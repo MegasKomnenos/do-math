@@ -14,6 +14,7 @@ from do_math.claude_adapter import ADAPTERS, provider_adapter
 from do_math.provider_wait import provider_for
 from do_math.canonical import canonical_json
 from .observation_transport import ObservationBatch
+from .provider_final import output_contract
 from .model_call import (classify_run, frame_rows, launch_conflict_result, runner_assignment,
                          unsupported_result, worker_request_fields)
 
@@ -76,7 +77,13 @@ class ModelRunner:
             # hand the CLI a schema file. Research binds its full schema to the
             # central draft submission instead; its input bundle preserves that schema.
             schema_path = evidence_dir / "output.schema.json"
-            schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+            schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True, allow_nan=False), encoding="utf-8")
+            if provider == "codex":
+                # Preserve the original separately. The worker snapshots and hashes
+                # the transport contract, whose description carries the original.
+                schema_path = evidence_dir / "transport.schema.json"
+                schema_path.write_text(json.dumps(output_contract(provider, output_schema),
+                    ensure_ascii=False, sort_keys=True, allow_nan=False), encoding="utf-8")
         request = worker_request_fields(adapter.worker_options(evidence_dir), prompt_path=prompt_path,
             workspace=workspace, evidence_dir=evidence_dir, cli_model=cli_model, effort=effort,
             timeout_seconds=timeout_seconds, schema_path=schema_path, execution_id=execution_id, reference=reference,

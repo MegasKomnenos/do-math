@@ -17,6 +17,7 @@ import jsonschema
 
 from .canonical import canonical_json
 from .observation_transport import decode_observation_row
+from .provider_final import request_provider, semantic_output
 from .values import strict_json_loads
 
 
@@ -174,7 +175,8 @@ def classify_run(collected: dict, *, started: dict, stopped: bool, cli_model: st
         return result
     raw = collected["final"].get("raw")
     try:
-        output = strict_json_loads(raw.decode("utf-8"))
+        request = strict_json_loads(collected["source_request"]["raw"].decode("utf-8"))
+        output = semantic_output(request_provider(request), raw)
         canonical_json(output)
         result["output"] = output
         jsonschema.validate(output, output_schema)

@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "unit.test_corpus_replay.CorpusReplayTests.test_every_entry_parses_to_its_recorded_judgment",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_corpus_replay.CorpusReplayTests.test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "unit.test_corpus_replay": 0.046999999962281436
+  }
+}

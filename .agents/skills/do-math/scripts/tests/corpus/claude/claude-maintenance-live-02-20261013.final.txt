@@ -1,0 +1,1 @@
+{"summary": "Provider smoke complete.", "used_sources": ["probe-evidence.txt", "checkpoint.json"], "questions": [], "report": "d41b9cde2cf8a02b5b58392165507e25", "remaining_work": []}

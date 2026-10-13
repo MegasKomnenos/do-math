@@ -1,0 +1,228 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 36,
+  "rows": [
+    {
+      "id": "sim.test_observation_delivery.CollectionOrderTests.test_returned_result_is_collected_before_unrelated_observation_callbacks",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "sim.test_observation_delivery.StreamChunkTests.test_one_native_chunk_is_one_owner_transaction",
+      "outcome": "passed",
+      "seconds": 0.0779999999795109,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_diagnosed_repair_restores_failed_request_and_preserves_regression_proof",
+      "outcome": "passed",
+      "seconds": 1.9689999999827705,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_failed_structured_report_preserves_output_without_research_submission",
+      "outcome": "passed",
+      "seconds": 1.6880000000237487,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_hold_before_report_does_not_use_up_the_repair",
+      "outcome": "passed",
+      "seconds": 2.952999999979511,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_judged_repair_counts_once_even_if_hold_holds_failed_verification",
+      "outcome": "passed",
+      "seconds": 1.5150000000139698,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt",
+      "outcome": "passed",
+      "seconds": 2.952999999979511,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_probe_routes_published_diagnosis_and_hold_blocks_recovery",
+      "outcome": "passed",
+      "seconds": 2.969000000040978,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_provider_limit_reaches_gate_unchanged_and_unjudged_repair_can_retry",
+      "outcome": "passed",
+      "seconds": 2.452999999979511,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_recovery_publishes_under_locks_and_restarts_after_collection_and_unlock",
+      "outcome": "passed",
+      "seconds": 1.7349999999860302,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unknown_local_termination_holds_output_and_never_restarts",
+      "outcome": "passed",
+      "seconds": 1.0780000000377186,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unresolved_diagnosis_does_not_restart_or_repeat",
+      "outcome": "passed",
+      "seconds": 1.6399999999557622,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unsupported_capability_is_saved_before_reserving_or_calling",
+      "outcome": "passed",
+      "seconds": 1.3130000000237487,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_absent_file_and_checkpoint_are_both_reported",
+      "outcome": "passed",
+      "seconds": 0.09399999998277053,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_background_requires_matching_completion_before_result_and_completed_file",
+      "outcome": "passed",
+      "seconds": 0.09299999999348074,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_background_without_events_and_file_fails_each_effect_check",
+      "outcome": "passed",
+      "seconds": 0.07900000002700835,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_claude_scholarly_tool_is_observed_from_actual_stream",
+      "outcome": "passed",
+      "seconds": 0.09399999998277053,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_claude_tool_requests_stop_and_collects_terminated_job",
+      "outcome": "passed",
+      "seconds": 0.0779999999795109,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_preserves_each_case_exception_and_complete_source_hashes",
+      "outcome": "passed",
+      "seconds": 0.15600000001722947,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_rejects_missing_required_live_arguments_before_effects",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_rejects_model_disagreement_lock_alias_and_duplicate_cases",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_command_requests_stop_and_collects_terminated_job",
+      "outcome": "passed",
+      "seconds": 0.09399999998277053,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_mcp_nonstring_tool_is_ignored_without_losing_later_tool",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_nonobject_item_and_other_item_are_ignored",
+      "outcome": "passed",
+      "seconds": 0.10899999999674037,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_scholarly_tool_name_joins_server_and_tool",
+      "outcome": "passed",
+      "seconds": 0.10899999999674037,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_files_preserve_nonce_and_the_checkpoint_requested_by_product",
+      "outcome": "passed",
+      "seconds": 0.15700000000651926,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_locked_claude_missing_model_evidence_is_not_success",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_locked_claude_reports_exact_requested_model",
+      "outcome": "passed",
+      "seconds": 0.09299999999348074,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_message_nonlist_content_does_not_create_tool_observation",
+      "outcome": "passed",
+      "seconds": 0.07900000002700835,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_nonobject_message_and_text_blocks_do_not_create_tool_observation",
+      "outcome": "passed",
+      "seconds": 0.09299999999348074,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_other_scholarly_tool_does_not_satisfy_list_sources",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_recorded_background_requires_exact_identity_status_and_pre_result_completion",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_scholarly_file_success_does_not_substitute_for_missing_tool",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_skill_only_uses_installed_bundle_without_model",
+      "outcome": "passed",
+      "seconds": 0.7810000000172295,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_stop_case_without_command_fails_without_termination_request",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_wrong_file_content_is_failed_even_with_completed_structured_response",
+      "outcome": "passed",
+      "seconds": 0.1559999999590218,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_observation_delivery": 0.0779999999795109,
+    "sim.test_operator_finish_recovery": 29.31300000002375,
+    "sim.test_operator_probe_contract": 2.9369999999762513
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "boundary.test_provider_worker_roots.WorkerRootTests.test_claude_worker_remains_importable_as_its_direct_job_root",
+      "outcome": "passed",
+      "seconds": 0.1720000000204891,
+      "details": []
+    },
+    {
+      "id": "boundary.test_provider_worker_roots.WorkerRootTests.test_worker_remains_importable_as_its_direct_job_root",
+      "outcome": "passed",
+      "seconds": 0.17199999996228144,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_provider_worker_roots": 0.35999999998603016
+  }
+}

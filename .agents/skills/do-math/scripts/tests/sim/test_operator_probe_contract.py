@@ -11,6 +11,7 @@ import unittest
 
 import probe_cli
 from do_math.model_runner import ModelRunner
+from do_math.provider_final import output_contract
 from support.entry import entry
 from support.operator_probe_inputs import ProbeCLI
 from support.provider_probes import ObservedCalls
@@ -48,6 +49,8 @@ class ProbeContractTests(unittest.TestCase):
         self.assertTrue(self.jobs.launched[0].done)
         request = json.loads(self.report['result']['execution']['collect']['source_request']['raw']['text'])
         self.assertIsNone(request['max_runtime_seconds'])
+        call, = self.cli.calls
+        self.assertEqual(call['schema'], output_contract(provider, call['output_schema']))
         return result
 
     def test_files_preserve_nonce_and_the_checkpoint_requested_by_product(self):
@@ -57,7 +60,7 @@ class ProbeContractTests(unittest.TestCase):
         self.assertTrue(result['passed'])
         self.assertEqual((self.root / 'evidence/files/workspace/probe-evidence.txt').read_text(),
                          self.cli.calls[0]['output']['nonce'])
-        self.assertEqual({key: value.get('type') for key, value in self.cli.calls[0]['schema']['properties'].items()},
+        self.assertEqual({key: value.get('type') for key, value in self.cli.calls[0]['output_schema']['properties'].items()},
                          {'status': 'string', 'nonce': 'string', 'phase': 'string'})
 
     def test_wrong_file_content_is_failed_even_with_completed_structured_response(self):

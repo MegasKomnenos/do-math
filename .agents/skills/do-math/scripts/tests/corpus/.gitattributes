@@ -1,4 +1,4 @@
 # External recordings keep the exact captured bytes through add and checkout.
 ** -text -whitespace
-manifest.json text eol=lf whitespace
+manifest.json -text whitespace
 .gitattributes text eol=lf whitespace

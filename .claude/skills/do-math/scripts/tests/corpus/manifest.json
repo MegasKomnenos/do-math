@@ -1,449 +1,1038 @@
 {
- "entries": [
-  {
-   "id": "codex-operational-review-completed",
-   "kind": "codex_stream",
-   "path": "codex/codex-operational-review-completed.jsonl",
-   "tool_version": "not recorded by the run",
-   "recorded_at": "2026-09-27",
-   "command": "codex exec --json (do-math codex_worker)",
-   "role": "operational_review",
-   "source": "nat-add-zero-20260927-01 EX-01M3HN3ZY2R4T481A5DV93QJ9P evidence/stdout.jsonl",
-   "verdict": {
-    "turn_completed": true,
-    "parse_complete": true,
-    "usage_fields": [
-     "cache_write_input_tokens",
-     "cached_input_tokens",
-     "input_tokens",
-     "output_tokens",
-     "reasoning_output_tokens"
-    ],
-    "unknown_events": [],
-    "final_sha256": "1f534a08280c31b798a2eae56e4c8ad830896bae82df3f30af1b50293568836f",
-    "final_is_selected_text": true
-   },
-   "final_path": "codex/codex-operational-review-completed.final.txt"
-  },
-  {
-   "id": "codex-cut-mid-turn",
-   "kind": "codex_stream",
-   "path": "codex/codex-cut-mid-turn.jsonl",
-   "tool_version": "not recorded by the run",
-   "recorded_at": "2026-09-27",
-   "command": "codex exec --json (do-math codex_worker)",
-   "role": "operational_review",
-   "source": "nat-add-zero-20260927-01 EX-01M3HN8JM42QXA1V9KG3RD68RM evidence/stdout.jsonl",
-   "verdict": {
-    "turn_completed": false,
-    "parse_complete": false,
-    "usage_fields": [],
-    "unknown_events": [
-     "invalid_terminal_count_or_position"
-    ]
-   }
-  },
-  {
-   "id": "lean-nat-add-zero-beq",
-   "kind": "lean_output",
-   "path": "lean/lean-nat-add-zero-beq.txt",
-   "source_path": "lean/lean-nat-add-zero-beq.lean",
-   "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
-   "recorded_at": "2026-09-27",
-   "command": "lean proposal.lean (do-math formal._worker); dependency rows cut",
-   "role": "formal_check",
-   "source": "nat-add-zero-20260927-01 KN-01M3HN9RSFZME2KHX6KCS0X83V formal.stdout",
-   "declarations": [
-    "natAddZeroBeqGoal",
-    "natAddZeroBeq_zero",
-    "natAddZeroBeq_one",
-    "natAddZeroBeq_two",
-    "natAddZeroBeq_all"
-   ],
-   "verdict": {
-    "status": "verified",
-    "declaration_signatures": {
-     "natAddZeroBeqGoal": "natAddZeroBeqGoal (n : Nat) : Prop",
-     "natAddZeroBeq_zero": "natAddZeroBeq_zero : natAddZeroBeqGoal 0",
-     "natAddZeroBeq_one": "natAddZeroBeq_one : natAddZeroBeqGoal 1",
-     "natAddZeroBeq_two": "natAddZeroBeq_two : natAddZeroBeqGoal 2",
-     "natAddZeroBeq_all": "natAddZeroBeq_all (n : Nat) : natAddZeroBeqGoal n"
+  "entries": [
+    {
+      "id": "codex-operational-review-completed",
+      "kind": "codex_stream",
+      "path": "codex/codex-operational-review-completed.jsonl",
+      "tool_version": "not recorded by the run",
+      "recorded_at": "2026-09-27",
+      "command": "codex exec --json (do-math codex_worker)",
+      "role": "operational_review",
+      "source": "nat-add-zero-20260927-01 EX-01M3HN3ZY2R4T481A5DV93QJ9P evidence/stdout.jsonl",
+      "verdict": {
+        "turn_completed": true,
+        "parse_complete": true,
+        "usage_fields": [
+          "cache_write_input_tokens",
+          "cached_input_tokens",
+          "input_tokens",
+          "output_tokens",
+          "reasoning_output_tokens"
+        ],
+        "unknown_events": [],
+        "final_sha256": "1f534a08280c31b798a2eae56e4c8ad830896bae82df3f30af1b50293568836f",
+        "final_is_selected_text": true
+      },
+      "final_path": "codex/codex-operational-review-completed.final.txt"
     },
-    "axioms": {
-     "natAddZeroBeqGoal": [],
-     "natAddZeroBeq_zero": [
-      "propext",
-      "Classical.choice",
-      "Quot.sound"
-     ],
-     "natAddZeroBeq_one": [
-      "propext",
-      "Classical.choice",
-      "Quot.sound"
-     ],
-     "natAddZeroBeq_two": [
-      "propext",
-      "Classical.choice",
-      "Quot.sound"
-     ],
-     "natAddZeroBeq_all": [
-      "propext",
-      "Classical.choice",
-      "Quot.sound"
-     ]
+    {
+      "id": "codex-cut-mid-turn",
+      "kind": "codex_stream",
+      "path": "codex/codex-cut-mid-turn.jsonl",
+      "tool_version": "not recorded by the run",
+      "recorded_at": "2026-09-27",
+      "command": "codex exec --json (do-math codex_worker)",
+      "role": "operational_review",
+      "source": "nat-add-zero-20260927-01 EX-01M3HN8JM42QXA1V9KG3RD68RM evidence/stdout.jsonl",
+      "verdict": {
+        "turn_completed": false,
+        "parse_complete": false,
+        "usage_fields": [],
+        "unknown_events": [
+          "invalid_terminal_count_or_position"
+        ]
+      }
+    },
+    {
+      "id": "lean-nat-add-zero-beq",
+      "kind": "lean_output",
+      "path": "lean/lean-nat-add-zero-beq.txt",
+      "source_path": "lean/lean-nat-add-zero-beq.lean",
+      "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+      "recorded_at": "2026-09-27",
+      "command": "lean proposal.lean (do-math formal._worker); dependency rows cut",
+      "role": "formal_check",
+      "source": "nat-add-zero-20260927-01 KN-01M3HN9RSFZME2KHX6KCS0X83V formal.stdout",
+      "declarations": [
+        "natAddZeroBeqGoal",
+        "natAddZeroBeq_zero",
+        "natAddZeroBeq_one",
+        "natAddZeroBeq_two",
+        "natAddZeroBeq_all"
+      ],
+      "verdict": {
+        "status": "verified",
+        "declaration_signatures": {
+          "natAddZeroBeqGoal": "natAddZeroBeqGoal (n : Nat) : Prop",
+          "natAddZeroBeq_zero": "natAddZeroBeq_zero : natAddZeroBeqGoal 0",
+          "natAddZeroBeq_one": "natAddZeroBeq_one : natAddZeroBeqGoal 1",
+          "natAddZeroBeq_two": "natAddZeroBeq_two : natAddZeroBeqGoal 2",
+          "natAddZeroBeq_all": "natAddZeroBeq_all (n : Nat) : natAddZeroBeqGoal n"
+        },
+        "axioms": {
+          "natAddZeroBeqGoal": [],
+          "natAddZeroBeq_zero": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "natAddZeroBeq_one": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "natAddZeroBeq_two": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "natAddZeroBeq_all": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ]
+        }
+      }
+    },
+    {
+      "id": "codex-schema-rejected-0160",
+      "kind": "codex_stream",
+      "path": "codex/codex-schema-rejected-0160.jsonl",
+      "tool_version": "codex-cli 0.160.0",
+      "recorded_at": "2026-10-04",
+      "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+      "role": "protocol_probe",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/codex/files/evidence/stdout.jsonl",
+      "source_sha256": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": false,
+        "preserved_file": false,
+        "checkpoint": false
+      },
+      "recorded_error": "HTTP 400 invalid_json_schema: nonce lacks type; native error then turn.failed; complete failure protocol, not a successful turn",
+      "verdict": {
+        "turn_completed": false,
+        "turn_failed": true,
+        "parse_complete": true,
+        "usage_fields": [],
+        "unknown_events": []
+      }
+    },
+    {
+      "id": "codex-files-completed-0160",
+      "kind": "codex_stream",
+      "path": "codex/codex-files-completed-0160.jsonl",
+      "tool_version": "codex-cli 0.160.0",
+      "recorded_at": "2026-10-04",
+      "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+      "role": "protocol_probe",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-1530bc64299343e483f95643719ca422/codex/files/evidence/stdout.jsonl",
+      "source_sha256": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": true,
+        "preserved_file": true,
+        "checkpoint": true
+      },
+      "final_path": "codex/codex-files-completed-0160.final.txt",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "usage_fields": [
+          "cache_write_input_tokens",
+          "cached_input_tokens",
+          "input_tokens",
+          "output_tokens",
+          "reasoning_output_tokens"
+        ],
+        "unknown_events": [],
+        "final_sha256": "23b5b3ba269ff930cc57e2166cdd0c64f25fcb75b100729ad60ddaec91a2a7ca",
+        "final_is_selected_text": true
+      }
+    },
+    {
+      "id": "claude-files-completed-21289",
+      "kind": "claude_stream",
+      "path": "claude/claude-files-completed-21289.jsonl",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-04",
+      "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+      "role": "protocol_probe",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/claude/files/evidence/stdout.jsonl",
+      "source_sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": true,
+        "preserved_file": true,
+        "checkpoint": true
+      },
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "status": "CLI_OK",
+          "nonce": "200cbc72f51f4f80e65a304a7b6cd27c",
+          "phase": "finished"
+        },
+        "reported_models": [
+          "claude-opus-5-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed",
+          "allowed"
+        ],
+        "background_event_types": [],
+        "post_result_event_types": []
+      }
+    },
+    {
+      "id": "claude-background-completed-21289",
+      "kind": "claude_stream",
+      "path": "claude/claude-background-completed-21289.jsonl",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-04",
+      "command": "probe_cli.run_case(background): real ModelRunner/WindowsJob/worker, timeout=None",
+      "role": "protocol_probe",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc/claude/background/evidence/stdout.jsonl",
+      "source_sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": true,
+        "native_background_start": true,
+        "actual_wait_tool": false,
+        "completed_file": true
+      },
+      "scope": "Actual background start, completed notification and final structured result. Probe did not invoke TaskOutput, so it is not a passing background smoke.",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "status": "CLI_OK",
+          "nonce": "fe01178cea1927f29d46b94b86407a1e",
+          "phase": "finished"
+        },
+        "reported_models": [
+          "claude-opus-5-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed"
+        ],
+        "background_event_types": [
+          "background_tasks_changed",
+          "task_started",
+          "background_tasks_changed",
+          "task_updated",
+          "task_notification"
+        ],
+        "post_result_event_types": []
+      }
+    },
+    {
+      "id": "lean-apostrophe-432",
+      "kind": "lean_output",
+      "path": "lean/lean-apostrophe-432.txt",
+      "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+      "recorded_at": "2026-10-04",
+      "command": "lean apostrophe-check.lean; actual check_file output, no extraction",
+      "role": "boundary_protocol",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "verdict": {
+        "status": "verified",
+        "declaration_signatures": {
+          "corpus_apostrophe'": "corpus_apostrophe' : True"
+        },
+        "axioms": {
+          "corpus_apostrophe'": []
+        },
+        "compiled_input_matches": true
+      },
+      "source_sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+      "source_path": "lean/apostrophe-source.lean",
+      "compiled_path": "lean/apostrophe-check.lean",
+      "declarations": [
+        "corpus_apostrophe'"
+      ]
+    },
+    {
+      "id": "scholarly-actual-codex-config",
+      "kind": "scholarly_config",
+      "path": "configuration/scholarly-codex.toml",
+      "tool_version": "codex-cli 0.160.0",
+      "recorded_at": "2026-10-04",
+      "command": "exact scholarly table excerpt from the real project .codex/config.toml",
+      "role": "boundary_protocol",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "verdict": {
+        "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+        "args": [
+          "C:/math/services/scholarly-mcp/server.py"
+        ]
+      },
+      "source_sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+      "recording": {
+        "id": "scholarly-config",
+        "source": "C:\\math\\.codex\\config.toml",
+        "source_sha256": "f1e9baa8d87c79874b23592342e884218be0cd58eef923650a020953dbaae693",
+        "source_lines_inclusive": [
+          22,
+          26
+        ],
+        "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+        "transformation": "exact byte excerpt of the scholarly table; unrelated settings excluded",
+        "expected_server": {
+          "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+          "args": [
+            "C:/math/services/scholarly-mcp/server.py"
+          ]
+        }
+      }
+    },
+    {
+      "id": "scheduler-absent-tasks",
+      "kind": "scheduler_json",
+      "path": "scheduler/absent-tasks.json",
+      "tool_version": "PowerShell 5.1.22621.6133; Windows 10.0.22631",
+      "recorded_at": "2026-10-04",
+      "command": "operator_schedule.ps1 -Action status; fresh absent names only",
+      "role": "boundary_protocol",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "verdict": {
+        "operator": null,
+        "engine": null,
+        "wake": null
+      },
+      "source_sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+      "returncode": 0,
+      "arguments": {
+        "Repository": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+        "Instance": "RI-recording",
+        "Workspace": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+        "Python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "OperatorTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-operator",
+        "EngineTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-engine",
+        "WakeTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-wake"
+      }
+    },
+    {
+      "id": "codex-current-command-surface",
+      "kind": "cli_surface",
+      "path": "capabilities/codex-20261013-0.txt",
+      "tool_version": "codex-cli 0.162.1",
+      "recorded_at": "2026-10-13",
+      "command": "real adapter-declared version/help commands",
+      "role": "boundary_protocol",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/codex-0.txt",
+      "verdict": {
+        "verified": true,
+        "supported": {
+          "jsonl": true,
+          "model": true,
+          "structured_output": true,
+          "effort_via_config": true,
+          "sandbox": true,
+          "local_job_stop": true
+        },
+        "scope": "cli_command_surface_only",
+        "unknown": [
+          "actual_input_bytes",
+          "provider_operation_ids",
+          "remote_termination",
+          "per_call_usage",
+          "provider_stop_reason",
+          "automatic_compaction_control",
+          "per_execution_read_isolation",
+          "cross_profile_noninterference"
+        ],
+        "version_sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+        "exec_help_sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c"
+      },
+      "source_sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+      "provider": "codex",
+      "recordings": [
+        {
+          "path": "capabilities/codex-20261013-0.txt",
+          "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/codex-0.txt",
+          "bytes": 18,
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "--version"
+          ],
+          "exit_code": 0
+        },
+        {
+          "path": "capabilities/codex-20261013-1.txt",
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/codex-1.txt",
+          "bytes": 5849,
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "--help"
+          ],
+          "exit_code": 0
+        },
+        {
+          "path": "capabilities/codex-20261013-2.txt",
+          "sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/codex-2.txt",
+          "bytes": 4331,
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "exec",
+            "--help"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    {
+      "id": "claude-current-command-surface",
+      "kind": "cli_surface",
+      "path": "capabilities/claude-20261013-0.txt",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-13",
+      "command": "real adapter-declared version/help commands",
+      "role": "boundary_protocol",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/claude-0.txt",
+      "verdict": {
+        "verified": true,
+        "supported": {
+          "jsonl": true,
+          "model": true,
+          "structured_output": true,
+          "local_job_stop": true
+        },
+        "scope": "cli_command_surface_only",
+        "unknown": [
+          "remote_termination",
+          "per_execution_read_isolation",
+          "provider_operation_ids",
+          "automatic_compaction_control",
+          "provider_operation_count",
+          "provider_maximum_output"
+        ],
+        "version_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+        "exec_help_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+      },
+      "source_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+      "provider": "claude",
+      "recordings": [
+        {
+          "path": "capabilities/claude-20261013-0.txt",
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/claude-0.txt",
+          "bytes": 22,
+          "command": [
+            "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+            "--version"
+          ],
+          "exit_code": 0
+        },
+        {
+          "path": "capabilities/claude-20261013-1.txt",
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/surfaces/claude-1.txt",
+          "bytes": 22040,
+          "command": [
+            "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+            "--help"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    {
+      "id": "claude-maintenance-live-01-20261013",
+      "kind": "claude_stream",
+      "path": "claude/claude-maintenance-live-01-20261013.jsonl",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-13T13:28:55.075851+00:00",
+      "command": [
+        "C:\\Users\\wogud\\.local\\bin\\claude.exe",
+        "--print",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--model",
+        "opus",
+        "--effort",
+        "low",
+        "--no-session-persistence",
+        "--setting-sources",
+        "",
+        "--settings",
+        "{\"disableAllHooks\": true, \"autoMemoryEnabled\": false}",
+        "--disable-slash-commands",
+        "--disallowedTools",
+        "Agent,Task",
+        "--strict-mcp-config",
+        "--mcp-config",
+        "{\"mcpServers\": {}}",
+        "--permission-mode",
+        "bypassPermissions",
+        "--json-schema",
+        "{\"$id\": \"https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138\", \"additionalProperties\": false, \"properties\": {\"integration_bundles\": {\"description\": \"Omit this field for one atomic whole-response bundle when there are no existing-object revisions or partial acceptances to preserve. For explicit grouping, declare every state-changing member exactly once. Existing revisions and partial retries require explicit grouping. For ordinary research, 'output' owns the report/outcome/questions, and 'output/knowledge/N' and 'output/relations/N' own records. Extensions use 'activity-extensions.json/FAMILY/N'. Other roles, review research and declared revision work require one bundle with 'output' and all extension members. New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.\", \"items\": {\"additionalProperties\": false, \"properties\": {\"authority_refs\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"array\", \"uniqueItems\": true}, \"impact_set\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"array\", \"uniqueItems\": true}, \"integration_id\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"members\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"minItems\": 1, \"type\": \"array\", \"uniqueItems\": true}, \"previous_hashes\": {\"additionalProperties\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"object\"}}, \"required\": [\"integration_id\", \"members\", \"impact_set\", \"authority_refs\"], \"type\": \"object\"}, \"minItems\": 1, \"type\": \"array\"}, \"questions\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, \"remaining_work\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, \"repair_responses\": {\"items\": {\"additionalProperties\": false, \"properties\": {\"disposition\": {\"enum\": [\"resolved\", \"maintained\", \"withdrawn\"]}, \"issue_id\": {\"minLength\": 1, \"type\": \"string\"}, \"reason\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}}, \"required\": [\"issue_id\", \"disposition\", \"reason\"], \"type\": \"object\"}, \"type\": \"array\"}, \"report\": {\"type\": \"string\"}, \"summary\": {\"type\": \"string\"}, \"used_sources\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}}, \"required\": [\"summary\", \"used_sources\", \"questions\", \"report\", \"remaining_work\"], \"type\": \"object\"}"
+      ],
+      "command_sha256": "a63f999245c92cddf3d7531b0c8f728669fad5ffe3b0851876d2c66e19f9817d",
+      "command_binding": "Current worker.build_argv from preserved source_request; digest equals the exited worker status.",
+      "role": "maintenance",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/call/stdout.jsonl",
+      "source_sha256": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+      "live_passed": false,
+      "live_checks": {
+        "completed": true,
+        "structured_output": true,
+        "schema_unchanged": true,
+        "nonce_file": true,
+        "checkpoint": true,
+        "native_read": false,
+        "native_completion": true,
+        "selected_final": true,
+        "local_termination": true
+      },
+      "model": "opus",
+      "effort": "low",
+      "host": "desktop",
+      "prompt_sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+      "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "scope": "Complete native stream from one unbound maintenance role call; no research control binding or central submission. Native response/files succeeded; smoke failed because the read tool appended checkpoint JSON. Historical failure retained.",
+      "recordings": [
+        {
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json",
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/call/output.schema.json",
+          "bytes": 2531
+        },
+        {
+          "path": "claude/claude-maintenance-live-01-20261013.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/call/stderr.txt",
+          "bytes": 0
+        },
+        {
+          "path": "claude/claude-maintenance-live-01-20261013.worker-status.json",
+          "sha256": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/call/worker-status.json",
+          "bytes": 366
+        },
+        {
+          "path": "claude/claude-maintenance-live-01-20261013.prompt.txt",
+          "sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/call/input.txt",
+          "bytes": 1234
+        },
+        {
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt",
+          "sha256": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-claude-keracdq7/selected-final.txt",
+          "bytes": 183
+        }
+      ],
+      "schema_path": "claude/claude-maintenance-live-01-20261013.schema.json",
+      "final_path": "claude/claude-maintenance-live-01-20261013.final.txt",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "summary": "Provider smoke complete.",
+          "used_sources": [
+            "probe-evidence.txt",
+            "checkpoint.json"
+          ],
+          "questions": [],
+          "report": "e476aa48ed26cd37f7936fb20d83042a",
+          "remaining_work": []
+        },
+        "reported_models": [
+          "claude-opus-5-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed"
+        ],
+        "background_event_types": [],
+        "post_result_event_types": []
+      }
+    },
+    {
+      "id": "codex-maintenance-live-01-20261013",
+      "kind": "codex_stream",
+      "path": "codex/codex-maintenance-live-01-20261013.jsonl",
+      "tool_version": "codex-cli 0.162.1",
+      "recorded_at": "2026-10-13T13:29:14.346041+00:00",
+      "command": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe",
+        "--ask-for-approval",
+        "never",
+        "exec",
+        "--json",
+        "--color",
+        "never",
+        "--output-last-message",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-01\\smoke-isolated-000\\scratch\\provider-smoke-codex-_4rkrk8h\\call\\final.txt",
+        "--model",
+        "gpt-6-astra",
+        "--cd",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-01\\smoke-isolated-000\\scratch\\provider-smoke-codex-_4rkrk8h\\workspace",
+        "--strict-config",
+        "--config",
+        "model_reasoning_effort=\"low\"",
+        "--config",
+        "project_doc_max_bytes=0",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--output-schema",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-01\\smoke-isolated-000\\scratch\\provider-smoke-codex-_4rkrk8h\\do-math-cli-brcqta0k\\schema.json",
+        "--config",
+        "windows.sandbox=\"unelevated\"",
+        "--sandbox",
+        "danger-full-access",
+        "-"
+      ],
+      "command_sha256": "ab50000155e92f00777f43a06ab5775e4f12f45b7f7df418cf1283e24cf48c51",
+      "command_binding": "Current worker.build_argv from preserved source_request; digest equals the exited worker status.",
+      "role": "maintenance",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-codex-_4rkrk8h/call/stdout.jsonl",
+      "source_sha256": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+      "live_passed": false,
+      "live_checks": {
+        "completed": false,
+        "structured_output": false,
+        "schema_unchanged": true,
+        "nonce_file": false,
+        "checkpoint": false,
+        "native_read": false,
+        "native_completion": false,
+        "selected_final": false,
+        "local_termination": true
+      },
+      "model": "gpt-6-astra",
+      "effort": "low",
+      "host": "desktop",
+      "prompt_sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+      "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "scope": "Complete native stream from one unbound maintenance role call; no research control binding or central submission.",
+      "recordings": [
+        {
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json",
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-codex-_4rkrk8h/call/output.schema.json",
+          "bytes": 2531
+        },
+        {
+          "path": "codex/codex-maintenance-live-01-20261013.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-codex-_4rkrk8h/call/stderr.txt",
+          "bytes": 0
+        },
+        {
+          "path": "codex/codex-maintenance-live-01-20261013.worker-status.json",
+          "sha256": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-codex-_4rkrk8h/call/worker-status.json",
+          "bytes": 366
+        },
+        {
+          "path": "codex/codex-maintenance-live-01-20261013.prompt.txt",
+          "sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-01/smoke-isolated-000/scratch/provider-smoke-codex-_4rkrk8h/call/input.txt",
+          "bytes": 1233
+        }
+      ],
+      "schema_path": "codex/codex-maintenance-live-01-20261013.schema.json",
+      "verdict": {
+        "turn_completed": false,
+        "parse_complete": true,
+        "usage_fields": [],
+        "unknown_events": [],
+        "turn_failed": true
+      },
+      "recorded_error": "cli_nonzero_exit; turn_failed; turn_completed_missing; final_message_missing"
+    },
+    {
+      "id": "claude-maintenance-live-02-20261013",
+      "kind": "claude_stream",
+      "path": "claude/claude-maintenance-live-02-20261013.jsonl",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-13T13:30:50.611529+00:00",
+      "command": [
+        "C:\\Users\\wogud\\.local\\bin\\claude.exe",
+        "--print",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--model",
+        "opus",
+        "--effort",
+        "low",
+        "--no-session-persistence",
+        "--setting-sources",
+        "",
+        "--settings",
+        "{\"disableAllHooks\": true, \"autoMemoryEnabled\": false}",
+        "--disable-slash-commands",
+        "--disallowedTools",
+        "Agent,Task",
+        "--strict-mcp-config",
+        "--mcp-config",
+        "{\"mcpServers\": {}}",
+        "--permission-mode",
+        "bypassPermissions",
+        "--json-schema",
+        "{\"$id\": \"https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138\", \"additionalProperties\": false, \"properties\": {\"integration_bundles\": {\"description\": \"Omit this field for one atomic whole-response bundle when there are no existing-object revisions or partial acceptances to preserve. For explicit grouping, declare every state-changing member exactly once. Existing revisions and partial retries require explicit grouping. For ordinary research, 'output' owns the report/outcome/questions, and 'output/knowledge/N' and 'output/relations/N' own records. Extensions use 'activity-extensions.json/FAMILY/N'. Other roles, review research and declared revision work require one bundle with 'output' and all extension members. New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.\", \"items\": {\"additionalProperties\": false, \"properties\": {\"authority_refs\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"array\", \"uniqueItems\": true}, \"impact_set\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"array\", \"uniqueItems\": true}, \"integration_id\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"members\": {\"items\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"minItems\": 1, \"type\": \"array\", \"uniqueItems\": true}, \"previous_hashes\": {\"additionalProperties\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}, \"type\": \"object\"}}, \"required\": [\"integration_id\", \"members\", \"impact_set\", \"authority_refs\"], \"type\": \"object\"}, \"minItems\": 1, \"type\": \"array\"}, \"questions\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, \"remaining_work\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, \"repair_responses\": {\"items\": {\"additionalProperties\": false, \"properties\": {\"disposition\": {\"enum\": [\"resolved\", \"maintained\", \"withdrawn\"]}, \"issue_id\": {\"minLength\": 1, \"type\": \"string\"}, \"reason\": {\"minLength\": 1, \"pattern\": \"\\\\S\", \"type\": \"string\"}}, \"required\": [\"issue_id\", \"disposition\", \"reason\"], \"type\": \"object\"}, \"type\": \"array\"}, \"report\": {\"type\": \"string\"}, \"summary\": {\"type\": \"string\"}, \"used_sources\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}}, \"required\": [\"summary\", \"used_sources\", \"questions\", \"report\", \"remaining_work\"], \"type\": \"object\"}"
+      ],
+      "command_sha256": "a63f999245c92cddf3d7531b0c8f728669fad5ffe3b0851876d2c66e19f9817d",
+      "command_binding": "Current worker.build_argv from preserved source_request; digest equals the exited worker status.",
+      "role": "maintenance",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/call/stdout.jsonl",
+      "source_sha256": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+      "live_passed": true,
+      "live_checks": {
+        "completed": true,
+        "structured_output": true,
+        "schema_unchanged": true,
+        "nonce_file": true,
+        "checkpoint": true,
+        "native_read": true,
+        "native_completion": true,
+        "selected_final": true,
+        "local_termination": true
+      },
+      "model": "opus",
+      "effort": "low",
+      "host": "desktop",
+      "prompt_sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+      "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "scope": "Complete native stream from one unbound maintenance role call; no research control binding or central submission.",
+      "recordings": [
+        {
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json",
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/call/output.schema.json",
+          "bytes": 2531
+        },
+        {
+          "path": "claude/claude-maintenance-live-02-20261013.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/call/stderr.txt",
+          "bytes": 0
+        },
+        {
+          "path": "claude/claude-maintenance-live-02-20261013.worker-status.json",
+          "sha256": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/call/worker-status.json",
+          "bytes": 366
+        },
+        {
+          "path": "claude/claude-maintenance-live-02-20261013.prompt.txt",
+          "sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/call/input.txt",
+          "bytes": 1442
+        },
+        {
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt",
+          "sha256": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/live-02/smoke-isolated-000/scratch/provider-smoke-claude-nfy7ei6r/selected-final.txt",
+          "bytes": 183
+        }
+      ],
+      "schema_path": "claude/claude-maintenance-live-02-20261013.schema.json",
+      "final_path": "claude/claude-maintenance-live-02-20261013.final.txt",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "summary": "Provider smoke complete.",
+          "used_sources": [
+            "probe-evidence.txt",
+            "checkpoint.json"
+          ],
+          "questions": [],
+          "report": "d41b9cde2cf8a02b5b58392165507e25",
+          "remaining_work": []
+        },
+        "reported_models": [
+          "claude-opus-5-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed"
+        ],
+        "background_event_types": [],
+        "post_result_event_types": []
+      }
+    },
+    {
+      "id": "codex-command-surface-20261004",
+      "kind": "cli_surface",
+      "path": "capabilities/codex-surface-0.txt",
+      "tool_version": "codex-cli 0.160.0",
+      "recorded_at": "2026-10-04",
+      "command": "real adapter-declared version/help commands",
+      "role": "boundary_protocol",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "verdict": {
+        "verified": true,
+        "supported": {
+          "jsonl": true,
+          "model": true,
+          "structured_output": true,
+          "effort_via_config": true,
+          "sandbox": true,
+          "local_job_stop": true
+        },
+        "scope": "cli_command_surface_only",
+        "unknown": [
+          "actual_input_bytes",
+          "provider_operation_ids",
+          "remote_termination",
+          "per_call_usage",
+          "provider_stop_reason",
+          "automatic_compaction_control",
+          "per_execution_read_isolation",
+          "cross_profile_noninterference"
+        ],
+        "version_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+        "exec_help_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
+      },
+      "source_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+      "provider": "codex",
+      "recordings": [
+        {
+          "path": "capabilities/codex-surface-0.txt",
+          "exit_code": 0,
+          "sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "command": [
+            "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+            "--version"
+          ]
+        },
+        {
+          "path": "capabilities/codex-surface-1.txt",
+          "exit_code": 0,
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "command": [
+            "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+            "--help"
+          ]
+        },
+        {
+          "path": "capabilities/codex-surface-2.txt",
+          "exit_code": 0,
+          "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "command": [
+            "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+            "exec",
+            "--help"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "claude-command-surface-20261004",
+      "kind": "cli_surface",
+      "path": "capabilities/claude-surface-0.txt",
+      "tool_version": "2.1.289 (Claude Code)",
+      "recorded_at": "2026-10-04",
+      "command": "real adapter-declared version/help commands",
+      "role": "boundary_protocol",
+      "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "verdict": {
+        "verified": true,
+        "supported": {
+          "jsonl": true,
+          "model": true,
+          "structured_output": true,
+          "local_job_stop": true
+        },
+        "scope": "cli_command_surface_only",
+        "unknown": [
+          "remote_termination",
+          "per_execution_read_isolation",
+          "provider_operation_ids",
+          "automatic_compaction_control",
+          "provider_operation_count",
+          "provider_maximum_output"
+        ],
+        "version_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+        "exec_help_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+      },
+      "source_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+      "provider": "claude",
+      "recordings": [
+        {
+          "path": "capabilities/claude-surface-0.txt",
+          "exit_code": 0,
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "command": [
+            "C:/Users/wogud/.local/bin/claude.exe",
+            "--version"
+          ]
+        },
+        {
+          "path": "capabilities/claude-surface-1.txt",
+          "exit_code": 0,
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "command": [
+            "C:/Users/wogud/.local/bin/claude.exe",
+            "--help"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "codex-maintenance-transport-20261014",
+      "kind": "codex_stream",
+      "path": "codex/codex-maintenance-transport-20261014.jsonl",
+      "tool_version": "codex-cli 0.162.1",
+      "recorded_at": "2026-10-13T15:25:53.383055+00:00",
+      "command": [
+        "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.162.1-x86_64-pc-windows-msvc\\bin\\codex.exe",
+        "--ask-for-approval",
+        "never",
+        "exec",
+        "--json",
+        "--color",
+        "never",
+        "--output-last-message",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\call\\final.txt",
+        "--model",
+        "gpt-6-astra",
+        "--cd",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\workspace",
+        "--strict-config",
+        "--config",
+        "model_reasoning_effort=\"low\"",
+        "--config",
+        "project_doc_max_bytes=0",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--output-schema",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\do-math-cli-vxnrsd_o\\schema.json",
+        "--config",
+        "windows.sandbox=\"unelevated\"",
+        "--sandbox",
+        "danger-full-access",
+        "-"
+      ],
+      "command_sha256": "5b9e149cd2f0c4219a810944e00aea3f7eccd3eeeffa50810c078e5f034af9ed",
+      "command_binding": "Current codex_worker.build_argv from preserved source_request; digest equals exited worker status.",
+      "role": "maintenance",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/stdout.jsonl",
+      "source_sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd",
+      "live_passed": true,
+      "live_checks": {
+        "completed": true,
+        "structured_output": true,
+        "schema_unchanged": true,
+        "transport_schema": true,
+        "worker_schema_hash": true,
+        "nonce_file": true,
+        "checkpoint": true,
+        "native_read": true,
+        "native_completion": true,
+        "selected_final": true,
+        "local_termination": true
+      },
+      "model": "gpt-6-astra",
+      "effort": "low",
+      "host": "desktop",
+      "reported_models": [],
+      "prompt_sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+      "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "transport_schema_sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+      "scope": "One unbound maintenance call. schema_path is the complete semantic role contract; transport_schema_path is the Codex JSON-string envelope. Native replay and original-schema semantic receipt are separately checked.",
+      "response_transport": "codex_output_json",
+      "semantic_output": {
+        "summary": "Provider smoke complete.",
+        "used_sources": [
+          "probe-evidence.txt",
+          "checkpoint.json"
+        ],
+        "questions": [],
+        "report": "74856b42c29d5ffaa43e4a99e6229ed9",
+        "remaining_work": []
+      },
+      "recordings": [
+        {
+          "path": "codex/codex-maintenance-transport-20261014.schema.json",
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "bytes": 2531,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/output.schema.json"
+        },
+        {
+          "path": "codex/codex-maintenance-transport-20261014.transport.schema.json",
+          "sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+          "bytes": 3206,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/transport.schema.json"
+        },
+        {
+          "path": "codex/codex-maintenance-transport-20261014.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/stderr.txt"
+        },
+        {
+          "path": "codex/codex-maintenance-transport-20261014.worker-status.json",
+          "sha256": "1bd82eef6adb6ced18840975f9a932f6ea5f896b02a1b6f56d35286c7f621941",
+          "bytes": 366,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/worker-status.json"
+        },
+        {
+          "path": "codex/codex-maintenance-transport-20261014.prompt.txt",
+          "sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+          "bytes": 1436,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/input.txt"
+        },
+        {
+          "path": "codex/codex-maintenance-transport-20261014.final.txt",
+          "sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+          "bytes": 219,
+          "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/selected-final.txt"
+        }
+      ],
+      "schema_path": "codex/codex-maintenance-transport-20261014.schema.json",
+      "transport_schema_path": "codex/codex-maintenance-transport-20261014.transport.schema.json",
+      "worker_status_path": "codex/codex-maintenance-transport-20261014.worker-status.json",
+      "final_path": "codex/codex-maintenance-transport-20261014.final.txt",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "usage_fields": [
+          "cache_write_input_tokens",
+          "cached_input_tokens",
+          "input_tokens",
+          "output_tokens",
+          "reasoning_output_tokens"
+        ],
+        "unknown_events": [],
+        "final_sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+        "final_is_selected_text": true
+      }
     }
-   }
-  },
-  {
-   "id": "codex-schema-rejected-0160",
-   "kind": "codex_stream",
-   "path": "codex/codex-schema-rejected-0160.jsonl",
-   "tool_version": "codex-cli 0.160.0",
-   "recorded_at": "2026-10-04",
-   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
-   "role": "protocol_probe",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/codex/files/evidence/stdout.jsonl",
-   "source_sha256": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
-   "live_checks": {
-    "local_termination": true,
-    "structured_result": false,
-    "preserved_file": false,
-    "checkpoint": false
-   },
-   "recorded_error": "HTTP 400 invalid_json_schema: nonce lacks type; native error then turn.failed; complete failure protocol, not a successful turn",
-   "verdict": {
-    "turn_completed": false,
-    "turn_failed": true,
-    "parse_complete": true,
-    "usage_fields": [],
-    "unknown_events": []
-   }
-  },
-  {
-   "id": "codex-files-completed-0160",
-   "kind": "codex_stream",
-   "path": "codex/codex-files-completed-0160.jsonl",
-   "tool_version": "codex-cli 0.160.0",
-   "recorded_at": "2026-10-04",
-   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
-   "role": "protocol_probe",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-1530bc64299343e483f95643719ca422/codex/files/evidence/stdout.jsonl",
-   "source_sha256": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
-   "live_checks": {
-    "local_termination": true,
-    "structured_result": true,
-    "preserved_file": true,
-    "checkpoint": true
-   },
-   "final_path": "codex/codex-files-completed-0160.final.txt",
-   "verdict": {
-    "turn_completed": true,
-    "turn_failed": false,
-    "parse_complete": true,
-    "usage_fields": [
-     "cache_write_input_tokens",
-     "cached_input_tokens",
-     "input_tokens",
-     "output_tokens",
-     "reasoning_output_tokens"
-    ],
-    "unknown_events": [],
-    "final_sha256": "23b5b3ba269ff930cc57e2166cdd0c64f25fcb75b100729ad60ddaec91a2a7ca",
-    "final_is_selected_text": true
-   }
-  },
-  {
-   "id": "claude-files-completed-21289",
-   "kind": "claude_stream",
-   "path": "claude/claude-files-completed-21289.jsonl",
-   "tool_version": "2.1.289 (Claude Code)",
-   "recorded_at": "2026-10-04",
-   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
-   "role": "protocol_probe",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/claude/files/evidence/stdout.jsonl",
-   "source_sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
-   "live_checks": {
-    "local_termination": true,
-    "structured_result": true,
-    "preserved_file": true,
-    "checkpoint": true
-   },
-   "verdict": {
-    "turn_completed": true,
-    "turn_failed": false,
-    "parse_complete": true,
-    "unknown_events": [],
-    "structured_output": {
-     "status": "CLI_OK",
-     "nonce": "200cbc72f51f4f80e65a304a7b6cd27c",
-     "phase": "finished"
-    },
-    "reported_models": [
-     "claude-opus-5-5"
-    ],
-    "result_segments": 1,
-    "usage_segments": 1,
-    "rate_limit_statuses": [
-     "allowed",
-     "allowed"
-    ],
-    "background_event_types": [],
-    "post_result_event_types": []
-   }
-  },
-  {
-   "id": "claude-background-completed-21289",
-   "kind": "claude_stream",
-   "path": "claude/claude-background-completed-21289.jsonl",
-   "tool_version": "2.1.289 (Claude Code)",
-   "recorded_at": "2026-10-04",
-   "command": "probe_cli.run_case(background): real ModelRunner/WindowsJob/worker, timeout=None",
-   "role": "protocol_probe",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc/claude/background/evidence/stdout.jsonl",
-   "source_sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
-   "live_checks": {
-    "local_termination": true,
-    "structured_result": true,
-    "native_background_start": true,
-    "actual_wait_tool": false,
-    "completed_file": true
-   },
-   "scope": "Actual background start, completed notification and final structured result. Probe did not invoke TaskOutput, so it is not a passing background smoke.",
-   "verdict": {
-    "turn_completed": true,
-    "turn_failed": false,
-    "parse_complete": true,
-    "unknown_events": [],
-    "structured_output": {
-     "status": "CLI_OK",
-     "nonce": "fe01178cea1927f29d46b94b86407a1e",
-     "phase": "finished"
-    },
-    "reported_models": [
-     "claude-opus-5-5"
-    ],
-    "result_segments": 1,
-    "usage_segments": 1,
-    "rate_limit_statuses": [
-     "allowed"
-    ],
-    "background_event_types": [
-     "background_tasks_changed",
-     "task_started",
-     "background_tasks_changed",
-     "task_updated",
-     "task_notification"
-    ],
-    "post_result_event_types": []
-   }
-  },
-  {
-   "id": "lean-apostrophe-432",
-   "kind": "lean_output",
-   "path": "lean/lean-apostrophe-432.txt",
-   "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
-   "recorded_at": "2026-10-04",
-   "command": "lean apostrophe-check.lean; actual check_file output, no extraction",
-   "role": "boundary_protocol",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-   "verdict": {
-    "status": "verified",
-    "declaration_signatures": {
-     "corpus_apostrophe'": "corpus_apostrophe' : True"
-    },
-    "axioms": {
-     "corpus_apostrophe'": []
-    },
-    "compiled_input_matches": true
-   },
-   "source_sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
-   "source_path": "lean/apostrophe-source.lean",
-   "compiled_path": "lean/apostrophe-check.lean",
-   "declarations": [
-    "corpus_apostrophe'"
-   ]
-  },
-  {
-   "id": "scholarly-actual-codex-config",
-   "kind": "scholarly_config",
-   "path": "configuration/scholarly-codex.toml",
-   "tool_version": "codex-cli 0.160.0",
-   "recorded_at": "2026-10-04",
-   "command": "exact scholarly table excerpt from the real project .codex/config.toml",
-   "role": "boundary_protocol",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-   "verdict": {
-    "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
-    "args": [
-     "C:/math/services/scholarly-mcp/server.py"
-    ]
-   },
-   "source_sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
-   "recording": {
-    "id": "scholarly-config",
-    "source": "C:\\math\\.codex\\config.toml",
-    "source_sha256": "f1e9baa8d87c79874b23592342e884218be0cd58eef923650a020953dbaae693",
-    "source_lines_inclusive": [
-     22,
-     26
-    ],
-    "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
-    "transformation": "exact byte excerpt of the scholarly table; unrelated settings excluded",
-    "expected_server": {
-     "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
-     "args": [
-      "C:/math/services/scholarly-mcp/server.py"
-     ]
-    }
-   }
-  },
-  {
-   "id": "scheduler-absent-tasks",
-   "kind": "scheduler_json",
-   "path": "scheduler/absent-tasks.json",
-   "tool_version": "PowerShell 5.1.22621.6133; Windows 10.0.22631",
-   "recorded_at": "2026-10-04",
-   "command": "operator_schedule.ps1 -Action status; fresh absent names only",
-   "role": "boundary_protocol",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-   "verdict": {
-    "operator": null,
-    "engine": null,
-    "wake": null
-   },
-   "source_sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
-   "returncode": 0,
-   "arguments": {
-    "Repository": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-    "Instance": "RI-recording",
-    "Workspace": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-    "Python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-    "OperatorTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-operator",
-    "EngineTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-engine",
-    "WakeTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-wake"
-   }
-  },
-  {
-   "id": "codex-current-command-surface",
-   "kind": "cli_surface",
-   "path": "capabilities/codex-surface-0.txt",
-   "tool_version": "codex-cli 0.160.0",
-   "recorded_at": "2026-10-04",
-   "command": "real adapter-declared version/help commands",
-   "role": "boundary_protocol",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-   "verdict": {
-    "verified": true,
-    "supported": {
-     "jsonl": true,
-     "model": true,
-     "structured_output": true,
-     "effort_via_config": true,
-     "sandbox": true,
-     "local_job_stop": true
-    },
-    "scope": "cli_command_surface_only",
-    "unknown": [
-     "actual_input_bytes",
-     "provider_operation_ids",
-     "remote_termination",
-     "per_call_usage",
-     "provider_stop_reason",
-     "automatic_compaction_control",
-     "per_execution_read_isolation",
-     "cross_profile_noninterference"
-    ],
-    "version_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
-    "exec_help_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
-   },
-   "source_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
-   "provider": "codex",
-   "recordings": [
-    {
-     "path": "capabilities/codex-surface-0.txt",
-     "exit_code": 0,
-     "sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
-     "command": [
-      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
-      "--version"
-     ]
-    },
-    {
-     "path": "capabilities/codex-surface-1.txt",
-     "exit_code": 0,
-     "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
-     "command": [
-      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
-      "--help"
-     ]
-    },
-    {
-     "path": "capabilities/codex-surface-2.txt",
-     "exit_code": 0,
-     "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
-     "command": [
-      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
-      "exec",
-      "--help"
-     ]
-    }
-   ]
-  },
-  {
-   "id": "claude-current-command-surface",
-   "kind": "cli_surface",
-   "path": "capabilities/claude-surface-0.txt",
-   "tool_version": "2.1.289 (Claude Code)",
-   "recorded_at": "2026-10-04",
-   "command": "real adapter-declared version/help commands",
-   "role": "boundary_protocol",
-   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
-   "verdict": {
-    "verified": true,
-    "supported": {
-     "jsonl": true,
-     "model": true,
-     "structured_output": true,
-     "local_job_stop": true
-    },
-    "scope": "cli_command_surface_only",
-    "unknown": [
-     "remote_termination",
-     "per_execution_read_isolation",
-     "provider_operation_ids",
-     "automatic_compaction_control",
-     "provider_operation_count",
-     "provider_maximum_output"
-    ],
-    "version_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
-    "exec_help_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
-   },
-   "source_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
-   "provider": "claude",
-   "recordings": [
-    {
-     "path": "capabilities/claude-surface-0.txt",
-     "exit_code": 0,
-     "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
-     "command": [
-      "C:/Users/wogud/.local/bin/claude.exe",
-      "--version"
-     ]
-    },
-    {
-     "path": "capabilities/claude-surface-1.txt",
-     "exit_code": 0,
-     "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
-     "command": [
-      "C:/Users/wogud/.local/bin/claude.exe",
-      "--help"
-     ]
-    }
-   ]
+  ],
+  "supported_stream_versions": {
+    "codex": "codex-cli 0.162.1",
+    "claude": "2.1.289 (Claude Code)"
   }
- ],
- "supported_stream_versions": {
-  "codex": "codex-cli 0.160.0",
-  "claude": "2.1.289 (Claude Code)"
- }
 }

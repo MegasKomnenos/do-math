@@ -2,6 +2,8 @@
 receiver names no field that no producer branch writes. Branches a receiver rejects today are the known
 defects below, each with its own reproduction."""
 from copy import deepcopy
+import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +13,38 @@ from contracts.pairs import (PAIRS, TEXT_RULE_ID_SAMPLES, accepted_condition, ac
 
 
 class ContractPairTests(unittest.TestCase):
+    def test_runner_samples_cover_success_bound_incomplete_and_stopped(self):
+        pair = next(pair for pair in PAIRS if pair.name == 'runner result (stored artifact)')
+        expected = {
+            'collected': ('completed', {}, None, None, 'output_collected'),
+            'collected, bound': ('completed', None, 'provider_evidence_only', None, 'output_collected'),
+            'incomplete': ('failed', None, None, 'execution_failure', 'incomplete'),
+            'stopped': ('stopped', None, None, 'execution_failure', 'output_collected'),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            samples = pair.samples(Path(directory))
+        self.assertEqual([label for label, _ in samples],
+                         [provider + ', ' + branch for provider in ('codex', 'claude') for branch in expected])
+        for label, result in samples:
+            with self.subTest(branch=label):
+                branch = label.split(', ', 1)[1]
+                self.assertEqual((result['status'], result['output'], result.get('collection'),
+                                  result.get('error_kind'), result['execution']['collect']['result']), expected[branch])
+                collected = result['execution']['collect']
+                self.assertEqual(collected['reasons'], ['cli_nonzero_exit'] if branch == 'incomplete' else [])
+                self.assertEqual(result['error'], 'cli_nonzero_exit' if branch == 'incomplete' else
+                                 'stop requested or timeout' if branch == 'stopped' else None)
+                self.assertTrue(collected['termination_barrier']['confirmed'])
+                for name in ('source_request', 'source_prompt', 'stdout', 'stderr', 'final'):
+                    artifact = collected[name]
+                    self.assertEqual(artifact['bytes'], len(artifact['raw']))
+                    self.assertEqual(artifact['sha256'], hashlib.sha256(artifact['raw']).hexdigest())
+                request = json.loads(collected['source_request']['raw'])
+                self.assertEqual('control_binding' in request, branch == 'collected, bound')
+                if branch == 'collected, bound':
+                    self.assertEqual(request['control_binding']['execution_id'], result['execution_id'])
+                    self.assertEqual(collected['final']['raw'], b'Draft submitted.')
+
     def test_every_producer_branch_is_received_and_every_named_field_is_produced(self):
         self.assertGreater(len(PAIRS), 0)
         for pair in PAIRS:

@@ -1,0 +1,28 @@
+[
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+    "working_bytes": 487,
+    "index_bytes": 484,
+    "head_equals_index": true,
+    "equal_after_crlf_normalization": true,
+    "working_sha256": "0cbb555326ddf66dca90f65b48199afef9f27c364db1b97c24cc66252abc6d25",
+    "index_sha256": "d32b57b24d15c121e1b4ed797b9bd57d11ed9e3944b1e946fb3d2da0989101f6",
+    "index_flags": "H .claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+    "working_sample": "b'import Init\\n\\n/-- The Boolean equality test for adding zero on the right returns true. -/\\ndef natAddZeroBeqGoal (n : Nat) : Prop := (n + 0 == n) = true'",
+    "index_sample": "b'import Init\\n\\n/-- The Boolean equality test for adding zero on the right returns true. -/\\ndef natAddZeroBeqGoal (n : Nat) : Prop := (n + 0 == n) = true'",
+    "attrs": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: whitespace: unset\n"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+    "working_bytes": 487,
+    "index_bytes": 484,
+    "head_equals_index": true,
+    "equal_after_crlf_normalization": true,
+    "working_sha256": "0cbb555326ddf66dca90f65b48199afef9f27c364db1b97c24cc66252abc6d25",
+    "index_sha256": "d32b57b24d15c121e1b4ed797b9bd57d11ed9e3944b1e946fb3d2da0989101f6",
+    "index_flags": "H .agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+    "working_sample": "b'import Init\\n\\n/-- The Boolean equality test for adding zero on the right returns true. -/\\ndef natAddZeroBeqGoal (n : Nat) : Prop := (n + 0 == n) = true'",
+    "index_sample": "b'import Init\\n\\n/-- The Boolean equality test for adding zero on the right returns true. -/\\ndef natAddZeroBeqGoal (n : Nat) : Prop := (n + 0 == n) = true'",
+    "attrs": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: whitespace: unset\n"
+  }
+]

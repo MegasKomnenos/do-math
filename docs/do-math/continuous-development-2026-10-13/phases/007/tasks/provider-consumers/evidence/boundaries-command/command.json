@@ -1,0 +1,34 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "sim.test_provider_schema",
+    "sim.test_provider_runner",
+    "sim.test_provider_runner_gaps",
+    "sim.test_provider_final_contract",
+    "sim.test_provider_pinned_runner",
+    "sim.test_provider_workers",
+    "sim.test_provider_collection",
+    "sim.test_provider_close_worker_rejections",
+    "unit.test_provider_live",
+    "unit.test_provider_cli_surface",
+    "structure.test_test_smells",
+    "structure.test_layers",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\007\\tasks\\provider-consumers\\evidence\\boundaries"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 4272,
+  "started_at": "2026-10-13T16:34:42.830231+00:00",
+  "pid": 3408,
+  "state": "exited",
+  "ended_at": "2026-10-13T16:35:13.902145+00:00",
+  "exit_code": 0,
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

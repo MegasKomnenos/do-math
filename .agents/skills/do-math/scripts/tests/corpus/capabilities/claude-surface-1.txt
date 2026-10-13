@@ -44,7 +44,7 @@ Options:
                                         unaffected), LSP, plugin sync,
                                         attribution, auto-memory, background
                                         prefetches, keychain reads, and
-                                        AGENTS.md auto-discovery. Sets
+                                        CLAUDE.md auto-discovery. Sets
                                         CLAUDE_CODE_SIMPLE=1. Anthropic auth is
                                         strictly ANTHROPIC_API_KEY or
                                         apiKeyHelper via --settings (OAuth and
@@ -54,7 +54,7 @@ Options:
                                         /skill-name. Explicitly provide context
                                         via: --system-prompt[-file],
                                         --append-system-prompt[-file], --add-dir
-                                        (AGENTS.md dirs), --mcp-config,
+                                        (CLAUDE.md dirs), --mcp-config,
                                         --settings, --agents, --plugin-dir.
   --betas <betas...>                    Beta headers to include in API requests
                                         (API key users only)
@@ -210,7 +210,7 @@ Options:
                                         open interactive picker with optional
                                         search term
   --safe-mode                           Start with all customizations
-                                        (AGENTS.md, skills, installed plugins,
+                                        (CLAUDE.md, skills, installed plugins,
                                         hooks, MCP servers, custom commands and
                                         agents, output styles, workflows, custom
                                         themes, keybindings, and more) disabled

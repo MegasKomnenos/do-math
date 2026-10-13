@@ -1,0 +1,30 @@
+Open known defects: 0
+[structure] 5 tests
+[unit] 7 tests
+[sim] 62 tests
+Over budget: 3 tests
+      2.750s > 2.0s sim.test_provider_collection.IdentityTests.test_capability_identity_has_host_worker_and_cli_hashes
+      2.312s > 2.0s sim.test_provider_schema.ProviderSchemaTests.test_original_maintenance_constraints_reject_invalid_values_without_repair
+      8.593s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+{"complete": true, "successful": true, "counts": {"passed": 74}, "group_seconds": {"structure": 12.0, "unit": 0.1, "sim": 13.2}, "total_seconds": 25.3}
+    8.593s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    2.750s passed             sim.test_provider_collection.IdentityTests.test_capability_identity_has_host_worker_and_cli_hashes
+    2.485s passed             structure.test_layers.LayerTests.test_declared_modules_obey_their_layer_and_no_module_is_undeclared
+    2.312s passed             sim.test_provider_schema.ProviderSchemaTests.test_original_maintenance_constraints_reject_invalid_values_without_repair
+    0.937s passed             sim.test_provider_schema.ProviderSchemaTests.test_repair_consumer_keeps_its_full_schema_and_exact_result
+    0.843s passed             sim.test_provider_collection.ProducedRequestCollectionTests.test_timeout_and_changed_worker_hashes_remain_incomplete_after_termination
+    0.672s passed             structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name
+    0.641s passed             sim.test_provider_schema.ProviderSchemaTests.test_invalid_envelope_and_json_never_become_successful_semantic_values
+    0.516s passed             sim.test_provider_collection.ProducedRequestCollectionTests.test_schema_path_cannot_alias_the_prompt_before_job_creation
+    0.485s passed             sim.test_provider_close_worker_rejections.WorkerResourceBoundaryTests.test_produced_bound_requests_reject_invalid_limits_before_spawn
+    0.437s passed             sim.test_provider_schema.ProviderSchemaTests.test_maintenance_absence_empty_and_nonempty_values_remain_distinct
+    0.406s passed             sim.test_provider_runner.ProviderRoutingTests.test_router_dispatches_claude_and_codex_without_mutating_shared_runner
+    0.312s passed             sim.test_provider_pinned_runner.ControlBindingTests.test_issued_workspace_binding_reaches_both_runners_and_worker_contracts
+    0.282s passed             sim.test_provider_final_contract.ProviderFinalContractTests.test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema
+    0.234s passed             structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization
+    0.219s passed             sim.test_provider_pinned_runner.RequestPinTests.test_surface_seal_and_runner_deliver_identical_complete_input
+    0.203s passed             sim.test_provider_collection.IdentityTests.test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity
+    0.203s passed             sim.test_provider_collection.SnapshotTests.test_both_adapters_snapshot_the_exact_control_binding
+    0.188s passed             sim.test_provider_runner.ObservationBurstTests.test_observation_burst_preserves_order_and_split_utf8_tail
+    0.172s passed             sim.test_provider_workers.ClaudeWorkerTests.test_role_schemas_reach_claude_without_unsupported_meta_schema
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\007\tasks\provider-consumers\evidence\boundaries\report.json

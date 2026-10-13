@@ -90,6 +90,24 @@ class TestTransform(unittest.TestCase):
         raw = b"\xff\xfe\x00\x01"
         self.assertEqual(bsm.transform("a/b.bin", raw, self.RULES), raw)
 
+    def test_repository_rules_preserve_do_math_corpus_bytes(self):
+        rules = bsm.load_rules(bsm.ROOT / ".agents" / "diff")
+        raw = (b"\xef\xbb\xbf---\r\nname: recording\r\nargument-hint: captured\r\n---\r\n"
+               b"CLAUDE.md .claude/skills/do-math\r\n")
+        for path in ("manifest.json", "capabilities/claude-surface-1.txt",
+                     "codex/stream.jsonl", "lean/input.lean", "nested/future/SKILL.md"):
+            with self.subTest(path=path):
+                self.assertEqual(bsm.transform("do-math/scripts/tests/corpus/" + path, raw, rules), raw)
+
+    def test_repository_rules_still_transform_instructions_outside_do_math_corpus(self):
+        rules = bsm.load_rules(bsm.ROOT / ".agents" / "diff")
+        raw = b"CLAUDE.md .claude/skills/do-math\r\n"
+        expected = b"AGENTS.md .agents/skills/do-math\r\n"
+        for path in ("do-math/references/guide.md", "do-math/scripts/tests/corpus-extra/guide.md",
+                     "another-skill/scripts/tests/corpus/guide.md"):
+            with self.subTest(path=path):
+                self.assertEqual(bsm.transform(path, raw, rules), expected)
+
 
 class TestBuildEndToEnd(unittest.TestCase):
     def setUp(self):

@@ -21,6 +21,7 @@ from do_math import claude_worker, codex_worker, execution_profiles
 from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.claude_stream import parse_stream
 from do_math.control_transport import ControlTransport
+from do_math.provider_final import output_contract
 from support.provider_inputs import PROFILE_CONFIG
 from support.fakes.clock import FakeClock
 from support.fakes.jobs import FakeJobs
@@ -66,17 +67,16 @@ class ProviderFinalContractTests(unittest.TestCase):
                     self.assertEqual('output_schema_path' in request, not bound)
                     self.assertEqual(flag in argv, not bound)
                     self.assertEqual(flag in call['command'], not bound)
-                    # The CLI's schema file exists only for the unbound final it constrains,
-                    # and holds the full draft schema, including the keyword rejected by
-                    # the actual provider in REAL run009. A bound run's schema reaches the
-                    # draft submission through its input bundle instead.
+                    # The complete semantic schema stays on file. Codex receives
+                    # its string envelope; bound drafts have no CLI output schema.
                     schema_file = root / 'evidence/output.schema.json'
                     self.assertEqual(schema_file.exists(), not bound)
                     if not bound:
                         self.assertEqual(json.loads(schema_file.read_text(encoding='utf-8')), SCHEMA)
                         sent = call['command'][call['command'].index(flag) + 1]
                         self.assertEqual(json.loads(sent) if provider == 'claude' else json.loads(
-                            Path(sent).read_text(encoding='utf-8')), SCHEMA)
+                            Path(sent).read_text(encoding='utf-8')), output_contract(provider, SCHEMA))
+                    self.assertEqual(call['stdin'], prompt.encode('utf-8'))
                     self.assertEqual(request.get('control_binding'), binding)
                     self.assertEqual(result['status'], 'completed')
                     if bound:

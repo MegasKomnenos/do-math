@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from support.operator_finish_scene import OperatorCLI
-from support.provider_runs import CLAUDE_INIT, claude_result, codex_stream
+from support.provider_runs import CLAUDE_INIT, claude_result, codex_stream, cli_final
 
 
 class ProbeCLI(OperatorCLI):
@@ -16,7 +16,7 @@ class ProbeCLI(OperatorCLI):
 
     def produce(self, call):
         output = call['output']
-        nonce = call['schema']['properties']['nonce']['const']
+        nonce = call['output_schema']['properties']['nonce']['const']
         workspace = Path(call['cwd'])
         if self.case == 'files':
             if self.file_value is not None:
@@ -30,7 +30,8 @@ class ProbeCLI(OperatorCLI):
         if self.case == 'background' and self.file_value is not None:
             (workspace / 'completed.txt').write_text(
                 nonce if self.file_value == 'nonce' else self.file_value, encoding='utf-8')
-        final = json.dumps(output).encode('utf-8')
+        final = cli_final(call['command'], json.dumps(output).encode('utf-8'))
+        self.final = final
         if '--print' in call['command']:
             fields = {} if self.models is None else {'modelUsage': {name: {'inputTokens': 1} for name in self.models}}
             rows = [CLAUDE_INIT, *self.events, claude_result(final, **fields)]

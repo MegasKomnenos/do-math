@@ -66,7 +66,8 @@ class RunnerGapTests(unittest.TestCase):
         self.assertGreaterEqual(self.clock.monotonic() - started, 0.2)
 
     def test_noncanonical_final_number_is_an_output_validation_failure_after_collection(self):
-        cli = ScriptedCLI(stdout=codex_stream(b'{"value":0.25}'), final=b'{"value":0.25}')
+        final = b'{"output_json":"{\\"value\\":0.25}"}'
+        cli = ScriptedCLI(stdout=codex_stream(final), final=final)
         jobs = ProviderJobs(cli, clock=self.clock)
         self.runner = model_runner(self.root, jobs, self.clock)
         result = self.call()

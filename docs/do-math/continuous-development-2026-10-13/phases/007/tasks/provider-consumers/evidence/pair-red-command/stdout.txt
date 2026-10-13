@@ -1,0 +1,6 @@
+Open known defects: 0
+[contracts] 1 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"contracts": 0.0}, "total_seconds": 0.0}
+    0.015s failed             contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\007\tasks\provider-consumers\evidence\pair-red\report.json

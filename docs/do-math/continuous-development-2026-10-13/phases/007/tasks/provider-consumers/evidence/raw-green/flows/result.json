@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "flows.test_provider_raw_ingress.RawIngressTests.test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage",
+      "outcome": "passed",
+      "seconds": 12.938000000023749,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "flows.test_provider_raw_ingress": 18.67200000002049
+  }
+}

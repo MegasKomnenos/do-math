@@ -6,6 +6,7 @@ a double that drifts from the real output shape fails here before it hides a
 receiving defect.
 """
 import json
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -31,6 +32,44 @@ class ModelDoubleStreamTests(unittest.TestCase):
                          {key: recorded['verdict'][key] for key in
                           ('turn_completed', 'parse_complete', 'usage_fields', 'unknown_events')})
         self.assertEqual(parsed['final_text'], final)
+
+    def test_current_maintenance_outputs_match_the_provider_doubles_at_the_real_parser(self):
+        from do_math.claude_stream import parse_stream
+        from do_math.provider_final import final_bytes, semantic_output
+        from support.model import raw, ModelDouble
+        from support.provider_claude_model import ClaudeModelDouble
+        recordings = [entry for entry in ENTRIES.values() if entry['role'] == 'maintenance']
+        self.assertTrue(recordings)
+        for entry in recordings:
+            with self.subTest(entry=entry['id']):
+                parser = parse_jsonl if entry['kind'] == 'codex_stream' else parse_stream
+                recorded = parser((CORPUS / entry['path']).read_bytes())
+                if recorded['turn_failed']:
+                    # The normal double must not make an admission rejection look successful.
+                    self.assertFalse(entry['live_passed'])
+                    self.assertIsNone(final_bytes(recorded))
+                    self.assertNotEqual(recorded['turn_completed'], parse_jsonl(codex_stream_bytes('{}'))['turn_completed'])
+                    continue
+                provider = entry['kind'].removesuffix('_stream')
+                output = semantic_output(provider, final_bytes(recorded))
+                if entry['kind'] == 'codex_stream':
+                    stdout = io.BytesIO()
+                    with tempfile.TemporaryDirectory() as directory:
+                        model = ModelDouble(clock=None)
+                        cli = model.spawn(['codex', '--output-schema', str(CORPUS / entry['transport_schema_path']),
+                            '--output-last-message', str(Path(directory) / 'final.txt')], stdout=stdout, cwd=directory)
+                        cli.finish(output, raw(output, mode='standalone', expected_receipt=None))
+                        doubled = parse_jsonl(stdout.getvalue())
+                        self.assertEqual(final_bytes(doubled), (Path(directory) / 'final.txt').read_bytes())
+                else:
+                    stdout = io.BytesIO()
+                    model = ClaudeModelDouble(clock=None)
+                    cli = model.spawn(['claude', '--print', '--json-schema', '{}'], stdout=stdout, cwd=CORPUS)
+                    cli.finish(output, raw(output, mode='standalone', expected_receipt=None))
+                    doubled = parse_stream(stdout.getvalue())
+                self.assertEqual({key: doubled[key] for key in ('turn_completed', 'turn_failed', 'parse_complete')},
+                                 {key: recorded[key] for key in ('turn_completed', 'turn_failed', 'parse_complete')})
+                self.assertEqual(semantic_output(provider, final_bytes(doubled)), output)
 
 
 class LeanDoubleOutputTests(unittest.TestCase):

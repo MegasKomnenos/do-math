@@ -20,6 +20,17 @@ RAW_CASES = (('null', b'null\n'), ('list', b'[]\n'), ('zero', b'0\n'),
     ('nonfinite', b'{"type":"usage","value":NaN}\n'))
 
 
+def _native_stream(provider, execution_id, raw=b''):
+    good = {'type': 'turn.started', 'execution_id': execution_id}
+    final = b'{"output_json":"{}"}' if provider == 'codex' else b'{}'
+    framing = codex_stream(final).splitlines(keepends=True) if provider == 'codex' else [
+        json.dumps(CLAUDE_INIT).encode() + b'\n', json.dumps(claude_result(final)).encode() + b'\n']
+    # Codex requires its final agent message immediately before turn.completed.
+    # Keep the following good row as the turn start, before the final message.
+    tail = framing[2:] if provider == 'codex' else framing[1:]
+    return good, final, framing[0] + raw + json.dumps(good).encode() + b'\n' + b''.join(tail)
+
+
 class RawIngressTests(unittest.TestCase):
     maxDiff = None
 
@@ -47,12 +58,27 @@ class RawIngressTests(unittest.TestCase):
 
     def test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage(self):
         failures = []
+        # A clean stream with the same final must complete before malformed rows
+        # are injected; an unrelated output-format rejection cannot stand in for
+        # the collector's strict JSONL rejection.
+        for provider in ADAPTERS:
+            with self.subTest(control=provider):
+                root = self.sim.root / ('raw-ingress-control-' + provider)
+                workspace = root / 'workspace'
+                workspace.mkdir(parents=True)
+                _, final, stream = _native_stream(provider, 'EX-raw-control')
+                jobs = ProviderJobs(ScriptedCLI(stdout=stream, final=final), clock=self.sim.clock)
+                result = model_runner(root, jobs, self.sim.clock).run(prompt='원시 입력 대조군',
+                    output_schema={}, workspace=workspace, evidence_dir=root / 'evidence',
+                    model='claude:claude-sonnet-5' if provider == 'claude' else 'test-model',
+                    effort='high', timeout_seconds=10)
+                self.assertEqual((result['status'], result['output'], result.get('error_kind')),
+                                 ('completed', {}, None))
+                self.assertEqual(result['execution']['collect']['reasons'], [])
+                self.assertTrue(all(job.done and job.closed for job in jobs.launched))
         for provider, label, raw, eid, workspace, tracker in self.scenes:
-            good = {'type': 'turn.started', 'execution_id': eid}
-            framing = codex_stream(b'{}').splitlines(keepends=True) if provider == 'codex' else [
-                json.dumps(CLAUDE_INIT).encode() + b'\n', json.dumps(claude_result(b'{}')).encode() + b'\n']
-            stream = b''.join(framing[:-1]) + raw + json.dumps(good).encode() + b'\n' + framing[-1]
-            cli = ScriptedCLI(stdout=stream)
+            good, final, stream = _native_stream(provider, eid, raw)
+            cli = ScriptedCLI(stdout=stream, final=final)
             jobs = ProviderJobs(cli, clock=self.sim.clock)
             before = set(self.sim.runtime['observation_facts'])
             try:
@@ -68,6 +94,22 @@ class RawIngressTests(unittest.TestCase):
                 self.assertEqual(rejected[0]['next_owner'], 'adapter')
                 self.assertTrue(rejected[0]['reason'])
                 self.assertEqual(result['status'], 'failed')  # strict collector는 같은 오형태 원 바이트를 반려한다.
+                self.assertEqual(result['error_kind'], 'execution_failure')
+                # Claude stops parsing at every invalid row; Codex stops at
+                # invalid JSON but records nonobject rows and continues. A stop
+                # before the terminal withholds the selected final as well.
+                if provider == 'claude':
+                    reasons = ['turn_completed_missing', 'jsonl_parse_incomplete', 'final_message_missing']
+                elif label.rsplit(':', 1)[1] in ('duplicate', 'nonfinite'):
+                    reasons = ['turn_completed_missing', 'jsonl_parse_incomplete', 'final_response_mismatch']
+                else:
+                    reasons = ['jsonl_parse_incomplete']
+                self.assertEqual(result['error'], '; '.join(reasons))
+                self.assertEqual(result['execution']['collect']['result'], 'incomplete')
+                self.assertEqual(result['execution']['collect']['reasons'], reasons)
+                self.assertEqual(result['execution']['collect']['stdout']['raw'], stream)
+                self.assertEqual(result['execution']['collect']['final']['raw'], final if provider == 'codex' else None)
+                self.assertIsNone(result['output'])
                 self.assertEqual(self.sim.engine.store.load(self.sim.engine.head)[2], self.sim.runtime)
                 state, head = deepcopy(self.sim.runtime), self.sim.engine.head
                 self.sim.engine._observe_running(eid, tracker, batch(self.sim, [], workspace.parent / 'raw-evidence/stdout.jsonl',

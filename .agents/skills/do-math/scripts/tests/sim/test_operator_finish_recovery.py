@@ -225,7 +225,9 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual({key for key in output if output[key] != original_output[key]}, {'next_step'})
         scene.cli.answer = output
         def inspect(call):
-            self.assertEqual(call['schema'], operator.OPERATOR_SCHEMA)
+            from do_math.provider_final import output_contract
+            self.assertEqual(call['output_schema'], operator.OPERATOR_SCHEMA)
+            self.assertEqual(call['schema'], output_contract('codex', operator.OPERATOR_SCHEMA))
             self.assertIn('Synthetic launcher failure', call['prompt'])
             self.assertFalse((Path(call['cwd']) / 'input/submission/context.json').exists())
         scene.cli.on_input = inspect

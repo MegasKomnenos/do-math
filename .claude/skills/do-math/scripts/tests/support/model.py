@@ -196,6 +196,8 @@ class FakeCLI:
         """Write the stream a row at a time; a live Job (``support.fakes.jobs``) lets its runner observe each row."""
         if Path(self.command[0]).stem.lower() != "codex":
             raise NotImplementedError("the model double writes only the Codex event stream: " + self.command[0])
+        from support.provider_runs import cli_final
+        final = cli_final(self.command, final.encode("utf-8")).decode("utf-8")
         for row in codex_stream_bytes(final).splitlines(keepends=True):
             self.stdout.write(row)
             self.stdout.flush()

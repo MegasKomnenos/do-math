@@ -2,9 +2,9 @@
 
 이 파일은 현재 남김과 다음 판단을 관리한다. 상세한 과거 이력은 sources와 기존 repo 자료에 연결하고 여기에 반복 복사하지 않는다. 상태·근거·구체적 다음 질문 없이 '추가 감사 필요'만 적지 않는다.
 
-## phase 001~006의 결과와 현재 상태
+## phase 001~007의 결과와 현재 상태
 
-phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이며 phase 007에서 fixture와 분기 단언을 수리한다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
+phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이었다. phase 007이 현 fixture와 실제 분기 단언을 수리했고 manager가 A1~A5를 검수했다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
 
 - 요구별 종료 질문: run:phases/001/tasks/closure-map/evidence/requirement-state.json. 원래 19/11/61/12 항목을 보존한다. 1-D/11-A/11-B 및 이미 검토한 부분은 최종 판본 연결로 넘기고 새 결함 없이 재구현하지 않는다.
 - 기존 109작업·25영역 재검토: 같은 evidence의 tracking-state.json과 prior-review-state.json. PR23과 PR06/B22의 완료 범위를 재사용하고 필요한 slice를 실제 수리/의미 확인과 결합한다. 없는 임시 원보고의 counts는 역사 주장으로 남긴다.
@@ -16,26 +16,28 @@ phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 ma
 - 미러 수리와 당시 Git 남김: run:phases/004/tasks/mirror-corpus/report.json 및 run:phases/004/manager-evidence/verification.json. 종료 2624파일과 변경 9개, 양쪽 14선택/14passed, 원자료 44파일·각 41개 SHA 참조를 대조했다. 생성 치환은 해결됐고 당시 하위 corpus/.gitattributes의 manifest text 예외가 남았다. 이전 Lean/scheduler clean 관찰은 경로 표기에 따른 차이이며 현재 슬래시 경로에서 보존된다.
 - Git 원바이트 수리: run:phases/005/tasks/corpus-git-bytes/report.json 및 run:phases/005/manager-evidence/verification.json. 현재 종료 2624파일과 허용된 두 속성 변경, 양쪽 88경로 raw/clean·41개씩의 SHA 참조를 대조했다. 녹화·manifest 불변과 기존 각 14개/22개 재사용을 승인하며 phase 004 A3/F1의 남김을 해소했다. stage/제품 커밋 검증은 관리 마감 시 별도다. task 시작 전 protocol.md 차이는 제품 변화와 구별한다.
 
-- Codex 전달 수리와 소비 시험 남김: run:phases/006/tasks/codex-schema/report.json 및 run:phases/006/manager-evidence/verification.json. 종료2640소스·허용50변경·9묶음의 실제 선택/row/exit·새 Codex1호출과11개판정을 대조했다. 최종 corpus 정본18개/미러14개와 전102경로 Git 바이트는 통과했다. 직접 소비45개 중11실패와 pair의 두 성공 표본 공백은007 책임이다. 정적 추가 관찰인 chunk·cross_installation도 정확한 직접 소비 범위에 넣는다.
+- Codex 전달 수리와 소비 시험 남김: run:phases/006/tasks/codex-schema/report.json 및 run:phases/006/manager-evidence/verification.json. 종료2640소스·허용50변경·9묶음의 실제 선택/row/exit·새 Codex1호출과11개판정을 대조했다. 최종 corpus 정본18개/미러14개와 전102경로 Git 바이트는 통과했다. 당시 직접 소비45개 중11실패와 pair의 두 성공 표본 공백은007의 새 근거로 해소됐다. 역사 report는 그대로 유지한다.
+
+- 공급자 직접 소비 종료: run:phases/007/tasks/provider-consumers/report.json 및 manager-evidence/verification.json. task26변경·최종98/74/14/59선택의 고유 row/exit·이전11실패 해소와 pair red/green을 대조했다. raw 정상 대조와42malformed의 정확 오류도 승인했다. runtime124·smoke입력3·corpus는 불변이고 현재 차이4파일은 운영자의 모델 정책 변경이다. 제품124파일은 관리 마감의 정확 stage·바이트 검증 뒤 커밋한다.
 
 분류는 완료율이 아니다. 검토된 성질은 최종 증거 대기, 확정된 공백은 수리, 아직 모르는 성질은 한 종료 질문, 실행 관문은 최종 고정판 검증으로 구별한다. 오래된 109개 task를 그대로 재파견하지 않는다.
 
-## 다음 phase: 007
+## 다음 phase: 008
 
-단일 work task `provider-consumers`가006 F2/F3와 A3/A5의 관련 회귀 남김을 닫는다. 제품 runtime을 고정하고 operator/probe/cross_installation의 외부 CLI fixture, native storage/chunk/raw ingress의 명시 입력, contracts.pairs의 실제 성공·결박·실패·정지 표본과 상태 단언을 수리한다. 원 schema 의미·관찰 바이트·정확한 오류·저장·정산·종료 성질을 유지하며 구 fixture 때문에 제품 계약을 완화하지 않는다. 지정된 직접 소비·제품 경계·미러 검사를 수행하고 원실패와 새 성공을 연결한다. 상세 A1~A5와 쓰기 범위는 run:phases/007/tasks/provider-consumers/objective.md 및 phase.json이다.
+단일 work task `document-recovery`가 P01의 운영/복구 실제 반환 결속을 닫고 N03-003의 확정된 설치 경로 설명을 교정한다. 운영-점검.md의 동명 result_source/checkpoint_source는 operational_evidence와 recovery_materials의 실제 객체를 구별해야 한다. 정상 파일·restoration_error·checkpoint_source=null·live에서 recovery_materials 부재를 문서 지시와 실제 반환/바이트 검사에 연결한다. B133의 일반 재개·반려·이전 파일 검사는 유지한다. 독립-운영.md의 LIVE_INSTALLATION_ROOT는 현재 manifest/snapshot_root에서 installation_root 인자를 전달하는 설명으로 고친다. N03 전체 이름 검토는 이번 범위가 아니다.
 
-Codex 대표 실호출과 corpus 수리는 검수됐으므로 동일 조건의 유료 호출을 반복 배정하지 않는다. runtime·smoke 입력·corpus 불변을 확인해006 Codex와003 Claude의 승인된 성질을 한정 재사용한다. 공유 helper·시험 템플릿/캐시·생성기와 그 직접 소비 때문에 이번 단위는 한 task로 묶고 manager는 제품을 직접 수정하지 않는다. 관련 회귀를 검수한 뒤 공급자 단위의 제품 커밋을 판단한다. 고정판 독립 읽기 review의 병렬성은 유지한다.
+새 task는 C8에 따라 gpt-6.1-sol/high를 명시한다. 공유 doc_code와 직접 소비·미러 생성/비용 캐시를 한 task가 맡으므로 병렬 쓰기 작업으로 나누지 않는다. 한정된 기존 검사와 반례를 사용하며 제품 runtime은 고정한다. 정확한 A1~A5와 writes는 run:phases/008/tasks/document-recovery/objective.md 및 phase.json이다.
 
 ## 가까운 후속 배정과 선행 관계
 
-007의 직접 소비·분기 회귀 결과를 검수해 공급자 단위의 관련 회귀 종료와 제품 커밋을 판단한다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
+007의 지정 관련 회귀를 검수했고 공급자 변경 단위를 커밋한다. 다음은008의 문서·실제 반환 연결을 검수하고 G7의 개별 실제 연쇄 배정을 정한다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
 
 | 남김 | 다음 담당 작업과 끝나는 조건 | 선행/한계 |
 |---|---|---|
-| G1/G2/G3 공급자 직접 소비 회귀 | phase 007이11실패와 성공 표본 공백을 현 외부 fixture·실제 분기 단언으로 해소하고 직접 소비/미러 검사를 완료한다. | 006의Codex 대표실호출·녹화와005의Git 수리는 검수됐다. runtime이 고정된 동안 그 성질을 재사용하고 역사 실패·Claude/background의 한정 재사용을 보존한다. |
+| G1/G2/G3 공급자 단위의 최종 판본 연결 | 007에서 관련 회귀를 종료했다. 이후 변경이 그 경계에 영향을 주면 필요한 근거만 교체하고 G4~G7 최종 관문에 연결한다. | 006 Codex 대표 호출·003 Claude 한정 재사용과 역사 실패를 유지한다. 중간 회귀 합산은 전체 성공이 아니다. |
 | G7 Job/Lean/예약/학술 및 L01 | 공급자 최소 경계와 구별해 실제 Job/pythonw, Lean/Mathlib, 시험 전용 예약 등록·발화·해제, 학술 list_sources를 기존 실제 경로로 검증한다. L01은 현재 Codex/Claude 운전 read-call의 host·판본·절단 규칙·한도 단위를 특정한다. | 개별 실제 연쇄로 한 문맥에서 끝나는 task를 만든다. 역할 stdin을 운전 출력 한도로 대체하지 않는다. byte/token 권위 근거가 없으면 결정 질문을 남긴다. |
-| G1/G3 문서 P01 | operational_evidence와 recovery_materials의 동명 result/checkpoint를 실제 생산자별로 결속하고 정상·restoration_error·null/부재 조건의 문서 지시와 반례를 확인한다. | B133 일반 재개 경계는 유지. doc_code/역할 입력 공유 파일을 단일 task가 수정한다. |
-| G1/G8 문서 N03 확정 불일치 | 독립-운영.md의 LIVE_INSTALLATION_ROOT 설명을 실제 installation_root 전달로 교정하고 기존 bootstrap-info 근거와 미러를 연결한다. | 해당 문서 절만 배정 가능하며 옛 전역 변수를 제품에 복원하지 않는다. |
+| G1/G3 문서 P01 | phase 008이 operational_evidence와 recovery_materials의 동명 result/checkpoint를 실제 생산자별로 결속하고 정상·restoration_error·null/부재 조건의 문서 지시와 반례를 확인한다. | B133 일반 재개 경계는 유지. doc_code/역할 입력 공유 파일을 단일 task가 수정한다. |
+| G1/G8 문서 N03 확정 불일치 | phase 008이 독립-운영.md의 LIVE_INSTALLATION_ROOT 설명을 실제 installation_root 전달로 교정하고 기존 bootstrap-info 근거와 미러를 연결한다. | 해당 문서 절만 배정 가능하며 옛 전역 변수를 제품에 복원하지 않는다. |
 | G1/G3 나머지 문서·정책 | P02~P11·N01~N03의 미결 절만 실제 반환/공유 계약·기존 시험에 연결한다. 명시 소비 없는 instance는 제거 가능성을 판정한다. | 34 AST 구문지점의 제거 수로 진척을 세지 않고 마지막 소비자 뒤 helper를 정리한다. |
 | G7 T4 adapter 보고 | T4 단독 전체 boundary 선택에 별도 adapter 분기 측정을 연결해 실제 보고를 만든다. | 설계5.5상 보고이며 통과 임계 관문으로 바꾸지 않는다. 최종 T3 선택과 분리한다. |
 | G1/G2 남은 의미 질문·과거 재검토 | requirement-state의 해당 생산자/소비자/입력/단언 질문과 관련 PR slice만 배정한다. 이미 충분하면 유지하고 빠진 축만 수리한다. | R05/R06은 현 test_provider_native_storage 경로 사용. 없는 원보고는 해당 slice에서만 회수/대체 증거 필요를 판정한다. |

@@ -41,11 +41,24 @@ class CorpusCompletenessTests(unittest.TestCase):
                     if field in entry:
                         self.assertTrue((CORPUS / entry[field]).is_file(), entry[field])
                         declared.add(entry[field])
+                if 'source_sha256' in entry:
+                    self.assertEqual(hashlib.sha256((CORPUS / entry['path']).read_bytes()).hexdigest(),
+                                     entry['source_sha256'], 'historical and current source bytes must be preserved')
                 for recording in entry.get('recordings', []):
                     path = CORPUS / recording['path']
                     self.assertTrue(path.is_file(), recording['path'])
                     self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), recording['sha256'])
                     declared.add(recording['path'])
+                if entry['role'] == 'maintenance':
+                    self.assertIn(entry['schema_path'], declared)
+                    self.assertEqual(hashlib.sha256((CORPUS / entry['schema_path']).read_bytes()).hexdigest(),
+                                     entry['schema_sha256'])
+                    self.assertIsInstance(entry['live_passed'], bool)
+                    if 'transport_schema_path' in entry:
+                        self.assertIn(entry['transport_schema_path'], declared)
+                        self.assertIn(entry['worker_status_path'], declared)
+                        self.assertEqual(hashlib.sha256((CORPUS / entry['transport_schema_path']).read_bytes()).hexdigest(),
+                                         entry['transport_schema_sha256'])
         present = {path.relative_to(CORPUS).as_posix() for path in CORPUS.rglob('*') if path.is_file()} - {'manifest.json', '.gitattributes'}
         self.assertEqual(present - declared, set(), 'corpus files the manifest does not declare')
         self.assertLessEqual(sum((CORPUS / path).stat().st_size for path in present), LIMIT_BYTES)

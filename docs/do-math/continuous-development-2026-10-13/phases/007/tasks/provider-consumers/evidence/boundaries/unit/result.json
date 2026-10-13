@@ -1,0 +1,53 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 7,
+  "rows": [
+    {
+      "id": "unit.test_provider_cli_surface.SurfaceTests.test_start_paths_accept_path_lookup_and_reject_a_different_executable",
+      "outcome": "passed",
+      "seconds": 0.045999999972991645,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_cli_surface.SurfaceTests.test_surface_requires_the_flags_used_by_the_worker",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_live.ProviderSmokePreparationTests.test_claude_read_requires_matching_prior_bash_identity_and_nonerror_result",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_live.ProviderSmokePreparationTests.test_codex_read_requires_successful_tool_result_and_exact_parsed_value",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_live.ProviderSmokePreparationTests.test_inputs_are_explicit_and_do_not_fall_back_to_global_defaults",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_live.ProviderSmokePreparationTests.test_missing_inputs_fail_before_calling_any_provider",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_provider_live.ProviderSmokePreparationTests.test_request_retains_the_complete_current_role_schema_and_valid_checkpoint",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "unit.test_provider_cli_surface": 0.045999999972991645,
+    "unit.test_provider_live": 0.0
+  }
+}

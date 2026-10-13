@@ -11,7 +11,7 @@ import hashlib
 from pathlib import Path
 
 from do_math import formal, scheduled_operator as operator
-from support.provider_runs import ProviderJobs, ScriptedCLI, claude_result, CLAUDE_INIT
+from support.provider_runs import ProviderJobs, ScriptedCLI, claude_result, CLAUDE_INIT, cli_schemas
 from support.sim import Sim
 
 
@@ -37,11 +37,8 @@ class InputProcess:
     def communicate(self, input=None, timeout=None):
         command = self.call['command']
         self.call['prompt'] = input.decode('utf-8')
-        if '--output-schema' in command:
-            schema = json.loads(Path(command[command.index('--output-schema') + 1]).read_bytes())
-        else:
-            schema = json.loads(command[command.index('--json-schema') + 1])
-        self.call['schema'] = schema
+        schema, transport = cli_schemas(command)
+        self.call['output_schema'], self.call['schema'] = schema, transport
         if self.cli.answer is None:
             output = {key: rule['const'] if 'const' in rule else 'finished'
                       for key, rule in schema['properties'].items()}

@@ -1,0 +1,11 @@
+{
+  "verdict": "revise",
+  "alignment": "독해의 9~10,12~19항이 지정 A 완료·실제 성공/정확 반려·다음 P01/N03 범위를 합의대로 구별했다. 1~8항의 서비스/전체 목표는 함께 제공한 필수 참조의 배경이다. 핵심 경중은 일치한다. 코드 진실성과 아직 수행하지 않은 commit/008의 불확실성을 독해가 임의로 채우지 않았다. 다만 C8의 과거 실행 상태를 현재 시제로 남긴 문장은 갱신하고, 역방향 모집단·읽기 한도 단위·문서 검사 위임 책임을 더 명시한다.",
+  "findings": [
+    {"index": 1, "action": "revise", "reason": "runtime/model-change.json의 실제 task exit 0과 manager_running을 manager-evidence/model-policy-observation.json에 보존했다. 모델 전환 당시007 작업자가 옛 세션을 끝냈고 이후 새 manager가 호출됐다는 완료 시제로 갱신한다."},
+    {"index": 2, "action": "keep", "reason": "C9는 완료된 모든 과거 성질을 재설명하는 문서가 아니라 원자료 진입점이다. 해당 문단의 requirement-state.json과 후속 closure-decisions.md를 읽는 경로가 이미 지정돼 있다. 008에 필요한 B132~B134 경계는 objective A1에서 직접 명시하므로 무관한 ID의 전체 설명을 중복하지 않는다."},
+    {"index": 3, "action": "revise", "reason": "역방향이 수신자가 선언한 필수·선택 필드 전체를 생산 표본의 written 합집합과 대조하는 검사임을 C9에 한 문장으로 밝힌다. 이미 유지된 contracts.pairs의 의미를 설명하며 요구를 바꾸지 않는다."},
+    {"index": 4, "action": "revise", "reason": "host/tool/version/read-call은 실행 조건이며 byte/token은 측정 단위다. C10 첫 문장을 둘의 구별이 드러나도록 고친다. 한도 미확정과 상신 조건은 유지한다."},
+    {"index": 5, "action": "revise", "reason": "일반 문서 순회가 실제 반환 없이 판정할 수 없는 소유자만 해당 반환 회귀에 맡기며, 소유자 ID의 정확한 목록과 누락/오기/타 경계 차단을 검사한다는 책임을 objective A3에 명시한다. 기존 defer 방식은 재사용할 수 있지만 구체 구현은 작업자 재량으로 남긴다."}
+  ]
+}

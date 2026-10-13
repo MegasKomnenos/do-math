@@ -77,8 +77,8 @@ class ResultTests(RunnerCase):
 
     def test_completed_only_after_schema(self):
         # The collector's parsed stream lists one usage row per report (codex_stream.parse_jsonl).
-        result, _, _ = self.call(ScriptedCLI(stdout=codex_stream(b'{"x":1}', usage={'input_tokens': 1}),
-                                             final=b'{"x":1}'))
+        final = b'{"output_json":"{\\"x\\":1}"}'
+        result, _, _ = self.call(ScriptedCLI(stdout=codex_stream(final, usage={'input_tokens': 1}), final=final))
         self.assertEqual(result['status'], 'completed')
         self.assertEqual(result['usage'], {'input_tokens': 1})
         self.assertEqual(result['output'], {'x': 1})
@@ -171,7 +171,7 @@ class ObservationBurstTests(RunnerCase):
     EXPECTED = [{"type": "item.updated", "index": index, "text": "x" * 960} for index in range(2000)]
     LAST = {"type": "item.updated", "index": 2000, "text": "가"}
 
-    def burst(self, prefix, suffix):
+    def burst(self, prefix, suffix, *, final=b'{}'):
         """``(result, batches, stream)`` of a call whose Job lives for three inspections after writing the stream."""
         encoded = json.dumps(self.LAST, ensure_ascii=False).encode('utf-8')
         cut = encoded.index('가'.encode('utf-8')) + 1
@@ -180,7 +180,7 @@ class ObservationBurstTests(RunnerCase):
         stream = first + encoded[cut:] + b'\r\n' + suffix
         observed = []
         clock = FakeClock()
-        jobs = ProviderJobs(ScriptedCLI(stdout=stream), clock=clock, polls=4)
+        jobs = ProviderJobs(ScriptedCLI(stdout=stream, final=final), clock=clock, polls=4)
         result, _, _ = self.call(jobs=jobs, clock=clock, schema={}, prompt='fixture', model='fixture',
                                  timeout_seconds=None, on_observation=observed.append)
         return result, observed, stream
@@ -213,9 +213,11 @@ class ObservationBurstTests(RunnerCase):
 
     def test_a_valid_burst_is_delivered_whole_and_completes(self):
         start = b'{"type":"thread.started","thread_id":"t"}\r\n{"type":"turn.started"}\r\n'
-        end = (b'{"type":"item.completed","item":{"id":"i","type":"agent_message","text":"{}"}}\r\n'
-               b'{"type":"turn.completed","usage":{"input_tokens":1}}\r\n')
-        result, observed, stream = self.burst(start, end)
+        final = b'{"output_json":"{}"}'
+        end = (json.dumps({'type': 'item.completed', 'item': {'id': 'i', 'type': 'agent_message',
+                'text': final.decode('utf-8')}}).encode('utf-8') + b'\r\n'
+               + b'{"type":"turn.completed","usage":{"input_tokens":1}}\r\n')
+        result, observed, stream = self.burst(start, end, final=final)
         self.assert_delivered(observed, stream)
         self.assertEqual(result['status'], 'completed')
         self.assertEqual(result['output'], {})

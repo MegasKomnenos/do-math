@@ -1,0 +1,43 @@
+[
+  {
+    "name": "generator-tests",
+    "argv": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-u",
+      "-B",
+      ".claude/skills/writing-skills/scripts/test_build_skill_mirrors.py"
+    ],
+    "pid": 6036,
+    "started_at": "2026-10-13T16:49:02.542094+00:00",
+    "ended_at": "2026-10-13T16:49:02.967921+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "mirror-check",
+    "argv": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-u",
+      "-B",
+      ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "--check"
+    ],
+    "pid": 17772,
+    "started_at": "2026-10-13T16:49:02.967921+00:00",
+    "ended_at": "2026-10-13T16:49:04.640075+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "skill-check",
+    "argv": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-u",
+      "-B",
+      ".claude/skills/do-math/scripts/probe_cli.py",
+      "--skill-only"
+    ],
+    "pid": 40308,
+    "started_at": "2026-10-13T16:49:04.641075+00:00",
+    "ended_at": "2026-10-13T16:49:05.735105+00:00",
+    "exit_code": 0
+  }
+]

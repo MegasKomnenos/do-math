@@ -1,0 +1,1003 @@
+[
+  {
+    "path": ".agents/diff/_rules.json",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 926,
+    "candidate_blob": "442e68dcdb7070e11ccb550c832e04201c0d5755",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".agents/skills/do-math/references/CLI-실행-계약.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 150650,
+    "candidate_blob": "577dfefbaa1d583fa9cee6271074d32abf87097b",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/do_math/model_call.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10772,
+    "candidate_blob": "d6f0ce4e50045ad9a3a3b1e700ec454bad7a21b0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/do_math/model_runner.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 11840,
+    "candidate_blob": "e8627de66f8452a069e41bdbcbb5bca39572b385",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/do_math/provider_final.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 3383,
+    "candidate_blob": "7b5b42445138c860966c4ac1e48f44624c3b4819",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 17605,
+    "candidate_blob": "46d42edb784a6455e122c7b5244a63b38b7ce7b3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 12408,
+    "candidate_blob": "51b1101dd5ade4f5291f9e7361c5069edb4fb4da",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 6168,
+    "candidate_blob": "1d11b441207b329833b8392084c32b4355fdef97",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 168,
+    "candidate_blob": "f9586ed311230a22c00c1c887647b7b0a44d807b",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 22,
+    "candidate_blob": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 22040,
+    "candidate_blob": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 22040,
+    "candidate_blob": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 18,
+    "candidate_blob": "ee4172c86797aae0b669402713b7231e9b75d68b",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 5849,
+    "candidate_blob": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 4331,
+    "candidate_blob": "b88670c0d8610585473501edd9dd1b0ccd499929",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 183,
+    "candidate_blob": "f2419fc800ce338046b48ed44a3a583642e59e10",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 11485,
+    "candidate_blob": "34665009be513f0b785d89d74e03df8d36f7856f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1234,
+    "candidate_blob": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "1b06e082c03a6e39a87bca10c504418770dc1359",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 183,
+    "candidate_blob": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 12982,
+    "candidate_blob": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1442,
+    "candidate_blob": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 815,
+    "candidate_blob": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1233,
+    "candidate_blob": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 219,
+    "candidate_blob": "4aadb749e19325160093a3cbd4d024c9f5a852f4",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 4572,
+    "candidate_blob": "120c048f0227887068fb47e8dc1ab074c951fb4d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1436,
+    "candidate_blob": "87d6b4044b6cf4c7758fbf3412ec62a95e20ed5a",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.transport.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 3206,
+    "candidate_blob": "1a756b922105ba194a5fe529e9905b94f499198d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "e6316d7a5d9d95f72cea046baec3eded87ac8689",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 50780,
+    "candidate_blob": "b4a8211e3b90446dff18dcef8b1ef87187578b81",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 13017,
+    "candidate_blob": "26b70bbf4dddec784d16bd25f3ac42a24a2bcad0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/flows/test_provider_raw_ingress.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 8409,
+    "candidate_blob": "8004204bb368c36b5e4f8333bbe195ce4e3ff09c",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_observation_delivery.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 3801,
+    "candidate_blob": "5b6268b3ae5cde2b1176ac4aa2b1a7cef7f5525e",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 24634,
+    "candidate_blob": "bfacdba622e4343e71179f873a9f6f246b1fd562",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 18443,
+    "candidate_blob": "0819f9034782e0941854f63698705117ee007bf5",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_provider_final_contract.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 7087,
+    "candidate_blob": "321bec3d8a191a817fee6082de919bcd39f7ebb1",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_provider_runner.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 18617,
+    "candidate_blob": "d31c4f7491e089ff1c725a8c32a0f6d71ae51c98",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 4419,
+    "candidate_blob": "ca9f5c93dcce8f33626cbf6bba2235bff07556ed",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 10254,
+    "candidate_blob": "0fe1e354c1624ab5cf93ad1213f97aa926147599",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 964,
+    "candidate_blob": "1d7529b4a750e056e3febc7ccc537ba9dc0ff3e0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/structure/test_corpus.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 4278,
+    "candidate_blob": "62313714d46627ba41d61b3c2f09432740bee829",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/cross_installation.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 1911,
+    "candidate_blob": "e34969361023f4e20da733fb8fb2f94077a1f3e4",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/model.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10965,
+    "candidate_blob": "9cdad761d30fa810b12e3b12191551c2b63379f7",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 9377,
+    "candidate_blob": "71695c53faf741be192fb2e3b1f0f5f81df388bf",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/operator_probe_inputs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 2214,
+    "candidate_blob": "f6c894ff56119722d2016af1fc31bc7c04409ac2",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 13920,
+    "candidate_blob": "c29de17cfe3e457af5e04bcea5b15ae730f7744f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/provider_runs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10357,
+    "candidate_blob": "850aaf9ec55464858aea068b0c6fb2f3288b81a1",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 7956,
+    "candidate_blob": "10d7716189da935734a340680d74ff8268f75b18",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 3299,
+    "candidate_blob": "43a6ee7f3d27b1063a3860ad6d9a9c0a6d54db80",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 25304,
+    "candidate_blob": "030f6296fdf11ff6e2e6e35e22677e3577b0e535",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/이음새-정본.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 84516,
+    "candidate_blob": "17a33e92a28721f497acff5b3df862750228fbdc",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".agents/skills/writing-skills/references/멀티런타임_동기화.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 4848,
+    "candidate_blob": "e5fd9d9b5260db91dee3173ac0e39529218860f4",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".agents/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 11581,
+    "candidate_blob": "4b34208f0863df0e7a2e8714dfed5da28bdfbd35",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 150650,
+    "candidate_blob": "577dfefbaa1d583fa9cee6271074d32abf87097b",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/model_call.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10772,
+    "candidate_blob": "d6f0ce4e50045ad9a3a3b1e700ec454bad7a21b0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 11840,
+    "candidate_blob": "e8627de66f8452a069e41bdbcbb5bca39572b385",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/provider_final.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 3383,
+    "candidate_blob": "7b5b42445138c860966c4ac1e48f44624c3b4819",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 17605,
+    "candidate_blob": "46d42edb784a6455e122c7b5244a63b38b7ce7b3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 12408,
+    "candidate_blob": "51b1101dd5ade4f5291f9e7361c5069edb4fb4da",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 6168,
+    "candidate_blob": "1d11b441207b329833b8392084c32b4355fdef97",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 168,
+    "candidate_blob": "f9586ed311230a22c00c1c887647b7b0a44d807b",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 22,
+    "candidate_blob": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 22040,
+    "candidate_blob": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 18,
+    "candidate_blob": "ee4172c86797aae0b669402713b7231e9b75d68b",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 5849,
+    "candidate_blob": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 4331,
+    "candidate_blob": "b88670c0d8610585473501edd9dd1b0ccd499929",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 183,
+    "candidate_blob": "f2419fc800ce338046b48ed44a3a583642e59e10",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 11485,
+    "candidate_blob": "34665009be513f0b785d89d74e03df8d36f7856f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1234,
+    "candidate_blob": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "1b06e082c03a6e39a87bca10c504418770dc1359",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 183,
+    "candidate_blob": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 12982,
+    "candidate_blob": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1442,
+    "candidate_blob": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 815,
+    "candidate_blob": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1233,
+    "candidate_blob": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.final.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 219,
+    "candidate_blob": "4aadb749e19325160093a3cbd4d024c9f5a852f4",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.jsonl",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 4572,
+    "candidate_blob": "120c048f0227887068fb47e8dc1ab074c951fb4d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.prompt.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 1436,
+    "candidate_blob": "87d6b4044b6cf4c7758fbf3412ec62a95e20ed5a",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 2531,
+    "candidate_blob": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.stderr.txt",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 0,
+    "candidate_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.transport.schema.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 3206,
+    "candidate_blob": "1a756b922105ba194a5fe529e9905b94f499198d",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-transport-20261014.worker-status.json",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 366,
+    "candidate_blob": "e6316d7a5d9d95f72cea046baec3eded87ac8689",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 50780,
+    "candidate_blob": "b4a8211e3b90446dff18dcef8b1ef87187578b81",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 13017,
+    "candidate_blob": "26b70bbf4dddec784d16bd25f3ac42a24a2bcad0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/flows/test_provider_raw_ingress.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 8409,
+    "candidate_blob": "8004204bb368c36b5e4f8333bbe195ce4e3ff09c",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_observation_delivery.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 3801,
+    "candidate_blob": "5b6268b3ae5cde2b1176ac4aa2b1a7cef7f5525e",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 24634,
+    "candidate_blob": "bfacdba622e4343e71179f873a9f6f246b1fd562",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 18443,
+    "candidate_blob": "0819f9034782e0941854f63698705117ee007bf5",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_provider_final_contract.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 7087,
+    "candidate_blob": "321bec3d8a191a817fee6082de919bcd39f7ebb1",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_provider_runner.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 18617,
+    "candidate_blob": "d31c4f7491e089ff1c725a8c32a0f6d71ae51c98",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 4419,
+    "candidate_blob": "ca9f5c93dcce8f33626cbf6bba2235bff07556ed",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 10254,
+    "candidate_blob": "0fe1e354c1624ab5cf93ad1213f97aa926147599",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 964,
+    "candidate_blob": "1d7529b4a750e056e3febc7ccc537ba9dc0ff3e0",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/structure/test_corpus.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 4278,
+    "candidate_blob": "62313714d46627ba41d61b3c2f09432740bee829",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/cross_installation.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 1911,
+    "candidate_blob": "e34969361023f4e20da733fb8fb2f94077a1f3e4",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/model.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10965,
+    "candidate_blob": "9cdad761d30fa810b12e3b12191551c2b63379f7",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 9377,
+    "candidate_blob": "71695c53faf741be192fb2e3b1f0f5f81df388bf",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/operator_probe_inputs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 2214,
+    "candidate_blob": "f6c894ff56119722d2016af1fc31bc7c04409ac2",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 13920,
+    "candidate_blob": "c29de17cfe3e457af5e04bcea5b15ae730f7744f",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/provider_runs.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 10357,
+    "candidate_blob": "850aaf9ec55464858aea068b0c6fb2f3288b81a1",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 7956,
+    "candidate_blob": "10d7716189da935734a340680d74ff8268f75b18",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_provider_live.py",
+    "start_clean_or_absent": true,
+    "tracked": false,
+    "bytes": 3299,
+    "candidate_blob": "43a6ee7f3d27b1063a3860ad6d9a9c0a6d54db80",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    "start_clean_or_absent": true,
+    "tracked": true,
+    "bytes": 25304,
+    "candidate_blob": "030f6296fdf11ff6e2e6e35e22677e3577b0e535",
+    "changes_HEAD": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/이음새-정본.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 84516,
+    "candidate_blob": "17a33e92a28721f497acff5b3df862750228fbdc",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".claude/skills/writing-skills/references/멀티런타임_동기화.md",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 4848,
+    "candidate_blob": "e5fd9d9b5260db91dee3173ac0e39529218860f4",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  },
+  {
+    "path": ".claude/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+    "start_clean_or_absent": false,
+    "tracked": true,
+    "bytes": 11581,
+    "candidate_blob": "4b34208f0863df0e7a2e8714dfed5da28bdfbd35",
+    "changes_HEAD": true,
+    "manual_diff_review": "Current complete diff contains only the reviewed provider transport documentation or corpus verbatim generator change; canonical and generated copies passed current mirror check."
+  }
+]

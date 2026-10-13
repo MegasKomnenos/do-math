@@ -57,13 +57,15 @@ class StreamChunkTests(unittest.TestCase):
                   for i in range(20)]
 
         from support.model import codex_stream_bytes
-        framing = [json.loads(row) for row in codex_stream_bytes('{}').splitlines()]
+        final = b'{"output_json":"{}"}'
+        framing = [json.loads(row) for row in codex_stream_bytes(final.decode('utf-8')).splitlines()]
         # Preserve the twenty observations, with the real collector's required
         # provider start/completion and exact final-message framing in one write.
         events = framing[:2] + events + framing[2:]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            cli = ScriptedCLI(stdout=b''.join(json.dumps(e).encode() + b'\n' for e in events))
+            rows = [json.dumps(e).encode() + b'\n' for e in events]
+            cli = ScriptedCLI(stdout=b''.join(rows), final=final)
             clock = FakeClock()
             jobs = ProviderJobs(cli, clock=clock, polls=2)
             runner = model_runner(root, jobs, clock)
@@ -72,8 +74,10 @@ class StreamChunkTests(unittest.TestCase):
                 evidence_dir=root / 'evidence', model='fixture', effort='low',
                 timeout_seconds=None, on_observation=delivered.append)
             self.assertEqual(result['status'], 'completed', result)
+            self.assertEqual(result['output'], {})
             self.assertEqual(len(delivered), 1, 'One buffered stream chunk must not require 20 state transactions')
             self.assertEqual(delivered[0].events, events)
+            self.assertEqual(list(delivered[0].rows), rows)
 
 
 if __name__ == '__main__':

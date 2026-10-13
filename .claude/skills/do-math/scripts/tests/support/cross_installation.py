@@ -14,7 +14,7 @@ def recover_report(sim, outcome):
     def actual_input(call):
         prompt = call['prompt']
         assert 'failure_inputs' in prompt and 'installation:' in prompt
-        assert 'repair_outcome' in call['schema']['properties']
+        assert 'repair_outcome' in call['output_schema']['properties']
         # This is explicitly an external provider/verification-port answer.
         # It certifies no actual repair or regression execution by this test.
         (Path(call['cwd']) / 'regression.txt').write_text(

@@ -1,0 +1,8 @@
+{
+  "scope": "Manager auxiliary manifest-binding comparison",
+  "observation": "The first added recording-size assertion raised KeyError: bytes because some preserved manifest recordings omit the optional bytes key.",
+  "correction": "Compare every explicit path/SHA binding against manifest entries; check recording byte size only when declared. Per-file corpus size and SHA remain mandatory and checked for all 102 paths.",
+  "final_exit_code": 0,
+  "product_files_changed": false,
+  "task_evidence_changed": false
+}

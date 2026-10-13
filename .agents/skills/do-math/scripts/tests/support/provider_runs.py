@@ -10,8 +10,8 @@ provider CLI at the worker's ``spawn`` seam.
 - ``ScriptedCLI(stdout=None, final=b'{}', returncode=0, timeout=False)``: the
   provider CLI. Each start is recorded in ``calls`` (``command``, ``env``,
   ``shell``, ``cwd``, ``creationflags`` and the ``stdin`` it was given). It
-  writes ``stdout`` (default: a completed stream in the provider's own format
-  whose final response is ``final``) and, for Codex, ``final`` to the
+  writes ``stdout`` (default: a completed stream encoding semantic ``final``
+  according to the CLI's schema) and, for Codex, that native final to the
   ``--output-last-message`` file. ``timeout`` writes ``stdout`` and then lets
   the worker's wait time out, as a CLI past the request's runtime limit does.
 - ``ProviderJobs(cli, ...)``: the Jobs fake whose programs run
@@ -38,6 +38,7 @@ import subprocess
 
 from do_math import claude_worker, codex_worker, launch
 from do_math.model_runner import ModelRunner
+from do_math.provider_final import CODEX_OUTPUT_KEY, output_contract
 from do_math.windows_job import JobInspection
 from support.fakes.jobs import FakeJob, FakeJobs
 
@@ -69,6 +70,38 @@ def _default_stdout(command, final):
     return codex_stream(final)
 
 
+def cli_schemas(command):
+    """Return (semantic, transport) from the schema actually given to the CLI.
+
+    The Codex envelope carries its complete semantic schema in the description.
+    Validate that representation against the product's one transmission contract.
+    Direct worker fixtures may supply a plain schema; bound calls supply none.
+    """
+    if "--output-schema" in command:
+        transport = json.loads(Path(command[command.index("--output-schema") + 1]).read_bytes())
+        if set(transport.get("properties", {})) == {CODEX_OUTPUT_KEY}:
+            semantic = json.loads(transport["properties"][CODEX_OUTPUT_KEY]["description"].split("\n", 1)[1])
+            assert transport == output_contract("codex", semantic), "unexpected Codex transport schema"
+            return semantic, transport
+        return transport, transport
+    if "--json-schema" in command:
+        schema = json.loads(command[command.index("--json-schema") + 1])
+        return schema, schema
+    return None, None
+
+
+def cli_final(command, final):
+    """Encode a scripted semantic response when the CLI was given the Codex envelope.
+
+    Explicit stdout/final recordings are already native bytes and bypass this
+    helper. Direct worker tests can still supply their own non-runner schema.
+    """
+    semantic, transport = cli_schemas(command)
+    if semantic != transport:
+        return json.dumps({CODEX_OUTPUT_KEY: final.decode("utf-8")}, ensure_ascii=False).encode("utf-8")
+    return final
+
+
 class ScriptedCLI:
     def __init__(self, *, stdout=None, final=b"{}", returncode=0, timeout=False):
         self.stdout, self.final, self.returncode, self.timeout = stdout, final, returncode, timeout
@@ -93,9 +126,10 @@ class _Process:
         self.waited = True
         self.call["stdin"] = input
         command = self.call["command"]
-        self.stream.write(self.cli.stdout if self.cli.stdout is not None else _default_stdout(command, self.cli.final))
+        final = self.cli.final if self.cli.stdout is not None else cli_final(command, self.cli.final)
+        self.stream.write(self.cli.stdout if self.cli.stdout is not None else _default_stdout(command, final))
         if "--output-last-message" in command:
-            Path(command[command.index("--output-last-message") + 1]).write_bytes(self.cli.final)
+            Path(command[command.index("--output-last-message") + 1]).write_bytes(final)
         if self.cli.timeout:
             self.waited = False
             raise subprocess.TimeoutExpired(command, timeout)

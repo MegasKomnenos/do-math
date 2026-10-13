@@ -1,0 +1,363 @@
+{
+  "head": "61f9e06fc15fb49ef30bf7d93c83c92e275eebad",
+  "source_count": 2640,
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_provider_raw_ingress.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_observation_delivery.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".agents/skills/do-math/scripts/tests/support/cross_installation.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_probe_inputs.py",
+    ".agents/skills/do-math/scripts/tests/support/provider_runs.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_provider_raw_ingress.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_observation_delivery.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".claude/skills/do-math/scripts/tests/support/cross_installation.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_probe_inputs.py",
+    ".claude/skills/do-math/scripts/tests/support/provider_runs.py"
+  ],
+  "current_differences": {
+    ".agents/skills/write-for-reader/references/독해_검토.md": {
+      "task_final": "b478ff848d835f305bfc5220a6f92ccbffc4636062b7d748dc5e4cbf5a54b5d4",
+      "current": "ab494cf605ce1ad6f3ce88ecd34e544acb2dab6a6d17ee7551c568516833b7e8"
+    },
+    ".agents/skills/write-for-reader/scripts/writing_flow.py": {
+      "task_final": "10d5d1eeca65403ed42c7b224cf52c8140802f835c4f633c09fce5af9b148a53",
+      "current": "42cd6ffa35328f39d424a5f4d60494dbbad5de74293d9f75f01ea65f099868be"
+    },
+    ".claude/skills/write-for-reader/references/독해_검토.md": {
+      "task_final": "a93e5e5e075f63c6996f3ec85698f28c84470dce2982986103174589b2dd53ff",
+      "current": "f530bac57a5414ce24cea61aa58e5f1d728ce66b95a4f4bea2e098948d9a7eb4"
+    },
+    ".claude/skills/write-for-reader/scripts/writing_flow.py": {
+      "task_final": "10d5d1eeca65403ed42c7b224cf52c8140802f835c4f633c09fce5af9b148a53",
+      "current": "42cd6ffa35328f39d424a5f4d60494dbbad5de74293d9f75f01ea65f099868be"
+    }
+  },
+  "operator_change_basis": "run:sources/model-policy-2026-10-14.md",
+  "checks": {
+    "pair-red": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1,
+      "python_count": 865,
+      "python_changes_since_run": [
+        "tests/contracts/pairs.py",
+        "tests/contracts/test_pairs.py",
+        "tests/flows/test_provider_native_storage.py",
+        "tests/flows/test_provider_raw_ingress.py",
+        "tests/sim/test_observation_delivery.py",
+        "tests/sim/test_operator_finish_recovery.py",
+        "tests/sim/test_operator_probe_contract.py",
+        "tests/sim/test_provider_schema.py",
+        "tests/support/cross_installation.py",
+        "tests/support/operator_finish_scene.py",
+        "tests/support/operator_probe_inputs.py",
+        "tests/support/provider_runs.py"
+      ],
+      "during_run_changes": [],
+      "report_sha256": "47861f5cea83096ef4b19ac5312de594c31ead8a78deb6e78173780bd9aa67d9",
+      "pid": 5600,
+      "started_at": "2026-10-13T16:18:47.325166+00:00",
+      "ended_at": "2026-10-13T16:18:52.758618+00:00"
+    },
+    "pair-green": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [
+        "tests/flows/test_provider_raw_ingress.py"
+      ],
+      "during_run_changes": [],
+      "report_sha256": "23dccdc07193e1f61da3327ea1b36045a8b6d9ce19dc026de28cdce0c63a238c",
+      "pid": 20212,
+      "started_at": "2026-10-13T16:22:04.671822+00:00",
+      "ended_at": "2026-10-13T16:22:11.177892+00:00"
+    },
+    "consumers": {
+      "selected": 98,
+      "unique_rows": 98,
+      "counts": {
+        "passed": 97,
+        "failed": 1
+      },
+      "exit_code": 1,
+      "python_count": 865,
+      "python_changes_since_run": [
+        "tests/flows/test_provider_raw_ingress.py"
+      ],
+      "during_run_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "989d16c2d187b9cb0a912af718f563e01629426a04c2c804297ef681ebdf234e",
+      "pid": 28140,
+      "started_at": "2026-10-13T16:22:27.919804+00:00",
+      "ended_at": "2026-10-13T16:26:44.833900+00:00"
+    },
+    "raw-green": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [],
+      "during_run_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "921d56f192dbc0d2353d0c941578dc42504b2937c248a00f7e375e8ab99201a9",
+      "pid": 29680,
+      "started_at": "2026-10-13T16:28:03.321887+00:00",
+      "ended_at": "2026-10-13T16:28:27.763061+00:00"
+    },
+    "consumers-final": {
+      "selected": 98,
+      "unique_rows": 98,
+      "counts": {
+        "passed": 98
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [],
+      "during_run_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "808c9f40fbbaed3a81aed0694cae1d6852ad16f10c5ac570d621aa11032d5df9",
+      "pid": 26868,
+      "started_at": "2026-10-13T16:30:15.911517+00:00",
+      "ended_at": "2026-10-13T16:34:41.342222+00:00"
+    },
+    "boundaries": {
+      "selected": 74,
+      "unique_rows": 74,
+      "counts": {
+        "passed": 74
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [],
+      "during_run_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "69cc56a2bdd0297a415b0663649c71fb117f576a38678b2402e12ea20bc2004a",
+      "pid": 3408,
+      "started_at": "2026-10-13T16:34:42.830231+00:00",
+      "ended_at": "2026-10-13T16:35:13.902145+00:00"
+    },
+    "corpus": {
+      "selected": 14,
+      "unique_rows": 14,
+      "counts": {
+        "passed": 14
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [],
+      "during_run_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "35fc503af0b690861e72f749c5f3ac1674a5c72764641af1cb88f45fa9dd368e",
+      "pid": 5580,
+      "started_at": "2026-10-13T16:35:17.014085+00:00",
+      "ended_at": "2026-10-13T16:35:25.716964+00:00"
+    },
+    "mirror": {
+      "selected": 59,
+      "unique_rows": 59,
+      "counts": {
+        "passed": 59
+      },
+      "exit_code": 0,
+      "python_count": 865,
+      "python_changes_since_run": [],
+      "during_run_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "report_sha256": "72d7ba45627d42473b9e52ede0c7e0874a430af91b679500a4a425c470be01ee",
+      "pid": 36152,
+      "started_at": "2026-10-13T16:36:32.107999+00:00",
+      "ended_at": "2026-10-13T16:37:33.582985+00:00"
+    }
+  },
+  "recovered_failures": [
+    "sim.test_operator_finish_recovery.RecoveryTests.test_failed_structured_report_preserves_output_without_research_submission",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_absent_file_and_checkpoint_are_both_reported",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_codex_command_requests_stop_and_collects_terminated_job",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_codex_mcp_nonstring_tool_is_ignored_without_losing_later_tool",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_codex_nonobject_item_and_other_item_are_ignored",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_codex_scholarly_tool_name_joins_server_and_tool",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_files_preserve_nonce_and_the_checkpoint_requested_by_product",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_other_scholarly_tool_does_not_satisfy_list_sources",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_scholarly_file_success_does_not_substitute_for_missing_tool",
+    "sim.test_operator_probe_contract.ProbeContractTests.test_wrong_file_content_is_failed_even_with_completed_structured_response",
+    "flows.test_provider_native_storage.NativeStorageTests.test_native_numbers_and_public_blocks_survive_actual_runner_and_repository"
+  ],
+  "runtime_unchanged_since_live": [
+    ".claude/skills/do-math/scripts/do_math/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/academic.py",
+    ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+    ".claude/skills/do-math/scripts/do_math/activities.py",
+    ".claude/skills/do-math/scripts/do_math/budget.py",
+    ".claude/skills/do-math/scripts/do_math/call_engine.py",
+    ".claude/skills/do-math/scripts/do_math/canonical.py",
+    ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/do_math/cli.py",
+    ".claude/skills/do-math/scripts/do_math/cli_contract.py",
+    ".claude/skills/do-math/scripts/do_math/cli_execution.py",
+    ".claude/skills/do-math/scripts/do_math/cli_worker.py",
+    ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/codex_stream.py",
+    ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+    ".claude/skills/do-math/scripts/do_math/configuration.py",
+    ".claude/skills/do-math/scripts/do_math/context_store.py",
+    ".claude/skills/do-math/scripts/do_math/contracts.py",
+    ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/control_protocol.py",
+    ".claude/skills/do-math/scripts/do_math/control_server.py",
+    ".claude/skills/do-math/scripts/do_math/control_transport.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+    ".claude/skills/do-math/scripts/do_math/delegations.py",
+    ".claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+    ".claude/skills/do-math/scripts/do_math/engine.py",
+    ".claude/skills/do-math/scripts/do_math/events.py",
+    ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+    ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    ".claude/skills/do-math/scripts/do_math/execution_window.py",
+    ".claude/skills/do-math/scripts/do_math/external.py",
+    ".claude/skills/do-math/scripts/do_math/external_engine.py",
+    ".claude/skills/do-math/scripts/do_math/file_io.py",
+    ".claude/skills/do-math/scripts/do_math/formal.py",
+    ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+    ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+    ".claude/skills/do-math/scripts/do_math/git_process.py",
+    ".claude/skills/do-math/scripts/do_math/git_store.py",
+    ".claude/skills/do-math/scripts/do_math/governance.py",
+    ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+    ".claude/skills/do-math/scripts/do_math/http_request.py",
+    ".claude/skills/do-math/scripts/do_math/http_transport.py",
+    ".claude/skills/do-math/scripts/do_math/ids.py",
+    ".claude/skills/do-math/scripts/do_math/initialization.py",
+    ".claude/skills/do-math/scripts/do_math/initialization_engine.py",
+    ".claude/skills/do-math/scripts/do_math/input_basis.py",
+    ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+    ".claude/skills/do-math/scripts/do_math/input_tool.py",
+    ".claude/skills/do-math/scripts/do_math/integration.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+    ".claude/skills/do-math/scripts/do_math/launch.py",
+    ".claude/skills/do-math/scripts/do_math/layers.py",
+    ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+    ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/do_math/local_host.py",
+    ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+    ".claude/skills/do-math/scripts/do_math/model_call.py",
+    ".claude/skills/do-math/scripts/do_math/model_policy.py",
+    ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    ".claude/skills/do-math/scripts/do_math/native_final.py",
+    ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+    ".claude/skills/do-math/scripts/do_math/observations.py",
+    ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+    ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+    ".claude/skills/do-math/scripts/do_math/parallel.py",
+    ".claude/skills/do-math/scripts/do_math/payloads.py",
+    ".claude/skills/do-math/scripts/do_math/planning.py",
+    ".claude/skills/do-math/scripts/do_math/planning_engine.py",
+    ".claude/skills/do-math/scripts/do_math/ports/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/ports/calls.py",
+    ".claude/skills/do-math/scripts/do_math/ports/clock.py",
+    ".claude/skills/do-math/scripts/do_math/ports/git_backend.py",
+    ".claude/skills/do-math/scripts/do_math/ports/host.py",
+    ".claude/skills/do-math/scripts/do_math/ports/http.py",
+    ".claude/skills/do-math/scripts/do_math/ports/jobs.py",
+    ".claude/skills/do-math/scripts/do_math/ports/scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/powershell_scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/preflight.py",
+    ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+    ".claude/skills/do-math/scripts/do_math/provider_final.py",
+    ".claude/skills/do-math/scripts/do_math/provider_wait.py",
+    ".claude/skills/do-math/scripts/do_math/question_engine.py",
+    ".claude/skills/do-math/scripts/do_math/questions.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/do_math/relation_refs.py",
+    ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+    ".claude/skills/do-math/scripts/do_math/reporting.py",
+    ".claude/skills/do-math/scripts/do_math/repository.py",
+    ".claude/skills/do-math/scripts/do_math/retention.py",
+    ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+    ".claude/skills/do-math/scripts/do_math/review_engine.py",
+    ".claude/skills/do-math/scripts/do_math/review_policy.py",
+    ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+    ".claude/skills/do-math/scripts/do_math/revisions.py",
+    ".claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/do_math/scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/scholarly.py",
+    ".claude/skills/do-math/scripts/do_math/scholarly_config.py",
+    ".claude/skills/do-math/scripts/do_math/session_slots.py",
+    ".claude/skills/do-math/scripts/do_math/state_checks.py",
+    ".claude/skills/do-math/scripts/do_math/state_contract.py",
+    ".claude/skills/do-math/scripts/do_math/storage_finish_git_output.py",
+    ".claude/skills/do-math/scripts/do_math/submission.py",
+    ".claude/skills/do-math/scripts/do_math/submission_tool.py",
+    ".claude/skills/do-math/scripts/do_math/supervision.py",
+    ".claude/skills/do-math/scripts/do_math/system_clock.py",
+    ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/task_scope.py",
+    ".claude/skills/do-math/scripts/do_math/trace_report.py",
+    ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+    ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+    ".claude/skills/do-math/scripts/do_math/values.py",
+    ".claude/skills/do-math/scripts/do_math/wait_rules.py",
+    ".claude/skills/do-math/scripts/do_math/windows_job.py",
+    ".claude/skills/do-math/scripts/do_math/wiring.py",
+    ".claude/skills/do-math/scripts/do_math/worker_request.py"
+  ],
+  "smoke_inputs_unchanged": [
+    ".claude/skills/do-math/scripts/tests/support/provider_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+    ".claude/skills/do-math/scripts/probe_cli.py"
+  ],
+  "corpus": {
+    ".claude": {
+      "entries": 18,
+      "files": 51,
+      "bytes": 223685,
+      "bindings": 50
+    },
+    ".agents": {
+      "entries": 18,
+      "files": 51,
+      "bytes": 223685,
+      "bindings": 50
+    }
+  },
+  "corpus_raw_clean_count": 102,
+  "new_model_calls": 0
+}

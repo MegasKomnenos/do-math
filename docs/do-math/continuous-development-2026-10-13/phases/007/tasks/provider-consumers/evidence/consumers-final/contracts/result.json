@@ -1,0 +1,40 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 5,
+  "rows": [
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+      "outcome": "passed",
+      "seconds": 2.2660000000032596,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+      "outcome": "passed",
+      "seconds": 0.375,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "contracts.test_pairs": 2.672000000020489
+  }
+}

@@ -68,15 +68,17 @@ class NativeStorageTests(unittest.TestCase):
                 sim, action, workspace, tracker = self.scene()
                 values = [0.25, 2 ** 53, 2 ** 53 + 1]
                 if provider == 'codex':
+                    final = b'{"output_json":"{}"}'
                     public = [{'type': 'item.completed', 'item': {'id': 'tool-' + str(i),
                         'type': 'mcp_tool_call', 'server': 'numeric', 'tool': 'calculate',
                         'arguments': {'value': value}, 'result': {'value': value}}} for i, value in enumerate(values)]
-                    public += [{'type': 'item.completed', 'item': {'type': 'agent_message', 'text': '{}'}}]
+                    public += [{'type': 'item.completed', 'item': {'type': 'agent_message', 'text': final.decode('utf-8')}}]
                     events = [{'type': 'thread.started', 'thread_id': 'native'}, {'type': 'turn.started'},
                               *public, {'type': 'turn.completed', 'usage': {'input_tokens': 1, 'output_tokens': 1}}]
                     first_public = 2
                     expected_roles = ['tool', 'tool', 'tool', 'assistant']
                 else:
+                    final = b'{}'
                     public = [{'type': 'assistant', 'message': {'content': [{'type': 'tool_use',
                         'id': 'tool-' + str(i), 'name': 'calculate', 'input': {'value': value}}]}}
                         for i, value in enumerate(values)]
@@ -86,7 +88,7 @@ class NativeStorageTests(unittest.TestCase):
                     expected_roles = ['assistant', 'assistant', 'assistant', 'user']
                 rows = [json.dumps(event, ensure_ascii=False).encode('utf-8') + b'\r\n' for event in events]
                 raw = b'\n' + b''.join(rows)
-                cli = ScriptedCLI(stdout=raw, final=b'{}')
+                cli = ScriptedCLI(stdout=raw, final=final)
                 jobs = ProviderJobs(cli, clock=sim.clock)
                 deliveries = []
 
@@ -100,6 +102,7 @@ class NativeStorageTests(unittest.TestCase):
                     model='claude:claude-sonnet-5' if provider == 'claude' else 'test-model',
                     effort='high', timeout_seconds=10, on_observation=deliver)
                 self.assertEqual(result['status'], 'completed', result)
+                self.assertEqual(result['output'], {})
                 self.assertEqual(len(cli.calls), 1)
                 self.assertEqual(cli.calls[0]['stdin'], '시험용 합성 입력'.encode('utf-8'))
                 self.assertEqual([row for incoming in deliveries for row in incoming.rows], rows)
@@ -117,7 +120,7 @@ class NativeStorageTests(unittest.TestCase):
                     self.assertEqual(content['arguments' if provider == 'codex' else 'input']['value'], value)
                     if provider == 'codex':
                         self.assertEqual(content['result']['value'], value)
-                self.assertEqual(messages[-1]['content'], '{}' if provider == 'codex' else '정상 후속')
+                self.assertEqual(messages[-1]['content'], final.decode('utf-8') if provider == 'codex' else '정상 후속')
                 self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
                 self.assertEqual(sim.runtime['executions']['EX-native-close']['observation_stream']['end_offset'], len(raw))
                 self.assertTrue(all(job.closed for job in jobs.launched))

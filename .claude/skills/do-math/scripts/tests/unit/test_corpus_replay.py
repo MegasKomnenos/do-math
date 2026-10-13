@@ -101,6 +101,42 @@ class CorpusReplayTests(unittest.TestCase):
                 self.assertIn(entry['kind'], READERS, 'a corpus kind needs a reader')
                 self.assertEqual(READERS[entry['kind']](entry), entry['verdict'])
 
+    def test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final(self):
+        from jsonschema import Draft202012Validator
+        from do_math.claude_adapter import ADAPTERS
+        from do_math.claude_stream import parse_stream
+        from do_math.codex_stream import parse_jsonl
+        from do_math.contracts import action_schema
+        from do_math.provider_final import final_bytes, output_contract, semantic_output
+        entries = [entry for entry in json.loads((CORPUS / 'manifest.json').read_text(encoding='utf-8'))['entries']
+                   if entry['role'] == 'maintenance']
+        self.assertEqual({entry['kind'].removesuffix('_stream') for entry in entries}, set(ADAPTERS))
+        for entry in entries:
+            with self.subTest(entry=entry['id']):
+                schema = json.loads((CORPUS / entry['schema_path']).read_bytes())
+                self.assertEqual(schema, action_schema({'role': 'maintenance'}))
+                parser = parse_jsonl if entry['kind'] == 'codex_stream' else parse_stream
+                parsed = parser((CORPUS / entry['path']).read_bytes())
+                final = final_bytes(parsed)
+                if entry['verdict']['turn_completed']:
+                    self.assertFalse(parsed['turn_failed'])
+                    self.assertEqual(final, (CORPUS / entry['final_path']).read_bytes())
+                    output = semantic_output(entry['kind'].removesuffix('_stream'), final)
+                    self.assertEqual(list(Draft202012Validator(schema).iter_errors(output)), [])
+                    if 'transport_schema_path' in entry:
+                        transport = json.loads((CORPUS / entry['transport_schema_path']).read_bytes())
+                        self.assertEqual(transport, output_contract('codex', schema))
+                        self.assertEqual(list(Draft202012Validator(transport).iter_errors(json.loads(final))), [])
+                        self.assertEqual(output, entry['semantic_output'])
+                        worker = json.loads((CORPUS / entry['worker_status_path']).read_bytes())
+                        self.assertEqual(worker['schema_sha256'], entry['transport_schema_sha256'])
+                        self.assertEqual(worker['argv_sha256'], entry['command_sha256'])
+                        self.assertEqual((worker['state'], worker['cli_exit_code']), ('exited', 0))
+                else:
+                    self.assertTrue(parsed['turn_failed'])
+                    self.assertFalse(entry['live_passed'])
+                    self.assertIsNone(final)
+
 
 if __name__ == '__main__':
     unittest.main()

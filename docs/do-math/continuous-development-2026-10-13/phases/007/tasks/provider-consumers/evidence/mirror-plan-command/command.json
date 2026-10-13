@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/007/tasks/provider-consumers/evidence/audit_delivery.py",
+    "mirror-plan"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 22764,
+  "started_at": "2026-10-13T16:35:44.905706+00:00",
+  "pid": 7436,
+  "state": "exited",
+  "ended_at": "2026-10-13T16:35:55.328849+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

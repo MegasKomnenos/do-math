@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+    "--check"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 38280,
+  "started_at": "2026-10-13T16:38:46.212499+00:00",
+  "pid": 11788,
+  "state": "exited",
+  "ended_at": "2026-10-13T16:38:50.857659+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

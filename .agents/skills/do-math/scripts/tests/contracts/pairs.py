@@ -232,28 +232,52 @@ def _condition_pairs():
 
 
 def _runner_result_samples(root):
-    """Runner results ``model_call.classify_run`` makes from collections carrying raw bytes, both providers."""
-    import hashlib
-    from do_math.claude_stream import parse_stream
-    from do_math.codex_stream import parse_jsonl
-    from do_math.model_call import classify_run
+    """Actual runner/worker/collector results; only the external CLI and Job are doubles."""
+    from copy import deepcopy
+    import json
+    from do_math import execution_profiles
+    from do_math.control_transport import ControlTransport
+    from support.entry import entry
     from support.fakes.clock import FakeClock
-    from support.model import codex_stream_bytes
-    claude = ('{"type":"system","subtype":"init","model":"claude-sonnet-5"}\n'
-              '{"type":"result","subtype":"success","result":"{}","usage":{"input_tokens":1,"output_tokens":1},'
-              '"total_cost_usd":0.0123,"modelUsage":{"claude-sonnet-5":{"inputTokens":1}}}\n').encode()
+    from support.provider_inputs import PROFILE_CONFIG
+    from support.provider_runs import (CLAUDE_INIT, ProviderJobs, ScriptedCLI, claude_result,
+                                       dispatched, model_runner)
     rows = []
-    for provider, raw, parse in (('codex', codex_stream_bytes('{}'), parse_jsonl), ('claude', claude, parse_stream)):
-        artifact = {'raw': raw, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
-        for outcome, stopped, binding in (('collected', False, None), ('collected, bound', False, {'bound': True}),
-                                          ('incomplete', False, None), ('stopped', True, None)):
-            collected = {'result': 'incomplete' if outcome == 'incomplete' else 'output_collected',
-                         'reasons': ['fixture'], 'jsonl': parse(raw), 'stdout': artifact, 'final': {'raw': b'{}'},
-                         'provider_observation': {'usage': {'input_tokens': 1}}}
-            rows.append((provider + ', ' + outcome, classify_run(
-                collected, started={'pid': 1}, stopped=stopped, cli_model='model', claude_only_assigned_model=False,
-                control_binding=binding, output_schema={'type': 'object'}, evidence_dir=root,
-                execution_id='EX-1', reference=None, provider_failure=lambda parsed: None, now=FakeClock().now)))
+    for provider, model in (('codex', 'gpt-6-astra'), ('claude', 'claude-sonnet-5')):
+        for index, outcome in enumerate(('collected', 'collected, bound', 'incomplete', 'stopped')):
+            case = root / provider / str(index)
+            workspace = case / 'workspace'
+            workspace.mkdir(parents=True)
+            clock = FakeClock()
+            bound, stopped = outcome == 'collected, bound', outcome == 'stopped'
+            final = b'Draft submitted.' if bound else b'{}'
+            stdout = None
+            if provider == 'claude':
+                stdout = b''.join(json.dumps(event).encode('utf-8') + b'\n' for event in (
+                    CLAUDE_INIT, claude_result(final, structured=not bound, total_cost_usd=0.0123,
+                                               modelUsage={model: {'inputTokens': 1}})))
+            cli = ScriptedCLI(final=final, stdout=stdout, returncode=1 if outcome == 'incomplete' else 0)
+            jobs = ProviderJobs(cli, clock=clock, polls=20 if stopped else 0)
+            prompt, options = 'Return an empty object.', {}
+            if bound:
+                config = deepcopy(PROFILE_CONFIG)
+                config.update(tier_models={tier: model for tier in ('high', 'medium', 'low')},
+                              session_limits={'work': {model: 3}})
+                profiles = execution_profiles.build_profiles(config, host=entry().ports.host)
+                profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'research_work')
+                prompt = execution_profiles.prepare_prompt('Submit the draft centrally.', profile)
+                options = {'execution_id': 'EX-pair', 'profile': profile,
+                           'input_seal': execution_profiles.prompt_seal(prompt),
+                           'control_binding': ControlTransport(case / 'transport', clock=clock).issue(
+                               'EX-pair', 'GR-pair', workspace=workspace),
+                           'launch_ticket': dispatched('EX-pair', profile, jobs, clock)}
+            result = model_runner(case, jobs, clock).run(
+                prompt=prompt, output_schema={'type': 'object'}, workspace=workspace, evidence_dir=case / 'evidence',
+                model=model, effort=profile['ai']['effort'] if bound else 'low', timeout_seconds=None,
+                should_stop=(lambda: jobs.launched[0].resumed) if stopped else None, **options)
+            assert len(cli.calls) == 1
+            assert all(job.done and job.closed for job in jobs.launched)
+            rows.append((provider + ', ' + outcome, result))
     return rows
 
 

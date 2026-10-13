@@ -1,0 +1,101 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 15,
+  "rows": [
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success",
+      "outcome": "passed",
+      "seconds": 0.061999999976251274,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_declaration_the_source_does_not_define_fails_like_lean",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_declared_facts_reproduce_the_recorded_signature_and_axiom_lines",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_binder_type_value_and_shared_bodies_survive_the_parser",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks",
+      "outcome": "passed",
+      "seconds": 0.030999999959021807,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_missing_or_conflicting_facts_are_not_silently_filled",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_only_the_default_producer_source_verifies_with_evidence_by_default",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_preview_registration_removes_previous_extraction_permission",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_current_maintenance_outputs_match_the_provider_doubles_at_the_real_parser",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_the_codex_stream_is_judged_like_a_recorded_completed_stream",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+      "outcome": "passed",
+      "seconds": 2.437000000034459,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+      "outcome": "passed",
+      "seconds": 1.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+      "outcome": "passed",
+      "seconds": 0.046999999962281436,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "contracts.test_doubles_follow_corpus": 0.17199999996228144,
+    "contracts.test_pairs": 3.5
+  }
+}

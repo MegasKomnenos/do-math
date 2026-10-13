@@ -1,0 +1,167 @@
+{
+  "complete": true,
+  "successful": false,
+  "tests_run": 25,
+  "rows": [
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_installation_repair_report_releases_one_successor",
+      "outcome": "passed",
+      "seconds": 7.327999999979511,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_installation_repair_unresolved_settles_and_does_not_repeat",
+      "outcome": "passed",
+      "seconds": 8.813000000023749,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_absent_failure_and_diagnosis_wait_without_publication",
+      "outcome": "passed",
+      "seconds": 0.9839999999967404,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_child_diagnosis_scheduler_failure_preserves_successful_engine_evidence",
+      "outcome": "passed",
+      "seconds": 1.875,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_diagnosis_probe_preserves_full_produced_failure_and_head",
+      "outcome": "passed",
+      "seconds": 1.827999999979511,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_distinct_preserved_failure_permits_one_attempt_in_same_installation",
+      "outcome": "passed",
+      "seconds": 1.7030000000377186,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_failed_verification_preserves_diagnosis_and_blocks_restart_and_repeat",
+      "outcome": "passed",
+      "seconds": 1.9689999999827705,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_live_execution_blocks_repair_before_capacity_or_model_creation",
+      "outcome": "passed",
+      "seconds": 0.9839999999967404,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_maintenance_lock_prevents_execution_and_releases_writer",
+      "outcome": "passed",
+      "seconds": 0.7970000000204891,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_missing_regression_file_rejects_repair_without_verification_or_restart",
+      "outcome": "passed",
+      "seconds": 1.6719999999622814,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_oversized_prompt_waits_before_reserving_or_starting_model",
+      "outcome": "passed",
+      "seconds": 1.9530000000377186,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_preserved_engine_failure_enters_recovery_before_engine_request",
+      "outcome": "passed",
+      "seconds": 1.125,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_ready_recovery_activity_is_reused_after_unjudged_provider_limit",
+      "outcome": "passed",
+      "seconds": 2.280999999959022,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_unsupported_job_records_runner_capability_evidence_without_model_or_restart",
+      "outcome": "passed",
+      "seconds": 2.5160000000032596,
+      "details": []
+    },
+    {
+      "id": "flows.test_operator_recovery_contract.RecoveryContractTests.test_waiting_guard_keeps_reconciled_wake_without_requesting_engine",
+      "outcome": "passed",
+      "seconds": 0.7810000000172295,
+      "details": []
+    },
+    {
+      "id": "flows.test_provider_native_storage.NativeStorageTests.test_invalid_normalized_role_is_consumed_once_then_valid_row_is_published",
+      "outcome": "passed",
+      "seconds": 0.6400000000139698,
+      "details": []
+    },
+    {
+      "id": "flows.test_provider_native_storage.NativeStorageTests.test_native_numbers_and_public_blocks_survive_actual_runner_and_repository",
+      "outcome": "passed",
+      "seconds": 2.0320000000065193,
+      "details": []
+    },
+    {
+      "id": "flows.test_provider_native_storage.NativeStorageTests.test_normalized_public_numeric_arguments_use_trusted_source_and_idle_is_noop",
+      "outcome": "passed",
+      "seconds": 1.3119999999762513,
+      "details": []
+    },
+    {
+      "id": "flows.test_provider_native_storage.NativeStorageTests.test_public_branch_population_preserves_blocks_and_ignores_private_or_empty_content",
+      "outcome": "passed",
+      "seconds": 0.4690000000409782,
+      "details": []
+    },
+    {
+      "id": "flows.test_provider_raw_ingress.RawIngressTests.test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage",
+      "outcome": "failed",
+      "seconds": 10.905999999959022,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_provider_raw_ingress.py\", line 108, in test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage\n    self.assertEqual(failures, [], 'live 반려와 strict collector는 같은 원 바이트 계약을 지켜야 한다')\nAssertionError: Lists differ: [('codex', 'event_driven:null', 'Assertion[10054 chars]\\n\")] != []\n\nFirst list contains 42 additional elements.\nFirst extra element 0:\n('codex', 'event_driven:null', 'AssertionError', \"'jsonl_parse_incomplete; final_response_mismatch' != 'jsonl_parse_incomplete'\\n- jsonl_parse_incomplete; final_response_mismatch\\n+ jsonl_parse_incomplete\\n\")\n\n+ []\n- [('codex',\n-   'event_driven:null',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:list',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:zero',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:string',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:boolean',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'event_driven:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:null',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:list',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:zero',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:string',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:boolean',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'event_driven:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:null',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:list',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:zero',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:string',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:boolean',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'periodic:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:null',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:list',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:zero',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:string',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:boolean',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'periodic:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:null',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:list',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:zero',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:string',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:boolean',\n-   'AssertionError',\n-   \"'jsonl_parse_incomplete; final_response_mismatch' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('codex',\n-   'deadline_only:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch' \"\n-   \"!= 'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_response_mismatch\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:null',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:list',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:zero',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:string',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:boolean',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:duplicate',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n'),\n-  ('claude',\n-   'deadline_only:nonfinite',\n-   'AssertionError',\n-   \"'turn_completed_missing; jsonl_parse_incomplete; final_message_missing' != \"\n-   \"'jsonl_parse_incomplete'\\n\"\n-   '- turn_completed_missing; jsonl_parse_incomplete; final_message_missing\\n'\n-   '+ jsonl_parse_incomplete\\n')] : live 반려와 strict collector는 같은 원 바이트 계약을 지켜야 한다\n"
+      ]
+    },
+    {
+      "id": "flows.test_scheduling_close_remaining_exits.RemainingExitTests.test_completed_goal_returns_without_repeating_any_role",
+      "outcome": "passed",
+      "seconds": 55.51600000000326,
+      "details": []
+    },
+    {
+      "id": "flows.test_scheduling_close_remaining_exits.RemainingExitTests.test_idle_with_missing_capability_returns_without_new_execution",
+      "outcome": "passed",
+      "seconds": 13.35899999999674,
+      "details": []
+    },
+    {
+      "id": "flows.test_scheduling_close_remaining_exits.RemainingExitTests.test_unconfirmed_recovery_blocks_dispatch_without_releasing_its_ownership",
+      "outcome": "passed",
+      "seconds": 1.5,
+      "details": []
+    },
+    {
+      "id": "flows.test_scheduling_close_repair_exit.RepairExitTests.test_accepted_installation_diagnosis_stops_public_dispatch",
+      "outcome": "passed",
+      "seconds": 1.297000000020489,
+      "details": []
+    },
+    {
+      "id": "flows.test_scheduling_close_repair_exit.RepairExitTests.test_real_failed_worker_and_independent_diagnosis_stop_later_dispatch",
+      "outcome": "passed",
+      "seconds": 26.51600000000326,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "flows.test_cross_required_events": 16.14100000000326,
+    "flows.test_operator_recovery_contract": 20.46799999999348,
+    "flows.test_provider_native_storage": 10.063000000023749,
+    "flows.test_provider_raw_ingress": 10.905999999959022,
+    "flows.test_scheduling_close_remaining_exits": 70.375,
+    "flows.test_scheduling_close_repair_exit": 27.81300000002375
+  }
+}
