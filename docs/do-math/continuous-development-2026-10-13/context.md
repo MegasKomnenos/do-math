@@ -74,6 +74,8 @@ phase 011 regression-reading은 A1~A4 complete로 검수했다. report 검사 �
 
 phase 012 lean-smoke는 A1~A4 complete로 검수했다. report 형식 검사 뒤 현재 2658파일과 종료 해시 전건 일치, 시작과011 manager 판본 동일, 허용22변경을 확인했다. 초기 live 두 건의 error1은 역사 실패로 유지한다. 최종 정본/미러 T5 각1passed, 관련 각48passed의 선택·고유row·실제exit0와 각869 Python 및 전후 소스를 대조했다. 실제 Mathlib 대표 컴파일과 정상 full32의존·타입 오류, 각20판정·5Job 종료, 설치 입력 바이트·11094판단파일 메타데이터 불변을 원자료로 확인했다. corpus 각19항목·56파일과 총112경로의 Git raw/clean, 새 원출력71704바이트와 기존18항목 보존을 검산했다. 근거는 run:phases/012/manager-evidence/verification.json·review.md다. 지정 Lean 경계의 완료이며 G 전체나 설치 신뢰 승인은 아니다.
 
+phase 013 scheduler-smoke는 A1~A4 complete로 검수했다. manager report 검사 후 현재2674파일과 종료 해시 전건 일치, 시작과012 manager 판본 동일, 허용22변경을 확인했다. 초기 live 세 실행의 error1은 역사 실패로 유지한다. 최종 live1passed·정본/미러 각33passed의 선택·고유row·실제exit와 각871 Python을 대조했다. 세 성공 표본의 각19판정·26명령 원바이트·291 snapshot 파일, 실제 operator/engine start와 시각 wake의 미실행267011에서 새 ticks/Ready/0 전이, 최종세null·HOLD/연구무부수효과를 확인했다. live-final의 wake PID9492는 실제 관측됐으므로 보고서의 포괄적 PID 미관측 문장은 최종 정본/미러 관련 실행에 한정한다. 원보고는 고치지 않는다. corpus 각21항목·62파일과124경로 Git raw/clean·기존19항목 보존을 검산했다. 근거는 run:phases/013/manager-evidence/verification.json·review.md다. held 설치/OS 경계의 완료이며 연구 운전·전체 G 완료는 아니다.
+
 ## C3 현재 정본과 이력의 역할
 
 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
@@ -90,7 +92,7 @@ task의 complete는 A 완료다. 검토 task는 결함을 발견해도 배정된
 
 ## C5 병렬 실행과 검증 자원
 
-phase 001~012의 task 세션은 종료됐고012의 Lean 실연쇄를 검수했다.013 scheduler-smoke는 실제 예약 등록·pythonw 발화·해제, 녹화/재생과 미러를 한 task로 맡는다. corpus manifest·시험 전건 구조 검사·생성기·비용 캐시 및 실제 OS 예약 자원을 공유하므로 다른 제품 수정/시험 task를 병행하지 않는다. jobs1·한 묶음씩 실행한다. 자기 evidence/scratch의 새 workspace와 충돌 없는 시험 이름만 사용하며 기존 연구·예약에는 접근하지 않는다. 기존 Lean/host/공급자는 불변 경로의 승인 성질만 재사용한다. 학술·T4 보고·문서/의미 질문은 별도 후속 책임이다.
+phase 001~013의 task 세션은 종료됐고013의 예약 실연쇄를 검수했다.014 scholarly-smoke는 기존 Codex/ModelRunner/worker에서 학술 MCP list_sources를 실제 호출하고 완료 응답·실행별 data-dir·종료와 녹화/재생을 한 task가 맡는다. corpus manifest·전건 구조 검사·생성기·비용 캐시와 유료 공급자 실행 자원을 공유하므로 다른 제품 수정/시험 task를 병행하지 않는다. jobs1·한 묶음씩 실행한다. 기존 공급자/host/Lean/예약의 불변 입력에서 승인된 성질만 재사용한다. 학술 자료 검색·fetch나 기존 연구 운전은 이 최소 연결 범위에 포함되지 않는다. T4 보고·문서/의미 질문·읽기 조건은 별도 후속 책임이다.
 
 do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
 
@@ -118,7 +120,7 @@ manager는 next phase와 공용 문서·기억 등을 먼저 확정하고 pendin
 
 준비 세션은 서비스 단위 검사(가짜 Codex 사용) 31개 중 30개 통과·권한 조건의 symlink 1개 건너뜀을 확인했다. 이것은 do-math나 실제 모델 호출 완료의 증거가 아니다. 준비 당시 실제 Codex 세션은 미기동이었다. 현재는 phase 001 세 task와 phase 002~008 각 한 task의 report를 각각 새 manager가 검사했다. phase 003은 실제 공급자 경계를 실행했으나 A2/A5가 실패한 partial이며, phase 004는 그 미러 실패를 수리했으나 당시 Git clean 조건 A3가 실패한 partial이다. phase 005는 A1~A3 complete이고 004의 clean 남김을 새 근거로 닫았다. phase 006은 A1/A2/A4의 한정 성과를 승인한 partial이며 A3/A5의 직접 소비 남김은007의 새 근거로 해소됐다. phase 007은 A1~A5 complete로 검수했다. phase 008은 A1~A4를 승인한 partial이고 A5의 문서4실패는009의 A1~A3 complete로 해소했다.010 두 task는 같은 모델로 수행됐고011 regression-reading도 gpt-6.1-sol/high다.010 host의partial과reading의조사complete를 각각 검수하며 제품 전체 합격과 구별한다.011의 A1~A4 complete를 검수했고012 lean-smoke도 gpt-6.1-sol/high로 배정한다. 이전 partial report 자체는 수정하지 않는다. 개발 서비스의 세션 수행과 제품의 공급자·역할 스키마 실호출은 다른 경계이며 실제 T4/T5의 책임은 G7에 남는다.
 
-012 lean-smoke의 gpt-6.1-sol/high 작업을 검수했고013 scheduler-smoke도 같은 설정으로 배정한다. 각 세션의 모델 정책은 C8의 사용자 지정과 같으며 제품 공급자 호출 설정과 구별한다.
+012와013의 gpt-6.1-sol/high 작업을 검수했고014 scholarly-smoke도 같은 설정으로 배정한다. 각 세션의 모델 정책은 C8의 사용자 지정과 같으며 제품 공급자 호출 설정과 구별한다.014 제품 실호출은006의 검증된 Codex gpt-6-astra/low를 기본으로 사용하고 실제 도구 판본과 요청 설정을 기록한다.
 
 ## C9 요구별 상태와 과거 검토의 재사용 범위
 
@@ -140,6 +142,8 @@ phase 006은 B49/065a323a의 전달·반려·수치·종료 slice를 실제 도�
 
 012에서 B38/8afa57c7의 formal/setup Git 포트 slice를 실제 diff·현재 함수·원보고 selector와 대조했다. 필수 git_backend 전달, backend identity별 memo, None root·미추적 입력·.lake 제외 및 stop/오류 계약을 유지한다. 관련8개 sim과 실제 Lean 경로가 새 근거이며 원보고10개가 현재 없다는 한계를 유지한다. 이 slice의 유지 판단을 승인하지만 PR02 전체와 다른 B38 소비자까지 완료로 올리지 않는다. 근거는 run:phases/012/tasks/lean-smoke/evidence/history-b38.stdout·history-original-reports.json·review.md 및 manager 검수다.
 
+013에서 0dd16a5e의 예약 포트 분리/real_ports 배선과 a0e6c2f4의 pythonw freeze Out-String·null/nonzero exit·빈 JSON 반려를 실제 diff·현재 소비자·양쪽33회귀로 대조했다. 이 예약 slice의 유지와 실제 OS 경계 추가 판단을 승인한다. 해당 raw 역사 report 위치를 task 입력/진행 기록에서 확인하지 못했다는 한계를 유지하며 부재의 원인이나 저장소 전체 부재를 단정하지 않는다. 다른 hunk와 PR02 전체는 미종결이다. 근거는 run:phases/013/tasks/scheduler-smoke/evidence/history-port.stdout·history-freeze.stdout·history-index.json·review.md와 manager 검수다.
+
 ## C10 문서 결속에서 남은 고정 범위
 
 document-closeout의 원목록은 실제24문서(계약11 포함), inline 필드189회·lexical owner79개·노출 owner84개와 당시 AST34지점이다. 이 수는 역사 목록의 크기이며 현 의미 검증 완료율이 아니다.008에서 P01의 운영/복구6 AST지점을 실제 _context/포장 객체와 저장·물질화 파일 검사로 교체했다. operational_evidence와 recovery_materials의 동명 source를 구별하고 정상·restoration_error·checkpoint_source=null·live 부재·activity_continuations와 반환 사본/제품 입력 반례를 확인했다. 일반 재개의 result_source와 B130~B134 기존 성질을 유지하며, 마지막 소비가 없어진 checkpoint_source/recovery_source/checkpoint_files/recovered_output_files 단독 입력은 제거했다. defer 두 입력의 실제 문서 검사 담당과 오기/누락 반례도 확인했다. 근거는 run:phases/008/tasks/document-recovery/evidence/binding-review.md 및 run:phases/008/manager-evidence/review.md다.
@@ -154,7 +158,7 @@ L01/13-C의 읽기 한도 절은010 조사 뒤에도 미인증이다. 실제 개
 
 설치 Claude2.1.289의 정적 Read는 기본25,000token, 전체 파일 입력262,144bytes와 세션 fileReadingLimits override를 구별한다. PARTIAL 접두/긴 행 일부·명시offset/limit 오류와 설명2,000행 대 실제limit 미지정을 확인했다. 이것은 실제 운전 세션의 효과값이나 Read 실행이 아니다. 최신allow_large 설명도 설치 판본에 소급하지 않는다. 입력 byte guard와 shell character 제한을 출력 byte 상한으로 바꾸지 않는다. 내부10역할의 문서·전체 prompt UTF-8/stdin 전달은 운전 도구 출력과 별개이며 기존 분석은 현재 코드/문서가 같은 성질만 재사용한다.
 
-010 reading F4/Q1~Q2의 외부 결정은 남는다. 공급자별 실제 운영 host/CLI판본·model·Read 또는 shell·개별/합산 호출 설정을 특정하고, 원문의 UTF-8 출력 byte 기준을 유지할지 실제token/character와 전 구간 수신 기준으로 개정할지 결정해야 한다. manager는 기준 변경을 자의 승인하지 않았고 사용자에게 단위 선택을 상신했다. 답변 전에는 기존byte 요구와 미충족 판정을 유지한다. 현재 개발 host를 제품operator로 자동 지정하지 않는다. 외부 결정과 독립적인011 문구 수리와012 Lean work는 완료했다.013 예약 work도 이 답변과 독립적으로 진행한다. Claude 실제 Read 후속 검증은 해당 운전 프로필과 권한을 확정한 뒤 수행한다. B-20의 AI준수 한계는 유지한다. 구체적 선택지/잃는 보증은 run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json·review.md, 검수는 run:phases/010/manager-evidence/verification.json·review.md다. 학술 외부 어휘는 별도 실제 응답 계약에서 확인한다. P02~P11/N01~N03의 다른 남김은 바꾸지 않았다.
+010 reading F4/Q1~Q2의 외부 결정은 남는다. 공급자별 실제 운영 host/CLI판본·model·Read 또는 shell·개별/합산 호출 설정을 특정하고, 원문의 UTF-8 출력 byte 기준을 유지할지 실제token/character와 전 구간 수신 기준으로 개정할지 결정해야 한다. manager는 기준 변경을 자의 승인하지 않았고 사용자에게 단위 선택을 상신했다. 답변 전에는 기존byte 요구와 미충족 판정을 유지한다. 현재 개발 host를 제품operator로 자동 지정하지 않는다. 외부 결정과 독립적인011 문구 수리와012 Lean work는 완료했다.013 예약 work도 완료했으며014 학술 최소 연결은 이 답변과 독립적으로 진행한다. Claude 실제 Read 후속 검증은 해당 운전 프로필과 권한을 확정한 뒤 수행한다. B-20의 AI준수 한계는 유지한다. 구체적 선택지/잃는 보증은 run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json·review.md, 검수는 run:phases/010/manager-evidence/verification.json·review.md다. 학술 외부 어휘는 별도 실제 응답 계약에서 확인한다. P02~P11/N01~N03의 다른 남김은 바꾸지 않았다.
 
 ## C11 최종 관문을 막는 도구·실경계 공백
 
@@ -174,7 +178,11 @@ phase 001 gate-readiness 당시 설치 Codex는 0.162.1, 녹화 manifest는 0.16
 
 012에서 기존 portable Lean4.32.0/Lake5.0.0/Mathlib v4.32.0의 실제 대표 컴파일과 verifier 정상·타입 오류를 T5로 연결했다. 각 설치의9의존 HEAD와 manifest revision, 실행 파일 SHA 및 입력/신뢰 기록 불변을 확인했다. 정상 선언2개의 정확 서명·빈 공리·full32의존 증거를 원출력에서 재생했고 오류는 exit1/failed/lean rejected와 타입 진단이다. 초기 도우미 오류2건을 성공으로 소급하지 않으며 live-final의79.4초/미러84.4초만 최종 완료 근거다. 대표 컴파일의308.3초/21.2초 차이는 캐시 조건이 다른 관찰이며 코드 최적화나 시간 제한 근거가 아니다. 설치 신뢰 채택·연구 저장/평가를 수행한 것으로 확대하지 않는다. 근거는 run:phases/012/manager-evidence/verification.json·review.md 및 task 원자료다.
 
-실제 OS 예약 등록·발화·해제는013 scheduler-smoke에 배정한다. 현재 PowerShellScheduler/operator_schedule.ps1·scheduled_operator.schedule·operator_bootstrap를 유지하고 시험 소유의 새 workspace/HOLD·충돌 없는 작업 이름으로 실제 pythonw 발화를 관찰한다. 설치 freeze의 JSON 수집과 OS 실행의 새 LastRunTime/LastTaskResult·정확 action을 구별하며 status 또는 start 요청 수락만으로 발화 성공을 세지 않는다. 학술 MCP·T4 별도 adapter 분기·13-C/L01 조건과 G4~G6/G8의 최종 관문은 남는다.012와 기존 성공을 합산해 전체 성공으로 만들지 않는다. 다음 책임은 run:phases/013/tasks/scheduler-smoke/objective.md다.
+013에서 시험 소유의 실제 OS 예약 등록·pythonw 동결/발화·one-shot wake·취소·해제 범위를 닫았다. real_ports/PowerShellScheduler/operator_schedule.ps1·scheduled_operator.schedule·operator_bootstrap는 불변이다. 새 workspace의 HOLD가 상태 읽기/모델 호출보다 먼저 반환하는 현재 경로, 실제 action/인자·Interactive/Limited·operator PT2H/PT1H35M·engine PT0S·snapshot291파일을 대조했다. 최종 정본/미러 각33건은 새 설치/OS 실실행을 포함한다. 별도 직접 pythonw freeze/held stdout과 OS task의 실행 관측은 서로 다른 증거다.
+
+세 성공 표본의 operator/engine/wake는 미실행267011/1999시각에서 새 LastRunTime ticks·Ready·LastTaskResult0으로 바뀌었다. wake에는 start 요청이 없고 XML의 시각 트리거와 WakeKey를 대조했다. 마지막 실제 status는 세null이고 자기 프로세스 부재·HOLD 불변·빈 repository·engine/recovery 미생성을 확인했다. 초기3error는 수정 전 helper/관찰 실패로 유지한다. live03은 확인된 소유 작업만 명시 해제했다. 서비스시각과 관찰 벽시계의 차이는 원인 미확인이며 정확 시간 지연 측정으로 사용하지 않는다. Operational 로그는 disabled이고 OS stdout은 미관측이다. task F2의 PID 미관측 표현은 정정한다. live-final await-wake 원출력에는 정확 live bootstrap/workspace의 pythonw PID9492가 있고, 최종 canonical-related/mirror-related에는 PID 관측이 없다. 이 정정은 원report 수정이나 새 OS 실행을 뜻하지 않는다. 근거는 run:phases/013/manager-evidence/verification.json·review.md와 원smoke/명령 자료다.
+
+다음014는 실제 Codex worker가 격리된 scholarly 서버에 list_sources를 호출하고 성공 완료 응답을 받는 경계다. 기존 probe_cli의 scholarly_actual_tool은 시작 사건의 도구명만 확인하므로 단독으로 응답 성공을 입증하지 않는다. 새 smoke는 현재 native 완료 결과·실제 source 목록/상태·파일/checkpoint·로컬 종료를 확인한다. 이는 제품 코드 변경 없이 새 시험에서 보완할 검증 공백이며 학술 search/fetch 성공을 요구하지 않는다. 학술 MCP·T4 별도 adapter 분기·13-C/L01 조건과 G4~G6/G8 최종 관문은 여전히 남는다. 책임은 run:phases/014/tasks/scholarly-smoke/objective.md다.
 
 ## C12 공급자 부분 성공과 원바이트 인도
 
@@ -209,3 +217,5 @@ phase 006은 provider_final.output_contract/semantic_output에 Codex 문자열 �
 011 F3의 불변 근거를 검수해010 host의 정본3·미러3 성질과 기존 공급자 실호출을 한정 재사용한다. host8원자료의 SHA/판정, Python/pythonw SHA·판본과 PowerShell 당시 경로/판본의 한계를 유지하며 새 OS T5/유료호출은 없다. 현재 corpus102경로의 Git raw/clean을 재확인했고 manifest/녹화·속성·생성규칙은 불변이다.010~011의 검수된 제품·시험·문서·미러20경로를 같은 관리 커밋으로 마감하고 비용캐시2개는 제외한다. 원task report/evidence는 수정하지 않는다.011 원자료 전부와 현재 제품 원바이트는 raw-evidence.zip으로도 보존한다. 추적하는 선별 원경로와 압축 항목·SHA는 run:phases/011/manager-evidence/preservation.json에, 커밋 행정 수신은 로컬 commit.json에 둔다. 원경로 중 압축으로만 추적되는 scratch/중복 snapshot 및 행정 수신은 로컬 정리로 사라질 수 있다.012의 새 Lean 자료는 기존 공급자/host 성과를 재인증하는 작업이 아니며 G4~G6/G8과 나머지G7 책임을 유지한다.
 
 012 F3의 불변 근거를 검수했다. runtime124·공급자 입력3·host 입력과8원자료의 바이트는 같고 기존 corpus18항목/verdict·100비manifest 경로도 유지됐다. 새 full Lean 녹화와 재생만 추가해 현재 corpus는 각19항목·56파일·320687바이트다. 총112경로의 명시 SHA·Git raw/clean·양쪽 바이트와 공식 --check1314파일을 확인했다. 이전 실호출은 기존 승인 성질과 도구 조건 안에서만 재사용하며 이번에 새 host/공급자 호출은 없다.012의 검수된 제품·시험·지침·미러20경로를 이번 관리 커밋으로 마감하고 비용 캐시2개는 제외한다. 원 task report/evidence와 제품 원바이트는 raw-evidence.zip에 보존하며 선별 원경로와 압축 항목·SHA는 run:phases/012/manager-evidence/preservation.json에 둔다. 압축으로만 추적되는 scratch/중복 snapshot의 원경로와 stage/commit 수신은 로컬 보관으로 정리 시 사라질 수 있다. 압축은 자동 복원 지시가 아니다.013 배정과 공용 문서·기억의 행정 추가는 제품 검증 판본을 바꾸지 않는다.
+
+013 F4의 불변 근거를 검수했다. runtime124·공급자3·host4·Lean4 입력과 host8원자료, 도구 조건은 유지됐고 기존19corpus 항목/verdict·110비manifest경로도 보존됐다. 새 scheduler 원녹화 두 항목과 현 parser 재생을 확인해 현재 각21항목·62파일·344100바이트, 총124경로의 명시 SHA·Git raw/clean·양쪽 바이트가 일치한다. --check1322와 skill-only를 확인했다. 새 정본/미러 관련33건을 과거 성공과 합산해 전체 관문으로 읽지 않는다. 검수된 제품·시험·지침·미러20경로를 이번 관리 커밋으로 마감하고 비용 캐시2개는 제외한다. 원 task 자료와 제품 원바이트는 raw-evidence.zip에 보존한다. 선별 원경로·압축 항목·SHA와 로컬 보관 범위는 run:phases/013/manager-evidence/preservation.json, 행정 수신은 로컬 commit.json에 둔다. 압축으로만 추적되는 scratch/중복 snapshot의 원경로는 정리 시 사라질 수 있으며 자동 복원 지시가 아니다.014 배정과 공용 문서·기억의 행정 추가는 제품 판본을 바꾸지 않는다.

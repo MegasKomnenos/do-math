@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--tier",
+    "T5",
+    "smoke.test_scheduler_live",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-03"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T20:08:01.032912+00:00",
+  "pid": 34256,
+  "exit_code": 1,
+  "finished_at": "2026-10-13T20:09:49.373612+00:00"
+}

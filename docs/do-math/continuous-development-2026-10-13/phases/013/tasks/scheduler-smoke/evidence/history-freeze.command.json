@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "a0e6c2f4",
+    "--",
+    ".claude/skills/do-math/scripts/operator_schedule.ps1",
+    ".claude/skills/do-math/scripts/tests/test_schedule_pythonw.py"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T20:08:21.235012+00:00",
+  "pid": 16024,
+  "exit_code": 0,
+  "finished_at": "2026-10-13T20:08:21.350927+00:00"
+}

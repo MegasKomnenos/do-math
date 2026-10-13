@@ -1172,6 +1172,154 @@
           "sha256": "de30d90c93c89df1508e6a3e4f66c154b2f3d4aa5a26e5a545767640958f92d7"
         }
       ]
+    },
+    {
+      "id": "scheduler-live-20261014-registered",
+      "kind": "scheduler_json",
+      "path": "scheduler/live-20261014-registered.stdout.json",
+      "source_sha256": "258dc752980fa680cedb8f49ab04d4ae81706e7e87ae1904bc32c56cdc173b40",
+      "tool_version": "PowerShell 5.1.22621.6133 / Microsoft Windows NT 10.0.22631.0",
+      "recorded_at": "2026-10-13T20:10:38.832521+00:00",
+      "command": [
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\math\\.claude\\skills\\do-math\\scripts\\operator_schedule.ps1",
+        "-Action",
+        "status",
+        "-Repository",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository",
+        "-Instance",
+        "RI-01M4VE6B29183A0GDEDR2B70VF",
+        "-Workspace",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace",
+        "-Python",
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "-OperatorTask",
+        "DoMath-Operator-9cb6c1aea55f",
+        "-EngineTask",
+        "DoMath-Engine-9cb6c1aea55f",
+        "-WakeTask",
+        "DoMath-Wake-9cb6c1aea55f"
+      ],
+      "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0",
+      "role": "scheduled_operator_status",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-final/smoke-isolated-000/scratch/scheduler-smoke-yoq34av0/smoke.json",
+      "arguments": {
+        "Repository": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository",
+        "Instance": "RI-01M4VE6B29183A0GDEDR2B70VF",
+        "Workspace": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace",
+        "Python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "OperatorTask": "DoMath-Operator-9cb6c1aea55f",
+        "EngineTask": "DoMath-Engine-9cb6c1aea55f",
+        "WakeTask": "DoMath-Wake-9cb6c1aea55f"
+      },
+      "returncode": 0,
+      "verdict": {
+        "operator": {
+          "name": "DoMath-Operator-9cb6c1aea55f",
+          "state": "Ready",
+          "action": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" check --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository\" --instance \"RI-01M4VE6B29183A0GDEDR2B70VF\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace\"",
+          "interval": "PT2H",
+          "multiple_instances": "IgnoreNew",
+          "execution_limit": "PT1H35M",
+          "next_run": "2026-10-13T22:10:10.0000000Z",
+          "last_result": 267011,
+          "description": "Model-free do-math supervisor with failure-only recovery."
+        },
+        "engine": {
+          "name": "DoMath-Engine-9cb6c1aea55f",
+          "state": "Ready",
+          "action": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" run-engine --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository\" --instance \"RI-01M4VE6B29183A0GDEDR2B70VF\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace\"",
+          "interval": null,
+          "multiple_instances": "IgnoreNew",
+          "execution_limit": "PT0S",
+          "next_run": null,
+          "last_result": 267011,
+          "description": "Independent do-math engine started by its operator."
+        },
+        "wake": null
+      },
+      "recordings": [
+        {
+          "path": "scheduler/live-20261014-registered.stdout.json",
+          "sha256": "258dc752980fa680cedb8f49ab04d4ae81706e7e87ae1904bc32c56cdc173b40"
+        },
+        {
+          "path": "scheduler/live-20261014-registered.stderr.bin",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "scheduler/live-20261014-registered.recording.json",
+          "sha256": "dfc5293c00519035d9a0a5f1b92bdd0b1aaf1ec273025945971933d34edd7bd4"
+        }
+      ]
+    },
+    {
+      "id": "scheduler-live-20261014-absent",
+      "kind": "scheduler_json",
+      "path": "scheduler/live-20261014-absent.stdout.json",
+      "source_sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+      "tool_version": "PowerShell 5.1.22621.6133 / Microsoft Windows NT 10.0.22631.0",
+      "recorded_at": "2026-10-13T20:11:41.706875+00:00",
+      "command": [
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\math\\.claude\\skills\\do-math\\scripts\\operator_schedule.ps1",
+        "-Action",
+        "status",
+        "-Repository",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository",
+        "-Instance",
+        "RI-01M4VE6B29183A0GDEDR2B70VF",
+        "-Workspace",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace",
+        "-Python",
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "-OperatorTask",
+        "DoMath-Operator-9cb6c1aea55f",
+        "-EngineTask",
+        "DoMath-Engine-9cb6c1aea55f",
+        "-WakeTask",
+        "DoMath-Wake-9cb6c1aea55f"
+      ],
+      "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0",
+      "role": "scheduled_operator_status",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-final/smoke-isolated-000/scratch/scheduler-smoke-yoq34av0/smoke.json",
+      "arguments": {
+        "Repository": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\repository",
+        "Instance": "RI-01M4VE6B29183A0GDEDR2B70VF",
+        "Workspace": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scheduler-smoke-yoq34av0\\workspace",
+        "Python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "OperatorTask": "DoMath-Operator-9cb6c1aea55f",
+        "EngineTask": "DoMath-Engine-9cb6c1aea55f",
+        "WakeTask": "DoMath-Wake-9cb6c1aea55f"
+      },
+      "returncode": 0,
+      "verdict": {
+        "operator": null,
+        "engine": null,
+        "wake": null
+      },
+      "recordings": [
+        {
+          "path": "scheduler/live-20261014-absent.stdout.json",
+          "sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5"
+        },
+        {
+          "path": "scheduler/live-20261014-absent.stderr.bin",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "scheduler/live-20261014-absent.recording.json",
+          "sha256": "5054791e858d6038870a18123f5a60d4440373740aa7fde20e52a9e6ed981226"
+        }
+      ]
     }
   ],
   "supported_stream_versions": {

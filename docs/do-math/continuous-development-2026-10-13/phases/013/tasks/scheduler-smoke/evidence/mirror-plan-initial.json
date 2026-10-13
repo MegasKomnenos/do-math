@@ -1,0 +1,18 @@
+{
+  "changed": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.recording.json",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stderr.bin",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stdout.json",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.recording.json",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stderr.bin",
+    ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stdout.json",
+    ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "removed": [],
+  "outside_writes": [],
+  "output_count": 1322
+}

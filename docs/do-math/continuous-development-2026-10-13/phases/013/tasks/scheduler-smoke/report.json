@@ -1,0 +1,424 @@
+{
+  "status": "complete",
+  "narrative": "phase013 scheduler-smoke의 A1~A4를 완료했다. 시작2658파일은012 manager 검수 판본과 전건 같았다. 제품 runtime을 바꾸지 않고 새T5 resource 시험/helper, 실제 예약 녹화2항목, 지침과 공식 미러를 추가했다. 새 좌표의 세 이름 부재와 공개 HOLD를 먼저 기록한 뒤 실제 real_ports/PowerShellScheduler/adapter/pythonw/bootstrap으로 등록·동결과 operator/engine 시작·one-shot 시각 wake·취소·해제를 확인했다. 현재 사용자 Interactive/Limited·action/workspace·operator interval/limit 및engine무제한·snapshot전체SHA와19판정을 검증했다. 마지막 세null·자기pythonw부재·HOLD불변·빈repository·연구/복구미생성을 확인했고 유료/기존연구 호출은 없다.\n\n초기3실행은 helper의 Windows 감사 문자열, XML 기본RunLevel 표현, 서비스/관찰자 시계 비교 문제로 각error1이었다. 원보고를 보존했고live03은 소유 증거 확인 후 자기 작업만 명시 해제해 대기를 끝냈다. 수리 후live-final1passed와 최종정본/미러각33passed·exit0을 구별한다. 요청 수락이나 이전result0만으로 발화를 주장하지 않고 미실행267011/1999년시각에서 새LastRunTimeticks/Ready/0 전이를 확인했다. 서비스시각과벽시계 차이는 원값으로 남겼으며 원인은 미확인이다. Operational로그는 꺼져 있고 빠른pythonwPID는 관측하지 못했다. OS stdout/내부 결과를 만들지 않았고 별도 실제freeze/heldstdout을OS발화와 구별한다. 모델-freeheld성공은 연구엔진운전성공이 아니다.\n\n등록/부재status원바이트의 argv/cwd·판본·시각·exit·SHA·당시판정을 연결해 기존reader로 재생했다. 기존19항목/verdict와110비manifest경로는 불변이고 새corpus는 각21항목/62파일/344100바이트다. 총124경로raw/clean·양쪽바이트·각64명시SHA·5MiB/선언검사를 통과했다. 정본/미러같은33고유선택·현재각871PythonSHA·실행중변경없음,생성계획11경로와허용22변경·캐시만1개동기화·--check1322/skill-only를 대조했다.\n\na1484748예약포트분리와f172b0bapythonwfreeze의해당diff/현소비자를검토해유지했다. raw역사report위치를확인하지못해진행기록counts는새성공에합산하지않고다른hunk도검토완료로올리지않는다. runtime124/공급자3/host4/Lean4입력·host8원자료와도구조건의승인된한정성질을재사용한다. 전체일반/freshT3/대상함수변이·학술/T4별도분기·읽기조건·전체G7/G8최종review와Git마감은후속manager책임이다. Gitstage/commit/reset/checkout/push·graphify갱신·권한/계정/서비스설정변경은없다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "시작 2658파일은 012 manager source-inspected와 전건 같다. Windows 10.0.22631, PowerShell 5.1.22621.6133, Python 3.12.10과 pythonw의 경로/SHA, Running Schedule 서비스와 현재 Interactive 세션을 기록했다. 새 좌표의 정확 세 이름 부재 확인 후 HOLD·생성 예정/cleanup 이름을 먼저 저장하고 실제 real_ports/schedule/PowerShellScheduler/adapter install을 실행했다. 현재 frozen manifest의 전체 파일/소스 SHA, 실제 action/인자/WorkingDirectory·Interactive/Limited principal·operator PT2H/PT1H35M·engine PT0S를 확인했다. 설치 내부 파이프 stdout을 관측한 것으로 쓰지 않고 같은 설치 snapshot의 별도 실제 pythonw freeze JSON/exit0와 세 held bootstrap JSON/exit0를 원바이트로 보존했다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/start-comparison.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/review.md"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "공식 T5 discovery 7건 중 새 resource 스모크 1건을 연결했다. 정본/미러에서 실제 operator/engine start와 one-shot WakeAt/WakeKey 시각 발화를 관찰했다. wake에 start 요청은 없다. 각 미실행(267011/1999 시각)에서 새 ticks·Ready·LastTaskResult0으로 전이했고 정확 live/frozen bootstrap action과 시각 트리거를 결속했다. 실제 cancel_wake와 finally의 소유 재확인/uninstall 뒤 세 null·자기 pythonw 부재·HOLD 불변·빈 repository·engine/recovery 미생성을 확인했다. OS stdout/내부 결과나 빠른 PID는 주장하지 않는다. 서비스 시각과 관찰 벽시계의 차이 및 disabled Operational 로그를 원자료로 보존한다. 연구 운전/모델 호출 성공으로 확대하지 않는다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/t5-list.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification-final.json"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "실제 추가 status 호출의 등록 상태/해제 후 부재 원 stdout/stderr를 재직렬화 없이 새 2항목에 복사했다. argv/cwd·판본·시각·exit·이름·원 SHA·당시 파싱값을 provenance/manifest와 결속했다. 기존 scheduler_json reader와 현재 PowerShellScheduler 수신 경계를 그대로 사용한다. 기존 19항목/verdict 및 양쪽 비manifest 110경로를 보존했다. 현재 각 21항목/62파일/344100바이트, 총124경로의 Git raw/clean·양쪽 바이트·각64개 명시 SHA가 모두 같다. corpus 3모듈의 전건 검사·파일 선언/5MiB 상한을 양쪽 관련33건에서 통과했다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-promotion.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-start.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification-final.json"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "설계 3.3/4.5/5.1/8·9-C·현재 지침 및 0dd16a5e 예약 포트 분리/a0e6c2f4 pythonw freeze 실제 diff와 현재 소비자를 검토했다. 포트 경계와 Out-String/exit/빈 JSON 반려를 유지하며 다른 hunk는 범위 밖이다. 해당 raw 역사 report 위치를 확인하지 못해 진행 기록의 counts를 합산하지 않는다. 현재 boundary 단언과 기존 host 성질은 보존했다. 새 smoke와 지정9모듈의 정본/미러 각33선택/고유row 전부passed/exit0·각871 Python 현재 SHA와 실행 중 변경 없음이 대조됐다. 생성 계획11개·실제8생성/3갱신 모두 writes 안이며 캐시1개만 최종 재생성했다. --check1322파일·skill-only와 runtime124/공급자3/host4/Lean4 입력·host8원자료 및 도구 조건이 검증됐다. 최종 전체 관문과 나머지G는 후속 책임이다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/review.md",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-port.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-freeze.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-index.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-plan-initial.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-plan-cache.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-check.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/skill-only.stdout"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 공식 runner 실행 비용 기록; 미러 캐시는 공식 생성기로 마지막 동기화했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 기존19항목을 보존하고 실제 scheduler 등록/부재 녹화2항목과 원 SHA/명령/당시 판정을 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.recording.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stderr.bin",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stdout.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.recording.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stderr.bin",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stdout.json",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+      "detail": "공식 생성기로 생성한 대응 미러. 공식 T5 resource 격리에서 실제 held 예약 등록·시작·시각 wake·해제 스모크를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/scheduler_live.py",
+      "detail": "공식 생성기로 생성한 대응 미러. 실제 포트/runner/cmdlet/bootstrap을 유지하는 시험 소유 좌표/HOLD·OS 관측·원바이트·소유 확인/정리 helper를 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "공식 생성기로 생성한 대응 미러. 예약 스모크의 OS 권한/로그온·시험 소유·HOLD·실행 원자료·시각/PID 한계·실패 정리와 재생 범위를 설명했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 runner 실행 비용 기록; 미러 캐시는 공식 생성기로 마지막 동기화했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "detail": "기존19항목을 보존하고 실제 scheduler 등록/부재 녹화2항목과 원 SHA/명령/당시 판정을 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.recording.json",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stderr.bin",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-absent.stdout.json",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.recording.json",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stderr.bin",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/live-20261014-registered.stdout.json",
+      "detail": "실제 status 호출의 원 stdout/빈 stderr 또는 argv/cwd·판본·시각·exit·SHA·당시 파싱값 provenance를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+      "detail": "공식 T5 resource 격리에서 실제 held 예약 등록·시작·시각 wake·해제 스모크를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+      "detail": "실제 포트/runner/cmdlet/bootstrap을 유지하는 시험 소유 좌표/HOLD·OS 관측·원바이트·소유 확인/정리 helper를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "예약 스모크의 OS 권한/로그온·시험 소유·HOLD·실행 원자료·시각/PID 한계·실패 정리와 재생 범위를 설명했다."
+    }
+  ],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "fact",
+      "detail": "G7의 시험 전용 실제 예약 등록·pythonw 동결/발화·one-shot 시각 wake·취소·해제 경계를 정본/미러에서 확인했다. 각19판정과 미실행→새실행/종료0, 소유/최종세null·프로세스부재·HOLD/연구무부수효과를 보존했다. 이는 held 경로의 설치/OS 성질이며 연구 운전이나 다른 G7 연쇄의 성공은 아니다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#G7",
+        "run:plan.md"
+      ],
+      "next_action": "manager가 실제 원자료/시각/소유/정리와 최종회귀를 검수해 지정예약남김을 갱신하고 학술·T4보고·나머지G관문을 후속 배정한다."
+    },
+    {
+      "id": "F2",
+      "kind": "fact",
+      "detail": "Task Scheduler LastRunTime이 관찰자 벽시계보다 앞선 값으로 나왔다. live-final의 요청 대비 operator/engine/wake 차이는 -33/-40/-15초다. 원인을 확인하지 않았으며, 같은 새 작업의 미실행1999년/267011에서 새ticks/Ready/0 전이로 새발화를 판정했다. Operational로그 disabled·빠른pythonwPID미관측·OSstdout미관측의 한계를 유지한다. 첫 엄격시각비교의live03을 소유확인 후 명시정리했으며 시간만으로 성공/실패를 만들지 않는다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03-observer-stop.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-final-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related-observation.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#G7",
+        "repo:.claude/skills/do-math/scripts/tests/support/scheduler_live.py"
+      ],
+      "next_action": "manager는 실제OS종료성질과시각해석의한계를 함께 유지한다. 원인조사나이벤트로그정책변경을 이번성공의 숨은전제로 만들지 않는다."
+    },
+    {
+      "id": "F3",
+      "kind": "decision",
+      "detail": "0dd16a5e의 좁은 예약 포트/실배선과 a0e6c2f4의 Out-String·null/nonzero exit·빈freezeJSON반려를 현재계약대로 유지했다. 해당 raw역사report 위치를 입력/진행기록에서 확인하지 못했으므로 역사 counts를 새 성공에 합산하지 않는다. 다른 Lean/도메인/저장hunk 및 PR02전체는 미종결이다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-port.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-freeze.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-index.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/review.md",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related/report.json"
+      ],
+      "affects": [
+        "run:context.md#C9",
+        "run:context.md#G2",
+        "run:plan.md"
+      ],
+      "next_action": "manager가 해당 예약 slice의 유지/실경계추가 판단과 원보고미확인 한계를 검수해 반영한다. 다른 slice와 최종판본연결은 유지한다."
+    },
+    {
+      "id": "F4",
+      "kind": "fact",
+      "detail": "허용22변경/생성계획11경로 외 제품변경은 없다. runtime124·공급자3·host4·Lean4입력과host8원자료·도구조건, 기존19corpus/verdict/110비manifest경로는 보존됐다. 새2녹화는 기존reader로 재생되고 정본/미러각33관련시험이통과했다. 이전승인실호출은 한정된성질로 재사용하며 최종전체일반/T3/변이/review를 대신하지 않는다.",
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/source-start.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/source-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-start.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-final.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-plan-initial.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-plan-cache.json"
+      ],
+      "affects": [
+        "run:context.md#C12",
+        "run:context.md#G7",
+        "run:context.md#G8",
+        "run:plan.md"
+      ],
+      "next_action": "manager가 기존실호출/원바이트의한정재사용과새제품단위를 검수·마감하고 나머지G의후속책임을 보존한다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_scheduler_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-01",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-01.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-01.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-01.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-01/report.json"
+      ],
+      "detail": "Windows subprocess 감사 argv가 문자열인데 목록으로 읽은 helper 오류; 등록 이전이며 원 error1을 보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_scheduler_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-02",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-02.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-02.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-02.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-02/report.json"
+      ],
+      "detail": "XML의 생략 가능한 기본 RunLevel 요소 존재를 요구한 helper 오류; 실제 등록/동결 뒤 finally로 모든 자기 작업 정리. 원 error1을 보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_scheduler_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-03",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03/report.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-03-observer-stop.json"
+      ],
+      "detail": "서비스 LastRunTime과 Python 벽시계 비교로 관찰 대기; 소유 증거 대조 후 자기 작업을 명시 해제해 시험이 실패/정리됐다. 원 error1과 observer-stop 원자료를 보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_scheduler_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/live-final",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-final.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-final.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-final.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/live-final/report.json"
+      ],
+      "detail": "수리된 관측으로 실제 start/time wake·19판정·정리와 공식1passed/exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py smoke.test_scheduler_live boundary.test_port_scheduler boundary.test_operator_schedule_adapter contracts.test_port_scheduler structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus structure.test_test_smells structure.test_boundary_invariants structure.test_ports --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/canonical-related",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related/report.json"
+      ],
+      "detail": "corpus/지침 추가 후 현 판본의 실제 예약 스모크 포함33고유 선택 전부passed·exit0; skip/error/미실행0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py smoke.test_scheduler_live boundary.test_port_scheduler boundary.test_operator_schedule_adapter contracts.test_port_scheduler structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus structure.test_test_smells structure.test_boundary_invariants structure.test_ports --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/mirror-related",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related.stderr",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-related/report.json"
+      ],
+      "detail": "공식 생성 미러의 같은33고유 선택 전부passed·exit0; 실제 예약 실실행과 자기 자원 정리."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 --list",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/t5-list.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/t5-list.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/t5-list.stderr"
+      ],
+      "detail": "새 scheduler 포함T5 7개 discovery. 공급자/host/Lean 호출은 실행하지 않았다."
+    },
+    {
+      "command": "git show 0dd16a5e -- .claude/skills/do-math/scripts/do_math/powershell_scheduler.py .claude/skills/do-math/scripts/do_math/scheduled_operator.py .claude/skills/do-math/scripts/do_math/wiring.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-port.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-port.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-port.stderr"
+      ],
+      "detail": "0dd16a5e의 해당 포트/호출/wiring 실제 diff를 보존하고 현재 계약/소비자와 대조했다."
+    },
+    {
+      "command": "git show a0e6c2f4 -- .claude/skills/do-math/scripts/operator_schedule.ps1 .claude/skills/do-math/scripts/tests/test_schedule_pythonw.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-freeze.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-freeze.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/history-freeze.stderr"
+      ],
+      "detail": "a0e6c2f4의 adapter/GUI freeze/시험 실제 diff를 보존하고 현 pipeline 반려와 대조했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-build.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-build.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-build.stderr"
+      ],
+      "detail": "사전11경로 계획이 writes 안이며 공식8생성/3갱신/삭제0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-cache-build.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-cache-build.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-cache-build.stderr"
+      ],
+      "detail": "미러 시험 이후 비용 캐시 한 파일만 공식 생성기로 동기화."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-check.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-check.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/mirror-check.stderr"
+      ],
+      "detail": "공식1322파일 생성물 드리프트 없음."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/skill-only.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/skill-only.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/skill-only.stderr"
+      ],
+      "detail": "공식 skill-only verified/exit0; 실환경 관문과 구별한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/013/tasks/scheduler-smoke/evidence/verify_submission.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification.command.json",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification.stdout",
+        "run:phases/013/tasks/scheduler-smoke/evidence/verification.stderr"
+      ],
+      "detail": "소스 시작/종료·22변경/writes·선택/고유row/실제exit·현재871 Python SHA·19판정/정리·124 corpus 경로·재사용 조건을 원파일로 대조했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\task_tools.py corpus corpus-start",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-start.json"
+      ],
+      "detail": "각 Git argv/exit/raw/clean·명시 SHA·양쪽 바이트를 실제 읽기 전용 호출로 대조했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\task_tools.py corpus corpus-final",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/013/tasks/scheduler-smoke/evidence/corpus-final.json"
+      ],
+      "detail": "각 Git argv/exit/raw/clean·명시 SHA·양쪽 바이트를 실제 읽기 전용 호출로 대조했다."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+Open known defects: 0
+[structure] 13 tests
+[unit] 2 tests
+[contracts] 13 tests
+[boundary] 4 tests
+  isolated: boundary.test_operator_schedule_adapter.ScheduleLifetimeTests
+  {'passed': 1}
+  isolated: boundary.test_operator_schedule_adapter.SchedulePythonwTests
+  {'passed': 2}
+  isolated: boundary.test_port_scheduler.PowerShellSchedulerContract
+  {'passed': 1}
+[smoke] 1 tests
+  isolated: smoke.test_scheduler_live.SchedulerLiveTests
+  {'passed': 1}
+Over budget: 1 tests
+      7.625s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+{"complete": true, "successful": true, "counts": {"passed": 33}, "group_seconds": {"structure": 15.4, "unit": 0.0, "contracts": 0.1, "boundary": 7.6, "smoke": 85.8}, "total_seconds": 108.9}
+   85.313s passed             smoke.test_scheduler_live.SchedulerLiveTests.test_held_pythonw_tasks_start_wake_and_uninstall
+    7.625s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    3.015s passed             boundary.test_operator_schedule_adapter.SchedulePythonwTests.test_real_freeze_json_is_collected_before_registration
+    2.344s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window
+    2.328s passed             boundary.test_port_scheduler.PowerShellSchedulerContract.test_status_of_tasks_that_do_not_exist_reports_all_three_absent
+    1.266s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files
+    1.141s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared
+    1.093s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization
+    1.047s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits
+    0.781s passed             boundary.test_operator_schedule_adapter.ScheduleLifetimeTests.test_exported_engine_is_unlimited_and_operator_remains_bounded
+    0.547s passed             structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name
+    0.516s passed             boundary.test_operator_schedule_adapter.SchedulePythonwTests.test_failed_freeze_cannot_register_tasks_even_with_json_stdout
+    0.235s passed             structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization
+    0.031s passed             structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason
+    0.031s passed             structure.test_corpus.CorpusCompletenessTests.test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared
+    0.031s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success
+    0.016s passed             unit.test_corpus_replay.CorpusReplayTests.test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final
+    0.016s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_declaration_the_source_does_not_define_fails_like_lean
+    0.016s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks
+    0.016s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_missing_or_conflicting_facts_are_not_silently_filled
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\013\tasks\scheduler-smoke\evidence\canonical-related\report.json

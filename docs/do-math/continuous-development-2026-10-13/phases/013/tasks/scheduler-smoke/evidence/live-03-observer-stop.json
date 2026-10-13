@@ -1,0 +1,66 @@
+{
+  "reason": "OS LastRunTime advanced from never-run and result=0, but timestamp predates Python request; stop observation to correct comparison without modifying running source",
+  "ownership": {
+    "names": {
+      "operator": "DoMath-Operator-4b1a734f2589",
+      "engine": "DoMath-Engine-4b1a734f2589",
+      "wake": "DoMath-Wake-4b1a734f2589"
+    },
+    "repository": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\repository",
+    "workspace": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace",
+    "instance": "RI-01M4VE25KGRGSXV4VNP5JXM8RZ",
+    "initial_status": {
+      "operator": null,
+      "engine": null,
+      "wake": null
+    },
+    "pythonw": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+    "hold_sha256": "c1fd52867ab2da822ecd7a32b9b76425c973ceaae186e4a6a5866ad84b1f5a47",
+    "planned_actions": [
+      "install",
+      "start-operator",
+      "start-engine",
+      "schedule-wake",
+      "cancel-wake",
+      "uninstall"
+    ]
+  },
+  "last_observation": {
+    "tasks": {
+      "operator": {
+        "name": "DoMath-Operator-4b1a734f2589",
+        "state": "Ready",
+        "execute": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "arguments": "\"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" check --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\repository\" --instance \"RI-01M4VE25KGRGSXV4VNP5JXM8RZ\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\"",
+        "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace",
+        "principal_run_level": "Limited",
+        "principal_logon_type": "Interactive",
+        "last_run_utc": "2026-10-13T20:08:08.0000000Z",
+        "last_run_ticks": "639275188880000000",
+        "last_result": 0,
+        "xml": "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\r\n<Task version=\"1.3\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\r\n  <RegistrationInfo>\r\n    <Description>Model-free do-math supervisor with failure-only recovery.</Description>\r\n    <URI>\\DoMath-Operator-4b1a734f2589</URI>\r\n  </RegistrationInfo>\r\n  <Principals>\r\n    <Principal id=\"Author\">\r\n      <UserId>S-1-5-21-1341389526-383855744-2931878407-1001</UserId>\r\n      <LogonType>InteractiveToken</LogonType>\r\n    </Principal>\r\n  </Principals>\r\n  <Settings>\r\n    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>\r\n    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>\r\n    <ExecutionTimeLimit>PT1H35M</ExecutionTimeLimit>\r\n    <Hidden>true</Hidden>\r\n    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>\r\n    <StartWhenAvailable>true</StartWhenAvailable>\r\n    <IdleSettings>\r\n      <Duration>PT10M</Duration>\r\n      <WaitTimeout>PT1H</WaitTimeout>\r\n      <StopOnIdleEnd>true</StopOnIdleEnd>\r\n      <RestartOnIdle>false</RestartOnIdle>\r\n    </IdleSettings>\r\n    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>\r\n  </Settings>\r\n  <Triggers>\r\n    <TimeTrigger>\r\n      <StartBoundary>2026-10-14T07:08:12+09:00</StartBoundary>\r\n      <Repetition>\r\n        <Interval>PT2H</Interval>\r\n        <StopAtDurationEnd>true</StopAtDurationEnd>\r\n      </Repetition>\r\n    </TimeTrigger>\r\n  </Triggers>\r\n  <Actions Context=\"Author\">\r\n    <Exec>\r\n      <Command>C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe</Command>\r\n      <Arguments>\"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" check --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\repository\" --instance \"RI-01M4VE25KGRGSXV4VNP5JXM8RZ\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\"</Arguments>\r\n      <WorkingDirectory>C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace</WorkingDirectory>\r\n    </Exec>\r\n  </Actions>\r\n</Task>\r\n"
+      },
+      "engine": {
+        "name": "DoMath-Engine-4b1a734f2589",
+        "state": "Ready",
+        "execute": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+        "arguments": "\"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" run-engine --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\repository\" --instance \"RI-01M4VE25KGRGSXV4VNP5JXM8RZ\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\"",
+        "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace",
+        "principal_run_level": "Limited",
+        "principal_logon_type": "Interactive",
+        "last_run_utc": "1999-11-29T15:00:00.0000000Z",
+        "last_run_ticks": "630794844000000000",
+        "last_result": 267011,
+        "xml": "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\r\n<Task version=\"1.3\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\r\n  <RegistrationInfo>\r\n    <Description>Independent do-math engine started by its operator.</Description>\r\n    <URI>\\DoMath-Engine-4b1a734f2589</URI>\r\n  </RegistrationInfo>\r\n  <Principals>\r\n    <Principal id=\"Author\">\r\n      <UserId>S-1-5-21-1341389526-383855744-2931878407-1001</UserId>\r\n      <LogonType>InteractiveToken</LogonType>\r\n    </Principal>\r\n  </Principals>\r\n  <Settings>\r\n    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>\r\n    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>\r\n    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>\r\n    <Hidden>true</Hidden>\r\n    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>\r\n    <StartWhenAvailable>true</StartWhenAvailable>\r\n    <IdleSettings>\r\n      <Duration>PT10M</Duration>\r\n      <WaitTimeout>PT1H</WaitTimeout>\r\n      <StopOnIdleEnd>true</StopOnIdleEnd>\r\n      <RestartOnIdle>false</RestartOnIdle>\r\n    </IdleSettings>\r\n    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>\r\n  </Settings>\r\n  <Triggers />\r\n  <Actions Context=\"Author\">\r\n    <Exec>\r\n      <Command>C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe</Command>\r\n      <Arguments>\"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\\operator\\bootstrap\\e37fddcab1bf07ecddba19f7dae5ba7b3e7ffb7a5d317b44d8ca1a011dcb5afd\\scripts\\operator_bootstrap.py\" run-engine --repository \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\repository\" --instance \"RI-01M4VE25KGRGSXV4VNP5JXM8RZ\" --workspace \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace\"</Arguments>\r\n      <WorkingDirectory>C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\013\\tasks\\scheduler-smoke\\evidence\\live-03\\smoke-isolated-000\\scratch\\scheduler-smoke-63z0g1co\\workspace</WorkingDirectory>\r\n    </Exec>\r\n  </Actions>\r\n</Task>\r\n"
+      },
+      "wake": null
+    },
+    "processes": [],
+    "observed_at": "2026-10-13T20:09:31.7581832Z"
+  },
+  "uninstall_result": {
+    "operator": null,
+    "engine": null,
+    "wake": null
+  }
+}
