@@ -1,0 +1,114 @@
+{
+  "head": "f0764fb192a405e6cf95fd9500f103ac11180cf3",
+  "report_sha256": "8aa52b67b828fa533171297eb7b04a635437ad70234901d414fa6ab95e81cfe8",
+  "source_count": 2624,
+  "source_mismatches": [],
+  "task_changes": [
+    ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+    ".claude/skills/do-math/scripts/tests/corpus/.gitattributes"
+  ],
+  "preexisting_changes": [
+    {
+      "path": "services/continuous-development/protocol.md",
+      "before": "cd47a1cff33fccc82f5a3cf284831fece663e805d0a30569c62d097c1d91f3b4",
+      "after": "07d63532457b3b5b8732bad449c779fa45c11e9be51fcec69cd35ca4a6cf002f"
+    }
+  ],
+  "corpus": {
+    ".claude": {
+      "entries": 17,
+      "files": 44,
+      "bytes": 200866,
+      "sha_bindings": 41,
+      "changes": [
+        ".gitattributes"
+      ]
+    },
+    ".agents": {
+      "entries": 17,
+      "files": 44,
+      "bytes": 200866,
+      "sha_bindings": 41,
+      "changes": [
+        ".gitattributes"
+      ]
+    }
+  },
+  "git_paths": 88,
+  "git_differences": [],
+  "commands": {
+    "start-command": {
+      "exit_code": 1,
+      "changes": [],
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "895eab342d1ab4ba44d57458bfffdf01e976b2b857c4658a53fdf3404044789b"
+    },
+    "complete-start-command": {
+      "exit_code": 0,
+      "changes": [],
+      "stdout_sha256": "26cef195427ceed5e0e7af81b84623c2a9af897c1d72715114a1acb41f8c25e0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "mirror-build": {
+      "exit_code": 0,
+      "changes": [
+        ".agents/skills/do-math/scripts/tests/corpus/.gitattributes"
+      ],
+      "stdout_sha256": "5f66908eb014359a69d2a3a037389c2b242355db4733502b3ccdc0ce8e8ee10b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "mirror-check": {
+      "exit_code": 0,
+      "changes": [],
+      "stdout_sha256": "cf90b99ce63f4610a017870b87e5c499b957894c8630b780dd652a5e4d7822ba",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "skill-check": {
+      "exit_code": 0,
+      "changes": [],
+      "stdout_sha256": "c2130d519be5ad2cfba0dae1f66922445e34648e3bbf766724d4172a511e4446",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "final-command": {
+      "exit_code": 0,
+      "changes": [],
+      "stdout_sha256": "4fa1eef4e8ce93ccbc086aa40762418c51c6706d87c6670f93c0093e89f29e52",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attribute-diff": {
+      "exit_code": 0,
+      "changes": [],
+      "stdout_sha256": "8e7d372fba691bf6d4e26c8d3433b1f112a32c920eb964f83eba54fc713744e0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "reuse": {
+    "canonical-replay": {
+      "python_files": 864,
+      "selected": 14,
+      "passed": 14,
+      "exit_code": 0,
+      "report_sha256": "41d605ba1690429e9ce65e7d652df21710f66047e2ed263ed58c2ed25129218f",
+      "rerun": false
+    },
+    "mirror-replay": {
+      "python_files": 864,
+      "selected": 14,
+      "passed": 14,
+      "exit_code": 0,
+      "report_sha256": "89addc3b00f0efb2f99e9020125afdaab3c1ede3d64d7665753704a07a2a501c",
+      "rerun": false
+    },
+    "generator-tests": {
+      "exit_code": 0,
+      "tests": 22,
+      "rerun": false,
+      "input_sha256": {
+        ".agents/diff/_rules.json": "fe39cb22de93b82e120b0d0ee14e151db5d875a94188365ef4214c204f9a7656",
+        ".claude/skills/writing-skills/scripts/build_skill_mirrors.py": "1a48fd287c174d93f1405575ae63efdbbecfa03becb01b1ef9abc8771994c09c",
+        ".claude/skills/writing-skills/scripts/test_build_skill_mirrors.py": "3a8e57326acf97fe3ddf599aed63d7271d54c896c88c086fda53211072d8b7af"
+      },
+      "stderr_sha256": "96bcd5bcd0f8f3882a6146c10772317339ec49aff7c66f140969dafca931c601"
+    }
+  }
+}

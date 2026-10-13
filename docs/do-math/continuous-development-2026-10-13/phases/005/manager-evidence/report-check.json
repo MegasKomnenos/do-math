@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "C:\\math\\services\\continuous-development\\check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "005",
+    "corpus-git-bytes"
+  ],
+  "cwd": "C:\\math",
+  "pid": 21148,
+  "started_at": "2026-10-13T14:49:56.287051+00:00",
+  "ended_at": "2026-10-13T14:49:56.663671+00:00",
+  "exit_code": 0,
+  "stdout": "PASS report 005\r\n",
+  "stderr": ""
+}

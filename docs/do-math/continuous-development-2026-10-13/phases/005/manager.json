@@ -1,0 +1,139 @@
+{
+  "next": "006",
+  "decision": "phase 005 corpus-git-bytes의 complete를 승인한다. report 형식 검사 후 현재 2624개 소스와 허용된 두 속성 변경, 실제 원파일·전88 Git 경로·각41개 SHA 참조를 대조했다. 두 manifest의 raw/clean 불일치는 해소됐고 녹화·manifest 내용은 불변이다. 기존 양쪽 Python 864개/재생 각14개와 생성기22개 성공의 입력이 같아 재실행 없이 해당 근거를 재사용한다. 004의 partial과 처음 보조 검산 실패는 역사 결과 그대로 둔다.\n\nF1은 새 해소 근거로 resolve하고 F2의 기존 protocol 문서 차이는 제품 변화와 구별해 resolve한다. 현재 protocol을 적용했으며 변경 원인을 추정하거나 engine을 수정하지 않았다. 공용 문서의 실제 차이를 보존했고 C1의 G1~G8 및 다른 미해결 의무는 유지한다. 작업트리/clean 성공을 staged blob이나 최종 인도 성공으로 확대하지 않는다.\n\nCodex 역할 schema HTTP 400은 아직 미해결이므로 review/종료 대신 006 work를 배정한다. 현재 비결박 ModelRunner가 CLI schema를 보내고 classify_run이 원 schema로 검사하는 경계를 확인했다. 실제 호출자 범위·선택 필드 의미·원자료 결속을 보존하는 제품 수리와 관련 반례 회귀, 최종 Codex 대표 실호출·녹화·미러를 한 task가 맡는다. 제공/수신·공통 제품·시험 캐시·생성 환경의 의존을 분리하기 어려우므로 이번에는 단일 task이며 고정판 최종 검토의 병렬성은 유지한다. 관리자 세션은 제품을 수정하거나 다음 task를 기동하지 않는다.\n\n관리 기록·원보고/근거·새 배정과 기억 노드를 커밋하고 관련 Codex 실패가 남은 공급자 제품 후보는 작업트리에 유지한다. 기존68파일 archive와 이번두속성 archive로 후보 바이트도 보존한다. 필요한 전체 관문과 최종 review가 남아 있으므로 개발 완료를 선언하지 않는다.",
+  "reports": [
+    {
+      "task": "corpus-git-bytes",
+      "state": "read",
+      "detail": "report 전문과 A1~A3·변경 두 파일·F1/F2·14개 check 항목을 읽고 report 검사 exit 0을 확인했다. 현재 2624소스·작업 변화·전88 Git 행·SHA 참조·실제 명령 출력과 기존 재생/생성기 판본을 검산했다. complete는 이번 세 조건에 한정하며 staged 제품·모델 새 실호출·최종 전체 관문은 수행하지 않았다.",
+      "evidence": [
+        "run:phases/005/tasks/corpus-git-bytes/report.json",
+        "run:phases/005/manager-evidence/report-check.json",
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/git-clean-observation.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "005/corpus-git-bytes/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C12",
+        "run:plan.md"
+      ],
+      "reason": "실제 하위 -text 규칙과 공식 생성 사본 두 파일만 바뀌었고 원녹화/manifest 불변·전88경로 raw/clean 동등성을 확인했다. 004 F1/A3의 clean 남김을 새 근거로 닫는다. staged blob/최종 제품 커밋의 근거는 별도이며 006에서 새 녹화 뒤에도 원바이트 검증을 유지한다.",
+      "evidence": [
+        "run:phases/005/tasks/corpus-git-bytes/report.json",
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/git-clean-observation.json",
+        "run:phases/006/tasks/codex-schema/objective.md#A5"
+      ]
+    },
+    {
+      "item": "005/corpus-git-bytes/F2",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "phase 004 종료와 005 시작의 유일한 차이는 protocol.md이며 시작/종료/현재 해시가 같다. 첫 검산의 전체 불변 가정 실패와 제품 바이트 불변을 구별했다. 현재 문서로 절차를 수행했고 변경 주체·문언 의미는 해시에서 추정하지 않는다. 제품 재검사나 engine 수리가 필요한 발견은 아니다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/tasks/corpus-git-bytes/evidence/start-command/audit.py",
+        "run:phases/005/tasks/corpus-git-bytes/evidence/start-command/stderr.txt",
+        "run:phases/005/tasks/corpus-git-bytes/evidence/verification-start.json",
+        "repo:services/continuous-development/protocol.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "005 report·현재 2624소스·두 속성·88 Git 경로 검수와 기존 engine protocol 차이를 추가했다. 최초 보조 검산 실패를 제품 실패와 구별하고 과거 기준선·부분 결과의 의미를 보존했다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "005 완료와 006의 단일 전달/수신 수리·실호출 배정을 반영했다. 공유 코드·검사/생성 자원 때문에 이번 단위를 합치며 고정판 독립 읽기 review의 병렬성은 유지한다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "새 manager가 005 complete를 검수한 사실과 004 clean 남김의 새 해소를 추가했다. 과거 partial report·서비스 검사와 제품 실호출의 구별·모델 기본 설정은 유지했다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "manifest text 예외의 이전 재검토를 실제 -text 수리와 전건 바이트 근거로 종결했다. 생성기 본문·PR15 전체의 검토 완료로 확대하지 않았다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "미러 치환·Git 속성 수리의 현행 상태와 Codex 006 후속 책임을 반영했다. 변이·T3·T4·기타 실제 연쇄의 원래 남김은 보존했다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "004 A3/F1을 005 원바이트/clean 근거로 해소하고 현재 corpus 크기·재사용 조건·stage 한계를 기록했다. Codex 원 schema와 비결박 전달/수신·연구 중앙 제출의 구별을 현재 코드에서 확인해 006에 배정했다. 제품/시험 후보는 Codex 수리 검수 전까지 관리 증거와 구별해 보존한다.",
+      "evidence": [
+        "run:phases/005/manager-evidence/verification.json",
+        "run:phases/005/manager-evidence/common-docs.diff",
+        "run:phases/005/manager-evidence/common-docs-review.json",
+        "run:phases/005/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "plan_update": "005의 완료된 Git 수리를 결과로 이동하고 006 codex-schema의 A1~A5를 확정했다. 실제 비결박 호출자·원 schema 의미 보존·전달/수신 회귀·Codex 대표 호출·녹화/미러/원바이트를 한 task가 맡는다. 다른 문서·정책·의미 질문·Job/Lean/예약/학술/L01·T4 보고·최종 일반/fresh T3/변이와 final review는 삭제하거나 성공으로 올리지 않았다. 공유 제품/시험 환경을 검토해 단일 task로 운영하며 완료 고정판의 독립 검토 병렬성은 유지한다.",
+  "seam_updates": [],
+  "completion": null
+}

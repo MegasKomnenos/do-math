@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "services/continuous-development/check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "005",
+    "corpus-git-bytes"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 6956,
+  "started_at": "2026-10-13T14:45:40.219785+00:00",
+  "pid": 6848,
+  "state": "exited",
+  "ended_at": "2026-10-13T14:45:42.241084+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

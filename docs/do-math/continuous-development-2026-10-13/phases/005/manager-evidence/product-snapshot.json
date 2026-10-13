@@ -1,0 +1,21 @@
+{
+  "meaning": "Phase-005 pending attribute bytes; combine with the unchanged phase-004 68-file archive. Candidate evidence, not product approval or a restore instruction.",
+  "prior_snapshot": "run:phases/004/manager-evidence/product-snapshot.json",
+  "prior_archive": "run:phases/004/manager-evidence/pending-product-working-tree.zip",
+  "prior_archive_sha256": "a32afae902386269f644d2fd8b1ed65b8762448a00629c7593425895c36a7d73",
+  "prior_files_unchanged": 68,
+  "archive": "pending-attributes.zip",
+  "archive_sha256": "c2c06290e95a94037e34d3fa601e7e2227c4f4ecbc1edb2504c818c19f6ab7cb",
+  "files": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+      "bytes": 168,
+      "sha256": "c92b232f4b939f18d060c8cdeb9acb974ea3b8b3b3968cbe26d3b5a991ce1235"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+      "bytes": 168,
+      "sha256": "c92b232f4b939f18d060c8cdeb9acb974ea3b8b3b3968cbe26d3b5a991ce1235"
+    }
+  ]
+}
