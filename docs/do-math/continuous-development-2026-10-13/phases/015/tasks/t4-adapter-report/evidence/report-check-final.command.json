@@ -1,0 +1,17 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "services/continuous-development/check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "015",
+    "t4-adapter-report"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:44:34.655049+00:00",
+  "pid": 26216,
+  "exit_code": 0,
+  "finished": "2026-10-13T22:44:36.141831+00:00"
+}

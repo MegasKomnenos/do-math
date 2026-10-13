@@ -1,0 +1,30 @@
+test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs (unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\015\tasks\t4-adapter-report\evidence\green-adapter-01\unit\failures\b8328b60a8ef47c682e93e42a1c05757ed92a240d1483549bbdbadab450d2d0b.json
+
+======================================================================
+FAIL: test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs (unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_adapter_coverage.py", line 34, in test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs
+    self.assertEqual(child.returncode, 0, child.stderr[-3000:])
+AssertionError: 1 != 0 : test_monotonic_never_decreases (boundary.test_port_clock.SystemClockContract.test_monotonic_never_decreases) ... ok
+test_new_id_rejects_a_non_registry_prefix (boundary.test_port_clock.SystemClockContract.test_new_id_rejects_a_non_registry_prefix) ... ok
+test_new_ids_have_the_stored_shape_and_differ (boundary.test_port_clock.SystemClockContract.test_new_ids_have_the_stored_shape_and_differ) ... ok
+test_now_is_an_iso_utc_time_that_the_product_parses (boundary.test_port_clock.SystemClockContract.test_now_is_an_iso_utc_time_that_the_product_parses) ... ok
+test_random_hex_has_the_requested_width_and_differs (boundary.test_port_clock.SystemClockContract.test_random_hex_has_the_requested_width_and_differs) ... ok
+test_resolutions_are_current_os_facts_in_wall_monotonic_order (boundary.test_port_clock.SystemClockContract.test_resolutions_are_current_os_facts_in_wall_monotonic_order) ... ok
+test_resolutions_are_two_finite_nonnegative_seconds (boundary.test_port_clock.SystemClockContract.test_resolutions_are_two_finite_nonnegative_seconds) ... ok
+test_sleep_advances_monotonic_time_by_at_least_the_duration (boundary.test_port_clock.SystemClockContract.test_sleep_advances_monotonic_time_by_at_least_the_duration) ... ok
+test_wall_is_an_aware_utc_datetime (boundary.test_port_clock.SystemClockContract.test_wall_is_an_aware_utc_datetime) ... ok
+test_wall_ns_agrees_with_wall (boundary.test_port_clock.SystemClockContract.test_wall_ns_agrees_with_wall) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.058s
+
+OK
+
+
+----------------------------------------------------------------------
+Ran 1 test in 9.639s
+
+FAILED (failures=1)

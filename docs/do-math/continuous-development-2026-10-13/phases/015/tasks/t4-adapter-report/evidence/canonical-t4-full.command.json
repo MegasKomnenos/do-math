@@ -1,0 +1,19 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--tier",
+    "T4",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\canonical-t4-full"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:23:18.638192+00:00",
+  "pid": 12644,
+  "exit_code": 1,
+  "finished": "2026-10-13T21:44:41.185646+00:00"
+}

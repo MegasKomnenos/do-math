@@ -1,0 +1,21 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "boundary.test_port_clock",
+    "boundary.test_port_jobs.WindowsJobsContract.test_a_job_resumes_only_once",
+    "--tier",
+    "T4",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\small-worker-01"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:10:04.904727+00:00",
+  "pid": 39400,
+  "exit_code": 0,
+  "finished": "2026-10-13T21:10:16.302783+00:00"
+}

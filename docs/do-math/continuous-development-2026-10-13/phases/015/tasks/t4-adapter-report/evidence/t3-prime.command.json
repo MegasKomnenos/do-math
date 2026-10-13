@@ -1,0 +1,23 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--tier",
+    "T3",
+    "unit.test_ids",
+    "unit.test_storage_json_digests",
+    "--jobs",
+    "1",
+    "--t3-store",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\t3-diagnostic-store",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\t3-prime"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:45:09.164472+00:00",
+  "pid": 32828,
+  "exit_code": 1,
+  "finished": "2026-10-13T21:45:26.557774+00:00"
+}

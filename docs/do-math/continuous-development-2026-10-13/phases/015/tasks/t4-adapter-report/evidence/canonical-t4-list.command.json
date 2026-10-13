@@ -1,0 +1,18 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--tier",
+    "T4",
+    "--list",
+    "--jobs",
+    "1"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:23:12.196850+00:00",
+  "pid": 29108,
+  "exit_code": 0,
+  "finished": "2026-10-13T21:23:15.469712+00:00"
+}

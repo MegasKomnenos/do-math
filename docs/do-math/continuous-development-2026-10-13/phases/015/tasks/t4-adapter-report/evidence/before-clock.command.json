@@ -1,0 +1,20 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "boundary.test_port_clock",
+    "--tier",
+    "T4",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\before-clock"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:07:03.311364+00:00",
+  "pid": 23664,
+  "exit_code": 0,
+  "finished": "2026-10-13T21:07:06.980756+00:00"
+}

@@ -1,0 +1,16 @@
+test_a_non_registry_prefix_is_rejected (unit.test_ids.UlidTests.test_a_non_registry_prefix_is_rejected) ... ok
+test_encoding_matches_the_identifier_the_product_has_always_produced (unit.test_ids.UlidTests.test_encoding_matches_the_identifier_the_product_has_always_produced) ... ok
+test_entropy_must_be_exactly_ten_bytes (unit.test_ids.UlidTests.test_entropy_must_be_exactly_ten_bytes) ... ok
+test_identifier_has_the_stored_shape (unit.test_ids.UlidTests.test_identifier_has_the_stored_shape) ... ok
+test_later_milliseconds_sort_after_earlier_ones (unit.test_ids.UlidTests.test_later_milliseconds_sort_after_earlier_ones) ... ok
+test_json_digest_refuses_non_finite_numbers (unit.test_storage_json_digests.DigestCharacterizationTests.test_json_digest_refuses_non_finite_numbers) ... ok
+test_json_digests_stay_fixed (unit.test_storage_json_digests.DigestCharacterizationTests.test_json_digests_stay_fixed) ... ok
+test_observation_rule_digests_stay_fixed (unit.test_storage_json_digests.DigestCharacterizationTests.test_observation_rule_digests_stay_fixed) ... ok
+test_state_value_digests_stay_fixed (unit.test_storage_json_digests.DigestCharacterizationTests.test_state_value_digests_stay_fixed) ... ok
+test_state_value_identity_refuses_values_outside_the_storage_domain (unit.test_storage_json_digests.DigestCharacterizationTests.test_state_value_identity_refuses_values_outside_the_storage_domain) ... ok
+test_stored_academic_and_external_identities_use_the_state_value_digest (unit.test_storage_json_digests.DigestCharacterizationTests.test_stored_academic_and_external_identities_use_the_state_value_digest) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.134s
+
+OK

@@ -1,0 +1,9 @@
+Open known defects: 0
+[unit] 1 tests
+  isolated: unit.test_adapter_coverage.NativeAdapterTests
+  {'passed': 1}
+Over budget: 1 tests
+     10.110s > 0.2s unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs
+{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"unit": 10.3}, "total_seconds": 10.3}
+   10.110s passed             unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\015\tasks\t4-adapter-report\evidence\diagnose-native-owned\report.json

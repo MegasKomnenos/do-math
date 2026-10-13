@@ -1,0 +1,15 @@
+test_monotonic_never_decreases (boundary.test_port_clock.SystemClockContract.test_monotonic_never_decreases) ... ok
+test_new_id_rejects_a_non_registry_prefix (boundary.test_port_clock.SystemClockContract.test_new_id_rejects_a_non_registry_prefix) ... ok
+test_new_ids_have_the_stored_shape_and_differ (boundary.test_port_clock.SystemClockContract.test_new_ids_have_the_stored_shape_and_differ) ... ok
+test_now_is_an_iso_utc_time_that_the_product_parses (boundary.test_port_clock.SystemClockContract.test_now_is_an_iso_utc_time_that_the_product_parses) ... ok
+test_random_hex_has_the_requested_width_and_differs (boundary.test_port_clock.SystemClockContract.test_random_hex_has_the_requested_width_and_differs) ... ok
+test_resolutions_are_current_os_facts_in_wall_monotonic_order (boundary.test_port_clock.SystemClockContract.test_resolutions_are_current_os_facts_in_wall_monotonic_order) ... ok
+test_resolutions_are_two_finite_nonnegative_seconds (boundary.test_port_clock.SystemClockContract.test_resolutions_are_two_finite_nonnegative_seconds) ... ok
+test_sleep_advances_monotonic_time_by_at_least_the_duration (boundary.test_port_clock.SystemClockContract.test_sleep_advances_monotonic_time_by_at_least_the_duration) ... ok
+test_wall_is_an_aware_utc_datetime (boundary.test_port_clock.SystemClockContract.test_wall_is_an_aware_utc_datetime) ... ok
+test_wall_ns_agrees_with_wall (boundary.test_port_clock.SystemClockContract.test_wall_ns_agrees_with_wall) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.023s
+
+OK

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/015/tasks/t4-adapter-report/evidence/reproduce_installed_fixture.py"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:47:19.464890+00:00",
+  "pid": 32776,
+  "exit_code": 0,
+  "finished": "2026-10-13T21:47:23.065512+00:00"
+}

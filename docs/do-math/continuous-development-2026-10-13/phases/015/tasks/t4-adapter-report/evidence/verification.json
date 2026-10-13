@@ -1,0 +1,742 @@
+{
+  "source_start_count": 2667,
+  "source_final_count": 2671,
+  "changes": [
+    ".agents/skills/do-math/scripts/run_tests.py",
+    ".agents/skills/do-math/scripts/tests/.timings-t3.json",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/support/adapter_coverage.py",
+    ".agents/skills/do-math/scripts/tests/support/branch_gate.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_adapter_coverage.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    ".claude/skills/do-math/scripts/tests/.timings-t3.json",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/support/adapter_coverage.py",
+    ".claude/skills/do-math/scripts/tests/support/branch_gate.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_adapter_coverage.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "outside_writes": [],
+  "suites": [
+    {
+      "label": "canonical-related-04",
+      "selected": 70,
+      "unique_rows": 70,
+      "counts": {
+        "passed": 70
+      },
+      "fixture_counts": {},
+      "exit_code": 0,
+      "complete": true,
+      "successful": true,
+      "source_count": 875,
+      "changed_during_run": [],
+      "seconds": 249.9,
+      "nonpassed": [],
+      "worker_errors": [],
+      "cost_cache_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".claude/skills/do-math/scripts/tests/.timings-t3.json"
+      ]
+    },
+    {
+      "label": "canonical-t4-final",
+      "selected": 295,
+      "unique_rows": 295,
+      "counts": {
+        "passed": 283,
+        "error": 6,
+        "failed": 4,
+        "skipped": 2
+      },
+      "fixture_counts": {},
+      "exit_code": 1,
+      "complete": true,
+      "successful": false,
+      "source_count": 875,
+      "changed_during_run": [],
+      "seconds": 1254.5,
+      "nonpassed": [
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_approved_command_seals_result_and_ends_execution",
+          "outcome": "error",
+          "seconds": 10.953000000037719,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 104, in test_actual_approved_command_seals_result_and_ends_execution\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact",
+          "outcome": "error",
+          "seconds": 2.3439999999827705,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 137, in test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact\n    sim, _ = self.start()\n             ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_current_environment_change_after_actual_compile_prevents_publication",
+          "outcome": "error",
+          "seconds": 2.047000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 177, in test_current_environment_change_after_actual_compile_prevents_publication\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_identity_change_after_actual_compile_is_caught_at_publication",
+          "outcome": "error",
+          "seconds": 2.014999999955762,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 157, in test_identity_change_after_actual_compile_is_caught_at_publication\n    sim, environment = self.start({**deepcopy(self.baseline), 'verifier_path': str(checker)})\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence",
+          "outcome": "error",
+          "seconds": 3.9380000000237487,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 30, in test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(lambda: None)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence",
+          "outcome": "error",
+          "seconds": 4.077999999979511,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 26, in test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(self.roundtrip)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_observation_real_job.RealJobObservationTests.test_real_job_completion_is_observed_before_delayed_batch_application",
+          "outcome": "failed",
+          "seconds": 2.125,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_observation_real_job.py\", line 82, in test_real_job_completion_is_observed_before_delayed_batch_application\n    self.assertEqual(result['status'], 'completed', result.get('error'))\nAssertionError: 'failed' != 'completed'\n- failed\n+ completed\n : output: Additional properties are not allowed ('ok' was unexpected)\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows",
+          "outcome": "failed",
+          "seconds": 1.0929999999934807,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_background_processes.py\", line 134, in test_real_git_descendants_are_observed_without_visible_windows\n    self.assertEqual(process.returncode, 0, process.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\canonical-t4-final\\boundary-isolated-039\\scratch\\tmpz99zb6ik\\actual_git_probe.py\", line 56, in <module>\n    snap=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'{}',\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 305, in publish\n    self._compare_and_swap(commit, expected_head, \"publish\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 256, in _compare_and_swap\n    if not self._backend.update_ref(self.repository, self.ref, new, old):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 166, in update_ref\n    return not self._run(repository, \"update-ref\", ref, new, old or \"0\" * len(new)).returncode\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 75, in _run\n    return self._run_process(\n           ^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\canonical-t4-final\\boundary-isolated-039\\scratch\\tmpz99zb6ik\\actual_git_probe.py\", line 16, in capture\n    return real_run(command,**kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 992, in __init__\n    errread, errwrite) = self._get_handles(stdin, stdout, stderr)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1365, in _get_handles\n    p2cread = self._make_inheritable(p2cread)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1416, in _make_inheritable\n    h = _winapi.DuplicateHandle(\n        ^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [WinError 6] 핸들이 잘못되었습니다\n\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_host_processes.WriterLockTests.test_two_processes_cannot_both_own_the_git_writer",
+          "outcome": "failed",
+          "seconds": 1.9690000000409782,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_host_processes.py\", line 54, in test_two_processes_cannot_both_own_the_git_writer\n    self.assertIn('LockError', child.stdout)\nAssertionError: 'LockError' not found in 'TypeError\\n'\n"
+          ]
+        },
+        {
+          "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+          ]
+        },
+        {
+          "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union",
+          "outcome": "skipped",
+          "seconds": 0.01600000000325963,
+          "details": [
+            "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+          ]
+        },
+        {
+          "id": "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker",
+          "outcome": "failed",
+          "seconds": 0.40600000001722947,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_submission_lean_preview.py\", line 116, in test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker\n    self.assertIsNotNone(observed, result.stderr)\nAssertionError: unexpectedly None : Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nNameError: name 'ports' is not defined\n\n"
+          ]
+        }
+      ],
+      "worker_errors": [],
+      "cost_cache_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings-t3.json"
+      ],
+      "adapter": {
+        "complete": true,
+        "problems": [],
+        "workers": 60,
+        "worker_statuses": {
+          "merged": 60
+        },
+        "tests_complete": true,
+        "totals": {
+          "covered_lines": 513,
+          "num_statements": 563,
+          "percent_covered": 87.23404255319149,
+          "percent_covered_display": "87",
+          "missing_lines": 50,
+          "excluded_lines": 0,
+          "percent_statements_covered": 91.1190053285968,
+          "percent_statements_covered_display": "91",
+          "num_branches": 142,
+          "num_partial_branches": 38,
+          "covered_branches": 102,
+          "missing_branches": 40,
+          "percent_branches_covered": 71.83098591549296,
+          "percent_branches_covered_display": "72"
+        },
+        "modules": {
+          "do_math/git_process.py": {
+            "sha256": "1ef13c92a8301885222787fe889a50f556e1cd752842a68be8eb60b302b0083d",
+            "summary": {
+              "covered_lines": 120,
+              "num_statements": 121,
+              "percent_covered": 98.62068965517241,
+              "percent_covered_display": "99",
+              "missing_lines": 1,
+              "excluded_lines": 0,
+              "percent_statements_covered": 99.17355371900827,
+              "percent_statements_covered_display": "99",
+              "num_branches": 24,
+              "num_partial_branches": 1,
+              "covered_branches": 23,
+              "missing_branches": 1,
+              "percent_branches_covered": 95.83333333333333,
+              "percent_branches_covered_display": "96"
+            }
+          },
+          "do_math/http_transport.py": {
+            "sha256": "8acb47446c82c97742c2de4b5ff75e425ce52d8d8f01b30f309254362b1f9540",
+            "summary": {
+              "covered_lines": 18,
+              "num_statements": 18,
+              "percent_covered": 100.0,
+              "percent_covered_display": "100",
+              "missing_lines": 0,
+              "excluded_lines": 0,
+              "percent_statements_covered": 100.0,
+              "percent_statements_covered_display": "100",
+              "num_branches": 2,
+              "num_partial_branches": 0,
+              "covered_branches": 2,
+              "missing_branches": 0,
+              "percent_branches_covered": 100.0,
+              "percent_branches_covered_display": "100"
+            }
+          },
+          "do_math/powershell_scheduler.py": {
+            "sha256": "19518362b93d0a65d0be579a12a438cdeeb2bcda71373d7d74579ef2beb40cbd",
+            "summary": {
+              "covered_lines": 22,
+              "num_statements": 26,
+              "percent_covered": 81.25,
+              "percent_covered_display": "81",
+              "missing_lines": 4,
+              "excluded_lines": 0,
+              "percent_statements_covered": 84.61538461538461,
+              "percent_statements_covered_display": "85",
+              "num_branches": 6,
+              "num_partial_branches": 2,
+              "covered_branches": 4,
+              "missing_branches": 2,
+              "percent_branches_covered": 66.66666666666667,
+              "percent_branches_covered_display": "67"
+            }
+          },
+          "do_math/system_clock.py": {
+            "sha256": "0e61a65c07624a8d50ee1f9b684081971a19d2316059361887d7037099d4a8b9",
+            "summary": {
+              "covered_lines": 25,
+              "num_statements": 25,
+              "percent_covered": 100.0,
+              "percent_covered_display": "100",
+              "missing_lines": 0,
+              "excluded_lines": 0,
+              "percent_statements_covered": 100.0,
+              "percent_statements_covered_display": "100",
+              "num_branches": 0,
+              "num_partial_branches": 0,
+              "covered_branches": 0,
+              "missing_branches": 0,
+              "percent_branches_covered": 100.0,
+              "percent_branches_covered_display": "100"
+            }
+          },
+          "do_math/windows_job.py": {
+            "sha256": "43dc28697d69313e335f825b91229d8f6a6a0361b7275be53c6a08d846c0f1e6",
+            "summary": {
+              "covered_lines": 328,
+              "num_statements": 373,
+              "percent_covered": 83.02277432712215,
+              "percent_covered_display": "83",
+              "missing_lines": 45,
+              "excluded_lines": 0,
+              "percent_statements_covered": 87.93565683646112,
+              "percent_statements_covered_display": "88",
+              "num_branches": 110,
+              "num_partial_branches": 35,
+              "covered_branches": 73,
+              "missing_branches": 37,
+              "percent_branches_covered": 66.36363636363636,
+              "percent_branches_covered_display": "66"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "mirror-related-final",
+      "selected": 70,
+      "unique_rows": 70,
+      "counts": {
+        "passed": 70
+      },
+      "fixture_counts": {},
+      "exit_code": 0,
+      "complete": true,
+      "successful": true,
+      "source_count": 875,
+      "changed_during_run": [],
+      "seconds": 260.6,
+      "nonpassed": [],
+      "worker_errors": [],
+      "cost_cache_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+      ]
+    },
+    {
+      "label": "mirror-t4-full",
+      "selected": 295,
+      "unique_rows": 295,
+      "counts": {
+        "passed": 283,
+        "error": 6,
+        "failed": 4,
+        "skipped": 2
+      },
+      "fixture_counts": {},
+      "exit_code": 1,
+      "complete": true,
+      "successful": false,
+      "source_count": 875,
+      "changed_during_run": [],
+      "seconds": 1366.0,
+      "nonpassed": [
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_approved_command_seals_result_and_ends_execution",
+          "outcome": "error",
+          "seconds": 10.672000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 104, in test_actual_approved_command_seals_result_and_ends_execution\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact",
+          "outcome": "error",
+          "seconds": 2.0619999999762513,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 137, in test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact\n    sim, _ = self.start()\n             ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_current_environment_change_after_actual_compile_prevents_publication",
+          "outcome": "error",
+          "seconds": 2.1410000000032596,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 177, in test_current_environment_change_after_actual_compile_prevents_publication\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_identity_change_after_actual_compile_is_caught_at_publication",
+          "outcome": "error",
+          "seconds": 1.952999999979511,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 157, in test_identity_change_after_actual_compile_is_caught_at_publication\n    sim, environment = self.start({**deepcopy(self.baseline), 'verifier_path': str(checker)})\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence",
+          "outcome": "error",
+          "seconds": 4.311999999976251,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 30, in test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(lambda: None)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence",
+          "outcome": "error",
+          "seconds": 3.98499999998603,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 26, in test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(self.roundtrip)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+          ]
+        },
+        {
+          "id": "boundary.test_observation_real_job.RealJobObservationTests.test_real_job_completion_is_observed_before_delayed_batch_application",
+          "outcome": "failed",
+          "seconds": 1.9690000000409782,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_observation_real_job.py\", line 82, in test_real_job_completion_is_observed_before_delayed_batch_application\n    self.assertEqual(result['status'], 'completed', result.get('error'))\nAssertionError: 'failed' != 'completed'\n- failed\n+ completed\n : output: Additional properties are not allowed ('ok' was unexpected)\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows",
+          "outcome": "failed",
+          "seconds": 1.3119999999762513,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_background_processes.py\", line 134, in test_real_git_descendants_are_observed_without_visible_windows\n    self.assertEqual(process.returncode, 0, process.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\mirror-t4-full\\boundary-isolated-039\\scratch\\tmpjw191fgq\\actual_git_probe.py\", line 56, in <module>\n    snap=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'{}',\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 305, in publish\n    self._compare_and_swap(commit, expected_head, \"publish\")\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 256, in _compare_and_swap\n    if not self._backend.update_ref(self.repository, self.ref, new, old):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 166, in update_ref\n    return not self._run(repository, \"update-ref\", ref, new, old or \"0\" * len(new)).returncode\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 75, in _run\n    return self._run_process(\n           ^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\mirror-t4-full\\boundary-isolated-039\\scratch\\tmpjw191fgq\\actual_git_probe.py\", line 16, in capture\n    return real_run(command,**kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 992, in __init__\n    errread, errwrite) = self._get_handles(stdin, stdout, stderr)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1365, in _get_handles\n    p2cread = self._make_inheritable(p2cread)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1416, in _make_inheritable\n    h = _winapi.DuplicateHandle(\n        ^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [WinError 6] 핸들이 잘못되었습니다\n\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_host_processes.WriterLockTests.test_two_processes_cannot_both_own_the_git_writer",
+          "outcome": "failed",
+          "seconds": 1.7660000000032596,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_host_processes.py\", line 54, in test_two_processes_cannot_both_own_the_git_writer\n    self.assertIn('LockError', child.stdout)\nAssertionError: 'LockError' not found in 'TypeError\\n'\n"
+          ]
+        },
+        {
+          "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+          ]
+        },
+        {
+          "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+          ]
+        },
+        {
+          "id": "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker",
+          "outcome": "failed",
+          "seconds": 0.4380000000237487,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_submission_lean_preview.py\", line 116, in test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker\n    self.assertIsNotNone(observed, result.stderr)\nAssertionError: unexpectedly None : Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nNameError: name 'ports' is not defined\n\n"
+          ]
+        }
+      ],
+      "worker_errors": [],
+      "cost_cache_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+      ],
+      "adapter": {
+        "complete": true,
+        "problems": [],
+        "workers": 60,
+        "worker_statuses": {
+          "merged": 60
+        },
+        "tests_complete": true,
+        "totals": {
+          "covered_lines": 512,
+          "num_statements": 563,
+          "percent_covered": 86.95035460992908,
+          "percent_covered_display": "87",
+          "missing_lines": 51,
+          "excluded_lines": 0,
+          "percent_statements_covered": 90.94138543516874,
+          "percent_statements_covered_display": "91",
+          "num_branches": 142,
+          "num_partial_branches": 39,
+          "covered_branches": 101,
+          "missing_branches": 41,
+          "percent_branches_covered": 71.12676056338029,
+          "percent_branches_covered_display": "71"
+        },
+        "modules": {
+          "do_math/git_process.py": {
+            "sha256": "1ef13c92a8301885222787fe889a50f556e1cd752842a68be8eb60b302b0083d",
+            "summary": {
+              "covered_lines": 120,
+              "num_statements": 121,
+              "percent_covered": 98.62068965517241,
+              "percent_covered_display": "99",
+              "missing_lines": 1,
+              "excluded_lines": 0,
+              "percent_statements_covered": 99.17355371900827,
+              "percent_statements_covered_display": "99",
+              "num_branches": 24,
+              "num_partial_branches": 1,
+              "covered_branches": 23,
+              "missing_branches": 1,
+              "percent_branches_covered": 95.83333333333333,
+              "percent_branches_covered_display": "96"
+            }
+          },
+          "do_math/http_transport.py": {
+            "sha256": "8acb47446c82c97742c2de4b5ff75e425ce52d8d8f01b30f309254362b1f9540",
+            "summary": {
+              "covered_lines": 18,
+              "num_statements": 18,
+              "percent_covered": 100.0,
+              "percent_covered_display": "100",
+              "missing_lines": 0,
+              "excluded_lines": 0,
+              "percent_statements_covered": 100.0,
+              "percent_statements_covered_display": "100",
+              "num_branches": 2,
+              "num_partial_branches": 0,
+              "covered_branches": 2,
+              "missing_branches": 0,
+              "percent_branches_covered": 100.0,
+              "percent_branches_covered_display": "100"
+            }
+          },
+          "do_math/powershell_scheduler.py": {
+            "sha256": "19518362b93d0a65d0be579a12a438cdeeb2bcda71373d7d74579ef2beb40cbd",
+            "summary": {
+              "covered_lines": 22,
+              "num_statements": 26,
+              "percent_covered": 81.25,
+              "percent_covered_display": "81",
+              "missing_lines": 4,
+              "excluded_lines": 0,
+              "percent_statements_covered": 84.61538461538461,
+              "percent_statements_covered_display": "85",
+              "num_branches": 6,
+              "num_partial_branches": 2,
+              "covered_branches": 4,
+              "missing_branches": 2,
+              "percent_branches_covered": 66.66666666666667,
+              "percent_branches_covered_display": "67"
+            }
+          },
+          "do_math/system_clock.py": {
+            "sha256": "0e61a65c07624a8d50ee1f9b684081971a19d2316059361887d7037099d4a8b9",
+            "summary": {
+              "covered_lines": 25,
+              "num_statements": 25,
+              "percent_covered": 100.0,
+              "percent_covered_display": "100",
+              "missing_lines": 0,
+              "excluded_lines": 0,
+              "percent_statements_covered": 100.0,
+              "percent_statements_covered_display": "100",
+              "num_branches": 0,
+              "num_partial_branches": 0,
+              "covered_branches": 0,
+              "missing_branches": 0,
+              "percent_branches_covered": 100.0,
+              "percent_branches_covered_display": "100"
+            }
+          },
+          "do_math/windows_job.py": {
+            "sha256": "43dc28697d69313e335f825b91229d8f6a6a0361b7275be53c6a08d846c0f1e6",
+            "summary": {
+              "covered_lines": 327,
+              "num_statements": 373,
+              "percent_covered": 82.6086956521739,
+              "percent_covered_display": "83",
+              "missing_lines": 46,
+              "excluded_lines": 0,
+              "percent_statements_covered": 87.66756032171581,
+              "percent_statements_covered_display": "88",
+              "num_branches": 110,
+              "num_partial_branches": 36,
+              "covered_branches": 72,
+              "missing_branches": 38,
+              "percent_branches_covered": 65.45454545454545,
+              "percent_branches_covered_display": "65"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "runtime_and_inputs_preserved": 139,
+  "reused_inputs": [
+    ".claude/skills/do-math/scripts/do_math/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/academic.py",
+    ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+    ".claude/skills/do-math/scripts/do_math/activities.py",
+    ".claude/skills/do-math/scripts/do_math/budget.py",
+    ".claude/skills/do-math/scripts/do_math/call_engine.py",
+    ".claude/skills/do-math/scripts/do_math/canonical.py",
+    ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/do_math/cli.py",
+    ".claude/skills/do-math/scripts/do_math/cli_contract.py",
+    ".claude/skills/do-math/scripts/do_math/cli_execution.py",
+    ".claude/skills/do-math/scripts/do_math/cli_worker.py",
+    ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/codex_stream.py",
+    ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+    ".claude/skills/do-math/scripts/do_math/configuration.py",
+    ".claude/skills/do-math/scripts/do_math/context_store.py",
+    ".claude/skills/do-math/scripts/do_math/contracts.py",
+    ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/control_protocol.py",
+    ".claude/skills/do-math/scripts/do_math/control_server.py",
+    ".claude/skills/do-math/scripts/do_math/control_transport.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+    ".claude/skills/do-math/scripts/do_math/delegations.py",
+    ".claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+    ".claude/skills/do-math/scripts/do_math/engine.py",
+    ".claude/skills/do-math/scripts/do_math/events.py",
+    ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+    ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    ".claude/skills/do-math/scripts/do_math/execution_window.py",
+    ".claude/skills/do-math/scripts/do_math/external.py",
+    ".claude/skills/do-math/scripts/do_math/external_engine.py",
+    ".claude/skills/do-math/scripts/do_math/file_io.py",
+    ".claude/skills/do-math/scripts/do_math/formal.py",
+    ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+    ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+    ".claude/skills/do-math/scripts/do_math/git_process.py",
+    ".claude/skills/do-math/scripts/do_math/git_store.py",
+    ".claude/skills/do-math/scripts/do_math/governance.py",
+    ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+    ".claude/skills/do-math/scripts/do_math/http_request.py",
+    ".claude/skills/do-math/scripts/do_math/http_transport.py",
+    ".claude/skills/do-math/scripts/do_math/ids.py",
+    ".claude/skills/do-math/scripts/do_math/initialization.py",
+    ".claude/skills/do-math/scripts/do_math/initialization_engine.py",
+    ".claude/skills/do-math/scripts/do_math/input_basis.py",
+    ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+    ".claude/skills/do-math/scripts/do_math/input_tool.py",
+    ".claude/skills/do-math/scripts/do_math/integration.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+    ".claude/skills/do-math/scripts/do_math/launch.py",
+    ".claude/skills/do-math/scripts/do_math/layers.py",
+    ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+    ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/do_math/local_host.py",
+    ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+    ".claude/skills/do-math/scripts/do_math/model_call.py",
+    ".claude/skills/do-math/scripts/do_math/model_policy.py",
+    ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    ".claude/skills/do-math/scripts/do_math/native_final.py",
+    ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+    ".claude/skills/do-math/scripts/do_math/observations.py",
+    ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+    ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+    ".claude/skills/do-math/scripts/do_math/parallel.py",
+    ".claude/skills/do-math/scripts/do_math/payloads.py",
+    ".claude/skills/do-math/scripts/do_math/planning.py",
+    ".claude/skills/do-math/scripts/do_math/planning_engine.py",
+    ".claude/skills/do-math/scripts/do_math/ports/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/ports/calls.py",
+    ".claude/skills/do-math/scripts/do_math/ports/clock.py",
+    ".claude/skills/do-math/scripts/do_math/ports/git_backend.py",
+    ".claude/skills/do-math/scripts/do_math/ports/host.py",
+    ".claude/skills/do-math/scripts/do_math/ports/http.py",
+    ".claude/skills/do-math/scripts/do_math/ports/jobs.py",
+    ".claude/skills/do-math/scripts/do_math/ports/scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/powershell_scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/preflight.py",
+    ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+    ".claude/skills/do-math/scripts/do_math/provider_final.py",
+    ".claude/skills/do-math/scripts/do_math/provider_wait.py",
+    ".claude/skills/do-math/scripts/do_math/question_engine.py",
+    ".claude/skills/do-math/scripts/do_math/questions.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/do_math/relation_refs.py",
+    ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+    ".claude/skills/do-math/scripts/do_math/reporting.py",
+    ".claude/skills/do-math/scripts/do_math/repository.py",
+    ".claude/skills/do-math/scripts/do_math/retention.py",
+    ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+    ".claude/skills/do-math/scripts/do_math/review_engine.py",
+    ".claude/skills/do-math/scripts/do_math/review_policy.py",
+    ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+    ".claude/skills/do-math/scripts/do_math/revisions.py",
+    ".claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/do_math/scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/scholarly.py",
+    ".claude/skills/do-math/scripts/do_math/scholarly_config.py",
+    ".claude/skills/do-math/scripts/do_math/session_slots.py",
+    ".claude/skills/do-math/scripts/do_math/state_checks.py",
+    ".claude/skills/do-math/scripts/do_math/state_contract.py",
+    ".claude/skills/do-math/scripts/do_math/storage_finish_git_output.py",
+    ".claude/skills/do-math/scripts/do_math/submission.py",
+    ".claude/skills/do-math/scripts/do_math/submission_tool.py",
+    ".claude/skills/do-math/scripts/do_math/supervision.py",
+    ".claude/skills/do-math/scripts/do_math/system_clock.py",
+    ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/task_scope.py",
+    ".claude/skills/do-math/scripts/do_math/trace_report.py",
+    ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+    ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+    ".claude/skills/do-math/scripts/do_math/values.py",
+    ".claude/skills/do-math/scripts/do_math/wait_rules.py",
+    ".claude/skills/do-math/scripts/do_math/windows_job.py",
+    ".claude/skills/do-math/scripts/do_math/wiring.py",
+    ".claude/skills/do-math/scripts/do_math/worker_request.py",
+    ".claude/skills/do-math/scripts/tests/support/provider_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_host_live.py",
+    ".agents/skills/do-math/scripts/tests/support/host_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_host_live.py",
+    ".claude/skills/do-math/scripts/tests/support/host_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+    ".claude/skills/do-math/scripts/tests/support/lean_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+    ".agents/skills/do-math/scripts/tests/support/lean_live.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduler_live.py"
+  ],
+  "corpus_paths_preserved": 144,
+  "host_recordings_preserved": [
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-cancel-iozevo7a/smoke.json",
+      "sha256": "9aff5458de828fc6ec43dfdbf3b90332785f409c5d31aeddefc0a143433abf48"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-nonzero-ar4klqrv/smoke.json",
+      "sha256": "bcdd39748fd4896b734b9223ebf6027dec92f095cdd6b43507e285d1466e8437"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-normal-jnk3s6cq/smoke.json",
+      "sha256": "c397e5fa651b2bc01e632cc9cc8c751748c29eed62c3a4553e3c87ebf6f79067"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-pythonw-nw9yj4cn/smoke.json",
+      "sha256": "5efe62361bd9b1628b28941c18c816a95e726222cd4a0a3f43f4e5036c69f7be"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-cancel-8yunjumq/smoke.json",
+      "sha256": "d9afee5ef63db9d4a13a7bbab91629bcab729f93792c4502f52a31ca404a8542"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-nonzero-m1thvro0/smoke.json",
+      "sha256": "ed9b755082b00dd42c301a27edcb90b75df844f38fbb952ce2f6b7e5ad6b8320"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-normal-25mq7b5q/smoke.json",
+      "sha256": "1f84d1f1bc385b237ddb6a8db3f4381df3a02c2b282079dc0c8dcc57a42e5e30"
+    },
+    {
+      "path": "phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-pythonw-n2ze3yrs/smoke.json",
+      "sha256": "de7622122599d11704551bb57c03d579a895c5c308364f135a595a90ed4c5044"
+    }
+  ],
+  "tool_sha256_preserved": {
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a",
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe": "d72294fb338bc2fc8896d25a7395a4db466425427e1559e77185d5135a830681",
+    "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe": "3247bcfd60f6dd25f34cb74b5889ab10ef1b3ec72b4d4b3d95b5b25b534560b8",
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe": "937918675ff15139816bbe2a4f6168fb8b36ea0e0990664311f4902cbce0f6f2",
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810"
+  },
+  "selection_index_and_pseudo_list_preserved": true,
+  "limitations": [
+    "T4 adapter reach is informational; no threshold was introduced.",
+    "No general whole run, fresh whole T3, whole mutation or new paid/scheduler/scholarly smoke call.",
+    "Existing smoke reuse is limited to previously approved properties and unchanged inputs/tools.",
+    "Historical PowerShell binary identity before phase014 was not recorded."
+  ]
+}

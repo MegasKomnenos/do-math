@@ -1,0 +1,73 @@
+commit bbe64043f49d46fb7c3b6e768b99a8acbaa125cf
+Author: MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+Date:   Sun Oct 4 09:45:24 2026 +0900
+
+    실행기 전체 비용과 공유 입력 provenance 및 변이 증거 판정을 통합한다
+
+diff --git a/.claude/skills/do-math/scripts/run_tests.py b/.claude/skills/do-math/scripts/run_tests.py
+index 9e52430d..6162ca69 100644
+--- a/.claude/skills/do-math/scripts/run_tests.py
++++ b/.claude/skills/do-math/scripts/run_tests.py
+@@ -616,9 +616,10 @@ def main(argv=None):
+     for report in reports:
+         for module, seconds in report['module_total_seconds'].items():
+             module_totals[module] += seconds
+-    if not changed:
+-        _record_timings(module_totals, measured=measurement is not None)
+     complete = all(report['complete'] for report in reports)
++    if not changed and complete:
++        _record_timings(_whole_module_costs(module_totals, discovered, selected, rows),
++                        measured=measurement is not None)
+     t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
+     # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
+     total = round(time.monotonic() - started_run if measurement else sum(group_seconds.values()), 1)
+@@ -712,6 +713,20 @@ def _record_timings(module_total_seconds, measured=False):
+         _write_json(path, {'_cost_basis': 'module_total_seconds', **recorded_seconds(measured), **seconds})
+ 
+ 
++def _whole_module_costs(totals, discovered, selected, rows):
++    """A partial selection reports its own cost but cannot replace a full module estimate."""
++    population, chosen = defaultdict(set), defaultdict(set)
++    for test in discovered:
++        population[module_of(test)].add(test.id())
++    for test in selected:
++        chosen[module_of(test)].add(test.id())
++    finished = {row['id'] for row in rows if not row.get('fixture')
++                and row['outcome'] not in {'running', 'not_run'}}
++    return {module: seconds for module, seconds in totals.items()
++            if module in chosen and chosen[module] == population[module]
++            and chosen[module] <= finished}
++
++
+ def selection_summary(selection):
+     """T0's selection in one line, then one line per changed path and rule."""
+     lines = [f"T0 selection ({selection.mode}{': ' + selection.reason if selection.reason else ''}): "
+@@ -818,7 +833,7 @@ def _finish_t3(measurement, directory, selected, args, clean, store=None, rows=(
+     if plan is not None and clean and not missing:
+         _write_t3_store(measurement, store, directory, rows)
+         written = True
+-    passed = gate['passed'] and not missing and (mutation is None or mutation['unreasoned_entries'] == 0)
++    passed = gate['passed'] and not missing and (mutation is None or mutation_tool.passed(mutation))
+     return {'branch_gate': gate, 'selection_index': index, 'mutation': mutation, 'summary': summary, 'passed': passed,
+             'measurement_missing': missing, 'closing_eligible': eligible,
+             't3_store': {**plan.report(), 'path': str(store['path']), 'written': written} if plan is not None else None}
+@@ -843,7 +858,9 @@ def _write_t3_store(measurement, store, directory, rows):
+     whole = storable_modules(store, rows)
+     entered, opens = measurement.entered(), {label: sorted(paths) for label, paths in measurement.opens.items()}
+     prefix = SCRIPTS.relative_to(root).as_posix()
+-    modules = t3_store.module_records(whole, entered, opens, store['tree'], prefix)
++    dependencies = measurement.input_dependencies()
++    modules = t3_store.module_records(whole, entered, opens, store['tree'], prefix,
++                                      input_dependencies=dependencies)
+     keep, extra = set(), None
+     if plan.mode == 'incremental':
+         outside = set(records.get('modules', {})) - set(store['chosen']) - plan.drop
+@@ -853,7 +870,7 @@ def _write_t3_store(measurement, store, directory, rows):
+                      t3_store.path_mapper(records['root'], root))
+     record = t3_store.records(root, SCRIPTS, modules, entered, opens, measurement.import_opens, store['tree'],
+                               store['coverage_version'], stored=records if plan.mode == 'incremental' else None,
+-                              keep=keep)
++                              keep=keep, input_dependencies=dependencies)
+     t3_store.write(store['path'], measurement.data_file, record, extra=extra)
+ 
+ 

@@ -1,0 +1,15 @@
+Open known defects: 0
+[boundary] 10 tests
+Over budget: 0 tests; T4 ran 0.0s of 300s
+{"complete": true, "successful": true, "counts": {"passed": 10}, "group_seconds": {"boundary": 0.0}, "total_seconds": 0.0}
+    0.016s passed             boundary.test_port_clock.SystemClockContract.test_sleep_advances_monotonic_time_by_at_least_the_duration
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_monotonic_never_decreases
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_new_id_rejects_a_non_registry_prefix
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_new_ids_have_the_stored_shape_and_differ
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_now_is_an_iso_utc_time_that_the_product_parses
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_random_hex_has_the_requested_width_and_differs
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_resolutions_are_current_os_facts_in_wall_monotonic_order
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_resolutions_are_two_finite_nonnegative_seconds
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_wall_is_an_aware_utc_datetime
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_wall_ns_agrees_with_wall
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\015\tasks\t4-adapter-report\evidence\before-clock\report.json

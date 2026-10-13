@@ -1,0 +1,18 @@
+Open known defects: 0
+[boundary] 11 tests
+  isolated: boundary.test_port_jobs.WindowsJobsContract
+  {'passed': 1}
+Over budget: 0 tests; T4 ran 5.8s of 300s
+{"complete": true, "successful": true, "counts": {"passed": 11}, "group_seconds": {"boundary": 5.8}, "total_seconds": 5.8}
+    0.032s passed             boundary.test_port_jobs.WindowsJobsContract.test_a_job_resumes_only_once
+    0.031s passed             boundary.test_port_clock.SystemClockContract.test_sleep_advances_monotonic_time_by_at_least_the_duration
+    0.016s passed             boundary.test_port_clock.SystemClockContract.test_new_ids_have_the_stored_shape_and_differ
+    0.015s passed             boundary.test_port_clock.SystemClockContract.test_monotonic_never_decreases
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_new_id_rejects_a_non_registry_prefix
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_now_is_an_iso_utc_time_that_the_product_parses
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_random_hex_has_the_requested_width_and_differs
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_resolutions_are_current_os_facts_in_wall_monotonic_order
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_resolutions_are_two_finite_nonnegative_seconds
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_wall_is_an_aware_utc_datetime
+    0.000s passed             boundary.test_port_clock.SystemClockContract.test_wall_ns_agrees_with_wall
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\015\tasks\t4-adapter-report\evidence\small-worker-01\report.json

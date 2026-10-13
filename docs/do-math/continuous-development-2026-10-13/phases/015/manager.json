@@ -1,0 +1,198 @@
+{
+  "next": "016",
+  "decision": "015 report를 형식 검사와 실제 소스/원자료 대조 후 partial로 검수한다. A1~A3의 실제 T4 측정·T3 보존과 양쪽70회귀는 승인하지만 A4의 양쪽295건 중6error/4failed/2skip을 성공으로 만들지 않는다. 측정 complete와 기능 결과를 분리하고16허용변경·각60worker/원DB·139입력/144corpus 보존을 확인했다.016은 현 fixture/OS 실패 수리와 과거 baseline 입력 준비를 독립 배정한다. 전자만 제품 시험/미러/캐시를 사용하고 후자는 Git 불변 객체/고정 자료만 읽으므로 공유 실행 환경의 충돌이 없다. 후속 실제 두 비교와 전체 T4는 두 결과 검수 뒤 단일 연결 작업이 맡는다. manager는 제품을 고치지 않고12제품 raw를 보존하며 관리 인계/기억만 커밋한다. L01·나머지 문서/의미 질문·최종 전체 관문과 review가 남아 개발 완료 조건은 충족하지 않는다.",
+  "reports": [
+    {
+      "task": "t4-adapter-report",
+      "state": "read",
+      "detail": "전문과 A1~A4를 읽고 report PASS. A1~A3 pass와 A4 fail의 partial을 승인한다. source2671·허용16변경, 최종4실행의 선택/row/exit/소스, T4 raw·worker, fixture 원trace 및 보존 조건을 대조했다.",
+      "evidence": [
+        "run:phases/015/tasks/t4-adapter-report/report.json",
+        "run:phases/015/manager-evidence/report-check.json",
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "015/t4-adapter-report/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "actual runner/각60worker와 원DB 재분석으로 T4 측정 공백을 닫는다. 기능 실패/skip은 별도 미충족으로 유지한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    },
+    {
+      "item": "015/t4-adapter-report/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/016/tasks/t4-fixture-repair/objective.md"
+      ],
+      "reason": "9건의 fixture 오류/실패를 현 record/schema/backend/실포트 정의와 trace에서 확인했다. 기존 guard/실경로 보존 수리와 정확 회귀를 배정한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    },
+    {
+      "item": "015/t4-adapter-report/F3",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/016/tasks/provenance-baseline/objective.md",
+        "run:plan.md"
+      ],
+      "reason": "비교 입력 부재는 정당한 통과가 아니다. Git 이력에 결속된 별도 pre-fix 트리를 준비하고 실제 두 비교/전체 T4는 후속 연결 task가 맡는다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    },
+    {
+      "item": "015/t4-adapter-report/F4",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:context.md#C11"
+      ],
+      "reason": "새 설정의 import 순서와 store bookkeeping을 교정한 diff·기존 incremental/parallel·양쪽70회귀를 확인했다. 과거 raw 부재와 새 runner의 fresh 최종 관문 책임은 유지한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    },
+    {
+      "item": "015/t4-adapter-report/F5",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "139입력·144corpus raw/clean·host8/도구SHA·공식미러를 확인했다. 한정 재사용과 원바이트 archive/관리 커밋을 승인하며12제품 경로는 T4 연결 검수까지 대기한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    },
+    {
+      "item": "015/t4-adapter-report/F6",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/016/tasks/t4-fixture-repair/objective.md"
+      ],
+      "reason": "최종 양쪽 stdin DuplicateHandle WinError6을 확인했다. AttachConsole/FreeConsole과의 인과는 가설이며 정확 OS 대조 재현을 배정한다. bootstrap 후속 통과와 역사 오류는 구별한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/tasks/t4-adapter-report/report.json"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "015 검수의 현재판본/선택/결과를 추가하며 역사 partial을 보존한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "016의 제품 실행 단독 소유와 불변 입력 준비의 독립성·후속 연결 책임으로 갱신한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "사용자 지정 모델/effort를016 두 task에 유지한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "runner/측정의 한정 이력 처분과 P10/P11 입력 준비 책임을 추가한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "L01 조건을 유지하고 독립 work의 현재 상태만 갱신한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "T4 측정 공백 문장을 역사 상태로 옮기고 해소 근거 및 fixture/baseline/OS의 정확 남김을 기록한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "기존 실경계의 한정 재사용과12제품 커밋 대기·원바이트 archive/관리 추적 범위를 기록한다.",
+      "evidence": [
+        "run:phases/015/manager-evidence/verification.json",
+        "run:phases/015/manager-evidence/review.md",
+        "run:phases/015/manager-evidence/common-docs.diff"
+      ]
+    }
+  ],
+  "plan_update": "015의 실제 측정/지정 회귀를 승인하고 기능 실패·baseline 입력 부재·OS 문제를 각각016의 두 독립 task에 배정했다. 제품 수리/공식 시험 소유와 읽기 전용 역사 입력 준비를 분리해 병렬 가능성을 확보했다. 두 결과 뒤 전체 T4 실제 연결 및015제품 마감을 명시하고 G 기준·일반→fresh T3→전체 변이→review, L01 외부 결정·기존 문서/의미 남김을 보존했다. 공용 편집 전후는 common-docs.diff다.",
+  "seam_updates": [],
+  "completion": null
+}

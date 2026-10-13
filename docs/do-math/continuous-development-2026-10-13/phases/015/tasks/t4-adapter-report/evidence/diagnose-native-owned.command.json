@@ -1,0 +1,18 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\diagnose-native-owned"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T21:19:49.229216+00:00",
+  "pid": 40804,
+  "exit_code": 0,
+  "finished": "2026-10-13T21:20:03.030881+00:00"
+}

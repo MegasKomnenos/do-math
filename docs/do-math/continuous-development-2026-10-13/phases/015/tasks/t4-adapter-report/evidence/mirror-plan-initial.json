@@ -1,0 +1,15 @@
+{
+  "changes": [
+    ".agents/skills/do-math/scripts/run_tests.py",
+    ".agents/skills/do-math/scripts/tests/.timings-t3.json",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/support/adapter_coverage.py",
+    ".agents/skills/do-math/scripts/tests/support/branch_gate.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_adapter_coverage.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "outside_writes": [],
+  "manifest_bytes_unchanged": false,
+  "outputs": 1336
+}
