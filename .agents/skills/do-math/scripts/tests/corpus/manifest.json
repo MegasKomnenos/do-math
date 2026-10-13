@@ -1029,6 +1029,149 @@
         "final_sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
         "final_is_selected_text": true
       }
+    },
+    {
+      "id": "lean-mathlib-live-20261014",
+      "kind": "lean_output",
+      "path": "lean/mathlib-live-20261014.stdout.txt",
+      "source_path": "lean/mathlib-live-20261014.lean",
+      "compiled_path": "lean/mathlib-live-20261014.compiled.lean",
+      "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+      "recorded_at": "2026-10-13T19:38:42.341182+00:00",
+      "command": [
+        "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+        "--dir",
+        "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0",
+        "env",
+        "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\012\\tasks\\lean-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\lean-smoke-x55z1ajz\\workspace\\tmposwot4u1\\proposal.lean"
+      ],
+      "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\012\\tasks\\lean-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\lean-smoke-x55z1ajz\\workspace\\tmposwot4u1",
+      "role": "formal_verification",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/live-final/smoke-isolated-000/scratch/lean-smoke-x55z1ajz/smoke.json",
+      "source_sha256": "67393ae7568519aee81e36d949f433ba362d60234ac1ecac83260f1c45d608e8",
+      "extract_evidence": true,
+      "declarations": [
+        "lean_smoke_add_zero",
+        "lean_smoke_true"
+      ],
+      "verdict": {
+        "status": "verified",
+        "declaration_signatures": {
+          "lean_smoke_add_zero": "lean_smoke_add_zero (n : ℕ) : n + 0 = n",
+          "lean_smoke_true": "lean_smoke_true : True"
+        },
+        "axioms": {
+          "lean_smoke_add_zero": [],
+          "lean_smoke_true": []
+        },
+        "signature_hash": "762279df877774588f5a44b9c9dea9de6591752b56e94be7132983f3bf32638e",
+        "dependency_closure": {
+          "lean_smoke_add_zero": [
+            "Add",
+            "Add.add",
+            "Add.mk",
+            "Eq",
+            "Eq.refl",
+            "HAdd",
+            "HAdd.hAdd",
+            "HAdd.mk",
+            "Nat",
+            "Nat.add",
+            "Nat.add._f",
+            "Nat.add.match_1",
+            "Nat.below",
+            "Nat.brecOn",
+            "Nat.brecOn.go",
+            "Nat.casesOn",
+            "Nat.rec",
+            "Nat.succ",
+            "Nat.zero",
+            "OfNat",
+            "OfNat.mk",
+            "OfNat.ofNat",
+            "PProd",
+            "PProd.mk",
+            "PUnit",
+            "PUnit.unit",
+            "instAddNat",
+            "instHAdd",
+            "instOfNatNat",
+            "outParam"
+          ],
+          "lean_smoke_true": [
+            "True",
+            "True.intro"
+          ]
+        },
+        "declaration_evidence": {
+          "lean_smoke_add_zero": {
+            "type": "{\"format\":\"lean-expr-dag/1\",\"nodes\":[{\"args\":[{\"atom\":\"`Nat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"atom\":\"`Eq\"},{\"atom\":\"[Lean.Level.succ (Lean.Level.zero)]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":1},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`HAdd.hAdd\"},{\"atom\":\"[Lean.Level.zero, Lean.Level.zero, Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":3},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":4},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":5},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instHAdd\"},{\"atom\":\"[Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":7},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instAddNat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":8},{\"ref\":9}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":6},{\"ref\":10}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"0\"}],\"constructor\":\"Lean.Expr.bvar\"},{\"args\":[{\"ref\":11},{\"ref\":12}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`OfNat.ofNat\"},{\"atom\":\"[Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":14},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"(Lean.Literal.natVal 0)\"}],\"constructor\":\"Lean.Expr.lit\"},{\"args\":[{\"ref\":15},{\"ref\":16}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instOfNatNat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":18},{\"ref\":16}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":17},{\"ref\":19}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":13},{\"ref\":20}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":2},{\"ref\":21}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":22},{\"ref\":12}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`n\"},{\"ref\":0},{\"ref\":23},{\"atom\":\"(Lean.BinderInfo.default)\"}],\"constructor\":\"Lean.Expr.forallE\"}],\"root\":24}",
+            "value": "{\"format\":\"lean-expr-dag/1\",\"nodes\":[{\"args\":[{\"atom\":\"`Nat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"atom\":\"`Eq.refl\"},{\"atom\":\"[Lean.Level.succ (Lean.Level.zero)]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":1},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`HAdd.hAdd\"},{\"atom\":\"[Lean.Level.zero, Lean.Level.zero, Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":3},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":4},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":5},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instHAdd\"},{\"atom\":\"[Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":7},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instAddNat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":8},{\"ref\":9}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":6},{\"ref\":10}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"0\"}],\"constructor\":\"Lean.Expr.bvar\"},{\"args\":[{\"ref\":11},{\"ref\":12}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`OfNat.ofNat\"},{\"atom\":\"[Lean.Level.zero]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":14},{\"ref\":0}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"(Lean.Literal.natVal 0)\"}],\"constructor\":\"Lean.Expr.lit\"},{\"args\":[{\"ref\":15},{\"ref\":16}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`instOfNatNat\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"},{\"args\":[{\"ref\":18},{\"ref\":16}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":17},{\"ref\":19}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":13},{\"ref\":20}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"ref\":2},{\"ref\":21}],\"constructor\":\"Lean.Expr.app\"},{\"args\":[{\"atom\":\"`n\"},{\"ref\":0},{\"ref\":22},{\"atom\":\"(Lean.BinderInfo.default)\"}],\"constructor\":\"Lean.Expr.lam\"}],\"root\":23}"
+          },
+          "lean_smoke_true": {
+            "type": "{\"format\":\"lean-expr-dag/1\",\"nodes\":[{\"args\":[{\"atom\":\"`True\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"}],\"root\":0}",
+            "value": "{\"format\":\"lean-expr-dag/1\",\"nodes\":[{\"args\":[{\"atom\":\"`True.intro\"},{\"atom\":\"[]\"}],\"constructor\":\"Lean.Expr.const\"}],\"root\":0}"
+          }
+        },
+        "dependency_evidence": {
+          "Add": "29ed174253c2c6da502d52c2ab5ff322838fbb1676f7cc457aeea5e680d9ec8a",
+          "Add.add": "4b2fd4016d2ec397cccf89a852ac9345269ba40204a3ca5ef46d618976ffd199",
+          "Add.mk": "a0df7b77088b1df2626f2b79a1a6e0c79185bedb05db58bf95469a0e49aaf425",
+          "Eq": "ae97c5036b97e3fededeccbccfe6b97f2390cdf5f6163be9fd412aeaa127c3e1",
+          "Eq.refl": "503a85598714e8eab2f4aca1f5aaf2daa1187dfa2aaa4d4c139554461e3bf271",
+          "HAdd": "8075a91f0bfbf5193d5bda754ccf8cab88c14886b2f2f5dc1dcbd3fbd6ef2101",
+          "HAdd.hAdd": "555859ffc0d90e1d6dad126cad42fff03ea893e2b0f96d75e4b8a82ae8e5b8bf",
+          "HAdd.mk": "055e10cd11910a8e85f87f433350c24ea36790ba9404433f8c18f28b239c3d2d",
+          "Nat": "437a839d75e265ca4705f8337894b170a7bbfbccf3600d3cc44fd5d557864c67",
+          "Nat.add": "fb2d5ca0f62ab9e9165c84ae83dfa525a5fa019f87660687c529e1d4d97fd005",
+          "Nat.add._f": "9d45652788b82a5f435c2a4efacc5b001055088b0f43613a502a36d42e476328",
+          "Nat.add.match_1": "7c2e92a5d85ec51a28846639d89f9a40cde69a392fbf2d576bacb46233e7abad",
+          "Nat.below": "85ff3349028b9057eb7a0a95205736680d12da3612b8b0c0d7b87be1fa9ec7a1",
+          "Nat.brecOn": "12286717777ab449cd4f2700cf45e66b16111e5eea8a0f610dc176931021adb1",
+          "Nat.brecOn.go": "67f85d90898e8c9577c19f280456b1abc7b98df17d089d74ee43e2756063712c",
+          "Nat.casesOn": "c1bcc92a0369402819fac3f997501d7c2b858abc50339bfde9ca505ce49a71b5",
+          "Nat.rec": "013090f3f8e8be95e69d620bdc248a16b33cbe48b0faa7afbfe0679031f11727",
+          "Nat.succ": "e6245a5ee332de07c53f0d41c7bc50ddcd8128fb255a93097b35946d106b4c00",
+          "Nat.zero": "8f01ef103b4828b19fdabb2a90948147ac66c82c9904c870a4dcd591f29c2984",
+          "OfNat": "f69046fe7cab367a8e93a5e01c30e80de07460b0c9d56923c418feb3033c552b",
+          "OfNat.mk": "5c11340d30dac1d74d179ba53f6e663db7da38bf0dab659dd1a86061768e330a",
+          "OfNat.ofNat": "72e1f99fb72fdd4451a59989ad795ba1384b1909ca6914f4a9be0e6da6859465",
+          "PProd": "2c1dc1914a406d5828cf0f08f06491fb9bb8c3389b42b171d695f963cdb39292",
+          "PProd.mk": "2c4a62a3a48def46b5f769c041417ed47299c0198bb34a7d29e0734b5e2c0d14",
+          "PUnit": "bdb6b2014478d0d2cf64ee037061626e97e4b6375d5188a4325a6a8dcec65a46",
+          "PUnit.unit": "89f425ac9109e813410f9a7645036b88173e17ddc04b8272b631bb387b11f338",
+          "instAddNat": "2f69586d84337d3a471dd413b727fb09a28fbcad6c90527391a554787304a3e3",
+          "instHAdd": "e4f0b46a83a712fea87091ce36143464e84a672ee9c2b4acff026e7b6d5229b2",
+          "instOfNatNat": "baf970dc94f0eeeb5c533813bdee486521bddad66147b91f20e33cd55048cc67",
+          "outParam": "dc31014642468b6a356cdd06689ea93460d2cfb3d850ef5b7ff424a09599775a",
+          "True": "05bc748483183712362e14fc77eb39d54c8ec9e328238e05da633f7bbd603dad",
+          "True.intro": "8702702a0dc812eba2350d64b3360b7bd6eb0ce58d906bd423e9489ef2038394"
+        },
+        "compiled_input_matches": true
+      },
+      "recordings": [
+        {
+          "path": "lean/mathlib-live-20261014.stdout.txt",
+          "sha256": "67393ae7568519aee81e36d949f433ba362d60234ac1ecac83260f1c45d608e8"
+        },
+        {
+          "path": "lean/mathlib-live-20261014.lean",
+          "sha256": "142d5512535eae533b72a34aaef7cf8b2b97321bcc5841d3398698412668c49a"
+        },
+        {
+          "path": "lean/mathlib-live-20261014.compiled.lean",
+          "sha256": "838f93a230708b2e574b55220f976723d635c85d003eeb9a93a7a03c0ab55774"
+        },
+        {
+          "path": "lean/mathlib-live-20261014.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "lean/mathlib-live-20261014.recording.json",
+          "sha256": "de30d90c93c89df1508e6a3e4f66c154b2f3d4aa5a26e5a545767640958f92d7"
+        }
+      ]
     }
   ],
   "supported_stream_versions": {

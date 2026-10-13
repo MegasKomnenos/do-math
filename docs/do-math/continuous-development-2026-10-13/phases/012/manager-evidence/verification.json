@@ -1,0 +1,217 @@
+{
+  "result": "pass",
+  "at_utc": "2026-10-13T19:53:31.794312+00:00",
+  "head": "571d282cfc8736b92939c2c89cc7064416399c3e",
+  "source_count": 2658,
+  "source_mismatches": [],
+  "changes": {
+    ".agents/skills/do-math/scripts/tests/.timings.json": {
+      "before": "d3e4e80e2e0191ca6ac7f5053fa1e6f8511711d5865887676b6441698f115521",
+      "after": "2a7412fb398f3d051b93da67ecaa729427cc4d0579e307be1c7fde4a6a71d505"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.compiled.lean": {
+      "before": null,
+      "after": "838f93a230708b2e574b55220f976723d635c85d003eeb9a93a7a03c0ab55774"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.lean": {
+      "before": null,
+      "after": "142d5512535eae533b72a34aaef7cf8b2b97321bcc5841d3398698412668c49a"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.recording.json": {
+      "before": null,
+      "after": "de30d90c93c89df1508e6a3e4f66c154b2f3d4aa5a26e5a545767640958f92d7"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stderr.txt": {
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stdout.txt": {
+      "before": null,
+      "after": "67393ae7568519aee81e36d949f433ba362d60234ac1ecac83260f1c45d608e8"
+    },
+    ".agents/skills/do-math/scripts/tests/corpus/manifest.json": {
+      "before": "ecd86c8869c06ff4491de235d4eb1dcb1d943df507133dbccf39e2626e2beb14",
+      "after": "64e31949fc3e3e58350a0b86b56c2daf63c6df0925976fb6a4cf98bd6125d1e1"
+    },
+    ".agents/skills/do-math/scripts/tests/smoke/test_lean_live.py": {
+      "before": null,
+      "after": "9bbd7426db5dfddf4e4138908d097fddb09e67e2c38b29db0fe01a9a1389c589"
+    },
+    ".agents/skills/do-math/scripts/tests/support/lean_live.py": {
+      "before": null,
+      "after": "cb25cd9dfa969945a9343da1a992d2e86c4509fc082404cacdadd94485461a32"
+    },
+    ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py": {
+      "before": "c461ce321d3a79b03a76c3cf01b4f1074185ea874fd62f4e8c324d95b2c867b8",
+      "after": "081059e3ee8532faa957c362ff30648cd96225803852e02421cc00bc8c30b810"
+    },
+    ".agents/skills/do-math/scripts/tests/시험-지침.md": {
+      "before": "f9b677eec8b0f8dbb5004c8e07f9af7dbbf847c2542125014b158e8b3b8d5510",
+      "after": "aa930b45a24093921b16666b7542c8971b2fc73c570c3d1864696b1a352bbfe6"
+    },
+    ".claude/skills/do-math/scripts/tests/.timings.json": {
+      "before": "d3e4e80e2e0191ca6ac7f5053fa1e6f8511711d5865887676b6441698f115521",
+      "after": "2a7412fb398f3d051b93da67ecaa729427cc4d0579e307be1c7fde4a6a71d505"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.compiled.lean": {
+      "before": null,
+      "after": "838f93a230708b2e574b55220f976723d635c85d003eeb9a93a7a03c0ab55774"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.lean": {
+      "before": null,
+      "after": "142d5512535eae533b72a34aaef7cf8b2b97321bcc5841d3398698412668c49a"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.recording.json": {
+      "before": null,
+      "after": "de30d90c93c89df1508e6a3e4f66c154b2f3d4aa5a26e5a545767640958f92d7"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stderr.txt": {
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stdout.txt": {
+      "before": null,
+      "after": "67393ae7568519aee81e36d949f433ba362d60234ac1ecac83260f1c45d608e8"
+    },
+    ".claude/skills/do-math/scripts/tests/corpus/manifest.json": {
+      "before": "ecd86c8869c06ff4491de235d4eb1dcb1d943df507133dbccf39e2626e2beb14",
+      "after": "64e31949fc3e3e58350a0b86b56c2daf63c6df0925976fb6a4cf98bd6125d1e1"
+    },
+    ".claude/skills/do-math/scripts/tests/smoke/test_lean_live.py": {
+      "before": null,
+      "after": "9bbd7426db5dfddf4e4138908d097fddb09e67e2c38b29db0fe01a9a1389c589"
+    },
+    ".claude/skills/do-math/scripts/tests/support/lean_live.py": {
+      "before": null,
+      "after": "cb25cd9dfa969945a9343da1a992d2e86c4509fc082404cacdadd94485461a32"
+    },
+    ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py": {
+      "before": "c461ce321d3a79b03a76c3cf01b4f1074185ea874fd62f4e8c324d95b2c867b8",
+      "after": "081059e3ee8532faa957c362ff30648cd96225803852e02421cc00bc8c30b810"
+    },
+    ".claude/skills/do-math/scripts/tests/시험-지침.md": {
+      "before": "f9b677eec8b0f8dbb5004c8e07f9af7dbbf847c2542125014b158e8b3b8d5510",
+      "after": "aa930b45a24093921b16666b7542c8971b2fc73c570c3d1864696b1a352bbfe6"
+    }
+  },
+  "suites": {
+    "live-01": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "error": 1
+      },
+      "exit_code": 1,
+      "python_hashes": 869,
+      "source_mismatches": {
+        "tests/support/lean_live.py": {
+          "recorded": "4126bb10ceff81003ad7d96126f3dac4e899d96edb8cc0dc523e9077f15e8982",
+          "current": "cb25cd9dfa969945a9343da1a992d2e86c4509fc082404cacdadd94485461a32"
+        },
+        "tests/unit/test_corpus_replay.py": {
+          "recorded": "c461ce321d3a79b03a76c3cf01b4f1074185ea874fd62f4e8c324d95b2c867b8",
+          "current": "081059e3ee8532faa957c362ff30648cd96225803852e02421cc00bc8c30b810"
+        }
+      },
+      "seconds": 40.0
+    },
+    "live-02": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "error": 1
+      },
+      "exit_code": 1,
+      "python_hashes": 869,
+      "source_mismatches": {
+        "tests/support/lean_live.py": {
+          "recorded": "93bd2fe182688d3e7327477123f7a52632151bc6fed255483cbda8f81fba0963",
+          "current": "cb25cd9dfa969945a9343da1a992d2e86c4509fc082404cacdadd94485461a32"
+        },
+        "tests/unit/test_corpus_replay.py": {
+          "recorded": "c461ce321d3a79b03a76c3cf01b4f1074185ea874fd62f4e8c324d95b2c867b8",
+          "current": "081059e3ee8532faa957c362ff30648cd96225803852e02421cc00bc8c30b810"
+        }
+      },
+      "seconds": 390.1
+    },
+    "live-final": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0,
+      "python_hashes": 869,
+      "source_mismatches": {},
+      "seconds": 79.4
+    },
+    "canonical-related": {
+      "selected": 48,
+      "unique_rows": 48,
+      "counts": {
+        "passed": 48
+      },
+      "exit_code": 0,
+      "python_hashes": 869,
+      "source_mismatches": {},
+      "seconds": 65.1
+    },
+    "mirror-live": {
+      "selected": 1,
+      "unique_rows": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0,
+      "python_hashes": 869,
+      "source_mismatches": {},
+      "seconds": 84.4
+    },
+    "mirror-related": {
+      "selected": 48,
+      "unique_rows": 48,
+      "counts": {
+        "passed": 48
+      },
+      "exit_code": 0,
+      "python_hashes": 869,
+      "source_mismatches": {},
+      "seconds": 64.8
+    }
+  },
+  "live": {
+    "live-final": {
+      "checks": 20,
+      "jobs": 5,
+      "dependencies": 9,
+      "judgment_files": 11094,
+      "dependency_evidence": 32,
+      "raw_stdout_bytes": 71704,
+      "normal_exit": 0,
+      "invalid_exit": 1,
+      "smoke_sha256": "56b0b7f4ffde497ff35369d322c893374cfee3f4d9090918541d35c450ff2e2b"
+    },
+    "mirror-live": {
+      "checks": 20,
+      "jobs": 5,
+      "dependencies": 9,
+      "judgment_files": 11094,
+      "dependency_evidence": 32,
+      "raw_stdout_bytes": 71704,
+      "normal_exit": 0,
+      "invalid_exit": 1,
+      "smoke_sha256": "5ef6fa0026fdfcaa7d0179dfa6a1e76eb742669da4f14b16cb982a5931f79909"
+    }
+  },
+  "corpus_raw_clean_paths": 112,
+  "runtime_preserved": 124,
+  "provider_inputs_preserved": 3,
+  "host_recordings_reused": 8,
+  "history_original_reports_absent": 10,
+  "limitations": [
+    "Lean slice only, no trust adoption or other G7 boundaries.",
+    "No new live calls by manager; original raw results and pure parser replay inspected.",
+    "No G4/G5/G6/final review or L01 certification."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".agents/skills/do-math/scripts/run_tests.py",
+    "structure.test_corpus",
+    "unit.test_corpus_replay",
+    "contracts.test_doubles_follow_corpus",
+    "boundary.test_setup_lean_compile",
+    "boundary.test_knowledge_lean_verifier",
+    "structure.test_test_smells",
+    "structure.test_boundary_invariants",
+    "structure.test_ports",
+    "sim.test_knowledge_project_identity.ProjectSourceIdentityTests",
+    "sim.test_toolchain_tools.HostIdentityTests",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/mirror-related"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T19:45:33.454953+00:00",
+  "pid": 25400,
+  "exit_code": 0,
+  "finished_at": "2026-10-13T19:46:42.412835+00:00"
+}

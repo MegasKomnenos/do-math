@@ -1,0 +1,72 @@
+[
+  {
+    "selector": "/current_work/git_port_integration/new_api_absent/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mhf6uf93\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "05ab06256b5eb09bfd8902d8487da41e461d9842939a8bc23fd42316f9e0cc5a"
+  },
+  {
+    "selector": "/current_work/git_port_integration/initial/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_muo2zq5\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "92ad22f4fc60fbfda0d630bce7c2fb07a4154a60a437f8c55be3f7e915b3dfb9"
+  },
+  {
+    "selector": "/current_work/git_port_integration/fake_contract_corrected/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-g2vuyxj8\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "034f72c5684e8557ef272131a90ce515c676c0d2b426240e710e2929d15c1795"
+  },
+  {
+    "selector": "/current_work/git_port_integration/actual_git_initial/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-epmjsj7i\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "053ac40be3b48208288c125bee2427fc15301a5b955afaea4c85aaa6b3a1a53b"
+  },
+  {
+    "selector": "/current_work/git_port_integration/activation_and_install_corrected/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-y4q61ztl\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "bcb5448d712a00644b6eda6fc6592a265f9eb68c8c216c23123251952634b7e4"
+  },
+  {
+    "selector": "/current_work/git_port_integration/related/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-k0g4_bdr\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "bfa72c3d135fcc1860b419afb645cf950fb571531313534a1e098bc3a35990f6"
+  },
+  {
+    "selector": "/current_work/git_port_integration/cli_and_boundary_inventory/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1b9pmbsr\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "95ebb2a46dc26e1f1878ddf6e8765f92b285c8aa41ffcada854efcf26bee3720"
+  },
+  {
+    "selector": "/current_work/git_port_integration/actual_lean/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ti7ve0py\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "934f3188ef84d2b20729b35c314252b11210e39f22f001f89a39b5f774df8b7b"
+  },
+  {
+    "selector": "/current_work/git_port_integration/candidate/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xt99nrfd\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "6d0182ff0aaa6f132bd45cbf3551858d754e8901c7ad88467c6e7e3e01323721"
+  },
+  {
+    "selector": "/current_work/git_port_integration/structural/path",
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ec0fowj9\\report.json",
+    "exists": false,
+    "sha256": null,
+    "reported_sha256": "e97f5455b071a46df3711c443cd022be0699ec6c1c1bad99ca24abf722f89341"
+  }
+]

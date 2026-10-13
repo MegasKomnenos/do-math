@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "git",
+    "diff",
+    "--cached",
+    "--check",
+    "--",
+    ".",
+    ":(exclude).agents/skills/do-math/scripts/tests/corpus/manifest.json",
+    ":(exclude).claude/skills/do-math/scripts/tests/corpus/manifest.json"
+  ],
+  "cwd": "C:\\math",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

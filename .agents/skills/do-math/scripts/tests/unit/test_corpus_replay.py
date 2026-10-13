@@ -46,12 +46,16 @@ def _lean_output(entry):
     base = {'stdout': (CORPUS / entry['path']).read_text(encoding='utf-8'), 'declaration_signatures': {},
             'axioms': {}, 'dependency_closure': {}, 'declaration_evidence': {}}
     allowed = sorted({axiom for axioms in entry['verdict']['axioms'].values() for axiom in axioms})
-    parsed = parse_evidence(base, entry['declarations'], allowed, extract_evidence=False)
+    extract_evidence = entry.get('extract_evidence', False)
+    parsed = parse_evidence(base, entry['declarations'], allowed, extract_evidence=extract_evidence)
     judged = {'status': parsed['status'], 'declaration_signatures': parsed['declaration_signatures'],
               'axioms': parsed['axioms']}
+    if extract_evidence:
+        judged.update({key: parsed[key] for key in
+                       ('signature_hash', 'dependency_closure', 'declaration_evidence', 'dependency_evidence')})
     if 'compiled_path' in entry:
         judged['compiled_input_matches'] = check_file(
-            (CORPUS / entry['source_path']).read_bytes(), entry['declarations'], extract_evidence=False
+            (CORPUS / entry['source_path']).read_bytes(), entry['declarations'], extract_evidence=extract_evidence
         ) == (CORPUS / entry['compiled_path']).read_bytes()
     return judged
 

@@ -1,0 +1,60 @@
+{
+  "kind": "work",
+  "purpose": "012의 Lean 실연쇄 검수 뒤 G7의 시험 전용 실제 OS 예약 등록·pythonw 발화·해제와 녹화/재생을 연결한다. 공유 corpus/생성기/캐시와 OS 자원을 한 task가 소유한다.",
+  "tasks": [
+    {
+      "id": "scheduler-smoke",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json",
+        "run:phases/010/tasks/host-smoke/evidence/review.md",
+        "run:phases/012/tasks/lean-smoke/report.json",
+        "run:phases/012/manager-evidence/verification.json",
+        "run:phases/012/manager-evidence/source-inspected.json",
+        "run:phases/012/manager-evidence/review.md",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "repo:.claude/skills/do-math/scripts/operator_schedule.ps1",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/do_math/powershell_scheduler.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/supervision.py",
+        "repo:.claude/skills/do-math/scripts/do_math/ports/scheduler.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_operator_schedule_adapter.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_port_scheduler.py",
+        "repo:.claude/skills/do-math/scripts/tests/contracts/test_port_scheduler.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/port_contracts/scheduler.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/entry.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/host_live.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_corpus.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+        ".claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        ".claude/skills/do-math/scripts/tests/시험-지침.md",
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+        ".agents/skills/do-math/scripts/tests/support/scheduler_live.py",
+        ".agents/skills/do-math/scripts/tests/corpus/scheduler/",
+        ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        ".agents/skills/do-math/scripts/tests/시험-지침.md",
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

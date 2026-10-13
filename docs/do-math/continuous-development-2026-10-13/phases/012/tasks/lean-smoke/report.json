@@ -1,0 +1,394 @@
+{
+  "status": "complete",
+  "narrative": "phase 012 lean-smoke의 A1~A4를 완료했다. 시작 소스 2644개는 011 manager의 source-inspected와 전건 같았다. 현 toolchain_root/discover_lean에서 기존 portable Lean 4.32.0, Lake 5.0.0 및 Mathlib v4.32.0을 찾았고, 설치된 의존 저장소 9개의 HEAD가 manifest revision과 같음을 확인했다. real_ports를 전달해 inspect_toolchain, 대표 Mathlib 컴파일과 실제 verifier의 정상·타입 오류를 실행했다. 설치 입력과 신뢰 기록의 바이트, 판단 파일 11094개의 메타데이터는 전후 같았다. 설치·다운로드나 신뢰 기록의 채택·재기록은 수행하지 않았다.\n\n최종 정본 T5는 1passed/79.4초, 미러는 1passed/84.4초였다. 각각 20개 판정과 실제 Job 5개의 종료·정리를 확인했다. 소스에 명시한 ℕ 표기와 증명의 수학적 내용에서 정확 서명과 빈 공리 집합을 정했고, 서명 해시·전체 의존 증거 32개·원 컴파일 입력을 검사했다. 같은 선언에 True.intro를 잘못 적용한 입력은 exit 1, failed, lean rejected와 타입 진단을 반환했다. worker·compiler·Job·clock·parser·검증기를 대체하지 않았다.\n\n초기 live-01/02는 새 도우미가 Job 상태의 정수 타입과 Calls factory를 잘못 읽어 각각 error 1이었다. 실패 원보고와 원자료를 보존했고 성공으로 소급하지 않는다. live-02의 대표 컴파일 308.275825초와 최종 21.170028초는 서로 다른 파일 캐시 조건에서의 실측이다. 시간에 따른 중단이나 단언 약화는 없으며, 이 차이를 코드 최적화의 증거로 주장하지 않는다.\n\n최종 정상 원출력 71704바이트, source 120바이트, compiled input 6597바이트와 빈 stderr를 자르거나 재작성하지 않고 corpus에 복사했다. provenance는 판본·실명령·시각·Job/PID·전체 추출 범위와 원출력 SHA를 결속한다. 제품 결과의 축약 stdout과 원out을 구별한다. 대표·오류 입력과 설치 fingerprint는 실행 evidence에 남기고 출하 corpus에는 작은 정상 녹화만 추가했다. reader는 새 full 녹화의 서명 해시·의존 증거를 재생하며, 기존 두 Lean 항목의 preview 경로와 기존 18개 entry/verdict·비manifest 100경로는 유지한다. 최종 corpus는 양쪽 각각 19항목·56파일·320687바이트이고, 총 112경로의 Git raw/clean·명시 SHA·미러 바이트와 5MiB 상한을 확인했다.\n\n관련 회귀는 정본과 미러 각각 48건이 전부 passed·exit 0이었다. corpus 3모듈, 지정 setup/verifier boundary와 smell/invariants/ports 구조 검사, Git 정체성·identity 8사례를 포함한다. 선택과 고유 row, 각 869개 Python 소스 해시와 실행 전후 소스를 대조했다. 사전 생성 계획 11경로는 모두 writes 안이었고, 공식 생성 뒤 미러의 실제 Lean 경로를 검사했다. 실행 뒤 비용 캐시 한 파일만 공식 재동기화했으며 --check 1314파일과 skill-only 검사가 통과했다. 최종 소스 2658개의 정확한 22변경은 모두 배정 범위 안이다.\n\nB38/8afa57c7의 formal/setup Git 포트 slice는 실제 diff·현재 소비자·원보고 selector를 대조해 유지했다. 원보고 10개가 현재 없어 과거 counts를 새 성공에 합산하지 않고 PR02 전체도 종료하지 않는다. runtime 124파일, 공급자 입력 3파일, host 입력·8원자료와 도구 조건, 기존 corpus를 보존해 011에서 승인한 실호출의 한정된 성질을 재사용한다. 새 유료 호출·host T5·예약·학술 호출은 없다. Git stage/commit/reset/checkout/push, graphify 갱신, 기존 연구 시작·재개·삭제는 수행하지 않았다. 전체 일반 검사·fresh T3·전체 함수 변이·나머지 G7/읽기 조건·최종 review와 관리 마감은 후속 manager의 책임이다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "현재 toolchain_root/discover_lean의 Mathlib 명령과 Lean/Lake SHA·판본, lean-toolchain/manifest/ready marker·9의존 HEAD를 결속했다. 실제 inspect_toolchain 및 verify_environment의 Mathlib 대표프로그램이exit0이다. source/argv/cwd/시각·Job/PID/원stdout/stderr/validation을 보존했다. 설치입력/신뢰기록바이트 및 판단파일11094개 메타데이터가 전후 같고 신뢰 채택/재기록·설치/download는 없다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/start-comparison.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final-observation.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/lake-version.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/host-version-inputs.json"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "공식 T5 discovery에 lean격리1건을 연결했다. real_ports/worker/Job/clock/검증/parser를 유지해 정상2선언의 정확서명·서명hash·빈axioms·full32의존 증거와 타입오류의exit1/failed/lean rejected/진단을 검사했다. 최종정본1passed/79.4초·미러1passed/84.4초다. 각각5실Job종료/active0/close/named빈값/자기proposal·workspace정리와factory호출0을 확인했다. 초기두도우미오류는 fail원보고로 보존한다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/live-final-observation.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live-observation.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/t5-list.stdout"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "새 정상원out71704bytes/source120bytes/compiled6597bytes/빈stderr를 변경·절단 없이 녹화했다. provenance는 실제명령·판본·시각·Job/PID·전체추출범위와원stdout/제품축약stdout SHA를 구별한다. 새full녹화에만 reader full범위를 열고 기존두Lean은 preview경로/기존18entries와판정을 유지했다. 양쪽각56파일/19항목·총112Git경로·모든명시SHA·생성bytes·5MiB상한과 corpus3모듈전건을 통과했다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-promotion.json",
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-start.json",
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/verification-final.json"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "원문설계3.3/4.5/5.1·9-C와 현지침을 대조했고 B38/8afa57c7 formal/setup/Git포트의 실제hunk·현소비자·원보고selector를 검토해 유지했다. 원보고10개부재와 PR02전체미종결을 명시했다. 정본/미러각48선택/고유row전건passed·exit0,각869Python해시와 전후소스가 결속됐다. 생성계획11개·실제11개,캐시만1개동기화·--check1314/skill-only verified. runtime124/공급자입력3/host입력·기존corpus바이트는 불변이며 기존실호출은 승인된한정성질로 재사용한다. 전체일반/T3/변이/나머지G7/최종review는 후속책임이다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/review.md",
+        "run:phases/012/tasks/lean-smoke/evidence/history-b38.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/history-original-reports.json",
+        "run:phases/012/tasks/lean-smoke/evidence/verification-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related/report.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-plan-initial.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-plan-cache.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-check.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/skill-only.stdout"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 생성기로 반영한 대응 미러. 공식 실행 비용캐시 갱신 및 최종 공식 미러 동기화."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.compiled.lean",
+      "detail": "공식 생성기로 반영한 대응 미러. 최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.lean",
+      "detail": "공식 생성기로 반영한 대응 미러. 최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.recording.json",
+      "detail": "공식 생성기로 반영한 대응 미러. 최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stderr.txt",
+      "detail": "공식 생성기로 반영한 대응 미러. 최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stdout.txt",
+      "detail": "공식 생성기로 반영한 대응 미러. 최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+      "detail": "공식 생성기로 반영한 대응 미러. 기존18항목을 보존하고 새실Lean정상녹화 한 항목·5파일과 명시SHA/판본/실명령/판정을 추가."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+      "detail": "공식 생성기로 반영한 대응 미러. 실제 Mathlib 대표/정상전체증거/타입오류/설치·자원 불변을 확인하는 lean격리T5 discovery시험 추가."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/lean_live.py",
+      "detail": "공식 생성기로 반영한 대응 미러. 기존real_ports/entry와 passive ObservedCalls를 사용해 실행·원spool·실설치조건·Job종료를 보존하고 검사하는 시험helper 추가."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+      "detail": "공식 생성기로 반영한 대응 미러. 명시extract_evidence=True인 새Lean녹화의 full서명hash/의존증거와 compiled input을 재생; 기존preview판정은 유지."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "공식 생성기로 반영한 대응 미러. T5 Lean 실행·실환경조건·원자료/full범위·정리·한계를 지침에 추가하고 전체T5선택설명을 갱신."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 실행 비용캐시 갱신 및 최종 공식 미러 동기화."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.compiled.lean",
+      "detail": "최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.lean",
+      "detail": "최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.recording.json",
+      "detail": "최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stderr.txt",
+      "detail": "최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/mathlib-live-20261014.stdout.txt",
+      "detail": "최종 실제컴파일의 원stdout/source/compiled input/stderr 또는 provenance를 보존한 새녹화. 기존Lean파일은 불변."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "detail": "기존18항목을 보존하고 새실Lean정상녹화 한 항목·5파일과 명시SHA/판본/실명령/판정을 추가."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+      "detail": "실제 Mathlib 대표/정상전체증거/타입오류/설치·자원 불변을 확인하는 lean격리T5 discovery시험 추가."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/lean_live.py",
+      "detail": "기존real_ports/entry와 passive ObservedCalls를 사용해 실행·원spool·실설치조건·Job종료를 보존하고 검사하는 시험helper 추가."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+      "detail": "명시extract_evidence=True인 새Lean녹화의 full서명hash/의존증거와 compiled input을 재생; 기존preview판정은 유지."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "T5 Lean 실행·실환경조건·원자료/full범위·정리·한계를 지침에 추가하고 전체T5선택설명을 갱신."
+    }
+  ],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "fact",
+      "detail": "현재기존Lean/Mathlib설치에서대표컴파일과실제verifier정상/full32의존·타입오류연쇄가정본/미러T5로완결됐다. 설치입력/신뢰기록·11094판단파일메타데이터는변경없고원자료/5Job정리를보존했다. 이는G7의지정Leanslice증거이며다른실외부와최종G전체의완료가아니다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/live-final-observation.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live-observation.json",
+        "run:phases/012/tasks/lean-smoke/evidence/verification-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#G7",
+        "run:plan.md"
+      ],
+      "next_action": "manager가원실행/해시/판정을검수해Lean배정의남김을갱신하고예약·학술·T4보고및최종관문을독립후속배정한다. 설치신뢰승인으로확대하지않는다."
+    },
+    {
+      "id": "F2",
+      "kind": "decision",
+      "detail": "B38/941fc04cformal/setupGit포트slice를현재필수backend전달·identity별memo·None/미추적/.lake제외·환경/stop/오류계약대로유지한다. 원보고selector10개는현재file이없고과거counts를새성공에합산하지않는다. currentcode/diff·관련8sim·실환경으로이slice만검토했으며PR02전체는미종결이다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/history-b38.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/b38-review.json",
+        "run:phases/012/tasks/lean-smoke/evidence/b38-tracking.json",
+        "run:phases/012/tasks/lean-smoke/evidence/history-original-reports.json",
+        "run:phases/012/tasks/lean-smoke/evidence/review.md",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related/report.json"
+      ],
+      "affects": [
+        "run:context.md#C9",
+        "run:context.md#G2",
+        "run:plan.md",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py"
+      ],
+      "next_action": "manager가해당B38slice유지판정과원보고부재한계를검수해현재맥락에반영한다. 다른PR02slice와최종판본연결책임은유지한다."
+    },
+    {
+      "id": "F3",
+      "kind": "fact",
+      "detail": "runtime124·공급자입력3·host입력/8원자료·도구조건과기존corpus의비manifest100경로/18entries/verdict가보존됐다. 새녹화1개와현재fullreader·정본/미러48회귀만추가했고기존승인실호출은불변경로의한정성질로재사용한다. 최종변경22개/생성11개·캐시1개동기화는writes안이다.",
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/verification-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-start.json",
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/source-start.json",
+        "run:phases/012/tasks/lean-smoke/evidence/source-final.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-plan-initial.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-plan-cache.json"
+      ],
+      "affects": [
+        "run:context.md#C12",
+        "run:context.md#G7",
+        "run:context.md#G8",
+        "run:plan.md"
+      ],
+      "next_action": "manager가기존실호출재사용/원바이트보존을유지하고이번제품단위를검수·마감한다. 부분회귀합산을전체일반/T3/변이/최종review로세지않는다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_lean_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/live-01",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/live-01.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-01.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/live-01.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/live-01/report.json"
+      ],
+      "detail": "도우미 상태 타입/Calls 접근 오류로 error1. 원보고와 원spool을 보존했으며 완료 근거로 세지 않는다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_lean_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/live-02",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/live-02.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-02.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/live-02.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/live-02/report.json"
+      ],
+      "detail": "대표/정상/타입오류 컴파일은 실제 수행했지만 Calls factory에 futures를 읽은 도우미 오류로 error1. 원보고는 보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_lean_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/live-final",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/live-final.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/live-final/report.json"
+      ],
+      "detail": "Mathlib 대표 컴파일·정상 전체 증거·실제 타입 오류·설치 불변·Job 정리20판정 및 공식1선택/1passed/exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py --tier T5 --list",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/t5-list.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/t5-list.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/t5-list.stderr"
+      ],
+      "detail": "T5 discovery6개에 새 Lean1개가 포함됐다. 공급자/host T5는 이번에 실행하지 않았다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus boundary.test_setup_lean_compile boundary.test_knowledge_lean_verifier structure.test_test_smells structure.test_boundary_invariants structure.test_ports sim.test_knowledge_project_identity.ProjectSourceIdentityTests sim.test_toolchain_tools.HostIdentityTests --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/canonical-related",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/canonical-related/report.json"
+      ],
+      "detail": "명시10선택의48고유시험이 전건passed·exit0. corpus3모듈·필수boundary/structure와 Git 정체성/identity8사례를 포함한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-build.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-build.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-build.stderr"
+      ],
+      "detail": "사전 계획11경로 모두 writes 안. 생성7/갱신4/삭제0, 공식1314파일 생성."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py --tier T5 smoke.test_lean_live --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/mirror-live",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-live/report.json"
+      ],
+      "detail": "생성된 미러 경로의 독립 Mathlib 실실행.20판정 및 공식1선택/1passed/exit0. 유료 호출은 없다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus boundary.test_setup_lean_compile boundary.test_knowledge_lean_verifier structure.test_test_smells structure.test_boundary_invariants structure.test_ports sim.test_knowledge_project_identity.ProjectSourceIdentityTests sim.test_toolchain_tools.HostIdentityTests --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/012/tasks/lean-smoke/evidence/mirror-related",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related.stderr",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-related/report.json"
+      ],
+      "detail": "정본과 정확히 같은48시험이 전건passed·exit0이며 skip/error/미실행0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-cache-build.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-cache-build.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-cache-build.stderr"
+      ],
+      "detail": "미러 시험 뒤 비용캐시 한 파일만 공식 재생성. 다른 제품 변화 없음."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-check.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-check.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/mirror-check.stderr"
+      ],
+      "detail": "공식 생성물1314파일 drift 없음."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/skill-only.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/skill-only.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/skill-only.stderr"
+      ],
+      "detail": "공식 skill-only 구조 검사verified."
+    },
+    {
+      "command": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe --version",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/lake-version.command.json",
+        "run:phases/012/tasks/lean-smoke/evidence/lake-version.stdout",
+        "run:phases/012/tasks/lean-smoke/evidence/lake-version.stderr"
+      ],
+      "detail": "실제 탐색한 Lake 실행 파일의 판본을 별도 보존. Lake5.0.0-src+8c9756b/Lean4.32.0이며 성공 컴파일의 대체 근거가 아니다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\012\\tasks\\lean-smoke\\evidence\\task_tools.py corpus corpus-start",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-start.json"
+      ],
+      "detail": "기존 양쪽18항목/51파일/223685바이트/50명시SHA 및 총102경로 Git raw/clean·미러 바이트 전건 일치."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\012\\tasks\\lean-smoke\\evidence\\task_tools.py corpus corpus-final",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/corpus-final.json"
+      ],
+      "detail": "새 양쪽19항목/56파일의 전112경로 Git raw/clean·명시SHA·미러바이트 전건 일치. 기존18entries/verdict 및100비manifest경로는 불변."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\012\\tasks\\lean-smoke\\evidence\\task_tools.py verification",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/012/tasks/lean-smoke/evidence/verification-final.json"
+      ],
+      "detail": "시작2644/최종2658소스와 정확22변경/writes,6공식 실행의선택/고유row/실제exit/소스 불변,기존 corpus 및 runtime124/공급자입력3/host입력·8원자료와도구 조건을 대조했다."
+    }
+  ]
+}

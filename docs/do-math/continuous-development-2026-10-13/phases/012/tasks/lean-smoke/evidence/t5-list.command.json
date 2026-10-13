@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--tier",
+    "T5",
+    "--list"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T19:40:39.389677+00:00",
+  "pid": 7136,
+  "exit_code": 0,
+  "finished_at": "2026-10-13T19:40:41.576241+00:00"
+}

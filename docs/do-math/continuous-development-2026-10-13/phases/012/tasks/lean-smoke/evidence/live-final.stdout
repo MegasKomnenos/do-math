@@ -1,0 +1,8 @@
+Open known defects: 0
+[smoke] 1 tests
+  isolated: smoke.test_lean_live.LeanLiveTests
+  {'passed': 1}
+Over budget: 0 tests; T5 ran 79.4s of 600s
+{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"smoke": 79.4}, "total_seconds": 79.4}
+   78.984s passed             smoke.test_lean_live.LeanLiveTests.test_installed_mathlib_compiles_and_verifier_checks_success_and_type_error
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\012\tasks\lean-smoke\evidence\live-final\report.json

@@ -1,0 +1,42 @@
+Open known defects: 0
+[structure] 13 tests
+[unit] 2 tests
+[sim] 8 tests
+[contracts] 10 tests
+[boundary] 15 tests
+  isolated: boundary.test_knowledge_lean_verifier.InstalledLeanTests
+  {'passed': 7}
+  isolated: boundary.test_knowledge_lean_verifier.LakeEnvironmentTests
+  {'passed': 1}
+  isolated: boundary.test_knowledge_lean_verifier.RealJobTests
+  {'passed': 3}
+  isolated: boundary.test_knowledge_lean_verifier.ToolchainContractTests
+  {'passed': 1}
+  isolated: boundary.test_setup_lean_compile.RepresentativeCompileTests
+  {'passed': 2}
+  isolated: boundary.test_setup_lean_compile.SetupProcessTests
+  {'passed': 1}
+Over budget: 1 tests
+      7.812s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+{"complete": true, "successful": true, "counts": {"passed": 48}, "group_seconds": {"structure": 15.5, "unit": 0.0, "sim": 0.2, "contracts": 0.3, "boundary": 49.1}, "total_seconds": 65.1}
+   14.391s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_shared_closure_traversal_matches_each_declaration_checked_alone
+    7.812s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    6.922s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_changed_transitive_body_requires_identity_reassessment
+    3.609s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_prime_declarations_have_signatures_and_axioms
+    3.578s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_exact_unicode_names_and_expressions_are_not_normalized
+    3.516s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_path_lookup_spelling_matches_the_inspected_executable
+    3.500s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_signatures_preserve_binders_and_unicode
+    3.391s passed             boundary.test_knowledge_lean_verifier.ToolchainContractTests.test_inspection_matches_actual_formal_verifier
+    3.250s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_installed_lean_extracts_transitive_constants
+    2.157s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window
+    2.125s passed             boundary.test_knowledge_lean_verifier.LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input
+    1.250s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits
+    1.234s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared
+    1.078s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization
+    1.078s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files
+    0.718s passed             boundary.test_knowledge_lean_verifier.RealJobTests.test_native_compiler_crash_code_reaches_the_verifier
+    0.531s passed             structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name
+    0.422s passed             boundary.test_setup_lean_compile.RepresentativeCompileTests.test_failure_and_stop_never_produce_verified_evidence
+    0.391s passed             boundary.test_knowledge_lean_verifier.RealJobTests.test_nested_stop_preserves_flushed_child_output
+    0.328s passed             boundary.test_setup_lean_compile.RepresentativeCompileTests.test_validation_preserves_source_output_and_exact_command
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\012\tasks\lean-smoke\evidence\canonical-related\report.json
