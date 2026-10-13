@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/verify_submission.py"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T20:49:46.076109+00:00",
+  "explicit_inputs": {},
+  "pid": 7920,
+  "exit_code": 0,
+  "ended_at": "2026-10-13T20:49:50.004390+00:00"
+}

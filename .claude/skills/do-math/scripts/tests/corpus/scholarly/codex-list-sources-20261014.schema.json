@@ -1,0 +1,1 @@
+{"additionalProperties": false, "properties": {"nonce": {"const": "74edfc44e17c6d8bedb52c5fb05fe12a", "type": "string"}, "phase": {"enum": ["finished", "pending"], "type": "string"}, "status": {"const": "CLI_OK", "type": "string"}}, "required": ["status", "nonce", "phase"], "type": "object"}

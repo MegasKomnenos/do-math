@@ -1,0 +1,83 @@
+{
+  "entry_id": "codex-scholarly-list-sources-20261014",
+  "recordings": [
+    {
+      "path": "scholarly/codex-list-sources-20261014.jsonl",
+      "sha256": "93fc0fced143ac5985713050855e4b846eafeaf88387d7edcac781c7dce35235",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/stdout.jsonl",
+      "bytes": 38469,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.final.txt",
+      "sha256": "0556820aadd601c05e6f315c6879d71ea5421810b2b935dba8c7895acf6174aa",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/final.txt",
+      "bytes": 111,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.schema.json",
+      "sha256": "7f69a2d73e44218e6c7bfaccb01201c1a1502762dc2b3dc8f912a9c2000dd214",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/output.schema.json",
+      "bytes": 292,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.transport.schema.json",
+      "sha256": "430292168e08f6fc57d8ca90e19f787c5f3406bae49b04c64f5d2e1bc4b13052",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/transport.schema.json",
+      "bytes": 745,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.worker-status.json",
+      "sha256": "2cd922e9414955122f730dabae7b68ea474d873229b3150a85e8fb6d88a6c012",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/worker-status.json",
+      "bytes": 366,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.registry.json",
+      "sha256": "e9526e292459f90a6b537435ea77d378213f44da6d4192064c67d339d22c21d4",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/registry.stdout.json",
+      "bytes": 14682,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.request.json",
+      "sha256": "10e32af7b08ba2e34340b1b2ea96f4ed45308a18c443329f658d7feb0cc9ab3d",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/do-math-cli-tvnfwpmp/request.json",
+      "bytes": 1930,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.prompt.txt",
+      "sha256": "5a6e77a29f20699005ad7f2a01f0f889fb708e56d05947b00799edc513a63a50",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/input.txt",
+      "bytes": 843,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/files/evidence/stderr.txt",
+      "bytes": 0,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "path": "scholarly/codex-list-sources-20261014.version.txt",
+      "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/version.stdout.txt",
+      "bytes": 18,
+      "transformation": "none; exact original bytes"
+    }
+  ],
+  "raw_stream_sha256": "93fc0fced143ac5985713050855e4b846eafeaf88387d7edcac781c7dce35235",
+  "independent_expected_source": "installed registry.Source.summary via actual server Python",
+  "initial_failures": [
+    "live-01 error: report bytes serialization",
+    "live-02 failed: nonexistent lazy artifact directory assertion"
+  ],
+  "actual_calls": 3,
+  "promotion": "Only live-final is promoted as a passed recording; earlier reports/raw files remain unchanged."
+}

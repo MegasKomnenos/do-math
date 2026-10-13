@@ -65,6 +65,18 @@ def _scholarly_config(entry):
     return _from_config(CORPUS / entry['path'])
 
 
+def _scholarly_stream(entry):
+    from do_math.codex_stream import parse_jsonl
+    from support.scholarly_live import list_sources_observation
+    raw = (CORPUS / entry['path']).read_bytes()
+    registry = json.loads((CORPUS / entry['registry_path']).read_bytes())
+    parsed = parse_jsonl(raw)
+    observed = list_sources_observation(raw, registry['sources'])
+    return {**{key: parsed[key] for key in ('turn_completed', 'turn_failed', 'parse_complete')},
+            **{key: observed[key] for key in ('tool_id', 'server', 'tool', 'status', 'structured_content_present')},
+            'source_ids': sorted(source['id'] for source in observed['sources'])}
+
+
 def _scheduler_json(entry):
     from subprocess import CompletedProcess
     from do_math.powershell_scheduler import PowerShellScheduler
@@ -94,10 +106,115 @@ def _cli_surface(entry):
 
 
 READERS = {'codex_stream': _codex_stream, 'claude_stream': _claude_stream, 'lean_output': _lean_output,
-           'scholarly_config': _scholarly_config, 'scheduler_json': _scheduler_json, 'cli_surface': _cli_surface}
+           'scholarly_config': _scholarly_config, 'scholarly_stream': _scholarly_stream,
+           'scheduler_json': _scheduler_json, 'cli_surface': _cli_surface}
 
 
 class CorpusReplayTests(unittest.TestCase):
+    def scholarly_recording(self):
+        entries = json.loads((CORPUS / 'manifest.json').read_bytes())['entries']
+        recordings = [entry for entry in entries if entry['kind'] == 'scholarly_stream']
+        self.assertTrue(recordings, 'actual list_sources completion must have a recording')
+        return recordings
+
+    def test_scholarly_completion_is_bound_to_exact_final_and_worker_isolation(self):
+        import hashlib
+        from do_math.codex_stream import parse_jsonl
+        from do_math.codex_worker import build_argv
+        from do_math.provider_final import final_bytes, semantic_output, output_contract
+        from jsonschema import Draft202012Validator
+        for entry in self.scholarly_recording():
+            with self.subTest(entry=entry['id']):
+                parsed = parse_jsonl((CORPUS / entry['path']).read_bytes())
+                final = (CORPUS / entry['final_path']).read_bytes()
+                self.assertEqual(final_bytes(parsed), final)
+                schema = json.loads((CORPUS / entry['schema_path']).read_bytes())
+                transport = json.loads((CORPUS / entry['transport_schema_path']).read_bytes())
+                self.assertEqual(transport, output_contract('codex', schema))
+                output = semantic_output('codex', final)
+                self.assertEqual(output, {'status': 'CLI_OK', 'nonce': schema['properties']['nonce']['const'], 'phase': 'finished'})
+                self.assertEqual(list(Draft202012Validator(schema).iter_errors(output)), [])
+                request_raw = (CORPUS / entry['request_path']).read_bytes()
+                request = json.loads(request_raw)
+                worker = json.loads((CORPUS / entry['worker_status_path']).read_bytes())
+                argv = build_argv(request)
+                data_dir = str(Path(request['cwd']).resolve() / 'scholarly-data')
+                server = request['scholarly_server']
+                self.assertIn('mcp_servers.scholarly.args=' + json.dumps(
+                    [*server['args'], '--data-dir', data_dir], ensure_ascii=False), argv)
+                self.assertEqual(worker['request_sha256'], hashlib.sha256(request_raw).hexdigest())
+                self.assertEqual(worker['argv_sha256'], hashlib.sha256('\0'.join(argv).encode('utf-8')).hexdigest())
+                self.assertEqual(worker['schema_sha256'], hashlib.sha256((CORPUS / entry['transport_schema_path']).read_bytes()).hexdigest())
+                self.assertEqual((worker['state'], worker['cli_exit_code']), ('exited', 0))
+
+    def test_scholarly_started_failed_missing_or_incomplete_response_is_rejected(self):
+        from copy import deepcopy
+        from support.scholarly_live import list_sources_observation
+        for entry in self.scholarly_recording():
+            raw = (CORPUS / entry['path']).read_bytes()
+            expected = json.loads((CORPUS / entry['registry_path']).read_bytes())['sources']
+            original = [json.loads(line) for line in raw.splitlines() if line.strip()]
+            completions = [index for index, event in enumerate(original) if event['type'] == 'item.completed'
+                           and event.get('item', {}).get('type') == 'mcp_tool_call']
+            self.assertEqual(len(completions), 1)
+            index = completions[0]
+            # Positive control is original bytes, independently checked against registry summaries.
+            self.assertEqual(list_sources_observation(raw, expected)['status'], 'ok')
+            cases = []
+            started = deepcopy(original)
+            del started[index]
+            cases.append(('start_only', started, '^scholarly requires exactly one start and one completion$'))
+            for name, changes, reason in (
+                    ('error_completion', {'status': 'failed', 'error': {'message': 'fixture failure'}}, '^scholarly native completion failed$'),
+                    ('wrong_id', {'id': 'different-request'}, '^scholarly completion is not bound to its start$'),
+                    ('no_result', {'result': None}, '^scholarly MCP result is absent or an error$'),
+                    ('other_tool', {'tool': 'fetch'}, '^scholarly probe called an unassigned MCP tool$')):
+                events = deepcopy(original)
+                events[index]['item'].update(changes)
+                cases.append((name, events, reason))
+            for name in ('isError', 'empty_content', 'broken_text', 'no_sources', 'missing_source',
+                         'duplicate_id', 'missing_summary_field', 'wrong_summary', 'structured_disagrees'):
+                events = deepcopy(original)
+                result = events[index]['item']['result']
+                payload = json.loads(result['content'][0]['text'])
+                reason = '^scholarly source summaries differ from the server registry$'
+                if name == 'isError':
+                    result['isError'] = True
+                    reason = '^scholarly MCP result is absent or an error$'
+                elif name == 'empty_content':
+                    result['content'] = []
+                    reason = '^scholarly response must preserve its complete text content$'
+                elif name == 'broken_text':
+                    result['content'][0]['text'] = '{'
+                    reason = '^Expecting property name enclosed in double quotes:'
+                else:
+                    if name == 'no_sources':
+                        del payload['sources']
+                        reason = '^scholarly response is not an ok source list$'
+                    elif name == 'missing_source':
+                        payload['sources'].pop()
+                    elif name == 'duplicate_id':
+                        payload['sources'].append(deepcopy(payload['sources'][0]))
+                        reason = '^scholarly source IDs are missing or duplicated$'
+                    elif name == 'missing_summary_field':
+                        del payload['sources'][0]['verification']
+                    elif name == 'wrong_summary':
+                        payload['sources'][0]['implementation'] = 'invented'
+                    result['content'][0]['text'] = json.dumps(payload, ensure_ascii=False)
+                    if result.get('structured_content') is not None:
+                        result['structured_content'] = payload
+                    if name == 'structured_disagrees':
+                        result['structured_content'] = {'status': 'error'}
+                        reason = '^scholarly content and structuredContent disagree$'
+                cases.append((name, events, reason))
+            for name, events, reason in cases:
+                with self.subTest(entry=entry['id'], case=name), self.assertRaisesRegex(ValueError, reason):
+                    list_sources_observation(b''.join(json.dumps(event, ensure_ascii=False).encode('utf-8') + b'\n'
+                                                    for event in events), expected)
+            with self.subTest(entry=entry['id'], case='truncated_stream'), self.assertRaisesRegex(
+                    ValueError, '^scholarly stream did not complete successfully$'):
+                list_sources_observation(raw[:-10], expected)
+
     def test_every_entry_parses_to_its_recorded_judgment(self):
         entries = json.loads((CORPUS / 'manifest.json').read_text(encoding='utf-8'))['entries']
         for entry in entries:

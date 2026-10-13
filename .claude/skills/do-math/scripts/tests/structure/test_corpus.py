@@ -49,6 +49,11 @@ class CorpusCompletenessTests(unittest.TestCase):
                     self.assertTrue(path.is_file(), recording['path'])
                     self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), recording['sha256'])
                     declared.add(recording['path'])
+                if entry['kind'] == 'scholarly_stream':
+                    for field in ('registry_path', 'request_path', 'schema_path', 'transport_schema_path', 'worker_status_path'):
+                        self.assertIn(entry[field], declared, 'scholarly inputs must be declared and hashed')
+                    self.assertTrue(entry['live_passed'])
+                    self.assertEqual(entry['verdict']['status'], 'ok')
                 if entry['role'] == 'maintenance':
                     self.assertIn(entry['schema_path'], declared)
                     self.assertEqual(hashlib.sha256((CORPUS / entry['schema_path']).read_bytes()).hexdigest(),

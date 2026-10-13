@@ -1,0 +1,172 @@
+commit d03f7d90ad2744cdbd24f4a0624306b8f5037246
+Author: MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+Date:   Wed Sep 16 13:46:29 2026 +0900
+
+    do-math의 계약 복구와 학술자료 및 독립 운영을 통합한다
+
+diff --git a/.claude/skills/do-math/scripts/do_math/codex_worker.py b/.claude/skills/do-math/scripts/do_math/codex_worker.py
+index aa80c83c..b115cbd5 100644
+--- a/.claude/skills/do-math/scripts/do_math/codex_worker.py
++++ b/.claude/skills/do-math/scripts/do_math/codex_worker.py
+@@ -11,6 +11,11 @@ import sys
+ import tempfile
+ from typing import Any, Mapping
+ 
++try:  # This module is also the direct ``python codex_worker.py`` Job root.
++    from do_math.scholarly import validate_scholarly_server
++except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
++    from scholarly import validate_scholarly_server
++
+ 
+ _REMOVED_ENV = frozenset({
+     "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL",
+@@ -53,7 +58,7 @@ def load_request(path: Path) -> dict[str, Any]:
+         raise ValueError("codex_path must be one NUL-free executable string")
+     if "codex_argv" in value:
+         raise ValueError("codex_argv is forbidden; production accepts one executable only")
+-    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path"}
++    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path", "scholarly_server"}
+     if unknown:
+         raise ValueError("unknown worker request fields: " + ", ".join(sorted(unknown)))
+     if not isinstance(value["effort"], str) or value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
+@@ -76,6 +81,8 @@ def load_request(path: Path) -> dict[str, Any]:
+         raise ValueError("output_schema_path must be a non-empty path when present")
+     if "windows_sandbox" in value and value["windows_sandbox"] not in _WINDOWS_SANDBOXES:
+         raise ValueError("windows_sandbox must be elevated or unelevated when present")
++    if "scholarly_server" in value and value["scholarly_server"] is not None:
++        value["scholarly_server"] = validate_scholarly_server(value["scholarly_server"])
+     if "filesystem" in value:
+         fs = value["filesystem"]
+         if value.get("windows_sandbox") != "elevated" or not isinstance(fs, dict):
+@@ -111,6 +118,13 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
+         argv.extend(["--output-schema", request["output_schema_path"]])
+     if "windows_sandbox" in request:
+         argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
++    scholarly = request.get("scholarly_server")
++    if scholarly is not None:
++        server = validate_scholarly_server(scholarly)
++        data_dir = str((Path(request["cwd"]).resolve() / "scholarly-data"))
++        args = [*server["args"], "--data-dir", data_dir]
++        argv.extend(["--config", "mcp_servers.scholarly.command=" + json.dumps(server["command"], ensure_ascii=False),
++                     "--config", "mcp_servers.scholarly.args=" + json.dumps(args, ensure_ascii=False)])
+     if "filesystem" in request:
+         fs = request["filesystem"]; entries = {'":minimal"': '"read"'}
+         for field, mode in (("read_roots", "read"), ("write_roots", "write"), ("deny_roots", "deny")):
+diff --git a/.claude/skills/do-math/scripts/do_math/model_runner.py b/.claude/skills/do-math/scripts/do_math/model_runner.py
+index 777ad8b7..ecec4cb2 100644
+--- a/.claude/skills/do-math/scripts/do_math/model_runner.py
++++ b/.claude/skills/do-math/scripts/do_math/model_runner.py
+@@ -26,6 +26,7 @@ class CodexModelRunner:
+ 
+     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
+             model: str, effort: str, timeout_seconds: float,
++            scholarly_server: dict | None = None,
+             should_stop: Callable[[], bool] | None = None,
+             on_started: Callable[[dict], None] | None = None,
+             on_observation: Callable[[dict], None] | None = None) -> dict:
+@@ -43,6 +44,8 @@ class CodexModelRunner:
+                    "approval_policy": "never", "windows_sandbox": self.windows_sandbox, "max_runtime_seconds": timeout_seconds,
+                    "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
+                    "final_path": str(evidence_dir / "final.txt"), "status_path": str(evidence_dir / "worker-status.json")}
++        if scholarly_server is not None:
++            request["scholarly_server"] = scholarly_server
+         request_path = evidence_dir / "request.json"
+         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+         execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ)
+diff --git a/.claude/skills/do-math/scripts/do_math/scholarly.py b/.claude/skills/do-math/scripts/do_math/scholarly.py
+new file mode 100644
+index 00000000..a84d0572
+--- /dev/null
++++ b/.claude/skills/do-math/scripts/do_math/scholarly.py
+@@ -0,0 +1,91 @@
++"""Closed scholarly-MCP configuration for isolated Codex executions."""
++from __future__ import annotations
++
++import os
++from pathlib import Path
++import tomllib
++from typing import Any
++
++
++def _pathlike(value: str) -> bool:
++    return "/" in value or "\\" in value or bool(Path(value).suffix)
++
++
++def _validate(value: dict[str, Any], *, allow_relative_paths: bool) -> dict[str, Any]:
++    if not isinstance(value, dict) or set(value) != {"command", "args"}:
++        raise ValueError("scholarly server must contain exactly command and args")
++    command, args = value["command"], value["args"]
++    if not isinstance(command, str) or not command or "\x00" in command:
++        raise ValueError("scholarly command must be a nonempty NUL-free string")
++    if not isinstance(args, list) or any(not isinstance(arg, str) or "\x00" in arg for arg in args):
++        raise ValueError("scholarly args must be NUL-free strings")
++    if any(arg == "--data-dir" or arg.startswith("--data-dir=") for arg in args):
++        raise ValueError("scholarly args must not override the execution data directory")
++    if not allow_relative_paths:
++        if _pathlike(command) and not Path(command).is_absolute():
++            raise ValueError("relative scholarly command needs a configuration-file base")
++        if args and _pathlike(args[0]) and not Path(args[0]).is_absolute():
++            raise ValueError("relative scholarly server file needs a configuration-file base")
++    return {"command": command, "args": list(args)}
++
++
++def validate_scholarly_server(value: dict[str, Any]) -> dict[str, Any]:
++    """Validate a command/args pair that has no configuration-file base."""
++    return _validate(value, allow_relative_paths=False)
++
++
++def _absolute_from_config(value: str, base: Path, *, label: str) -> str:
++    candidate = Path(value)
++    if candidate.is_absolute():
++        return value
++    resolved = (base / candidate).resolve(strict=False)
++    if not resolved.is_file():
++        raise ValueError(f"relative scholarly {label} does not name a file beside its configuration")
++    return str(resolved)
++
++
++def _from_config(path: Path) -> dict[str, Any] | None:
++    try:
++        with path.open("rb") as stream:
++            parsed = tomllib.load(stream)
++    except tomllib.TOMLDecodeError as error:
++        raise ValueError(f"invalid Codex configuration at {path}") from error
++    table = parsed.get("mcp_servers")
++    entry = table.get("scholarly") if isinstance(table, dict) else None
++    if entry is None:
++        return None
++    if not isinstance(entry, dict):
++        raise ValueError("scholarly server configuration must be a table")
++    # Codex's server table may also carry client timeout settings. They remain
++    # owned by the parent configuration and are deliberately not inherited.
++    server = _validate({key: entry.get(key) for key in ("command", "args")}, allow_relative_paths=True)
++    if _pathlike(server["command"]) and not Path(server["command"]).is_absolute():
++        server["command"] = _absolute_from_config(server["command"], path.parent, label="command")
++    if server["args"] and _pathlike(server["args"][0]) and not Path(server["args"][0]).is_absolute():
++        server["args"][0] = _absolute_from_config(server["args"][0], path.parent, label="server file")
++    return validate_scholarly_server(server)
++
++
++def resolve_scholarly_server(explicit: dict[str, Any] | None, *, start: Path) -> dict[str, Any] | None:
++    """Resolve an explicit server or the nearest project/CODEX_HOME scholarly entry.
++
++    This deliberately reads and returns only the ``mcp_servers.scholarly``
++    command/args pair. Relative executable and first server-file arguments are
++    resolved against their configuration file. Other arguments remain literals.
++    """
++    if explicit is not None:
++        return validate_scholarly_server(explicit)
++    anchor = start if start.is_dir() else start.parent
++    checked: set[Path] = set()
++    for directory in (anchor, *anchor.parents):
++        candidate = directory / ".codex" / "config.toml"
++        checked.add(candidate.resolve(strict=False))
++        if candidate.is_file():
++            resolved = _from_config(candidate)
++            if resolved is not None:
++                return resolved
++    code_home = Path(os.environ["CODEX_HOME"]) if os.environ.get("CODEX_HOME") else Path.home() / ".codex"
++    candidate = code_home / "config.toml"
++    if candidate.resolve(strict=False) not in checked and candidate.is_file():
++        return _from_config(candidate)
++    return None

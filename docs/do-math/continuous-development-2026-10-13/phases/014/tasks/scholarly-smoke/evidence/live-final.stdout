@@ -1,0 +1,8 @@
+Open known defects: 0
+[smoke] 1 tests
+  isolated: smoke.test_scholarly_live.ScholarlyLiveTests
+  {'passed': 1}
+Over budget: 0 tests; T5 ran 34.0s of 600s
+{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"smoke": 34.0}, "total_seconds": 34.0}
+   33.703s passed             smoke.test_scholarly_live.ScholarlyLiveTests.test_list_sources_completes_with_installed_registry_in_isolated_workspace
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\014\tasks\scholarly-smoke\evidence\live-final\report.json

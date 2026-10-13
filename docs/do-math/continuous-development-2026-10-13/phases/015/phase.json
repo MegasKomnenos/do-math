@@ -1,0 +1,58 @@
+{
+  "kind": "work",
+  "purpose": "014 학술 경계 검수 뒤 설계5.5의 T4 단독 adapter 분기 보고 공백을 공식 runner와 실제 격리 worker/병합 경로에 연결한다. T3 관문·색인·저장소 의미를 보존한다.",
+  "tasks": [
+    {
+      "id": "t4-adapter-report",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json",
+        "run:phases/002/tasks/mutation-baseline/report.json",
+        "run:phases/014/tasks/scholarly-smoke/report.json",
+        "run:phases/014/manager-evidence/verification.json",
+        "run:phases/014/manager-evidence/source-inspected.json",
+        "run:phases/014/manager-evidence/review.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md",
+        "repo:.claude/skills/do-math/scripts/run_tests.py",
+        "repo:.claude/skills/do-math/scripts/test_categories.py",
+        "repo:.claude/skills/do-math/scripts/do_math/layers.py",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/scripts/tests/support/branch_gate.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/t3_store.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_branch_gate.py"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/run_tests.py",
+        ".claude/skills/do-math/scripts/tests/support/branch_gate.py",
+        ".claude/skills/do-math/scripts/tests/support/adapter_coverage.py",
+        ".claude/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+        ".claude/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+        ".claude/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+        ".claude/skills/do-math/scripts/tests/unit/test_adapter_coverage.py",
+        ".claude/skills/do-math/scripts/tests/시험-지침.md",
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".claude/skills/do-math/scripts/tests/.timings-t3.json",
+        ".agents/skills/do-math/scripts/run_tests.py",
+        ".agents/skills/do-math/scripts/tests/support/branch_gate.py",
+        ".agents/skills/do-math/scripts/tests/support/adapter_coverage.py",
+        ".agents/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+        ".agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+        ".agents/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+        ".agents/skills/do-math/scripts/tests/unit/test_adapter_coverage.py",
+        ".agents/skills/do-math/scripts/tests/시험-지침.md",
+        ".agents/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

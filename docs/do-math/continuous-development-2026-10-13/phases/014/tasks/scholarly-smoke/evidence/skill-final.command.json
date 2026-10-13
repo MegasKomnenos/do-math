@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    "--skill-only"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T20:49:08.044037+00:00",
+  "explicit_inputs": {},
+  "pid": 14740,
+  "exit_code": 0,
+  "ended_at": "2026-10-13T20:49:09.127589+00:00"
+}

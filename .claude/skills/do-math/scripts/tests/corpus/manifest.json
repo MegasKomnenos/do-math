@@ -1320,6 +1320,195 @@
           "sha256": "5054791e858d6038870a18123f5a60d4440373740aa7fde20e52a9e6ed981226"
         }
       ]
+    },
+    {
+      "id": "codex-scholarly-list-sources-20261014",
+      "kind": "scholarly_stream",
+      "path": "scholarly/codex-list-sources-20261014.jsonl",
+      "final_path": "scholarly/codex-list-sources-20261014.final.txt",
+      "schema_path": "scholarly/codex-list-sources-20261014.schema.json",
+      "transport_schema_path": "scholarly/codex-list-sources-20261014.transport.schema.json",
+      "worker_status_path": "scholarly/codex-list-sources-20261014.worker-status.json",
+      "registry_path": "scholarly/codex-list-sources-20261014.registry.json",
+      "request_path": "scholarly/codex-list-sources-20261014.request.json",
+      "prompt_path": "scholarly/codex-list-sources-20261014.prompt.txt",
+      "stderr_path": "scholarly/codex-list-sources-20261014.stderr.txt",
+      "version_path": "scholarly/codex-list-sources-20261014.version.txt",
+      "source_sha256": "93fc0fced143ac5985713050855e4b846eafeaf88387d7edcac781c7dce35235",
+      "tool_version": "codex-cli 0.162.1",
+      "recorded_at": "2026-10-13T20:38:50.589545+00:00",
+      "ended_at": "2026-10-13T20:39:24.102963+00:00",
+      "command": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+        "--ask-for-approval",
+        "never",
+        "exec",
+        "--json",
+        "--color",
+        "never",
+        "--output-last-message",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\014\\tasks\\scholarly-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scholarly-smoke-3jgbe5bc\\files\\evidence\\final.txt",
+        "--model",
+        "gpt-6-astra",
+        "--cd",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\014\\tasks\\scholarly-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scholarly-smoke-3jgbe5bc\\files\\workspace",
+        "--strict-config",
+        "--config",
+        "model_reasoning_effort=\"low\"",
+        "--config",
+        "project_doc_max_bytes=0",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--output-schema",
+        "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\014\\tasks\\scholarly-smoke\\evidence\\live-final\\smoke-isolated-000\\scratch\\scholarly-smoke-3jgbe5bc\\files\\do-math-cli-tvnfwpmp\\schema.json",
+        "--config",
+        "windows.sandbox=\"unelevated\"",
+        "--config",
+        "mcp_servers.scholarly.command=\"C:/math/services/scholarly-mcp/.venv/Scripts/python.exe\"",
+        "--config",
+        "mcp_servers.scholarly.args=[\"C:/math/services/scholarly-mcp/server.py\", \"--data-dir\", \"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\014\\\\tasks\\\\scholarly-smoke\\\\evidence\\\\live-final\\\\smoke-isolated-000\\\\scratch\\\\scholarly-smoke-3jgbe5bc\\\\files\\\\workspace\\\\scholarly-data\"]",
+        "--sandbox",
+        "danger-full-access",
+        "-"
+      ],
+      "command_sha256": "5d52b4f6149c47c46a8db86aded62596de6a6e7b96626ac819d18e4ed783ec7c",
+      "role": "protocol_probe",
+      "source": "docs/do-math/continuous-development-2026-10-13/phases/014/tasks/scholarly-smoke/evidence/live-final/smoke-isolated-000/scratch/scholarly-smoke-3jgbe5bc/smoke.json",
+      "live_passed": true,
+      "cli_exit_code": 0,
+      "server": {
+        "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+        "args": [
+          "C:/math/services/scholarly-mcp/server.py"
+        ]
+      },
+      "cli_identity": {
+        "path": "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.162.1-x86_64-pc-windows-msvc\\bin\\codex.exe",
+        "sha256": "dd13bdb162a184fa04039488b234a8258ef9b76f84e926c505d5742b19249a6a"
+      },
+      "server_python": {
+        "path": "C:\\math\\services\\scholarly-mcp\\.venv\\Scripts\\python.exe",
+        "sha256": "0b471133e110cfb53a061cad528ce8e517d7b9ac41a0a396c39ad795a487fc14"
+      },
+      "configuration_source": "C:\\math\\.codex\\config.toml",
+      "server_packages": {
+        "mcp": "1.30.0",
+        "pydantic": "2.13.5",
+        "openpyxl": "3.1.5"
+      },
+      "server_python_version": "3.12.10",
+      "server_source_sha256": {
+        "server.py": "4504e7f8e70414f82717d782ab02f8055f070283529142db5abf85fe9e4ccee2",
+        "registry.py": "208c0ec534516931ad018a47982809292b9354c18931458cb1d30e15477b89dd",
+        "scholarly.py": "c8be58ff939e90fb547da03ae144c98ad3869d5b72adecb110fa3ce06c03a7fd"
+      },
+      "initialization_observation": "Actual native completion demonstrates an initialized tool session; CLI does not emit the MCP handshake/version negotiation.",
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "tool_id": "item_3",
+        "server": "scholarly",
+        "tool": "list_sources",
+        "status": "ok",
+        "source_ids": [
+          "acm-dl",
+          "afp",
+          "aip",
+          "ams",
+          "aps",
+          "aps-institutional",
+          "arxiv",
+          "author-repository",
+          "cambridge",
+          "core",
+          "crossmark",
+          "crossref",
+          "dblp",
+          "dblp-kg",
+          "de-gruyter",
+          "drops",
+          "eccc",
+          "eudml",
+          "figshare",
+          "general-web",
+          "github",
+          "ieee-xplore",
+          "individual-subscription",
+          "iop",
+          "jstor",
+          "knu-fric",
+          "math-comp",
+          "mathlib",
+          "mathscinet",
+          "numdam",
+          "openalex",
+          "opencitations",
+          "oxford",
+          "pqdt",
+          "project-euclid",
+          "science-direct",
+          "scopus",
+          "semantic-scholar",
+          "siam",
+          "society-journal",
+          "software-heritage",
+          "springer",
+          "taylor-francis",
+          "theory-of-computing",
+          "unpaywall",
+          "wiley",
+          "wos",
+          "zbmath",
+          "zenodo"
+        ],
+        "structured_content_present": true
+      },
+      "recordings": [
+        {
+          "path": "scholarly/codex-list-sources-20261014.jsonl",
+          "sha256": "93fc0fced143ac5985713050855e4b846eafeaf88387d7edcac781c7dce35235"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.final.txt",
+          "sha256": "0556820aadd601c05e6f315c6879d71ea5421810b2b935dba8c7895acf6174aa"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.schema.json",
+          "sha256": "7f69a2d73e44218e6c7bfaccb01201c1a1502762dc2b3dc8f912a9c2000dd214"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.transport.schema.json",
+          "sha256": "430292168e08f6fc57d8ca90e19f787c5f3406bae49b04c64f5d2e1bc4b13052"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.worker-status.json",
+          "sha256": "2cd922e9414955122f730dabae7b68ea474d873229b3150a85e8fb6d88a6c012"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.registry.json",
+          "sha256": "e9526e292459f90a6b537435ea77d378213f44da6d4192064c67d339d22c21d4"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.request.json",
+          "sha256": "10e32af7b08ba2e34340b1b2ea96f4ed45308a18c443329f658d7feb0cc9ab3d"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.prompt.txt",
+          "sha256": "5a6e77a29f20699005ad7f2a01f0f889fb708e56d05947b00799edc513a63a50"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "scholarly/codex-list-sources-20261014.version.txt",
+          "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2"
+        }
+      ],
+      "scope": "Complete native stdout/stderr and safe original request/schema/prompt/final/status; registry summary snapshot is a dated observation, not a second source contract. No environment/authentication dump. No search/fetch evidence."
     }
   ],
   "supported_stream_versions": {
