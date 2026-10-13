@@ -1,0 +1,28 @@
+Open known defects: 0
+[structure] 20 tests
+[sim] 13 tests
+Over budget: 2 tests
+      2.156s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+      2.390s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+{"complete": true, "successful": false, "counts": {"passed": 29, "failed": 2, "error": 2}, "group_seconds": {"structure": 3.7, "sim": 27.8}, "total_seconds": 31.5}
+    2.390s error              sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+    2.156s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+    1.188s passed             sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review
+    1.125s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    0.969s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_recovery_captures_parent_and_inline_child_without_losing_action
+    0.719s passed             sim.test_role_input_context.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text
+    0.687s passed             sim.test_role_input_context.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check
+    0.578s passed             sim.test_role_input_context.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis
+    0.516s passed             sim.test_role_input_context.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review
+    0.500s failed             sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review
+    0.500s error              sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files
+    0.422s passed             sim.test_role_input_context.OperationalInputTests.test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input
+    0.406s passed             sim.test_role_input_context.OperationalInputTests.test_live_review_receives_the_already_sealed_target_checkpoint
+    0.375s passed             structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables
+    0.359s passed             sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application
+    0.282s passed             structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema
+    0.265s passed             structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution
+    0.235s passed             structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families
+    0.187s failed             structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner
+    0.187s passed             structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\focused-01\results\report.json

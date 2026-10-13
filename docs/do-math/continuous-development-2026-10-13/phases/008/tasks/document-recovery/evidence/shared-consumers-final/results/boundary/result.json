@@ -1,0 +1,156 @@
+{
+  "complete": true,
+  "successful": false,
+  "tests_run": 23,
+  "rows": [
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_check_exit_follows_the_engine_inspection_status",
+      "outcome": "passed",
+      "seconds": 3.0160000000032596,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_normalized_control_identity_at_public_boundary",
+      "outcome": "passed",
+      "seconds": 2.8589999999967404,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_operator_effort_alone_leaves_the_schedule_untouched",
+      "outcome": "passed",
+      "seconds": 1.3119999999762513,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces",
+      "outcome": "passed",
+      "seconds": 3.719000000040978,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_rejected_configure_receipt_does_not_reapply_scheduler",
+      "outcome": "passed",
+      "seconds": 1.5160000000032596,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliConsumerTests.test_replayed_configure_receipt_does_not_reapply_scheduler",
+      "outcome": "passed",
+      "seconds": 1.5939999999827705,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliFailureTests.test_accepted_control_processing_failure_is_not_a_user_input_error",
+      "outcome": "passed",
+      "seconds": 2.875,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliFailureTests.test_runtime_failure_is_a_structured_internal_error",
+      "outcome": "passed",
+      "seconds": 2.76500000001397,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTemplateTests.test_restored_template_is_an_independent_copy_of_the_published_state",
+      "outcome": "passed",
+      "seconds": 1.827999999979511,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_create_repository_is_explicit_and_only_accepts_empty_directory",
+      "outcome": "passed",
+      "seconds": 1.672000000020489,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload",
+      "outcome": "passed",
+      "seconds": 1.937999999965541,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+      "outcome": "error",
+      "seconds": 1.797000000020489,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 134, in test_original_request_is_preserved_separately_from_the_mathematical_goal\n    for issue in cli_field_issues(text, schemas, 'init_result', result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 61, in cli_field_issues\n    return scoped_field_issues(text, {**schemas, owner: schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+      ]
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning",
+      "outcome": "passed",
+      "seconds": 4.375,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+      "outcome": "error",
+      "seconds": 1.077999999979511,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 179, in test_profile_selection_respects_the_role_floor_without_model_execution\n    for issue in cli_field_issues(text, schemas, 'selection_result', result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 61, in cli_field_issues\n    return scoped_field_issues(text, {**schemas, owner: schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+      ]
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+      "outcome": "error",
+      "seconds": 1.8429999999934807,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 350, in test_public_check_json_discovery_and_fixed_snapshot\n    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+      ]
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+      "outcome": "error",
+      "seconds": 1.5160000000032596,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 450, in test_query_read_export_and_check_use_a_fixed_repository_snapshot\n    for issue in field_issues(text, file_page)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 443, in field_issues\n    return scoped_field_issues(text, {**schemas, 'query_result': schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+      ]
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_request_applies_a_maintenance_queue_entry_without_model_execution",
+      "outcome": "passed",
+      "seconds": 1.6880000000237487,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes",
+      "outcome": "passed",
+      "seconds": 5.25,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_retry_action_reaches_the_public_control_inbox_idempotently",
+      "outcome": "passed",
+      "seconds": 1.8119999999762513,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_source_identity_and_effect_use_one_read",
+      "outcome": "passed",
+      "seconds": 2.3589999999967404,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model",
+      "outcome": "passed",
+      "seconds": 3.797000000020489,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause",
+      "outcome": "passed",
+      "seconds": 4.25,
+      "details": []
+    },
+    {
+      "id": "boundary.test_engine_cli.ControlCliTests.test_resume_of_a_publicly_closed_instance_reports_its_rejection",
+      "outcome": "passed",
+      "seconds": 2.422000000020489,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_engine_cli": 57.28100000001723
+  }
+}

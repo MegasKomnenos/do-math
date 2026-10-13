@@ -1,0 +1,480 @@
+{
+  "checked_at": "2026-10-13T17:43:46.947709+00:00",
+  "head": "12a751550dc06ac75cdc56058b622d8b621b21cd",
+  "source_count": 2640,
+  "source_final_sha256": "e5685e082d4a204ef5b32fe5c0d4ce2a71374178d4e581c1a6566a66e888f057",
+  "current_mismatches": [],
+  "start_changes_since_007": [
+    ".agents/skills/write-for-reader/references/독해_검토.md",
+    ".agents/skills/write-for-reader/scripts/writing_flow.py",
+    ".claude/skills/write-for-reader/references/독해_검토.md",
+    ".claude/skills/write-for-reader/scripts/writing_flow.py"
+  ],
+  "changes": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".agents/skills/do-math/계약/독립-운영.md",
+    ".agents/skills/do-math/계약/운영-점검.md",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/계약/독립-운영.md",
+    ".claude/skills/do-math/계약/운영-점검.md"
+  ],
+  "suites": {
+    "red": {
+      "selected": 2,
+      "unique_rows": 2,
+      "counts": {
+        "failed": 2
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/flows/test_knowledge_impact_retry.py",
+        "tests/sim/test_knowledge_currentness.py",
+        "tests/sim/test_role_input_context.py",
+        "tests/structure/test_doc_code.py",
+        "tests/support/doc_code.py",
+        "tests/support/engine_context.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_role_input_packaging.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners",
+          "outcome": "failed",
+          "seconds": 0.01600000000325963,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 26, in test_operational_document_names_the_result_and_checkpoint_owners\n    self.assertIn('operational_evidence.checkpoint_source.local_path', SPAN.findall(text))\nAssertionError: 'operational_evidence.checkpoint_source.local_path' not found in ['SKILL.md', 'action.target', 'execution_to_review', 'observation', 'operational_evidence', 'checkpoint_status=preserved', 'checkpoint_source.local_path', 'checkpoint_files[].local_path', 'checkpoint_evidence_omitted', 'not_preserved', 'checkpoint', 'checkpoint_source', 'execution_to_review.observation_stream', 'local_termination_confirmed', 'recovery_materials', 'source_snapshot', 'final_result_status=available', 'result_source.local_path', 'checkpoint_recovery', 'activity_result', 'checkpoint_source.local_path', 'output_files[].local_path', 'blocked', 'no_progress', 'current_claim', 'evidence_paths', 'progress_criteria', 'unknown', 'disposition', 'decision', 'disposition', 'basis_refs', 'reason', 'next_owner', 'basis_refs', 'admissible_basis_refs', 'used_sources', 'admissible_basis_refs', 'reference_catalog', 'basis_refs', 'currentness_changed', 'action.refresh', 'invalid_basis_refs', 'continue', 'next_review', '{at, reason}', 'null', 'repair', 'repair', 'repair_target', 'installation:<스킬 폴더 안의 실제 상대 파일 경로>', 'meaning_preserving', 'true', 'next_owner', 'installation_recovery', 'reason', 'verification', 'basis_refs', 'installation_repair_pending', 'installation_repair_waiting', 'verification', 'resume', 'checkpoint_ref', 'scope', 'retry', 'scope', 'replay_safety', 'retry', 'scope', 'replay_safety', 'retry', 'repair', 'task_disposition', 'task_id', 'task_state', 'completed', 'incomplete', 'closed', 'task_assessments', 'task_id', 'decision', 'task_id', 'task_state', 'item_dispositions', 'fulfilled', 'open', 'waived', 'transferred', 'unresolved', 'obligation_id', 'missing_inputs', 'next_owner', 'completed', 'closed', 'open', 'unresolved', 'fulfilled', 'evidence_required', 'evidence_refs', 'judges', 'waived', 'transferred', 'authority_ref', 'task_scope', 'transferred', 'target_task_id', 'target_obligation_id', 'user_decision', 'question', 'effect', 'blocked_actions', 'action_resolutions', 'output_parse', 'output_schema', 'output_contract', 'input_failure', 'kind=output_validation', 'error_kind', 'currentness_changed', 'publication_failure', 'repetition_holds', 'retry', 'resume', 'summary', 'used_sources', 'questions', 'integration_bundles', 'resume', 'retry', 'continue', 'operational_evidence.activity_continuations', 'continuation_of', 'superseded']\n"
+          ]
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner",
+          "outcome": "failed",
+          "seconds": 0.28100000001722947,
+          "details": [
+            "test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) (owner='operational_evidence')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_operational_fields_require_their_actual_input_owner\n    with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) (owner='recovery_materials')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_operational_fields_require_their_actual_input_owner\n    with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "command_sha256": "49a6dd0e86796b0d850fa57f06c4b60b94423d4226ddf218cc42d9faf7554a62",
+      "report_sha256": "7bb20592fc238043e59dc09ec954865fd3c88702626c6e620f4418ed715c28ad"
+    },
+    "focused-01": {
+      "selected": 33,
+      "unique_rows": 33,
+      "counts": {
+        "passed": 29,
+        "failed": 2,
+        "error": 2
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/flows/test_knowledge_impact_retry.py",
+        "tests/sim/test_knowledge_currentness.py",
+        "tests/sim/test_role_input_context.py",
+        "tests/structure/test_doc_code.py",
+        "tests/support/engine_context.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_role_input_packaging.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "failed",
+          "seconds": 0.18699999997625127,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 435, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources",
+          "outcome": "error",
+          "seconds": 2.389999999955762,
+          "details": [
+            "test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources) (fault='normal')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_knowledge_currentness.py\", line 164, in test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources\n    fitted, _ = package(engine, root, role='operational_review', target='EX-formal-diagnostic')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 235, in package\n    context = engine._context(action, root, execution_id='EX-plan')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n",
+            "test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources) (fault='missing_result')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_knowledge_currentness.py\", line 164, in test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources\n    fitted, _ = package(engine, root, role='operational_review', target='EX-formal-diagnostic')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 235, in package\n    context = engine._context(action, root, execution_id='EX-plan')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n",
+            "test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources) (fault='output_hash')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_knowledge_currentness.py\", line 164, in test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources\n    fitted, _ = package(engine, root, role='operational_review', target='EX-formal-diagnostic')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 235, in package\n    context = engine._context(action, root, execution_id='EX-plan')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n",
+            "test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources) (fault='output_size')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_knowledge_currentness.py\", line 164, in test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources\n    fitted, _ = package(engine, root, role='operational_review', target='EX-formal-diagnostic')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 235, in package\n    context = engine._context(action, root, execution_id='EX-plan')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n",
+            "test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources) (fault='missing_output')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_knowledge_currentness.py\", line 164, in test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources\n    fitted, _ = package(engine, root, role='operational_review', target='EX-formal-diagnostic')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 235, in package\n    context = engine._context(action, root, execution_id='EX-plan')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n"
+          ]
+        },
+        {
+          "id": "sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review",
+          "outcome": "failed",
+          "seconds": 0.5,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 209, in test_changed_checkpoint_file_bytes_are_rejected_before_review\n    with tempfile.TemporaryDirectory() as directory, self.assertRaisesRegex(ValueError, 'checkpoint hash'):\n                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        },
+        {
+          "id": "sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files",
+          "outcome": "error",
+          "seconds": 0.5,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 125, in test_live_review_receives_exact_checkpoint_evidence_files\n    fitted = self.packaged(engine, action, root)[1]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 73, in packaged\n    context = engine._context(action, root, execution_id='EX-review')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\core_engine.py\", line 1560, in _context\n    materialize_inputs(workspace, {\"implementation/\" + document[\"path\"]: document[\"content\"].encode(\"utf-8\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\context_store.py\", line 101, in materialize_inputs\n    raise FileExistsError(f\"input path already exists: {logical.as_posix()}\")\nFileExistsError: input path already exists: input/implementation/SKILL.md\n"
+          ]
+        }
+      ],
+      "command_sha256": "d6e165f75e11ccb1682df00c5b725d91c33cb78491fc2144e9fee697df18aa62",
+      "report_sha256": "866db1e5fb1f77ef3bd2c60187f532881d69fcfeac3c3fd0be26e497e777426a"
+    },
+    "focused-02": {
+      "selected": 5,
+      "unique_rows": 5,
+      "counts": {
+        "passed": 5
+      },
+      "complete": true,
+      "successful": true,
+      "exit_code": 0,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/sim/test_knowledge_currentness.py",
+        "tests/sim/test_role_input_context.py",
+        "tests/structure/test_doc_code.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_role_input_packaging.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [],
+      "command_sha256": "e65dd70e7d293d3ee67eda5abdfd226397ac3be3d925be79f1cb83f5d88429c3",
+      "report_sha256": "6b413781a8ba2bf56bbf3e1823cf71663e2a802f6acab0a91a15787c1eeef10c"
+    },
+    "canonical-final": {
+      "selected": 77,
+      "unique_rows": 77,
+      "counts": {
+        "passed": 75,
+        "failed": 1,
+        "error": 1
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_role_input_packaging.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "failed",
+          "seconds": 0.18699999997625127,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 432, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "error",
+          "seconds": 0.23499999998603016,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 547, in test_role_input_uses_current_schema_documents_and_private_resume_bytes\n    for issue in field_issues(text, manifest)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 517, in field_issues\n    return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        }
+      ],
+      "command_sha256": "6a98c1270b2f45c9382a557662344433e79c3c240533d0c63e6bc6a637be345d",
+      "report_sha256": "cd7e38446c956a5247442ba30c3c1c0bb1bf8f2ff9393220143cb607eb95b477"
+    },
+    "canonical-final-02": {
+      "selected": 77,
+      "unique_rows": 77,
+      "counts": {
+        "passed": 75,
+        "failed": 2
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "failed",
+          "seconds": 0.18800000002374873,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 432, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "failed",
+          "seconds": 0.28200000000651926,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 549, in test_role_input_uses_current_schema_documents_and_private_resume_bytes\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        }
+      ],
+      "command_sha256": "184e6d77ceb2831d347f1380176989b89554e7dfab14f8053c07d6429a55b42a",
+      "report_sha256": "31e9d709cc5cff9e5e236def0c2662a1f4c54a71324a86b5874cc4a6f0042017"
+    },
+    "shared-consumers-final": {
+      "selected": 33,
+      "unique_rows": 33,
+      "counts": {
+        "passed": 26,
+        "error": 7
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [
+        "tests/boundary/test_engine_cli.py",
+        "tests/unit/test_engine_trace_report_corruption.py",
+        "tests/unit/test_storage_record_queries.py",
+        "tests/unit/test_storage_report_projections.py"
+      ],
+      "failures": [
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "error",
+          "seconds": 0.2190000000409782,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_engine_trace_report_corruption.py\", line 68, in test_unreadable_error_sidecar_has_bounded_explicit_status\n    for issue in field_issues(text, result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_engine_trace_report_corruption.py\", line 61, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "outcome": "error",
+          "seconds": 0.4059999999590218,
+          "details": [
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='knowledge')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='goal_judgments')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='grants')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='decisions')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='sources')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='trust_environments')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='execution_profiles')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='formal_results')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='expositions')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='identity_assessments')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='assessment_uses')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance_sources')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='kind_definitions')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='relations')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='tasks')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='activities')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='executions')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='external_operations')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n",
+            "test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='review_cycles')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 48, in test_query_family_names_are_the_condition_grammar_names\n    for issue in field_issues(text, record)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_record_queries.py\", line 33, in field_issues\n    return scoped_field_issues(text, actual, defer_status=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "error",
+          "seconds": 0.35999999998603016,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_report_projections.py\", line 148, in test_human_report_preserves_loaded_initialization_blocker_and_machine_finding\n    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "outcome": "error",
+          "seconds": 1.797000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 134, in test_original_request_is_preserved_separately_from_the_mathematical_goal\n    for issue in cli_field_issues(text, schemas, 'init_result', result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 61, in cli_field_issues\n    return scoped_field_issues(text, {**schemas, owner: schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "outcome": "error",
+          "seconds": 1.077999999979511,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 179, in test_profile_selection_respects_the_role_floor_without_model_execution\n    for issue in cli_field_issues(text, schemas, 'selection_result', result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 61, in cli_field_issues\n    return scoped_field_issues(text, {**schemas, owner: schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "outcome": "error",
+          "seconds": 1.8429999999934807,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 350, in test_public_check_json_discovery_and_fixed_snapshot\n    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "outcome": "error",
+          "seconds": 1.5160000000032596,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 450, in test_query_read_export_and_check_use_a_fixed_repository_snapshot\n    for issue in field_issues(text, file_page)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 443, in field_issues\n    return scoped_field_issues(text, {**schemas, 'query_result': schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+          ]
+        }
+      ],
+      "command_sha256": "f9e90d54bda1e87158049e9fe5a2c38423519544ef1e0d577c6edd75c5feae5f",
+      "report_sha256": "b067acf48fbe5cb68f03a66077cc93f506d863f8a4946585e7bcb2a0beec80e0"
+    },
+    "canonical-joined-final": {
+      "selected": 110,
+      "unique_rows": 110,
+      "counts": {
+        "passed": 106,
+        "failed": 4
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "failed",
+          "seconds": 0.20300000003771856,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 432, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "failed",
+          "seconds": 0.2809999999590218,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_engine_trace_report_corruption.py\", line 70, in test_unreadable_error_sidecar_has_bounded_explicit_status\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "failed",
+          "seconds": 0.26500000001396984,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 549, in test_role_input_uses_current_schema_documents_and_private_resume_bytes\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "failed",
+          "seconds": 0.2970000000204891,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_report_projections.py\", line 154, in test_human_report_preserves_loaded_initialization_blocker_and_machine_finding\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        }
+      ],
+      "command_sha256": "8295b2e87ef432ddbe72a275ce61e4e6bf2f897cb8156329e49317a0356ab3db",
+      "report_sha256": "22bf45c526a6d26cf109128132e1f71136c7269b5627d660710e64fe6e084c5b"
+    },
+    "mirror-final": {
+      "selected": 89,
+      "unique_rows": 89,
+      "counts": {
+        "passed": 85,
+        "failed": 4
+      },
+      "complete": true,
+      "successful": false,
+      "exit_code": 1,
+      "python_source_count": 865,
+      "changed_after_run": [],
+      "failures": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "failed",
+          "seconds": 0.18699999997625127,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 432, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "failed",
+          "seconds": 0.23399999999674037,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\unit\\test_engine_trace_report_corruption.py\", line 70, in test_unreadable_error_sidecar_has_bounded_explicit_status\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "failed",
+          "seconds": 0.26600000000325963,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 549, in test_role_input_uses_current_schema_documents_and_private_resume_bytes\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "failed",
+          "seconds": 0.3279999999795109,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\unit\\test_storage_report_projections.py\", line 154, in test_human_report_preserves_loaded_initialization_blocker_and_machine_finding\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+          ]
+        }
+      ],
+      "command_sha256": "4b4d105f64ecb92b6db2ef75614e70d030a7fafa776be1f463d44daeb1f7dd25",
+      "report_sha256": "49c413320ad8caa79fa72fbf69f32adda1b374dc5e8a8cd8cbeb002899264b23"
+    }
+  },
+  "runtime_unchanged": 124,
+  "smoke_inputs_unchanged": [
+    ".claude/skills/do-math/scripts/tests/support/provider_live.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+    ".claude/skills/do-math/scripts/probe_cli.py"
+  ],
+  "corpus_paths_unchanged": 102,
+  "gates": {
+    "mirror-check": "[.agents] 드리프트 없음 (1305파일)\n",
+    "skill-only": "{\"scope\": \"installed_skill_structure\", \"status\": \"verified\", \"checks\": [{\"check\": \"installed_documents\", \"status\": \"verified\", \"roles\": 10, \"documents\": {\"SKILL.md\": \"f5f9cba65d705dc6cb826cb564cb49fab9a04f129b54b241a11be08608f35c88\", \"GLOSSARY.md\": \"21656f01b65c6bb2c25939ff3a6426ade76d68cec0dd2344eaf44e71f987c120\", \"references/공통-실행.md\": \"e8e529ee0c2699f6439b0ac99414cc3344b75c210c844462ad570154a4daaa84\", \"references/지식-저작과-재사용.md\": \"711c8b9d2ff81659f1c528e20ba114ee7189951447bb97ade6433b3a2da96d5e\", \"references/학술자료-활용.md\": \"2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2\", \"references/모델과-실행예산.md\": \"a197888224c97ea5a315949c58014acc1836ae36a3312d360b6d19bb5059778a\", \"references/과제-착수조건.md\": \"5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5\", \"계약/후보-준비.md\": \"2e85ca88a0ec0b24ba8a2d57f8a343eddaaf06e46550cc0ba5eccf580b86cfbb\", \"계약/연구-계획.md\": \"107dd250b6b2c5ec1c6243f9451f244086f7809e2696a05ea8fd66c6680e3429\", \"references/자기-점검.md\": \"4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d\", \"계약/연구-수행.md\": \"949bc5d7cf9200a8e26bd24c925c97ff99b5294cb469bf21d07a5b904e262e78\", \"계약/작업-계약-검토.md\": \"ff929bdf0c299a6632c32e138553383ab5cac2517d157750d95f2d4a3b988be7\", \"계약/동일성-검토.md\": \"de05683e4c1d1f1bb6f074b67aa6581febd4880f620d18c5544fcd2e49fd6279\", \"계약/목표-감사.md\": \"dfecc348d437b31c69acac5eb87f4abc8de9e8c02fd2592108ebe99e618b6453\", \"계약/보충-조사.md\": \"d6acf59643072a3944096bad33cc38322685e70d3292d350d7c2739a1a18f92f\", \"계약/운영-점검.md\": \"c5141038e028d63767a1df70bb8d9be36e4c8a89ecab98008b530b489f563480\", \"references/입력-소비자.md\": \"6e68e800cff4c13fabef24f49036801afc1c9efd49e909f517b8fdab4ec5f72a\", \"계약/의도-해석.md\": \"ecc2265d459cea2ed77ea0ba4855fbcdeb80013b97f3c926889951da8e080f82\", \"계약/유지보수.md\": \"be999a68e22179b6aa33a78555453f8b04d3538040fa55f817c8b81f679e75f6\", \"README.md\": \"d908cb747ff6bdd68c7c78823ff7336040ad5b1e393656e6d6166966f11c64f9\", \"references/CLI-실행-계약.md\": \"b71aa6558b52c204acf8d59e96d53df8a8758afb91f43c671a021d4071854a11\", \"requirements.txt\": \"756cc9e506ae4ee1a6f6c0507088b5cfc0dc8ba350fb2d2d46f1ffa72033adb6\", \"계약/독립-운영.md\": \"87b99d32dcf72f5164f094885cac0d3d8b47a5f09633e80de896c20f70106e48\", \"scripts/operator_schedule.ps1\": \"54901087ed02e0d86a62fd6bacfb95cf00f8c4e604fb9631ebbc7a3d5ec9b1e0\", \"scripts/do_math.py\": \"24403f801deb26dcad72b4fc327109223eab76fb9d373aa1f3ddd27c0510b604\"}}, {\"check\": \"role_output_schemas\", \"status\": \"verified\", \"roles\": 10, \"schemas\": {\"research_preparation\": \"8106bdcd9aed237e253b4516c8fe97de9a5e2e669b8fc5fd4bdafff4705f4a24\", \"research_plan\": \"af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184\", \"research_work\": \"a4ffa2ff090a03428fc867b788ff94c2ff9d1c95259536cf0242c5e3a90ca4e9\", \"task_contract_review\": \"08c6a221d77ab0ede50b2ba6c3aa148e3c77751298221ca1d644c160b122ddd9\", \"identity_review\": \"5c8dbdadcac46175cb926992b175ed1ecb88332a5960fd488356939ea1ad370f\", \"goal_audit\": \"c05dd243693416845a75b075c180d0d8a5c20e9cd26bcac90faa20e37a33993f\", \"supplemental_research\": \"a4ffa2ff090a03428fc867b788ff94c2ff9d1c95259536cf0242c5e3a90ca4e9\", \"operational_review\": \"0725992e1f30d512f358fda5dffb618f6ab8caf8b0e4a44102c367a2e2ebfa11\", \"intent_interpretation\": \"f7fccf1f1acf7d8c6ca2bfbd6b17094cd9ba90d282e03a64911198650c221c83\", \"maintenance\": \"7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b\", \"identity_review:scope\": \"2be643c5a83b9d31c276b68b74590d09b89bb28dd9ebfb1cd0c1350cb2b9cac8\", \"identity_review:initial\": \"17b9ecf3957e2f042796bf59b56e659a48cb928ec3b7ddf2e6b40aeeeb205151\", \"identity_review:organize\": \"c4820dec08e43453b6c77963bf275be5cf75ecba44bc263e931f318a33d83f56\", \"identity_review:answer\": \"8facb99d1852dd2f5af3d0496b9e01948a7619e1b38a4a26887a0ddf0128fc8a\", \"identity_review:judge\": \"15b7502c69b8bdbf3a9e323ed4e0ee202be42de669c41d9d35defcb7b9ed5804\", \"intent_interpretation:interpret\": \"0e67c0ad37fe757f5884e0a8817451899f0929363c6cfaf8708859fe1ec4154d\", \"intent_interpretation:check\": \"f32dff9fd8088d02d01d8441e027beb773c9b3b91754014b1c3f8e6791c9c579\", \"review_research\": \"5c9f2e3c6578fe23f3c2857344a32ec64f3aed84c292aa10d42c4f5e94ea23b3\", \"recovery\": \"954e6168c7188eb64fbb706b997bad9e3d0794091f7c2a59bc1665721ad6de0f\", \"research_preparation:bound_action\": \"986f567815025e12bd84b2d91f22c6f97977f3c7f5555a93f3959b96e308bc8d\", \"research_plan:bound_action\": \"af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184\", \"research_work:bound_action\": \"e892da4387db4cb846315768f889c1434d5eb76c4afa02d28bb701aea1afa70a\", \"task_contract_review:bound_action\": \"08c6a221d77ab0ede50b2ba6c3aa148e3c77751298221ca1d644c160b122ddd9\", \"identity_review:bound_action\": \"5c8dbdadcac46175cb926992b175ed1ecb88332a5960fd488356939ea1ad370f\", \"goal_audit:bound_action\": \"c05dd243693416845a75b075c180d0d8a5c20e9cd26bcac90faa20e37a33993f\", \"supplemental_research:bound_action\": \"e892da4387db4cb846315768f889c1434d5eb76c4afa02d28bb701aea1afa70a\", \"operational_review:bound_action\": \"0725992e1f30d512f358fda5dffb618f6ab8caf8b0e4a44102c367a2e2ebfa11\", \"intent_interpretation:bound_action\": \"f7fccf1f1acf7d8c6ca2bfbd6b17094cd9ba90d282e03a64911198650c221c83\", \"maintenance:bound_action\": \"7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b\", \"assessment:main\": \"c62a908aefdcdd7aec4a32da0c5744ef24a84b7dcecc107cc0e52c1e8619bb9b\", \"live_operations:main\": \"0725992e1f30d512f358fda5dffb618f6ab8caf8b0e4a44102c367a2e2ebfa11\", \"research_preparation:extensions\": \"b4c60e932d00b0a2121df8402d231e64514d1d936f887a10f3440aaebb0633bb\", \"research_plan:extensions\": \"8ccb9f4110e4758cc3250478bcbcb0f04a4f977ed2ab79e1d67f1260fda5d5c4\", \"research_work:extensions\": \"a8de3008c4e852f7c20ecb53a813137a9341d0bb14261269c5f2d1919cd1ba42\", \"task_contract_review:extensions\": \"db96e26cb527e3b844b50965d18daf5b52333cfa12b66b5dd069ac43d279814d\", \"identity_review:extensions\": \"db96e26cb527e3b844b50965d18daf5b52333cfa12b66b5dd069ac43d279814d\", \"goal_audit:extensions\": \"db96e26cb527e3b844b50965d18daf5b52333cfa12b66b5dd069ac43d279814d\", \"supplemental_research:extensions\": \"a8de3008c4e852f7c20ecb53a813137a9341d0bb14261269c5f2d1919cd1ba42\", \"operational_review:extensions\": \"84a7c7b834d09cfeddfc7e97b46b5b554417d50a0b6221b5b32d3d46356c2a57\", \"intent_interpretation:extensions\": \"db96e26cb527e3b844b50965d18daf5b52333cfa12b66b5dd069ac43d279814d\", \"maintenance:extensions\": \"db96e26cb527e3b844b50965d18daf5b52333cfa12b66b5dd069ac43d279814d\", \"assessment:extensions\": \"2af9742eccfd6699dbe78c9e3aab815040c3d83ee5bb8eb88d6a344b56aecafb\", \"preparation:main\": \"c62a908aefdcdd7aec4a32da0c5744ef24a84b7dcecc107cc0e52c1e8619bb9b\", \"preparation:extensions\": \"dbeb58541be31cfa0ee414dcc329d5b3fda26ff9590d85e658fd9bef65e64f4c\", \"fixed_research:extensions\": \"35fb909c1c89bbf6b557ecdf67caf1c0d7b6fe9211151f907bb30ce931e6244e\", \"identity:extensions\": \"af205c2e1b84b752f888847ab8de6ef9fb29c8e3ad174b3da22a3481efac67f8\"}, \"claude_conversion\": \"Only top-level $schema and x-contract-id are removed; constraints are preserved.\"}], \"not_verified\": [\"document_semantics\", \"runtime_execution\", \"research_roles\", \"Lean\", \"research_efficacy\"]}\n"
+  },
+  "callable_issue": {
+    "baseline_reproduced": true,
+    "current_unowned": [
+      "provider_final.output_contract"
+    ],
+    "existing_explicit_notation_resolves": "`provider_final.output_contract(...)`"
+  },
+  "report_status": "partial",
+  "acceptance": {
+    "A1": "pass",
+    "A2": "pass",
+    "A3": "pass",
+    "A4": "pass",
+    "A5": "fail"
+  }
+}

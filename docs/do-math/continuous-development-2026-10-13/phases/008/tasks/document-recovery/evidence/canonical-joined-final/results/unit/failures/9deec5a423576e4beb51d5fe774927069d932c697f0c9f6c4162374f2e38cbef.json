@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_report_projections.py\", line 154, in test_human_report_preserves_loaded_initialization_blocker_and_machine_finding\n    self.assertEqual([(name, token) for name, text in texts\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+    ]
+  }
+}

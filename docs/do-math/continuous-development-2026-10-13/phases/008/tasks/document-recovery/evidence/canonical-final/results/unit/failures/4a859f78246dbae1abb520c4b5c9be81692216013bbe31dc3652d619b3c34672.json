@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+    "outcome": "error",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 547, in test_role_input_uses_current_schema_documents_and_private_resume_bytes\n    for issue in field_issues(text, manifest)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_role_input_packaging.py\", line 517, in field_issues\n    return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+    ]
+  }
+}

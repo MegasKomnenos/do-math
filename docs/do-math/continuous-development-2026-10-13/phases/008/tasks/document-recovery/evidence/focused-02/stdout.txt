@@ -1,0 +1,12 @@
+Open known defects: 0
+[sim] 4 tests
+[flows] 1 tests
+Over budget: 1 tests
+      3.266s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+{"complete": true, "successful": true, "counts": {"passed": 5}, "group_seconds": {"sim": 18.1, "flows": 10.8}, "total_seconds": 28.9}
+    4.625s passed             flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared
+    3.266s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+    0.719s passed             sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files
+    0.625s passed             sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review
+    0.328s passed             sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\focused-02\results\report.json

@@ -1,0 +1,45 @@
+Open known defects: 0
+[structure] 20 tests
+[unit] 41 tests
+[sim] 13 tests
+[flows] 1 tests
+[boundary] 2 tests
+  isolated: boundary.test_operator_bootstrap_info.BootstrapInfoTests
+  {'passed': 2}
+Over budget: 14 tests
+      2.297s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+      5.562s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+      0.234s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history
+      0.454s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+      0.218s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison
+      0.203s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_engine_review_context_reaches_role_input_with_bound_identity_and_policy
+      0.297s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence
+      0.484s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+      0.282s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes
+      0.218s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_overflow_records_the_context_budget_it_compared
+      0.859s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+      0.203s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_citable_records_cover_every_readable_work_record
+      0.250s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context
+      1.188s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline
+{"complete": true, "successful": false, "counts": {"passed": 75, "failed": 2}, "group_seconds": {"structure": 3.5, "unit": 6.6, "sim": 29.1, "flows": 11.5, "boundary": 7.7}, "total_seconds": 58.4}
+    5.562s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+    4.594s passed             flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared
+    3.985s passed             boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_entry_reports_original_installation_and_exact_verified_manifest
+    3.390s passed             boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_location_without_manifest_fails_before_reporting_live_mode
+    2.297s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+    1.188s passed             unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline
+    1.172s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    0.984s passed             sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review
+    0.938s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_recovery_captures_parent_and_inline_child_without_losing_action
+    0.859s passed             unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+    0.766s passed             sim.test_role_input_context.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis
+    0.750s passed             sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files
+    0.531s passed             sim.test_role_input_context.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review
+    0.516s passed             sim.test_role_input_context.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check
+    0.500s passed             sim.test_role_input_context.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text
+    0.484s passed             unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+    0.454s passed             unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+    0.453s passed             sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application
+    0.391s passed             sim.test_role_input_context.OperationalInputTests.test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input
+    0.360s passed             structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\canonical-final-02\results\report.json

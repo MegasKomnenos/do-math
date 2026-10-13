@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "C:\\math\\services\\continuous-development\\check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "008",
+    "document-recovery"
+  ],
+  "exit_code": 0,
+  "stdout": "PASS report 008\r\n",
+  "stderr": ""
+}

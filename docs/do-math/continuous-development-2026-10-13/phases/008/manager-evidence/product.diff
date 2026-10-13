@@ -1,0 +1,1528 @@
+diff --git "a/.agents/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md" "b/.agents/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+index 577dfefb..64b56057 100644
+--- "a/.agents/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
++++ "b/.agents/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+@@ -872,7 +872,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source
+ 
+ 늦은 산출이 이미 닫힌 과제나 종결된 검토 자리를 가리키면 그 산출은 보존하되 대상을 다시 열지 않는다. 원문을 읽지 못한 실행, 실패한 공급자 호출과 의미상 미해결 결과도 구별해 기록한다.
+ 
+-영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 복구 파일의 `local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
++영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 `recovery_materials.output_files[].local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 결과·복구 체크포인트의 복원 실패도 각 `recovery_materials.result_source.restoration_error`와 `recovery_materials.checkpoint_source.restoration_error`에 같은 형식으로 전달한다. `recovery_materials.final_result_status`의 `available`은 정상 결과 경로 선택이며 복원 성공을 뜻하지 않는다. checkpoint_source가 null이면 읽을 복구 체크포인트가 없고 live_review에는 recovery_materials가 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
+ 
+ ## 실행 수명과 복구
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py b/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+index 0a2531ac..5d568e5c 100644
+--- a/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ b/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -61,6 +61,7 @@ def cli_field_issues(text, schemas, owner, result):
+     return scoped_field_issues(text, {**schemas, owner: schema},
+         defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+         defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+         defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner})
+ 
+@@ -350,6 +351,7 @@ class CliTests(CliInstanceTest):
+                 for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                     defer_query_record=True, defer_query_result=True,
+                     defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                    defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                     defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             omitted = dict(result)
+@@ -443,6 +445,7 @@ class CliTests(CliInstanceTest):
+             return scoped_field_issues(text, {**schemas, 'query_result': schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True,
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py b/.agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
+index f2752aa8..ea043923 100644
+--- a/.agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
++++ b/.agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
+@@ -23,6 +23,7 @@ import unittest
+ 
+ from do_math import repository, submission
+ from support.model import Answer
++from support.engine_context import assert_operational_documents
+ from support.provider_probes import ObservedCalls
+ from support.review_sim import held_impact, impact_review_answer, impact_sim, warm_impact
+ 
+@@ -120,6 +121,12 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
+         diagnostics = []
+ 
+         def diagnose(output, context):
++            from pathlib import Path
++            active = next(row for row in sim.runtime['executions'].values()
++                          if row['role'] == 'operational_review' and row['status'] != 'ended')
++            workspace = Path(sim.instance['workspace']) / 'runs' / active['id'] / 'workspace'
++            assert_operational_documents(self, context, workspace, sim.engine, owner='recovery_materials',
++                                         snapshot=active['input_snapshot'])
+             diagnostics.append(deepcopy(context['recovery_materials']))
+             return output
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py b/.agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
+index d32974ff..77c50f1b 100644
+--- a/.agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
++++ b/.agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
+@@ -28,6 +28,7 @@ from do_math.knowledge_io import import_candidate
+ from do_math.launch import ticket
+ from do_math.state_contract import default_state_contract, validate_record
+ from support.engine_lifecycle import applied, solve_goal
++from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
+ from support.knowledge_currentness import currentness_model
+ from support.review_sim import reviewed_sim as reviewed_theorem_sim, theorem_id, warm_reviewed
+ from support.sim import Sim, warm_template
+@@ -104,6 +105,79 @@ class GoalDependencyTests(unittest.TestCase):
+ 
+ 
+ class RecoveryMaterialTests(unittest.TestCase):
++    def test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources(self):
++        """Real repository reads and _context distinguish normal, missing, hash and size branches."""
++        import tempfile
++        from support.engine_context import context_engine, package
++        result = b'{"status":"completed"}'
++        output = b'checked output bytes'
++        for fault in ('normal', 'normal_inline', 'missing_checkpoint', 'missing_result', 'output_hash', 'output_size', 'missing_output'):
++            prefix = 'runtime/artifacts/BA-formal-diagnostic-' + fault + '/'
++            files = {prefix + 'result.json': result, prefix + 'proof.txt': output}
++            if fault == 'missing_result':
++                del files[prefix + 'result.json']
++            if fault == 'missing_output':
++                del files[prefix + 'proof.txt']
++            engine = context_engine(files=files)
++            source = {'path': 'proof.txt', 'artifact_ref': prefix + 'proof.txt',
++                      'sha256': hashlib.sha256(output).hexdigest(), 'bytes': len(output)}
++            if fault == 'output_hash':
++                source['sha256'] = '0' * 64
++            if fault == 'output_size':
++                source['bytes'] += 1
++            role = 'formal_check' if fault not in ('normal_inline', 'missing_checkpoint') else 'research_preparation'
++            engine.runtime['executions']['EX-formal-diagnostic'] = {
++                'id': 'EX-formal-diagnostic', 'role': role, 'status': 'ended',
++                'action': {'role': role}, 'artifact_bundle': 'BA-formal-diagnostic-' + fault,
++                'result_ref': prefix + 'result.json', 'output_files': [source]}
++            if fault == 'normal_inline':
++                engine.runtime['executions']['EX-formal-diagnostic']['parent_execution_id'] = 'EX-parent'
++            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault):
++                root = Path(directory)
++                context = engine._context({'role': 'operational_review', 'target': 'EX-formal-diagnostic'}, root)
++                recovery = context['recovery_materials']
++                if fault != 'missing_checkpoint':
++                    self.assertIsNone(recovery['checkpoint_source'])
++                self.assertEqual((recovery['result_kind'], recovery['final_result_status']),
++                                 ('execution_result', 'available'))
++                assert_operational_documents(self, context, root, engine, owner='recovery_materials')
++                assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++                row = (recovery['result_source'] if fault == 'missing_result' else
++                       recovery['checkpoint_source'] if fault == 'missing_checkpoint' else recovery['output_files'][0])
++                if fault in ('normal', 'normal_inline'):
++                    self.assertNotIn('restoration_error', row)
++                    self.assertEqual((root / row['local_path']).read_bytes(), output)
++                    assert_operational_damage_rejected(self, context, root, engine, owner='recovery_materials')
++                else:
++                    self.assertNotIn('local_path', row)
++                    error = row['restoration_error']
++                    self.assertEqual(row['snapshot'], engine.head)
++                    if fault in ('output_hash', 'output_size'):
++                        self.assertEqual(error['error_type'], 'ValueError')
++                        reason = ('operational review artifact hash changed: ' + source['artifact_ref']
++                                  if fault == 'output_hash' else 'operational review artifact size changed')
++                        self.assertEqual(error['reason'], reason)
++                        self.assertEqual((error['observed_sha256'], error['observed_bytes']),
++                                         (hashlib.sha256(output).hexdigest(), len(output)))
++                        self.assertEqual((row['sha256'], row['bytes']), (source['sha256'], source['bytes']))
++                    else:
++                        self.assertEqual((error['observed_sha256'], error['observed_bytes']), (None, None))
++                        self.assertIn(row['artifact_ref'], error['reason'])
++                    # Diagnostic coordinates remain readable, unverifiable bytes do not.
++                    self.assertFalse((root / 'input/operational-review/EX-formal-diagnostic' /
++                                      ('result.json' if fault == 'missing_result' else
++                                       'checkpoint-recovery.json' if fault == 'missing_checkpoint' else 'files/proof.txt')).exists())
++                    damaged = deepcopy(context)
++                    bad = (damaged['recovery_materials']['result_source'] if fault == 'missing_result' else
++                           damaged['recovery_materials']['checkpoint_source'] if fault == 'missing_checkpoint' else
++                           damaged['recovery_materials']['output_files'][0])
++                    bad['local_path'] = 'input/unchecked-bytes.txt'
++                    with self.assertRaises(AssertionError):
++                        assert_operational_documents(self, damaged, root, engine, owner='recovery_materials')
++                fitted_root = root / 'packaged'
++                fitted, _ = package(engine, fitted_root, role='operational_review', target='EX-formal-diagnostic')
++                assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='recovery_materials')
++
+     def test_failed_execution_materials_are_restored_for_its_operational_review(self):
+         sim = Sim.activated()
+         currentness_model(sim).interrupt('research_preparation', interrupted_preparation)
+@@ -129,14 +203,33 @@ class RecoveryMaterialTests(unittest.TestCase):
+             self.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
+         restored = next(f for f in recovery['output_files'] if f['path'] == 'partial.txt')
+         self.assertEqual((review_workspace / restored['local_path']).read_bytes(), PARTIAL)
++        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_documents(self, context, review_workspace, engine, owner='operational_evidence')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='operational_evidence')
++        # The same execution's genuine continuation source has a different owner/path.
++        from do_math.context_store import restore_continuation
++        resumed = restore_continuation(engine.runtime, {**execution['action'], 'continuation_of': execution['id']},
++            review_workspace, snapshot=engine.head, read_artifact=lambda path: engine.store.read(path, engine.head))
++        swapped = deepcopy(context)
++        swapped['recovery_materials']['result_source'] = resumed['continuation_history'][-1]['result_source']
++        with self.assertRaises(AssertionError):
++            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
++        swapped = deepcopy(context)
++        swapped['recovery_materials']['result_source'] = context['operational_evidence']['checkpoint_source']
++        with self.assertRaises(AssertionError):
++            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
+         activity_result = b'{"report":"A separately preserved activity result."}'
+         activity_ref = 'runtime/artifacts/BA-activity-result/diagnostic.json'
+         engine.runtime['executions'][execution['id']]['result_ref'] = activity_ref
+         engine._save({activity_ref: activity_result})
+         other_workspace = sim.root / 'activity-result-review'
+-        other = engine._context(review, other_workspace)['recovery_materials']
++        other_context = engine._context(review, other_workspace)
++        other = other_context['recovery_materials']
+         self.assertEqual((other_workspace / other['result_source']['local_path']).read_bytes(), activity_result)
+         self.assertNotEqual(other['result_source']['local_path'], other['checkpoint_source']['local_path'])
++        self.assertEqual(other['result_kind'], 'activity_result')
++        assert_operational_documents(self, other_context, other_workspace, engine, owner='recovery_materials')
+ 
+     def test_recovery_captures_parent_and_inline_child_without_losing_action(self):
+         sim = Sim.activated()
+@@ -178,6 +271,8 @@ class RecoveryMaterialTests(unittest.TestCase):
+         self.assertEqual(recovery['final_result_status'], 'not_produced')
+         self.assertEqual(recovery['result_source'], recovery['checkpoint_source'])
+         self.assertTrue((review_workspace / recovery['result_source']['local_path']).is_file())
++        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/.agents/skills/do-math/scripts/tests/sim/test_role_input_context.py b/.agents/skills/do-math/scripts/tests/sim/test_role_input_context.py
+index c79ecc30..889e6f1a 100644
+--- a/.agents/skills/do-math/scripts/tests/sim/test_role_input_context.py
++++ b/.agents/skills/do-math/scripts/tests/sim/test_role_input_context.py
+@@ -13,6 +13,7 @@ import json
+ from pathlib import Path
+ import tempfile
+ import unittest
++from uuid import uuid4
+ from unittest.mock import Mock
+ 
+ from do_math import contracts, execution_lifecycle, execution_profiles, integration, knowledge_io, knowledge_records, \
+@@ -24,13 +25,11 @@ from support.record_builders import approve_task, approved_task, surface_state
+ from support.default_responder import common
+ from support.role_answers import seal_response
+ from support.engine_context import JUDGED, central_check_knowledge, context_engine, issue, package
++from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
+ from support.sim import Sim, warm_template
+ 
+ setUpModule = warm_template
+ 
+-CHECKPOINT = 'runtime/artifacts/BA-check/checkpoint.json'
+-
+-
+ def use_state(engine, instance, runtime):
+     """Give the engine the legacy ``context_engine`` state over ``instance`` and ``runtime``, keeping its workspace."""
+     from support.engine_context import context_state
+@@ -54,12 +53,15 @@ class OperationalInputTests(unittest.TestCase):
+         if claim is not None:
+             value['current_claim'] = claim
+             raw = json.dumps(value).encode()
+-        engine = context_engine(files={CHECKPOINT: raw if stored is None else stored, **(files or {})})
++        # The template reuses its repository path. Each published bundle is
++        # immutable within that identity, including the per-process sealed memo.
++        checkpoint_path = 'runtime/artifacts/BA-check-' + uuid4().hex + '/checkpoint.json'
++        engine = context_engine(files={checkpoint_path: raw if stored is None else stored, **(files or {})})
+         target = {'id': 'EX-work', 'role': 'research_work', 'status': 'running',
+                   'action': {'role': 'research_work', 'target': 'TK-work'}}
+         engine.runtime['executions'][target['id']] = target
+         checkpoint = {'kind': 'worker_checkpoint', 'execution_id': target['id'], 'status': 'valid',
+-            'value': value, 'artifact_ref': CHECKPOINT, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
++            'value': value, 'artifact_ref': checkpoint_path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+         engine.runtime['checkpoints'] = {target['id']: checkpoint}
+         action = {'id': 'AC-review', 'role': 'operational_review', 'target': target['id'],
+                   'live': True, 'observation_refs': ['OF-one'], 'obligation_ids': ['SC-one']}
+@@ -87,6 +89,8 @@ class OperationalInputTests(unittest.TestCase):
+             source = evidence['checkpoint_source']
+             self.assertEqual((workspace / source['local_path']).read_bytes(), raw)
+             self.assertEqual(source['sha256'], checkpoint['sha256'])
++            self.assertNotIn('recovery_materials', context)
++            assert_operational_documents(self, context, workspace, engine, owner='operational_evidence')
+ 
+     def test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text(self):
+         engine, action, _, raw = self.fixture(claim='Evidence retained. ' * 40000)
+@@ -96,6 +100,7 @@ class OperationalInputTests(unittest.TestCase):
+             self.assertIsNone(fitted['overflow'], 'Checkpoint text is available through its exact file reference')
+             source = fitted['context']['operational_evidence']['checkpoint_source']
+             self.assertEqual((root / source['local_path']).read_bytes(), raw)
++            assert_operational_documents(self, fitted['context'], root, engine, owner='operational_evidence')
+ 
+     def test_review_gets_the_same_canonical_basis_set_as_application(self):
+         engine, action, checkpoint, _ = self.fixture()
+@@ -110,12 +115,49 @@ class OperationalInputTests(unittest.TestCase):
+                   'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
+         engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
+         checkpoint['evidence_files'] = [source]
++        engine.runtime['executions']['EX-successor'] = {
++            'id': 'EX-successor', 'role': 'research_work', 'status': 'running',
++            'continuation_of': 'EX-work', 'action': {'role': 'research_work', 'target': 'TK-work'}}
+         with tempfile.TemporaryDirectory() as directory:
+             root = Path(directory)
+             context = engine._context(action, root, execution_id='EX-review')
+             files = context['operational_evidence'].get('checkpoint_files', [])
+             self.assertEqual(len(files), 1)
+             self.assertEqual((root / files[0]['local_path']).read_bytes(), proof)
++            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++            assert_operational_damage_rejected(self, context, root, engine, owner='operational_evidence')
++            successors = context['operational_evidence']['activity_continuations']
++            self.assertEqual(successors['frontier']['execution_ids'], ['EX-successor'])
++            self.assertEqual(successors['frontier']['state'], 'in_progress')
++            self.assertEqual(successors['executions'][0]['id'], 'EX-successor')
++            fitted_root = root / 'packaged'
++            fitted = self.packaged(engine, action, fitted_root)[1]
++            assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='operational_evidence')
++
++    def test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input(self):
++        engine, action, _, _ = self.fixture()
++        engine.runtime['checkpoints'] = {}
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            context = engine._context(action, root, execution_id='EX-review')
++            self.assertEqual(context['operational_evidence']['checkpoint_status'], 'not_preserved')
++            self.assertIsNone(context['operational_evidence']['checkpoint_source'])
++            self.assertEqual(context['operational_evidence']['checkpoint_files'], [])
++            self.assertNotIn('recovery_materials', context)
++            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++
++    def test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review(self):
++        proof = b'preserved evidence'
++        source = {'path': 'proof.lean', 'artifact_ref': 'runtime/artifacts/BA-check/proof.lean',
++                  'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
++        for fault in ('sha256', 'bytes'):
++            engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
++            changed = dict(source)
++            changed[fault] = '0' * 64 if fault == 'sha256' else len(proof) + 1
++            checkpoint['evidence_files'] = [changed]
++            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
++                engine._context(action, Path(directory), execution_id='EX-review')
++            self.assertEqual(str(rejected.exception), 'operational checkpoint evidence bytes changed: ' + source['artifact_ref'])
+ 
+     def test_packaged_operational_submission_checks_the_advertised_basis(self):
+         from support.entry import entry
+diff --git a/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py b/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 83efb349..43e2a415 100644
+--- a/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -13,6 +13,69 @@ SCRIPTS = SKILL / 'scripts'
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_operational_fields_require_their_actual_input_owner(self):
++        schemas = field_schemas()
++        for owner, field in (('operational_evidence', 'activity_continuations'),
++                             ('recovery_materials', 'output_files[].restoration_error')):
++            with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
++                scoped_field_issues('`' + owner + '.' + field + '`', schemas)
++            other = {'operational_evidence', 'recovery_materials'} - {owner}
++            with self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
++                scoped_field_issues('`' + owner + '.' + field + '`', schemas, defer_operational_inputs=other)
++            self.assertEqual(scoped_field_issues('`' + owner + '.' + field + '`', schemas,
++                defer_operational_inputs=(owner,)), [])
++        for name in ('checkpoint_source', 'recovery_source', 'checkpoint_files', 'recovered_output_files'):
++            self.assertNotIn(name, schemas)
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred operational input owners'):
++            scoped_field_issues('', schemas, defer_operational_inputs=('operational_evience',))
++        with self.assertRaisesRegex(ValueError, 'result_source fields require the actual continuation'):
++            scoped_field_issues('`result_source.local_path`', schemas,
++                               defer_operational_inputs=('operational_evidence', 'recovery_materials'))
++
++    def test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method(self):
++        import ast
++        from support.doc_code import OPERATIONAL_INPUT_BOUNDARIES
++        owners = {
++            'operational_evidence': ('sim/test_role_input_context.py', 'OperationalInputTests',
++                                    'test_live_review_receives_exact_checkpoint_evidence_files'),
++            'recovery_materials': ('sim/test_knowledge_currentness.py', 'RecoveryMaterialTests',
++                                  'test_failed_execution_materials_are_restored_for_its_operational_review')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(OPERATIONAL_INPUT_BOUNDARIES))
++            for owner, (path, class_name, method_name) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                classes = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name]
++                self.assertEqual(len(classes), 1)
++                methods = [n for n in classes[0].body if isinstance(n, ast.FunctionDef) and n.name == method_name]
++                self.assertEqual(len(methods), 1)
++                calls = [n for n in ast.walk(methods[0]) if isinstance(n, ast.Call)
++                         and isinstance(n.func, ast.Name) and n.func.id == 'assert_operational_documents'
++                         and any(k.arg == 'owner' and isinstance(k.value, ast.Constant)
++                                 and k.value.value == owner for k in n.keywords)]
++                self.assertTrue(calls, owner + ' needs its actual document check')
++        verify(owners)
++        for fault in ('wrong_owner', 'missing_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'wrong_owner':
++                changed['operational_evience'] = changed.pop('operational_evidence')
++            elif fault == 'missing_owner':
++                del changed['recovery_materials']
++            elif fault == 'missing_method':
++                changed['recovery_materials'] = (*changed['recovery_materials'][:2], 'test_missing')
++            else:
++                changed['operational_evidence'] = (*changed['operational_evidence'][:2],
++                    'test_review_gets_the_same_canonical_basis_set_as_application')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
++    def test_operational_document_names_the_result_and_checkpoint_owners(self):
++        from support.doc_code import SPAN
++        text = (SKILL / '계약/운영-점검.md').read_text(encoding='utf-8')
++        self.assertIn('operational_evidence.checkpoint_source.local_path', SPAN.findall(text))
++        self.assertIn('recovery_materials.result_source.local_path', SPAN.findall(text))
++        self.assertNotIn('checkpoint_source.local_path', SPAN.findall(text))
++        self.assertNotIn('result_source.local_path', SPAN.findall(text))
++
+     def test_documented_commands_and_options_exist(self):
+         from do_math.cli_contract import build_parser
+         options = parser_options(build_parser())
+@@ -72,6 +135,7 @@ class DocumentCodeTests(unittest.TestCase):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                             defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                             defer_continuations=others)
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_continuations=(owner,)), [])
+@@ -147,6 +211,7 @@ class DocumentCodeTests(unittest.TestCase):
+                                                   defer_status=True, defer_operation_progress=True,
+                                                   defer_query_record=True, defer_query_result=True,
+                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                                                  defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))]
+         self.assertEqual(issues, [])
+@@ -228,7 +293,8 @@ class DocumentCodeTests(unittest.TestCase):
+             produced_object_schema(alternatives)
+         schemas = field_schemas()
+         self.assertEqual(scoped_field_issues(
+-            '`operational_evidence.activity_continuations`', schemas), [])
++            '`operational_evidence.activity_continuations`', schemas,
++            defer_operational_inputs=('operational_evidence',)), [])
+         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
+             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
+             '`operating_summary.primary_blocker` `operating_summary.workspace` '
+@@ -288,7 +354,7 @@ class DocumentCodeTests(unittest.TestCase):
+                          [('unused field binding', 'record')])
+         self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
+             '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
+-            '`checkpoint_source.local_path`', schemas), [])
++            '`action.role`', schemas), [])
+ 
+     def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
+         def producer(command):
+@@ -324,6 +390,7 @@ class DocumentCodeTests(unittest.TestCase):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                             defer_role_inputs={'input_manifest', 'prompt', 'documents', 'profile_selection'} - {owner})
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])
+                     self.assertEqual(unowned_field_references(text, schemas), [])
+@@ -383,7 +450,7 @@ class DocumentCodeTests(unittest.TestCase):
+         with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input'):
+             scoped_field_issues('`documents[].artifact_ref`', actual)
+         self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
+-            '`question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
++            '`question_details[].id`', actual), [])
+         self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
+                          [('scoped field', 'execution.output_files[].local_path')])
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/support/doc_code.py b/.agents/skills/do-math/scripts/tests/support/doc_code.py
+index 155700b3..4d0face7 100644
+--- a/.agents/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.agents/skills/do-math/scripts/tests/support/doc_code.py
+@@ -36,6 +36,8 @@ ROLE_INPUT_BOUNDARIES = {owner: object() for owner in
+                          ('input_manifest', 'prompt', 'documents', 'profile_selection')}
+ CONTINUATION_BOUNDARIES = {owner: object() for owner in
+                            ('result_source', 'rejected_response', 'previous_output_files')}
++OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
++                              ('operational_evidence', 'recovery_materials')}
+ 
+ 
+ def documents(skill):
+@@ -279,9 +281,7 @@ def field_schemas():
+     schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
+     schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
+         bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
+-    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
+     schemas.update(CONTINUATION_BOUNDARIES)
+-    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
+     schemas['query_record'] = QUERY_RECORD_BOUNDARY
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+@@ -329,11 +329,6 @@ def field_schemas():
+     schemas['materialized_output_files'] = array(restored_file)
+     schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
+         bindings={'source': RECORDS['sources']}))
+-    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
+-        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
+-    schemas['recovered_output_files'] = array(schemas['recovery_source'])
+-    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
+-        bindings={'output_files': array(schemas['recovery_source'])})
+     # The task result retains the research response, then _context restores its files.
+     research_output = contracts.schema_for('research_work')
+     retained = {'properties': {key: value for key, value in research_output['properties'].items()
+@@ -367,9 +362,7 @@ def field_schemas():
+     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
+     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
+     schemas['status'] = STATUS_REPORT_BOUNDARY
+-    schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
+-    schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
+-        CoreEngineMixin._context, "evidence['activity_continuations']")
++    schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
+     return schemas
+ 
+ 
+@@ -465,7 +458,7 @@ def unowned_field_references(text, schemas):
+ 
+ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+-                        defer_role_inputs=(), defer_continuations=()):
++                        defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -476,6 +469,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     unknown = set(defer_continuations) - CONTINUATION_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred continuation owners: {sorted(unknown)}')
++    unknown = set(defer_operational_inputs) - OPERATIONAL_INPUT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred operational input owners: {sorted(unknown)}')
+     issues = []
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+@@ -521,6 +517,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+                     continue
+                 raise ValueError(owner + ' fields require the actual continuation result')
+             candidates = [local[root]]
++            owner = next((name for name, boundary in OPERATIONAL_INPUT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_operational_inputs:
++                    continue
++                raise ValueError(owner + ' fields require the actual operational input')
+             for part in parts:
+                 candidates = [child for schema in candidates for child in
+                               (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
+@@ -530,6 +532,43 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     return sorted(set(issues))
+ 
+ 
++def operational_field_issues(text, owner, value):
++    """Traverse one actual input, preserving each item and its conditional branch.
++
++    Null checkpoint sources and restoration errors are explicit document reading
++    conditions. Empty arrays do not establish an item shape; populated real
++    producer tests check those paths separately. No union of sample keys is used.
++    """
++    if owner not in OPERATIONAL_INPUT_BOUNDARIES:
++        raise ValueError('Unknown operational input owner: ' + owner)
++    issues = []
++    def visit(node, parts, path):
++        if not parts:
++            return True
++        if node is None and path == owner + '.checkpoint_source':
++            return True
++        part, *remaining = parts
++        if part.startswith('['):
++            if not isinstance(node, list):
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return (not index or bool(items)) and all(visit(item, remaining, path + part) for item in items)
++        if not isinstance(node, dict):
++            return False
++        if part == 'restoration_error' and part not in node:
++            return True  # Successful source; the error-only reading instruction does not apply.
++        if part == 'local_path' and 'restoration_error' in node:
++            return True  # Error sources must never be materialized; checked at the file boundary.
++        return part in node and visit(node[part], remaining, path + '.' + part)
++    for token in SPAN.findall(text):
++        if FIELD.fullmatch(token) and re.split(r'[.\[]', token)[0] == owner:
++            parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)[1:]
++            if not visit(value, parts, owner):
++                issues.append(('actual field', token))
++    return sorted(set(issues))
++
++
+ def declared_policy_names(scripts):
+     """Named policy fields/choices come from schemas; code owners come from real modules."""
+     from do_math import contracts, control_contracts
+diff --git a/.agents/skills/do-math/scripts/tests/support/engine_context.py b/.agents/skills/do-math/scripts/tests/support/engine_context.py
+index e2b1774b..cf60a0e1 100644
+--- a/.agents/skills/do-math/scripts/tests/support/engine_context.py
++++ b/.agents/skills/do-math/scripts/tests/support/engine_context.py
+@@ -65,6 +65,87 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
+                       'admissible_basis_refs': []}
+ 
+ 
++def assert_operational_documents(case, context, workspace, engine, *, owner, snapshot=None):
++    """Bind document fields to one real _context/packaging result and sealed bytes."""
++    import hashlib
++    from support.doc_code import documents, operational_field_issues
++    value = context[owner]
++    snapshot = engine.head if snapshot is None else snapshot
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(operational_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    target = context['execution_to_review']
++    case.assertEqual(value['source_snapshot'], snapshot)
++    if owner == 'operational_evidence':
++        case.assertEqual(value['execution_status'], target['status'])
++        sources = [value['checkpoint_source'], *value['checkpoint_files']]
++        if value['checkpoint_status'] == 'preserved':
++            case.assertEqual(value['checkpoint_source']['artifact_ref'], value['checkpoint']['artifact_ref'])
++            case.assertEqual(value['checkpoint_source']['sha256'], value['checkpoint']['sha256'])
++        else:
++            case.assertIsNone(value['checkpoint_source'])
++        case.assertIn('activity_continuations', value)
++    elif owner == 'recovery_materials':
++        case.assertFalse(context['live_review'])
++        case.assertEqual(value['execution_id'], target['id'])
++        bundle = 'runtime/artifacts/' + target['artifact_bundle'] + '/'
++        case.assertEqual(value['result_source']['artifact_ref'], target.get('result_ref') or bundle + 'result.json')
++        if value['checkpoint_source'] is not None:
++            case.assertEqual(value['checkpoint_source']['artifact_ref'], bundle + 'checkpoint-recovery.json')
++        sources = [value['result_source'], value['checkpoint_source'], *value['output_files']]
++    else:
++        raise ValueError('Unknown operational input owner: ' + owner)
++    for source in sources:
++        if source is None:
++            continue
++        case.assertEqual(source['snapshot'], snapshot)
++        if 'restoration_error' in source:
++            case.assertNotIn('local_path', source)
++            case.assertEqual(set(source['restoration_error']),
++                             {'error_type', 'reason', 'observed_sha256', 'observed_bytes'})
++            case.assertTrue(source['restoration_error']['reason'])
++            continue
++        case.assertIn('local_path', source)
++        case.assertTrue(source['local_path'].startswith('input/operational-review/' + target['id'] + '/'))
++        local = (Path(workspace) / source['local_path']).resolve()
++        case.assertTrue(local.is_relative_to(Path(workspace).resolve() / 'input'))
++        raw = local.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])
++        case.assertEqual(len(raw), source['bytes'])
++        case.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
++
++
++def assert_operational_damage_rejected(case, context, workspace, engine, *, owner):
++    """Perturb copies after production; these failures are document/file checks."""
++    from copy import deepcopy
++    value = context[owner]
++    slots = (['checkpoint_source'] if owner == 'operational_evidence' else
++             ['result_source', 'checkpoint_source'])
++    file_key = 'checkpoint_files' if owner == 'operational_evidence' else 'output_files'
++    slots += [(file_key, index) for index in range(len(value[file_key]))]
++    for slot in slots:
++        source = value[slot[0]][slot[1]] if isinstance(slot, tuple) else value[slot]
++        if source is None or 'restoration_error' in source:
++            continue
++        for fault in ('local_path', 'sha256', 'bytes'):
++            damaged = deepcopy(context)
++            row = damaged[owner][slot[0]][slot[1]] if isinstance(slot, tuple) else damaged[owner][slot]
++            if fault == 'local_path':
++                del row[fault]
++            elif fault == 'sha256':
++                row[fault] = '0' * 64
++            else:
++                row[fault] += 1
++            with case.subTest(owner=owner, slot=slot, fault=fault), case.assertRaises(AssertionError):
++                assert_operational_documents(case, damaged, workspace, engine, owner=owner)
++    other = 'recovery_materials' if owner == 'operational_evidence' else 'operational_evidence'
++    if other in context:
++        swapped = deepcopy(context)
++        swapped[owner] = swapped[other]
++        with case.subTest(owner=owner, fault='other_owner'), case.assertRaises(AssertionError):
++            assert_operational_documents(case, swapped, workspace, engine, owner=owner)
++
++
+ def is_map_entry(value):
+     """A context key given as a map entry: its exact catalog source and item count, not its content."""
+     return isinstance(value, dict) and set(value) == {'source_ref', 'total'}
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py b/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+index bc62e252..62a5438f 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -61,6 +61,7 @@ class TraceCorruptionTests(unittest.TestCase):
+                 return scoped_field_issues(text, actual, defer_status=True,
+                                            defer_query_record=True, defer_query_result=True,
+                                            defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                           defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                            defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py b/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+index 9b76e602..47404b76 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -275,6 +275,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents'))
+ 
+@@ -350,6 +351,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, actual,
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+@@ -516,6 +518,7 @@ class RoleInputTests(unittest.TestCase):
+                                              'documents': document_schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_role_inputs=('profile_selection',),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py b/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+index 8ba30b1d..91d5acc7 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -33,6 +33,7 @@ class QueryFamilyNameTests(unittest.TestCase):
+             return scoped_field_issues(text, actual, defer_status=True,
+                                        defer_operation_progress=True, defer_query_result=True,
+                                        defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                       defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                        defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py b/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+index 2b8e947d..06eeed62 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -148,6 +148,7 @@ class ReportProjections(unittest.TestCase):
+                               for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                               defer_query_record=True, defer_query_result=True,
+                                                               defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                                              defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                               defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+@@ -179,6 +180,7 @@ class ReportProjections(unittest.TestCase):
+                                          for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                                          defer_query_record=True, defer_query_result=True,
+                                                                          defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                                                         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                                          defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))])
+                     if name == 'config_sha256':
+diff --git "a/.agents/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md" "b/.agents/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
+index 1b70bc13..d8a18c51 100644
+--- "a/.agents/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
++++ "b/.agents/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
+@@ -18,7 +18,7 @@
+ 
+ `operator install`은 먼저 현재 설치 스킬의 설치 파일 집합을 해시해 workspace의 `operator/bootstrap/<snapshot_sha256>/` 아래 내용 주소형 사본으로 고정한다. 설치 파일 집합은 스킬 폴더의 모든 파일에서 `scripts/tests/` 아래 시험, `__pycache__`와 `.pyc` 바이트코드, `.git`·`.lake` 아래의 VCS·빌드 산출을 뺀 것이다. 설치 복구가 비교하는 "같은 설치 판본"도 이 집합의 해시로 정한다. 따라서 회귀 시험만 추가하거나 고쳐도 같은 실패의 자동 복구는 다시 열리지 않는다. bootstrap manifest에는 원 설치 경로, 각 파일 경로·해시와 전체 snapshot 해시가 들어간다. 예약 감독은 이 고정 사본에서 시작하므로 live 설치가 import조차 못 하는 상태에서도 감독과 복구 진입점을 보존한다.
+ 
+-고정 bootstrap은 manifest에 없는 파일, 바뀐 파일과 reparse point를 거부한다. 이 검사는 설치 파일의 정체성과 완전성을 확인하지만 코드의 의미, 공급자 인증이나 강한 실행 격리를 보증하지 않는다. bootstrap의 `LIVE_INSTALLATION_ROOT`는 실제 수리할 live 설치 경로를 가리킨다. 복구 AI는 bootstrap 사본을 정본처럼 고치는 것이 아니라 이 live 설치만 수리하며, 검증 뒤 다음 설치 조정에서 새 고정 사본을 만들 수 있다.
++고정 bootstrap은 manifest에 없는 파일, 바뀐 파일과 reparse point를 거부한다. 이 검사는 설치 파일의 정체성과 완전성을 확인하지만 코드의 의미, 공급자 인증이나 강한 실행 격리를 보증하지 않는다. bootstrap의 main은 manifest의 installation_root를 scheduled_operator의 main에 installation_root 인자로 전달한다. manifest가 없는 live 모드에서는 snapshot_root를 전달하며, 이 인자가 실제 수리할 live 설치 경로를 가리킨다. 복구 AI는 bootstrap 사본을 정본처럼 고치는 것이 아니라 이 live 설치만 수리하며, 검증 뒤 다음 설치 조정에서 새 고정 사본을 만들 수 있다.
+ 
+ ## 보존된 실행기 실패 또는 수락된 설치 결함 진단에서 복구 AI를 연다
+ 
+diff --git "a/.agents/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md" "b/.agents/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
+index 84f8f96d..dd05551b 100644
+--- "a/.agents/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
++++ "b/.agents/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
+@@ -12,13 +12,17 @@
+ 
+ `observation`은 점검을 연 신호이지 결론이 아니다. 도래한 자기 점검 의무, 발동 이유, 실행 시작 뒤 경과 시간, 진행 중 도구, 최근 메시지, 체크포인트의 실제 값과 소비된 경계를 읽는다. 없는 신호를 0이나 정상으로 간주하지 않는다. 자기 점검 의무의 발생·응답과 호출별 무응답의 판정 규칙은 「자기 점검」 문서가 정한다. 작업자가 큰 도구를 시작했다는 기록은 결과 수신이 아니므로, 완료 호출 ID·실제 반환·그 내용을 읽은 체크포인트를 구별한다.
+ 
+-실행 중 점검과 종료 후 진단 모두 `operational_evidence`를 받는다. `checkpoint_status=preserved`이면 `checkpoint_source.local_path`에서 고정 입력 snapshot의 최신 체크포인트를 읽고, `checkpoint_files[].local_path`에서 함께 보존한 근거 바이트를 읽는다. `checkpoint_evidence_omitted`는 크기 상한·읽기 실패 등으로 보존하지 못한 범위다. `not_preserved`와 근거 파일 미수집을 진전 없음으로 바꾸지 않는다. 다른 실행의 live 작업 공간을 직접 읽어 빈칸을 채우지 않는다.
++실행 중 점검과 종료 후 진단 모두 `operational_evidence`를 받는다. `operational_evidence.checkpoint_status`가 `preserved`이면 `operational_evidence.checkpoint_source.local_path`에서 고정 입력 snapshot의 최신 체크포인트를 읽고, `operational_evidence.checkpoint_files[].local_path`에서 함께 보존한 근거 바이트를 읽는다. `operational_evidence.checkpoint_evidence_omitted`는 크기 상한·읽기 실패 등으로 보존하지 못한 범위다. `not_preserved`이면 `operational_evidence.checkpoint_source`는 null이다. 보존 부재와 근거 파일 미수집을 진전 없음으로 바꾸지 않는다. 다른 실행의 live 작업 공간을 직접 읽어 빈칸을 채우지 않는다.
+ 
+-직접 지급된 `checkpoint`는 정체성·관측 시각·상태의 메타데이터다. 본문은 크기와 관계없이 `checkpoint_source`의 정확한 파일에서 읽는다. 큰 체크포인트를 프롬프트에 중복 삽입해 운영 점검 자체의 입력 한도를 소진하지 않는다.
++직접 지급된 `operational_evidence.checkpoint`는 정체성·관측 시각·상태의 메타데이터다. 보존된 본문은 크기와 관계없이 `operational_evidence.checkpoint_source`의 정확한 파일에서 읽는다. 큰 체크포인트를 프롬프트에 중복 삽입해 운영 점검 자체의 입력 한도를 소진하지 않는다.
+ 
+ `execution_to_review.observation_stream`이 있으면 stream 수신 시각·중앙 적용 시각과 `local_termination_confirmed`를 원장의 실행 상태와 함께 읽는다. 지연된 로그의 적용 시각은 원 행동의 발생 시각이 아니다. 로컬 종료 확인은 제출 수락이나 원격 공급자 정산을 뜻하지 않는다.
+ 
+-종료 뒤 진단의 `recovery_materials`에서는 대상 실행 ID와 `source_snapshot`을 확인한다. `final_result_status=available`이면 `result_source.local_path`의 정상 결과를 직접 읽는다. `checkpoint_recovery`나 `activity_result`는 최종 결과와 다르다. `checkpoint_source.local_path`와 부분 `output_files[].local_path`도 직접 읽으며, 같은 파일을 결과와 체크포인트 두 건으로 세지 않는다. 해시·크기·경로는 원문 정체성의 근거이지 성공의 근거가 아니다. <!-- do-math fields: output_files=recovered_output_files -->
++종료 뒤 진단에서 대상 실행에 artifact 묶음이 있으면 `recovery_materials`를 받는다. `recovery_materials.execution_id`와 `recovery_materials.source_snapshot`을 확인한다. 실행 중 점검(`live_review`)에는 이 복구 입력이 없다. `recovery_materials.result_kind`의 `execution_result`는 정상 결과 경로, `checkpoint_recovery`와 `activity_result`는 각각 복구 체크포인트와 별도 활동 결과를 뜻한다. `recovery_materials.final_result_status`가 `available`이어도 정상 결과 경로를 선택했다는 뜻이며 복원 성공이나 수학적 성공을 보증하지 않는다.
++
++복원에 성공하여 `local_path`가 있는 자료만 읽는다. 정상 결과는 `recovery_materials.result_source.local_path`, 복구 체크포인트는 `recovery_materials.checkpoint_source.local_path`, 부분 출력은 `recovery_materials.output_files[].local_path`에서 읽는다. 정상 formal/인라인 자식 실행에 복구 체크포인트가 없으면 `recovery_materials.checkpoint_source`는 null이며 읽을 파일도 없다. 같은 원 artifact·snapshot을 결과와 체크포인트 두 건으로 세지 않는다. 해시·크기·경로는 원문 정체성의 근거이지 성공의 근거가 아니다.
++
++복원 실패는 `recovery_materials.result_source.restoration_error`, `recovery_materials.checkpoint_source.restoration_error` 또는 `recovery_materials.output_files[].restoration_error`에 나타난다. 해당 자료의 원 artifact·snapshot·기대 해시·크기와 오류 종류·사유, 읽은 경우의 실제 해시·크기를 진단 근거로 사용한다. 이 자료에는 `local_path`가 없으므로 없는 경로를 읽지 않는다. 검증되지 않은 바이트를 수학적 산출의 수락 근거로 쓰지 않으며 다른 실행의 live 공간으로 복구 공백을 채우지 않는다.
+ 
+ 계약, 체크포인트, 프로세스 상태나 외부 효과 근거가 없으면 기억이나 다른 실행의 상태로 채우지 않는다. 확인한 사실과 결정할 수 없는 처분을 나누고, 부족한 입력과 다음 소유자를 반환한다.
+ 
+diff --git "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md" "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+index 577dfefb..64b56057 100644
+--- "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
++++ "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+@@ -872,7 +872,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source
+ 
+ 늦은 산출이 이미 닫힌 과제나 종결된 검토 자리를 가리키면 그 산출은 보존하되 대상을 다시 열지 않는다. 원문을 읽지 못한 실행, 실패한 공급자 호출과 의미상 미해결 결과도 구별해 기록한다.
+ 
+-영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 복구 파일의 `local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
++영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 `recovery_materials.output_files[].local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 결과·복구 체크포인트의 복원 실패도 각 `recovery_materials.result_source.restoration_error`와 `recovery_materials.checkpoint_source.restoration_error`에 같은 형식으로 전달한다. `recovery_materials.final_result_status`의 `available`은 정상 결과 경로 선택이며 복원 성공을 뜻하지 않는다. checkpoint_source가 null이면 읽을 복구 체크포인트가 없고 live_review에는 recovery_materials가 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
+ 
+ ## 실행 수명과 복구
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+index 0a2531ac..5d568e5c 100644
+--- a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -61,6 +61,7 @@ def cli_field_issues(text, schemas, owner, result):
+     return scoped_field_issues(text, {**schemas, owner: schema},
+         defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+         defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+         defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner})
+ 
+@@ -350,6 +351,7 @@ class CliTests(CliInstanceTest):
+                 for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                     defer_query_record=True, defer_query_result=True,
+                     defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                    defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                     defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             omitted = dict(result)
+@@ -443,6 +445,7 @@ class CliTests(CliInstanceTest):
+             return scoped_field_issues(text, {**schemas, 'query_result': schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True,
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py b/.claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
+index f2752aa8..ea043923 100644
+--- a/.claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py
+@@ -23,6 +23,7 @@ import unittest
+ 
+ from do_math import repository, submission
+ from support.model import Answer
++from support.engine_context import assert_operational_documents
+ from support.provider_probes import ObservedCalls
+ from support.review_sim import held_impact, impact_review_answer, impact_sim, warm_impact
+ 
+@@ -120,6 +121,12 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
+         diagnostics = []
+ 
+         def diagnose(output, context):
++            from pathlib import Path
++            active = next(row for row in sim.runtime['executions'].values()
++                          if row['role'] == 'operational_review' and row['status'] != 'ended')
++            workspace = Path(sim.instance['workspace']) / 'runs' / active['id'] / 'workspace'
++            assert_operational_documents(self, context, workspace, sim.engine, owner='recovery_materials',
++                                         snapshot=active['input_snapshot'])
+             diagnostics.append(deepcopy(context['recovery_materials']))
+             return output
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py b/.claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
+index d32974ff..77c50f1b 100644
+--- a/.claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
++++ b/.claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py
+@@ -28,6 +28,7 @@ from do_math.knowledge_io import import_candidate
+ from do_math.launch import ticket
+ from do_math.state_contract import default_state_contract, validate_record
+ from support.engine_lifecycle import applied, solve_goal
++from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
+ from support.knowledge_currentness import currentness_model
+ from support.review_sim import reviewed_sim as reviewed_theorem_sim, theorem_id, warm_reviewed
+ from support.sim import Sim, warm_template
+@@ -104,6 +105,79 @@ class GoalDependencyTests(unittest.TestCase):
+ 
+ 
+ class RecoveryMaterialTests(unittest.TestCase):
++    def test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources(self):
++        """Real repository reads and _context distinguish normal, missing, hash and size branches."""
++        import tempfile
++        from support.engine_context import context_engine, package
++        result = b'{"status":"completed"}'
++        output = b'checked output bytes'
++        for fault in ('normal', 'normal_inline', 'missing_checkpoint', 'missing_result', 'output_hash', 'output_size', 'missing_output'):
++            prefix = 'runtime/artifacts/BA-formal-diagnostic-' + fault + '/'
++            files = {prefix + 'result.json': result, prefix + 'proof.txt': output}
++            if fault == 'missing_result':
++                del files[prefix + 'result.json']
++            if fault == 'missing_output':
++                del files[prefix + 'proof.txt']
++            engine = context_engine(files=files)
++            source = {'path': 'proof.txt', 'artifact_ref': prefix + 'proof.txt',
++                      'sha256': hashlib.sha256(output).hexdigest(), 'bytes': len(output)}
++            if fault == 'output_hash':
++                source['sha256'] = '0' * 64
++            if fault == 'output_size':
++                source['bytes'] += 1
++            role = 'formal_check' if fault not in ('normal_inline', 'missing_checkpoint') else 'research_preparation'
++            engine.runtime['executions']['EX-formal-diagnostic'] = {
++                'id': 'EX-formal-diagnostic', 'role': role, 'status': 'ended',
++                'action': {'role': role}, 'artifact_bundle': 'BA-formal-diagnostic-' + fault,
++                'result_ref': prefix + 'result.json', 'output_files': [source]}
++            if fault == 'normal_inline':
++                engine.runtime['executions']['EX-formal-diagnostic']['parent_execution_id'] = 'EX-parent'
++            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault):
++                root = Path(directory)
++                context = engine._context({'role': 'operational_review', 'target': 'EX-formal-diagnostic'}, root)
++                recovery = context['recovery_materials']
++                if fault != 'missing_checkpoint':
++                    self.assertIsNone(recovery['checkpoint_source'])
++                self.assertEqual((recovery['result_kind'], recovery['final_result_status']),
++                                 ('execution_result', 'available'))
++                assert_operational_documents(self, context, root, engine, owner='recovery_materials')
++                assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++                row = (recovery['result_source'] if fault == 'missing_result' else
++                       recovery['checkpoint_source'] if fault == 'missing_checkpoint' else recovery['output_files'][0])
++                if fault in ('normal', 'normal_inline'):
++                    self.assertNotIn('restoration_error', row)
++                    self.assertEqual((root / row['local_path']).read_bytes(), output)
++                    assert_operational_damage_rejected(self, context, root, engine, owner='recovery_materials')
++                else:
++                    self.assertNotIn('local_path', row)
++                    error = row['restoration_error']
++                    self.assertEqual(row['snapshot'], engine.head)
++                    if fault in ('output_hash', 'output_size'):
++                        self.assertEqual(error['error_type'], 'ValueError')
++                        reason = ('operational review artifact hash changed: ' + source['artifact_ref']
++                                  if fault == 'output_hash' else 'operational review artifact size changed')
++                        self.assertEqual(error['reason'], reason)
++                        self.assertEqual((error['observed_sha256'], error['observed_bytes']),
++                                         (hashlib.sha256(output).hexdigest(), len(output)))
++                        self.assertEqual((row['sha256'], row['bytes']), (source['sha256'], source['bytes']))
++                    else:
++                        self.assertEqual((error['observed_sha256'], error['observed_bytes']), (None, None))
++                        self.assertIn(row['artifact_ref'], error['reason'])
++                    # Diagnostic coordinates remain readable, unverifiable bytes do not.
++                    self.assertFalse((root / 'input/operational-review/EX-formal-diagnostic' /
++                                      ('result.json' if fault == 'missing_result' else
++                                       'checkpoint-recovery.json' if fault == 'missing_checkpoint' else 'files/proof.txt')).exists())
++                    damaged = deepcopy(context)
++                    bad = (damaged['recovery_materials']['result_source'] if fault == 'missing_result' else
++                           damaged['recovery_materials']['checkpoint_source'] if fault == 'missing_checkpoint' else
++                           damaged['recovery_materials']['output_files'][0])
++                    bad['local_path'] = 'input/unchecked-bytes.txt'
++                    with self.assertRaises(AssertionError):
++                        assert_operational_documents(self, damaged, root, engine, owner='recovery_materials')
++                fitted_root = root / 'packaged'
++                fitted, _ = package(engine, fitted_root, role='operational_review', target='EX-formal-diagnostic')
++                assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='recovery_materials')
++
+     def test_failed_execution_materials_are_restored_for_its_operational_review(self):
+         sim = Sim.activated()
+         currentness_model(sim).interrupt('research_preparation', interrupted_preparation)
+@@ -129,14 +203,33 @@ class RecoveryMaterialTests(unittest.TestCase):
+             self.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
+         restored = next(f for f in recovery['output_files'] if f['path'] == 'partial.txt')
+         self.assertEqual((review_workspace / restored['local_path']).read_bytes(), PARTIAL)
++        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_documents(self, context, review_workspace, engine, owner='operational_evidence')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='operational_evidence')
++        # The same execution's genuine continuation source has a different owner/path.
++        from do_math.context_store import restore_continuation
++        resumed = restore_continuation(engine.runtime, {**execution['action'], 'continuation_of': execution['id']},
++            review_workspace, snapshot=engine.head, read_artifact=lambda path: engine.store.read(path, engine.head))
++        swapped = deepcopy(context)
++        swapped['recovery_materials']['result_source'] = resumed['continuation_history'][-1]['result_source']
++        with self.assertRaises(AssertionError):
++            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
++        swapped = deepcopy(context)
++        swapped['recovery_materials']['result_source'] = context['operational_evidence']['checkpoint_source']
++        with self.assertRaises(AssertionError):
++            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
+         activity_result = b'{"report":"A separately preserved activity result."}'
+         activity_ref = 'runtime/artifacts/BA-activity-result/diagnostic.json'
+         engine.runtime['executions'][execution['id']]['result_ref'] = activity_ref
+         engine._save({activity_ref: activity_result})
+         other_workspace = sim.root / 'activity-result-review'
+-        other = engine._context(review, other_workspace)['recovery_materials']
++        other_context = engine._context(review, other_workspace)
++        other = other_context['recovery_materials']
+         self.assertEqual((other_workspace / other['result_source']['local_path']).read_bytes(), activity_result)
+         self.assertNotEqual(other['result_source']['local_path'], other['checkpoint_source']['local_path'])
++        self.assertEqual(other['result_kind'], 'activity_result')
++        assert_operational_documents(self, other_context, other_workspace, engine, owner='recovery_materials')
+ 
+     def test_recovery_captures_parent_and_inline_child_without_losing_action(self):
+         sim = Sim.activated()
+@@ -178,6 +271,8 @@ class RecoveryMaterialTests(unittest.TestCase):
+         self.assertEqual(recovery['final_result_status'], 'not_produced')
+         self.assertEqual(recovery['result_source'], recovery['checkpoint_source'])
+         self.assertTrue((review_workspace / recovery['result_source']['local_path']).is_file())
++        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
++        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/.claude/skills/do-math/scripts/tests/sim/test_role_input_context.py b/.claude/skills/do-math/scripts/tests/sim/test_role_input_context.py
+index c79ecc30..889e6f1a 100644
+--- a/.claude/skills/do-math/scripts/tests/sim/test_role_input_context.py
++++ b/.claude/skills/do-math/scripts/tests/sim/test_role_input_context.py
+@@ -13,6 +13,7 @@ import json
+ from pathlib import Path
+ import tempfile
+ import unittest
++from uuid import uuid4
+ from unittest.mock import Mock
+ 
+ from do_math import contracts, execution_lifecycle, execution_profiles, integration, knowledge_io, knowledge_records, \
+@@ -24,13 +25,11 @@ from support.record_builders import approve_task, approved_task, surface_state
+ from support.default_responder import common
+ from support.role_answers import seal_response
+ from support.engine_context import JUDGED, central_check_knowledge, context_engine, issue, package
++from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
+ from support.sim import Sim, warm_template
+ 
+ setUpModule = warm_template
+ 
+-CHECKPOINT = 'runtime/artifacts/BA-check/checkpoint.json'
+-
+-
+ def use_state(engine, instance, runtime):
+     """Give the engine the legacy ``context_engine`` state over ``instance`` and ``runtime``, keeping its workspace."""
+     from support.engine_context import context_state
+@@ -54,12 +53,15 @@ class OperationalInputTests(unittest.TestCase):
+         if claim is not None:
+             value['current_claim'] = claim
+             raw = json.dumps(value).encode()
+-        engine = context_engine(files={CHECKPOINT: raw if stored is None else stored, **(files or {})})
++        # The template reuses its repository path. Each published bundle is
++        # immutable within that identity, including the per-process sealed memo.
++        checkpoint_path = 'runtime/artifacts/BA-check-' + uuid4().hex + '/checkpoint.json'
++        engine = context_engine(files={checkpoint_path: raw if stored is None else stored, **(files or {})})
+         target = {'id': 'EX-work', 'role': 'research_work', 'status': 'running',
+                   'action': {'role': 'research_work', 'target': 'TK-work'}}
+         engine.runtime['executions'][target['id']] = target
+         checkpoint = {'kind': 'worker_checkpoint', 'execution_id': target['id'], 'status': 'valid',
+-            'value': value, 'artifact_ref': CHECKPOINT, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
++            'value': value, 'artifact_ref': checkpoint_path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+         engine.runtime['checkpoints'] = {target['id']: checkpoint}
+         action = {'id': 'AC-review', 'role': 'operational_review', 'target': target['id'],
+                   'live': True, 'observation_refs': ['OF-one'], 'obligation_ids': ['SC-one']}
+@@ -87,6 +89,8 @@ class OperationalInputTests(unittest.TestCase):
+             source = evidence['checkpoint_source']
+             self.assertEqual((workspace / source['local_path']).read_bytes(), raw)
+             self.assertEqual(source['sha256'], checkpoint['sha256'])
++            self.assertNotIn('recovery_materials', context)
++            assert_operational_documents(self, context, workspace, engine, owner='operational_evidence')
+ 
+     def test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text(self):
+         engine, action, _, raw = self.fixture(claim='Evidence retained. ' * 40000)
+@@ -96,6 +100,7 @@ class OperationalInputTests(unittest.TestCase):
+             self.assertIsNone(fitted['overflow'], 'Checkpoint text is available through its exact file reference')
+             source = fitted['context']['operational_evidence']['checkpoint_source']
+             self.assertEqual((root / source['local_path']).read_bytes(), raw)
++            assert_operational_documents(self, fitted['context'], root, engine, owner='operational_evidence')
+ 
+     def test_review_gets_the_same_canonical_basis_set_as_application(self):
+         engine, action, checkpoint, _ = self.fixture()
+@@ -110,12 +115,49 @@ class OperationalInputTests(unittest.TestCase):
+                   'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
+         engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
+         checkpoint['evidence_files'] = [source]
++        engine.runtime['executions']['EX-successor'] = {
++            'id': 'EX-successor', 'role': 'research_work', 'status': 'running',
++            'continuation_of': 'EX-work', 'action': {'role': 'research_work', 'target': 'TK-work'}}
+         with tempfile.TemporaryDirectory() as directory:
+             root = Path(directory)
+             context = engine._context(action, root, execution_id='EX-review')
+             files = context['operational_evidence'].get('checkpoint_files', [])
+             self.assertEqual(len(files), 1)
+             self.assertEqual((root / files[0]['local_path']).read_bytes(), proof)
++            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++            assert_operational_damage_rejected(self, context, root, engine, owner='operational_evidence')
++            successors = context['operational_evidence']['activity_continuations']
++            self.assertEqual(successors['frontier']['execution_ids'], ['EX-successor'])
++            self.assertEqual(successors['frontier']['state'], 'in_progress')
++            self.assertEqual(successors['executions'][0]['id'], 'EX-successor')
++            fitted_root = root / 'packaged'
++            fitted = self.packaged(engine, action, fitted_root)[1]
++            assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='operational_evidence')
++
++    def test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input(self):
++        engine, action, _, _ = self.fixture()
++        engine.runtime['checkpoints'] = {}
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            context = engine._context(action, root, execution_id='EX-review')
++            self.assertEqual(context['operational_evidence']['checkpoint_status'], 'not_preserved')
++            self.assertIsNone(context['operational_evidence']['checkpoint_source'])
++            self.assertEqual(context['operational_evidence']['checkpoint_files'], [])
++            self.assertNotIn('recovery_materials', context)
++            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
++
++    def test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review(self):
++        proof = b'preserved evidence'
++        source = {'path': 'proof.lean', 'artifact_ref': 'runtime/artifacts/BA-check/proof.lean',
++                  'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
++        for fault in ('sha256', 'bytes'):
++            engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
++            changed = dict(source)
++            changed[fault] = '0' * 64 if fault == 'sha256' else len(proof) + 1
++            checkpoint['evidence_files'] = [changed]
++            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
++                engine._context(action, Path(directory), execution_id='EX-review')
++            self.assertEqual(str(rejected.exception), 'operational checkpoint evidence bytes changed: ' + source['artifact_ref'])
+ 
+     def test_packaged_operational_submission_checks_the_advertised_basis(self):
+         from support.entry import entry
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 83efb349..43e2a415 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -13,6 +13,69 @@ SCRIPTS = SKILL / 'scripts'
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_operational_fields_require_their_actual_input_owner(self):
++        schemas = field_schemas()
++        for owner, field in (('operational_evidence', 'activity_continuations'),
++                             ('recovery_materials', 'output_files[].restoration_error')):
++            with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
++                scoped_field_issues('`' + owner + '.' + field + '`', schemas)
++            other = {'operational_evidence', 'recovery_materials'} - {owner}
++            with self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
++                scoped_field_issues('`' + owner + '.' + field + '`', schemas, defer_operational_inputs=other)
++            self.assertEqual(scoped_field_issues('`' + owner + '.' + field + '`', schemas,
++                defer_operational_inputs=(owner,)), [])
++        for name in ('checkpoint_source', 'recovery_source', 'checkpoint_files', 'recovered_output_files'):
++            self.assertNotIn(name, schemas)
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred operational input owners'):
++            scoped_field_issues('', schemas, defer_operational_inputs=('operational_evience',))
++        with self.assertRaisesRegex(ValueError, 'result_source fields require the actual continuation'):
++            scoped_field_issues('`result_source.local_path`', schemas,
++                               defer_operational_inputs=('operational_evidence', 'recovery_materials'))
++
++    def test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method(self):
++        import ast
++        from support.doc_code import OPERATIONAL_INPUT_BOUNDARIES
++        owners = {
++            'operational_evidence': ('sim/test_role_input_context.py', 'OperationalInputTests',
++                                    'test_live_review_receives_exact_checkpoint_evidence_files'),
++            'recovery_materials': ('sim/test_knowledge_currentness.py', 'RecoveryMaterialTests',
++                                  'test_failed_execution_materials_are_restored_for_its_operational_review')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(OPERATIONAL_INPUT_BOUNDARIES))
++            for owner, (path, class_name, method_name) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                classes = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name]
++                self.assertEqual(len(classes), 1)
++                methods = [n for n in classes[0].body if isinstance(n, ast.FunctionDef) and n.name == method_name]
++                self.assertEqual(len(methods), 1)
++                calls = [n for n in ast.walk(methods[0]) if isinstance(n, ast.Call)
++                         and isinstance(n.func, ast.Name) and n.func.id == 'assert_operational_documents'
++                         and any(k.arg == 'owner' and isinstance(k.value, ast.Constant)
++                                 and k.value.value == owner for k in n.keywords)]
++                self.assertTrue(calls, owner + ' needs its actual document check')
++        verify(owners)
++        for fault in ('wrong_owner', 'missing_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'wrong_owner':
++                changed['operational_evience'] = changed.pop('operational_evidence')
++            elif fault == 'missing_owner':
++                del changed['recovery_materials']
++            elif fault == 'missing_method':
++                changed['recovery_materials'] = (*changed['recovery_materials'][:2], 'test_missing')
++            else:
++                changed['operational_evidence'] = (*changed['operational_evidence'][:2],
++                    'test_review_gets_the_same_canonical_basis_set_as_application')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
++    def test_operational_document_names_the_result_and_checkpoint_owners(self):
++        from support.doc_code import SPAN
++        text = (SKILL / '계약/운영-점검.md').read_text(encoding='utf-8')
++        self.assertIn('operational_evidence.checkpoint_source.local_path', SPAN.findall(text))
++        self.assertIn('recovery_materials.result_source.local_path', SPAN.findall(text))
++        self.assertNotIn('checkpoint_source.local_path', SPAN.findall(text))
++        self.assertNotIn('result_source.local_path', SPAN.findall(text))
++
+     def test_documented_commands_and_options_exist(self):
+         from do_math.cli_contract import build_parser
+         options = parser_options(build_parser())
+@@ -72,6 +135,7 @@ class DocumentCodeTests(unittest.TestCase):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                             defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                             defer_continuations=others)
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_continuations=(owner,)), [])
+@@ -147,6 +211,7 @@ class DocumentCodeTests(unittest.TestCase):
+                                                   defer_status=True, defer_operation_progress=True,
+                                                   defer_query_record=True, defer_query_result=True,
+                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                                                  defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))]
+         self.assertEqual(issues, [])
+@@ -228,7 +293,8 @@ class DocumentCodeTests(unittest.TestCase):
+             produced_object_schema(alternatives)
+         schemas = field_schemas()
+         self.assertEqual(scoped_field_issues(
+-            '`operational_evidence.activity_continuations`', schemas), [])
++            '`operational_evidence.activity_continuations`', schemas,
++            defer_operational_inputs=('operational_evidence',)), [])
+         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
+             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
+             '`operating_summary.primary_blocker` `operating_summary.workspace` '
+@@ -288,7 +354,7 @@ class DocumentCodeTests(unittest.TestCase):
+                          [('unused field binding', 'record')])
+         self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
+             '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
+-            '`checkpoint_source.local_path`', schemas), [])
++            '`action.role`', schemas), [])
+ 
+     def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
+         def producer(command):
+@@ -324,6 +390,7 @@ class DocumentCodeTests(unittest.TestCase):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                             defer_role_inputs={'input_manifest', 'prompt', 'documents', 'profile_selection'} - {owner})
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])
+                     self.assertEqual(unowned_field_references(text, schemas), [])
+@@ -383,7 +450,7 @@ class DocumentCodeTests(unittest.TestCase):
+         with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input'):
+             scoped_field_issues('`documents[].artifact_ref`', actual)
+         self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
+-            '`question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
++            '`question_details[].id`', actual), [])
+         self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
+                          [('scoped field', 'execution.output_files[].local_path')])
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 155700b3..4d0face7 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -36,6 +36,8 @@ ROLE_INPUT_BOUNDARIES = {owner: object() for owner in
+                          ('input_manifest', 'prompt', 'documents', 'profile_selection')}
+ CONTINUATION_BOUNDARIES = {owner: object() for owner in
+                            ('result_source', 'rejected_response', 'previous_output_files')}
++OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
++                              ('operational_evidence', 'recovery_materials')}
+ 
+ 
+ def documents(skill):
+@@ -279,9 +281,7 @@ def field_schemas():
+     schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
+     schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
+         bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
+-    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
+     schemas.update(CONTINUATION_BOUNDARIES)
+-    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
+     schemas['query_record'] = QUERY_RECORD_BOUNDARY
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+@@ -329,11 +329,6 @@ def field_schemas():
+     schemas['materialized_output_files'] = array(restored_file)
+     schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
+         bindings={'source': RECORDS['sources']}))
+-    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
+-        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
+-    schemas['recovered_output_files'] = array(schemas['recovery_source'])
+-    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
+-        bindings={'output_files': array(schemas['recovery_source'])})
+     # The task result retains the research response, then _context restores its files.
+     research_output = contracts.schema_for('research_work')
+     retained = {'properties': {key: value for key, value in research_output['properties'].items()
+@@ -367,9 +362,7 @@ def field_schemas():
+     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
+     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
+     schemas['status'] = STATUS_REPORT_BOUNDARY
+-    schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
+-    schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
+-        CoreEngineMixin._context, "evidence['activity_continuations']")
++    schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
+     return schemas
+ 
+ 
+@@ -465,7 +458,7 @@ def unowned_field_references(text, schemas):
+ 
+ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+-                        defer_role_inputs=(), defer_continuations=()):
++                        defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -476,6 +469,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     unknown = set(defer_continuations) - CONTINUATION_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred continuation owners: {sorted(unknown)}')
++    unknown = set(defer_operational_inputs) - OPERATIONAL_INPUT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred operational input owners: {sorted(unknown)}')
+     issues = []
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+@@ -521,6 +517,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+                     continue
+                 raise ValueError(owner + ' fields require the actual continuation result')
+             candidates = [local[root]]
++            owner = next((name for name, boundary in OPERATIONAL_INPUT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_operational_inputs:
++                    continue
++                raise ValueError(owner + ' fields require the actual operational input')
+             for part in parts:
+                 candidates = [child for schema in candidates for child in
+                               (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
+@@ -530,6 +532,43 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     return sorted(set(issues))
+ 
+ 
++def operational_field_issues(text, owner, value):
++    """Traverse one actual input, preserving each item and its conditional branch.
++
++    Null checkpoint sources and restoration errors are explicit document reading
++    conditions. Empty arrays do not establish an item shape; populated real
++    producer tests check those paths separately. No union of sample keys is used.
++    """
++    if owner not in OPERATIONAL_INPUT_BOUNDARIES:
++        raise ValueError('Unknown operational input owner: ' + owner)
++    issues = []
++    def visit(node, parts, path):
++        if not parts:
++            return True
++        if node is None and path == owner + '.checkpoint_source':
++            return True
++        part, *remaining = parts
++        if part.startswith('['):
++            if not isinstance(node, list):
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return (not index or bool(items)) and all(visit(item, remaining, path + part) for item in items)
++        if not isinstance(node, dict):
++            return False
++        if part == 'restoration_error' and part not in node:
++            return True  # Successful source; the error-only reading instruction does not apply.
++        if part == 'local_path' and 'restoration_error' in node:
++            return True  # Error sources must never be materialized; checked at the file boundary.
++        return part in node and visit(node[part], remaining, path + '.' + part)
++    for token in SPAN.findall(text):
++        if FIELD.fullmatch(token) and re.split(r'[.\[]', token)[0] == owner:
++            parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)[1:]
++            if not visit(value, parts, owner):
++                issues.append(('actual field', token))
++    return sorted(set(issues))
++
++
+ def declared_policy_names(scripts):
+     """Named policy fields/choices come from schemas; code owners come from real modules."""
+     from do_math import contracts, control_contracts
+diff --git a/.claude/skills/do-math/scripts/tests/support/engine_context.py b/.claude/skills/do-math/scripts/tests/support/engine_context.py
+index e2b1774b..cf60a0e1 100644
+--- a/.claude/skills/do-math/scripts/tests/support/engine_context.py
++++ b/.claude/skills/do-math/scripts/tests/support/engine_context.py
+@@ -65,6 +65,87 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
+                       'admissible_basis_refs': []}
+ 
+ 
++def assert_operational_documents(case, context, workspace, engine, *, owner, snapshot=None):
++    """Bind document fields to one real _context/packaging result and sealed bytes."""
++    import hashlib
++    from support.doc_code import documents, operational_field_issues
++    value = context[owner]
++    snapshot = engine.head if snapshot is None else snapshot
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(operational_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    target = context['execution_to_review']
++    case.assertEqual(value['source_snapshot'], snapshot)
++    if owner == 'operational_evidence':
++        case.assertEqual(value['execution_status'], target['status'])
++        sources = [value['checkpoint_source'], *value['checkpoint_files']]
++        if value['checkpoint_status'] == 'preserved':
++            case.assertEqual(value['checkpoint_source']['artifact_ref'], value['checkpoint']['artifact_ref'])
++            case.assertEqual(value['checkpoint_source']['sha256'], value['checkpoint']['sha256'])
++        else:
++            case.assertIsNone(value['checkpoint_source'])
++        case.assertIn('activity_continuations', value)
++    elif owner == 'recovery_materials':
++        case.assertFalse(context['live_review'])
++        case.assertEqual(value['execution_id'], target['id'])
++        bundle = 'runtime/artifacts/' + target['artifact_bundle'] + '/'
++        case.assertEqual(value['result_source']['artifact_ref'], target.get('result_ref') or bundle + 'result.json')
++        if value['checkpoint_source'] is not None:
++            case.assertEqual(value['checkpoint_source']['artifact_ref'], bundle + 'checkpoint-recovery.json')
++        sources = [value['result_source'], value['checkpoint_source'], *value['output_files']]
++    else:
++        raise ValueError('Unknown operational input owner: ' + owner)
++    for source in sources:
++        if source is None:
++            continue
++        case.assertEqual(source['snapshot'], snapshot)
++        if 'restoration_error' in source:
++            case.assertNotIn('local_path', source)
++            case.assertEqual(set(source['restoration_error']),
++                             {'error_type', 'reason', 'observed_sha256', 'observed_bytes'})
++            case.assertTrue(source['restoration_error']['reason'])
++            continue
++        case.assertIn('local_path', source)
++        case.assertTrue(source['local_path'].startswith('input/operational-review/' + target['id'] + '/'))
++        local = (Path(workspace) / source['local_path']).resolve()
++        case.assertTrue(local.is_relative_to(Path(workspace).resolve() / 'input'))
++        raw = local.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])
++        case.assertEqual(len(raw), source['bytes'])
++        case.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
++
++
++def assert_operational_damage_rejected(case, context, workspace, engine, *, owner):
++    """Perturb copies after production; these failures are document/file checks."""
++    from copy import deepcopy
++    value = context[owner]
++    slots = (['checkpoint_source'] if owner == 'operational_evidence' else
++             ['result_source', 'checkpoint_source'])
++    file_key = 'checkpoint_files' if owner == 'operational_evidence' else 'output_files'
++    slots += [(file_key, index) for index in range(len(value[file_key]))]
++    for slot in slots:
++        source = value[slot[0]][slot[1]] if isinstance(slot, tuple) else value[slot]
++        if source is None or 'restoration_error' in source:
++            continue
++        for fault in ('local_path', 'sha256', 'bytes'):
++            damaged = deepcopy(context)
++            row = damaged[owner][slot[0]][slot[1]] if isinstance(slot, tuple) else damaged[owner][slot]
++            if fault == 'local_path':
++                del row[fault]
++            elif fault == 'sha256':
++                row[fault] = '0' * 64
++            else:
++                row[fault] += 1
++            with case.subTest(owner=owner, slot=slot, fault=fault), case.assertRaises(AssertionError):
++                assert_operational_documents(case, damaged, workspace, engine, owner=owner)
++    other = 'recovery_materials' if owner == 'operational_evidence' else 'operational_evidence'
++    if other in context:
++        swapped = deepcopy(context)
++        swapped[owner] = swapped[other]
++        with case.subTest(owner=owner, fault='other_owner'), case.assertRaises(AssertionError):
++            assert_operational_documents(case, swapped, workspace, engine, owner=owner)
++
++
+ def is_map_entry(value):
+     """A context key given as a map entry: its exact catalog source and item count, not its content."""
+     return isinstance(value, dict) and set(value) == {'source_ref', 'total'}
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+index bc62e252..62a5438f 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -61,6 +61,7 @@ class TraceCorruptionTests(unittest.TestCase):
+                 return scoped_field_issues(text, actual, defer_status=True,
+                                            defer_query_record=True, defer_query_result=True,
+                                            defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                           defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                            defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+index 9b76e602..47404b76 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -275,6 +275,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents'))
+ 
+@@ -350,6 +351,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, actual,
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+@@ -516,6 +518,7 @@ class RoleInputTests(unittest.TestCase):
+                                              'documents': document_schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_role_inputs=('profile_selection',),
++                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+index 8ba30b1d..91d5acc7 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -33,6 +33,7 @@ class QueryFamilyNameTests(unittest.TestCase):
+             return scoped_field_issues(text, actual, defer_status=True,
+                                        defer_operation_progress=True, defer_query_result=True,
+                                        defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                       defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                        defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+index 2b8e947d..06eeed62 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -148,6 +148,7 @@ class ReportProjections(unittest.TestCase):
+                               for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                               defer_query_record=True, defer_query_result=True,
+                                                               defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                                              defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                               defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+@@ -179,6 +180,7 @@ class ReportProjections(unittest.TestCase):
+                                          for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                                          defer_query_record=True, defer_query_result=True,
+                                                                          defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                                                                         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                                          defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))])
+                     if name == 'config_sha256':
+diff --git "a/.claude/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md" "b/.claude/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
+index 1b70bc13..d8a18c51 100644
+--- "a/.claude/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
++++ "b/.claude/skills/do-math/\352\263\204\354\225\275/\353\217\205\353\246\275-\354\232\264\354\230\201.md"
+@@ -18,7 +18,7 @@
+ 
+ `operator install`은 먼저 현재 설치 스킬의 설치 파일 집합을 해시해 workspace의 `operator/bootstrap/<snapshot_sha256>/` 아래 내용 주소형 사본으로 고정한다. 설치 파일 집합은 스킬 폴더의 모든 파일에서 `scripts/tests/` 아래 시험, `__pycache__`와 `.pyc` 바이트코드, `.git`·`.lake` 아래의 VCS·빌드 산출을 뺀 것이다. 설치 복구가 비교하는 "같은 설치 판본"도 이 집합의 해시로 정한다. 따라서 회귀 시험만 추가하거나 고쳐도 같은 실패의 자동 복구는 다시 열리지 않는다. bootstrap manifest에는 원 설치 경로, 각 파일 경로·해시와 전체 snapshot 해시가 들어간다. 예약 감독은 이 고정 사본에서 시작하므로 live 설치가 import조차 못 하는 상태에서도 감독과 복구 진입점을 보존한다.
+ 
+-고정 bootstrap은 manifest에 없는 파일, 바뀐 파일과 reparse point를 거부한다. 이 검사는 설치 파일의 정체성과 완전성을 확인하지만 코드의 의미, 공급자 인증이나 강한 실행 격리를 보증하지 않는다. bootstrap의 `LIVE_INSTALLATION_ROOT`는 실제 수리할 live 설치 경로를 가리킨다. 복구 AI는 bootstrap 사본을 정본처럼 고치는 것이 아니라 이 live 설치만 수리하며, 검증 뒤 다음 설치 조정에서 새 고정 사본을 만들 수 있다.
++고정 bootstrap은 manifest에 없는 파일, 바뀐 파일과 reparse point를 거부한다. 이 검사는 설치 파일의 정체성과 완전성을 확인하지만 코드의 의미, 공급자 인증이나 강한 실행 격리를 보증하지 않는다. bootstrap의 main은 manifest의 installation_root를 scheduled_operator의 main에 installation_root 인자로 전달한다. manifest가 없는 live 모드에서는 snapshot_root를 전달하며, 이 인자가 실제 수리할 live 설치 경로를 가리킨다. 복구 AI는 bootstrap 사본을 정본처럼 고치는 것이 아니라 이 live 설치만 수리하며, 검증 뒤 다음 설치 조정에서 새 고정 사본을 만들 수 있다.
+ 
+ ## 보존된 실행기 실패 또는 수락된 설치 결함 진단에서 복구 AI를 연다
+ 
+diff --git "a/.claude/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md" "b/.claude/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
+index 84f8f96d..dd05551b 100644
+--- "a/.claude/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
++++ "b/.claude/skills/do-math/\352\263\204\354\225\275/\354\232\264\354\230\201-\354\240\220\352\262\200.md"
+@@ -12,13 +12,17 @@
+ 
+ `observation`은 점검을 연 신호이지 결론이 아니다. 도래한 자기 점검 의무, 발동 이유, 실행 시작 뒤 경과 시간, 진행 중 도구, 최근 메시지, 체크포인트의 실제 값과 소비된 경계를 읽는다. 없는 신호를 0이나 정상으로 간주하지 않는다. 자기 점검 의무의 발생·응답과 호출별 무응답의 판정 규칙은 「자기 점검」 문서가 정한다. 작업자가 큰 도구를 시작했다는 기록은 결과 수신이 아니므로, 완료 호출 ID·실제 반환·그 내용을 읽은 체크포인트를 구별한다.
+ 
+-실행 중 점검과 종료 후 진단 모두 `operational_evidence`를 받는다. `checkpoint_status=preserved`이면 `checkpoint_source.local_path`에서 고정 입력 snapshot의 최신 체크포인트를 읽고, `checkpoint_files[].local_path`에서 함께 보존한 근거 바이트를 읽는다. `checkpoint_evidence_omitted`는 크기 상한·읽기 실패 등으로 보존하지 못한 범위다. `not_preserved`와 근거 파일 미수집을 진전 없음으로 바꾸지 않는다. 다른 실행의 live 작업 공간을 직접 읽어 빈칸을 채우지 않는다.
++실행 중 점검과 종료 후 진단 모두 `operational_evidence`를 받는다. `operational_evidence.checkpoint_status`가 `preserved`이면 `operational_evidence.checkpoint_source.local_path`에서 고정 입력 snapshot의 최신 체크포인트를 읽고, `operational_evidence.checkpoint_files[].local_path`에서 함께 보존한 근거 바이트를 읽는다. `operational_evidence.checkpoint_evidence_omitted`는 크기 상한·읽기 실패 등으로 보존하지 못한 범위다. `not_preserved`이면 `operational_evidence.checkpoint_source`는 null이다. 보존 부재와 근거 파일 미수집을 진전 없음으로 바꾸지 않는다. 다른 실행의 live 작업 공간을 직접 읽어 빈칸을 채우지 않는다.
+ 
+-직접 지급된 `checkpoint`는 정체성·관측 시각·상태의 메타데이터다. 본문은 크기와 관계없이 `checkpoint_source`의 정확한 파일에서 읽는다. 큰 체크포인트를 프롬프트에 중복 삽입해 운영 점검 자체의 입력 한도를 소진하지 않는다.
++직접 지급된 `operational_evidence.checkpoint`는 정체성·관측 시각·상태의 메타데이터다. 보존된 본문은 크기와 관계없이 `operational_evidence.checkpoint_source`의 정확한 파일에서 읽는다. 큰 체크포인트를 프롬프트에 중복 삽입해 운영 점검 자체의 입력 한도를 소진하지 않는다.
+ 
+ `execution_to_review.observation_stream`이 있으면 stream 수신 시각·중앙 적용 시각과 `local_termination_confirmed`를 원장의 실행 상태와 함께 읽는다. 지연된 로그의 적용 시각은 원 행동의 발생 시각이 아니다. 로컬 종료 확인은 제출 수락이나 원격 공급자 정산을 뜻하지 않는다.
+ 
+-종료 뒤 진단의 `recovery_materials`에서는 대상 실행 ID와 `source_snapshot`을 확인한다. `final_result_status=available`이면 `result_source.local_path`의 정상 결과를 직접 읽는다. `checkpoint_recovery`나 `activity_result`는 최종 결과와 다르다. `checkpoint_source.local_path`와 부분 `output_files[].local_path`도 직접 읽으며, 같은 파일을 결과와 체크포인트 두 건으로 세지 않는다. 해시·크기·경로는 원문 정체성의 근거이지 성공의 근거가 아니다. <!-- do-math fields: output_files=recovered_output_files -->
++종료 뒤 진단에서 대상 실행에 artifact 묶음이 있으면 `recovery_materials`를 받는다. `recovery_materials.execution_id`와 `recovery_materials.source_snapshot`을 확인한다. 실행 중 점검(`live_review`)에는 이 복구 입력이 없다. `recovery_materials.result_kind`의 `execution_result`는 정상 결과 경로, `checkpoint_recovery`와 `activity_result`는 각각 복구 체크포인트와 별도 활동 결과를 뜻한다. `recovery_materials.final_result_status`가 `available`이어도 정상 결과 경로를 선택했다는 뜻이며 복원 성공이나 수학적 성공을 보증하지 않는다.
++
++복원에 성공하여 `local_path`가 있는 자료만 읽는다. 정상 결과는 `recovery_materials.result_source.local_path`, 복구 체크포인트는 `recovery_materials.checkpoint_source.local_path`, 부분 출력은 `recovery_materials.output_files[].local_path`에서 읽는다. 정상 formal/인라인 자식 실행에 복구 체크포인트가 없으면 `recovery_materials.checkpoint_source`는 null이며 읽을 파일도 없다. 같은 원 artifact·snapshot을 결과와 체크포인트 두 건으로 세지 않는다. 해시·크기·경로는 원문 정체성의 근거이지 성공의 근거가 아니다.
++
++복원 실패는 `recovery_materials.result_source.restoration_error`, `recovery_materials.checkpoint_source.restoration_error` 또는 `recovery_materials.output_files[].restoration_error`에 나타난다. 해당 자료의 원 artifact·snapshot·기대 해시·크기와 오류 종류·사유, 읽은 경우의 실제 해시·크기를 진단 근거로 사용한다. 이 자료에는 `local_path`가 없으므로 없는 경로를 읽지 않는다. 검증되지 않은 바이트를 수학적 산출의 수락 근거로 쓰지 않으며 다른 실행의 live 공간으로 복구 공백을 채우지 않는다.
+ 
+ 계약, 체크포인트, 프로세스 상태나 외부 효과 근거가 없으면 기억이나 다른 실행의 상태로 채우지 않는다. 확인한 사실과 결정할 수 없는 처분을 나누고, 부족한 입력과 다음 소유자를 반환한다.
+ 

@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "boundary.test_engine_cli.CliExitTests.test_help_and_input_error_exit_codes_are_structured",
+      "outcome": "passed",
+      "seconds": 3.9060000000172295,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_engine_cli": 3.9060000000172295
+  },
+  "returncode": 0,
+  "worker_seconds": 5.078000000037719,
+  "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\008\\tasks\\document-recovery\\evidence\\mirror-final\\results\\boundary-isolated-000",
+  "requested": [
+    "boundary.test_engine_cli.CliExitTests.test_help_and_input_error_exit_codes_are_structured"
+  ]
+}

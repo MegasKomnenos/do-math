@@ -1,0 +1,89 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 13,
+  "rows": [
+    {
+      "id": "sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review",
+      "outcome": "passed",
+      "seconds": 2.2189999999827705,
+      "details": []
+    },
+    {
+      "id": "sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources",
+      "outcome": "passed",
+      "seconds": 4.703000000037719,
+      "details": []
+    },
+    {
+      "id": "sim.test_knowledge_currentness.RecoveryMaterialTests.test_recovery_captures_parent_and_inline_child_without_losing_action",
+      "outcome": "passed",
+      "seconds": 0.9219999999622814,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review",
+      "outcome": "passed",
+      "seconds": 0.8429999999934807,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review",
+      "outcome": "passed",
+      "seconds": 0.2970000000204891,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check",
+      "outcome": "passed",
+      "seconds": 0.48499999998603016,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text",
+      "outcome": "passed",
+      "seconds": 0.5150000000139698,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files",
+      "outcome": "passed",
+      "seconds": 0.75,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_live_review_receives_the_already_sealed_target_checkpoint",
+      "outcome": "passed",
+      "seconds": 0.3130000000237487,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review",
+      "outcome": "passed",
+      "seconds": 0.48399999999674037,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis",
+      "outcome": "passed",
+      "seconds": 0.48499999998603016,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application",
+      "outcome": "passed",
+      "seconds": 0.28100000001722947,
+      "details": []
+    },
+    {
+      "id": "sim.test_role_input_context.OperationalInputTests.test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input",
+      "outcome": "passed",
+      "seconds": 0.3279999999795109,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_knowledge_currentness": 22.68799999996554,
+    "sim.test_role_input_context": 4.7810000000172295
+  }
+}

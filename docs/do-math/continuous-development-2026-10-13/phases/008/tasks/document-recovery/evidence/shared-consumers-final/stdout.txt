@@ -1,0 +1,31 @@
+Open known defects: 0
+[unit] 9 tests
+[boundary] 24 tests
+  isolated: boundary.test_engine_cli.CliExitTests
+  {'passed': 1}
+Over budget: 3 tests
+      0.219s > 0.2s unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status
+      0.406s > 0.2s unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names
+      0.360s > 0.2s unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding
+{"complete": true, "successful": false, "counts": {"passed": 26, "error": 7}, "group_seconds": {"unit": 1.2, "boundary": 59.9}, "total_seconds": 61.1}
+    5.250s passed             boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes
+    4.375s passed             boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning
+    4.250s passed             boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause
+    3.797s passed             boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model
+    3.719s passed             boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces
+    3.016s passed             boundary.test_engine_cli.CliConsumerTests.test_check_exit_follows_the_engine_inspection_status
+    2.875s passed             boundary.test_engine_cli.CliFailureTests.test_accepted_control_processing_failure_is_not_a_user_input_error
+    2.859s passed             boundary.test_engine_cli.CliConsumerTests.test_normalized_control_identity_at_public_boundary
+    2.765s passed             boundary.test_engine_cli.CliFailureTests.test_runtime_failure_is_a_structured_internal_error
+    2.422s passed             boundary.test_engine_cli.ControlCliTests.test_resume_of_a_publicly_closed_instance_reports_its_rejection
+    2.359s passed             boundary.test_engine_cli.CliTests.test_source_identity_and_effect_use_one_read
+    1.953s passed             boundary.test_engine_cli.CliExitTests.test_help_and_input_error_exit_codes_are_structured
+    1.938s passed             boundary.test_engine_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload
+    1.843s error              boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot
+    1.828s passed             boundary.test_engine_cli.CliTemplateTests.test_restored_template_is_an_independent_copy_of_the_published_state
+    1.812s passed             boundary.test_engine_cli.CliTests.test_retry_action_reaches_the_public_control_inbox_idempotently
+    1.797s error              boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal
+    1.688s passed             boundary.test_engine_cli.CliTests.test_request_applies_a_maintenance_queue_entry_without_model_execution
+    1.672s passed             boundary.test_engine_cli.CliTests.test_create_repository_is_explicit_and_only_accepts_empty_directory
+    1.594s passed             boundary.test_engine_cli.CliConsumerTests.test_replayed_configure_receipt_does_not_reapply_scheduler
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\report.json

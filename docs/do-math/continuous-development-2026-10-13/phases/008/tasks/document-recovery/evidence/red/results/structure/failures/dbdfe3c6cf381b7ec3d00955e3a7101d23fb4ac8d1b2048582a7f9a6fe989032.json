@@ -1,0 +1,13 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) (owner='operational_evidence')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_operational_fields_require_their_actual_input_owner\n    with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+      "test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) (owner='recovery_materials')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_operational_fields_require_their_actual_input_owner\n    with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+    ]
+  }
+}

@@ -1,0 +1,446 @@
+test_invalid_rows_and_unreadable_paths_keep_exact_source_and_no_completion (unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_invalid_rows_and_unreadable_paths_keep_exact_source_and_no_completion) ... ok
+test_unreadable_error_sidecar_has_bounded_explicit_status (unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\0678c0c75f371dab560c6a49cb173ffe40fd13ee0541b83a9582df26e348a7ad.json
+test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) ... 
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='knowledge') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='goal_judgments') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='grants') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='decisions') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='sources') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='trust_environments') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='execution_profiles') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='formal_results') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='expositions') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='identity_assessments') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='assessment_uses') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance_sources') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='kind_definitions') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='relations') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='tasks') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='activities') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='executions') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='external_operations') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+  test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='review_cycles') ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\bd911a2fcfb60702fc7ea7586557f73b55613fa96a085e785f631fb6d3823825.json
+test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error (unit.test_storage_record_queries.QueryRecordTests.test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error) ... ok
+test_human_report_preserves_loaded_initialization_blocker_and_machine_finding (unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\unit\failures\9deec5a423576e4beb51d5fe774927069d932c697f0c9f6c4162374f2e38cbef.json
+test_operation_timeline_preserves_producer_trace_bytes_and_null_snapshot (unit.test_storage_report_projections.ReportProjections.test_operation_timeline_preserves_producer_trace_bytes_and_null_snapshot) ... ok
+test_status_refuses_unknown_observation_before_rendering (unit.test_storage_report_projections.ReportProjections.test_status_refuses_unknown_observation_before_rendering) ... ok
+test_timeline_uses_stored_execution_times_and_exact_snapshot (unit.test_storage_report_projections.ReportProjections.test_timeline_uses_stored_execution_times_and_exact_snapshot) ... ok
+test_timezone_display_and_csv_preserve_null_and_nested_values (unit.test_storage_report_projections.ReportProjections.test_timezone_display_and_csv_preserve_null_and_nested_values) ... ok
+
+======================================================================
+ERROR: test_unreadable_error_sidecar_has_bounded_explicit_status (unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_engine_trace_report_corruption.py", line 68, in test_unreadable_error_sidecar_has_bounded_explicit_status
+    for issue in field_issues(text, result)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_engine_trace_report_corruption.py", line 61, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='knowledge')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='goal_judgments')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='grants')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='decisions')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='sources')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='trust_environments')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='execution_profiles')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='formal_results')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='expositions')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='identity_assessments')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='assessment_uses')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='governance_sources')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='kind_definitions')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='relations')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='tasks')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='activities')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='executions')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='external_operations')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_family_names_are_the_condition_grammar_names (unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names) (stored='review_cycles')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 48, in test_query_family_names_are_the_condition_grammar_names
+    for issue in field_issues(text, record)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_record_queries.py", line 33, in field_issues
+    return scoped_field_issues(text, actual, defer_status=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_human_report_preserves_loaded_initialization_blocker_and_machine_finding (unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_storage_report_projections.py", line 148, in test_human_report_preserves_loaded_initialization_blocker_and_machine_finding
+    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.199s
+
+FAILED (errors=22)
+test_check_exit_follows_the_engine_inspection_status (boundary.test_engine_cli.CliConsumerTests.test_check_exit_follows_the_engine_inspection_status) ... ok
+test_normalized_control_identity_at_public_boundary (boundary.test_engine_cli.CliConsumerTests.test_normalized_control_identity_at_public_boundary) ... ok
+test_operator_effort_alone_leaves_the_schedule_untouched (boundary.test_engine_cli.CliConsumerTests.test_operator_effort_alone_leaves_the_schedule_untouched) ... ok
+test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces (boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces) ... ok
+test_rejected_configure_receipt_does_not_reapply_scheduler (boundary.test_engine_cli.CliConsumerTests.test_rejected_configure_receipt_does_not_reapply_scheduler) ... ok
+test_replayed_configure_receipt_does_not_reapply_scheduler (boundary.test_engine_cli.CliConsumerTests.test_replayed_configure_receipt_does_not_reapply_scheduler) ... ok
+test_accepted_control_processing_failure_is_not_a_user_input_error (boundary.test_engine_cli.CliFailureTests.test_accepted_control_processing_failure_is_not_a_user_input_error) ... ok
+test_runtime_failure_is_a_structured_internal_error (boundary.test_engine_cli.CliFailureTests.test_runtime_failure_is_a_structured_internal_error) ... ok
+test_restored_template_is_an_independent_copy_of_the_published_state (boundary.test_engine_cli.CliTemplateTests.test_restored_template_is_an_independent_copy_of_the_published_state) ... ok
+test_create_repository_is_explicit_and_only_accepts_empty_directory (boundary.test_engine_cli.CliTests.test_create_repository_is_explicit_and_only_accepts_empty_directory) ... ok
+test_explicit_request_identity_replays_once_and_rejects_changed_payload (boundary.test_engine_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload) ... ok
+test_original_request_is_preserved_separately_from_the_mathematical_goal (boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\boundary\failures\5f1b1fde383ea77b445ddb6d4430fda8c82adc3af5b7e753a32d45a6b4c13b60.json
+test_pending_and_rejected_receipts_keep_their_meaning (boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning) ... ok
+test_profile_selection_respects_the_role_floor_without_model_execution (boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\boundary\failures\fb8888890d248f8b861e27d67fcea2c6ef4ad8aa60cffe991bfe1450ac7bcdd2.json
+test_public_check_json_discovery_and_fixed_snapshot (boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\boundary\failures\4fd9161e4a222f7abedffde5ec02e624f0c5cd12f485961f407bbcf397772b76.json
+test_query_read_export_and_check_use_a_fixed_repository_snapshot (boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\shared-consumers-final\results\boundary\failures\bb0a2e602ccb2373273f6a0518357fc7879e7f66108396559e4ca0b2dfe8cf0c.json
+test_request_applies_a_maintenance_queue_entry_without_model_execution (boundary.test_engine_cli.CliTests.test_request_applies_a_maintenance_queue_entry_without_model_execution) ... ok
+test_resend_replays_its_receipt_until_an_opposite_control_intervenes (boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes) ... ok
+test_retry_action_reaches_the_public_control_inbox_idempotently (boundary.test_engine_cli.CliTests.test_retry_action_reaches_the_public_control_inbox_idempotently) ... ok
+test_source_identity_and_effect_use_one_read (boundary.test_engine_cli.CliTests.test_source_identity_and_effect_use_one_read) ... ok
+test_status_input_pause_and_configure_apply_without_running_model (boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model) ... ok
+test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause (boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause) ... ok
+test_resume_of_a_publicly_closed_instance_reports_its_rejection (boundary.test_engine_cli.ControlCliTests.test_resume_of_a_publicly_closed_instance_reports_its_rejection) ... ok
+
+======================================================================
+ERROR: test_original_request_is_preserved_separately_from_the_mathematical_goal (boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 134, in test_original_request_is_preserved_separately_from_the_mathematical_goal
+    for issue in cli_field_issues(text, schemas, 'init_result', result)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 61, in cli_field_issues
+    return scoped_field_issues(text, {**schemas, owner: schema},
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_profile_selection_respects_the_role_floor_without_model_execution (boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 179, in test_profile_selection_respects_the_role_floor_without_model_execution
+    for issue in cli_field_issues(text, schemas, 'selection_result', result)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 61, in cli_field_issues
+    return scoped_field_issues(text, {**schemas, owner: schema},
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_public_check_json_discovery_and_fixed_snapshot (boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 350, in test_public_check_json_discovery_and_fixed_snapshot
+    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+======================================================================
+ERROR: test_query_read_export_and_check_use_a_fixed_repository_snapshot (boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 450, in test_query_read_export_and_check_use_a_fixed_repository_snapshot
+    for issue in field_issues(text, file_page)], [])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_engine_cli.py", line 443, in field_issues
+    return scoped_field_issues(text, {**schemas, 'query_result': schema},
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 525, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual operational input')
+ValueError: recovery_materials fields require the actual operational input
+
+----------------------------------------------------------------------
+Ran 23 tests in 57.279s
+
+FAILED (errors=4)

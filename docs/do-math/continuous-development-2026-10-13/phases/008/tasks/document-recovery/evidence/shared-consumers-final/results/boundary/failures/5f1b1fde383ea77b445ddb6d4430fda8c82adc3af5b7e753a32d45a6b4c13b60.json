@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+    "outcome": "error",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 134, in test_original_request_is_preserved_separately_from_the_mathematical_goal\n    for issue in cli_field_issues(text, schemas, 'init_result', result)], [])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 61, in cli_field_issues\n    return scoped_field_issues(text, {**schemas, owner: schema},\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+    ]
+  }
+}

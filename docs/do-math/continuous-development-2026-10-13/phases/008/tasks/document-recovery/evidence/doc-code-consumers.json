@@ -1,0 +1,9 @@
+[
+  ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+  ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+  ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+  ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+  ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+  ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+  ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py"
+]

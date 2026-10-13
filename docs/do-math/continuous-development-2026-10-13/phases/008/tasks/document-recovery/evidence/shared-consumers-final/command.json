@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "unit.test_engine_trace_report_corruption",
+    "unit.test_storage_record_queries",
+    "unit.test_storage_report_projections",
+    "boundary.test_engine_cli",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/008/tasks/document-recovery/evidence/shared-consumers-final/results"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 37128,
+  "started_at": "2026-10-13T17:27:42.437225+00:00",
+  "pid": 41796,
+  "state": "exited",
+  "ended_at": "2026-10-13T17:28:47.748509+00:00",
+  "exit_code": 1,
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

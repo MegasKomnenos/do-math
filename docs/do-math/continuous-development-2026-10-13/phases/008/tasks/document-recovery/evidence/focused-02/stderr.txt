@@ -1,0 +1,17 @@
+test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources)
+Real repository reads and _context distinguish normal, missing, hash and size branches. ... ok
+test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review (sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review) ... ok
+test_changed_checkpoint_file_bytes_are_rejected_before_review (sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review) ... ok
+test_live_review_receives_exact_checkpoint_evidence_files (sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 18.083s
+
+OK
+test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared (flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared)
+손상 제출의 검토는 한 번 정리하고 진단에는 검증 실패 좌표만 전달한다. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 10.835s
+
+OK

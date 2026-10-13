@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "boundary.test_engine_cli.CliExitTests.test_help_and_input_error_exit_codes_are_structured",
+      "outcome": "passed",
+      "seconds": 1.9530000000377186,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_engine_cli": 1.9530000000377186
+  }
+}

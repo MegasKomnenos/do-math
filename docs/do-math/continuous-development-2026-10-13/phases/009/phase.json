@@ -1,0 +1,35 @@
+{
+  "kind": "work",
+  "purpose": "CLI 함수 표기를 기존 callable 검사와 맞추고008의 최종 관련 회귀4실패를 해소한다.",
+  "tasks": [
+    {
+      "id": "document-callable",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "run:phases/008/tasks/document-recovery/report.json",
+        "run:phases/008/tasks/document-recovery/evidence/source-final.json",
+        "run:phases/008/tasks/document-recovery/evidence/binding-review.md",
+        "run:phases/008/manager-evidence/verification.json",
+        "run:phases/008/manager-evidence/review.md",
+        "run:phases/008/manager-evidence/preservation.json",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+        "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_final.py"
+      ],
+      "writes": [
+        ".claude/skills/do-math/references/CLI-실행-계약.md",
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/references/CLI-실행-계약.md",
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

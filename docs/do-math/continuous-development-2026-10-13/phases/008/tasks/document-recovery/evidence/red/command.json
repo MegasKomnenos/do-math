@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner",
+    "structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/008/tasks/document-recovery/evidence/red/results"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 21496,
+  "started_at": "2026-10-13T17:14:52.534747+00:00",
+  "pid": 33292,
+  "state": "exited",
+  "ended_at": "2026-10-13T17:14:56.783117+00:00",
+  "exit_code": 1,
+  "changed_sources": []
+}

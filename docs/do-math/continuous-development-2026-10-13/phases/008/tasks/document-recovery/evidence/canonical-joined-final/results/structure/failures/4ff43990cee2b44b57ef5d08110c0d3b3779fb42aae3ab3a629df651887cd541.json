@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 432, in test_all_dotted_document_fields_have_an_owner\n    self.assertEqual(pending, [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'provider_final.output_contract')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'provider_final.output_contract')\n\n- [('references/CLI-실행-계약.md', 'provider_final.output_contract')]\n+ []\n"
+    ]
+  }
+}

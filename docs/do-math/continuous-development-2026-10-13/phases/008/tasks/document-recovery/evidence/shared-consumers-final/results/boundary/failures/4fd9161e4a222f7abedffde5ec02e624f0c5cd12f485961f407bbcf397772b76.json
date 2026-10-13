@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+    "outcome": "error",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_engine_cli.py\", line 350, in test_public_check_json_discovery_and_fixed_snapshot\n    for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\doc_code.py\", line 525, in scoped_field_issues\n    raise ValueError(owner + ' fields require the actual operational input')\nValueError: recovery_materials fields require the actual operational input\n"
+    ]
+  }
+}

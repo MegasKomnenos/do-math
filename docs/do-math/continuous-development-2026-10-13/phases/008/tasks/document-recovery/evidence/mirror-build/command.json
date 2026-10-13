@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 22064,
+  "started_at": "2026-10-13T17:32:58.238683+00:00",
+  "pid": 7080,
+  "state": "exited",
+  "ended_at": "2026-10-13T17:33:02.810956+00:00",
+  "exit_code": 0,
+  "changed_sources": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".agents/skills/do-math/계약/독립-운영.md",
+    ".agents/skills/do-math/계약/운영-점검.md"
+  ]
+}

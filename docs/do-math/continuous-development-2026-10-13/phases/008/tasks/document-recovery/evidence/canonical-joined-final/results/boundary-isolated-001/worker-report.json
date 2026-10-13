@@ -1,0 +1,29 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_entry_reports_original_installation_and_exact_verified_manifest",
+      "outcome": "passed",
+      "seconds": 3.9530000000377186,
+      "details": []
+    },
+    {
+      "id": "boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_location_without_manifest_fails_before_reporting_live_mode",
+      "outcome": "passed",
+      "seconds": 3.4689999999827705,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_operator_bootstrap_info": 7.422000000020489
+  },
+  "returncode": 0,
+  "worker_seconds": 7.717999999993481,
+  "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\008\\tasks\\document-recovery\\evidence\\canonical-joined-final\\results\\boundary-isolated-001",
+  "requested": [
+    "boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_entry_reports_original_installation_and_exact_verified_manifest",
+    "boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_location_without_manifest_fails_before_reporting_live_mode"
+  ]
+}
