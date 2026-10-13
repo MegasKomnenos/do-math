@@ -1,0 +1,276 @@
+commit 56e961ff2b4666a373839e6524a9701d1f9c1462
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Tue Oct 6 16:47:20 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Tue Oct 6 16:47:20 2026 +0900
+
+    프로필 선택 문서 필드를 기존 실제 역할 입력에 연결한다
+
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+index 71500bed..0a2531ac 100644
+--- a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -61,7 +61,7 @@ def cli_field_issues(text, schemas, owner, result):
+     return scoped_field_issues(text, {**schemas, owner: schema},
+         defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+         defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-        defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+         defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner})
+ 
+ 
+@@ -350,7 +350,7 @@ class CliTests(CliInstanceTest):
+                 for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                     defer_query_record=True, defer_query_result=True,
+                     defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                    defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                    defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                     defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+@@ -443,7 +443,7 @@ class CliTests(CliInstanceTest):
+             return scoped_field_issues(text, {**schemas, 'query_result': schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True,
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 6c2f24ce..83efb349 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -48,6 +48,17 @@ class DocumentCodeTests(unittest.TestCase):
+ 
+     def test_documented_scoped_fields_belong_to_their_actual_schema(self):
+         schemas = field_schemas()
++        for text in ('`profile_selection.allowed_profiles`',
++                     '`result.allowed_profiles` <!-- do-math fields: result=profile_selection -->'):
++            with self.subTest(text=text):
++                with self.assertRaisesRegex(ValueError, 'profile_selection fields require the actual'):
++                    scoped_field_issues(text, schemas)
++                with self.assertRaisesRegex(ValueError, 'profile_selection fields require the actual'):
++                    scoped_field_issues(text, schemas,
++                                        defer_role_inputs=('input_manifest', 'prompt', 'documents'))
++                self.assertEqual(scoped_field_issues(text, schemas,
++                    defer_role_inputs=('profile_selection',)), [])
++                self.assertEqual(unowned_field_references(text, schemas), [])
+         # Continuation fields need the restored response, including its files.
+         for owner, suffix in (('result_source', '.local_path'), ('rejected_response', '.local_path'),
+                               ('previous_output_files', '[].local_path')):
+@@ -61,7 +72,7 @@ class DocumentCodeTests(unittest.TestCase):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+-                            defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                             defer_continuations=others)
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_continuations=(owner,)), [])
+                     self.assertEqual(unowned_field_references(text, schemas), [])
+@@ -137,7 +148,7 @@ class DocumentCodeTests(unittest.TestCase):
+                                                   defer_query_record=True, defer_query_result=True,
+                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                                                  defer_role_inputs=('input_manifest', 'prompt', 'documents'))]
++                                                  defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -217,7 +228,7 @@ class DocumentCodeTests(unittest.TestCase):
+             produced_object_schema(alternatives)
+         schemas = field_schemas()
+         self.assertEqual(scoped_field_issues(
+-            '`profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
++            '`operational_evidence.activity_continuations`', schemas), [])
+         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
+             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
+             '`operating_summary.primary_blocker` `operating_summary.workspace` '
+@@ -307,19 +318,20 @@ class DocumentCodeTests(unittest.TestCase):
+             for text in (f'`{owner}{suffix}`',
+                          f'`result{suffix}` <!-- do-math fields: result={owner} -->'):
+                 with self.subTest(owner=owner, text=text):
+-                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):
++                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input'):
+                         scoped_field_issues(text, schemas)
+-                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):
++                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input'):
+                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                             defer_query_record=True, defer_query_result=True,
+                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+-                            defer_role_inputs={'input_manifest', 'prompt', 'documents'} - {owner})
++                            defer_role_inputs={'input_manifest', 'prompt', 'documents', 'profile_selection'} - {owner})
+                     self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])
+                     self.assertEqual(unowned_field_references(text, schemas), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred role input owners'):
+             scoped_field_issues('', schemas, defer_role_inputs=('input_manfiest',))
+         with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+-            scoped_field_issues('`status.budget`', schemas, defer_role_inputs=('input_manifest', 'prompt', 'documents'))
++            scoped_field_issues('`status.budget`', schemas,
++                                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
+ 
+     def test_optional_reads_and_same_named_checks_keep_their_actual_owners(self):
+         def consumer(payload, other, field):
+@@ -368,7 +380,7 @@ class DocumentCodeTests(unittest.TestCase):
+                          ['integration[].currentness', 'unknown[].json', 'unknown[].own'])
+         self.assertEqual(scoped_field_issues('`data[].own` <!-- do-math fields: data=rows -->', schemas), [])
+         actual = field_schemas()
+-        with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input manifest'):
++        with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input'):
+             scoped_field_issues('`documents[].artifact_ref`', actual)
+         self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
+             '`question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 1597b458..155700b3 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -32,7 +32,8 @@ QUERY_RECORD_BOUNDARY = object()
+ QUERY_RESULT_BOUNDARY = object()
+ CLI_RESULT_BOUNDARIES = {owner: object() for owner in
+                          ('init_result', 'scheduling_result', 'selection_result')}
+-ROLE_INPUT_BOUNDARIES = {owner: object() for owner in ('input_manifest', 'prompt', 'documents')}
++ROLE_INPUT_BOUNDARIES = {owner: object() for owner in
++                         ('input_manifest', 'prompt', 'documents', 'profile_selection')}
+ CONTINUATION_BOUNDARIES = {owner: object() for owner in
+                            ('result_source', 'rejected_response', 'previous_output_files')}
+ 
+@@ -352,7 +353,6 @@ def field_schemas():
+     schemas['record_map']['properties']['read_tool'] = produced_object_schema(
+         submission.install_tools, 'context["record_map"]["read_tool"]')
+     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
+-    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
+     from support.state_builders import current_state
+     instance, runtime = current_state()
+     summary = reporting.operating_summary(instance, runtime)
+@@ -513,7 +513,7 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+             if owner is not None:
+                 if owner in defer_role_inputs:
+                     continue
+-                raise ValueError(owner + ' fields require the actual role input manifest')
++                raise ValueError(owner + ' fields require the actual role input')
+             owner = next((name for name, boundary in CONTINUATION_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if owner is not None:
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+index 4e2bb3a6..bc62e252 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -61,7 +61,7 @@ class TraceCorruptionTests(unittest.TestCase):
+                 return scoped_field_issues(text, actual, defer_status=True,
+                                            defer_query_record=True, defer_query_result=True,
+                                            defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                                           defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                                           defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                            defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+index 10583757..9b76e602 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -259,11 +259,25 @@ class RoleInputTests(unittest.TestCase):
+             self.assertNotEqual(engine.runtime['checkpoints']['EX-a'], engine.runtime['checkpoints']['EX-b'])
+ 
+     def test_candidate_population_is_compact_profile_bound_and_reproducible(self):
+-        """About 0.3 s, over the 0.2 s unit budget: the role input with three 100 kB tasks is prepared and sealed twice (first and replay)."""
++        """Over the 0.2 s unit budget: three 100 kB tasks are sealed twice; the actual profile selection also checks the full document population."""
+         from support.entry import entry
+         _entry = entry()
+         from do_math.context_store import read_source
+         from do_math.execution_profiles import boundary_prompt
++        skill = Path(__file__).resolve().parents[3]
++        texts = [(path.relative_to(skill).as_posix(), path.read_text(encoding='utf-8'))
++                 for path in documents(skill)]
++        schemas = field_schemas()
++
++        def check(text, selection):
++            schema = {'type': 'object', 'properties': {key: {} for key in selection},
++                      'additionalProperties': False}
++            return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
++                defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
++                defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'))
++
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+             'revision': 1, 'scope': {'included': ['P'], 'excluded': []},
+@@ -292,6 +306,26 @@ class RoleInputTests(unittest.TestCase):
+                 candidate_order=order, clock=_entry.ports.clock)
+             self.assertEqual(replay['manifest']['candidate_order'], order)
+             self.assertEqual(replay['prompt'], fitted['prompt'])
++            selection = actual['profile_selection']
++            self.assertEqual([(name, *issue) for name, text in texts
++                              for issue in check(text, selection)], [])
++            alias = '`result.allowed_profiles` <!-- do-math fields: result=profile_selection -->'
++            self.assertEqual(check(alias, selection), [])
++            omitted = dict(selection)
++            del omitted['allowed_profiles']
++            self.assertEqual([(name, *issue) for name, text in texts
++                              for issue in check(text, omitted)],
++                             [('references/공통-실행.md', 'scoped field', 'profile_selection.allowed_profiles'),
++                              ('계약/후보-준비.md', 'scoped field', 'profile_selection.allowed_profiles')])
++            self.assertEqual(check(alias, omitted), [('scoped field', 'result.allowed_profiles')])
++            # An exact source reference cannot stand in for the inline object.
++            self.assertEqual(check('`profile_selection.allowed_profiles`', selection['profiles_ref']),
++                             [('scoped field', 'profile_selection.allowed_profiles')])
++            for token in ('profile_selection.role', 'profile_selection[].allowed_profiles',
++                          'profile_selection.allowed_profiles[].artifact_ref'):
++                self.assertEqual(check('`' + token + '`', selection), [('scoped field', token)])
++            self.assertEqual(check('`result.role` <!-- do-math fields: result=profile_selection -->', selection),
++                             [('scoped field', 'result.role')])
+ 
+     def test_multihop_restores_latest_file_and_stage_evidence(self):
+         """Budget: full document checks and two real file restorations retain the boundary evidence."""
+@@ -316,7 +350,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, actual,
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -481,6 +515,7 @@ class RoleInputTests(unittest.TestCase):
+             return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,
+                                              'documents': document_schema},
+                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
++                defer_role_inputs=('profile_selection',),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+index ca2361b6..8ba30b1d 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -33,7 +33,7 @@ class QueryFamilyNameTests(unittest.TestCase):
+             return scoped_field_issues(text, actual, defer_status=True,
+                                        defer_operation_progress=True, defer_query_result=True,
+                                        defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                                       defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                                       defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                        defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+index eb40b5a2..2b8e947d 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -148,7 +148,7 @@ class ReportProjections(unittest.TestCase):
+                               for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                               defer_query_record=True, defer_query_result=True,
+                                                               defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                                                              defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                                                              defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                               defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+@@ -179,7 +179,7 @@ class ReportProjections(unittest.TestCase):
+                                          for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                                          defer_query_record=True, defer_query_result=True,
+                                                                          defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                                                                         defer_role_inputs=('input_manifest', 'prompt', 'documents'),
++                                                                         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                                          defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])

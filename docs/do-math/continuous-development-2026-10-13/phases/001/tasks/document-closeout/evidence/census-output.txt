@@ -1,0 +1,9 @@
+{
+  "documents": 24,
+  "field_occurrences": 189,
+  "field_owners": 79,
+  "inline_spans": 4735,
+  "remaining_ast_call_sites": 34,
+  "baseline_mismatches": [],
+  "raw_reports": 12
+}

@@ -1,0 +1,315 @@
+$ git diff --no-ext-diff 91346df5a296154230d9ba3767b2a6a2c9454d44 -- .claude/skills/do-math/references/과제-착수조건.md
+exit=0
+diff --git "a/.claude/skills/do-math/references/\352\263\274\354\240\234-\354\260\251\354\210\230\354\241\260\352\261\264.md" "b/.claude/skills/do-math/references/\352\263\274\354\240\234-\354\260\251\354\210\230\354\241\260\352\261\264.md"
+index d6398a24..66befdcb 100644
+--- "a/.claude/skills/do-math/references/\352\263\274\354\240\234-\354\260\251\354\210\230\354\241\260\352\261\264.md"
++++ "b/.claude/skills/do-math/references/\352\263\274\354\240\234-\354\260\251\354\210\230\354\241\260\352\261\264.md"
+@@ -17,7 +17,7 @@
+ | `decision_value_is` | 입력에 제공된 사용자 결정의 `decision_id`와 비교할 `value`를 둔다. 결정이 현재 유효하고 결정의 `change.value`(없으면 `change`)가 `value`와 자료형까지 같을 때 참이다. 특정 과제로 범위를 정한 결정은 그 과제의 조건에서만 참이 된다. |
+ | `artifact_valid` | 보존 산출을 가리키는 `artifact_ref`에 `snapshot`, `path`, `sha256`을 둔다. `path`는 `runtime/artifacts/` 아래의 상대 경로이며, 이 규칙이나 경로 성분의 저장 규칙을 어긴 조건은 제출 단계에서 거부된다. 실행기가 그 스냅샷에서 읽은 바이트의 해시와 형식을 확인하면 참이다. 해시가 다르거나 형식 검사를 통과하지 못하면 평가 오류다. 형식 검사는 JSON과 UTF-8 텍스트(`.txt`, `.md`, `.tsv`, `.csv`)만 지원한다. |
+ 
+-조건의 평가 오류는 `task_condition_evaluation_error` 사건과 해당 과제의 오류를 연구 계획에 제공한다. 아직 시작하지 않은 과제의 조건 오류만으로 대상 실행이 없는 운영 점검을 만들지 않는다. 자료 대기의 `next_owner`는 다음 담당을 나타내며, 그 값만으로 새 호출을 시작하지 않는다. 필요한 자료 도착이나 별도의 유효한 재고 사건을 기다린다.
++조건의 평가 오류는 `task_condition_evaluation_error` 사건과 해당 과제의 오류를 연구 계획에 제공한다. 현재 조건은 매번 다시 평가한다. 같은 계약·근거의 오류를 owner 재시작 후 다시 보았다는 이유만으로 새 사건을 만들지는 않는다. 계약이나 근거가 달라지면 오류 문구가 같아도 새 사건으로 전달한다. 아직 시작하지 않은 과제의 조건 오류만으로 대상 실행이 없는 운영 점검을 만들지 않는다. 자료 대기의 `next_owner`는 다음 담당을 나타내며, 그 값만으로 새 호출을 시작하지 않는다. 필요한 자료 도착이나 별도의 유효한 재고 사건을 기다린다.
+ 
+ `family`는 기록의 구체적인 지식 종류와 구별한다. 현재 기록 가족은 `knowledge`, `governance`, `goal-judgment`, `grant`, `task`, `activity`, `execution`, `decision`, `external-operation`, `source`, `trust-environment`, `review-cycle`, `instance`, `execution-profile`, `formal-result`, `exposition`, `identity-assessment`, `assessment-use`, `governance-source`, `kind-definition`, `relation`이다. 조건에서 참조한 대상이 실제로 제공되지 않았다면 존재하는 ID처럼 만들어 넣지 않는다.
+ 
+
+
+$ git diff --no-ext-diff 91346df5a296154230d9ba3767b2a6a2c9454d44 -- .claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+index c7c6a4b7..8985ae83 100644
+--- a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+@@ -499,6 +499,31 @@ class SelectedActionReplanningTests(unittest.TestCase):
+ 
+ 
+ class GoalAuditReplanningTests(unittest.TestCase):
++    def test_finished_unsatisfied_audit_group_opens_one_plan_with_its_judgments(self):
++        from support.engine_lifecycle import _ended_execution, clear_work
++        from support.cross_contracts import assert_call_records
++        from support.model import amend
++        sim = Sim.activated()
++        clear_work(sim)
++        _ended_execution(sim.engine, 'EX-audit-request', 'research_plan')
++        basis = sim.engine._goal_basis_key()
++        sim.engine._ensure_goal_audit_requests(basis, 'EX-audit-request')
++        sim.engine._save()
++        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
++        sim.model.on('research_plan').reply(amend(goal_audit=False))
++        sim.run_until(lambda current: any(c['role'] == 'research_plan' for c in current.model.calls), max_steps=8)
++        event, = [e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed']
++        self.assertEqual(event['basis_sha256'], basis)
++        self.assertEqual(len(event['judgment_ids']), sim.instance['config']['goal_auditors'])
++        plan, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
++        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
++        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
++        for _ in range(2):
++            sim.step()
++            assert_call_records(self, sim)
++            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
++        self.assertEqual(sum(e['kind'] == 'goal_audit_completed' for e in sim.runtime['events']), 1)
++
+     def test_current_goal_basis_runs_the_auditor_without_replanning(self):
+         from support.engine_lifecycle import _ended_execution, clear_work
+         from support.cross_contracts import assert_call_records
+@@ -697,6 +722,38 @@ class ReconsiderationPlanningTests(unittest.TestCase):
+         for _ in range(2):
+             sim.step()
+             self.assertEqual(assert_call_records(self, sim), after)
++        events = deepcopy(sim.runtime['events'])
++        sim.restart()
++        sim.step()
++        self.assertEqual(assert_call_records(self, sim), after)
++        self.assertEqual(sim.runtime['events'], events)
++        from support.engine_lifecycle import _ended_execution
++        from support.role_answers import contract_review
++        for index, restart in enumerate((False, True), start=1):
++            engine = sim.engine
++            changed_path = f'runtime/artifacts/BA-readiness-error-new-{index}/evidence.json'
++            engine._save({changed_path: raw})
++            current = only_task(sim)
++            current['occurrence_condition'] = {'op': 'artifact_valid', 'artifact_ref': {
++                'path': changed_path, 'snapshot': engine.head, 'sha256': hashlib.sha256(raw).hexdigest()}}
++            reviewer = sim.clock.new_id('EX')
++            _ended_execution(engine, reviewer, 'task_contract_review')
++            engine._apply({'role': 'task_contract_review', 'target': current['id']},
++                          contract_review({'task': current}), reviewer, owns_response=False)
++            engine._save()
++            if restart:
++                sim.restart()
++            sim.run_until(lambda state: sum(c['role'] == 'research_plan' for c in state.model.calls)
++                          == after['research_plan'] + index, max_steps=8)
++            self.assertEqual(assert_call_records(self, sim)['research_plan'], after['research_plan'] + index)
++            self.assertEqual(seen[-1]['errors'], seen[0]['errors'])
++            errors = [e for e in sim.runtime['events'] if e['kind'] == 'task_condition_evaluation_error']
++            self.assertEqual(len(errors), index + 1)
++            self.assertNotEqual(errors[-2]['basis'], errors[-1]['basis'])
++            self.assertEqual(sim.runtime['events'][:len(events)], events)
++            latest, = [e for e in sim.runtime['executions'].values()
++                       if errors[-1]['id'] in e['action'].get('event_refs', [])]
++            self.assertEqual(latest['outcome'], 'output_accepted', latest.get('error'))
+ 
+ 
+ if __name__ == '__main__':
+
+
+$ git diff --no-ext-diff 91346df5a296154230d9ba3767b2a6a2c9454d44 -- .claude/skills/do-math/scripts/tests/known_defects.json
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/known_defects.json b/.claude/skills/do-math/scripts/tests/known_defects.json
+index ac7fee3b..4667792c 100644
+--- a/.claude/skills/do-math/scripts/tests/known_defects.json
++++ b/.claude/skills/do-math/scripts/tests/known_defects.json
+@@ -584,6 +584,33 @@
+       "found_by": "B107 정상 수신자로 만든 missing-input 평가에서 _1n1w1zv의 계획1회와 operational disposition has no execution target 예외를 재현했다. 같은 실행의 malformed JSON artifact 조건도 operational_review와 research_plan을 동시에 만들었다. 판단 가능한 재고 사유를 명시하고 평가 오류를 기존 lifecycle 계획 사건에 맡긴 뒤 kqpe7_y_에서 실제 대기0/자료 도착1 및 오류 계획1 수락을 확인했다.",
+       "missed_kind": "기존 검사는 exhaustion_state의 사유와 next_owner만 확인했다. 대기 담당을 실제 호출 역할로 소비하는 직접 queue 생성과 역할의 필수 대상 계약을 연결하지 않았다.",
+       "status": "closed"
++    },
++    {
++      "id": "KD-1919",
++      "summary": "준비성 평가 오류의 사건 발동이 process-local 이전 평가에만 의존해 owner 재시작 후 같은 오류를 새 사건으로 기록하고 이미 수락한 계획을 반복한다.",
++      "category": 11,
++      "reproduction": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_artifact_evaluation_error_opens_a_plan_with_the_task_error_and_no_targetless_review",
++      "found_by": "B108의 6tmk_c4i에서 동일 오류·동일 근거의 수락 계획 뒤 restart만으로 실제 계획이2회가 되는 것을 재현. 오류 사건에 계약/판정 근거를 보존하고 cold owner는 마지막 준비성 사건과 대조하도록 교정하여 g44_cnps에서 추가0과 변경 근거의 새 계획1 수락을 확인.",
++      "missed_kind": "B107은 같은 owner의 추가 pass만 확인했다. 준비성 캐시는 과정 내부 파생 상태라 재시작하면 비며, 사건의 처리 이력과 비교하지 않으면 이미 판단한 원인을 다시 발동한다.",
++      "status": "closed"
++    },
++    {
++      "id": "KD-1920",
++      "summary": "첫 준비 전에 제공한 source_imported 사건을 별도 계획에 배정하여, 그 자료를 읽은 준비가 빈 후보를 수락받아도 판단 대상 없는 계획을 추가 실행한다.",
++      "category": 11,
++      "reproduction": "flows.test_cross_role_calls.RoleCallTests.test_source_supplied_before_empty_preparation_does_not_open_an_empty_plan",
++      "found_by": "B109 사건 원천×대상 없음 대조의 w4frrm49에서 준비1·계획1을 재현. 과제/지식이 없는 상태의 미시작 일반 준비에 source 사건을 결속한 뒤 jama1ase에서 준비1·계획0과 사건 소비 확인.",
++      "missed_kind": "기존 빈 준비 검사는 별도 새 자료 사건이 없었고, 새 자료 검사는 실제 후보가 있는 경우만 확인했다. 준비 입력에 이미 포함된 사실과 준비 시작 뒤 도착한 사실의 담당을 구별하지 않았다.",
++      "status": "closed"
++    },
++    {
++      "id": "KD-1921",
++      "summary": "pythonw.exe의 형제 python.exe가 없을 때 콘솔 명령 정본이 GUI 실행기를 지급해 작업자 검사와 예약 실패 재조정 명령이 셸 실행 계약을 어긴다.",
++      "category": 9,
++      "reproduction": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
++      "found_by": "R17의 수정 전 4yviykas에서 실제 도구 설치와 init/configure 생산자·예약 오류 안내의 네 반례가 실패했다. 정본이 형제 부재를 거부하고 설치 진입에서 확인하며 예약 실패 응답은 원결과·원오류와 reconcile=null/reconcile_error를 함께 보존하도록 수리했다. 8yaqu8pz의 설치 거부 통과와 Windows 오류 경로의 repr 표현을 반영한 6xbk7d_v의 CLI 세 반례 통과로 확인했다.",
++      "missed_kind": "기존 pythonw 시험은 형제 python.exe가 있는 경로만 검사했다. 실행기 확인 실패와 이미 저장된 초기화·설정 영수증의 결합을 검사하지 않았다.",
++      "status": "closed"
+     }
+   ]
+ }
+
+
+$ git diff --no-ext-diff 91346df5a296154230d9ba3767b2a6a2c9454d44 -- .claude/skills/do-math/계약/연구-계획.md
+exit=0
+diff --git "a/.claude/skills/do-math/\352\263\204\354\225\275/\354\227\260\352\265\254-\352\263\204\355\232\215.md" "b/.claude/skills/do-math/\352\263\204\354\225\275/\354\227\260\352\265\254-\352\263\204\355\232\215.md"
+index 4ea9637f..5131117f 100644
+--- "a/.claude/skills/do-math/\352\263\204\354\225\275/\354\227\260\352\265\254-\352\263\204\355\232\215.md"
++++ "b/.claude/skills/do-math/\352\263\204\354\225\275/\354\227\260\352\265\254-\352\263\204\355\232\215.md"
+@@ -6,6 +6,8 @@
+ 
+ 연구 계획은 후보나 작업 계약을 저작하지 않는다. 후보를 저작한 실행의 작업 문맥을 이어받아 자기 제안을 선택하지 않고, 실행기가 제공한 계약·검토·공용 근거를 별도 관점에서 읽는다. 계약 문면을 고쳐야 하면 선택 결과 안에서 직접 수정하지 않고 후보 준비에 이유와 필요한 변경을 돌려준다.
+ 
++과제나 지식이 아직 없고 일반 후보 준비가 시작 전이라면 새 자료 사건은 그 준비의 입력에 결속한다. 그 준비가 새 자료를 읽고 후보 없이 반환한 것만으로 빈 계획을 열지 않는다. 이미 입력이 고정된 실행에 나중 사건을 덧붙이지는 않는다.
++
+ 계획이 과제를 선택했다는 사실은 그 과제의 결과, 과제 완료나 수학적 해결을 뜻하지 않는다. 계약이 승인된 과제에 아직 증명이 없다는 점은 선택을 막는 이유가 아니다. 그 증명이나 조사를 수행하는 것이 선택 뒤 연구 수행의 책임이다.
+ 
+ ## 시작 전에 확인할 입력
+
+
+$ git diff --no-ext-diff a989dfc141e23ea5bf255bc297a2012a4fb2e1c7 -- .claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+exit=0
+diff --git a/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py b/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+index 8199baa6..1ee61048 100644
+--- a/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+@@ -688,6 +688,16 @@ class LifecycleEngineMixin:
+         if not pending: return
+         running_ids = live_action_ids(self.runtime)
+         assigned = False
++        if not self.runtime['tasks'] and not self.instance['knowledge']:
++            preparation = next((a for a in self.runtime['queue'] if a.get('role') == 'research_preparation'
++                and a.get('id') not in running_ids and 'assessment_targets' not in a and 'observation_rule_targets' not in a), None)
++            source_events = [ref for ref in pending if events[ref]['kind'] == 'source_imported']
++            if preparation is not None and source_events:
++                # This unstarted author will read the new sources. With no
++                # task or knowledge to judge, those facts do not open a plan.
++                preparation['event_refs'] = list(dict.fromkeys([*preparation.get('event_refs', []), *source_events]))
++                pending = [ref for ref in pending if ref not in source_events]
++                assigned = True
+         for role in ('research_preparation', 'research_plan'):
+             selected = [event_id for event_id in pending if
+                         (events[event_id]['kind'] == 'research_reconsider_due') == (role == 'research_preparation')]
+
+
+$ git diff --no-ext-diff a989dfc141e23ea5bf255bc297a2012a4fb2e1c7 -- .claude/skills/do-math/scripts/tests/flows/test_engine_purpose_decisions.py
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/flows/test_engine_purpose_decisions.py b/.claude/skills/do-math/scripts/tests/flows/test_engine_purpose_decisions.py
+index 4b74a581..8b7574a3 100644
+--- a/.claude/skills/do-math/scripts/tests/flows/test_engine_purpose_decisions.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_engine_purpose_decisions.py
+@@ -183,6 +183,31 @@ class PublicGovernancePlanningTests(unittest.TestCase):
+ 
+ 
+ class PublicJudgmentRequestTests(unittest.TestCase):
++    def test_conversation_and_submission_records_do_not_automatically_open_judgments(self):
++        from support.cross_contracts import assert_call_records
++        from support.default_responder import DefaultResponder
++        from support.engine_lifecycle import clear_work
++        from support.sim import Sim
++        sim = Sim.activated()
++        clear_work(sim)
++        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
++        applied(sim, 'conversation', config={'operation': 'attach', 'id': 'talk-events', 'generation': 1,
++            'lease_seconds': 60, 'disconnect_policy': 'continue_authorized'})
++        for operation in ('heartbeat', 'detach'):
++            applied(sim, 'conversation', config={'operation': operation, 'id': 'talk-events', 'generation': 1})
++        events = [e for e in sim.runtime['events'] if e.get('target') == 'talk-events']
++        self.assertEqual({e['kind'] for e in events},
++                         {'conversation_attach', 'conversation_heartbeat', 'conversation_detach', 'conversation_lost'})
++        self.assertTrue(all(e['id'] not in sim.runtime['pending_events'] for e in events))
++        for _ in range(2):
++            sim.step()
++            counts = assert_call_records(self, sim)
++            self.assertEqual(counts['research_plan'], 0)
++            self.assertEqual(counts['operational_review'], 0)
++        checked = [e for e in sim.runtime['events'] if e['kind'] == 'submission_checked']
++        self.assertTrue(checked)
++        self.assertTrue(all(e['id'] not in sim.runtime['pending_events'] for e in checked))
++
+     def test_new_decision_event_during_a_plan_is_assigned_to_a_later_plan(self):
+         from support.cross_contracts import assert_call_records
+         from support.default_responder import DefaultResponder
+
+
+$ git diff --no-ext-diff a989dfc141e23ea5bf255bc297a2012a4fb2e1c7 -- .claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+index 7814c255..8985ae83 100644
+--- a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py
+@@ -499,6 +499,31 @@ class SelectedActionReplanningTests(unittest.TestCase):
+ 
+ 
+ class GoalAuditReplanningTests(unittest.TestCase):
++    def test_finished_unsatisfied_audit_group_opens_one_plan_with_its_judgments(self):
++        from support.engine_lifecycle import _ended_execution, clear_work
++        from support.cross_contracts import assert_call_records
++        from support.model import amend
++        sim = Sim.activated()
++        clear_work(sim)
++        _ended_execution(sim.engine, 'EX-audit-request', 'research_plan')
++        basis = sim.engine._goal_basis_key()
++        sim.engine._ensure_goal_audit_requests(basis, 'EX-audit-request')
++        sim.engine._save()
++        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
++        sim.model.on('research_plan').reply(amend(goal_audit=False))
++        sim.run_until(lambda current: any(c['role'] == 'research_plan' for c in current.model.calls), max_steps=8)
++        event, = [e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed']
++        self.assertEqual(event['basis_sha256'], basis)
++        self.assertEqual(len(event['judgment_ids']), sim.instance['config']['goal_auditors'])
++        plan, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
++        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
++        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
++        for _ in range(2):
++            sim.step()
++            assert_call_records(self, sim)
++            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
++        self.assertEqual(sum(e['kind'] == 'goal_audit_completed' for e in sim.runtime['events']), 1)
++
+     def test_current_goal_basis_runs_the_auditor_without_replanning(self):
+         from support.engine_lifecycle import _ended_execution, clear_work
+         from support.cross_contracts import assert_call_records
+
+
+$ git diff --no-ext-diff a989dfc141e23ea5bf255bc297a2012a4fb2e1c7 -- .claude/skills/do-math/scripts/tests/known_defects.json
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/known_defects.json b/.claude/skills/do-math/scripts/tests/known_defects.json
+index 5d4f8d86..4667792c 100644
+--- a/.claude/skills/do-math/scripts/tests/known_defects.json
++++ b/.claude/skills/do-math/scripts/tests/known_defects.json
+@@ -593,6 +593,24 @@
+       "found_by": "B108의 6tmk_c4i에서 동일 오류·동일 근거의 수락 계획 뒤 restart만으로 실제 계획이2회가 되는 것을 재현. 오류 사건에 계약/판정 근거를 보존하고 cold owner는 마지막 준비성 사건과 대조하도록 교정하여 g44_cnps에서 추가0과 변경 근거의 새 계획1 수락을 확인.",
+       "missed_kind": "B107은 같은 owner의 추가 pass만 확인했다. 준비성 캐시는 과정 내부 파생 상태라 재시작하면 비며, 사건의 처리 이력과 비교하지 않으면 이미 판단한 원인을 다시 발동한다.",
+       "status": "closed"
++    },
++    {
++      "id": "KD-1920",
++      "summary": "첫 준비 전에 제공한 source_imported 사건을 별도 계획에 배정하여, 그 자료를 읽은 준비가 빈 후보를 수락받아도 판단 대상 없는 계획을 추가 실행한다.",
++      "category": 11,
++      "reproduction": "flows.test_cross_role_calls.RoleCallTests.test_source_supplied_before_empty_preparation_does_not_open_an_empty_plan",
++      "found_by": "B109 사건 원천×대상 없음 대조의 w4frrm49에서 준비1·계획1을 재현. 과제/지식이 없는 상태의 미시작 일반 준비에 source 사건을 결속한 뒤 jama1ase에서 준비1·계획0과 사건 소비 확인.",
++      "missed_kind": "기존 빈 준비 검사는 별도 새 자료 사건이 없었고, 새 자료 검사는 실제 후보가 있는 경우만 확인했다. 준비 입력에 이미 포함된 사실과 준비 시작 뒤 도착한 사실의 담당을 구별하지 않았다.",
++      "status": "closed"
++    },
++    {
++      "id": "KD-1921",
++      "summary": "pythonw.exe의 형제 python.exe가 없을 때 콘솔 명령 정본이 GUI 실행기를 지급해 작업자 검사와 예약 실패 재조정 명령이 셸 실행 계약을 어긴다.",
++      "category": 9,
++      "reproduction": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
++      "found_by": "R17의 수정 전 4yviykas에서 실제 도구 설치와 init/configure 생산자·예약 오류 안내의 네 반례가 실패했다. 정본이 형제 부재를 거부하고 설치 진입에서 확인하며 예약 실패 응답은 원결과·원오류와 reconcile=null/reconcile_error를 함께 보존하도록 수리했다. 8yaqu8pz의 설치 거부 통과와 Windows 오류 경로의 repr 표현을 반영한 6xbk7d_v의 CLI 세 반례 통과로 확인했다.",
++      "missed_kind": "기존 pythonw 시험은 형제 python.exe가 있는 경로만 검사했다. 실행기 확인 실패와 이미 저장된 초기화·설정 영수증의 결합을 검사하지 않았다.",
++      "status": "closed"
+     }
+   ]
+ }
+
+
+$ git diff --no-ext-diff 8d6ae26b0a413b64ef2f0e06002636b7bb5c8217 -- .claude/skills/do-math/scripts/tests/known_defects.json
+exit=0
+diff --git a/.claude/skills/do-math/scripts/tests/known_defects.json b/.claude/skills/do-math/scripts/tests/known_defects.json
+index 99b638f7..4667792c 100644
+--- a/.claude/skills/do-math/scripts/tests/known_defects.json
++++ b/.claude/skills/do-math/scripts/tests/known_defects.json
+@@ -602,6 +602,15 @@
+       "found_by": "B109 사건 원천×대상 없음 대조의 w4frrm49에서 준비1·계획1을 재현. 과제/지식이 없는 상태의 미시작 일반 준비에 source 사건을 결속한 뒤 jama1ase에서 준비1·계획0과 사건 소비 확인.",
+       "missed_kind": "기존 빈 준비 검사는 별도 새 자료 사건이 없었고, 새 자료 검사는 실제 후보가 있는 경우만 확인했다. 준비 입력에 이미 포함된 사실과 준비 시작 뒤 도착한 사실의 담당을 구별하지 않았다.",
+       "status": "closed"
++    },
++    {
++      "id": "KD-1921",
++      "summary": "pythonw.exe의 형제 python.exe가 없을 때 콘솔 명령 정본이 GUI 실행기를 지급해 작업자 검사와 예약 실패 재조정 명령이 셸 실행 계약을 어긴다.",
++      "category": 9,
++      "reproduction": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
++      "found_by": "R17의 수정 전 4yviykas에서 실제 도구 설치와 init/configure 생산자·예약 오류 안내의 네 반례가 실패했다. 정본이 형제 부재를 거부하고 설치 진입에서 확인하며 예약 실패 응답은 원결과·원오류와 reconcile=null/reconcile_error를 함께 보존하도록 수리했다. 8yaqu8pz의 설치 거부 통과와 Windows 오류 경로의 repr 표현을 반영한 6xbk7d_v의 CLI 세 반례 통과로 확인했다.",
++      "missed_kind": "기존 pythonw 시험은 형제 python.exe가 있는 경로만 검사했다. 실행기 확인 실패와 이미 저장된 초기화·설정 영수증의 결합을 검사하지 않았다.",
++      "status": "closed"
+     }
+   ]
+ }

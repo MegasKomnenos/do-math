@@ -1,0 +1,156 @@
+diff --git a/docs/do-math/continuous-development-2026-10-13/context.md b/docs/do-math/continuous-development-2026-10-13/context.md
+index e3de79ee..b06ad4b3 100644
+--- a/docs/do-math/continuous-development-2026-10-13/context.md
++++ b/docs/do-math/continuous-development-2026-10-13/context.md
+@@ -10,7 +10,7 @@
+ 
+ ### G2 기존 개선과 기대값 보존
+ 
+-보존 성질 K-01~K-61과 원래 P2 12개 ID를 각각 현행 근거에 연결한다. 과거 원문의 timeout 등 폐기된 수단은 최신 사용자 지시와 현재 계약으로 처리한다. 기존 변경 재검토는 실제 diff·현재 소비자·원보고를 사용해 유지/교정/제거/추가 판정 필요를 결정한다. B01~B109를 25영역에 매핑했다는 사실은 검토 완료가 아니다. 결함 동작을 정상 기대값으로 남기지 않는다.
++원래 K ID의 보존 성질 61개와 원래 P2 12개 ID를 각각 현행 근거에 연결한다. K ID는 K-01~K-78 안의 비연속 집합이며 sources/requirements-index.json의 preservation 모집단을 따른다. 과거 원문의 timeout 등 폐기된 수단은 최신 사용자 지시와 현재 계약으로 처리한다. 기존 변경 재검토는 실제 diff·현재 소비자·원보고를 사용해 유지/교정/제거/추가 판정 필요를 결정한다. B01~B109를 25영역에 매핑했다는 사실은 검토 완료가 아니다. 결함 동작을 정상 기대값으로 남기지 않는다.
+ 
+ ### G3 검증 방식의 실질
+ 
+@@ -48,6 +48,8 @@ B130~B134는 조회·CLI·역할 입력 metadata·복원·profile_selection 문
+ 
+ 기존 실제 제품 수리와 유효한 검증은 유지한다. 반면 B110~B114의 문서 소스 추론 확장은 이후 반례로 교체 대상이 됐다. 최근 성과에는 이 재작업 비용도 포함돼 있다. 커밋 수·검사 수·새 보고서 수로 전체 진척을 대신하지 않는다.
+ 
++phase 001의 세 분석 task는 모두 A1~A4를 완료했고 manager의 report 형식 검사를 통과했다. manager가 현재 HEAD 77b8f132c056bcb222e7b6ee431742aa4dc1f27e에서 baseline 979파일(제품969·원자료6·engine4)의 바이트 불변, 원래 19/11/61/12 ID·원문 대응, B129 및 B130~B134/repair 원보고 14개의 해시·선택/row 대응을 재확인했다. B129와 현재 Python 소스 차이는 8개이며 B134 green의 28개 부분 성공은 현재 Python 판본과 일치한다. 분석 complete는 G 충족이나 제품 합격이 아니다. 근거는 run:phases/001/manager-evidence/verification.json 및 세 task의 report다.
++
+ ## C3 현재 정본과 이력의 역할
+ 
+ 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
+@@ -64,7 +66,7 @@ task의 complete는 A 완료다. 검토 task는 결함을 발견해도 배정된
+ 
+ ## C5 병렬 실행과 검증 자원
+ 
+-phase 001은 세 task 모두 프로젝트 writes=[]인 독립 분석이다. 같은 고정 자료를 읽고 자기 report/evidence만 쓰며 서로의 출력은 기다리지 않는다. manager가 세 결과를 통합한다. 이후 제품/시험을 수정하고 검사하는 phase는 기본 한 task로 운영한다. 같은 field_schemas나 Git index, 테스트 템플릿·캐시, 미완성 소스를 공유하는 작업을 파일 이름만 다르다는 이유로 병렬 배정하지 않는다. 고정판의 독립적인 읽기 검토에는 병렬성을 사용한다.
++phase 001은 세 task 모두 프로젝트 writes=[]인 독립 분석으로 종료됐고 manager가 세 결과를 통합했다. phase 002는 변이 정상 기준 수리 task 하나로 운영한다. 이후에도 제품/시험을 수정하고 검사하는 phase는 기본 한 task로 운영한다. 같은 field_schemas나 Git index, 테스트 템플릿·캐시, 미완성 소스를 공유하는 작업을 파일 이름만 다르다는 이유로 병렬 배정하지 않는다. 고정판의 독립적인 읽기 검토에는 병렬성을 사용한다.
+ 
+ do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
+ 
+@@ -90,4 +92,34 @@ manager는 next phase와 공용 문서·기억 등을 먼저 확정하고 pendin
+ 
+ settings.manager={}와 task의 model/effort 생략으로 설치된 Codex 프로젝트 기본값을 사용한다. 이 준비는 지원 모델 목록을 검증하지 않았으므로 manager가 임의 모델 ID나 effort 조합을 발명하지 않는다. 명시 선택이 필요하면 실제 지원·사용자 환경을 먼저 확인한다. 전역 settings는 시작 때 한 번 읽히므로 manager가 실행 중 바꿔 반영된다고 가정하지 않는다.
+ 
+-준비 세션은 서비스 단위 검사(가짜 Codex 사용) 31개 중 30개 통과·권한 조건의 symlink 1개 건너뜀을 확인했다. 이것은 do-math나 실제 모델 호출 완료의 증거가 아니다. 첫 phase 형식·참조와 시작 명령을 별도로 검사한다. 실제 Codex 세션 기동은 아직 수행하지 않았다. 마지막 외부 도구 확인과 실제 T4/T5의 책임은 G7에 남는다.
++준비 세션은 서비스 단위 검사(가짜 Codex 사용) 31개 중 30개 통과·권한 조건의 symlink 1개 건너뜀을 확인했다. 이것은 do-math나 실제 모델 호출 완료의 증거가 아니다. 준비 당시 실제 Codex 세션은 미기동이었다. 현재는 phase 001 세 task의 report가 제출됐고 새 manager 세션이 이를 검사했다. 개발 서비스의 세션 수행과 제품의 공급자·역할 스키마 실호출은 다른 경계이며 실제 T4/T5의 책임은 G7에 남는다.
++
++## C9 요구별 상태와 과거 검토의 재사용 범위
++
++phase 001의 requirement-state.json은 원래 19/11/61/12 항목을 각각 한 번씩 연결했고 tracking-state.json은 기존 109개 작업을 연결했다. 이들은 역사 근거와 종료 질문의 진입점이며 새로 수행한 전수 의미 감사가 아니다. 현재 판정은 이 context와 후속 report/manager의 처분을 따른다. 1-D/11-A/11-B의 검토된 성질, R17과 R07의 완료 부분, DOC-RETURN-PURE/CLI 및 B132~B134의 지정 경계는 유지하고 최종 판본 근거를 연결한다. 9-A의 R18 현재 외부 호출 전건, 1-E의 최종 반환 소유권 처분은 별도로 남는다. K-27/38/72/75와 P2 A-31/B-32는 후속 수리 이전의 낡은 remaining만으로 재수리하지 않는다.
++
++prior-review-state.json에서 실제 이전 검토는 PR23/B107~B109 완료, PR06/B22 부분 완료, 나머지 23영역 미검토다. 같은 구현을 다루는 후속 task에 해당 review_slices의 실제 diff·현재 소비자·원보고만 결합한다. 25영역 전체를 모든 수리의 선행 장벽으로 두지 않는다. phase 002는 PR01/B56 중 mutation child 결과·정상 기준·공유 passed 소비에 닿는 slice만 재검토한다. PR01 전체를 완료로 바꾸지 않는다.
++
++저장소 원보고 100개의 해시와 그중 39개의 선택·결과를 읽었다는 것은 closure-map의 관찰이다. 외부 임시 원보고 246개 위치 레코드(236개 고유 경로)는 현재 없다. 해당 slice의 판단에 필요할 때만 보존 근거를 찾고, 없으면 과거 counts와 현재 대체 재현을 구별한다. 삭제 원인을 추측하거나 사용자가 지운 작업을 복원하지 않는다. R05/R06의 현행 시험은 tests/flows/test_provider_native_storage.py의 NativeStorageTests.test_native_numbers_and_public_blocks_survive_actual_runner_and_repository이며 과거 test_provider_close_native_storage.py 경로는 쓰지 않는다.
++
++1-A의 원문 인용은 보존하되 A20의 필수+선택 필드 역방향을 적용한다. SHARDS·메모리 저장 대역 이름·하드 timeout 같은 폐기된 수단은 복원하지 않으며 현재 보호 성질과 사건/임대 의미를 유지한다. 구체적 근거는 run:phases/001/tasks/closure-map/evidence/requirement-state.json, prior-review-state.json, evidence-catalog.json 및 closure-decisions.md다.
++
++## C10 문서 결속에서 남은 고정 범위
++
++document-closeout은 실제 24문서(계약11 포함), inline 필드189회·lexical owner79개·노출 owner84개와 잔여 AST 호출34지점을 연결했다. 이 수는 목록의 크기이며 의미 검증 완료율이 아니다. B130~B134의 실제 반환·원래 단언은 유지한다. 두 동명 생산자 오류를 구별해야 한다. 운영-점검.md의 operational_evidence.checkpoint_source와 recovery_materials 안의 result_source/checkpoint_source는 일반 재개 restore_continuation의 결과로 대신 입증할 수 없다. recovery의 restoration_error 및 checkpoint_source=null도 원문 지시에 반영해야 한다. manager가 문서·doc_code·core_engine 원문을 대조했으며 실제 재현과 수리는 P01 책임으로 남는다.
++
++독립-운영.md의 LIVE_INSTALLATION_ROOT는 현재 operator_bootstrap.py에 없다. 현재 manifest 또는 snapshot_root에서 installation_root 인자를 전달한다. N03의 해당 절에서 문서를 교정하며 호환용 옛 전역 이름을 제품에 추가하지 않는다.
++
++followup-packets.json의 P01~P11·N01~N03·L01은 유한한 후보 범위다. 15개 고정 phase를 예약한 것이 아니다. P01 운영/복구, P02 원자료/과제 결과, P03 실행 안내/설치를 구별하고 REVIEW/TRUST·D-06·단독 이름을 실제 소비 경계별로 닫는다. instance는 명시 소비가 없는 제거 후보이며 config/profile/execution/recovery_source는 유지 근거가 있다. 마지막 소비자가 없어지기 전 AST helper를 일괄 삭제하지 않는다.
++
++L01은 실제 운전 host/tool/version/read-call과 같은 단위의 한도가 미확정이다. 조사 대상은 현재 사용하는 Codex/Claude의 운전 문서 읽기 경로이며 역할 stdin 전달과 구별한다. G7의 설치 CLI/실호출 확인 때 호스트의 실제 출력 절단·읽기 설정을 함께 조사한다. byte와 token 사이에 임의 환산 상한을 두지 않는다. 권위 있는 설정으로 판정할 수 없으면 필요한 외부 결정·영향 의무를 상신하며 13-C 통과로 바꾸지 않는다. 학술 외부 어휘도 그 실제 응답 계약에서 확인한다. 근거는 run:phases/001/tasks/document-closeout/evidence/binding-inventory.json, followup-packets.json, review-notes.md와 run:phases/001/manager-evidence/source-excerpts.json이다.
++
++## C11 최종 관문을 막는 도구·실경계 공백
++
++가장 가까운 수리는 mutation.run.fails_unmutated의 증거 부재 처리다. 현재는 정상 child의 반환 집합에 시험 ID가 없으면 통과로 기억하므로 CHILD_NO_RESULT·loader 오류·skip/빈 실행·비정상 exit를 실제 정상 통과와 구별할 정보가 부족하다. mutant의 결과 부재만 막는 검사로는 부족하다. manager는 실제 소스 분기를 대조했으며 아직 동적 재현하지 않았다. phase 002가 작은 실제 parent/child 경계와 정상 대조군으로 이를 재현·수리한다. 시간 경과는 포착 증거가 아니며 D9의 실패 후보에만 수행하는 지연 정상 기준 검사를 유지한다.
++
++기존 변이17분할은 130파일이며 현재 LAYERS 1/2/3의 123모듈을 포함한다. adapter인 git_process/http_transport/powershell_scheduler/system_clock/windows_job 5개와 run_tests.py/test_categories.py는 해당 필터 밖이다. 설계 5.5/6.3 및 현재 도구 정본에 따라 이 7파일은 G6의 layer1/2/3 변이 분모에서 제외한다. adapter 5개는 T4 실제 계약·별도 분기 보고/T5로, runner·격리 표지는 관련 도구 시험과 G4/G5 선택·종료 검증으로 확인할 책임을 유지한다. 제외를 실행 성공으로 세지 않는다. 현 함수·rule·trivial·시험 진입 집합은 fresh T3 뒤 확정하고 오래된 1586함수나 17분할을 분모로 쓰지 않는다.
++
++T5의 smoke 폴더에는 현재 test_*.py가 없고 runner는 빈 선택을 거부한다. probe_cli의 files/background는 작은 protocol_probe 경계라 실제 역할 schema·Job/pythonw·Lean/Mathlib·예약 등록/발화/해제·학술 list_sources의 전체 요구를 대신하지 않는다. G7 work에서 공식 T5 진입점에 실제 smoke를 연결하고 필요한 실호출·말뭉치를 최종 소스 고정 전에 취득한다. T4 단독은 Measurement를 만들지 않아 adapter 분기 보고가 없다. 별도 T4 측정 수리를 배정하며 최종 T3 모집단에 T4를 섞어 해결하지 않는다.
++
++gate-readiness가 관찰한 설치 Codex는 0.162.1, 녹화 manifest는 0.160.0이며 Claude는 양쪽 2.1.289다. corpus12항목/20파일의 해시 일치는 현재 인증·모델 호출 성공을 뜻하지 않는다. Claude background는 실제 event 순서와 현 background_completed_before_result 조건을 재판정해야 한다. Lean/Lake/Mathlib·pythonw·학술 서버 자료의 존재/버전은 확인됐으나 인증·지원 모델·계정 한도·컴파일·예약 권한·MCP 응답은 미확인이다. 독립적으로 가능한 수리를 진행하면서 가까운 G7 작업에서 비밀 비노출 방식으로 조건을 확인하고, 부족한 외부 조건은 정확히 상신한다. 근거는 run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json, population-and-corpus.json, environment.json, source-contracts.json 및 manager의 verification.json이다.
+diff --git a/docs/do-math/continuous-development-2026-10-13/plan.md b/docs/do-math/continuous-development-2026-10-13/plan.md
+index b40f580d..62278894 100644
+--- a/docs/do-math/continuous-development-2026-10-13/plan.md
++++ b/docs/do-math/continuous-development-2026-10-13/plan.md
+@@ -2,36 +2,46 @@
+ 
+ 이 파일은 현재 남김과 다음 판단을 관리한다. 상세한 과거 이력은 sources와 기존 repo 자료에 연결하고 여기에 반복 복사하지 않는다. 상태·근거·구체적 다음 질문 없이 '추가 감사 필요'만 적지 않는다.
+ 
+-## 첫 phase: 001
++## phase 001의 결과와 현재 상태
+ 
+-코드를 더 수정하기 전에 독립적인 세 질문을 함께 닫는다. 모두 writes=[]이며 무거운 검사·T3·변이·실호출은 시작하지 않는다.
++세 분석 task의 A1~A4와 manager의 report 검사가 완료됐다. 제품 수리나 최종 관문 실행은 아직 하지 않았다. 현재 상태의 근거는 context C9~C11과 다음 자료다.
+ 
+-| task | 끝낼 질문 | 산출물과 사용처 |
+-|---|---|---|
+-| closure-map | 원래 30의무·61보존·P2 12 각각에서 이미 입증한 성질, 확정 공백, 확인 질문, 최종 재실행을 구별할 수 있는가? | 자기 evidence의 requirement-state.json과 과거 검토 처분. manager가 현재 backlog와 우선순위를 결정 |
+-| document-closeout | 13-C의 현재 실제 문서와 검사기에서 남은 연결을 어떻게 유한하게 끝내는가? 최근 수정은 유지할 가치와 충분한 근거가 있는가? | 실제 문서/생산자/기존 시험별 결속 목록, 유지·교체·제거 판정, 한 문맥에서 끝나는 구체적 packet 후보 |
+-| gate-readiness | 현재 전체 일반/T3/변이/T4/T5를 어떤 실제 도구·선택·환경·증거로 실행해야 하는가? | gate-readiness.json과 실행 절차. 막힌 외부 조건을 마지막에 처음 발견하지 않게 함 |
++- 요구별 종료 질문: run:phases/001/tasks/closure-map/evidence/requirement-state.json. 원래 19/11/61/12 항목을 보존한다. 1-D/11-A/11-B 및 이미 검토한 부분은 최종 판본 연결로 넘기고 새 결함 없이 재구현하지 않는다.
++- 기존 109작업·25영역 재검토: 같은 evidence의 tracking-state.json과 prior-review-state.json. PR23과 PR06/B22의 완료 범위를 재사용하고 필요한 slice를 실제 수리/의미 확인과 결합한다. 없는 임시 원보고의 counts는 역사 주장으로 남긴다.
++- 문서의 고정 잔여: run:phases/001/tasks/document-closeout/evidence/followup-packets.json 및 binding-inventory.json. 후보15묶음을 고정 phase15개로 만들지 않는다.
++- 관문 준비와 미충족 조건: run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json. 제안 명령의 출력 경로·최종 HEAD·검증된 모델 값은 실행 task가 실제 값으로 결속한다.
++
++분류는 완료율이 아니다. 검토된 성질은 최종 증거 대기, 확정된 공백은 수리, 아직 모르는 성질은 한 종료 질문, 실행 관문은 최종 고정판 검증으로 구별한다. 오래된 109개 task를 그대로 재파견하지 않는다.
++
++## 다음 phase: 002
+ 
+-세 task는 서로의 중간 결과를 읽지 않는다. 같은 구판 작업표를 각 관점에서 읽는 것은 허용하지만 서로 같은 전수 코드 검토를 반복하지 않는다. closure-map은 현재 상태의 근거 연결, document-closeout은 문서 검사기의 실제 코드, gate-readiness는 실행기·환경 경계를 책임진다. 각 task의 report는 판단 가능한 산문과 원자료 좌표를 담는다.
++work task `mutation-baseline` 하나를 배정한다. gate-readiness F4의 정상 child 결과 부재가 killed/통과로 바뀌는 경로를 작은 반례로 재현하고 수리한다. 정상 기준의 실제 통과·실패·미실행/skip·수집 오류·비정상 종료를 구별하고 동일한 판정이 CLI와 T3 소비에 적용됨을 확인한다. 실제 parent/child 경계의 검증까지 같은 task가 맡는다. G3의 거짓 통과 기제와 G6의 정상 기준 공백을 제거하는 작업이며 전체 변이 실행이나 G6 완료 판정은 아니다.
+ 
+-## 첫 manager가 결정할 것
++doc P01보다 먼저 선택한 이유는 현재 도구가 정상 증거 부재를 변이 포착으로 만들 수 있어 최종 변이 결과 전체의 신뢰를 가리기 때문이다. 외부 계정·T3 전건 실행 없이 작은 입력에서 끝낼 수 있다. PR01/B56의 mutation 관련 diff·소비자·원보고 검토를 같은 objective에 결합하며 T3 저장소·전체 runner 재감사는 배정하지 않는다. D9의 지연 정상 기준 검사, 싸게 실패하는 모듈 우선, 실제 실패/생존 구별, 시간 강제종료 금지를 보존한다.
+ 
+-세 보고와 그 형식 검사를 읽은 뒤 결정에 필요한 원증거를 대조한다. 요구별 원문과 현재 코드가 달라진 경우 둘을 구별한다. report에서 'evidence-only'로 볼 수 있다는 의견은 source 판본·검사 성질이 맞는 범위에서만 수용한다. 매핑만 끝난 과거 재검토 영역은 완료로 바꾸지 않는다.
++상세 종료조건·writes·검증은 run:phases/002/tasks/mutation-baseline/objective.md다. 공유 코드·미러·검사 캐시 때문에 동시 task는 두지 않는다. 형식 검사 뒤 실행기는 새 세션에서 수행한다.
+ 
+-다음 단계는 고정된 109개 task를 그대로 재파견하는 것이 아니다. 기존 목록의 의미를 보존하면서 다음 상태로 현재 backlog를 정리한다.
++## 가까운 후속 배정과 선행 관계
+ 
+-- 검토된 성질이 있어 최종 판본 연결만 필요한 항목: 다시 구현하지 않고 해당 G의 최종 증거 대기로 둔다.
+-- 실제 결함/공백이 확인된 항목: 원문 요구, 재현 입력, 수정 파일, 관련 검증, 끝나는 조건을 붙여 한 work task로 배정한다.
+-- 사실 하나를 확인해야 하는 항목: 답할 질문·입력·산출물·판정 뒤 행동을 지정한 조사/검토 task로 둔다.
+-- 최종 관문: 대상·선행 조건·실제 명령·출력·판본을 준비하고 이후 고정판에서 실행한다.
++002 결과를 검수한 뒤 아래 구체적 남김에서 다음 단위를 선택한다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
++
++| 남김 | 다음 담당 작업과 끝나는 조건 | 선행/한계 |
++|---|---|---|
++| G7 실제 공급자 조건·말뭉치 | 공식 T5에 최소 실제 역할 schema 호출을 연결하는 단위에서 현재 모델·인증을 비밀 비노출로 확인하고 Codex 현 판본의 raw 출력·파싱·종료를 녹화한다. Claude는 현 background 사건/파일 조건을 대조해 재사용 또는 새 호출한다. | 장기 문서 작업을 모두 끝내기 전에 배정한다. 버전 확인만으로 호출 성공을 선언하지 않는다. 외부 조건 부재는 정확한 상신으로 남긴다. |
++| G7 Job/Lean/예약/학술 및 L01 | 공급자 최소 경계와 구별해 실제 Job/pythonw, Lean/Mathlib, 시험 전용 예약 등록·발화·해제, 학술 list_sources를 기존 실제 경로로 검증한다. L01은 현재 Codex/Claude 운전 read-call의 host·판본·절단 규칙·한도 단위를 특정한다. | 개별 실제 연쇄로 한 문맥에서 끝나는 task를 만든다. 역할 stdin을 운전 출력 한도로 대체하지 않는다. byte/token 권위 근거가 없으면 결정 질문을 남긴다. |
++| G1/G3 문서 P01 | operational_evidence와 recovery_materials의 동명 result/checkpoint를 실제 생산자별로 결속하고 정상·restoration_error·null/부재 조건의 문서 지시와 반례를 확인한다. | B133 일반 재개 경계는 유지. doc_code/역할 입력 공유 파일을 단일 task가 수정한다. |
++| G1/G8 문서 N03 확정 불일치 | 독립-운영.md의 LIVE_INSTALLATION_ROOT 설명을 실제 installation_root 전달로 교정하고 기존 bootstrap-info 근거와 미러를 연결한다. | 해당 문서 절만 배정 가능하며 옛 전역 변수를 제품에 복원하지 않는다. |
++| G1/G3 나머지 문서·정책 | P02~P11·N01~N03의 미결 절만 실제 반환/공유 계약·기존 시험에 연결한다. 명시 소비 없는 instance는 제거 가능성을 판정한다. | 34 AST 구문지점의 제거 수로 진척을 세지 않고 마지막 소비자 뒤 helper를 정리한다. |
++| G7 T4 adapter 보고 | T4 단독 전체 boundary 선택에 별도 adapter 분기 측정을 연결해 실제 보고를 만든다. | 설계5.5상 보고이며 통과 임계 관문으로 바꾸지 않는다. 최종 T3 선택과 분리한다. |
++| G1/G2 남은 의미 질문·과거 재검토 | requirement-state의 해당 생산자/소비자/입력/단언 질문과 관련 PR slice만 배정한다. 이미 충분하면 유지하고 빠진 축만 수리한다. | R05/R06은 현 test_provider_native_storage 경로 사용. 없는 원보고는 해당 slice에서만 회수/대체 증거 필요를 판정한다. |
+ 
+-manager는 다음 purpose에서 '이 task가 끝나면 더 할 필요가 없어지는 일'과 '어느 G의 남김이 제거되는지'를 명시한다. 동일 소유자를 계속 하나씩 발견하는 식으로 범위를 늘리지 않는다. 읽기나 보고가 다음 판단을 바꾸지 못하면 더 넓은 조사를 자동으로 이어가지 않는다.
++원래 1-A는 A20의 필수+선택 역방향을 적용하고 역사 SHARDS/저장대역/timeout 표현은 현재 의미로 판정한다. 의미를 모르는 항목을 일괄 final-evidence로 올리지 않는다. G7이 외부 조건에 막혀도 독립 수리는 진행하며, 모든 행동이 막히면 context C7의 정확한 상신 절차를 따른다.
+ 
+ ## 구현과 기존 작업 재검토
+ 
+ 확인된 공백과 관련 과거 변경을 같은 한정 단위에서 처리한다. 25개 재검토 영역 전체의 완료를 모든 구현의 선행 장벽으로 만들지 않는다. 기존 실제 코드·시험을 재사용하고 source/diff/원보고가 입증한 성질은 계약 변경이나 새 반례가 있을 때만 다시 연다.
+ 
+-전체 범위는 다음 네 묶음으로 남겨 둔다. 첫 보고의 구체적 의존과 위험에 따라 가까운 순서를 확정하며 무관한 발견으로 방향을 바꾸지 않는다.
++전체 범위는 다음 네 묶음으로 보존한다. phase 001의 구체적 종료 질문과 이후 결과로 가까운 순서를 정하며 무관한 발견으로 방향을 바꾸지 않는다.
+ 
+ 1. 대기·계수·관측·정산: 모든 지정 상태 공간의 생성, 유지, 해소, 담당자, 후속 호출과 실제 표시.
+ 2. 입력·평가·근거: 역할 변형, 실제 생산/수신, 판정 함수와 교란 축, 원래 평가자 쌍·보존/P2 기대값.
+@@ -44,7 +54,7 @@ manager는 다음 purpose에서 '이 task가 끝나면 더 할 필요가 없어
+ 
+ ## 최종 관문과 완료 review
+ 
+-필요한 실제 경계 호출·녹화와 코드 수리를 먼저 끝내 최종 판본을 고정한다. G4 전체 일반 → G5 fresh T3 → G6 정상 기준/현재 함수 전체 극단 변이의 근거를 확보하고 G7의 실제 경계·녹화 판본을 연결한다. 측정/변이의 실제 전체 모집단은 현재 코드에서 확정한다. 오래된 함수 수나 분할 개수를 성공의 분모로 사용하지 않는다.
++필요한 실제 경계 호출·녹화와 코드 수리를 먼저 끝내 최종 판본을 고정한다. G4 전체 일반 → G5 fresh T3 → G6 정상 기준/현재 함수 전체 극단 변이의 근거를 확보하고 G7의 실제 경계·녹화 판본을 연결한다. G6 담당 작업이 fresh T3 뒤 현 함수·rule·trivial·선택 시험 manifest를 확정한다. context C11의 adapter5·runner2 제외 처분을 명시하고 layer1/2/3 변이 분모와 별도 검증을 혼합하지 않는다. 공유 pseudo_tested 목록을 쓰는 분할은 순차 실행한다. 오래된 함수 수나 분할 개수를 성공의 분모로 사용하지 않는다.
+ 
+ 후속 변경이 생기면 어떤 기존 증거가 무효화됐는지 기록하고 그 범위의 검증을 교체한다. 최종 동일 판본 조건이 필요한 전체 관문은 필요한 시점에 다시 완결한다. 중간 부분 통과를 합산하지 않는다. 유효한 기존 실제 경계 결과의 재사용은 코드·도구 판본과 성질을 대조해 판단한다.
+ 
+diff --git a/docs/do-math/continuous-development-2026-10-13/seams.md b/docs/do-math/continuous-development-2026-10-13/seams.md
+index 326ca73a..ec8641be 100644
+--- a/docs/do-math/continuous-development-2026-10-13/seams.md
++++ b/docs/do-math/continuous-development-2026-10-13/seams.md
+@@ -1,6 +1,6 @@
+ # 현재 경계 계약의 사용
+ 
+-첫 phase는 기존 자료를 읽고 자기 보고를 작성하는 독립 분석 세 개다. 같은 phase 안에서 새 제품 제공자와 소비자를 구현하지 않으므로 provides/uses는 모두 빈 목록이며 인위적인 S 항목을 만들지 않는다. report의 형식은 서비스 protocol.md가 직접 규정한다.
++phase 001의 독립 분석 세 개는 종료됐다. phase 002는 하나의 task가 변이 parent/child의 결과 처리·직접 소비자·관련 검증을 함께 수정한다. 병렬 제공자/소비자로 분리 배정하지 않으므로 provides/uses는 빈 목록이며 새 S 항목은 없다. 내부 결과 형식의 정본은 tests/support/mutation.py의 실제 정의와 도구 docstring이고 그 소비자는 같은 task에서 함께 검증한다. report의 형식은 서비스 protocol.md가 직접 규정한다.
+ 
+ 제품의 기존 공유 정의는 .claude/skills/do-math/scripts/이음새-정본.md 및 실제 타입·함수·스키마·포트 계약 시험을 원문으로 확인한다. 자연어로 새 인터페이스 사본을 만들지 않는다.
+ 

@@ -1,0 +1,434 @@
+{
+  "next": "002",
+  "decision": "phase 001의 세 task는 배정된 분석을 완료했고 manager의 report 검사도 모두 exit 0이다. 원래103개 항목의 연결, 문서 잔여의 고정 범위, 관문 준비의 실제 공백을 현재 계획에 통합한다. 제품 969파일·원자료 6개·engine 4개는 준비 기준과 바이트가 같고,14개 원보고의 실제 선택/결과 및 해시를 재확인했다. 이는 요구의 전수 의미 검토나 최종 관문 성공을 의미하지 않는다. B129는 3988 pass/1 fail/1 skip이며 B134의 28개 부분 성공으로 전체를 닫을 수 없다.\n\n다음은 work phase 002의 mutation-baseline 한 task다. 정상 child 결과 부재가 시험 t의 비실패로 축약돼 mutant killed/관문 통과가 될 수 있는 소스 경로를 확인했다. 문서 P01 제안도 유효하지만 이 공백은 최종 G6 증거 전체를 오판하게 할 수 있고 외부 의존 없이 작은 실제 child로 재현·수리할 수 있어 먼저 배정한다. A1~A5는 수정 전 재현, 증거의 양쪽 처리, 기존 지연 정상 기준/시간 정책 보존, 실제 parent/child 및 CLI/T3 소비 연결, 관련 검증/미러를 요구한다. manager는 제품을 수정하거나 연결 검증을 대신 실행하지 않았다.\n\n문서의 동명 필드·bootstrap 이름, T4 adapter 측정과 빈 T5, 실제 공급자/Job/Lean/예약/학술 및 읽기 한도는 context와 plan의 구체적 후속 책임으로 남겼다. G7 환경 확인을 장기 문서 마감 이후로 미루지 않는다. 변이17분할의7파일은 현 layer1/2/3 분모 밖으로 처분하되 T4/T5 또는 도구/전체 관문의 별도 책임을 유지한다. 과거109작업과15문서 후보를 고정 phase 목록으로 만들지 않는다.\n\ncontext의 원래 조건을 보존하면서 G2의61개 비연속 K ID를 명확히 하고 현재 결과를 C9~C11에 추가했다. common-docs.diff와 review.md에 변경 의미를 기록한다. seams는 단일 task 소유의 설명만 갱신했으며 S ID/외부 경계 계약 개정은 없다.18개 finding 모두 carry/resolve로 처분했고 누락/파손 report는 없다. 직전 phase는 work이고 G1~G8이 미충족이므로 completion=null이다. pending handoff 통과 후 동일 파일을 manager.json으로 게시하고 정확한 실행 기록·기억만 관리 커밋한다. 푸시는 하지 않는다.",
+  "reports": [
+    {
+      "task": "closure-map",
+      "state": "read",
+      "detail": "A1~A4의 분류·참조 작업을 complete로 인정한다. manager가 원래19/11/61/12 ID·원문과 현 기준 파일을 대조했다. 전수 의미 감사나 모든 과거 검토 완료로 인정하지 않는다. F1~F7을 각각 처분했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/manager-evidence/closure-map-report-check.stdout.txt",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "task": "document-closeout",
+      "state": "read",
+      "detail": "A1~A4의 현재 문서/producer 조사와 한정 후보 반환을 complete로 인정한다. 핵심 동명 필드·bootstrap 문제와 원보고14개를 대조했다. 실제 수리·동적 재현·13-C 완료는 남으며 F1~F5를 각각 처분했다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/manager-evidence/document-closeout-report-check.stdout.txt",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "task": "gate-readiness",
+      "state": "read",
+      "detail": "A1~A4의 실행 준비 분석을 complete로 인정한다. mutation/T4/T5 코드 경로, layer 모집단, 실제 원보고와 환경 출력이 준비 한계를 뒷받침한다. 제품 검사·실호출은 실행하지 않았으며 F1~F6을 각각 처분했다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/manager-evidence/gate-readiness-report-check.stdout.txt",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "001/closure-map/F1",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C9",
+        "run:plan.md"
+      ],
+      "reason": "입증된 지정 성질은 유지하고 최종 판본 연결로 넘긴다. R18·반환 소유권 등 구체적인 남김까지 해결됐다고 확대하지 않으며 과거 remaining만으로 재수리하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/code-readback.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/closure-map/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "B134까지의 닫힌 경계를 유지하고 남은 실제 producer 결속만 배정한다. 두 문서의 동명 recovery 필드 문제를 manager도 대조했다. phase002는 더 먼저 정상 기준 공백을 수리하며 문서 P01은 가까운 후속 단위로 남긴다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/closure-map/F3",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C9",
+        "run:plan.md",
+        "run:phases/002/tasks/mutation-baseline/objective.md"
+      ],
+      "reason": "PR23/B22만 기존 검토 완료 범위로 재사용한다. 나머지는 해당 구현의 diff·소비자·원보고 slice와 결합하며 002에는 PR01/B56의 mutation 부분만 포함했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "run:phases/001/tasks/closure-map/evidence/pr23-current-diff.txt",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt"
+      ]
+    },
+    {
+      "item": "001/closure-map/F4",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:plan.md"
+      ],
+      "reason": "현재 test_provider_native_storage.py 정의와 새 분류표의 교정 경로를 채택했다. 후속 objective는 이 경로를 사용하므로 낡은 표를 수정하거나 동일 시험을 새 파일에 복제할 필요가 없다. 1-C의 남은 의미 판정은 별도로 유지한다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt",
+        "repo:.claude/skills/do-math/scripts/tests/flows/test_provider_native_storage.py"
+      ]
+    },
+    {
+      "item": "001/closure-map/F5",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C9",
+        "run:plan.md"
+      ],
+      "reason": "evidence-catalog의 없는 임시 보고는 과거 counts 이상의 증거로 쓰지 않는다. 해당 PR slice에서 필요한 자료만 보존 위치 또는 현재 동일 반례로 대체 판단한다. 전체 임시 자료 복구를 선행시키지 않으며 소실 원인도 추측하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/source-comparison.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md"
+      ]
+    },
+    {
+      "item": "001/closure-map/F6",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:plan.md"
+      ],
+      "reason": "사용자 최신 시간 정책과 설계A20으로 해석을 확정했다. 원문 인용·보호 성질은 보존하되 SHARDS/저장대역 이름과 하드 timeout은 복원하지 않는다. 실제 임대·사건 시각은 그대로 별도 계약이다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:sources/user-decisions.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md"
+      ]
+    },
+    {
+      "item": "001/closure-map/F7",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C2",
+        "run:plan.md"
+      ],
+      "reason": "manager가 B129 원보고 선택3990과3988/1/1, successful=false 및 현재 소스차8개를 직접 대조했다. 부분 repair를 합산하지 않고 최종 고정판 G4/G5/G6을 별도로 배정한다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-일반통합-B129/report.json",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "item": "001/document-closeout/F1",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "운영-점검의 두 중첩 producer, doc_code의 checkpoint/continuation 결속과 core_engine.recover의 실패/null 분기를 원문에서 확인했다. P01에서 실제 입력·복원 파일·조건별 문서까지 수리하며 일반 재개의 B133 성질은 유지한다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+        "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+        "repo:.claude/skills/do-math/계약/운영-점검.md",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/document-closeout/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "operator_bootstrap의 이름 부재와 installation_root 전달을 직접 확인했다. N03의 해당 절만 현 인자 계약에 맞춰 교정하고 옛 전역 이름을 추가하지 않는다. 제품 동작 실패로 과장하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+        "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+        "run:phases/001/tasks/document-closeout/evidence/inventory-validation.json",
+        "repo:.claude/skills/do-math/계약/독립-운영.md",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/document-closeout/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C2",
+        "run:context.md#C10"
+      ],
+      "reason": "최근 실제 반환 경계의 유지 판정을 수용했다. manager는 B130~B134를 포함한 원보고14개의 SHA/선택-row와 B134 현 소스 일치를 재확인했다. 유지 판정은 F1의 잘못된 문서 소비를 포함하지 않으며 최종 전체 증거는 별도로 남는다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/history-verification.json",
+        "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+        "run:phases/001/tasks/document-closeout/evidence/baseline-observation.json"
+      ]
+    },
+    {
+      "item": "001/document-closeout/F4",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "고정 목록과 packet 후보를 채택하되15개 phase를 기계적으로 예약하지 않는다. 소비가 없는 instance는 제거 후보, 나머지4개는 근거 있는 소비로 구별한다. AST의 마지막 실제 소비자와 기존 owner/배열/누락 거부 시험을 확인한 뒤만 helper를 제거한다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+        "run:phases/001/tasks/document-closeout/evidence/followup-packets.json",
+        "run:phases/001/tasks/document-closeout/evidence/inventory-validation.json"
+      ]
+    },
+    {
+      "item": "001/document-closeout/F5",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "대상은 현재 프로젝트의 Codex/Claude 운전 read-call로 잡고 G7 환경/실호출 작업에서 host·판본·절단·단위를 특정하도록 했다. 역할 stdin과 구별하며 token을 임의 byte 상한으로 바꾸지 않는다. 지금은 13-C 미충족이고 권위 있는 근거를 얻지 못하면 필요한 외부 결정을 상신한다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/followup-packets.json",
+        "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+        "repo:.claude/skills/do-math/SKILL.md"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F1",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "디스크의 smoke test_*.py 0개와 runner 빈 선택 거부를 확인했다. 공식 T5에 최소 실제 역할 호출부터 연결하고 Job/pythonw·Lean/Mathlib·시험 예약·학술 연쇄를 한정 후속 단위로 검증한다. probe_cli 작은 schema 성공으로 대체하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/population-and-corpus.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-contracts.json",
+        "repo:.claude/skills/do-math/scripts/probe_cli.py",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "실제 버전 명령 출력과 corpus 판본을 구별해 수용했다. Codex 현 버전 녹화 및 Claude background 사건/파일/완료 조건의 재판정이 필요하다. 계정·모델·권한·컴파일·MCP는 확인되지 않았으며 가까운 G7 work에서 확인하고 부족하면 정확히 상신한다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/environment.json",
+        "run:phases/001/tasks/gate-readiness/evidence/population-and-corpus.json",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        "repo:.claude/skills/do-math/scripts/probe_cli.py",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "현재 LAYERS의123모듈과 설계5.5/6.3·mutation 필터를 대조해 adapter5와 runner2를 layer1/2/3 G6 변이 분모에서 제외하기로 결정했다. adapter는 T4 별도 분기보고/실계약/T5, runner는 도구시험·G4/G5의 실제 선택/종료 책임으로 남긴다. 최종 함수/rule/trivial/진입 manifest는 fresh T3 뒤 별도 확정하며7개를 실행 성공으로 세지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/population-and-corpus.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-contracts.json",
+        "repo:.claude/skills/do-math/scripts/do_math/layers.py",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F4",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md",
+        "run:phases/002/tasks/mutation-baseline/objective.md"
+      ],
+      "reason": "현재 mutation.py의 membership 정상 판정·CHILD_NO_RESULT 비대칭·loader 문자열 처리를 직접 읽었다. 최종 G6 증거 전체의 신뢰를 가리는 좁고 재현 가능한 공백이므로 phase002의 A1~A5로 우선 배정한다. 실제 child·정상 대조군과 공유 passed 소비 검증을 한 task에 포함하고 전체 변이를 재현 도구로 쓰지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-contracts.json",
+        "repo:.claude/skills/do-math/scripts/tests/support/mutation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F5",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C2",
+        "run:plan.md"
+      ],
+      "reason": "B129 원자료와 B134 부분 성공의 현 판본 일치를 직접 대조했다. B129 symlink1314 skip는 실제 환경 건너뜀으로 남겨 원문상 정당성을 최종 판단하고, 부분 성공을 G4 성공에 합산하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/historical-reports.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-before.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-after.json",
+        "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-일반통합-B129/execution.json",
+        "run:phases/001/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "item": "001/gate-readiness/F6",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "T3 조건에서만 Measurement를 만드는 runner와 설계5.5의 adapter 별도 보고를 대조했다. T4 전용 측정/보고 책임을 후속 work에 남기며 해당 수리는 phase002 writes에 있는 runner를 고칠 수 있다는 이유로 끼워 넣지 않는다. T4 통과를 실제 T5 공급자/예약 성공으로 확대하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/source-contracts.json",
+        "repo:.claude/skills/do-math/scripts/tests/support/port_contracts/scheduler.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_operator_schedule_adapter.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_provider_cli_surface.py",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C1",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C1"
+      ],
+      "reason": "G2의 잘못 읽힐 수 있는 연속 K-01~K-61 표기를 원래 비연속 K ID의61개로 명확히 했다. 원래 ID·요구의 추가/삭제는 없다.",
+      "evidence": [
+        "run:sources/requirements-index.json",
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/manager-evidence/verification.json",
+        "run:phases/001/manager-evidence/common-docs-review.json",
+        "run:phases/001/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "시작 당시 이력은 유지하고001의 분석 완료·manager가 대조한979파일과14원보고 범위 및 부분 성공의 한계를 추가했다.",
+      "evidence": [
+        "run:phases/001/manager-evidence/verification.json",
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/gate-readiness/report.json"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "001 독립 분석 종료와002 단일 수리 배정을 현재형으로 반영했다. 공유 코드·검증 환경 충돌 때문에 병렬 task를 두지 않으며 기존 worker3/순차 검사는 보존한다.",
+      "evidence": [
+        "run:phases/002/phase.json",
+        "run:phases/002/tasks/mutation-baseline/objective.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "준비 당시 미기동 관찰과 현재 task 보고 제출을 구별했다. 서비스 Codex 수행을 제품 공급자 경계 성공으로 오인하지 않게 하고 기존 모델 기본값 정책은 유지한다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/gate-readiness/report.json"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "add",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "요구별 상태 진입점·유지 성질·실제 이전 검토 범위·없는 원보고·현 경로·역사 수단의 현행 해석을 공용 맥락에 추가했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/report.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md",
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "add",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "문서 조사에서 확정한 고정 범위·잘못된 producer 결속·옛 이름·유한 후보·host/단위 미정을 추가했다.",
+      "evidence": [
+        "run:phases/001/tasks/document-closeout/report.json",
+        "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+        "run:phases/001/manager-evidence/source-excerpts.json"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "add",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "정상 기준 수리 우선순위,7파일 변이 분모 제외/별도 검증 책임,T4/T5 공백과 실제 환경 미확인을 추가했다.",
+      "evidence": [
+        "run:phases/001/tasks/gate-readiness/report.json",
+        "run:phases/001/tasks/gate-readiness/evidence/population-and-corpus.json",
+        "run:phases/001/manager-evidence/source-excerpts.json",
+        "run:phases/002/tasks/mutation-baseline/objective.md"
+      ]
+    }
+  ],
+  "plan_update": "완료된 첫 분석 배정과 첫 manager의 미래 판단 절을001 결과/현재 분류와002 단일 수리로 교체했다. 확인된 정상 기준 공백을 우선하고PR01 mutation slice를 같은 작업에 합쳤다. docP01/N03·나머지 유한 문서 후보·G7 공급자 조건/실연쇄/L01·T4 별도 측정·원문 의미 질문을 완료 조건과 선행 관계로 남겼다. 기존 네 구현 묶음·근거 재사용·중복 감사 억제·최종 고정판G4→G5→G6 및G7·수정 없는G8 review 순서는 보존했다. 변이7파일 제외와 별도 책임 및fresh T3 뒤 함수 모집단 확정을 추가했다.",
+  "seam_updates": [],
+  "completion": null
+}

@@ -1,6 +1,6 @@
 # 현재 경계 계약의 사용
 
-첫 phase는 기존 자료를 읽고 자기 보고를 작성하는 독립 분석 세 개다. 같은 phase 안에서 새 제품 제공자와 소비자를 구현하지 않으므로 provides/uses는 모두 빈 목록이며 인위적인 S 항목을 만들지 않는다. report의 형식은 서비스 protocol.md가 직접 규정한다.
+phase 001의 독립 분석 세 개는 종료됐다. phase 002는 하나의 task가 변이 parent/child의 결과 처리·직접 소비자·관련 검증을 함께 수정한다. 병렬 제공자/소비자로 분리 배정하지 않으므로 provides/uses는 빈 목록이며 새 S 항목은 없다. 내부 결과 형식의 정본은 tests/support/mutation.py의 실제 정의와 도구 docstring이고 그 소비자는 같은 task에서 함께 검증한다. report의 형식은 서비스 protocol.md가 직접 규정한다.
 
 제품의 기존 공유 정의는 .claude/skills/do-math/scripts/이음새-정본.md 및 실제 타입·함수·스키마·포트 계약 시험을 원문으로 확인한다. 자연어로 새 인터페이스 사본을 만들지 않는다.
 

@@ -1,0 +1,165 @@
+{
+  "observed_at": "2026-10-13T11:58:10.782611+00:00",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "sys_executable": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "sys_monitoring_available": true,
+  "which": {
+    "python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+    "pythonw": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.EXE",
+    "git": "C:\\Program Files\\Git\\cmd\\git.EXE",
+    "claude": "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+    "codex": "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+    "powershell": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.EXE",
+    "pwsh": "C:\\Program Files\\PowerShell\\7\\pwsh.EXE",
+    "lean": null,
+    "lake": null,
+    "elan": null
+  },
+  "paths": [
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\lean-toolchain",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\lake-manifest.json",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\lakefile.toml",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\.do-math-ready",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\.lake\\packages\\mathlib\\Mathlib.lean",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\.skill-workspace\\do-math-toolchains\\mathlib-4.32.0\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib.olean",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\services\\scholarly-mcp\\server.py",
+      "exists": true
+    },
+    {
+      "path": "C:\\math\\services\\scholarly-mcp\\.venv\\Scripts\\python.exe",
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\pythonw.exe",
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe",
+      "exists": true
+    }
+  ],
+  "versions": [
+    {
+      "argv": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "Python 3.12.10\r\n",
+      "stderr": "",
+      "seconds": 0.079
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "git version 2.50.0.windows.2\n",
+      "stderr": "",
+      "seconds": 0.125
+    },
+    {
+      "argv": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "codex-cli 0.162.1\n",
+      "stderr": "",
+      "seconds": 0.109
+    },
+    {
+      "argv": [
+        "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "2.1.289 (Claude Code)\n",
+      "stderr": "",
+      "seconds": 0.297
+    },
+    {
+      "argv": [
+        "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)\n",
+      "stderr": "",
+      "seconds": 2.234
+    },
+    {
+      "argv": [
+        "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+        "--version"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "Lake version 5.0.0-src+8c9756b (Lean version 4.32.0)\n",
+      "stderr": "",
+      "seconds": 0.703
+    },
+    {
+      "argv": [
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.EXE",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "$PSVersionTable.PSVersion.ToString()"
+      ],
+      "cwd": "C:\\math",
+      "status": "executed",
+      "exit_code": 0,
+      "stdout": "5.1.22621.6133\r\n",
+      "stderr": "",
+      "seconds": 0.297
+    }
+  ],
+  "test_packages": {
+    "coverage": "7.16.2",
+    "hypothesis": "6.168.3",
+    "jsonschema": "4.26.0"
+  },
+  "lean_test_override_present": false,
+  "mathlib_toolchain": "leanprover/lean4:v4.32.0\n",
+  "credential_access": "No credential files, tokens, authentication state or general environment dump were read. Live calls, downloads, compilation and task registration were not attempted."
+}

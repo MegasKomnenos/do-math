@@ -2,3 +2,6 @@ sources/*.json -text -whitespace
 phases/**/report.json -text -whitespace
 phases/**/manager.json -text -whitespace
 phases/**/evidence/*.json -text -whitespace
+# Preserve raw output, patches and evidence scripts with their inspected bytes.
+phases/**/evidence/** -text -whitespace
+phases/**/manager-evidence/** -text -whitespace

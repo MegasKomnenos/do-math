@@ -1,0 +1,110 @@
+{
+  "original_reports": 14,
+  "hashes_all_match": true,
+  "selected_rows_all_match": true,
+  "B115_helpers": [
+    {
+      "function": "producer_nodes",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        108,
+        139
+      ]
+    },
+    {
+      "function": "produced_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        142,
+        199
+      ]
+    },
+    {
+      "function": "written_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        202,
+        220
+      ]
+    },
+    {
+      "function": "consumed_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        224,
+        239
+      ]
+    },
+    {
+      "function": "command_issues",
+      "same_ast_as_B115_review": false,
+      "current_lines": [
+        72,
+        105
+      ]
+    },
+    {
+      "function": "documented_policies",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        563,
+        565
+      ]
+    },
+    {
+      "function": "policy_issues",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        559,
+        560
+      ]
+    }
+  ],
+  "removed_assertions": [
+    {
+      "id": "B130",
+      "symbol": "test_query_family_names_are_the_condition_grammar_names",
+      "expressions": [
+        "self.assertEqual(_query_record(row)['family'], name)"
+      ]
+    },
+    {
+      "id": "B130",
+      "symbol": "test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+      "expressions": [
+        "self.assertGreaterEqual(body(queried)['total'], 1)"
+      ]
+    },
+    {
+      "id": "B131",
+      "symbol": "test_original_request_is_preserved_separately_from_the_mathematical_goal",
+      "expressions": []
+    },
+    {
+      "id": "B131",
+      "symbol": "test_profile_selection_respects_the_role_floor_without_model_execution",
+      "expressions": []
+    },
+    {
+      "id": "B131",
+      "symbol": "test_public_check_json_discovery_and_fixed_snapshot",
+      "expressions": []
+    },
+    {
+      "id": "B132",
+      "symbol": "test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+      "expressions": []
+    },
+    {
+      "id": "B133",
+      "symbol": "test_multihop_restores_latest_file_and_stage_evidence",
+      "expressions": []
+    },
+    {
+      "id": "B134",
+      "symbol": "test_candidate_population_is_compact_profile_bound_and_reproducible",
+      "expressions": []
+    }
+  ],
+  "B134_current_source_differences": []
+}

@@ -1,0 +1,23 @@
+{
+  "python": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+  "checks": [
+    {
+      "command": "python -B services/continuous-development/check.py phase C:\\math C:\\math\\docs\\do-math\\continuous-development-2026-10-13 002",
+      "exit_code": 0,
+      "output": "PASS phase 002\r\n",
+      "wall_time_seconds": 0.0000052
+    },
+    {
+      "command": "python -B 기억/scripts/validate_memory_index.py",
+      "exit_code": 0,
+      "output": "[validate_memory_index] 정합: 파일 570개 = 색인 210 + 아카이브 360줄\r\n",
+      "wall_time_seconds": 0.0000029
+    },
+    {
+      "command": "git diff --check -- docs/do-math/continuous-development-2026-10-13 기억/색인.md",
+      "exit_code": 0,
+      "output": "warning: in the working copy of 'docs/do-math/continuous-development-2026-10-13/plan.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/do-math/continuous-development-2026-10-13/seams.md', LF will be replaced by CRLF the next time Git touches it\n",
+      "wall_time_seconds": 0.6709645
+    }
+  ]
+}

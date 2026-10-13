@@ -1,0 +1,205 @@
+{
+  "status": "complete",
+  "narrative": "배정된 분류 작업을 완료했다. 제품·시험·공용 context/plan/seams·기존 작업판·Git 상태를 수정하지 않고 자기 evidence와 report만 작성했다. 다른 phase 001 task의 중간 결과를 읽거나 기다리지 않았다. 원래 1단계 19개, 2단계 11개, 필수 보존 61개, P2 12개를 원문 및 기존 표와 전건 대응했고, 109개 추적 항목을 원래 의무 또는 별도 설계/관문 G에 연결했다. 서로 다른 모집단을 합산한 완료율은 만들지 않았다.\n\nrequirement-state.json은 항목별 원문, 현재 해시/파일/시험 위치, 역사 주장과 실제 확인 수준, 적용 한계, 남김, 종료 질문과 다음 행동을 담는다. 1-D/11-A/11-B는 기존 검토된 성질을 최종 판본 연결로 분류했고, 13-C의 남은 AST 반환 추정 교체는 기존 반례가 있는 검사기 수리로 분류했다. 나머지는 구체적인 의미 질문 또는 근거 부족으로 남겼다. 1-D/11-A 및 PR23의 핵심 현재 경로는 본문을 직접 대조했으나, 이 task에서 103개 성질의 전수 코드 의미 감사를 수행했다고 주장하지 않는다. 과거 static/dynamic 분류, 파일 존재, 해시 일치를 현재 의미 충족으로 승격하지 않았다.\n\n원자료 6·실행기 4·제품 969개는 준비 baseline과 바이트가 같다. 현재 HEAD는 77b8f132c056bcb222e7b6ee431742aa4dc1f27e이다. 기록된 원보고 100개의 SHA가 일치했고, 필요한 39개는 실제 선택/결과/판본을 읽었다. 반면 임시 원보고 246개 위치 레코드(236개 고유 경로)는 현재 없으며, 보드의 counts와 직접 읽은 원보고를 분리했다. PR23/B107~B109 완료, PR06/B22 부분 완료, 나머지 23영역 미검토를 구별하여 같은 구현 파일을 읽는 후속 작업과 결합할 review slice를 제시했다. B115 문서 검토의 유지/교체 판정 및 B116/B117의 완료 범위도 재사용했다.\n\n독립 완결성 검사는 19/11/61/12의 정확 집합·중복 없음·원문 일치, 109개 연결과 비순환 선행 관계, 25영역/B01~B109 대응, 현재 파일 참조 1093개와 기록 해시 3541건을 확인했다. R05/R06의 없어진 시험 모듈 경로는 현재 정의와 B129 실제 ID로 교정했다. 생성기 초기 질문 목록의 K-24 누락은 실패 원출력을 보존하고 보완했으며 최종 검사에서 전건 대응을 확인했다. 제품 시험·T3·변이·공급자 호출은 배정대로 실행하지 않았다.\n\n가까운 다음 선택은 document-closeout의 한정 반환 교체 packet과 gate-readiness의 실제 외부 조건을 manager가 결합하는 것이다. 의미 질문/필요 수리/실경계 자료 취득 뒤 최종 G4 전체 일반→G5 fresh T3→G6 현재 함수 전건 변이·정상 기준 및 G7 연결, 제품 변경 없는 G8 review로 이어진다. B129는 3990개 실행 완결이지만 3988 pass·1 fail·1 skip, successful=false이며 이후 부분 수리를 더해 전체 성공으로 만들지 않는다. 이 report의 complete는 A1~A4 분류 작업 완료이고 G1/G2 또는 프로젝트 전체 완료 선언이 아니다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "원래 표와 index의 19/11/61/12 ID 집합을 각각 정확히 한 번 대응하고 원문 문자열을 보존했다. 30개 의무 인용은 현재 결함-범주.md에도 그대로 존재한다. 비연속 K ID, 원래 P2 12개와 추가 KD를 구별했다. timeout·SHARDS·저장 대역의 역사 수단과 현행 계약, 1-A의 A20 필수+선택 역방향 확대를 항목별로 명시했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt",
+        "run:sources/requirements-index.json",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "모든 항목에 검토 수준을 밝힌 성질, 출처/해시, 적용 한계, 남김, 생산자·소비자·입력·단언을 가르는 질문과 다음 행동을 작성했다. 109개 기존 추적 항목의 원래 requirement_ids를 보존하고 보조 설계/관문을 G에 연결했다. 고립/중복 task는 없으며 같은 의무를 나눈 작업, 문서 교체와 이름/읽기 질문, 중간 통합과 최종 성공 관문, 변이 계획/분할/결합의 겹침을 표시했다. 미검토 K/P2 의미를 완료로 승격하지 않았다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/code-readback.json",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "25영역 매핑과 실제 리뷰 성적을 분리했다. PR23의 B107~B109 유지 판정과 원보고/red를 재사용하고 실제 git diff 및 현재 핵심 caller/소비를 한정 대조했다. PR06은 B22 유지 판정까지만 완료로 인정했다. B115 문서 검사기 기능별 유지/교체/제거 판정과 후속 B119~B134 완료 범위를 연결했다. 나머지는 각 B의 commit/hunk·현재 파일·원보고 selector와 끝나는 질문을 지정하고 겹치는 요구 작업에 함께 배정할 관계를 제공했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "run:phases/001/tasks/closure-map/evidence/pr23-current-diff.txt",
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "문서 반환 교체, 조기 외부 조건 판단, 한 종료 질문과 관련 PR slice 결합, 고정판 최종 일반→fresh T3→전체 함수 변이의 선행 관계를 제시했다. 독립 read-only 검사 결과 exit 0: 모든 원래 ID 누락/중복 없음, 파일 참조 유효, 판본 일치, 109 task 비순환 연결, 25영역 전건 대응. 낡은 입력 경로 2곳/시험 모듈 1곳을 실제 현재 위치로 해소했다. G1/G2 전체 충족은 선언하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md",
+        "run:phases/001/tasks/closure-map/evidence/validate_mapping.py",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt",
+        "run:phases/001/tasks/closure-map/evidence/source-comparison.json"
+      ]
+    }
+  ],
+  "changes": [],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "decision",
+      "detail": "1-D/11-A/11-B의 검토된 성질은 재구현하지 않고 최종 판본 증거에 연결한다. R17 및 R07의 이미 끝난 부분, DOC-RETURN-PURE/CLI와 ROLE의 B132~B134 완료 부분도 유지한다. 단 9-A의 상위 implementation_reviewed는 R18의 현행 호출 전건 질문까지 자동 종료하지 않는다. K-27/B36, K-38·K-72/B37, K-75/B36·B37·B80, P2 A-31/B21·B107~B109, B-32/B72~B73은 후속 기록을 반영하지 않은 역사 공백으로 재수리를 배정하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/code-readback.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G2",
+        "run:plan.md"
+      ],
+      "next_action": "manager는 완료된 부분을 최종 증거 대기로 유지하고, 분류표의 항목별 종료 질문을 답한 뒤 실제로 빠진 입력/단언에만 수리를 배정한다."
+    },
+    {
+      "id": "F2",
+      "kind": "issue",
+      "detail": "13-C 상위 remaining은 B122까지 서술하지만 세부 기록은 B134까지 진행했다. PURE/CLI/ROLE 일부를 다시 열면 중복 구현이 된다. B115 J3/J4가 재현한 삭제/재대입 거짓 통과와 dict 구문 의존은 남은 AST 반환 결속의 교체 근거다. 이는 제품 반환값 자체의 결함 판정이 아니며 정책 이름/의미 및 실제 읽기 한도 질문과 구별해야 한다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "run:plan.md"
+      ],
+      "next_action": "document-closeout의 실제 소유자/문서/기존 반환 시험 목록을 검수하여 남은 _context·REVIEW·TRUST 중 한정된 다음 packet만 배정하고 완료된 범위를 제외한다."
+    },
+    {
+      "id": "F3",
+      "kind": "fact",
+      "detail": "prior_review는 25영역/B01~B109 매핑이 완비됐지만 실제 상태는 PR23 완료, PR06(B22) 부분 완료, 나머지 23영역 미검토다. PR23의 111/113/128 통과와 선행 실패 원보고를 실제 파일로 확인했고 핵심 현재 코드를 제한적으로 대조했다. 전체 mapping을 실제 독립 검토 완료로 해석할 수 없다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "run:phases/001/tasks/closure-map/evidence/pr23-current-diff.txt",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt"
+      ],
+      "affects": [
+        "run:context.md#G2",
+        "run:plan.md"
+      ],
+      "next_action": "각 review_units의 coassign_with_tracking_tasks와 review_slices를 다음 objective 입력에 결합한다. PR23/B22의 완료 범위는 재사용하고 전체 25영역 리뷰를 모든 구현의 선행 장벽으로 두지 않는다."
+    },
+    {
+      "id": "F4",
+      "kind": "issue",
+      "detail": "R05/R06과 1-C의 역사 binding에 있는 flows/test_provider_close_native_storage.py는 없다. 현재는 flows/test_provider_native_storage.py의 NativeStorageTests.test_native_numbers_and_public_blocks_survive_actual_runner_and_repository이며 실제 정의와 B129 passed ID가 대응한다. 이번 evidence의 입력/시험 연결을 교정했고 기존 작업판은 수정하지 않았다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt",
+        "repo:.claude/skills/do-math/scripts/tests/flows/test_provider_native_storage.py"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:plan.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json"
+      ],
+      "next_action": "1-C/R05/R06의 후속 objective에는 현재 경로와 test ID를 사용한다. 같은 시험을 새 모듈로 중복 구현하지 않는다."
+    },
+    {
+      "id": "F5",
+      "kind": "fact",
+      "detail": "보드의 통합 기록에서 추출한 외부 임시 원보고 246개 위치 레코드(236개 고유 경로)는 현재 파일이 없다. 저장소 원보고 100개의 해시는 확인됐고 그 중 39개는 결과/선택/판본까지 읽었다. 없는 임시 보고의 counts는 보드의 역사 주장으로만 표시했다. baseline 파일 해시 일치가 외부 원보고의 존속이나 의미 증명을 보장하지 않는다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/source-comparison.json",
+        "run:phases/001/tasks/closure-map/evidence/closure-decisions.md"
+      ],
+      "affects": [
+        "run:context.md#G2",
+        "run:plan.md"
+      ],
+      "next_action": "해당 PR slice가 필요해졌을 때 catalog의 B/selector로 필요한 원보고만 보존 자료에서 회수한다. 회수할 수 없으면 현재 계약·diff·동일 반례의 대체 검증 필요를 명시한다. 보드 숫자로 과거 red/green을 인증하거나 236개 복구를 무조건 일괄 선행시키지 않는다."
+    },
+    {
+      "id": "F6",
+      "kind": "decision",
+      "detail": "역사 수단과 현행 계약을 분리했다. 1-A는 원문 필수 필드 인용을 보존하되 설계 A20의 필수+선택 필드 역방향을 적용한다. K-01/02/68의 SHARDS, K-36/37의 저장 대역 이름 자체를 복원하지 않는다. K-10/11/28/46/66·6-A·A-27의 timeout 관련 역사 문구는 최신 소프트 시간 정책과 현재 사건/국면/임대 의미로 재판정한다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+        "run:sources/user-decisions.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G2",
+        "run:context.md#G3"
+      ],
+      "next_action": "다음 objective의 입력축과 합격 기준에 항목별 meaning_resolution을 적용한다. 폐기된 구현이나 시간 강제종료를 복원하지 않으며 현재 계약이 요구한 보호 성질은 줄이지 않는다."
+    },
+    {
+      "id": "F7",
+      "kind": "fact",
+      "detail": "B129 원보고는 selected 3990, 3988 passed·1 failed·1 skipped, complete=true/successful=false다. 이후 repair 2개 통과를 합산할 수 없다. B129와 현재 사이 시험/지원 파일 8개가 달라졌으므로 같은 최종 판본 전체 성공 근거도 아니다. INTEGRATION-CURRENT의 완료와 FINAL-ORDINARY의 성공 조건을 별도로 연결했다.",
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json",
+        "run:phases/001/tasks/closure-map/evidence/tracking-state.json",
+        "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-일반통합-B129/report.json"
+      ],
+      "affects": [
+        "run:context.md#G4",
+        "run:context.md#G5",
+        "run:context.md#G6",
+        "run:context.md#G7",
+        "run:plan.md"
+      ],
+      "next_action": "의미 질문·필요 수리·실경계 자료를 마친 고정판에서 기본 전체 일반 실행, fresh T3, 현재 함수 모집단 변이/정상 기준을 완결한다. 명령·환경의 구체적 실행 준비는 gate-readiness 결과와 결합한다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "\"C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe\" -B docs/do-math/continuous-development-2026-10-13/phases/001/tasks/closure-map/evidence/build_mapping.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/build-attempt-1.txt"
+      ],
+      "detail": "첫 evidence 생성 시 수동 질문 사전에 K-24가 빠져 KeyError로 종료했다. 원출력을 보존했고 해당 질문을 추가했다. 제품/시험 실행의 실패가 아니다."
+    },
+    {
+      "command": "\"C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe\" -B docs/do-math/continuous-development-2026-10-13/phases/001/tasks/closure-map/evidence/build_mapping.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/build-output.txt",
+        "run:phases/001/tasks/closure-map/evidence/source-comparison.json",
+        "run:phases/001/tasks/closure-map/evidence/evidence-catalog.json"
+      ],
+      "detail": "최종 생성 실행은 원자료를 읽어 103개 원문 항목, 109개 tracking task, 25개 review 영역을 작성했다. baseline 979개 변화 0, 통합 기록 134개, 저장소 원보고 해시 100개, 원보고 결과 선택 읽기 39개. 실제 git show/diff 결과와 제한된 현재 본문 발췌도 보존했다. 파일 존재/해시를 의미 충족으로 해석하지 않는다."
+    },
+    {
+      "command": "\"C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe\" -B docs/do-math/continuous-development-2026-10-13/phases/001/tasks/closure-map/evidence/validate_mapping.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/001/tasks/closure-map/evidence/validation-output.txt",
+        "run:phases/001/tasks/closure-map/evidence/validate_mapping.py"
+      ],
+      "detail": "ID 정확 집합·원문 보존·중복 없음, 30의무 원문 파일 대조, 109추적/설계-G 연결·고립 없음·비순환 선행, 25영역/B01~B109 전건 대응, 현재 파일 참조1093개·해시3541건, baseline979개 판본 및 R05/R06 현재 정의/B129 ID 교정을 확인했다. 역사 미해결 task 입력/시험 모듈 locator는 각각0개다. 의미 충족 판정이나 제품 시험을 수행한 검사는 아니다."
+    }
+  ]
+}

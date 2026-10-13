@@ -1,0 +1,1573 @@
+{
+  "reports": [
+    {
+      "id": "B130",
+      "stage": "red",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-조회-실제반환/red.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed",
+          "seconds": 1.547000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 77, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "cd3f4bf759e018dcc48820eb7943f820daadfc7dbd00816d4e1b4bfc48af456e",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "6d3a2592bb571dd5d8348e79f4ac3204523b4ff995f491c9400eaaf368af04f0",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "723a37b8e3e79f72bf82c6d266d7d90b5252fb088fd822a9f25d2b65688bf7fb",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "1fce80d8504c3797a7bf383542e071398d0f92fa15392e87e051acaf93ab7a2a",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "3ac9451aa5e6a4b4bd6ce2dca6901aa2f12e55c6dc6d34a0fb22a6251912eb82",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "a5c1f5e37c488fd3f5021fccc76da5cf11e0777e26678aaf1469b15e30c58ded",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B130",
+      "stage": "green",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-조회-실제반환/green.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 22
+      },
+      "selected": 22,
+      "row_count": 22,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 22
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "4d598f2d8e98ce0a6f5e1dd335346822eb6d61a0becc08a64509f2c9da597e1e",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "6d3a2592bb571dd5d8348e79f4ac3204523b4ff995f491c9400eaaf368af04f0",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "c5a619477712fbe324d5633c68102922665d37151ccd76988c838586ca956efd",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "605de940e308fff448a92f15432b6f63c41b68e237ac795325e296ebfb65783c",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "b4ba389ccafd1108a0cedbdc8a7baca0e3bc193ec4393ba83b92026236cbb8e7",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "4cfaef5d725642b9ce4d994df9474d36888f50cb6dda1e88989ea7bfa09b16ad",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B131",
+      "stage": "red",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-CLI-실제반환/red.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed",
+          "seconds": 0.5939999999245629,
+          "details": [
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='init_result', text='`init_result.instance_id`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='init_result', text='`result.instance_id` <!-- do-math fields: result=init_result -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='scheduling_result', text='`scheduling_result.operator_schedule`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='scheduling_result', text='`result.operator_schedule` <!-- do-math fields: result=scheduling_result -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='selection_result', text='`selection_result.selection.profile_ref`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='selection_result', text='`result.selection.profile_ref` <!-- do-math fields: result=selection_result -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 97, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "4d598f2d8e98ce0a6f5e1dd335346822eb6d61a0becc08a64509f2c9da597e1e",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "c0cb030999b0bc8154e6b11f9d477dab358a64f0621a40e1c4bd2a1322cf2ee8",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "c5a619477712fbe324d5633c68102922665d37151ccd76988c838586ca956efd",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "605de940e308fff448a92f15432b6f63c41b68e237ac795325e296ebfb65783c",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "b4ba389ccafd1108a0cedbdc8a7baca0e3bc193ec4393ba83b92026236cbb8e7",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "4cfaef5d725642b9ce4d994df9474d36888f50cb6dda1e88989ea7bfa09b16ad",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B131",
+      "stage": "green",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-CLI-실제반환/green.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 25
+      },
+      "selected": 25,
+      "row_count": 25,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 25
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "427bd49b1e397a1e8afaec355509e4fbb93422cc129809ebebae43ca6a86f4b0",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "aafff603b1bb98d1c0d61a6bd86e2b5032fa42de922d3733a4ff12c7adb113e4",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "109b89e1b611ecbca349ec1ec8681ae39d361c3e00121cb9aeaa79972d8bafa9",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "5e5ce778139921eff2c06946c1941442149f57ed2d247a8d9c60676d2054ef2b",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "3180de19d51244aa2662010fa73963ba79d74e1b5164a5924501186c22b74f4b",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "1fb2743c107a70289480bb89ebff3a629b8b2a481b7aec8d9cc20ab254172209",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B132",
+      "stage": "red",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "failed",
+          "seconds": 0.48499999998603016,
+          "details": [
+            "test_cli_result_branches_and_incremental_manifest_fields_remain_separate (structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate) (owner='input_manifest')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 283, in test_cli_result_branches_and_incremental_manifest_fields_remain_separate\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_cli_result_branches_and_incremental_manifest_fields_remain_separate (structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate) (owner='prompt')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 283, in test_cli_result_branches_and_incremental_manifest_fields_remain_separate\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "427bd49b1e397a1e8afaec355509e4fbb93422cc129809ebebae43ca6a86f4b0",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "91cc2b299b35898b3304ca2bfab8b39781b2f3d3865e0ac2424b5420f215aa05",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "109b89e1b611ecbca349ec1ec8681ae39d361c3e00121cb9aeaa79972d8bafa9",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "5e5ce778139921eff2c06946c1941442149f57ed2d247a8d9c60676d2054ef2b",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "3180de19d51244aa2662010fa73963ba79d74e1b5164a5924501186c22b74f4b",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "1fb2743c107a70289480bb89ebff3a629b8b2a481b7aec8d9cc20ab254172209",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B132",
+      "stage": "green",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 26
+      },
+      "selected": 26,
+      "row_count": 26,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 26
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "32d64a9819e0b0909d4b66a1ea0826cd3e23c4e64aff645f79119ff5d96b6e6f",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "9c234b2228a17ea78c97bd7b2257cd4b07585bc525d8699da2efba16fa3f6a96",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "42c3ebce305fb6ec4fc031ce615a24787994c2d6c1080055e7ec3f8916e59ef6",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "b8d160c65cfff6893662d6c0e2c881cb1581bc9c0a1571c97208162003a65461",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "b0097486c31a63c9827d732475a75f7aca8c6353e8f2232f3dd052a69755e85d",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "5371ec7335ad2fd4126fb22ab58127a3eb2b00f905bfbd1d54cfd47b3719e18c",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "21ff96a03547cfa8960a04bba4a6a7e70e5ee05513dd25595a1721b177518997",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B132",
+      "stage": "red-documents",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red-documents.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "failed",
+          "seconds": 1.4839999999385327,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 347, in test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields\n    with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input manifest'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "32d64a9819e0b0909d4b66a1ea0826cd3e23c4e64aff645f79119ff5d96b6e6f",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "c96717a140566b04ee7f9d030b59743e8c09b970d35915b7f9adb434fa62ee9d",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "42c3ebce305fb6ec4fc031ce615a24787994c2d6c1080055e7ec3f8916e59ef6",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "b8d160c65cfff6893662d6c0e2c881cb1581bc9c0a1571c97208162003a65461",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "b0097486c31a63c9827d732475a75f7aca8c6353e8f2232f3dd052a69755e85d",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "5371ec7335ad2fd4126fb22ab58127a3eb2b00f905bfbd1d54cfd47b3719e18c",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "21ff96a03547cfa8960a04bba4a6a7e70e5ee05513dd25595a1721b177518997",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B132",
+      "stage": "green-documents",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green-documents.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 26
+      },
+      "selected": 26,
+      "row_count": 26,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 26
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "d367dcc290db6ebea23b7436e498a368e62169b0c764f5ccce3525d721021727",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "4c8f43810acd003d38ed5248713328b5ba97bdb30784cb38ed29cb1170a94b4c",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "9dba4fb719760062f51a0a2c9610559acc649971a237cddddf075fd382896728",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "7aaeabcf396fef33479f55bf63167e806c617182571fc7cde4656e87d78c33ec",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "56be9435a5183a69e53984398bb9a26a2d2dcc521cfd4ae11062be76a13ab035",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "e722e5c929d9d26ce273b6bd5a4791d68d002b147139b5dc3ff34d6ef0195474",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "c82c26620477aa4aa4ce1558731c752095e30f6bc4260cd893a94eff6b268e0f",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B133",
+      "stage": "red",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/red.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed",
+          "seconds": 1.8429999999934807,
+          "details": [
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='result_source', text='`result_source.local_path`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='result_source', text='`result.local_path` <!-- do-math fields: result=result_source -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='rejected_response', text='`rejected_response.local_path`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='rejected_response', text='`result.local_path` <!-- do-math fields: result=rejected_response -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='previous_output_files', text='`previous_output_files[].local_path`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (owner='previous_output_files', text='`result[].local_path` <!-- do-math fields: result=previous_output_files -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 57, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "d367dcc290db6ebea23b7436e498a368e62169b0c764f5ccce3525d721021727",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "c90f1b85d240c62efebb6d1ade83607fd6c2a70d15b8f68398705b77764c69ea",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "9dba4fb719760062f51a0a2c9610559acc649971a237cddddf075fd382896728",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "7aaeabcf396fef33479f55bf63167e806c617182571fc7cde4656e87d78c33ec",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "56be9435a5183a69e53984398bb9a26a2d2dcc521cfd4ae11062be76a13ab035",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "e722e5c929d9d26ce273b6bd5a4791d68d002b147139b5dc3ff34d6ef0195474",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "c82c26620477aa4aa4ce1558731c752095e30f6bc4260cd893a94eff6b268e0f",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B133",
+      "stage": "green",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/green.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 28
+      },
+      "selected": 28,
+      "row_count": 28,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 28
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "97704f27a11cb39eb52c5ed0a8696abdbda948d77505f1ceb7887353cd9882df",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "590cb89e83124bc5792524418d0851061fff1e318310b275f3c23bfc7cf5c577",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "1d81346a9dac5f0e507e1f78ecdef3d8fc7416d7ca7346a03583017a7e9fab8b",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "5f981d43abfa2d6fc5004e9bd8e7337b9847f2ecef840b505cc2d0d7b1c9f335",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "fb54607a7f0a196022d35ee23866f762cc98fb9343f1bc8b19a24a7495ab2acf",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "604ecfb12da8c2857060b668a1f1afc12ddc55ef4fe4b257f42c32ba73da02a9",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "c0e75e5facfb2ed4317ee2b83426c76ddc974a10693aeaa86785878892e68dac",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B134",
+      "stage": "red",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/red.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "row_count": 1,
+      "selected_rows_match": true,
+      "outcomes": {
+        "failed": 1
+      },
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed",
+          "seconds": 2.6410000000614673,
+          "details": [
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (text='`profile_selection.allowed_profiles`')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 54, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, 'profile_selection fields require the actual'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) (text='`result.allowed_profiles` <!-- do-math fields: result=profile_selection -->')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 54, in test_documented_scoped_fields_belong_to_their_actual_schema\n    with self.assertRaisesRegex(ValueError, 'profile_selection fields require the actual'):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ],
+      "changed_during_run": [],
+      "current_source_differences": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+          "recorded": "97704f27a11cb39eb52c5ed0a8696abdbda948d77505f1ceb7887353cd9882df",
+          "current": "c73cc9a86a6b5aa45d808e16a9f0c487af66550f0fbff5a41c295b29c0f94fbd"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+          "recorded": "4af5280add3f9e561f796e4c5f127d6037bc18fe248305cbac1397412b62dfa3",
+          "current": "e0b09f0062ae9c9900b8224c15204ef5bf1fa24a3a5887fc744bba06179802a5"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+          "recorded": "1d81346a9dac5f0e507e1f78ecdef3d8fc7416d7ca7346a03583017a7e9fab8b",
+          "current": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+          "recorded": "5f981d43abfa2d6fc5004e9bd8e7337b9847f2ecef840b505cc2d0d7b1c9f335",
+          "current": "6be63f88f76c11809f67728ee8f73ef4b90ba1c5b123a8def1412567f7394461"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "recorded": "fb54607a7f0a196022d35ee23866f762cc98fb9343f1bc8b19a24a7495ab2acf",
+          "current": "fc705d85e1e24ddb58eb938dd44d44e17fc4e9aa22c1c3828db503ffa2a2294c"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+          "recorded": "604ecfb12da8c2857060b668a1f1afc12ddc55ef4fe4b257f42c32ba73da02a9",
+          "current": "f64daba87145adde965b714c3672b45e6b37fa8ab2e90d8a265927ecc6e97888"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+          "recorded": "c0e75e5facfb2ed4317ee2b83426c76ddc974a10693aeaa86785878892e68dac",
+          "current": "d2dff4829b5c42cbd7926c2fe40e5ac3d55c0095fbb526c4468505a711a47eca"
+        }
+      ]
+    },
+    {
+      "id": "B134",
+      "stage": "green",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/green.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 28
+      },
+      "selected": 28,
+      "row_count": 28,
+      "selected_rows_match": true,
+      "outcomes": {
+        "passed": 28
+      },
+      "nonpassing_rows": [],
+      "changed_during_run": [],
+      "current_source_differences": []
+    },
+    {
+      "id": "B115",
+      "stage": "before",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-선택인자/before.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "selected": 1,
+      "nonpassing_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+          "outcome": "failed",
+          "seconds": 0.01600000006146729,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 34, in test_another_commands_flag_cannot_validate_the_documented_command\n    self.assertEqual(command_issues('`do_math.py status [--goal-file question.txt]`', options, flags),\nAssertionError: Lists differ: [] != [('command option', 'status', '--goal-file')]\n\nSecond list contains 1 additional elements.\nFirst extra element 0:\n('command option', 'status', '--goal-file')\n\n- []\n+ [('command option', 'status', '--goal-file')]\n"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B115",
+      "stage": "report",
+      "path": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-선택인자/report.json",
+      "raw_hash_matches_record": true,
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 17
+      },
+      "selected": 17,
+      "nonpassing_rows": []
+    }
+  ],
+  "B115_helper_comparison": [
+    {
+      "function": "producer_nodes",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        108,
+        139
+      ]
+    },
+    {
+      "function": "produced_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        142,
+        199
+      ]
+    },
+    {
+      "function": "written_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        202,
+        220
+      ]
+    },
+    {
+      "function": "consumed_object_schema",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        224,
+        239
+      ]
+    },
+    {
+      "function": "command_issues",
+      "same_ast_as_B115_review": false,
+      "current_lines": [
+        72,
+        105
+      ]
+    },
+    {
+      "function": "documented_policies",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        563,
+        565
+      ]
+    },
+    {
+      "function": "policy_issues",
+      "same_ast_as_B115_review": true,
+      "current_lines": [
+        559,
+        560
+      ]
+    }
+  ],
+  "targeted_test_diffs": [
+    {
+      "increment": "B130",
+      "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+      "symbol": "test_query_family_names_are_the_condition_grammar_names",
+      "commit": "6d1d1778",
+      "before_assertions": 3,
+      "after_assertions": 9,
+      "removed_assertion_expressions": [
+        "self.assertEqual(_query_record(row)['family'], name)"
+      ],
+      "added_assertion_expressions": [
+        "self.assertEqual(unowned_field_references(alias + '\\n`record.family`', schemas), ['record.family'])",
+        "self.assertEqual(record['family'], name)",
+        "self.assertEqual([(path, *issue) for path, text in texts for issue in field_issues(text, record)], [])",
+        "self.assertEqual(field_issues('`query_record.family`', record), [])",
+        "self.assertEqual(field_issues(alias, record), [])",
+        "self.assertEqual(field_issues(alias, omitted), [('scoped field', 'record.family')])",
+        "self.assertIn(('references/CLI-실행-계약.md', 'scoped field', 'record.family'), [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])"
+      ],
+      "before_call_counts": {
+        "RECORD_FAMILIES.items": 1,
+        "self.assertEqual": 3,
+        "_query_record": 3,
+        "self.subTest": 1
+      },
+      "after_call_counts": {
+        "field_schemas": 1,
+        "RECORD_FAMILIES.items": 1,
+        "self.assertEqual": 8,
+        "scoped_field_issues": 1,
+        "unowned_field_references": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "_query_record": 3,
+        "self.subTest": 1,
+        "dict": 1,
+        "self.assertIn": 1,
+        "Path": 1,
+        "document.relative_to": 1,
+        "field_issues": 5
+      },
+      "current_call_counts": {
+        "field_schemas": 1,
+        "RECORD_FAMILIES.items": 1,
+        "self.assertEqual": 8,
+        "scoped_field_issues": 1,
+        "unowned_field_references": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "_query_record": 3,
+        "self.subTest": 1,
+        "dict": 1,
+        "self.assertIn": 1,
+        "Path": 1,
+        "document.relative_to": 1,
+        "field_issues": 5
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B130",
+      "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "symbol": "test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+      "commit": "6d1d1778",
+      "before_assertions": 13,
+      "after_assertions": 27,
+      "removed_assertion_expressions": [
+        "self.assertGreaterEqual(body(queried)['total'], 1)"
+      ],
+      "added_assertion_expressions": [
+        "self.assertGreaterEqual(file_page['total'], 1)",
+        "self.assertTrue(file_page['items'])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, file_page)], [])",
+        "self.assertEqual(field_issues(alias, file_page), [])",
+        "self.assertEqual(field_issues('`query_result.snapshot` `query_result.items[].path`', file_page), [])",
+        "self.assertEqual(field_issues(alias, {**file_page, 'items': []}), [('scoped field', 'result.items[].path')])",
+        "self.assertTrue(record_page['items'])",
+        "self.assertIn('family', record_page['items'][0]['record'])",
+        "self.assertIn('logical_sha256', record_page['items'][0])",
+        "self.assertEqual(unowned_field_references(alias + '\\n`result.items[].path`', schemas), ['result.items[].path'])",
+        "self.assertEqual(field_issues(alias, omitted), [('scoped field', 'result.items[].path')])",
+        "self.assertIn(('references/초기화-운전.md', 'scoped field', 'result.items[].path'), [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])",
+        "self.assertEqual(field_issues(alias, omitted), [('scoped field', token)])",
+        "self.assertIn(('references/초기화-운전.md', 'scoped field', token), [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])",
+        "self.assertEqual(field_issues('`' + token + '` <!-- do-math fields: result=query_result -->', file_page), [('scoped field', token)])"
+      ],
+      "before_call_counts": {
+        "self.cli": 5,
+        "self.assertEqual": 9,
+        "body": 5,
+        "self.assertGreaterEqual": 2,
+        "self.store": 1,
+        "store.load": 1,
+        "self.assertFalse": 1,
+        "self.assertIn": 1,
+        "len": 1,
+        "store.list_files": 1,
+        "str": 1,
+        "(destination / path).read_bytes": 1,
+        "store.read": 1,
+        "(destination / 'research/instance.json').exists": 1,
+        "report.get": 1,
+        "self.instance_args": 5
+      },
+      "after_call_counts": {
+        "self.cli": 5,
+        "self.assertEqual": 17,
+        "body": 5,
+        "self.assertGreaterEqual": 2,
+        "self.assertTrue": 2,
+        "field_schemas": 1,
+        "range": 1,
+        "self.assertIn": 5,
+        "self.store": 1,
+        "store.load": 1,
+        "self.assertFalse": 1,
+        "len": 2,
+        "page.get": 1,
+        "isinstance": 2,
+        "scoped_field_issues": 1,
+        "field_issues": 9,
+        "deepcopy": 2,
+        "unowned_field_references": 1,
+        "store.list_files": 1,
+        "str": 1,
+        "(destination / path).read_bytes": 1,
+        "store.read": 1,
+        "(destination / 'research/instance.json').exists": 1,
+        "report.get": 1,
+        "self.instance_args": 5,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "self.subTest": 2,
+        "set.intersection": 1,
+        "set": 2,
+        "Path": 1,
+        "document.relative_to": 1,
+        "all": 1
+      },
+      "current_call_counts": {
+        "self.cli": 5,
+        "self.assertEqual": 17,
+        "body": 5,
+        "self.assertGreaterEqual": 2,
+        "self.assertTrue": 2,
+        "field_schemas": 1,
+        "range": 1,
+        "self.assertIn": 5,
+        "self.store": 1,
+        "store.load": 1,
+        "self.assertFalse": 1,
+        "len": 2,
+        "page.get": 1,
+        "isinstance": 2,
+        "scoped_field_issues": 1,
+        "field_issues": 9,
+        "deepcopy": 2,
+        "unowned_field_references": 1,
+        "store.list_files": 1,
+        "str": 1,
+        "(destination / path).read_bytes": 1,
+        "store.read": 1,
+        "(destination / 'research/instance.json').exists": 1,
+        "report.get": 1,
+        "self.instance_args": 5,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "self.subTest": 2,
+        "set.intersection": 1,
+        "set": 2,
+        "Path": 1,
+        "document.relative_to": 1,
+        "all": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B131",
+      "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "symbol": "test_original_request_is_preserved_separately_from_the_mathematical_goal",
+      "commit": "f3ee5aeb",
+      "before_assertions": 4,
+      "after_assertions": 18,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in cli_field_issues(text, schemas, 'init_result', result)], [])",
+        "self.assertEqual(cli_field_issues(alias, schemas, 'init_result', result), [])",
+        "self.assertEqual(cli_field_issues(alias, schemas, 'init_result', omitted), [('scoped field', 'result.instance_id')])",
+        "self.assertIn(('README.md', 'scoped field', 'result.instance_id'), [(name, *issue) for name, text in texts for issue in cli_field_issues(text, schemas, 'init_result', omitted)])",
+        "self.assertEqual([action for action, _ in scheduler.calls], ['install'])",
+        "self.assertEqual(set(result['operator_schedule']), {'operator', 'engine', 'wake'})",
+        "self.assertEqual(result['operator_schedule']['operator'], scheduler.tasks[scheduled_operator.task_names(self.repository, result['instance_id'])['operator']])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in cli_field_issues(text, schemas, 'scheduling_result', result)], [])",
+        "self.assertEqual(cli_field_issues(schedule_alias, schemas, 'scheduling_result', result), [])",
+        "self.assertEqual(cli_field_issues(schedule_alias, schemas, 'scheduling_result', omitted), [('scoped field', 'result.operator_schedule')])",
+        "self.assertEqual(cli_field_issues('`scheduling_result.selection`', schemas, 'scheduling_result', result), [('scoped field', 'scheduling_result.selection')])",
+        "self.assertEqual(unowned_field_references(alias + '\\n`result.instance_id`', schemas), ['result.instance_id'])",
+        "self.assertIn((name, 'scoped field', 'result.operator_schedule'), missing)",
+        "self.assertEqual(cli_field_issues('`' + token + '`', schemas, 'init_result', result), [('scoped field', token)])"
+      ],
+      "before_call_counts": {
+        "path.write_bytes": 1,
+        "self.cli": 1,
+        "self.assertEqual": 4,
+        "self.store(body(response)['instance_id']).load": 1,
+        "original.encode": 2,
+        "str": 4,
+        "hashlib.sha256(original.encode()).hexdigest": 1,
+        "self.store": 1,
+        "hashlib.sha256": 1,
+        "body": 1
+      },
+      "after_call_counts": {
+        "path.write_bytes": 1,
+        "enabled.write_text": 1,
+        "entry": 1,
+        "make_fake": 1,
+        "replace": 1,
+        "io.StringIO": 1,
+        "subprocess.CompletedProcess": 1,
+        "self.assertEqual": 16,
+        "body": 1,
+        "self.store(result['instance_id']).load": 1,
+        "field_schemas": 1,
+        "dict": 2,
+        "self.assertIn": 2,
+        "original.encode": 2,
+        "json.dumps": 1,
+        "real_ports": 1,
+        "redirect_stdout": 1,
+        "cli.main": 1,
+        "output.getvalue": 1,
+        "hashlib.sha256(original.encode()).hexdigest": 1,
+        "cli_field_issues": 10,
+        "set": 1,
+        "unowned_field_references": 1,
+        "self.store": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "str": 4,
+        "hashlib.sha256": 1,
+        "scheduled_operator.task_names": 1,
+        "Path": 1,
+        "document.relative_to": 1
+      },
+      "current_call_counts": {
+        "path.write_bytes": 1,
+        "enabled.write_text": 1,
+        "entry": 1,
+        "make_fake": 1,
+        "replace": 1,
+        "io.StringIO": 1,
+        "subprocess.CompletedProcess": 1,
+        "self.assertEqual": 16,
+        "body": 1,
+        "self.store(result['instance_id']).load": 1,
+        "field_schemas": 1,
+        "dict": 2,
+        "self.assertIn": 2,
+        "original.encode": 2,
+        "json.dumps": 1,
+        "real_ports": 1,
+        "redirect_stdout": 1,
+        "cli.main": 1,
+        "output.getvalue": 1,
+        "hashlib.sha256(original.encode()).hexdigest": 1,
+        "cli_field_issues": 10,
+        "set": 1,
+        "unowned_field_references": 1,
+        "self.store": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "str": 4,
+        "hashlib.sha256": 1,
+        "scheduled_operator.task_names": 1,
+        "Path": 1,
+        "document.relative_to": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B131",
+      "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "symbol": "test_profile_selection_respects_the_role_floor_without_model_execution",
+      "commit": "f3ee5aeb",
+      "before_assertions": 4,
+      "after_assertions": 12,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in cli_field_issues(text, schemas, 'selection_result', result)], [])",
+        "self.assertEqual(cli_field_issues(alias, schemas, 'selection_result', result), [])",
+        "self.assertEqual(cli_field_issues('`selection_result.selection.profile_ref.id`', schemas, 'selection_result', result), [])",
+        "self.assertEqual(unowned_field_references(alias + '\\n`result.selection.profile_ref`', schemas), ['result.selection.profile_ref'])",
+        "self.assertEqual(cli_field_issues('`' + token + '`', schemas, 'selection_result', result), [('scoped field', token)])",
+        "self.assertEqual(cli_field_issues('`selection_result.selection.profile_ref.id`', schemas, 'selection_result', omitted), [('scoped field', 'selection_result.selection.profile_ref.id')])",
+        "self.assertEqual(cli_field_issues(alias, schemas, 'selection_result', omitted), [('scoped field', 'result.selection.profile_ref')])",
+        "self.assertIn(('references/초기화-운전.md', 'scoped field', 'result.selection.profile_ref'), [(name, *issue) for name, text in texts for issue in cli_field_issues(text, schemas, 'selection_result', omitted)])"
+      ],
+      "before_call_counts": {
+        "self.cli": 1,
+        "self.assertEqual": 4,
+        "body": 1,
+        "self.instance_args": 1,
+        "self.store().load": 1,
+        "self.store": 1
+      },
+      "after_call_counts": {
+        "self.cli": 1,
+        "self.assertEqual": 11,
+        "body": 1,
+        "field_schemas": 1,
+        "cli_field_issues": 7,
+        "unowned_field_references": 1,
+        "self.instance_args": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "self.subTest": 1,
+        "deepcopy": 1,
+        "self.store().load": 1,
+        "len": 1,
+        "self.assertIn": 1,
+        "Path": 1,
+        "document.relative_to": 1,
+        "self.store": 1
+      },
+      "current_call_counts": {
+        "self.cli": 1,
+        "self.assertEqual": 11,
+        "body": 1,
+        "field_schemas": 1,
+        "cli_field_issues": 7,
+        "unowned_field_references": 1,
+        "self.instance_args": 1,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "self.subTest": 1,
+        "deepcopy": 1,
+        "self.store().load": 1,
+        "len": 1,
+        "self.assertIn": 1,
+        "Path": 1,
+        "document.relative_to": 1,
+        "self.store": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B131",
+      "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "symbol": "test_public_check_json_discovery_and_fixed_snapshot",
+      "commit": "f3ee5aeb",
+      "before_assertions": 19,
+      "after_assertions": 21,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in scoped_field_issues(text, schemas, defer_operation_progress=True, defer_query_record=True, defer_query_result=True, defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])",
+        "self.assertEqual(scoped_field_issues('`result.config_sha256` <!-- do-math fields: result=status -->', schemas), [('scoped field', 'result.config_sha256')])"
+      ],
+      "before_call_counts": {
+        "self.cli": 6,
+        "self.assertEqual": 18,
+        "json.loads": 3,
+        "self.assertIn": 1,
+        "request.write_text": 1,
+        "body": 5,
+        "set": 4,
+        "json.dumps": 1,
+        "str": 2,
+        "dict.fromkeys": 1,
+        "self.instance_args": 4
+      },
+      "after_call_counts": {
+        "self.cli": 6,
+        "self.assertEqual": 20,
+        "json.loads": 3,
+        "self.assertIn": 1,
+        "request.write_text": 1,
+        "body": 6,
+        "field_schemas": 1,
+        "set": 4,
+        "json.dumps": 1,
+        "str": 2,
+        "dict.fromkeys": 1,
+        "status_field_schema": 2,
+        "dict": 1,
+        "self.instance_args": 4,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "scoped_field_issues": 2,
+        "Path": 1,
+        "document.relative_to": 1
+      },
+      "current_call_counts": {
+        "self.cli": 6,
+        "self.assertEqual": 20,
+        "json.loads": 3,
+        "self.assertIn": 1,
+        "request.write_text": 1,
+        "body": 6,
+        "field_schemas": 1,
+        "set": 4,
+        "json.dumps": 1,
+        "str": 2,
+        "dict.fromkeys": 1,
+        "status_field_schema": 2,
+        "dict": 1,
+        "self.instance_args": 4,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "scoped_field_issues": 2,
+        "Path": 1,
+        "document.relative_to": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B132",
+      "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      "symbol": "test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+      "commit": "e618f7b1",
+      "before_assertions": 11,
+      "after_assertions": 26,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual(result['artifacts'][manifest['prompt']['artifact_ref']], result['prompt'].encode('utf-8'))",
+        "self.assertGreater(len(manifest['documents']), 1)",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, manifest)], [])",
+        "self.assertEqual([(name, token) for name, text in texts for token in unowned_field_references(text, schemas)], [])",
+        "self.assertEqual(field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref`', manifest), [])",
+        "self.assertEqual(field_issues('`documents[].artifact_ref` `input_manifest.documents[].artifact_ref`', manifest), [])",
+        "self.assertEqual(field_issues('`result.prompt.sha256` <!-- do-math fields: result=input_manifest -->', manifest), [])",
+        "self.assertEqual(field_issues('`result.artifact_ref` <!-- do-math fields: result=prompt -->', manifest), [])",
+        "self.assertEqual(field_issues('`result[].artifact_ref` <!-- do-math fields: result=documents -->', manifest), [])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, omitted)], [('references/CLI-실행-계약.md', 'scoped field', 'input_manifest.prompt.sha256'), ('references/CLI-실행-계약.md', 'scoped field', 'prompt.artifact_ref')])",
+        "self.assertEqual(field_issues('`' + token + '`', manifest), [('scoped field', token)])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, omitted)], [('references/CLI-실행-계약.md', 'scoped field', token)])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, changed)], [('references/CLI-실행-계약.md', 'scoped field', 'documents[].artifact_ref')])",
+        "self.assertEqual(field_issues('`' + path + '`', omitted), [('scoped field', path)])",
+        "self.assertEqual(field_issues('`' + token + '`', changed), [('scoped field', token)])"
+      ],
+      "before_call_counts": {
+        "entry": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "catalog_opens": 1,
+        "self.assertIn": 2,
+        "self.assertEqual": 6,
+        "self.assertTrue": 1,
+        "deepcopy": 1,
+        "audit_events": 1,
+        "prepare_role_input": 1,
+        "len": 2,
+        "validate_role_manifest": 2,
+        "hashlib.sha256(result['prompt'].encode()).hexdigest": 1,
+        "self.assertRaisesRegex": 2,
+        "verify_manifest_artifacts": 2,
+        "set": 1,
+        "contracts.schema_for": 1,
+        "Path": 1,
+        "hashlib.sha256": 1,
+        "result['prompt'].encode": 1
+      },
+      "after_call_counts": {
+        "entry": 1,
+        "field_schemas": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "manifest.get": 2,
+        "scoped_field_issues": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "catalog_opens": 1,
+        "self.assertIn": 2,
+        "self.assertEqual": 20,
+        "self.assertTrue": 1,
+        "self.assertGreater": 1,
+        "dict": 1,
+        "deepcopy": 3,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "set.intersection": 1,
+        "set": 3,
+        "audit_events": 1,
+        "prepare_role_input": 1,
+        "len": 3,
+        "validate_role_manifest": 2,
+        "hashlib.sha256(result['prompt'].encode()).hexdigest": 1,
+        "result['prompt'].encode": 2,
+        "field_issues": 12,
+        "self.assertRaisesRegex": 2,
+        "verify_manifest_artifacts": 2,
+        "isinstance": 3,
+        "all": 1,
+        "self.subTest": 3,
+        "contracts.schema_for": 1,
+        "Path": 2,
+        "document.relative_to": 1,
+        "hashlib.sha256": 1,
+        "unowned_field_references": 1
+      },
+      "current_call_counts": {
+        "entry": 1,
+        "field_schemas": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "manifest.get": 2,
+        "scoped_field_issues": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "catalog_opens": 1,
+        "self.assertIn": 2,
+        "self.assertEqual": 20,
+        "self.assertTrue": 1,
+        "self.assertGreater": 1,
+        "dict": 1,
+        "deepcopy": 3,
+        "Path(__file__).resolve": 1,
+        "document.relative_to(skill).as_posix": 1,
+        "document.read_text": 1,
+        "documents": 1,
+        "set.intersection": 1,
+        "set": 3,
+        "audit_events": 1,
+        "prepare_role_input": 1,
+        "len": 3,
+        "validate_role_manifest": 2,
+        "hashlib.sha256(result['prompt'].encode()).hexdigest": 1,
+        "result['prompt'].encode": 2,
+        "field_issues": 12,
+        "self.assertRaisesRegex": 2,
+        "verify_manifest_artifacts": 2,
+        "isinstance": 3,
+        "all": 1,
+        "self.subTest": 3,
+        "contracts.schema_for": 1,
+        "Path": 2,
+        "document.relative_to": 1,
+        "hashlib.sha256": 1,
+        "unowned_field_references": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B133",
+      "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      "symbol": "test_multihop_restores_latest_file_and_stage_evidence",
+      "commit": "e54a6bd4",
+      "before_assertions": 8,
+      "after_assertions": 23,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual([row['execution_id'] for row in repaired['continuation_history']], ['EX-a', 'EX-b'])",
+        "self.assertEqual(repaired['previous_execution']['result_source'], repaired['continuation_history'][-1]['result_source'])",
+        "self.assertEqual({row['path']: (row['execution_id'], row['artifact_ref']) for row in repaired['previous_output_files']}, {'lemma.txt': ('EX-b', 'runtime/artifacts/B/lemma.txt'), 'keep.txt': ('EX-a', 'runtime/artifacts/A/keep.txt')})",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in check(text, repaired)], [])",
+        "self.assertEqual(check('`previous_output_files[].local_path`', empty), [('scoped field', 'previous_output_files[].local_path')])",
+        "self.assertEqual(check('`rejected_response.local_path`', result), [('scoped field', 'rejected_response.local_path')])",
+        "self.assertEqual(check('`result_source.local_path`', absent), [('scoped field', 'result_source.local_path')])",
+        "self.assertEqual((repaired_root / ref['local_path']).read_bytes(), raw)",
+        "self.assertEqual((ref['sha256'], ref['bytes'], ref['snapshot']), (hashlib.sha256(raw).hexdigest(), len(raw), 'a' * 40))",
+        "self.assertEqual(check('`' + token + '`', repaired), [])",
+        "self.assertEqual(check(alias, repaired), [])",
+        "self.assertEqual(check('`' + token + '`', omitted), [('scoped field', token)])",
+        "self.assertEqual(check(alias, omitted), [('scoped field', 'result' + suffix)])",
+        "self.assertTrue([(name, *issue) for name, text in texts for issue in check(text, omitted) if issue == ('scoped field', token)])",
+        "self.assertEqual(check('`' + token + '`', repaired), [('scoped field', token)])"
+      ],
+      "before_call_counts": {
+        "tempfile.TemporaryDirectory": 1,
+        "context_store.restore_continuation": 3,
+        "self.assertEqual": 6,
+        "json.dumps({'stage': identifier}).encode": 1,
+        "Path": 6,
+        "(Path(directory) / 'input/previous-output/lemma.txt').read_bytes": 1,
+        "(Path(directory) / 'input/previous-output/keep.txt').read_bytes": 1,
+        "self.assertRaisesRegex": 2,
+        "hashlib.sha256(body).hexdigest": 1,
+        "len": 1,
+        "(Path(directory) / ref['local_path']).read_bytes": 1,
+        "hashlib.sha256(archive[ref['artifact_ref']]).hexdigest": 1,
+        "json.dumps": 1,
+        "hashlib.sha256": 2,
+        "entry": 3
+      },
+      "after_call_counts": {
+        "field_schemas": 1,
+        "dict": 1,
+        "rows.items": 1,
+        "scoped_field_issues": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "context_store.restore_continuation": 4,
+        "self.assertEqual": 20,
+        "deepcopy": 3,
+        "Path(__file__).resolve": 1,
+        "path.relative_to(skill).as_posix": 1,
+        "path.read_text": 1,
+        "documents": 1,
+        "json.dumps({'stage': identifier}).encode": 1,
+        "Path": 8,
+        "(Path(directory) / 'input/previous-output/lemma.txt').read_bytes": 1,
+        "(Path(directory) / 'input/previous-output/keep.txt').read_bytes": 1,
+        "self.assertTrue": 1,
+        "check": 10,
+        "self.assertRaisesRegex": 2,
+        "set.intersection": 1,
+        "set": 2,
+        "hashlib.sha256(body).hexdigest": 1,
+        "len": 2,
+        "(Path(directory) / ref['local_path']).read_bytes": 1,
+        "hashlib.sha256(archive[ref['artifact_ref']]).hexdigest": 1,
+        "(repaired_root / ref['local_path']).read_bytes": 1,
+        "path.relative_to": 1,
+        "json.dumps": 1,
+        "hashlib.sha256(archive[raw_ref]).hexdigest": 1,
+        "hashlib.sha256(raw).hexdigest": 1,
+        "hashlib.sha256": 4,
+        "entry": 3
+      },
+      "current_call_counts": {
+        "field_schemas": 1,
+        "dict": 1,
+        "rows.items": 1,
+        "scoped_field_issues": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "context_store.restore_continuation": 4,
+        "self.assertEqual": 20,
+        "deepcopy": 3,
+        "Path(__file__).resolve": 1,
+        "path.relative_to(skill).as_posix": 1,
+        "path.read_text": 1,
+        "documents": 1,
+        "json.dumps({'stage': identifier}).encode": 1,
+        "Path": 8,
+        "(Path(directory) / 'input/previous-output/lemma.txt').read_bytes": 1,
+        "(Path(directory) / 'input/previous-output/keep.txt').read_bytes": 1,
+        "self.assertTrue": 1,
+        "check": 10,
+        "self.assertRaisesRegex": 2,
+        "set.intersection": 1,
+        "set": 2,
+        "hashlib.sha256(body).hexdigest": 1,
+        "len": 2,
+        "(Path(directory) / ref['local_path']).read_bytes": 1,
+        "hashlib.sha256(archive[ref['artifact_ref']]).hexdigest": 1,
+        "(repaired_root / ref['local_path']).read_bytes": 1,
+        "path.relative_to": 1,
+        "json.dumps": 1,
+        "hashlib.sha256(archive[raw_ref]).hexdigest": 1,
+        "hashlib.sha256(raw).hexdigest": 1,
+        "hashlib.sha256": 4,
+        "entry": 3
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    },
+    {
+      "increment": "B134",
+      "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      "symbol": "test_candidate_population_is_compact_profile_bound_and_reproducible",
+      "commit": "56e961ff",
+      "before_assertions": 10,
+      "after_assertions": 17,
+      "removed_assertion_expressions": [],
+      "added_assertion_expressions": [
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in check(text, selection)], [])",
+        "self.assertEqual(check(alias, selection), [])",
+        "self.assertEqual([(name, *issue) for name, text in texts for issue in check(text, omitted)], [('references/공통-실행.md', 'scoped field', 'profile_selection.allowed_profiles'), ('계약/후보-준비.md', 'scoped field', 'profile_selection.allowed_profiles')])",
+        "self.assertEqual(check(alias, omitted), [('scoped field', 'result.allowed_profiles')])",
+        "self.assertEqual(check('`profile_selection.allowed_profiles`', selection['profiles_ref']), [('scoped field', 'profile_selection.allowed_profiles')])",
+        "self.assertEqual(check('`result.role` <!-- do-math fields: result=profile_selection -->', selection), [('scoped field', 'result.role')])",
+        "self.assertEqual(check('`' + token + '`', selection), [('scoped field', token)])"
+      ],
+      "before_call_counts": {
+        "entry": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "deepcopy": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "prepare_role_input": 2,
+        "self.assertTrue": 1,
+        "self.assertNotIn": 2,
+        "self.assertIn": 1,
+        "self.assertEqual": 6,
+        "list": 1,
+        "fitted['prompt'].endswith": 1,
+        "set": 1,
+        "read_source": 1,
+        "runtime['tasks'].values": 1,
+        "boundary_prompt": 1,
+        "json.loads": 1,
+        "Path": 3
+      },
+      "after_call_counts": {
+        "entry": 1,
+        "field_schemas": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "scoped_field_issues": 1,
+        "deepcopy": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "prepare_role_input": 2,
+        "self.assertTrue": 1,
+        "self.assertNotIn": 2,
+        "self.assertIn": 1,
+        "self.assertEqual": 13,
+        "dict": 1,
+        "Path(__file__).resolve": 1,
+        "path.relative_to(skill).as_posix": 1,
+        "path.read_text": 1,
+        "documents": 1,
+        "list": 1,
+        "fitted['prompt'].endswith": 1,
+        "set": 1,
+        "read_source": 1,
+        "check": 7,
+        "runtime['tasks'].values": 1,
+        "boundary_prompt": 1,
+        "json.loads": 1,
+        "Path": 4,
+        "path.relative_to": 1
+      },
+      "current_call_counts": {
+        "entry": 1,
+        "field_schemas": 1,
+        "surface_state": 1,
+        "role_profile": 1,
+        "scoped_field_issues": 1,
+        "deepcopy": 1,
+        "tempfile.TemporaryDirectory": 1,
+        "prepare_role_input": 2,
+        "self.assertTrue": 1,
+        "self.assertNotIn": 2,
+        "self.assertIn": 1,
+        "self.assertEqual": 13,
+        "dict": 1,
+        "Path(__file__).resolve": 1,
+        "path.relative_to(skill).as_posix": 1,
+        "path.read_text": 1,
+        "documents": 1,
+        "list": 1,
+        "fitted['prompt'].endswith": 1,
+        "set": 1,
+        "read_source": 1,
+        "check": 7,
+        "runtime['tasks'].values": 1,
+        "boundary_prompt": 1,
+        "json.loads": 1,
+        "Path": 4,
+        "path.relative_to": 1
+      },
+      "note": "AST counts locate edits; human source/diff review decides equivalence, not these counts."
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+[
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    "sha256": "4809b2d84d720b10424648ea438a191f88fa2ef42863d939c0e2d1ddef9109f7",
+    "ranges": [
+      {
+        "start": 248,
+        "end": 267,
+        "text": "def _child_run(spec, directory):\n    \"\"\"Return failing ids/text or CHILD_NO_RESULT on missing evidence, and elapsed seconds.\"\"\"\n    directory.mkdir(parents=True, exist_ok=True)\n    (directory / 'spec.json').write_text(json.dumps(spec), encoding='utf-8')\n    started = time.monotonic()\n    with (directory / 'output.txt').open('w', encoding='utf-8') as output:\n        process = subprocess.Popen([sys.executable, '-B', str(Path(__file__).resolve()), '--child',\n                                    str(directory / 'spec.json')], cwd=SCRIPTS, stdout=output,\n                                   stderr=subprocess.STDOUT, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})\n        try:\n            process.wait()\n        finally:\n            if process.poll() is None:\n                process.kill()\n                process.wait()\n    result = json.loads((directory / 'result.json').read_text(encoding='utf-8')) \\\n        if (directory / 'result.json').exists() else {'failing': [CHILD_NO_RESULT]}\n    return set(result['failing']), time.monotonic() - started\n\n"
+      },
+      {
+        "start": 312,
+        "end": 356,
+        "text": "            plans.append((outcome, mutant, {'tests': sorted(tests[o] for o in ordinals), 'folders': list(folders)}))\n    seconds = recorded_seconds()\n    unmutated = {}  # test id -> whether it fails with no mutant\n\n    def fails_unmutated(test):\n        if test not in unmutated:\n            failing, _ = _child_run({'tests': [test], 'folders': [], 'exclude': [], 'target': None, 'mutant': None},\n                                    Path(directory) / f'unmutated-{len(unmutated):04}')\n            unmutated[test] = test in failing\n        return unmutated[test]\n\n    for number, (outcome, mutant, chosen) in enumerate(plans):\n        outcome['estimated_seconds'] = expected_seconds(chosen, seconds)\n        work = Path(directory) / f'mutant-{number:04}'\n        work.mkdir(parents=True, exist_ok=True)\n        (work / 'mutant.py').write_text(mutant, encoding='utf-8')\n        excluded, took = set(), 0.0\n        while True:\n            failing, spent = _child_run({'tests': [t for t in chosen['tests'] if t not in excluded],\n                                         'folders': chosen['folders'], 'exclude': sorted(excluded),\n                                         'target': str(SCRIPTS / outcome['module']), 'mutant': str(work / 'mutant.py')},\n                                        work)\n            took += spent\n            if CHILD_NO_RESULT in failing:\n                outcome.update(status='execution_error', detail=CHILD_NO_RESULT)\n                break\n            broken = {t for t in failing if _is_test_id(t) and fails_unmutated(t)}\n            killers = sorted(failing - broken)\n            if killers or not broken:\n                outcome['status'] = 'killed' if killers else 'survived'\n                outcome['killed_by'] = killers[:5]\n                break\n            excluded |= broken  # it fails unmutated too: run the mutant again without it\n        outcome['seconds'] = round(took, 2)\n    baseline = {test for test, fails in unmutated.items() if fails}\n    listing = read_list(listing_path)\n    if update_list(listing, outcomes, base):\n        Path(listing_path).write_text(json.dumps(listing, ensure_ascii=False, indent=1) + '\\n', encoding='utf-8')\n    counts = Counter(o['status'] for o in outcomes)\n    return {'base': base, 'every': every, 'functions': len(outcomes), 'counts': dict(counts),\n            'baseline_failing': sorted(baseline), 'unreasoned_entries': unreasoned(listing),\n            'list': str(listing_path), 'seconds': round(time.monotonic() - started, 1),\n            'survived': [f\"{o['module']}:{o['function']}\" for o in outcomes if o['status'] == 'survived'],\n            'outcomes': outcomes}\n"
+      },
+      {
+        "start": 366,
+        "end": 371,
+        "text": "def passed(report):\n    \"\"\"A zero survivor count cannot cover failed measurement or untested functions.\"\"\"\n    return (report['unreasoned_entries'] == 0 and not report['baseline_failing']\n            and not any(report['counts'].get(name, 0)\n                        for name in ('execution_error', 'mutation_error', 'not_executed')))\n"
+      },
+      {
+        "start": 416,
+        "end": 448,
+        "text": "        ordered_modules = sorted(modules, key=lambda module: (\n            seconds.get(module, UNKNOWN_TEST_SECONDS * len(modules[module])) / len(modules[module]), module))\n        batches = [([], modules[module]) for module in ordered_modules]\n    excluded = set(spec.get('exclude', ()))\n    failing = []\n    for folders, names in batches:\n        suite = unittest.TestSuite()\n        try:\n            for folder in folders:\n                suite.addTests(loader.discover(str(TESTS / folder), pattern='test_*.py', top_level_dir=str(TESTS)))\n            if names:\n                suite.addTests(loader.loadTestsFromNames(names))\n        except Exception as error:\n            # Only module loading is classified here; execution errors retain\n            # the runner's actual failing test identity below.\n            traceback.print_exc(file=sys.stdout)\n            result = {'failing': [f'<test module load failure: {type(error).__name__}: {error}>'],\n                      'load_error': {'type': type(error).__name__, 'message': str(error)}}\n            (Path(spec_path).parent / 'result.json').write_text(json.dumps(result), encoding='utf-8')\n            return 0\n        tests = [test for test in _flatten(suite) if test.id() not in excluded]\n        ordered = unittest.TestSuite(cheapest_first(tests, seconds))\n        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True).run(ordered)\n        failing = [test.id() for test, _ in result.failures + result.errors] \\\n            + [test.id() for test in result.unexpectedSuccesses]\n        failing += [str(error) for error in loader.errors]\n        if failing:\n            break\n    (Path(spec_path).parent / 'result.json').write_text(json.dumps({'failing': failing}), encoding='utf-8')\n    return 0\n\n\ndef main(argv=None):"
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    "sha256": "6ef53502e156e926bac683445da64adea868ce69e85921d3f496443ce84cec08",
+    "ranges": [
+      {
+        "start": 1,
+        "end": 38,
+        "text": "\"\"\"Mutation baseline bookkeeping against actual Git blobs and HEAD.\"\"\"\nfrom pathlib import Path\nimport tempfile\nimport unittest\nfrom unittest import mock\n\nfrom support import mutation\nfrom test_categories import test_group\n\n\n@test_group(\"resource\")\nclass LazyBaselineTests(unittest.TestCase):\n    def test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside(self):\n        \"\"\"No union baseline: a mutant's failing test counts only if it passes unmutated (D9).\"\"\"\n        from support.branch_gate import git_blobs, repository_root\n        root = repository_root()\n        module = 'do_math/http_request.py'\n        path = f'{mutation.SCRIPTS.relative_to(root).as_posix()}/{module}'\n        index = {'tests': ['t0', 't1', 't2'],\n                 'files': {path: {'blob': git_blobs(root, [path])[path],\n                                  'functions': {'check_url': [1], 'check_body': [0, 2]}}}}\n        calls = []\n\n        def child(spec, directory):\n            tests = spec['tests']\n            calls.append((spec['mutant'] is not None, tests))\n            if spec['mutant'] is None:\n                return {'t0'} & set(tests), 0.1\n            return ({'t1'} if 't1' in tests else {'t0'} if 't0' in tests else set()), 0.1\n        self.enterContext(mock.patch.object(mutation, '_child_run', child))\n        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))\n        report = mutation.run('HEAD', index, {module: '1'}, root, directory, only=[module], every=True,\n                              listing_path=directory / 'pseudo_tested.json')\n        self.assertEqual({o['function']: o['status'] for o in report['outcomes']},\n                         {'check_url': 'killed', 'check_body': 'survived'})\n        self.assertEqual([tests for mutated, tests in calls if not mutated], [['t1'], ['t0']])\n        self.assertEqual(report['baseline_failing'], ['t0'])"
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/run_tests.py",
+    "sha256": "6a2552fa012934a4ffc8b46cbc076dedb82809e6d0ec510905b192bf748884fe",
+    "ranges": [
+      {
+        "start": 58,
+        "end": 70,
+        "text": "FOLDERS = ('structure', 'unit', 'sim', 'flows', 'contracts', 'boundary', 'smoke')\nTIERS = {\n    'T0': ('structure',),\n    'T1': ('structure', 'unit', 'contracts'),\n    'T2': ('structure', 'unit', 'contracts', 'sim'),\n    # flows: Sim scenarios longer than the Sim budget, moved to the rarer tier (설계 6.1, 결정 A26).\n    'T3': ('structure', 'unit', 'contracts', 'sim', 'flows'),\n    'T4': ('boundary',),\n    'T5': ('smoke',),\n}\n# Folders that run when no --tier/folder/test ID narrows the selection. Boundary\n# and smoke tests need real tools or model calls, so they run only when asked.\nDEFAULT_FOLDERS = TIERS['T3']"
+      },
+      {
+        "start": 525,
+        "end": 533,
+        "text": "    if unknown:\n        # A mistyped ID would otherwise drop out silently and read as a pass.\n        print('No test matches: ' + ', '.join(unknown), file=sys.stderr)\n        return bail(2)\n    if not selected:\n        print('No tests selected; no pass was established.', file=sys.stderr)\n        return bail(2)\n    if args.list:\n        for test in selected:"
+      },
+      {
+        "start": 552,
+        "end": 562,
+        "text": "        open_defects = open_count()\n    print(f'Open known defects: {open_defects}', flush=True)\n    if selection is not None:\n        print(selection_summary(selection), flush=True)\n    reports, group_seconds = [], {}\n    if measurement is not None and not measurement.started:\n        # Parallel T3: the workers measure; this measurement only combines their data.\n        from support.branch_gate import Measurement, repository_root\n        measurement = Measurement(repository_root(), data_file=directory / 'coverage.data')\n    if measurement is not None and measurement.started:\n        measurement.begin([test.id() for group in FOLDERS for test in selected"
+      },
+      {
+        "start": 798,
+        "end": 815,
+        "text": "        index = branch_gate.write_index(measurement, report, tests)\n        summary.append(f\"Selection index: {index['tests']} tests, {index['measured_files']} measured files, \"\n                       f\"{index['inputs']} inputs, commit {index['commit'][:12]} -> {index['path']}\")\n    else:\n        summary.append('Selection index not written: the run was partial, incomplete or saw files change.')\n    mutation = None\n    if args.mutation_base:\n        from support import mutation as mutation_tool\n        from support import selection\n        # The index this run wrote, or a usable older one: a partial run writes none (결함 D13).\n        current, _ = selection.usable(*selection.read_index(), selection.is_ancestor_of_head(measurement.root))\n        mutation = mutation_tool.run(args.mutation_base, current, LAYERS, measurement.root,\n                                     directory / 'mutation')\n        summary.append(mutation_tool.summary(mutation))\n        summary += [f'  survived: {name}' for name in mutation['survived']]\n    written = False\n    if plan is not None and clean and not missing:\n        _write_t3_store(measurement, store, directory, rows)"
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "sha256": "a509baaab29f9374cea601beab9db97e4e5513d7c65d56a02072e906566b9a31",
+    "ranges": [
+      {
+        "start": 30,
+        "end": 40,
+        "text": "OPERATION_PROGRESS_BOUNDARY = object()\nQUERY_RECORD_BOUNDARY = object()\nQUERY_RESULT_BOUNDARY = object()\nCLI_RESULT_BOUNDARIES = {owner: object() for owner in\n                         ('init_result', 'scheduling_result', 'selection_result')}\nROLE_INPUT_BOUNDARIES = {owner: object() for owner in\n                         ('input_manifest', 'prompt', 'documents', 'profile_selection')}\nCONTINUATION_BOUNDARIES = {owner: object() for owner in\n                           ('result_source', 'rejected_response', 'previous_output_files')}\n\n"
+      },
+      {
+        "start": 277,
+        "end": 289,
+        "text": "    schemas['governance_record'] = RECORDS['governance']\n    schemas['governance_content'] = RECORDS['governance']['properties']['content']\n    schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}\n    schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',\n        bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']\n    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')\n    schemas.update(CONTINUATION_BOUNDARIES)\n    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)\n    schemas['query_record'] = QUERY_RECORD_BOUNDARY\n    schemas.update(ROLE_INPUT_BOUNDARIES)\n    schemas.update(CLI_RESULT_BOUNDARIES)\n    from do_math import formal, observations, planning, review_cycle, trust_validation\n    from do_math.dispatch_engine import DispatchEngineMixin"
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/계약/운영-점검.md",
+    "sha256": "e28aba8ff8d08c8ca1cd4b0a5c5e32e2d95206aae728bb9d3b1f08433888fdc5",
+    "ranges": [
+      {
+        "start": 15,
+        "end": 21,
+        "text": "실행 중 점검과 종료 후 진단 모두 `operational_evidence`를 받는다. `checkpoint_status=preserved`이면 `checkpoint_source.local_path`에서 고정 입력 snapshot의 최신 체크포인트를 읽고, `checkpoint_files[].local_path`에서 함께 보존한 근거 바이트를 읽는다. `checkpoint_evidence_omitted`는 크기 상한·읽기 실패 등으로 보존하지 못한 범위다. `not_preserved`와 근거 파일 미수집을 진전 없음으로 바꾸지 않는다. 다른 실행의 live 작업 공간을 직접 읽어 빈칸을 채우지 않는다.\n\n직접 지급된 `checkpoint`는 정체성·관측 시각·상태의 메타데이터다. 본문은 크기와 관계없이 `checkpoint_source`의 정확한 파일에서 읽는다. 큰 체크포인트를 프롬프트에 중복 삽입해 운영 점검 자체의 입력 한도를 소진하지 않는다.\n\n`execution_to_review.observation_stream`이 있으면 stream 수신 시각·중앙 적용 시각과 `local_termination_confirmed`를 원장의 실행 상태와 함께 읽는다. 지연된 로그의 적용 시각은 원 행동의 발생 시각이 아니다. 로컬 종료 확인은 제출 수락이나 원격 공급자 정산을 뜻하지 않는다.\n\n종료 뒤 진단의 `recovery_materials`에서는 대상 실행 ID와 `source_snapshot`을 확인한다. `final_result_status=available`이면 `result_source.local_path`의 정상 결과를 직접 읽는다. `checkpoint_recovery`나 `activity_result`는 최종 결과와 다르다. `checkpoint_source.local_path`와 부분 `output_files[].local_path`도 직접 읽으며, 같은 파일을 결과와 체크포인트 두 건으로 세지 않는다. 해시·크기·경로는 원문 정체성의 근거이지 성공의 근거가 아니다. <!-- do-math fields: output_files=recovered_output_files -->"
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+    "ranges": [
+      {
+        "start": 1807,
+        "end": 1865,
+        "text": "                def recover(artifact_ref: str, relative: str, *, expected_sha256: str | None = None,\n                            expected_bytes: int | None = None) -> dict:\n                    raw = None\n                    try:\n                        raw = self.store.read(artifact_ref, source_snapshot)\n                        if expected_sha256 is None:\n                            digest = hashlib.sha256(raw).hexdigest()  # no record yet: identity is created here\n                        else:\n                            digest = expected_sha256\n                            self._sealed_bytes(artifact_ref, expected_sha256, raw=raw,\n                                               error=\"operational review artifact hash changed\")\n                        if expected_bytes is not None and len(raw) != expected_bytes:\n                            raise ValueError(\"operational review artifact size changed\")\n                    except (ValueError, OSError, GitStateStoreError) as error:\n                        # Diagnosis names unreadable evidence; unverified bytes\n                        # are never materialized as a restored research result.\n                        return {'artifact_ref': artifact_ref, 'snapshot': source_snapshot,\n                            'sha256': expected_sha256, 'bytes': expected_bytes,\n                            'restoration_error': {'error_type': type(error).__name__, 'reason': str(error),\n                                'observed_sha256': hashlib.sha256(raw).hexdigest() if raw is not None else None,\n                                'observed_bytes': len(raw) if raw is not None else None}}\n                    logical = prefix + \"/\" + relative\n                    materialized[logical] = raw\n                    return {\"artifact_ref\": artifact_ref, \"snapshot\": source_snapshot,\n                            \"local_path\": \"input/\" + logical, \"sha256\": digest, \"bytes\": len(raw)}\n\n                normal_result_ref = f\"{ARTIFACT_ROOT}{bundle}/result.json\"\n                checkpoint_ref = f\"{ARTIFACT_ROOT}{bundle}/checkpoint-recovery.json\"\n                # Recovery (_recover_disappeared) records its preserved checkpoint as the result_ref.\n                selected_result_ref = reviewed_execution.get(\"result_ref\") or normal_result_ref\n                result_kind = (\"execution_result\" if selected_result_ref == normal_result_ref else\n                               \"checkpoint_recovery\" if selected_result_ref == checkpoint_ref else\n                               \"activity_result\")\n                result_source = recover(selected_result_ref,\n                    \"result.json\" if result_kind == \"execution_result\" else\n                    \"checkpoint-recovery.json\" if result_kind == \"checkpoint_recovery\" else \"activity-result.json\")\n                if selected_result_ref == checkpoint_ref:\n                    checkpoint_source = result_source\n                elif (reviewed_execution.get(\"role\") == \"formal_check\" or\n                      reviewed_execution.get(\"parent_execution_id\")) and checkpoint_ref not in self.store.list_files(\n                          f\"{ARTIFACT_ROOT}{bundle}/\", source_snapshot):\n                    # These producers do not create a recovery checkpoint on normal completion.\n                    checkpoint_source = None\n                else:\n                    checkpoint_source = recover(checkpoint_ref, \"checkpoint-recovery.json\")\n                output_files = []\n                for entry in reviewed_execution.get(\"output_files\", []):\n                    restored = recover(entry[\"artifact_ref\"], \"files/\" + entry[\"path\"],\n                                       expected_sha256=entry.get(\"sha256\"), expected_bytes=entry.get(\"bytes\"))\n                    output_files.append({**entry, **restored})\n                materialize_inputs(workspace, materialized)\n                context[\"recovery_materials\"] = {\"execution_id\": reviewed_execution[\"id\"],\n                    \"source_snapshot\": source_snapshot,\n                    \"checkpoint\": deepcopy(checkpoint_metadata),\n                    \"checkpoint_source\": checkpoint_source, \"result_source\": result_source,\n                    \"result_kind\": result_kind,\n                    \"final_result_status\": \"available\" if result_kind == \"execution_result\" else \"not_produced\",\n                    \"output_files\": output_files}\n        context[\"execution_window\"] = {\"path\": \".control/execution-window.json\", \"finish_request_path\": \".control/finish-request.json\","
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/계약/독립-운영.md",
+    "sha256": "fc9b051cfc36132c6ce8d1f8f67dd8f6941bf8f78a745471bf4da786bd518e57",
+    "ranges": [
+      {
+        "start": 21,
+        "end": 21,
+        "text": "고정 bootstrap은 manifest에 없는 파일, 바뀐 파일과 reparse point를 거부한다. 이 검사는 설치 파일의 정체성과 완전성을 확인하지만 코드의 의미, 공급자 인증이나 강한 실행 격리를 보증하지 않는다. bootstrap의 `LIVE_INSTALLATION_ROOT`는 실제 수리할 live 설치 경로를 가리킨다. 복구 AI는 bootstrap 사본을 정본처럼 고치는 것이 아니라 이 live 설치만 수리하며, 검증 뒤 다음 설치 조정에서 새 고정 사본을 만들 수 있다."
+      }
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/operator_bootstrap.py",
+    "sha256": "58efaa37d6e35e6de9efa627efd60200e5d0c4cce1a30f4e0f974e5b922906f7",
+    "ranges": [
+      {
+        "start": 159,
+        "end": 170,
+        "text": "    manifest = verify_snapshot(manifest_path) if frozen_location or manifest_path.exists() else None\n    if args == [\"--bootstrap-info\"]:\n        print(json.dumps({\"mode\": \"frozen\" if manifest else \"live\", \"manifest\": manifest}))\n        return 0\n    # This is a dedicated CLI entrypoint. Its package must come from the verified\n    # snapshot beside it, independent of the working directory or live target.\n    sys.dont_write_bytecode = True\n    sys.path.insert(0, str(Path(__file__).resolve().parent))\n    from do_math import scheduled_operator\n    installation_root = Path(manifest[\"installation_root\"]) if manifest else snapshot_root\n    return scheduled_operator.main(args, installation_root=installation_root)\n"
+      }
+    ]
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/설계.md",
+    "sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83",
+    "ranges": [
+      {
+        "start": 271,
+        "end": 275,
+        "text": "### 5.5 분기 도달 관문\n\nT3는 1·2·3층 모듈의 모든 분기가 적어도 한 시험에서 실행되었는지 판정한다. 경계 어댑터 모듈은 T3 관문에서 뺀다. 경계 어댑터의 외부 호출 분기는 인프로세스 시험에서 원리상 실행되지 않기 때문이다. 경계 어댑터의 분기 도달은 T4 실행에서 따로 측정해 보고하며 관문으로 쓰지 않는다. 어댑터가 담던 해석 함수는 1c 단계에서 1층으로 옮겨지므로 관문 안에 든다. 저장이 들어가는 분기는 실제 저장 검증이 켜진 시험에서 실행되어야 하며, 4.3절에 따라 새 체계의 모든 시험이 그렇다. 의도적으로 도달하지 않는 분기는 `# pragma: no cover`로 제외하되, 같은 행에 사유를 적어야 한다. 구조 검사가 사유 없는 제외 표지를 실패로 판정하고, T3 보고가 제외 수를 집계한다.\n\n구조 검사, 실행기, 극단 변이 스크립트의 세부 판정 규칙(서명 비교의 정규화, 단언 도우미의 등록 형식, 변이 대상 함수의 세부 범위 등)은 1a 단계에서 도구를 만들 때 정하고, 도구의 docstring과 `시험-지침.md`에 적는다. 이 문서는 각 도구의 목적과 판정 대상을 정한다."
+      },
+      {
+        "start": 299,
+        "end": 307,
+        "text": "### 6.3 바뀐 함수의 극단 변이\n\n하위 단계(9.1절 표의 한 행)에서 본문이 바뀌었거나 새로 생긴 제품 함수마다 변이체를 하나 만든다. 비교 기준점은 그 하위 단계를 연 커밋이며, 하위 단계를 시작할 때 `진행.md`에 적는다. 작업자가 T1에서 돌릴 때는 자기 worktree의 분기점 커밋을 기준점으로 쓴다. T1의 결과는 작업자의 자기 점검이고, 하위 단계를 닫는 판정은 T3가 하위 단계를 연 커밋을 기준으로 한 결과로 한다. 변이 규칙은 본문의 모양으로 정한다. 본문에 값을 돌려주는 `return 식`이 있으면 본문 전체를 `return None`으로 바꾼다. 없으면(상태를 바꾸는 함수) 본문 전체를 `pass`로 바꾼다. 생성기는 첫 문장 앞에 `return`을 넣는다. 반환형 주석은 보지 않는다. 선택 색인에서 그 함수를 실행한 시험만 돌리고, 변이체마다 적어도 한 시험이 실패해야 한다. 아무 시험도 실패하지 않은 함수는 의사 시험됨 목록 `tests/pseudo_tested.json`에 오른다. 항목은 함수의 모듈과 이름, 변이 규칙, 기준점 커밋, 사유다. `None` 반환이 원래 동작과 같아 어떤 시험도 실패할 수 없는 함수도 이 목록에 오르며, 사유 칸에 그 사정을 적는다. 이 목록의 사유 없는 항목이 0이어야 하위 단계를 닫는다. 변이는 작업 트리가 아니라 임시 사본에서 한다. 구현은 표준 라이브러리 `ast`로 본문을 치환하고 선택 시험을 도는 스크립트 하나이며, T3에 붙는다. 작업자는 T1에서 자기가 바꾼 함수에만 선택적으로 돌릴 수 있다.\n\n이 검사는 커버리지가 보지 못하는 것, 곧 실행은 하되 결과를 확인하지 않는 시험을 잡는다. 분기 도달 관문을 채우려고 경로만 지나가는 시험이 여기서 걸린다.\n\n1f는 제품 함수를 거의 바꾸지 않고 옮긴 시험과 새 시험으로 관문을 채우는 단계여서, 바뀐 함수만 변이하면 옮긴 시험이 결과를 확인하는지 거의 보지 못한다. 그래서 1f에서는 제품 영역마다 그 영역의 제품 모듈에 속한 모든 함수를 같은 규칙으로 변이한다(스크립트의 `--every`, 결정 A24). 살아남은 함수는 그 변이체에서 실패할 단언을 더하는 것이 원칙이고, 의사 시험됨 목록의 사유는 `None` 반환이나 빈 본문이 원래 동작과 같은 함수에만 쓴다.\n\n### 6.4 남는 위험"
+      }
+    ]
+  }
+]
