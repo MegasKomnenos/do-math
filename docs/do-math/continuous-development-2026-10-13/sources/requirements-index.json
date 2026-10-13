@@ -1,0 +1,1972 @@
+{
+  "kind": "source index, not completion evidence",
+  "authority": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+  "authority_sha256": "9f0a0e6100d70dacacc4c9a428db92903a08bd040f7bd736770b51715c98e365",
+  "p2_source_sha256": "4ff123e36b33eff49ec22ff773253c8ad7c73a6d795a335d2eb271cdc03213f7",
+  "warning": "Historical mechanisms and expected values require current-contract review; the 2026-10-04 soft-time policy overrides old timeout text. Do not count items as implemented from this index.",
+  "counts": {
+    "stage1": 19,
+    "stage2": 11,
+    "preservation": 61,
+    "p2": 12
+  },
+  "rows": [
+    {
+      "group": "stage1",
+      "id": "1-A",
+      "original": "- **1-A 실제 생산자 → 실제 수신 검사.**\n  - 모집단: 코드 안의 모든 (생산자, 수신 검사) 쌍. 지금 확인된 쌍은 여섯 종류다. ① 저장 가족 × `StateContract` 검증, ② 작업자 요청 조립(`ModelRunner`, `CodexModelRunner`) × `codex_worker.load_request`와 Claude 작업자의 요청 검사, ③ 신뢰 manifest 조립(`setup_lean`) × `trust_environment_errors`, ④ 관찰 추적기의 기록 × 저장 스키마, ⑤ 조건 문법의 상태 어휘 × 저장 스키마 enum, ⑥ 러너 결과 영수증 × JSON 출력.\n  - 입력: 손으로 만든 fixture가 아니라 실제 생산자 함수의 출력. 생산자의 입력은 분기마다 하나 이상이다. 설정 불리언 선택지 전건, 공급자 전건, 관계 다중도 0·1·여럿, 선택 필드 있음·없음을 포함한다.\n  - 성질: 생산자 출력이 수신 검사를 오류 없이 통과한다. 역방향으로, 수신 검사가 필수로 요구하는 필드마다 그 필드를 쓰는 생산자가 하나 이상 있다.\n  - 층: 1층(스키마·검사기)과 2층(생산 함수).",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 267,
+        "line_end": 271,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **1-A 실제 생산자 → 실제 수신 검사.**",
+        "last_line": "  - 층: 1층(스키마·검사기)과 2층(생산 함수)."
+      },
+      "baseline_selector": "obligations[id='1-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "1-B",
+      "original": "- **1-B 저장 대역의 검증 보존과 쓰기 분기 도달.**\n  - 모집단: 시험이 쓰는 모든 저장 대역(`StateStore`, `NoRepository`, `_save` 대체, `ReviewFakeEngine`의 저장, `Host._save`).\n  - 성질: 대역도 게시 시점에 실제 `StateContract` 검증을 실행하고, 검증 실패를 시험 실패로 드러낸다. 저장 가족에 필드를 쓰는 생산 분기마다, 이 검증이 켜진 시험이 최소 하나 지난다. 판정은 쓰기 지점 단위의 분기 커버리지로 한다. 검증이 켜진 시험이 한 번도 실행하지 않은 쓰기 지점이 0이어야 한다.\n  - 층: 2층 저장 인터페이스(포트)의 인프로세스 대역.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 272,
+        "line_end": 275,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **1-B 저장 대역의 검증 보존과 쓰기 분기 도달.**",
+        "last_line": "  - 층: 2층 저장 인터페이스(포트)의 인프로세스 대역."
+      },
+      "baseline_selector": "obligations[id='1-B']"
+    },
+    {
+      "group": "stage1",
+      "id": "1-C",
+      "original": "- **1-C 값 영역과 null 경계.**\n  - 모집단: 외부·사용자·모델 값이 저장·해시·직렬화로 들어가는 경계(공급자 사건, 사용자 학술 요구 ID, 러너 영수증, 모델 확장 필드)와, 생산자가 명시 null을 쓰는 모든 필드.\n  - 입력: 각 경계의 수용 영역 표본. 실수, 2^53 이상의 정수, bytes, 비ASCII·공백 문자열, 명시 null, 빈 목록·빈 객체를 넣는다.\n  - 성질: 생산자가 받는 영역 ⊆ 저장·직렬화가 받는 영역. 명시 null을 쓰는 필드는 그 필드를 읽는 모든 소비자가 null로 실행돼도 예외가 없다.\n  - 층: 1층·2층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 276,
+        "line_end": 280,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **1-C 값 영역과 null 경계.**",
+        "last_line": "  - 층: 1층·2층."
+      },
+      "baseline_selector": "obligations[id='1-C']"
+    },
+    {
+      "group": "stage1",
+      "id": "1-D",
+      "original": "- **1-D 코덱·저장 왕복.**\n  - 모집단: payload 인코딩과 저장소의 게시·적재.\n  - 입력: 무작위 레코드(큰 값 여럿, 키 삽입 순서 무작위)와, 같은 필드가 A→B→A로 재등장하는 값 열.\n  - 성질: `decode(encode(x)) == x`이고 정본 검사를 통과한다. 임의 값 열의 연속 저장이 모두 성공하고, 마지막 값이 바이트까지 같게 적재된다.\n  - 층: 2층(저장 인터페이스, 임시 Git).",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 281,
+        "line_end": 285,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **1-D 코덱·저장 왕복.**",
+        "last_line": "  - 층: 2층(저장 인터페이스, 임시 Git)."
+      },
+      "baseline_selector": "obligations[id='1-D']"
+    },
+    {
+      "group": "stage1",
+      "id": "1-E",
+      "original": "- **1-E 공유 가변 노드 금지.**\n  - 모집단: 스키마·상수 빌더 전건.\n  - 성질: 한 결과를 제자리에서 바꿔도 다른 결과와 모듈 전역이 바뀌지 않는다. `85a540c`이 `test_schema_builders_return_copies_that_share_no_node`로 일부를 이미 도입했다(C-23).\n  - 층: 1층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 286,
+        "line_end": 289,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **1-E 공유 가변 노드 금지.**",
+        "last_line": "  - 층: 1층."
+      },
+      "baseline_selector": "obligations[id='1-E']"
+    },
+    {
+      "group": "stage1",
+      "id": "2-A",
+      "original": "- **2-A 입구의 반려 계약.**\n  - 모집단: 소유 루프가 받는 모든 입구. 공개 제어 action 14종, 제출 검사의 확장 가족과 참조 검증기, 관찰 방식 셋의 사건 적용, 공급자 사건 기록, 제어 수송 pump와 영수증 조회가 들어간다.\n  - 입력: 세 부류다. 첫째, 각 입구 스키마에서 생성한 잘못된 모양(비객체, 빈 목록, `None`, `0`, 숫자 대신 문자열, 빈 경로·루트 경로·상위 경로). 둘째, 형식은 옳지만 적용 시점에 전제가 사라진 요청(대상 종결·삭제). 셋째, 요청 ID의 충돌과 재전달(전송 둘 이상, 처리 순서 양쪽 강제).\n  - 성질: 입구는 구조화된 반려(이슈 목록, 거부 영수증)를 내고 반려 목록 밖의 예외를 내지 않는다. 반려된 항목은 정확히 한 번 소비되고, 뒤에 들어온 정상 항목이 처리된다.\n  - 층: 2층(입구 함수). pump는 3층 수송을 인프로세스로 돌린다.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 358,
+        "line_end": 362,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **2-A 입구의 반려 계약.**",
+        "last_line": "  - 층: 2층(입구 함수). pump는 3층 수송을 인프로세스로 돌린다."
+      },
+      "baseline_selector": "obligations[id='2-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "2-C",
+      "original": "- **2-C 탈출 분기 표.**\n  - 모집단: `_run_parallel`의 조기 종료 분기 전건(정비 fence, 사용자 정지, 종결, 설치 수리 대기, 단계 상한, idle).\n  - 성질: 각 분기에서 `run`이 예외 없이 결과 봉투를 반환하고 실행을 만들지 않는다.\n  - 층: 3층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 368,
+        "line_end": 371,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **2-C 탈출 분기 표.**",
+        "last_line": "  - 층: 3층."
+      },
+      "baseline_selector": "obligations[id='2-C']"
+    },
+    {
+      "group": "stage1",
+      "id": "2-D",
+      "original": "- **2-D 전이 열의 예외 금지.** 범주 7의 상태 기계 시험(7-A)이 도는 모든 전이 열에서, 어떤 단계도 반려 목록 밖의 예외를 내지 않는다는 것을 공통 불변식으로 단언한다. 층: 2층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 372,
+        "line_end": 372,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **2-D 전이 열의 예외 금지.** 범주 7의 상태 기계 시험(7-A)이 도는 모든 전이 열에서, 어떤 단계도 반려 목록 밖의 예외를 내지 않는다는 것을 공통 불변식으로 단언한다. 층: 2층.",
+        "last_line": "- **2-D 전이 열의 예외 금지.** 범주 7의 상태 기계 시험(7-A)이 도는 모든 전이 열에서, 어떤 단계도 반려 목록 밖의 예외를 내지 않는다는 것을 공통 불변식으로 단언한다. 층: 2층."
+      },
+      "baseline_selector": "obligations[id='2-D']"
+    },
+    {
+      "group": "stage1",
+      "id": "3-A",
+      "original": "- **3-A 광고 ⊆ 수락, 광고 밖은 지목 거부.**\n  - 모집단: 모든 역할 × 그 역할 입력이 광고하는 허용 집합. 참조 catalog, `admissible_basis_refs`, ready·returned 과제 ID, 허용 프로필, 과제 목록, 누락 자료의 지목 형식이 여기에 든다.\n  - 입력: `prepare_role_input`이 만든 실제 역할 입력. 대표 상태(live와 복구, 초기와 진행 중, 과제 상태 조합)마다 만들고, 모델은 필요 없다.\n  - 성질: 셋이다. (0) 수신 검사가 쓰는 허용 집합마다 역할 입력에 그 집합이 명시되어 있다. (1) 광고된 원소 하나를 인용·선택한 스키마 적합 출력이, 작업 공간 제출 검사와 중앙 적용 검사를 모두 통과한다. 원소는 모델이 알 수 있는 식별 형식(ID, 이름, 경로, 별칭)을 모두 생성한다. (2) 광고 밖 원소는 그 원소를 지목하는 사유로 거부된다. 누락, 과잉, 중복을 구별한다.\n  - 층: 2층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 455,
+        "line_end": 459,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **3-A 광고 ⊆ 수락, 광고 밖은 지목 거부.**",
+        "last_line": "  - 층: 2층."
+      },
+      "baseline_selector": "obligations[id='3-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "7-A",
+      "original": "- **7-A 상태 기계 속성 시험.**\n  - 모집단: 2층 전이의 사건 알파벳.\n    - 공개 제어: pause, resume, HOLD와 해제, quiesce와 해제, close, configure, limited_recovery, 목표·요구 변경.\n    - 결과 편입: 역할별 판정값 전건.\n    - 개정 요청과 은퇴.\n    - 계획 적용: 선택, 철회, 감사 요청.\n    - 운영 처분: continue, retry, revise, repair.\n    - 설치 수리.\n    - 실행 국면 사건: 시작, 도구, 정상·실패·시간 초과 종료, 결과 완성 뒤 미접수.\n  - 입력: 무작위 사건 열(씨앗 고정, 길이 상한)과 회귀 씨앗. 회귀 씨앗은 이 문서의 기록이 보인 순서를 고정 열로 만든 것이다. 실행 환경은 대본 러너, 가짜 시계, 실제 계약 검사를 도는 메모리 저장이다.\n  - 성질: 매 전이 뒤 아래 불변식 목록을 검사하고, 2-D의 \"반려 목록 밖 예외 없음\"을 함께 검사한다.\n    - (a) 사용자 정지가 있으면 사용자 재개 전까지 수명 상태가 paused다. 종결 인스턴스는 어떤 제어로도 다시 열리지 않는다. HOLD 해제는 그 HOLD가 건 정지만 푼다. 정비 정지는 사용자 정지를 풀지 않고 봉인된 산출을 보존한다.\n    - (b) `task_readiness`의 키 ⊆ 배정 가능 과제다. 모든 대기 행동의 모델 배정과 용량 제약은 현재 설정으로 다시 계산한 값과 같거나, 명시적 재평가 대기에 있다. 병합과 은퇴 전후로 요청 이유의 합집합이 대기열과 이력에 보존된다. 목표 변경은 목표와 무관한 행동을 지우지 않는다. 개정 저장은 교체 의미다(현행은 제출값, 옛값은 이력). 판정·결정 이력은 추가만 된다.\n    - (c) 개정·의존 대기 그래프에 순환이 없다. 같은 (계보, 자리, 계약)에 살아 있는 실행·대기 행동은 하나다. 한 행동이나 한 예산 풀의 실패·소진은 독립 행동의 배정을 막지 않는다. 재개는 입력 변경 없이 실패 행동을 되살리지 않는다. 운영 처분은 도달 가능한 모든 상태에서 방어 오류 없이 정산된다(후속이 있으면 superseded).\n  - 층: 2층. 실행 국면 사건은 러너 대역이 국면을 보고하게 해 인프로세스로 만든다.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 757,
+        "line_end": 771,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **7-A 상태 기계 속성 시험.**",
+        "last_line": "  - 층: 2층. 실행 국면 사건은 러너 대역이 국면을 보고하게 해 인프로세스로 만든다."
+      },
+      "baseline_selector": "obligations[id='7-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "8-A",
+      "original": "- **8-A 진행성.**\n  - 모집단: 소유 루프가 기다리는 원천 전건(모델 호출 완료, 관찰 스트림, 제어 수송, 기계 실행).\n  - 입력: 적대적 일정. 관찰을 끝없이 덧붙이는 호출, 사건당 처리 지연이 큰 소유자, 완료가 겹치는 호출들을 둔다.\n  - 성질: 한 바퀴의 관찰 적용량이 진입 시점의 적재분으로 제한된다. 완료된 결과는 관찰 처리량과 무관한 상한 안에 회수된다. 대기 중인 제어는 한 바퀴 안에 처리된다.\n  - 층: 3층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 836,
+        "line_end": 840,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **8-A 진행성.**",
+        "last_line": "  - 층: 3층."
+      },
+      "baseline_selector": "obligations[id='8-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "8-B",
+      "original": "- **8-B 반환 시 정산 완결.**\n  - 모집단: `run`의 반환 경로 전건(단계 상한, idle, fence, 정지, until-active) × 실행 종류(AI, 형식 검사, 신뢰 검사, 외부 작업) × 정지 시점(시작 전, 실행 중, 완료 회수 직후).\n  - 성질: 반환할 때 \"회수했지만 적용하지 않은 완료\"가 0이다. 끝나지 않은 실행은 모두 소유 기록을 가진다. 기계 실행은 `ended`, 종료 확인 `confirmed`, 용량 반환 상태로 끝난다.\n  - 층: 3층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 841,
+        "line_end": 844,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **8-B 반환 시 정산 완결.**",
+        "last_line": "  - 층: 3층."
+      },
+      "baseline_selector": "obligations[id='8-B']"
+    },
+    {
+      "group": "stage1",
+      "id": "9-A",
+      "original": "- **9-A 경계 정적 불변식.**\n  - 모집단: 제품의 외부 호출 지점 전건(하위 프로세스 14곳, Windows API, 파일 교체; 코드-구조 2.2).\n  - 성질(AST 검사): 모든 프로세스 생성이 창 억제 플래그를 공통 인자로 받는다. 스크립트 폴더의 모듈 이름과 `sys.stdlib_module_names`의 교집합이 비었다. 사람과 작업자에게 주는 명령의 인터프리터는 `console_python()`을 거친다. 실행 파일 경로 비교는 정규화 함수 하나만 쓴다. 자식 프로세스 기동은 Job 소유 공통 함수만 쓴다. 파일 원자 교체는 `file_io` 공통 함수만 쓴다.\n  - 층: 1층(정적).",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 914,
+        "line_end": 917,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **9-A 경계 정적 불변식.**",
+        "last_line": "  - 층: 1층(정적)."
+      },
+      "baseline_selector": "obligations[id='9-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "9-B",
+      "original": "- **9-B 녹화 재생.**\n  - 모집단: 외부 출력을 해석하는 순수 함수 전건 × 지원 판본. Codex JSONL, Claude `stream-json`, 공급자 실패 분류, Lean 출력과 선언명, 예약 조회 JSON, scholarly·codex 설정 파일, 능력 탐침 출력이 대상이다.\n  - 입력: 실제 외부 도구에서 녹화한 원자료 말뭉치. 정상과 경계를 함께 담는다. init 앞의 rate_limit 사건, 한 세션의 여러 결과 구간과 task-notification, 종료 정리 사건, 한도 초과, 작은따옴표 선언명, timeout 키가 있는 실제 설정, 실제 역할 스키마 전건이 들어간다.\n  - 성질: 해석 결과가 녹화할 때 확인한 판정(수락·거부, 추출값)과 같다. CLI·Lean 판본이 바뀌면 말뭉치를 다시 녹화한다.\n  - 층: 1층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 918,
+        "line_end": 922,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **9-B 녹화 재생.**",
+        "last_line": "  - 층: 1층."
+      },
+      "baseline_selector": "obligations[id='9-B']"
+    },
+    {
+      "group": "stage1",
+      "id": "10-A",
+      "original": "- **10-A 크기 상한.**\n  - 모집단: 역할 입력 전건 × 대표 상태, 저장 레코드 가족, 작업자 도구 출력(사전 검사).\n  - 입력: 실측 규모 fixture. 녹화한 실제 Lean 결과(선언 5, 폐포 603, 원출력 약 5MB; 9-B 말뭉치와 공유), 대형 manifest(합성으로 만들 수 있음), 프로필 37개, 과제 100개와 과제당 이력 10개를 쓴다.\n  - 성질: 역할 입력 바이트가 기본 `max_input_bytes` 이하이고 필수 부분이 문맥 예산 이하다. 저장 논리 바이트가 원천 바이트의 상수배 이하다(중복 인라인 금지). 사전 검사 출력이 상한 이하이며 JSON 하나로 해석된다.\n  - 층: 1층·2층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 999,
+        "line_end": 1003,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **10-A 크기 상한.**",
+        "last_line": "  - 층: 1층·2층."
+      },
+      "baseline_selector": "obligations[id='10-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "10-B",
+      "original": "- **10-B 횟수 계수.**\n  - 모집단: 반복 비용 경로(Git 읽기·쓰기, 파일 해시와 경로 해석, 깊은 복사, 상태 게시).\n  - 입력: 규모 N을 작은 값과 실측 값 둘로 준다.\n  - 성질: 계수(자식 프로세스, 파일 열기, 커밋, 복사 호출)가 선언된 차수 이하다(상수, ⌈N/배치⌉, N). idle 순회 k회 동안 새 커밋이 0이다.\n  - 층: 2층·3층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 1004,
+        "line_end": 1008,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **10-B 횟수 계수.**",
+        "last_line": "  - 층: 2층·3층."
+      },
+      "baseline_selector": "obligations[id='10-B']"
+    },
+    {
+      "group": "stage1",
+      "id": "11-A",
+      "original": "- **11-A 역할 호출 수 시나리오.**\n  - 모집단: 표준 흐름(초기화 → 첫 수행 배정, 준비 수락 → 계약 검토 → 계획, 정상 착수, 계획 수락).\n  - 입력: 대본 러너.\n  - 성질: 역할별 호출 수가 선언값과 같다. 예를 들어 첫 흐름에서 준비 1회와 계획 1회, 준비 직후 고를 과제가 없으면 계획 0회, 정상 착수 뒤 계획 0회다.\n  - 층: 2층.",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 1061,
+        "line_end": 1065,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **11-A 역할 호출 수 시나리오.**",
+        "last_line": "  - 층: 2층."
+      },
+      "baseline_selector": "obligations[id='11-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "13-A",
+      "original": "- **13-A 운전 여정 시험.**\n  - 모집단: 운전 문서(`references/초기화-운전.md` 등)의 절차 단계 전건.\n  - 입력: 그 절차를 공개 CLI로 따라가는 대본. `cli.main`을 인프로세스로 부르고 포트 대역을 쓴다.\n  - 성질: 각 단계가 공개 명령 하나로 수행된다(수작업 JSON이나 해시 조립 없음). 절차가 요구하는 정지점(예: 활성화 직후)에서 반환한다. 기록된 출처가 실제 주체와 같다(운영자 선택과 사용자 결정을 구별). 원 요청 전문이 보존된다.\n  - 층: 3층(CLI 진입, 인프로세스).",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 1172,
+        "line_end": 1176,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **13-A 운전 여정 시험.**",
+        "last_line": "  - 층: 3층(CLI 진입, 인프로세스)."
+      },
+      "baseline_selector": "obligations[id='13-A']"
+    },
+    {
+      "group": "stage1",
+      "id": "13-C",
+      "original": "- **13-C 문서와 코드의 대응 정적 검사.**\n  - 모집단: 운전·역할 문서가 이름으로 드는 명령, 인자, 필드, 정책.\n  - 성질: 모두 코드에 존재한다. 한 번에 읽게 하는 필수 문서의 바이트 합이 운전 도구의 출력 한도 이하다.\n  - 층: 1층(정적).",
+      "source": {
+        "path": "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line_start": 1181,
+        "line_end": 1184,
+        "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+        "first_line": "- **13-C 문서와 코드의 대응 정적 검사.**",
+        "last_line": "  - 층: 1층(정적)."
+      },
+      "baseline_selector": "obligations[id='13-C']"
+    },
+    {
+      "group": "stage2",
+      "id": "2-B",
+      "original": "- **2-B 소유 루프의 격벽.**\n  - 모집단: 소유 루프 한 바퀴의 단계(제어 적용, 행동 준비, 관찰 적용, 결과 회수·편입, 정비·정산).\n  - 입력: 한 단위(행동, 요청, 실행)의 처리에 임의 예외를 주입한다. 포트 실패(봉인 입력의 읽기 실패, 해시 불일치)도 주입한다.\n  - 성질: `run`이 정상 반환 봉투를 낸다. 예외는 그 단위의 실패 기록(대기, 진단 요청)으로 남는다. 같은 단위를 같은 입력으로 되풀이하지 않고, 다른 단위는 진행한다.\n  - 층: 3층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 363
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='2-B']"
+    },
+    {
+      "group": "stage2",
+      "id": "3-B",
+      "original": "- **3-B 역할 계약의 입력 충족.**\n  - 모집단: 역할 계약 문서 전건 × 역할 변형(live와 복구, 단계).\n  - 입력: 계약이 판단 근거로 요구하는 입력 항목의 기계 판독 표.\n  - 성질: 역할 입력에 표의 모든 항목이 실리거나, 정확한 참조로 도달할 수 있다.\n  - 층: 2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 460
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='3-B']"
+    },
+    {
+      "group": "stage2",
+      "id": "3-C",
+      "original": "- **3-C 평가자 사이의 차분.**\n  - 모집단: 같은 판단을 둘 이상이 계산하는 규칙 전건. 지금 알려진 것은 위 (c)의 열한 쌍이다.\n  - 입력: 각 규칙의 입력 공간. 작은 유한 영역(난이도 × 중요도 × 허용 프로필 부분집합, 역할 × 프로필, 역할 × grant 이름 집합, 과제 상태)은 전수로, 나머지는 생성으로 만든다. 문서가 드는 예시 값(예: `초기화-운전` 3절의 grant 예시)을 영역에 반드시 넣는다.\n  - 성질: 모든 평가자가 같은 판정을 내거나, 선언된 함의가 성립한다. 예를 들어 ready이면 선택 가능하고, 배정 허가이면 실행 중 정지가 아니며, 환경 원인 거부이면 환경 대기로 분류된다.\n  - 층: 1층·2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 465
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='3-C']"
+    },
+    {
+      "group": "stage2",
+      "id": "4-A",
+      "original": "- **4-A 대기 종류 등록부와 해소자.**\n  - 모집단: 코드가 만들 수 있는 모든 대기·보류·판정 종류. `waiting_actions[*].kind`, 과제 `waiting.kind`, 실행기 수명 상태, 활동 대기, 질문 소유자, 반복 보류, 공급자 대기, 설치 수리 대기, 사건 종류, 역할 판정값(계약 검토·운영 점검·목표 감사·평가의 판정 enum)이 들어간다.\n  - 입력: 소스의 정적 추출(대기 생성 지점의 kind 리터럴, 출력 스키마의 판정 enum)과 해소자 등록부.\n  - 성질: 모든 종류에 해소자(재큐, 폐기, 후속 소유자 배정, 사용자 공개 결정)가 하나 이상 등록되어 있다. 해소자 없는 새 종류가 생기면 시험이 실패한다.\n  - 층: 1층(정적).",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 557
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='4-A']"
+    },
+    {
+      "group": "stage2",
+      "id": "4-B",
+      "original": "- **4-B 진입에서 해소까지의 동적 확인.**\n  - 모집단: 4-A의 종류 전건.\n  - 입력: 그 종류에 들어가는 최소 시나리오와 해소 조건을 충족하는 사건. 시나리오는 실제 계약 검사를 도는 메모리 저장 대역, 대본 러너, 가짜 시계로 만든다. 해소 사건은 허가 복원, 환경 활성, 자원 반환, 시각 경과, 다음 계획, 자료 도착(ID·이름·경로 각 형식), 요구 변경(빈 집합 포함), 사용자 공개 결정이다.\n  - 성질: 조건이 충족되면 스케줄러 한 바퀴 안에 대기가 풀린다(재큐, 종결, 다음 소유자 배정, 완료 전이). 조건이 충족되지 않으면 대기가 유지된다. 판정값마다 후속 행동이 정확히 하나 생긴다.\n  - 층: 2층, 그리고 한 바퀴를 확인하는 3층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 562
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='4-B']"
+    },
+    {
+      "group": "stage2",
+      "id": "4-C",
+      "original": "- **4-C 계수 분류 표.**\n  - 모집단: 반복·한도 계수 전건(무산출 계보, 출력 수리 한도, 설치 복구 1회, 반복 문턱).\n  - 입력: 실행 결과 분류 전건(수락, 부분 수락, 거부, 전제 변경, 공급자 한도, 보류, 판정 불가).\n  - 성질: 선언표에 계수 대상으로 적힌 분류만 센다. 한도에 도달한 뒤에도 4-B의 출구가 있다.\n  - 층: 1층·2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 567
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='4-C']"
+    },
+    {
+      "group": "stage2",
+      "id": "5-A",
+      "original": "- **5-A 근거 민감도 표.**\n  - 모집단: 판정 함수 전건. `decision_basis`(인용 근거), `task_scope.assessment_basis`(완료 판정), 검토 개설 조건(`_refresh_readiness`의 기준 키), `trust_validation`의 manifest·inventory 검사, 편입 적용 때의 허용 목록 계산이 들어간다.\n  - 입력: 대표 상태에서 필드를 하나씩 바꾼다. 교란 축은 다섯이다. 관리 정보(상태, 이력 추가, 검토 ID, 수락 표지), 내용(계약, 코드, 증거 바이트), 모집단(목록 원소의 추가·삭제), 시점(입력 봉인 뒤 근거 교체), 동시 상태(같은 대상의 실행 중 검토)다.\n  - 성질: 판정마다 \"근거 필드\"를 선언한다. 근거 필드를 바꾸면 판정이 바뀌고, 선언 밖 필드를 바꾸면 판정이 그대로다. 봉인 뒤 근거가 바뀐 경우는 '전제 변경'으로 분류되고 생산자 수리 계수를 쓰지 않는다. 같은 대상의 실행 중 검토가 있으면 개설 판정이 억제된다.\n  - 층: 1층·2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 630
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='5-A']"
+    },
+    {
+      "group": "stage2",
+      "id": "6-A",
+      "original": "- **6-A 시간 규칙 × 국면 행렬.**\n  - 모집단: 시간 규칙 전건. 풀별 호출 기한, run 기한과 착수 여유, 체크포인트 유예, 자기 점검 응답 기한과 도구 실행 중 정지, 관찰 창(도구, 출력 전송, 무기한 대기), 주기 점검, 대화 임대 만료가 들어간다.\n  - 입력: 주입 시계와 사건 열. 각 규칙을 모든 국면 위치에 배치한다. 선언 timeout이 있는 도구와 없는 도구, 밀린 사건의 재생을 포함한다.\n  - 성질: 설계가 선언한 규칙표대로 타이머가 흐르거나 멈춘다. 판정은 처리 시각이 아니라 사건의 시각과 행 위치로 한다.\n  - 층: 추적기와 호출 창 규칙은 2층, 엔진 국면(입력 준비 중 정지, 모델 시작 전)은 3층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 687
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='6-A']"
+    },
+    {
+      "group": "stage2",
+      "id": "11-B",
+      "original": "- **11-B 발동 규칙 표.**\n  - 모집단: 계획과 운영 점검을 여는 사건 종류 전건 × 상태(판단 대상 있음·없음).\n  - 성질: 판단 대상이 없는 조합은 모델 실행을 만들지 않는다. 판단 대상이 있으면 정확히 하나를 만든다.\n  - 층: 2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 1066
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='11-B']"
+    },
+    {
+      "group": "stage2",
+      "id": "12-A",
+      "original": "- **12-A 기동 관문 대조.**\n  - 모집단: 실행기와 운영자의 기동 경로 전건.\n  - 입력: 설치본, 정본 생성 결과, 기록된 설치 manifest의 파일 해시.\n  - 성질: 설치본의 스킬 파일 해시가 정본 생성 결과나 설치 manifest와 다르면 기동을 거부하거나 차이를 보고한다. 운영 AI의 수리 보고는 판본·커밋 필드를 필수로 가진다.\n  - 층: 3층(기동). 외부 프로세스 없이 파일 해시로 판정한다.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 1114
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='12-A']"
+    },
+    {
+      "group": "stage2",
+      "id": "13-B",
+      "original": "- **13-B 관측 표면 대응.**\n  - 모집단: 4-A의 대기 종류 전건과 실행기 상태값.\n  - 성질: `status`(JSON과 사람용)가 각 대기의 사유, 다음 소유자, 제약 좌표를 표시한다. 표시값은 실제 판정(실제 예약 계산)과 같은 함수에서 나온다. 과제 대상이 없는 대기도 표시된다.\n  - 층: 2층.",
+      "source": {
+        "path": "docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "line": 1177
+      },
+      "baseline_selector": "stage2.eleven_obligations[id='13-B']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-01",
+      "original": "디스크의 시험 모듈과 `SHARDS` 등록이 어긋나면(누락·유령) 실행하지 않고 종료 코드 2를 낸다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "unregistered_modules",
+          "line": 61,
+          "end_line": 64,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "shard_for",
+          "line": 82,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/test_categories.py",
+          "line": 1,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-01']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-02",
+      "original": "같은 모듈이 두 조각에 적히면 뒤 조각에 조용히 배정되고, 이 검사는 그 경우를 잡지 못한다(알려진 구멍).",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "unregistered_modules",
+          "line": 61,
+          "end_line": 64,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "shard_for",
+          "line": 82,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/test_categories.py",
+          "line": 1,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-02']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-03",
+      "original": "수집 중 import 오류(`loader.errors`)가 있으면 종료 코드 2를 낸다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-03']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-04",
+      "original": "위치 인자 ID가 어떤 시험에도 맞지 않으면 선택 전체를 거부한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-04']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-05",
+      "original": "고른 시험이 0개면 \"no pass was established\"로 실패한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-05']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-06",
+      "original": "출력 폴더는 새것이거나 비어 있어야 하고, 결과를 재사용하는 캐시가 없다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-06']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-07",
+      "original": "준비 단계(`setUpClass`, `setUpModule`)가 실패해 시작하지 않은 시험은 `not_run`으로 적고 실패로 친다. 준비 단계 행은 `fixture: True`로 구별한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "TimedResult._outcome",
+          "line": 77,
+          "end_line": 89,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "_run_suite",
+          "line": 140,
+          "end_line": 158,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "_isolated",
+          "line": 203,
+          "end_line": 245,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-07']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-08",
+      "original": "시험 하나가 실패하면 다음 시험이 시작되기 전에 `failures/<ID 해시>.json`을 `complete: False`로 게시한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "TimedResult._outcome",
+          "line": 77,
+          "end_line": 89,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_failure_is_readable_while_the_next_test_runs_before_group_completion",
+          "line": 18,
+          "end_line": 41,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_failing_subtest_remains_a_failure_in_the_machine_report",
+          "line": 90,
+          "end_line": 104,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent",
+          "line": 124,
+          "end_line": 138,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-08']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-09",
+      "original": "실행 전후 `scripts/` 아래 `.py`의 SHA-256을 비교해, 바뀌었으면 `successful`을 거짓으로 둔다. `.md`는 대상이 아니다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-09']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-10",
+      "original": "`lean`·`resource` 표지 시험은 클래스 단위로 Windows Job 안의 별도 작업자에서 돈다. 규칙은 다섯 가지다. 제한 시간은 시험·준비·종료 단계마다 걸린다. 시간을 넘기면 Job 전체를 종료한다. 진행 기록은 덮어쓰지 않는 `progress-<번호>.json`으로 남긴다. `TMP`·`TEMP`를 묶음의 `scratch/`로 돌린다. 작업자 종료 코드를 보고와 합친다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "wait_for_worker",
+          "line": 178,
+          "end_line": 200,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "_isolated",
+          "line": 203,
+          "end_line": 245,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-10']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-11",
+      "original": "격리 제한 시간은 실행기의 운영 값일 뿐이고, 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "wait_for_worker",
+          "line": 178,
+          "end_line": 200,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "_isolated",
+          "line": 203,
+          "end_line": 245,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-11']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-12",
+      "original": "`subTest` 실패는 부모 시험의 실패로 적는다. 건너뛴 하위 시험은 `skipped_subtests`에 쌓고, 부모를 통과로 적지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "TimedResult.addSubTest",
+          "line": 122,
+          "end_line": 126,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "TimedResult.addSkip",
+          "line": 103,
+          "end_line": 112,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_failure_is_readable_while_the_next_test_runs_before_group_completion",
+          "line": 18,
+          "end_line": 41,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_failing_subtest_remains_a_failure_in_the_machine_report",
+          "line": 90,
+          "end_line": 104,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_test_runner.py",
+          "symbol": "RunnerTests.test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent",
+          "line": 124,
+          "end_line": 138,
+          "sha256": "0e69c909984789b352aa8c17e698df83e010b8327c2f70aba2c80e5ae45c7cc2"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-12']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-15",
+      "original": "한 템플릿의 모든 사본은 빌드가 돈 바로 그 절대 경로에 복원한다. 새 사본을 요청하면 이전 사본이 대체되므로, 시험은 한 엔진을 다 쓴 뒤 다음 사본을 요청한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-15']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-16",
+      "original": "상태가 stat 지문을 기록하는 파일은 복사하지도 지우지도 않는 `shared` 아래에 두고, 빌드 뒤에는 읽기만 한다. 예: `trust_fixture` 도구 사슬과 기록.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-16']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-17",
+      "original": "매개변수는 JSON 값이고, 기본값까지 열쇠에 넣는다. 설정은 빌드 매개변수로 넘기고 뒤늦은 `configure` 제어로 바꾸지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-17']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-18",
+      "original": "빌드가 실패하면 그 열쇠를 `'failed'`로 표시하고 재시도하지 않는다. 뒤 요청은 템플릿 열쇠를 담은 `AssertionError`를 받는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-18']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-19",
+      "original": "템플릿은 프로세스 안에서만 살고 디스크에서 재사용하지 않는다. 설치 판본, 빌드 하루 뒤의 권한 만료, 시계 최고 기록을 싣기 때문이다. 빌드 뒤 경과 시간에 좌우되는 규칙은 공개 경로로 시험한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-19']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-20",
+      "original": "사본은 디스크 바이트만 담는다. 프로세스 지역 엔진 상태(`_task_readiness`, `lifecycle_clock` 패치, `_solution_basis`)는 새 엔진에 다시 설정한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_Template",
+          "line": 1013,
+          "end_line": 1037,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "restore_template",
+          "line": 1043,
+          "end_line": 1073,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-20']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-21",
+      "original": "빌드는 끝나지 않은 실행과 예약 없이 끝낸다. 사본 위에서 시작한 실행기가 끝나지 않은 실행을 모두 복구하기 때문이다. `purpose_state`가 이를 강제한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "purpose_state",
+          "line": 504,
+          "end_line": 531,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "drive_to",
+          "line": 460,
+          "end_line": 468,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "PurposeHarness.drive",
+          "line": 359,
+          "end_line": 368,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-21']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-23",
+      "original": "공개 경로를 유지할지는 판별 질문으로 정한다. \"활성화 과정에 결함이 있어도 끝난 상태가 정상과 같다면 이 시험은 실패해야 하는가?\" 전용 연결 시험 둘과 `solved_instance`가 공개 경로를 지킨다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_no_formal_check",
+          "line": 921,
+          "end_line": 922,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activated_instance",
+          "line": 925,
+          "end_line": 939,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activate",
+          "line": 863,
+          "end_line": 918,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "send_control",
+          "line": 801,
+          "end_line": 809,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-23']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-24",
+      "original": "프로세스가 검사 대상일 때만 자식 프로세스를 유지한다. 대상은 셸 종료 코드, 스트림 인코딩, `pythonw`, Windows Job, 다른 프로세스의 소유자 식별, 백그라운드 프로세스, 인터프리터 시동이다. 같은 프로세스 안의 다른 기술자 잠금은 프로세스 사이처럼 충돌하므로, 잠금 경합만으로는 자식이 필요 없다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "run_cli",
+          "line": 963,
+          "end_line": 991,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "role_reach",
+          "line": 328,
+          "end_line": 356,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-24']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-25",
+      "original": "조기 정지 규칙. 모든 단언 값이 확정되는 첫 상태에서 멈추되, 두 가지를 먼저 확인한다. 그 뒤 단계가 단언한 개수에 더해지지 않는가, 뒤에서만 도는 대역 안 검사를 잃지 않는가. 목표 판정이 단언·이름·대역 검사의 대상이면 목표까지 몬다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "purpose_state",
+          "line": 504,
+          "end_line": 531,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "drive_to",
+          "line": 460,
+          "end_line": 468,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "PurposeHarness.drive",
+          "line": 359,
+          "end_line": 368,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-25']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-27",
+      "original": "`submit_intent`는 엔진이 실제 제어 수송 결속을 넘겼는지 확인하고, 영수증이 `accepted`가 아니면 실패한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "submit_intent",
+          "line": 656,
+          "end_line": 666,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-27']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-28",
+      "original": "`local_job_runner`는 시작 보고가 정확히 한 번인지 확인하고, 자식이 10초 안에 끝나지 않거나 활성 프로세스가 남으면 실패한다. 바깥 래퍼가 이미 Job을 만들었으면 안쪽은 만들지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "local_job_runner",
+          "line": 615,
+          "end_line": 645,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-28']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-29",
+      "original": "`read_fixture_context`는 공급된 원천을 정확히(상태 `ok`, 잘림 없음) 읽지 못하면 실패한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "read_fixture_context",
+          "line": 304,
+          "end_line": 325,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-29']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-30",
+      "original": "`seal_response`는 고정 입력에 없는 기록을 개정하려 하면 실패한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "seal_response",
+          "line": 582,
+          "end_line": 612,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-30']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-31",
+      "original": "역할 응답 조각은 실제 입력을 요구한다. `contract_review`는 구조화된 계약(의무와 범위)을, `assessment`는 비어 있지 않은 보고서를, `planning_model_assessments`는 공급된 모델 평가를 요구한다. `intent_response`는 원문을 그대로 이어 붙인 해석만 승인한다. `scope_response`는 정의된 두 관점을 넘는 요구를 거부한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "contract_review",
+          "line": 392,
+          "end_line": 396,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "assessment",
+          "line": 552,
+          "end_line": 559,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "planning_model_assessments",
+          "line": 425,
+          "end_line": 437,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "intent_response",
+          "line": 562,
+          "end_line": 579,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "scope_response",
+          "line": 399,
+          "end_line": 415,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-31']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-32",
+      "original": "`PurposeRunner`의 검사. 행동에 `repair`가 있으면 조용히 적응하지 않고 실패한다. 효력 있는 형식 증거 전에 목표 감사가 오면 실패한다. 목표 감사가 효력 있는 최종 동일성 평가만 받았는지 확인한다. 예상 밖 역할이나 `live`가 아닌 운영 점검이 오면 실패한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "PurposeRunner.run",
+          "line": 123,
+          "end_line": 222,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "PurposeRunner.answer",
+          "line": 224,
+          "end_line": 343,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-32']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-33",
+      "original": "`PurposeHarness.drive`와 `drive_to`, `purpose_state`는 흐름이 `paused`·`closed`·`waiting`에 빠지면 즉시 상태 요약과 함께 실패하고, 단계 상한(45)을 둔다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "purpose_state",
+          "line": 504,
+          "end_line": 531,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "drive_to",
+          "line": 460,
+          "end_line": 468,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "PurposeHarness.drive",
+          "line": 359,
+          "end_line": 368,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-33']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-34",
+      "original": "템플릿 빌드의 공개 활성화에는 불리면 실패하는 검증기(`_no_formal_check`)를 준다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_no_formal_check",
+          "line": 921,
+          "end_line": 922,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activated_instance",
+          "line": 925,
+          "end_line": 939,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activate",
+          "line": 863,
+          "end_line": 918,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "send_control",
+          "line": 801,
+          "end_line": 809,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-34']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-35",
+      "original": "공개 제어 도우미 `send_control`은 거부된 제어를, `activate`는 초기화 제어 거부와 `active` 미도달을 즉시 실패로 드러낸다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "_no_formal_check",
+          "line": 921,
+          "end_line": 922,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activated_instance",
+          "line": 925,
+          "end_line": 939,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activate",
+          "line": 863,
+          "end_line": 918,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "send_control",
+          "line": 801,
+          "end_line": 809,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-35']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-36",
+      "original": "메모리 대역 저장소는 산출물 읽기를 거부한다. `StateStore.read`와 `NoRepository.read`는 `AssertionError`를, `_no_artifacts`는 `FileNotFoundError`를 던진다. 엔진이 넘긴 판독기로 읽는 것은 시험 결함으로 본다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "StateStore.read",
+          "line": 281,
+          "end_line": 283,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\engine_fixtures.py",
+          "symbol": "NoRepository",
+          "line": 357,
+          "end_line": 366,
+          "sha256": "b6fd2647261f2a1b6bac460c055d134e8ae3496a84fbf0af9e7b20ff6a53b570"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "_no_artifacts",
+          "line": 48,
+          "end_line": 49,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-36']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-37",
+      "original": "`NoRepository.published_state`는 `None`이다. 게시된 것이 없으므로 엔진 상태는 결코 \"변경 없음\"이 아니다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\engine_fixtures.py",
+          "symbol": "NoRepository",
+          "line": 357,
+          "end_line": 366,
+          "sha256": "b6fd2647261f2a1b6bac460c055d134e8ae3496a84fbf0af9e7b20ff6a53b570"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-37']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-38",
+      "original": "합성 컴파일러는 명시한 원천만 받는다(`formal_ok` 두 가지, `formal_fixture` 한 가지). 결과에 `launch_not_created=True`와 \"not an actual Lean invocation\" 사유를 싣는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\runner_fixtures.py",
+          "symbol": "formal_ok",
+          "line": 156,
+          "end_line": 176,
+          "sha256": "6ca3fa1a2bc3e7bb49eb4e2c329ed52e14dae91a1ecfa385d39954e95240fb6e"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "formal_fixture",
+          "line": 101,
+          "end_line": 109,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "signed_formal_fixture",
+          "line": 494,
+          "end_line": 497,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\knowledge_fixtures.py",
+          "symbol": "formal_result",
+          "line": 48,
+          "end_line": 59,
+          "sha256": "d9dfda05395c163ba59185289b06413fcf997460db771d6a17d83c4b020736d4"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-38']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-39",
+      "original": "합성 증거는 합성임을 숨기지 않는다. `FixtureAdapter.describe`의 `scope`, 제어 본문 \"Synthetic CORE_TESTS input; not actual host verification or user approval\", 증거 경계 문자열이 그 표시다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "FixtureAdapter.describe",
+          "line": 713,
+          "end_line": 717,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "activate",
+          "line": 863,
+          "end_line": 918,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-39']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-41",
+      "original": "합성 도구 사슬의 검사기 식별은 실제 제품 `formal.py`로 둔다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "trust_fixture",
+          "line": 759,
+          "end_line": 786,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-41']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-42",
+      "original": "`formal_boundary_engine`은 설정 명령을 의도적으로 승인 명령과 다르게 둔다(`'unapproved-config-command'`).",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\knowledge_fixtures.py",
+          "symbol": "formal_boundary_engine",
+          "line": 130,
+          "end_line": 189,
+          "sha256": "d9dfda05395c163ba59185289b06413fcf997460db771d6a17d83c4b020736d4"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-42']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-45",
+      "original": "`Host._save`는 소유 스레드 밖의 엔진 변경을 거부한다. 게시마다 머리를 전진시키고, 게시 뒤 정지를 평가한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_machine_parallel.py",
+          "symbol": "Host._save",
+          "line": 48,
+          "end_line": 53,
+          "sha256": "51671f3458ae3425092cc8fa5c702e0da535588f41f9c9b9b747a8ab570d1539"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-45']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-46",
+      "original": "지역 러너의 입력 검사. `ConcurrentRunner`는 120초 안에 호출이 겹치지 않으면 실패한다. `InvestigationRunner`는 돌려받은 원천의 해시를 대조하고, 조사가 과제 실행 계약을 물려받으면 실패한다. `RejectingRunner`와 `QuotaRunner`는 `producer_result`로 실제 수송을 지난다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_session_scheduler.py",
+          "symbol": "ConcurrentRunner.run",
+          "line": 98,
+          "end_line": 124,
+          "sha256": "9eaa4297ece0f0f2891b3d794f740383f04dbf580d2da4a138f50acf5be2dfcd"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_review_research.py",
+          "symbol": "InvestigationRunner.answer",
+          "line": 33,
+          "end_line": 78,
+          "sha256": "c4af772be58c4fc2cd156bca4e76c2d6f42d77141ca877fe10cdcaf7ea925b89"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_model_assessment_flow.py",
+          "symbol": "RejectingRunner.run",
+          "line": 117,
+          "end_line": 122,
+          "sha256": "8e7bfdef435124c5aae2435d793ae01077e8064e931812db3f5eb86f7b864b77"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\test_provider_recovery.py",
+          "symbol": "QuotaRunner.run",
+          "line": 23,
+          "end_line": 33,
+          "sha256": "3a4db392fffac18abf6dec993b910361b99e04d1e6863e7e93b8d27dbace77ee"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-46']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-48",
+      "original": "`role_reach`는 비밀이 닿은 곳(`reached`)과 스냅숏이 그 비밀을 품었는지(`held`)를 함께 보고한다. `held`가 비었으면 `reached`가 비어도 아무것도 입증하지 않는다. 읽기 도구는 실제 자식 프로세스로 실행한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "role_reach",
+          "line": 328,
+          "end_line": 356,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-48']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-49",
+      "original": "스크립트 러너의 출력은 실제 작업자와 같은 네 단계를 지난다. 후보 결속, 봉인 선언, 엔진이 준 스키마로 검증, 제어 수송 제출이다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\runner_fixtures.py",
+          "symbol": "ScriptedRunner.run",
+          "line": 72,
+          "end_line": 153,
+          "sha256": "6ca3fa1a2bc3e7bb49eb4e2c329ed52e14dae91a1ecfa385d39954e95240fb6e"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-49']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-51",
+      "original": "제품이 정의한 목록과 상수는 제품에서 가져온다. `review_items`는 `CONTRACT_REVIEW_ITEMS`에서, `observation_rule`은 `OPERATORS`에서, `PROFILE_CONFIG`는 `model_policy` 상수에서 가져온다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "review_items",
+          "line": 384,
+          "end_line": 389,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "observation_rule",
+          "line": 446,
+          "end_line": 460,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-51']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-52",
+      "original": "검토 대역과 하네스의 결말 확인. `ReviewFakeEngine.execute`는 입장 처분이 `admitted`가 아니면 실패한다. `reviewed_candidate`, `KnowledgeRoundtripHarness.cycle`, `ImpactReviewHarness.seal_review_fixture`, `defer_review_for_research`는 각자 기대한 결말(주기 결정, 봉인 통과, 유예)을 단언한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "ReviewFakeEngine.execute",
+          "line": 140,
+          "end_line": 188,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "reviewed_candidate",
+          "line": 278,
+          "end_line": 335,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "KnowledgeRoundtripHarness.cycle",
+          "line": 417,
+          "end_line": 454,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "ImpactReviewHarness.seal_review_fixture",
+          "line": 484,
+          "end_line": 504,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\review_fixtures.py",
+          "symbol": "defer_review_for_research",
+          "line": 225,
+          "end_line": 249,
+          "sha256": "59919a22d67514547b5b9262b53beca8663e427f53a56a6e876f8b0601c5f4a1"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-52']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-54",
+      "original": "실행 중인 작업 트리는 편집하지 않는다. `stash`와 `checkout`도 편집이다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-54']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-61",
+      "original": "worktree에서 통합 확인을 할 때는 `DO_MATH_KNOWLEDGE_TEST_LEAN`에 주 작업 트리의 `lean.exe`를 준다. 그렇지 않은 Lean 실패는 결함으로 세지 않는다.",
+      "source": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-61']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-62",
+      "original": "`unittest discover`나 파일별 직접 실행의 종료 코드로 회귀 검사를 마쳤다고 판단하지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-62']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-64",
+      "original": "시험 하나는 성질 하나를 검사하고, 이름은 그 성질을 문장으로 말한다.",
+      "source": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-64']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-65",
+      "original": "고정 시간 대기(`time.sleep`)를 쓰지 않는다. 조건을 폴링하고 넉넉한 상한을 두며, 시각은 시계를 주입해 시험한다.",
+      "source": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-65']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-66",
+      "original": "외부 자원은 검사 대상일 때만 실제로 쓴다(`git_init`, `run_cli`). 실제 Lean에는 `lean` 표지를, 실제 프로세스 수명·자원 한도에는 `resource` 표지를 붙인다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "wait_for_worker",
+          "line": 178,
+          "end_line": 200,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "_isolated",
+          "line": 203,
+          "end_line": 245,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-66']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-67",
+      "original": "제품에 이름 붙은 정의는 import해서 쓰고, 계산 결과처럼 검사하려는 값은 시험에 적는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "review_items",
+          "line": 384,
+          "end_line": 389,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\research_fixtures.py",
+          "symbol": "observation_rule",
+          "line": 446,
+          "end_line": 460,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-67']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-68",
+      "original": "새 시험은 제품 모듈이나 성질의 이름을 단 모듈에 두고, 계기(수리 회차, 점검)로 이름 짓지 않는다. 새 모듈은 `SHARDS`에 등록한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "unregistered_modules",
+          "line": 61,
+          "end_line": 64,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\test_categories.py",
+          "symbol": "shard_for",
+          "line": 82,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/test_categories.py",
+          "line": 1,
+          "end_line": 83,
+          "sha256": "4dbdae512557bcb3cc14e545651ad01bb0544aff04754fffd23ae9d042a8a4ed"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-68']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-69",
+      "original": "시험 모듈은 다른 시험 모듈을 import하지 않는다. 두 모듈 이상이 쓰는 도우미는 영역의 픽스처 모듈로 옮긴다.",
+      "source": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+          "line": 95,
+          "end_line": 165,
+          "sha256": "16d786eb60eb5d3944a6729477f28bca8fbb38917d3bd5753c58ada2e3f92279"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-69']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-70",
+      "original": "결함을 고칠 때는 재현 시험을 먼저 쓰고, 고치기 전 코드에서 실패함을 확인한다.",
+      "source": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+          "line": 1,
+          "end_line": 81,
+          "sha256": "19ed8f2ea1f4d294e3189c6ea0ff67e2ace20ec9dfa0be1003ca7248a715e0c8"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-70']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-71",
+      "original": "음성 시험은 거부된 사실만이 아니라 거부 사유를 고정한다.",
+      "source": [
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-71']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-72",
+      "original": "fake의 기본값이 실제 시스템에서 가능한 상태인지 확인한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\runner_fixtures.py",
+          "symbol": "formal_ok",
+          "line": 156,
+          "end_line": 176,
+          "sha256": "6ca3fa1a2bc3e7bb49eb4e2c329ed52e14dae91a1ecfa385d39954e95240fb6e"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "formal_fixture",
+          "line": 101,
+          "end_line": 109,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "signed_formal_fixture",
+          "line": 494,
+          "end_line": 497,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\knowledge_fixtures.py",
+          "symbol": "formal_result",
+          "line": 48,
+          "end_line": 59,
+          "sha256": "d9dfda05395c163ba59185289b06413fcf997460db771d6a17d83c4b020736d4"
+        },
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-72']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-73",
+      "original": "수정 내용을 무력화했을 때 시험이 실패하는지 프로브로 확인한다.",
+      "source": [
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-73']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-74",
+      "original": "제품 속성을 바꿀 때는 그 속성을 흉내 내는 대역을 먼저 `grep`한다. 대역이 따라가지 못한 실패는 단언을 약하게 하지 않고 현행 계약의 같은 성질로 다시 단언한다.",
+      "source": [
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-74']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-75",
+      "original": "시험 비용을 줄일 때 단언뿐 아니라 시작 상태와 실제 경로를 보존한다. 공통 준비 코드의 소비자는 자동 목록으로 다 덮이지 않는다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\runner_fixtures.py",
+          "symbol": "formal_ok",
+          "line": 156,
+          "end_line": 176,
+          "sha256": "6ca3fa1a2bc3e7bb49eb4e2c329ed52e14dae91a1ecfa385d39954e95240fb6e"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "formal_fixture",
+          "line": 101,
+          "end_line": 109,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\purpose_fixtures.py",
+          "symbol": "signed_formal_fixture",
+          "line": 494,
+          "end_line": 497,
+          "sha256": "5ff5cfa0fdaf48313ca954a91b25e53e93d46537a6ef4455ac375a04d60e3f65"
+        },
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\tests\\knowledge_fixtures.py",
+          "symbol": "formal_result",
+          "line": 48,
+          "end_line": 59,
+          "sha256": "d9dfda05395c163ba59185289b06413fcf997460db771d6a17d83c4b020736d4"
+        },
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-75']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-76",
+      "original": "실제 외부 호출, 대역을 둔 상태 검사, 실제 프로세스·파일 검사, 문서 독해는 서로 다른 것을 입증한다. 보고에는 각 통과의 종류를 적는다.",
+      "source": [
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-76']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-77",
+      "original": "회귀는 판본을 고정한 사본에서 실행하고, 최초 실행의 실패는 이후 재검사가 통과해도 지우지 않는다. 검증 보조 코드의 실패는 제품 결함과 구별해 기록하되 통과 전에 해결한다.",
+      "source": [
+        {
+          "path": ".claude\\skills\\do-math\\scripts\\run_tests.py",
+          "symbol": "main",
+          "line": 264,
+          "end_line": 352,
+          "sha256": "d9c109f75a7d200769b53784106dec1e6dfc1fdf07ba0349afac354704d1d978"
+        },
+        {
+          "path": "기억/layer3/L-0001.md",
+          "line": 1,
+          "end_line": 98,
+          "sha256": "72ada208ae96d7a94f6ec5a2b6b0d3d554d4d380732c4e70b752fc7dc9b8af60"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-77']"
+    },
+    {
+      "group": "preservation",
+      "id": "K-78",
+      "original": "저장 관문을 대역으로 바꾼 엔진 시험만 있는 생산자는 저장 계약 불일치를 가린다. 스키마와 생산자를 맞출 때는 두 방향을 모두 본다. 하나는 스키마에 있는데 생산자가 없는 필드이고, 다른 하나는 생산자가 쓰는데 스키마에 없는 필드다. 이 규칙은 아직 픽스처나 지침에 성문화되지 않았다.",
+      "source": [
+        {
+          "path": "기억/layer1/M-0355.md",
+          "line": 66,
+          "end_line": 94,
+          "sha256": "a017be0e43ff418c6bb0ff76efe19572de51d409650864664dd65c9df3224eb1"
+        },
+        {
+          "path": "기억/layer1/M-0355.md",
+          "line": 70,
+          "end_line": 98,
+          "sha256": "a017be0e43ff418c6bb0ff76efe19572de51d409650864664dd65c9df3224eb1"
+        }
+      ],
+      "baseline_selector": "preservation[id='K-78']"
+    },
+    {
+      "group": "p2",
+      "id": "A-23",
+      "historical_expectation": "INIT/RESULT 복수 구간은 마지막 유효 완결구간 선택; 후속실패/절단은 옛성공으로 fallback 금지.",
+      "historical_counterexample": "원 INIT,RESULT,RESULT 입력과 같은session의 task-notification 3구간; 정상→뒤실패·새작업미제출.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-A.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='A-23']"
+    },
+    {
+      "group": "p2",
+      "id": "A-27",
+      "historical_expectation": "선언timeout 내 도구·진행중출력은 단순 경과시간으로 점검하지 않고 현재 모드의 명시 발동만 적용.",
+      "historical_counterexample": "timeout3600 도구20분·timeout없음·밀린종료사건; 현행규칙표와 옛event_driven 동일성은 미확인.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-A.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='A-27']"
+    },
+    {
+      "group": "p2",
+      "id": "A-31",
+      "historical_expectation": "판단대상0이면 plan0, 대상있으면1; 요청사유 문자열만으로 대상생성 금지.",
+      "historical_counterexample": "prepare([]) 뒤 owner 여러차례: 현재 plan1. 빈queue에 reason만 넣은 _dispatchable True도 별도 교정.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-A.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='A-31']"
+    },
+    {
+      "group": "p2",
+      "id": "A-42",
+      "historical_expectation": "작업한도/용량 한계가 독립 운영풀의 정상 계획·진단 배정을 막지 않음.",
+      "historical_counterexample": "작업풀 소진·운영풀 여유에서 양쪽 요청; capacity=0과 누적budget소진은 각각 검사.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-A.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='A-42']"
+    },
+    {
+      "group": "p2",
+      "id": "B-02",
+      "historical_expectation": "실제 setup producer 산출로 등록, 생산자없는 build_kind=clean 요구금지.",
+      "historical_counterexample": "캐시환경 실제 요청→수신; hand-added clean 없는 양성, 실패compile·unknownfield 음성.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-B.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='B-02']"
+    },
+    {
+      "group": "p2",
+      "id": "B-09",
+      "historical_expectation": "review_cycle_id·formal수락 등 관리변경은 완료basis 유지, 실제 내용변경은 stale·후속1회·종결보존.",
+      "historical_counterexample": "KN review ID추가/FR candidate→accepted와 lean_code변경의 짝; 무관 source추가.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-B.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='B-09']"
+    },
+    {
+      "group": "p2",
+      "id": "B-14",
+      "historical_expectation": "채택root 전건 inventory와 manifest 모집단 일치, 파일추가/누락/외부검색경로 거부.",
+      "historical_counterexample": "6개 label파일만으로 활성화 시도·N개중1누락·목록외 파일추가/변경.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-B.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='B-14']"
+    },
+    {
+      "group": "p2",
+      "id": "B-15",
+      "historical_expectation": "verified 문자열만으로 승인금지, 실제 validation bytes·exit·command·toolchain 대조.",
+      "historical_counterexample": "status failed/exit17/없는경로/다른command/toolchain, 앞의 label만 verified.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-B.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='B-15']"
+    },
+    {
+      "group": "p2",
+      "id": "B-32",
+      "historical_expectation": "실제 prepare_role_input의 필수분류가 fit_context에서 확대되지 않음; 명시 필수항목 overflow 자체는 정상.",
+      "historical_counterexample": "governance/action 필수, goal/policies 각800bytes 선택인 역할입력→1200예산; producer 거치기.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-B.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='B-32']"
+    },
+    {
+      "group": "p2",
+      "id": "C-03",
+      "historical_expectation": "tracker 정상기록이 실제 닫힌schema 통과, control_call_ids 사본 제거·boundary_receipt_ref/rule_update 보존.",
+      "historical_counterexample": "의무open→boundary→rule_proposal응답→close→저장·재시작; 저장patch 금지.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-C.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='C-03']"
+    },
+    {
+      "group": "p2",
+      "id": "C-19",
+      "historical_expectation": "trust_check/activate를 이름짓는 grant 없이도 전환허용, 실행중 같은권한판정 유지.",
+      "historical_counterexample": "문서 grant 그대로 trust roles 없음→check두번→activate; 중간 연구grant revoke.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-C.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='C-19']"
+    },
+    {
+      "group": "p2",
+      "id": "C-20",
+      "historical_expectation": "판정못한 provider-limit/HOLD는 repair1회를 쓰지 않고, 판단완료후 HOLD는1회로 센다.",
+      "historical_counterexample": "동일repair identity 두호출, first refused/held→정상 retry; judged failed verification은두번째 거부.",
+      "source": "docs/do-math/시험-재편-2026-09-29/조사/결함-C.md",
+      "baseline_selector": "P2-현재연결-2026-10-03.json rows[id='C-20']"
+    }
+  ]
+}

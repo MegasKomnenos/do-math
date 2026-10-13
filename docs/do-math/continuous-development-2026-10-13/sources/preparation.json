@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-13",
+  "state": "configured_not_started",
+  "native_codex": "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+  "observed_codex_version": "0.162.1",
+  "python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "service_unit_check": {
+    "command": "python -m unittest discover -s services/continuous-development/tests -v",
+    "exit_code": 0,
+    "run": 31,
+    "passed": 30,
+    "skipped": 1,
+    "skip_reason": "Windows symlink privilege unavailable (WinError 1314)",
+    "observed_in": "preparation session tool output",
+    "raw_output_retained": false,
+    "scope": "fake Codex/process and format/seam tests, not real model execution"
+  },
+  "real_codex_sessions_started": 0,
+  "notes": [
+    "README contains legacy output/continuous-development command paths; configuration uses the actual services path.",
+    "README-linked docs/continuous-development/design.md is absent; protocol.md and actual run.py/check.py were read instead.",
+    "Service sources are pre-existing untracked user files; setup does not modify or absorb them."
+  ],
+  "phase_check": {
+    "exit_code": 0,
+    "output": "sources/phase-check.log",
+    "state": "ready_not_started"
+  },
+  "powershell_check_only": {
+    "exit_code": 0,
+    "state": "ready_not_started"
+  },
+  "launcher_checks": {
+    "path": "sources/launcher-check.json",
+    "duplicate_phase_rejected": true,
+    "invalid_phase_rejected": true,
+    "real_sessions_started": 0
+  },
+  "integrity": {
+    "product_files_unchanged": 969,
+    "source_and_engine_hashes_unchanged": true,
+    "original_requirement_ids": 103,
+    "duplicate_requirement_ids": 0
+  }
+}

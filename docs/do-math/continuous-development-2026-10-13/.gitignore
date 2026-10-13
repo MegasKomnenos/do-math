@@ -1,0 +1,6 @@
+runtime/
+phases/*/logs/*
+!phases/*/logs/.gitkeep
+phases/*/tasks/*/evidence/**/scratch/
+phases/*/tasks/*/evidence/**/__pycache__/
+phases/*/tasks/*/evidence/**/.coverage*

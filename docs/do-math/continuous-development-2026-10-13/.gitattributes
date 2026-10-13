@@ -1,0 +1,4 @@
+sources/*.json -text -whitespace
+phases/**/report.json -text -whitespace
+phases/**/manager.json -text -whitespace
+phases/**/evidence/*.json -text -whitespace
