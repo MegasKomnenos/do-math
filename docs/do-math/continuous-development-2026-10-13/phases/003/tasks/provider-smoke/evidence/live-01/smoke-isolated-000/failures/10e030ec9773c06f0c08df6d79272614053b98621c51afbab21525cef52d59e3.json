@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "smoke.test_provider_live.ProviderLiveTests.test_codex_maintenance_files_and_termination",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\smoke\\test_provider_live.py\", line 17, in test_codex_maintenance_files_and_termination\n    self.assertTrue(report['passed'], {'checks': report['checks'], 'evidence': report['evidence_directory']})\nAssertionError: False is not true : {'checks': {'completed': False, 'structured_output': False, 'schema_unchanged': True, 'nonce_file': False, 'checkpoint': False, 'native_read': False, 'native_completion': False, 'selected_final': False, 'local_termination': True}, 'evidence': 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\003\\\\tasks\\\\provider-smoke\\\\evidence\\\\live-01\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-_4rkrk8h'}\n"
+    ]
+  }
+}

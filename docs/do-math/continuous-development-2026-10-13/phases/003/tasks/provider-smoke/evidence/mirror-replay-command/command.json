@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".agents/skills/do-math/scripts/run_tests.py",
+    "structure.test_corpus",
+    "unit.test_corpus_replay",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/mirror-replay"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T13:38:16.851102+00:00",
+  "environment": {},
+  "pid": 28972,
+  "exit_code": 1,
+  "ended_at": "2026-10-13T13:38:21.285347+00:00",
+  "changed_sources": [
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

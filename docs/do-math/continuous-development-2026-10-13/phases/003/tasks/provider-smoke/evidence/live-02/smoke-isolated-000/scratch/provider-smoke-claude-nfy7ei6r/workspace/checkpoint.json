@@ -1,0 +1,1 @@
+{"current_claim": "The smoke file was written and read back.", "evidence_paths": ["probe-evidence.txt"], "attempts": ["Write and read the nonce file."], "remaining_work": [], "next_step": "Return the maintenance response.", "progress_state": "ready_to_submit"}

@@ -1,0 +1,380 @@
+{
+  "status": "partial product bytes preserved as evidence; working tree left unchanged and product paths not committed",
+  "archive": "phases/003/manager-evidence/provider-smoke-working-tree.zip",
+  "archive_sha256": "d6ff06d758628bef9d2d4e50131196fcbb4809b94535e80f629158e9a74d56e0",
+  "file_count": 62,
+  "files": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "before_sha256": "73cd08ef657cb492a9a4b27430f4da92f17a769690e6f13a7e2c7995681b86fb",
+      "sha256": "ac713e8c62e526f8217d57e3c82494142d984c5c2bf82ab5779e7f4602fcd01a",
+      "bytes": 30290
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+      "before_sha256": "9339f6dd96df6b8a16a7f61d96524d47d4f41c4ca3f5abaa92b6dd469354465c",
+      "sha256": "15afdec8b9b462d10ec60038a1ccfd92643c1b8fc470105d852d93456609758c",
+      "bytes": 11689
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+      "before_sha256": null,
+      "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+      "bytes": 22
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+      "before_sha256": null,
+      "sha256": "1804fa77a537f63782a027a44937d3219b8d3aaf0b344dd87d26cf61b02925a4",
+      "bytes": 22040
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+      "before_sha256": null,
+      "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+      "bytes": 18
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+      "before_sha256": null,
+      "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+      "bytes": 5849
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+      "before_sha256": null,
+      "sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+      "bytes": 4331
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+      "before_sha256": null,
+      "sha256": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+      "bytes": 183
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+      "bytes": 11485
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+      "bytes": 1234
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+      "bytes": 366
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+      "before_sha256": null,
+      "sha256": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+      "bytes": 183
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+      "bytes": 12982
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+      "bytes": 1442
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+      "bytes": 366
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+      "bytes": 815
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+      "bytes": 1233
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+      "bytes": 366
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+      "before_sha256": "ae4d9107a3532d66eff58bda3e580059d63a3bf600a2a247955a6fb02ce93859",
+      "sha256": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7",
+      "bytes": 40291
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+      "before_sha256": null,
+      "sha256": "96c48471651592a60cb20b677694a727e5dd4b7da2ac9b16b28a12bd28749870",
+      "bytes": 964
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/structure/test_corpus.py",
+      "before_sha256": "811ff45acb6bb0701867ff285b84086d41f7e1e9fff086661e470dd711abaccd",
+      "sha256": "fd6d032b9f39ad850c4e603deb6d61a87a66aebc407ec1f52deb68982d441830",
+      "bytes": 3864
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/provider_live.py",
+      "before_sha256": "0336874576d6a0348caaa584ebfe6ab93de1249c2d2a23d9fb9c18e5d6c75b83",
+      "sha256": "18fd4a7a4bb4ebe30b21ed309ff4c29d7e878571258f56d2d206039338667431",
+      "bytes": 13316
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+      "before_sha256": "2648848558be34c7865cb99cbb2cec45e334fdcfae41c8951325158233b57a63",
+      "sha256": "bc4ac7d1d94d4fa1b08f075da5cf142b31689167deb2d2e051e03b465cdc8dcc",
+      "bytes": 7020
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_provider_live.py",
+      "before_sha256": null,
+      "sha256": "6d24bd377d5a195d7005a1b6118643f2f859af14773924112234dee04fe80663",
+      "bytes": 3299
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      "before_sha256": "75eef0f7b987bf226225a349858e68ecba8999e3fa9f5968db12a7e2031516e6",
+      "sha256": "96cad3616f3d960e40f218801330c71f94b609a7f5462d051627f3b1778663cd",
+      "bytes": 24254
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "before_sha256": "73cd08ef657cb492a9a4b27430f4da92f17a769690e6f13a7e2c7995681b86fb",
+      "sha256": "ac713e8c62e526f8217d57e3c82494142d984c5c2bf82ab5779e7f4602fcd01a",
+      "bytes": 30290
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+      "before_sha256": "9339f6dd96df6b8a16a7f61d96524d47d4f41c4ca3f5abaa92b6dd469354465c",
+      "sha256": "15afdec8b9b462d10ec60038a1ccfd92643c1b8fc470105d852d93456609758c",
+      "bytes": 11689
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+      "before_sha256": null,
+      "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+      "bytes": 22
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+      "before_sha256": null,
+      "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+      "bytes": 22040
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+      "before_sha256": null,
+      "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+      "bytes": 18
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+      "before_sha256": null,
+      "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+      "bytes": 5849
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+      "before_sha256": null,
+      "sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+      "bytes": 4331
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+      "before_sha256": null,
+      "sha256": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+      "bytes": 183
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+      "bytes": 11485
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+      "bytes": 1234
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+      "bytes": 366
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+      "before_sha256": null,
+      "sha256": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+      "bytes": 183
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+      "bytes": 12982
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+      "bytes": 1442
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+      "bytes": 366
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+      "before_sha256": null,
+      "sha256": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+      "bytes": 815
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+      "before_sha256": null,
+      "sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+      "bytes": 1233
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+      "before_sha256": null,
+      "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+      "bytes": 2531
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+      "before_sha256": null,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+      "before_sha256": null,
+      "sha256": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+      "bytes": 366
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "before_sha256": "ae4d9107a3532d66eff58bda3e580059d63a3bf600a2a247955a6fb02ce93859",
+      "sha256": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7",
+      "bytes": 40291
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/smoke/test_provider_live.py",
+      "before_sha256": null,
+      "sha256": "96c48471651592a60cb20b677694a727e5dd4b7da2ac9b16b28a12bd28749870",
+      "bytes": 964
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/structure/test_corpus.py",
+      "before_sha256": "811ff45acb6bb0701867ff285b84086d41f7e1e9fff086661e470dd711abaccd",
+      "sha256": "fd6d032b9f39ad850c4e603deb6d61a87a66aebc407ec1f52deb68982d441830",
+      "bytes": 3864
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/provider_live.py",
+      "before_sha256": "0336874576d6a0348caaa584ebfe6ab93de1249c2d2a23d9fb9c18e5d6c75b83",
+      "sha256": "18fd4a7a4bb4ebe30b21ed309ff4c29d7e878571258f56d2d206039338667431",
+      "bytes": 13316
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+      "before_sha256": "2648848558be34c7865cb99cbb2cec45e334fdcfae41c8951325158233b57a63",
+      "sha256": "bc4ac7d1d94d4fa1b08f075da5cf142b31689167deb2d2e051e03b465cdc8dcc",
+      "bytes": 7020
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_provider_live.py",
+      "before_sha256": null,
+      "sha256": "6d24bd377d5a195d7005a1b6118643f2f859af14773924112234dee04fe80663",
+      "bytes": 3299
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      "before_sha256": "75eef0f7b987bf226225a349858e68ecba8999e3fa9f5968db12a7e2031516e6",
+      "sha256": "96cad3616f3d960e40f218801330c71f94b609a7f5462d051627f3b1778663cd",
+      "bytes": 24254
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 # 현재 경계 계약의 사용
 
-phase 001의 독립 분석과 phase 002의 변이 정상 기준 수리는 종료됐다. 변이 결과 형식의 정본은 tests/support/mutation.py의 validate_result와 도구 docstring이며 같은 task가 parent/child 및 CLI/T3 소비를 검증했다. phase 003의 단일 task는 기존 contracts.action_schema, ModelRunner.run, real_ports, 공급자 adapter·parser를 사용해 공급자 최소 스모크와 녹화를 연결한다. 새 독립 인터페이스를 설계하거나 병렬 제공자/소비자로 분리 배정하지 않으므로 provides/uses는 빈 목록이며 새 S 항목은 없다. 네이티브 공급자 결과는 현재 실제 판본의 원출력과 기존 parser를 대조한다. report의 형식은 서비스 protocol.md가 직접 규정한다.
+phase 001의 독립 분석, phase 002 변이 정상 기준 수리와 phase 003 공급자 smoke 작업은 종료됐다. 변이 결과 형식은 tests/support/mutation.py의 validate_result와 도구 docstring, 공급자 호출은 기존 contracts.action_schema·ModelRunner.run·real_ports·adapter/parser가 정본이다. phase 003의 부분 성공과 두 실패는 context C12에 있다.
+
+phase 004의 단일 task는 `.agents/diff/_rules.json`과 `writing-skills/scripts/build_skill_mirrors.py`의 기존 transform/build_target을 사용해 corpus 원자료의 축자 생성을 수리한다. 입력은 정본 파일 바이트와 기존 규칙, 결과는 생성 미러이며 의미는 `writing-skills/references/멀티런타임_동기화.md`와 실제 코드로 확인한다. 한 task가 규칙과 생성 결과·양쪽 소비를 검증하므로 새 독립 인터페이스나 분리된 제공자/소비자를 만들지 않는다. provides/uses는 빈 목록이고 새 S 항목은 없다. report의 형식은 서비스 protocol.md가 직접 규정한다.
 
 제품의 기존 공유 정의는 .claude/skills/do-math/scripts/이음새-정본.md 및 실제 타입·함수·스키마·포트 계약 시험을 원문으로 확인한다. 자연어로 새 인터페이스 사본을 만들지 않는다.
 

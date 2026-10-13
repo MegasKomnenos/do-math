@@ -2,9 +2,9 @@
 
 이 파일은 현재 남김과 다음 판단을 관리한다. 상세한 과거 이력은 sources와 기존 repo 자료에 연결하고 여기에 반복 복사하지 않는다. 상태·근거·구체적 다음 질문 없이 '추가 감사 필요'만 적지 않는다.
 
-## phase 001~002의 결과와 현재 상태
+## phase 001~003의 결과와 현재 상태
 
-phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C11과 다음 자료다.
+phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
 
 - 요구별 종료 질문: run:phases/001/tasks/closure-map/evidence/requirement-state.json. 원래 19/11/61/12 항목을 보존한다. 1-D/11-A/11-B 및 이미 검토한 부분은 최종 판본 연결로 넘기고 새 결함 없이 재구현하지 않는다.
 - 기존 109작업·25영역 재검토: 같은 evidence의 tracking-state.json과 prior-review-state.json. PR23과 PR06/B22의 완료 범위를 재사용하고 필요한 slice를 실제 수리/의미 확인과 결합한다. 없는 임시 원보고의 counts는 역사 주장으로 남긴다.
@@ -12,23 +12,24 @@ phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 ma
 - 관문 준비와 미충족 조건: run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json. 제안 명령의 출력 경로·최종 HEAD·검증된 모델 값은 실행 task가 실제 값으로 결속한다.
 - 정상 기준 수리·직접 소비 검증: run:phases/002/tasks/mutation-baseline/report.json 및 run:phases/002/manager-evidence/verification.json. CLI/T3 공통 passed의 비통과, D9·failfast·정상 실패 제외·시도별 근거를 확인했다. 최종 G6는 이 판본의 baselines/attempt 구조를 사용한다. PR01 중 이 slice만 검토를 종결했다.
 
+- 공급자 실호출의 부분 결과: run:phases/003/tasks/provider-smoke/report.json 및 run:phases/003/manager-evidence/verification.json. task 종료 2254파일과 원보고/실호출 원자료를 대조했다. F1/F2는 미해결이며 F3 background의 한정 재사용과 PR15/B86/B87 지정 slice만 승인했다.
+
 분류는 완료율이 아니다. 검토된 성질은 최종 증거 대기, 확정된 공백은 수리, 아직 모르는 성질은 한 종료 질문, 실행 관문은 최종 고정판 검증으로 구별한다. 오래된 109개 task를 그대로 재파견하지 않는다.
 
-## 다음 phase: 003
+## 다음 phase: 004
 
-work task `provider-smoke` 하나를 배정한다. 공식 `run_tests.py --tier T5`에 현행 maintenance action schema를 사용하는 Codex/Claude 최소 스모크를 연결하고 현재 설치판의 실호출·파일/checkpoint·종료 회수·raw 녹화와 현재 파서 재생을 확인한다. 최소 스모크의 입력 모델은 실제 설정/CLI 근거와 연결하고 공급자마다 기본 1회, 필요한 추가는 1~2회 범위로 한정한다. 원문 스키마를 시험용 protocol_probe로 바꾸거나 인증/환경 실패를 skip/통과로 숨기지 않는다.
+work task `mirror-corpus` 하나를 배정한다. phase 003 F2의 두 Claude help 원자료 변형을 기존 `_rules.json`의 verbatim 규칙으로 수리한다. 현재 생성기는 이 규칙을 먼저 적용해 원바이트를 반환하므로 별도 생성기나 공급자 예외를 도입할 이유가 없다. corpus 전체 데이터 경계를 보호하고 일반 지시문의 런타임 치환을 유지하는 작은 회귀 검증, 공식 생성, 양쪽 해시/재생으로 끝낸다.
 
-변이 정상 기준 수리를 검수한 뒤, 장기 문서 작업에 앞서 외부 계정·모델·실제 역할 schema의 실행 조건을 확인하기 위해 이 작업을 선택했다. Claude background는 현 계약과 기존 녹화를 먼저 대조하고 부족한 실제 증거만 추가한다. PR15/B86/B87의 해당 diff·현재 소비·원보고도 함께 검토한다. Lean/Mathlib·예약·학술 및 운전 읽기 한도는 이 작은 공급자 작업에 합치지 않는다.
-
-상세 종료조건·writes·검증은 run:phases/003/tasks/provider-smoke/objective.md다. 공유 말뭉치·미러·검사 캐시와 실제 모델 실행 때문에 동시 task는 두지 않는다. task는 성공한 공급자와 실패/미실행 공급자를 분리해 반환한다. 모델 호출 실패의 제품 수리가 쓰기 범위를 넘으면 원출력과 정확한 위치를 보고하고 manager가 다음 수리를 배정한다. 형식 검사 뒤 실행기는 새 세션에서 수행한다.
+이 작업을 먼저 하는 이유는 모든 후속 corpus 인도에 이미 확인된 미러 실패가 반복되며, 모델 재호출 없이 좁은 규칙 수정과 현재 근거로 종료할 수 있기 때문이다. Codex schema 수리는 별도 다음 단위다. 동일 생성기·말뭉치·시험 캐시를 쓰는 두 수리를 병렬화하지 않는다. 상세 쓰기 범위와 A1~A4는 run:phases/004/tasks/mirror-corpus/objective.md다. manager는 제품을 직접 수정하지 않는다.
 
 ## 가까운 후속 배정과 선행 관계
 
-003 결과를 검수한 뒤 아래 구체적 남김에서 다음 단위를 선택한다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
+004 결과를 검수한 뒤 우선 Codex schema 전달·수신 경계의 확인된 실패를 한정 work로 배정한다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
 
 | 남김 | 다음 담당 작업과 끝나는 조건 | 선행/한계 |
 |---|---|---|
-| G7 실제 공급자 조건·말뭉치 | phase 003에 배정했다. 현재 모델·인증을 비밀 비노출로 확인하고 두 공급자의 실제 역할 schema 호출 및 녹화/재생을 연결한다. Claude background는 현 사건/파일 조건으로 재판정한다. | 결과의 충족 범위를 G7에 연결한다. 버전 확인만으로 호출 성공을 선언하지 않는다. 외부 조건 부재는 정확한 상신으로 남긴다. |
+| G7/G8 녹화 원바이트와 미러 | phase 004 mirror-corpus에 F2 수리를 배정했다. 기존/신규 raw·manifest를 보존하고 양쪽 전건 해시 및 실제 재생을 통과한다. | 현재 제품 생성의 실제 --check와 원자료 무결성을 함께 확인한다. 모델 호출·역할 schema 변경은 없다. |
+| G7 Codex schema 수락·말뭉치 | phase 003 F1: 보통 maintenance의 선택 integration_bundles가 required에 없다는 실제 HTTP 400이다. 후속 task가 역할 schema와 공급자 전달/수신 경계의 현재 호출자를 확인하고 선택 필드 의미를 보존하는 수리·관련 검사·Codex 새 실호출과 녹화를 수행한다. | 004 뒤 단일 work로 배정한다. 부재/null/값과 다른 schema 제약을 확인하며 단순 필드 삭제·필수화를 하지 않는다. 기존 Codex 실패는 보존하고 Claude 성공/background는 경로 불변이면 재사용한다. |
 | G7 Job/Lean/예약/학술 및 L01 | 공급자 최소 경계와 구별해 실제 Job/pythonw, Lean/Mathlib, 시험 전용 예약 등록·발화·해제, 학술 list_sources를 기존 실제 경로로 검증한다. L01은 현재 Codex/Claude 운전 read-call의 host·판본·절단 규칙·한도 단위를 특정한다. | 개별 실제 연쇄로 한 문맥에서 끝나는 task를 만든다. 역할 stdin을 운전 출력 한도로 대체하지 않는다. byte/token 권위 근거가 없으면 결정 질문을 남긴다. |
 | G1/G3 문서 P01 | operational_evidence와 recovery_materials의 동명 result/checkpoint를 실제 생산자별로 결속하고 정상·restoration_error·null/부재 조건의 문서 지시와 반례를 확인한다. | B133 일반 재개 경계는 유지. doc_code/역할 입력 공유 파일을 단일 task가 수정한다. |
 | G1/G8 문서 N03 확정 불일치 | 독립-운영.md의 LIVE_INSTALLATION_ROOT 설명을 실제 installation_root 전달로 교정하고 기존 bootstrap-info 근거와 미러를 연결한다. | 해당 문서 절만 배정 가능하며 옛 전역 변수를 제품에 복원하지 않는다. |

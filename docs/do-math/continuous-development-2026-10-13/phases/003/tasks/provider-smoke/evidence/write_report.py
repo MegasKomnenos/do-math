@@ -1,0 +1,119 @@
+import json
+import subprocess
+from run_command import EVIDENCE, write
+
+verification = json.loads((EVIDENCE / 'verification.json').read_text(encoding='utf-8'))
+prefix = 'run:phases/003/tasks/provider-smoke/evidence/'
+def ev(*names):
+    return [prefix + name for name in names]
+
+report = {
+    'status': 'partial',
+    'narrative': (
+        '공식 T5에 실제 Codex/Claude maintenance 스모크 두 개를 구현하고 현재 ModelRunner·real_ports·Windows Job·worker·adapter·parser로 실행했다. '
+        '현재 설정의 gpt-6-astra/opus와 지원이 확인된 low를 명시했고 개인 경로나 모델을 시험 코드에 고정하지 않았다. '
+        '일반 maintenance의 실제 _response_schema 결과와 action_schema 전체가 같고 세 실제 worker가 받은 schema도 같음을 확인했다.\n\n'
+        '새 ModelRunner 호출은 Codex 1회·Claude 2회다. live-01의 Claude는 역할 응답·파일·checkpoint·종료에 성공했으나 nonce 읽기 결과에 checkpoint도 출력해 정확 비교에서 실패했다. '
+        '원판정은 보존하고 출력 지시만 명확히 한 뒤 Claude 한 건만 다시 실행해 live-02의 모든 검사와 공식 row가 통과했다. '
+        'Codex 0.162.1은 현 schema의 선택 필드 integration_bundles가 required에 없다는 HTTP 400 invalid_json_schema를 반환했다. '
+        '이 실패는 정상 완료가 아니며 schema를 삭제·축소하거나 허용 범위 밖 제품 코드를 수정하지 않았다. '
+        '두 CLI의 local termination barrier는 모든 시도에서 확인됐다. Claude가 보고한 모델은 claude-opus-5-5, 두 호출의 reported list cost 합계는 약 USD 0.4631016이며 실제 청구액은 미확인이다. Codex 거부의 비용은 보고되지 않았다.\n\n'
+        '세 시도의 완전 원출력과 schema·prompt·worker 상태·선택 final을 새 corpus로 보존했다. 현재 adapter 선언 version/help도 녹화했고 이전 raw와 실패 verdict는 유지했다. '
+        'B86/B87 실제 diff, 현재 직접 소비자, 존재하는 네 원보고를 읽었다. 기존 Claude background의 같은 task/tool ID·start/completion/result 순서·nonce 파일·종료 원자료를 확인해 그 성질만 재사용했다. '
+        '정본의 관련 오프라인 검사는 23/23 통과했고 최종 소스 해시와 일치한다.\n\n'
+        '공식 생성·--check·skill-only는 통과했으나, 생성기가 raw Claude help의 CLAUDE.md를 AGENTS.md로 바꿔 미러 해시와 replay를 깨뜨리는 문제를 추가 재현했다(4선택 중 2통과·2실패). '
+        '생성 규칙은 writes 밖이므로 원 해시를 바꾸는 우회 없이 finding으로 반환한다. 62개 변경은 모두 배정 범위 안이며 제품 runtime/schema/parser는 불변이다. '
+        '따라서 A2와 A5는 미충족이고 이 task는 partial이다. 전체 일반·fresh T3·전체 함수 변이·T4 전체, Job/pythonw·Lean/Mathlib·예약·학술·L01 및 G7 전체는 후속 책임으로 남는다.'
+    ),
+    'acceptance': [
+        {'id': 'A1', 'result': 'pass',
+         'detail': '최종 --tier T5 --list가 resource 격리의 공급자별 두 시험을 선택한다. 시험은 실 ModelRunner.run과 real_ports(environment)를 사용하며 대역/별도 schema가 없다. 현재 역할 schema의 선택 필드까지 전달했고 plain CoreEngine branch 동등성·설정 모델/effort·CLI 버전/호스트와 실제 schema 해시를 기록했다. 이 항목의 통과는 Codex가 schema를 수락했다는 뜻이 아니다.',
+         'evidence': ev('handoff-t5-list/stdout.txt', 'handoff-t5-list/command.json', 'environment.json', 'verification.json', 'live-01/report.json')
+             + ['repo:.claude/skills/do-math/scripts/tests/smoke/test_provider_live.py', 'repo:.claude/skills/do-math/scripts/tests/support/provider_live.py']},
+        {'id': 'A2', 'result': 'fail',
+         'detail': 'Claude 최종 live-02는 파일 바이트·실제 Bash JSON 읽기·read_checkpoint valid·structured output·선택 final·native completion·Job barrier 전부 통과했다. Codex 실제 1회는 HTTP 400 invalid_json_schema: Missing integration_bundles로 거부되어 유효한 응답/파일/checkpoint가 없다. F1의 제품 경계 수리가 필요하다. 실패를 포함한 총 3회와 PID/시각/입출력/schema/argv 해시 및 파서 판정을 모두 보존했다. 인증·설치 문제로 추정하거나 실패를 skip으로 바꾸지 않았다.',
+         'evidence': ev('live-01/report.json', 'live-01-command/command.json', 'live-02/report.json', 'live-02-command/command.json', 'verification.json')
+             + ['repo:.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl']},
+        {'id': 'A3', 'result': 'pass',
+         'detail': '현재 schema 거부 Codex stream과 성공한 Claude stream 두 개(첫 전체 smoke는 실패)를 별도 녹화했다. manifest는 role/source/source_sha256·버전/시각·worker argv SHA·prompt/schema SHA·원 recording 파일·live 판정·현재 parser verdict를 결속한다. 기존 raw 및 비공급자 항목은 그대로이며 약 201KB로 상한 이하다. current surface를 현재 관찰로 연결하고 이전 surface 기록을 별도 ID로 보존했다. 정본의 전 항목 replay, 새 final/schema 대조, 실제 Claude double/parser 대조와 구조 검사가 통과했다. 미러의 원바이트 변형은 A5/F2에 별도 실패로 남긴다.',
+         'evidence': ev('promotion.json', 'offline-01/report.json', 'offline-01-command/command.json', 'verification.json', 'codex-surface-2.diff.txt')
+             + ['repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json']},
+        {'id': 'A4', 'result': 'pass',
+         'detail': 'B86 46a67a7f와 B87 87fd1c1b 실제 변경 및 현 probe/parser/직접 시험 소비자를 대조했다. 네 원보고가 존재하고 해시가 일치했다. 기존 Claude background raw와 원report·completed.txt·worker 상태를 재확인했고 동일 task_id/tool_use_id, local_bash/is_backgrounded, completed, 시작<완료<선택 result, 정확 nonce 및 종료 barrier가 성립한다. 현재 CLI/parser/probe/collector 의미와 맞아 그 성질만 재사용하고 추가 background 호출은 하지 않았다. 과거 actual_wait_tool=false와 passed=false는 유지했다. PR15 나머지 범위는 미검토다.',
+         'evidence': ev('review-notes.md', 'review-b86/stdout.txt', 'review-b87/stdout.txt', 'historical-reports.json', 'background-reuse-review.json', 'historical-background-source/report.json', 'verification.json')},
+        {'id': 'A5', 'result': 'fail',
+         'detail': '선택/row/exit와 실행 중 Python 소스 불변, 최종 오프라인 23/23, 지침과 공식 생성/--check/skill-only는 확보했다. 마지막 live-02 뒤 호출 경로는 불변이고 후속 변경은 corpus/오프라인 검사/지침이다. 하지만 미러의 raw Claude help 치환으로 4건 중 2건이 실패해 검증과 인도 결과 일치를 충족하지 못했다(F2). 최종 --check가 통과해도 원바이트 해시 실패는 남는다. Codex 역할 수락도 F1로 미충족이며 전체 T5/G7 성공을 주장하지 않는다.',
+         'evidence': ev('verification.json', 'offline-01/report.json', 'mirror-plan.json', 'mirror-build/command.json', 'final-mirror-check/command.json', 'final-mirror-check/stdout.txt', 'skill-check/stdout.txt', 'mirror-replay/report.json', 'mirror-replay-command/stderr.txt')}
+    ],
+    'changes': [], 'seams': [],
+    'findings': [
+        {'id': 'F1', 'kind': 'issue',
+         'detail': '실제 Codex 0.162.1/gpt-6-astra/low가 완전한 maintenance action schema를 HTTP 400 invalid_json_schema로 거부했다. 메시지는 schema.required가 모든 properties를 포함해야 하며 integration_bundles가 빠졌다는 것이다. worker exit 1, turn_failed=true, parse_complete=true, final 부재와 Job barrier 확인을 보존했다. 이는 현재 비결박 역할 schema 전달 경계의 확인된 실패다. 연구 control_binding 경로의 실패나 인증 부재를 입증한 것은 아니다.',
+         'evidence': ['repo:.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl'] + ev('live-01/report.json', 'verification.json', 'review-notes.md'),
+         'affects': ['run:context.md#G7', 'run:plan.md', 'repo:.claude/skills/do-math/scripts/do_math/contracts.py', 'repo:.claude/skills/do-math/scripts/do_math/model_runner.py', 'repo:.claude/skills/do-math/scripts/do_math/worker_request.py'],
+         'next_action': 'manager가 제품 schema/공급자 전달·수신 경계의 별도 work를 배정한다. 선택 필드 의미를 유지하는 해결책과 현재 호출자의 범위를 검토하고 Codex 대표 역할 호출을 새로 검증한다. integration_bundles를 삭제하거나 강제로 required로 바꿔 이 요구를 축소하지 않는다. 첫 거부 뒤의 추가 제약은 아직 미확인이다.'},
+        {'id': 'F2', 'kind': 'issue',
+         'detail': '공식 미러 생성기의 텍스트 치환이 Claude CLI help 원자료의 CLAUDE.md를 AGENTS.md로 변경한다. 기존/신규 두 help의 원 SHA a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367가 미러에서 1804fa77a537f63782a027a44937d3219b8d3aaf0b344dd87d26cf61b02925a4가 된다. 이전 녹화도 작업 시작 전에 이미 불일치했다. 공식 --check exit 0과 별개로 미러 structure/replay 2개 시험이 실패했다. 정본 raw와 원 해시를 보존했고 생성물의 수기 수정은 하지 않았다.',
+         'evidence': ev('mirror-plan.json', 'mirror-replay/report.json', 'mirror-replay-command/stderr.txt', 'final-mirror-check/stdout.txt', 'verification.json'),
+         'affects': ['run:context.md#G7', 'run:context.md#G8', 'run:plan.md', 'repo:.agents/diff/_rules.json', 'repo:.claude/skills/writing-skills/scripts/build_skill_mirrors.py', 'repo:.agents/skills/do-math/scripts/tests/corpus/manifest.json'],
+         'next_action': 'manager가 녹화 말뭉치를 축자 보존하도록 미러 규칙을 검토·수리하는 task를 배정한다. 공식 생성 후 양쪽 corpus 해시·replay와 --check를 확인한다. 변형된 바이트에 맞춰 원 manifest SHA/verdict를 고치는 방식으로 통과시키지 않는다. 이번 writes에는 rules/generator가 없어 부수 수리하지 않았다.'},
+        {'id': 'F3', 'kind': 'decision',
+         'detail': '기존 claude-background-completed-21289의 현재 의미상 native completion·파일·종료 성질을 재사용한다. 현재 코드로 identity/순서를 판정하고 실제 원자료의 nonce 및 barrier까지 대조했다. B87 도입 이후 관련 코드의 의미 변화가 없고 Claude CLI 판본도 같다. 과거 TaskOutput 부재로 실패한 전체 보고는 그대로이며 새 maintenance/저장 연쇄 성공으로 확장하지 않는다. PR15/B86/B87 중 지정된 slice만 유지/한정 판정했다.',
+         'evidence': ev('background-reuse-review.json', 'historical-reports.json', 'historical-background-source/report.json', 'review-notes.md', 'verification.json'),
+         'affects': ['run:context.md#C11', 'run:context.md#G7', 'run:plan.md'],
+         'next_action': 'manager는 이 background 성질의 재사용을 판단하고 불필요한 추가 유료 호출을 피한다. Codex 실패, 미러 결함 및 Job/pythonw·Lean/Mathlib·예약·학술·L01은 독립된 남김으로 후속 배정한다.'}
+    ],
+    'checks': []
+}
+
+for path in verification['changed_sources']:
+    mirror = path.startswith('.agents/')
+    if path.endswith('/.timings.json'):
+        detail = '공식 runner의 모듈 비용 기록; 선택/결과 캐시를 수동 수정하지 않았다.'
+    elif path.endswith('/support/provider_live.py'):
+        detail = '기존 Sim 실행 도우미를 유지하고 명시 입력·전체 maintenance 요청·native 읽기 판정·실제 단일 호출 및 원자료 보존을 추가했다.'
+    elif '/smoke/' in path:
+        detail = '공식 T5/resource에 실제 Codex/Claude maintenance 파일·checkpoint·종료 시험을 각 한 개 연결했다.'
+    elif path.endswith('/unit/test_provider_live.py'):
+        detail = '실호출 전 명시 입력/완전 schema와 실제 도구 결과의 identity·성공·정확 JSON 판정을 오프라인으로 검증한다.'
+    elif path.endswith('/structure/test_corpus.py'):
+        detail = '이전/현재 source SHA와 maintenance schema recording 및 live 판정 존재를 검증한다.'
+    elif path.endswith('/unit/test_corpus_replay.py'):
+        detail = '모든 maintenance 녹화의 현재 역할 schema, 실패와 성공의 구별, 정확한 선택 final을 검증한다.'
+    elif path.endswith('/contracts/test_doubles_follow_corpus.py'):
+        detail = '새 maintenance native 출력과 실제 provider double을 동일 product parser에서 비교하고 거부를 정상 성공으로 취급하지 않는다.'
+    elif path.endswith('/시험-지침.md'):
+        detail = 'T5 명시 환경 입력·호출 비용·증거 위치·대표 역할 범위·현재 Codex 거부와 남은 외부 연쇄를 문서화했다.'
+    elif path.endswith('/corpus/manifest.json'):
+        detail = '세 실제 시도의 raw/schema/prompt/worker/final과 해시·모델·verdict·live 판정을 연결하고 현 surface 및 이전 surface 기록을 보존했다.'
+    else:
+        detail = '실제 관찰 바이트를 새 corpus 파일로 보존했다. 기존 원바이트나 실패 판정을 덮어쓰지 않았다.'
+    if mirror:
+        detail = '공식 생성기가 만든 대응 미러. ' + detail
+        if path.endswith('/capabilities/claude-20261013-1.txt'):
+            detail += ' 생성기의 텍스트 치환으로 원 SHA가 불일치함을 F2로 보고한다.'
+    report['changes'].append({'path': path, 'detail': detail})
+
+checks = [
+    ('initial-t5-list', 'pass', '시작 시 test_*.py가 없어 실제 exit 2를 관찰했다. 모델 호출은 없었으며 빈 선택을 성공으로 세지 않는다.'),
+    ('prepare-run', 'pass', '비밀 아닌 설정 필드·지원 effort와 실제 adapter version/help를 보존했다. 모델 호출은 없다.'),
+    ('preparation-tests', 'pass', '실호출 전 입력/요청/native 읽기 준비와 냄새 검사 9건 통과.'),
+    ('handoff-t5-list', 'pass', '최종 T5에서 공급자별 두 시험을 명시 선택.'),
+    ('live-01-command', 'fail', 'Claude 첫 read tool 출력 형식과 Codex HTTP 400 schema 거부로 2선택/2실패, skip/미실행 없음. 원판정 보존.'),
+    ('live-02-command', 'pass', '출력 지시만 명확히 한 후 Claude 1선택/1통과. Codex를 재호출하거나 전체 T5 성공으로 합산하지 않았다.'),
+    ('history-review-command', 'pass', 'B86/B87 원보고 및 background 실제 파일·stream·종료 증거를 확인. 유료 호출 없음.'),
+    ('offline-01-command', 'pass', '정본 corpus 구조·전 항목 재생·double 비교·smells·준비 검사 23선택/23통과, skip/fixture/미실행 없음.'),
+    ('mirror-build', 'pass', '생성 전 변경 31파일이 허용 쓰기 범위 안임을 확인하고 공식 생성했다. 원바이트 의미 합격은 별도다.'),
+    ('skill-check', 'pass', 'probe_cli --skill-only가 verified를 반환했다.'),
+    ('mirror-replay-command', 'fail', '미러 4선택/2통과/2실패. Claude help 두 파일의 원 SHA와 replay digest가 변경됐다. 실패를 숨기지 않는다.'),
+    ('mirror-timing-sync', 'pass', '미러 재생이 바꾼 비용 캐시만 공식 생성기로 재동기화했다.'),
+    ('final-mirror-check', 'pass', '최종 공식 생성 일치/overlay 확인은 통과했다. 이 결과는 F2의 raw 무결성 실패를 대체하지 않는다.'),
+    ('verification-command', 'pass', '정본 최종판·62개 허용 변경·선택/row·schema/argv/final/원 corpus 보존을 대조했다. gate 전체 성공 판정은 아니다.')
+]
+for name, result, detail in checks:
+    data = json.loads((EVIDENCE / name / 'command.json').read_text(encoding='utf-8'))
+    report['checks'].append({'command': subprocess.list2cmdline(data['argv']), 'cwd': 'repo:.', 'result': result,
+        'exit_code': data['exit_code'], 'evidence': ev(name + '/command.json', name + '/stdout.txt', name + '/stderr.txt'), 'detail': detail})
+write(EVIDENCE.parent / 'report.json', report)
+print(json.dumps({'status': report['status'], 'acceptance': {row['id']: row['result'] for row in report['acceptance']},
+                  'changes': len(report['changes']), 'checks': len(report['checks']), 'findings': len(report['findings'])}))

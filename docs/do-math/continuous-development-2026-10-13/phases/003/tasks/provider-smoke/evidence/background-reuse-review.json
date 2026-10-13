@@ -1,0 +1,178 @@
+{
+  "files": {
+    "report.json": {
+      "exists": true,
+      "sha256": "073d9880bdb66dea6d6023d43ff936f27bf89ba93ba78c10edc246e6e5db14a7"
+    },
+    "workspace/completed.txt": {
+      "exists": true,
+      "sha256": "b18fcbdcba292d4832323156f07d9d5972fc9f60ae8707f0bb6197b8d3c77df2"
+    },
+    "workspace/phase-pending.json": {
+      "exists": true,
+      "sha256": "beb859238c8ce7133a471c0e33988f595fac050410619e0bee7a82834c98acd8"
+    },
+    "evidence/stdout.jsonl": {
+      "exists": true,
+      "sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74"
+    },
+    "evidence/stderr.txt": {
+      "exists": true,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "evidence/worker-status.json": {
+      "exists": true,
+      "sha256": "2356c564965f93fff588db045c5e3f9dc44ceb6959c6df4421b84554b507d70b"
+    },
+    "evidence/input.txt": {
+      "exists": true,
+      "sha256": "8f6a102a41a6792770b5de3cec2ad7f53ecc412fe4daac37fe482cbadd8faf20"
+    },
+    "evidence/output.schema.json": {
+      "exists": true,
+      "sha256": "9bf531d9a665fd448d030d6860d16232f978cff561861bed7a7c28ad3e3e9fc4"
+    },
+    "evidence/request.json": {
+      "exists": true,
+      "sha256": "b4413f9259cce5c5497495976341bf6d9006fbc7969e27d49c184c47a57a97d1"
+    }
+  },
+  "source": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc\\claude\\background",
+  "historical_passed": false,
+  "historical_checks": {
+    "local_termination": true,
+    "structured_result": true,
+    "native_background_start": true,
+    "actual_wait_tool": false,
+    "completed_file": true
+  },
+  "current_background_predicate": true,
+  "raw_matches_corpus": true,
+  "file_matches_selected_nonce": true,
+  "worker_status": {
+    "argv_sha256": "d963ffb0b17417374d5e49ec770e5f83c874040b03c9d777cc52cff589e9ccd8",
+    "cli_exit_code": 0,
+    "request_sha256": "90d8d7153363cbd61ff15bc3977d5a6bac3ec1c62fee798a3442210963340514",
+    "schema_sha256": "9bf531d9a665fd448d030d6860d16232f978cff561861bed7a7c28ad3e3e9fc4",
+    "state": "exited",
+    "stdin_sha256": "8f6a102a41a6792770b5de3cec2ad7f53ecc412fe4daac37fe482cbadd8faf20"
+  },
+  "termination_barrier": {
+    "active_processes": 0,
+    "process_ids": [],
+    "root_signaled": true,
+    "confirmed": true
+  },
+  "selected_result": {
+    "segment": 0,
+    "start_line": 1,
+    "result_line": 35,
+    "result_sha256": "ac628364a37a9084cededd548fa70fe681c207c2cafff0e12f789559b51cc564",
+    "success": true,
+    "origin": null,
+    "num_turns": 6,
+    "output_sha256": "406a419ce7723db5fe756b37c03abf27bfe57b0cd87b99976f9b00bede2ff8d0"
+  },
+  "background_events": [
+    {
+      "line": 8,
+      "event": {
+        "type": "system",
+        "subtype": "background_tasks_changed",
+        "tasks": [
+          {
+            "task_id": "bdpm763r9",
+            "task_type": "local_bash",
+            "description": "Wait 5s then write completed.txt"
+          }
+        ],
+        "uuid": "6efa8a93-48ee-4953-b90c-0d2076ffd155",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 9,
+      "event": {
+        "type": "system",
+        "subtype": "task_started",
+        "task_id": "bdpm763r9",
+        "tool_use_id": "toolu_01LDnYPKQVRxMunNrDu8928v",
+        "description": "Wait 5s then write completed.txt",
+        "is_backgrounded": true,
+        "task_type": "local_bash",
+        "uuid": "86d20be5-66aa-4b11-a900-107e8ac75f7f",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 16,
+      "event": {
+        "type": "system",
+        "subtype": "background_tasks_changed",
+        "tasks": [],
+        "uuid": "d9e8afa1-34d2-4914-abb8-7852a9c2adba",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 17,
+      "event": {
+        "type": "system",
+        "subtype": "task_updated",
+        "task_id": "bdpm763r9",
+        "patch": {
+          "status": "completed",
+          "end_time": 1791116972149
+        },
+        "uuid": "9b78e6ff-c3a6-4c4c-9a71-eb194cf66c49",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 18,
+      "event": {
+        "type": "system",
+        "subtype": "task_notification",
+        "task_id": "bdpm763r9",
+        "tool_use_id": "toolu_01LDnYPKQVRxMunNrDu8928v",
+        "status": "completed",
+        "output_file": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc\\claude\\background\\workspace\\.scratch\\.execution-temp\\claude\\C--math--skill-workspace-test-restructure-2026-09-29-finish-actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc-claude-background-workspace\\ec1f3eab-96e6-4499-b91e-7192364da958\\tasks\\bdpm763r9.output",
+        "summary": "Background command \"Wait 5s then write completed.txt\" completed (exit code 0)",
+        "uuid": "1e6c11e8-571e-4c5f-8c70-02994ee4d734",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    }
+  ],
+  "current_sources": {
+    "probe_cli.py": {
+      "b87_sha256": "cbf4bbadb4897afe4e3f534e402123a495bc958d91647f1c00c7a6cbba20a452",
+      "current_sha256": "cbf4bbadb4897afe4e3f534e402123a495bc958d91647f1c00c7a6cbba20a452",
+      "same_bytes": true
+    },
+    "do_math/claude_stream.py": {
+      "b87_sha256": "488f126d18980f9f5a37d2396e3766b368bcae2f7ac209d7f171da1ed461b7b6",
+      "current_sha256": "488f126d18980f9f5a37d2396e3766b368bcae2f7ac209d7f171da1ed461b7b6",
+      "same_bytes": true
+    },
+    "do_math/model_runner.py": {
+      "b87_sha256": "9a538ed1589a78ec50ec58ea974cb549f9da0629798a6ac5a8b10878b8f6dadc",
+      "current_sha256": "9a538ed1589a78ec50ec58ea974cb549f9da0629798a6ac5a8b10878b8f6dadc",
+      "same_bytes": true
+    },
+    "do_math/claude_worker.py": {
+      "b87_sha256": "c554bffd86306d10eefbd22fd7b406b5520a1b620707b8c6993c60e6cf0a4849",
+      "current_sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05",
+      "same_bytes": false
+    },
+    "do_math/codex_adapter.py": {
+      "b87_sha256": "76c86d4ea93b6c2beb7f9a289f2d98aad1c2089600617f2a08b29b6bbf1e7069",
+      "current_sha256": "76c86d4ea93b6c2beb7f9a289f2d98aad1c2089600617f2a08b29b6bbf1e7069",
+      "same_bytes": true
+    },
+    "do_math/cli_execution.py": {
+      "b87_sha256": "cb1c1b5d432e8ad590d3de07783d70eee1cb3088ac72461c3d9d6b6fd6345c2c",
+      "current_sha256": "cb1c1b5d432e8ad590d3de07783d70eee1cb3088ac72461c3d9d6b6fd6345c2c",
+      "same_bytes": true
+    }
+  }
+}

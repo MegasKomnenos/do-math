@@ -1,0 +1,2 @@
+Provider smoke evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\003\tasks\provider-smoke\evidence\live-01\smoke-isolated-000\scratch\provider-smoke-claude-keracdq7
+Provider smoke evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\003\tasks\provider-smoke\evidence\live-01\smoke-isolated-000\scratch\provider-smoke-codex-_4rkrk8h

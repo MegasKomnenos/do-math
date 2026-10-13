@@ -1,0 +1,39 @@
+{
+  "changed_context_ids": [
+    "C2",
+    "C5",
+    "C8",
+    "C9",
+    "C11",
+    "C12"
+  ],
+  "unchanged_goal_ids": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6",
+    "G7",
+    "G8"
+  ],
+  "unchanged_context_ids": [
+    "C1",
+    "C3",
+    "C4",
+    "C6",
+    "C7",
+    "C10"
+  ],
+  "semantic_review": "기존 G 조건과 문서/의미/전체 관문 남김을 유지했다. C11의 당시 미실행 설명은 역사 관찰로 표시하고 현재 한정 성공/실패와 다음 책임은 C12에 분리했다. S 계약은 바꾸지 않았다.",
+  "before_sha256": {
+    "context.md": "8707f90842c2bae6343bfd85381438ea942de08c676bcd4ca79285d7aa408079",
+    "plan.md": "c4e65e5aeefd5c1e2493a81b3583ff5698fc60aa80c990d7fe5dcb277c538b4c",
+    "seams.md": "cf30e1208fdf20aaabd606a9bebc91e97b43975ae4325b29b008784e38eee31b"
+  },
+  "after_sha256": {
+    "context.md": "855d610821a4d892d65b9d101e9e32debe22d4f66fb64b01303bba1a5703983c",
+    "plan.md": "579e95f5a976a8c9cdd62dcc241dee05c4df8211294650bcd62ab3f7b5b27b69",
+    "seams.md": "2c848b873556cb441d560bdef79a7ab2077272ffcff97cd7653c8855d276e78b"
+  }
+}

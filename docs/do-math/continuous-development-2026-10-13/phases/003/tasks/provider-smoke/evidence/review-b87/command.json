@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "87fd1c1b",
+    "--",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T13:28:19.228451+00:00",
+  "environment": {},
+  "pid": 9976,
+  "exit_code": 0,
+  "ended_at": "2026-10-13T13:28:19.385714+00:00",
+  "changed_sources": []
+}

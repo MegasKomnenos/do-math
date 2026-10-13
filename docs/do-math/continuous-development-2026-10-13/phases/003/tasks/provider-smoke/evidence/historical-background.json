@@ -1,0 +1,130 @@
+{
+  "entry": {
+    "id": "claude-background-completed-21289",
+    "kind": "claude_stream",
+    "path": "claude/claude-background-completed-21289.jsonl",
+    "tool_version": "2.1.289 (Claude Code)",
+    "recorded_at": "2026-10-04",
+    "command": "probe_cli.run_case(background): real ModelRunner/WindowsJob/worker, timeout=None",
+    "role": "protocol_probe",
+    "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc/claude/background/evidence/stdout.jsonl",
+    "source_sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+    "live_checks": {
+      "local_termination": true,
+      "structured_result": true,
+      "native_background_start": true,
+      "actual_wait_tool": false,
+      "completed_file": true
+    },
+    "scope": "Actual background start, completed notification and final structured result. Probe did not invoke TaskOutput, so it is not a passing background smoke.",
+    "verdict": {
+      "turn_completed": true,
+      "turn_failed": false,
+      "parse_complete": true,
+      "unknown_events": [],
+      "structured_output": {
+        "status": "CLI_OK",
+        "nonce": "fe01178cea1927f29d46b94b86407a1e",
+        "phase": "finished"
+      },
+      "reported_models": [
+        "claude-opus-5-5"
+      ],
+      "result_segments": 1,
+      "usage_segments": 1,
+      "rate_limit_statuses": [
+        "allowed"
+      ],
+      "background_event_types": [
+        "background_tasks_changed",
+        "task_started",
+        "background_tasks_changed",
+        "task_updated",
+        "task_notification"
+      ],
+      "post_result_event_types": []
+    }
+  },
+  "source_exists": true,
+  "current_predicate": true,
+  "background_events": [
+    {
+      "line": 8,
+      "event": {
+        "type": "system",
+        "subtype": "background_tasks_changed",
+        "tasks": [
+          {
+            "task_id": "bdpm763r9",
+            "task_type": "local_bash",
+            "description": "Wait 5s then write completed.txt"
+          }
+        ],
+        "uuid": "6efa8a93-48ee-4953-b90c-0d2076ffd155",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 9,
+      "event": {
+        "type": "system",
+        "subtype": "task_started",
+        "task_id": "bdpm763r9",
+        "tool_use_id": "toolu_01LDnYPKQVRxMunNrDu8928v",
+        "description": "Wait 5s then write completed.txt",
+        "is_backgrounded": true,
+        "task_type": "local_bash",
+        "uuid": "86d20be5-66aa-4b11-a900-107e8ac75f7f",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 16,
+      "event": {
+        "type": "system",
+        "subtype": "background_tasks_changed",
+        "tasks": [],
+        "uuid": "d9e8afa1-34d2-4914-abb8-7852a9c2adba",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 17,
+      "event": {
+        "type": "system",
+        "subtype": "task_updated",
+        "task_id": "bdpm763r9",
+        "patch": {
+          "status": "completed",
+          "end_time": 1791116972149
+        },
+        "uuid": "9b78e6ff-c3a6-4c4c-9a71-eb194cf66c49",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    },
+    {
+      "line": 18,
+      "event": {
+        "type": "system",
+        "subtype": "task_notification",
+        "task_id": "bdpm763r9",
+        "tool_use_id": "toolu_01LDnYPKQVRxMunNrDu8928v",
+        "status": "completed",
+        "output_file": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc\\claude\\background\\workspace\\.scratch\\.execution-temp\\claude\\C--math--skill-workspace-test-restructure-2026-09-29-finish-actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc-claude-background-workspace\\ec1f3eab-96e6-4499-b91e-7192364da958\\tasks\\bdpm763r9.output",
+        "summary": "Background command \"Wait 5s then write completed.txt\" completed (exit code 0)",
+        "uuid": "1e6c11e8-571e-4c5f-8c70-02994ee4d734",
+        "session_id": "ec1f3eab-96e6-4499-b91e-7192364da958"
+      }
+    }
+  ],
+  "selected_result": {
+    "segment": 0,
+    "start_line": 1,
+    "result_line": 35,
+    "result_sha256": "ac628364a37a9084cededd548fa70fe681c207c2cafff0e12f789559b51cc564",
+    "success": true,
+    "origin": null,
+    "num_turns": 6,
+    "output_sha256": "406a419ce7723db5fe756b37c03abf27bfe57b0cd87b99976f9b00bede2ff8d0"
+  }
+}

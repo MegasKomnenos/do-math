@@ -1,0 +1,91 @@
+{
+  "streams": [
+    {
+      "id": "claude-maintenance-live-01-20261013",
+      "live_passed": false,
+      "source": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-01\\smoke-isolated-000\\scratch\\provider-smoke-claude-keracdq7\\smoke.json",
+      "worker_cli_exit": 0,
+      "command_sha256_matches": true,
+      "raw_bytes": 11485
+    },
+    {
+      "id": "codex-maintenance-live-01-20261013",
+      "live_passed": false,
+      "source": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-01\\smoke-isolated-000\\scratch\\provider-smoke-codex-_4rkrk8h\\smoke.json",
+      "worker_cli_exit": 1,
+      "command_sha256_matches": true,
+      "raw_bytes": 815
+    },
+    {
+      "id": "claude-maintenance-live-02-20261013",
+      "live_passed": true,
+      "source": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-02\\smoke-isolated-000\\scratch\\provider-smoke-claude-nfy7ei6r\\smoke.json",
+      "worker_cli_exit": 0,
+      "command_sha256_matches": true,
+      "raw_bytes": 12982
+    }
+  ],
+  "surfaces": [
+    {
+      "provider": "codex",
+      "archived_id": "codex-command-surface-20261004",
+      "diffs": [
+        {
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "--version"
+          ],
+          "same_bytes": false,
+          "before_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "after_sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2"
+        },
+        {
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "--help"
+          ],
+          "same_bytes": true,
+          "before_sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "after_sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e"
+        },
+        {
+          "command": [
+            "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+            "exec",
+            "--help"
+          ],
+          "same_bytes": false,
+          "before_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "after_sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "provider": "claude",
+      "archived_id": "claude-command-surface-20261004",
+      "diffs": [
+        {
+          "command": [
+            "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+            "--version"
+          ],
+          "same_bytes": true,
+          "before_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "after_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e"
+        },
+        {
+          "command": [
+            "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+            "--help"
+          ],
+          "same_bytes": true,
+          "before_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "after_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+        }
+      ],
+      "verified": true
+    }
+  ],
+  "total_corpus_bytes": 200872
+}

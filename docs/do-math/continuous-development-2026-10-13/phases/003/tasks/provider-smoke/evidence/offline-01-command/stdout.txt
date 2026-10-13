@@ -1,0 +1,28 @@
+Open known defects: 0
+[structure] 6 tests
+[unit] 7 tests
+[contracts] 10 tests
+Over budget: 1 tests
+      7.609s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+{"complete": true, "successful": true, "counts": {"passed": 23}, "group_seconds": {"structure": 8.4, "unit": 0.0, "contracts": 0.2}, "total_seconds": 8.6}
+    7.609s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    0.516s passed             structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name
+    0.203s passed             structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization
+    0.078s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success
+    0.032s passed             structure.test_corpus.CorpusCompletenessTests.test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared
+    0.032s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks
+    0.032s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_only_the_default_producer_source_verifies_with_evidence_by_default
+    0.031s passed             structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason
+    0.031s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_declared_facts_reproduce_the_recorded_signature_and_axiom_lines
+    0.031s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_binder_type_value_and_shared_bodies_survive_the_parser
+    0.016s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_declaration_the_source_does_not_define_fails_like_lean
+    0.015s passed             unit.test_corpus_replay.CorpusReplayTests.test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final
+    0.015s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_missing_or_conflicting_facts_are_not_silently_filled
+    0.015s passed             contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_preview_registration_removes_previous_extraction_permission
+    0.000s passed             structure.test_corpus.CorpusCompletenessTests.test_each_provider_has_a_versioned_real_stream
+    0.000s passed             unit.test_corpus_replay.CorpusReplayTests.test_every_entry_parses_to_its_recorded_judgment
+    0.000s passed             unit.test_provider_live.ProviderSmokePreparationTests.test_claude_read_requires_matching_prior_bash_identity_and_nonerror_result
+    0.000s passed             unit.test_provider_live.ProviderSmokePreparationTests.test_codex_read_requires_successful_tool_result_and_exact_parsed_value
+    0.000s passed             unit.test_provider_live.ProviderSmokePreparationTests.test_inputs_are_explicit_and_do_not_fall_back_to_global_defaults
+    0.000s passed             unit.test_provider_live.ProviderSmokePreparationTests.test_missing_inputs_fail_before_calling_any_provider
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\003\tasks\provider-smoke\evidence\offline-01\report.json

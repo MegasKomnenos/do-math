@@ -1,0 +1,83 @@
+{
+  "host": "desktop",
+  "python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "settings": [
+    {
+      "path": "C:\\Users\\wogud\\.codex\\config.toml",
+      "selected_fields": {
+        "model": "gpt-6-astra",
+        "model_reasoning_effort": "max"
+      }
+    },
+    {
+      "path": "C:\\math\\.codex\\config.toml",
+      "selected_fields": {
+        "model": "gpt-6-astra"
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\.claude\\settings.json",
+      "selected_fields": {
+        "model": "opus",
+        "effortLevel": "xhigh"
+      }
+    },
+    {
+      "path": "C:\\math\\.claude\\settings.json",
+      "selected_fields": {}
+    },
+    {
+      "path": "C:\\math\\.claude\\settings.local.json",
+      "selected_fields": {}
+    }
+  ],
+  "codex_model_observations": [
+    {
+      "slug": "gpt-6-astra",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        },
+        {
+          "effort": "max",
+          "description": "Maximum reasoning depth for the hardest problems"
+        },
+        {
+          "effort": "ultra",
+          "description": "Maximum reasoning with automatic task delegation"
+        }
+      ]
+    }
+  ],
+  "selected": {
+    "codex": {
+      "cli": "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+      "model": "gpt-6-astra",
+      "effort": "low",
+      "only_assigned_model": false,
+      "version": "codex-cli 0.162.1"
+    },
+    "claude": {
+      "cli": "C:\\Users\\wogud\\.local\\bin\\claude.EXE",
+      "model": "opus",
+      "effort": "low",
+      "only_assigned_model": false,
+      "version": "2.1.289 (Claude Code)"
+    }
+  },
+  "effort_reason": "Explicit low effort for a short file/checkpoint smoke; Codex cache and installed Claude --help record accepted effort values. Configured model names are unchanged; global effort settings are not edited."
+}

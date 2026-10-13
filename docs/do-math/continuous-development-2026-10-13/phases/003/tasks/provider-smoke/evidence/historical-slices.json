@@ -1,0 +1,86 @@
+{
+  "provider_corpus_integration": {
+    "id": "B86",
+    "scope": "현재 Codex·Claude 실호출 녹화와 재생, 탐침 문자열 타입 및 Codex 실패 프로토콜 교정",
+    "state": "검수·관련 검증 완료",
+    "defect_id": "KD-1910",
+    "reports": {
+      "related": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-공급자-실출력/related.json",
+        "sha256": "1b84353ff4f134954577b490d3ea665af4d9dc9f5a66e1ef5f4bef98973e9a9c",
+        "counts": {
+          "passed": 95
+        },
+        "seconds": 25.8
+      },
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-공급자-실출력/report.json",
+        "sha256": "6751efabc9d1875fb806d73e30ec6169c952c789fdf4b3270be749d8f5631d92",
+        "counts": {
+          "passed": 12
+        },
+        "seconds": 0.1
+      },
+      "final_ledger_and_replay": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-공급자-실출력/ledger-and-replay.json",
+        "sha256": "fc0feef262a73b96d9068ed20e46a3a477497e4a8d4dcfab38ef6f6f0c3ac9ac",
+        "counts": {
+          "passed": 7
+        },
+        "seconds": 3.1
+      }
+    },
+    "live_probes": {
+      "codex_files": "passed after explicit schema string types; first HTTP400 retained",
+      "claude_files": "passed",
+      "claude_background": "structured result, background start/completion and file passed; TaskOutput check failed because native ToolSearch reports no matching tool"
+    },
+    "recordings": {
+      "entries": 7,
+      "kinds": [
+        "codex_stream",
+        "claude_stream",
+        "lean_output"
+      ],
+      "current_versions": {
+        "codex": "0.160.0",
+        "claude": "2.1.289"
+      },
+      "new_entries": [
+        "codex-schema-rejected-0160",
+        "codex-files-completed-0160",
+        "claude-files-completed-21289",
+        "claude-background-completed-21289"
+      ]
+    },
+    "whole_requirement_closed": false,
+    "remaining": [
+      "여러 결과 구간과 종료 정리·한도 거부의 실제 녹화",
+      "예약 조회·설정 파일·능력 탐침·실제 역할 스키마와 Lean 경계 모집단",
+      "현재 대역과 새 공급자 말뭉치의 계약 대응",
+      "최종 동일 판본 T4/T5 전체"
+    ],
+    "memory_node": "M-0503",
+    "resolved_by_B87": [
+      "TaskOutput가 없는 현행 CLI에 맞게 작업/호출 ID와 완료-before-result 검사로 교정"
+    ]
+  },
+  "background_probe_contract": {
+    "id": "B87",
+    "scope": "현행 Claude 네이티브 작업 완료의 ID·상태·순서 확인과 실환경 탐침 timeout 제거",
+    "state": "검수·관련 검증 완료",
+    "memory_node": "M-0504",
+    "defect_id": "KD-1911",
+    "related": {
+      "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-백그라운드-탐침/report.json",
+      "sha256": "510d23e8edb878d3b650a8d4f4e7b6462dec3d745ca53ceaca10d1a314850ad5",
+      "counts": {
+        "passed": 100
+      },
+      "seconds": 49.7,
+      "changed_during_run": []
+    },
+    "whole_requirement_closed": false,
+    "limits": "실제 B86 원자료를 새 판정 함수로 재생했다. B86의 실패 원보고를 소급 성공으로 쓰지 않았고 새 공급자 호출도 추가하지 않았다. 최종 T4/T5는 별도 남김."
+  }
+}

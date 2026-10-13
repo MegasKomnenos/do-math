@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/promote.py"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T13:35:41.090193+00:00",
+  "environment": {},
+  "pid": 39560,
+  "exit_code": 0,
+  "ended_at": "2026-10-13T13:35:41.412485+00:00",
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+    ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+    ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+    ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+    ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+    ".claude/skills/do-math/scripts/tests/corpus/manifest.json"
+  ]
+}

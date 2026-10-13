@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "unit.test_provider_live",
+    "structure.test_test_smells",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/preparation-results"
+  ],
+  "cwd": "C:\\math",
+  "started_at": "2026-10-13T13:27:53.750480+00:00",
+  "environment": {},
+  "pid": 32844,
+  "exit_code": 0,
+  "ended_at": "2026-10-13T13:28:04.638298+00:00",
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

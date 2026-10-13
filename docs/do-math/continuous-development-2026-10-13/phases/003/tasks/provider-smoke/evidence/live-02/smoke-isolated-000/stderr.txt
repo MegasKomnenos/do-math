@@ -1,0 +1,6 @@
+test_claude_maintenance_files_and_termination (smoke.test_provider_live.ProviderLiveTests.test_claude_maintenance_files_and_termination) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 16.302s
+
+OK

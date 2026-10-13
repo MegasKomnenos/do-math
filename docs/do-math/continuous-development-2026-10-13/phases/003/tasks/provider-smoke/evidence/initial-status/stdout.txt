@@ -1,0 +1,69 @@
+ M .agents/skills/do-math/scripts/do_math/canonical.py
+ M .agents/skills/do-math/scripts/do_math/repository.py
+ M .agents/skills/do-math/scripts/tests/migration/dispositions/planning.2.json
+ M .claude/skills/do-math/scripts/do_math/canonical.py
+ M .claude/skills/do-math/scripts/do_math/repository.py
+ M .claude/skills/do-math/scripts/tests/migration/dispositions/planning.2.json
+ M docs/do-math/시험-재편-2026-09-29/진행.md
+?? .agents/skills/do-math/scripts/tests/flows/test_cross_terminal_absorption.py
+?? .agents/skills/do-math/scripts/tests/unit/test_cross_wait_graphs.py
+?? .claude/skills/do-math/scripts/tests/flows/test_cross_terminal_absorption.py
+?? .claude/skills/do-math/scripts/tests/unit/test_cross_wait_graphs.py
+?? docs/do-math/continuous-development-2026-10-13/phases/002/manager-evidence/commit-paths.nul
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/diff-check/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/diff-check/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/focused1-run/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/focused1-run/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-build/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-build/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-check/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-check/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-precheck/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/mirror-precheck/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/red-run/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/red-run/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/red2-run/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/red2-run/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/related-green-run/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/related-green-run/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/report-check/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/report-check/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/skill-structure/source-after.json
+?? docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/skill-structure/source-before.json
+?? docs/do-math/continuous-development-2026-10-13/phases/003/tasks/provider-smoke/evidence/
+?? docs/do-math/시험-재편-2026-09-29/JSON-동등성-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/P2-현재연결-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/개편-조사-2026-10-02.md
+?? docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-AI-호출-시간-규칙/focused.json
+?? docs/do-math/시험-재편-2026-09-29/검토-권한-재승인-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/검토-대기-정본-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/관찰-조건-값영역-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/목표-검증-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/목표-진행-2026-10-03.md
+?? docs/do-math/시험-재편-2026-09-29/목표-추가검증-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/반복-계수-분류-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/반복-문턱-해소-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/배정-대기-정본-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/보류-철회-저장-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/봉인-복원-검증-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/수리-계수-분류-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/신뢰-전환-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/실패-대기-해소-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/외부-경계-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/원문-재확인-2026-10-03.md
+?? docs/do-math/시험-재편-2026-09-29/원문-재확인-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/의도-대기-해소-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/입력-반려-소비-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/작업-방식-검토-2026-10-03.md
+?? docs/do-math/시험-재편-2026-09-29/작업-방식-검토-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/재개-검증-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/재개-검토-2026-10-03.md
+?? docs/do-math/시험-재편-2026-09-29/전체-T3-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/준비-대기-정본-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/첫-수리-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/행동-권한-대기-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/행동-대기-등록부-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/행동-대기-상태-근거-2026-10-03.json
+?? docs/do-math/시험-재편-2026-09-29/형식-대기-정본-근거-2026-10-03.json
+?? docs/do-math/시험-지도-2026-09-28/
+?? services/continuous-development/
