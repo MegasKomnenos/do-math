@@ -1,0 +1,9 @@
+Failed to import test module: mutation_fixture_tests
+Traceback (most recent call last):
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-final\boundary-isolated-000\scratch\mutation-baseline-wcpfdkb_\scripts\mutation_fixture_tests.py", line 5, in <module>
+    raise ImportError("specimen load")
+ImportError: specimen load
+

@@ -434,7 +434,7 @@ class MutationIndexTests(unittest.TestCase):
         self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
         args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD')
-        for status in ('execution_error', 'mutation_error', 'not_executed'):
+        for status in ('execution_error', 'mutation_error', 'not_executed', 'baseline_failing'):
             with self.subTest(status=status):
                 report = {'base': 'HEAD', 'every': True, 'functions': 1, 'counts': {status: 1},
                           'unreasoned_entries': 0, 'baseline_failing': [], 'seconds': 0.0, 'survived': []}

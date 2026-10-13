@@ -1,0 +1,22 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "unit.test_mutation",
+    "boundary.test_mutation_baseline",
+    "unit.test_runner_tiers",
+    "structure.test_test_smells",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/related-final"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T12:56:55.844324+00:00",
+  "pid": 14832,
+  "exit_code": 0,
+  "ended": "2026-10-13T12:57:26.216202+00:00",
+  "seconds": 30.375
+}

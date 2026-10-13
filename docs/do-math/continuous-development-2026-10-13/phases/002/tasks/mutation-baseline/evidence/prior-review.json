@@ -1,0 +1,120 @@
+{
+  "history": "PR01/B56",
+  "reports": [
+    {
+      "selector": "/current_work/measurement_integration/changed_area",
+      "declaration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fj9e2u51\\report.json",
+        "sha256": "3b423af2326287ac9a2b03d549d61128e5287ff82a88b6d215047d3cad1acfbf",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 83,
+          "skipped": 2
+        },
+        "total_seconds": 25.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_runner_tiers.ModuleFixtureTests.test_both_modes_preserve_order_fixture_counts_and_complete_module_costs",
+              "seconds": 0.34399999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_runner_tiers.ReportTests.test_report_states_the_number_of_open_known_defects",
+              "seconds": 2.405999999959022,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost",
+              "seconds": 0.875,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "exists": false
+    },
+    {
+      "selector": "/current_work/measurement_integration/structure",
+      "declaration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6bxa__n2\\report.json",
+        "sha256": "d5e4e5130d7a2dac5a98181cbeee64c174ef5e64c6f75a6fe1bcb7ce39ac8133",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.030999999959022,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "exists": false
+    },
+    {
+      "selector": "/current_work/measurement_integration/timing_red",
+      "declaration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-eaivmkw0\\report.json",
+        "sha256": "b8edf42c1e2c0bd6eb5561dce58cdcd4975edff6da1923dbc29ba186f5c23925",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 0.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost",
+              "seconds": 0.890999999945052,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "exists": false
+    },
+    {
+      "selector": "/current_work/measurement_integration/exact_baseline_comparison",
+      "declaration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-hkr9st06\\report.json",
+        "sha256": "5b41f533e251219e0f43e91db3a95bceb04a3ad21714d3cdabe60cab2989f281",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 15.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "exists": false
+    }
+  ],
+  "diffs": [
+    "bbe64043.patch",
+    "f56a2772.patch"
+  ],
+  "scope": "mutation child evidence, baseline and shared passed consumer"
+}

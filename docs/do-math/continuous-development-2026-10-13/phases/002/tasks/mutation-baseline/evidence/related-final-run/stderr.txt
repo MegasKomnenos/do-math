@@ -1,0 +1,72 @@
+test_new_system_tests_have_no_smell (structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell) ... ok
+test_product_coverage_exclusions_state_a_reason (structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason) ... ok
+test_test_side_helpers_patch_no_product_name (structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name) ... ok
+test_test_sources_are_unchanged_by_unicode_normalization (structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 8.520s
+
+OK
+test_a_changed_or_new_body_is_a_target_and_a_docstring_or_neighbour_edit_is_not (unit.test_mutation.ChangeTests.test_a_changed_or_new_body_is_a_target_and_a_docstring_or_neighbour_edit_is_not) ... ok
+test_repeated_names_are_keyed_in_order (unit.test_mutation.ChangeTests.test_repeated_names_are_keyed_in_order) ... ok
+test_a_mutant_child_stops_at_the_first_failing_test (unit.test_mutation.ChildRunTests.test_a_mutant_child_stops_at_the_first_failing_test) ... ok
+test_a_surviving_cheap_module_does_not_skip_a_later_killer (unit.test_mutation.ChildRunTests.test_a_surviving_cheap_module_does_not_skip_a_later_killer) ... ok
+test_module_load_exception_is_reported_as_load_failure (unit.test_mutation.ChildRunTests.test_module_load_exception_is_reported_as_load_failure) ... ok
+test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first (unit.test_mutation.ChildRunTests.test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first) ... ok
+test_survivors_enter_without_a_reason_and_killed_functions_leave (unit.test_mutation.ListTests.test_survivors_enter_without_a_reason_and_killed_functions_leave) ... ok
+test_a_body_of_only_pass_or_ellipsis_has_no_mutant (unit.test_mutation.MutantTests.test_a_body_of_only_pass_or_ellipsis_has_no_mutant) ... ok
+test_a_generator_stays_a_generator_and_yields_nothing (unit.test_mutation.MutantTests.test_a_generator_stays_a_generator_and_yields_nothing) ... ok
+test_a_one_line_body_is_replaced_in_place (unit.test_mutation.MutantTests.test_a_one_line_body_is_replaced_in_place) ... ok
+test_a_state_changing_function_does_nothing (unit.test_mutation.MutantTests.test_a_state_changing_function_does_nothing) ... ok
+test_a_value_returning_function_returns_none_and_keeps_its_docstring_and_neighbours (unit.test_mutation.MutantTests.test_a_value_returning_function_returns_none_and_keeps_its_docstring_and_neighbours) ... ok
+test_a_partial_successful_selection_cannot_be_reported_as_surviving (unit.test_mutation.MutationEvidenceTests.test_a_partial_successful_selection_cannot_be_reported_as_surviving) ... ok
+test_closing_requires_measured_mutants_and_a_passing_unmutated_baseline (unit.test_mutation.MutationEvidenceTests.test_closing_requires_measured_mutants_and_a_passing_unmutated_baseline) ... ok
+test_elapsed_time_alone_does_not_kill_a_mutant (unit.test_mutation.MutationEvidenceTests.test_elapsed_time_alone_does_not_kill_a_mutant) ... ok
+test_fallback_keeps_layer_folders_and_unentered_and_trivial_functions_need_no_child (unit.test_mutation.MutationEvidenceTests.test_fallback_keeps_layer_folders_and_unentered_and_trivial_functions_need_no_child) ... ok
+test_load_error_requires_the_identical_normal_selection_to_actually_pass (unit.test_mutation.MutationEvidenceTests.test_load_error_requires_the_identical_normal_selection_to_actually_pass) ... ok
+test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill (unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill)
+About 0.8s: both sides of 15 evidence faults retain actual spec/result/attempt files. ... ok
+test_normal_failure_is_excluded_and_attempts_and_cached_baselines_remain_traceable (unit.test_mutation.MutationEvidenceTests.test_normal_failure_is_excluded_and_attempts_and_cached_baselines_remain_traceable) ... ok
+test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success (unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success)
+About 0.3s for the 3 mutant outcomes x 4 normal outcomes through actual file parsing. ... ok
+test_the_rule_follows_the_body_shape_of_the_function_itself (unit.test_mutation.RuleTests.test_the_rule_follows_the_body_shape_of_the_function_itself) ... ok
+test_an_unknown_function_of_a_changed_file_or_a_missing_index_adds_the_layer_folders (unit.test_mutation.SelectionTests.test_an_unknown_function_of_a_changed_file_or_a_missing_index_adds_the_layer_folders) ... ok
+test_the_tests_that_entered_the_function_are_chosen_whatever_moved (unit.test_mutation.SelectionTests.test_the_tests_that_entered_the_function_are_chosen_whatever_moved) ... ok
+test_a_run_without_a_tier_has_no_tier_budget (unit.test_runner_tiers.BudgetTests.test_a_run_without_a_tier_has_no_tier_budget) ... ok
+test_a_t3_that_measured_everything_is_held_to_the_full_measurement_budget (unit.test_runner_tiers.BudgetTests.test_a_t3_that_measured_everything_is_held_to_the_full_measurement_budget)
+설계 A29: the daily incremental T3 keeps its budget; a run measuring every module has its own. ... ok
+test_only_tests_over_their_folder_budget_are_listed (unit.test_runner_tiers.BudgetTests.test_only_tests_over_their_folder_budget_are_listed) ... ok
+test_unmeasured_module_preparation_cost_reaches_cache_and_lpt (unit.test_runner_tiers.ModuleCostTests.test_unmeasured_module_preparation_cost_reaches_cache_and_lpt) ... ok
+test_a_measured_run_sets_up_and_tears_down_each_module_under_its_own_fixture_label (unit.test_runner_tiers.ModuleFixtureTests.test_a_measured_run_sets_up_and_tears_down_each_module_under_its_own_fixture_label)
+A29: a module's fixtures belong to that module alone, so its reused measurement keeps them. ... ok
+test_both_modes_preserve_order_fixture_counts_and_complete_module_costs (unit.test_runner_tiers.ModuleFixtureTests.test_both_modes_preserve_order_fixture_counts_and_complete_module_costs) ... ok
+test_fixture_errors_and_skips_keep_their_outcomes_and_observed_cost (unit.test_runner_tiers.ModuleFixtureTests.test_fixture_errors_and_skips_keep_their_outcomes_and_observed_cost) ... ok
+test_stopped_or_interrupted_modules_are_not_filled_from_rows (unit.test_runner_tiers.ModuleFixtureTests.test_stopped_or_interrupted_modules_are_not_filled_from_rows) ... ok
+test_a_run_that_writes_no_index_still_mutates_on_the_usable_index (unit.test_runner_tiers.MutationIndexTests.test_a_run_that_writes_no_index_still_mutates_on_the_usable_index)
+A partial T3 with --mutation-base hands mutation the fresh index it finds, not none (결함 D13). ... ok
+test_branch_success_cannot_hide_missing_mutation_measurement (unit.test_runner_tiers.MutationIndexTests.test_branch_success_cannot_hide_missing_mutation_measurement) ... ok
+test_a_module_without_a_recorded_time_is_estimated_from_its_test_count (unit.test_runner_tiers.ParallelGroupTests.test_a_module_without_a_recorded_time_is_estimated_from_its_test_count) ... ok
+test_modules_go_longest_first_to_the_lightest_group (unit.test_runner_tiers.ParallelGroupTests.test_modules_go_longest_first_to_the_lightest_group) ... ok
+test_changed_source_rejects_pass_and_does_not_publish_timing_cache (unit.test_runner_tiers.ReportTests.test_changed_source_rejects_pass_and_does_not_publish_timing_cache) ... ok
+test_edition_hashes_actual_python_bytes_and_ignores_docs_and_pycache (unit.test_runner_tiers.ReportTests.test_edition_hashes_actual_python_bytes_and_ignores_docs_and_pycache) ... ok
+test_report_states_the_number_of_open_known_defects (unit.test_runner_tiers.ReportTests.test_report_states_the_number_of_open_known_defects)
+About 0.3 s, over the 0.2 s unit budget: it runs the runner's whole main, discovery included. ... test_folder_package_decides_the_tier_group (unit.test_runner_tiers.TierTests.test_folder_package_decides_the_tier_group) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+ok
+test_a_module_with_a_test_that_did_not_pass_is_not_stored_so_the_next_run_measures_it_again (unit.test_runner_tiers.StoredModuleTests.test_a_module_with_a_test_that_did_not_pass_is_not_stored_so_the_next_run_measures_it_again)
+A reused module does not run: a stored failure would vanish from T3 while its reach still counted. ... ok
+test_discovery_reaches_the_folder_packages (unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages) ... ok
+test_folder_package_decides_the_tier_group (unit.test_runner_tiers.TierTests.test_folder_package_decides_the_tier_group) ... ok
+test_tier_selects_only_its_folders (unit.test_runner_tiers.TierTests.test_tier_selects_only_its_folders) ... ok
+test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost (unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost) ... ok
+test_body_only_cache_is_invalidated_without_inventing_module_totals (unit.test_runner_tiers.TimingRecordTests.test_body_only_cache_is_invalidated_without_inventing_module_totals) ... ok
+test_measured_and_unmeasured_module_totals_have_separate_cost_populations (unit.test_runner_tiers.TimingRecordTests.test_measured_and_unmeasured_module_totals_have_separate_cost_populations) ... ok
+
+----------------------------------------------------------------------
+Ran 45 tests in 3.849s
+
+OK

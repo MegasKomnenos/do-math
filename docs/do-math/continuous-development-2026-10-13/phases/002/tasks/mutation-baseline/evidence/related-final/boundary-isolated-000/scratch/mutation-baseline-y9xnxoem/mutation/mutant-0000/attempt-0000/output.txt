@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_value (mutation_fixture_tests.Case.test_value)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-final\boundary-isolated-000\scratch\mutation-baseline-y9xnxoem\scripts\mutation_fixture_tests.py", line 8, in test_value
+    self.assertEqual(value(), 2)
+AssertionError: None != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

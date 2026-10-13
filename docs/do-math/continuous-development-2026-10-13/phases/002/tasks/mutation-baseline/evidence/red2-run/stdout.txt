@@ -1,0 +1,9 @@
+Open known defects: 0
+[boundary] 2 tests
+  isolated: boundary.test_mutation_baseline.ActualBaselineTests
+  {'passed': 1, 'failed': 1}
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"passed": 1, "failed": 1}, "group_seconds": {"boundary": 2.3}, "total_seconds": 2.3}
+    0.984s failed             boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill
+    0.969s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\red2\report.json

@@ -1,0 +1,142 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 22,
+  "rows": [
+    {
+      "id": "unit.test_mutation.ChangeTests.test_a_changed_or_new_body_is_a_target_and_a_docstring_or_neighbour_edit_is_not",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ChangeTests.test_repeated_names_are_keyed_in_order",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ChildRunTests.test_a_mutant_child_stops_at_the_first_failing_test",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ChildRunTests.test_a_surviving_cheap_module_does_not_skip_a_later_killer",
+      "outcome": "passed",
+      "seconds": 0.030999999959021807,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ChildRunTests.test_module_load_exception_is_reported_as_load_failure",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ChildRunTests.test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.ListTests.test_survivors_enter_without_a_reason_and_killed_functions_leave",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutantTests.test_a_body_of_only_pass_or_ellipsis_has_no_mutant",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutantTests.test_a_generator_stays_a_generator_and_yields_nothing",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutantTests.test_a_one_line_body_is_replaced_in_place",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutantTests.test_a_state_changing_function_does_nothing",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutantTests.test_a_value_returning_function_returns_none_and_keeps_its_docstring_and_neighbours",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_closing_requires_measured_mutants_and_a_passing_unmutated_baseline",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_elapsed_time_alone_does_not_kill_a_mutant",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_fallback_keeps_layer_folders_and_unentered_and_trivial_functions_need_no_child",
+      "outcome": "passed",
+      "seconds": 0.030999999959021807,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_load_error_requires_the_identical_normal_selection_to_actually_pass",
+      "outcome": "passed",
+      "seconds": 0.11000000004423782,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill",
+      "outcome": "passed",
+      "seconds": 0.7809999999590218,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_normal_failure_is_excluded_and_attempts_and_cached_baselines_remain_traceable",
+      "outcome": "passed",
+      "seconds": 0.07800000003771856,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success",
+      "outcome": "passed",
+      "seconds": 0.2809999999590218,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.RuleTests.test_the_rule_follows_the_body_shape_of_the_function_itself",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.SelectionTests.test_an_unknown_function_of_a_changed_file_or_a_missing_index_adds_the_layer_folders",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_mutation.SelectionTests.test_the_tests_that_entered_the_function_are_chosen_whatever_moved",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "unit.test_mutation": 1.4209999999729916
+  }
+}

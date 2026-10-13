@@ -1,0 +1,43 @@
+test_actual_normal_pass_certifies_the_mutant_failure (boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\red\boundary-isolated-000\failures\dd0a1b62c5b70088c9b0c1d343f25e21efb0b9540d7360a1692fa17973613b20.json
+test_missing_normal_child_result_never_certifies_a_kill (boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\red\boundary-isolated-000\failures\ea6550112917ff3b3b62b19f54ddbdad75d49deec6f7cc65277e12821270c282.json
+
+======================================================================
+ERROR: test_actual_normal_pass_certifies_the_mutant_failure (boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_mutation_baseline.py", line 51, in test_actual_normal_pass_certifies_the_mutant_failure
+    report, root = self._run_fixture('        self.assertTrue(True)')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_mutation_baseline.py", line 33, in _run_fixture
+    'blob': git_blobs(root, [path])[path], 'functions': {'value': [0]}}}}
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\branch_gate.py", line 215, in git_blobs
+    output = subprocess.run(['git', 'hash-object', '--stdin-paths'], cwd=root, input='\n'.join(paths) + '\n',
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', 'hash-object', '--stdin-paths']' returned non-zero exit status 128.
+
+======================================================================
+ERROR: test_missing_normal_child_result_never_certifies_a_kill (boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_mutation_baseline.py", line 46, in test_missing_normal_child_result_never_certifies_a_kill
+    report, root = self._run_fixture('        if value() == 2:\n            os._exit(17)')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\boundary\test_mutation_baseline.py", line 33, in _run_fixture
+    'blob': git_blobs(root, [path])[path], 'functions': {'value': [0]}}}}
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\branch_gate.py", line 215, in git_blobs
+    output = subprocess.run(['git', 'hash-object', '--stdin-paths'], cwd=root, input='\n'.join(paths) + '\n',
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', 'hash-object', '--stdin-paths']' returned non-zero exit status 128.
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.418s
+
+FAILED (errors=2)

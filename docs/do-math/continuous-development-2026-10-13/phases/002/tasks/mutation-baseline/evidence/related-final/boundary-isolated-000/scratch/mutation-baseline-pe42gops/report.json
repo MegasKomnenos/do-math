@@ -1,0 +1,51 @@
+{
+  "base": "6385880f821743dab59bfc4853970597175e91b4",
+  "every": true,
+  "functions": 1,
+  "counts": {
+    "execution_error": 1
+  },
+  "baseline_failing": [],
+  "baselines": [],
+  "unreasoned_entries": 0,
+  "list": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-pe42gops\\pseudo.json",
+  "seconds": 0.4,
+  "survived": [],
+  "outcomes": [
+    {
+      "module": "mutation_fixture_subject.py",
+      "function": "value",
+      "rule": "return_none",
+      "line": 1,
+      "tests": 1,
+      "folders": [],
+      "estimated_seconds": 0.5,
+      "attempts": [
+        {
+          "execution": {
+            "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-pe42gops\\mutation\\mutant-0000\\attempt-0000",
+            "started": "2026-10-13T12:57:11.838251+00:00",
+            "command": [
+              "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+              "-B",
+              "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+              "--child",
+              "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-pe42gops\\mutation\\mutant-0000\\attempt-0000\\spec.json"
+            ],
+            "pid": 20896,
+            "exit_code": 19,
+            "result": null,
+            "error": "child exit 19; child result error: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\002\\\\tasks\\\\mutation-baseline\\\\evidence\\\\related-final\\\\boundary-isolated-000\\\\scratch\\\\mutation-baseline-pe42gops\\\\mutation\\\\mutant-0000\\\\attempt-0000\\\\result.json'",
+            "seconds": 0.1720000000204891,
+            "finished": "2026-10-13T12:57:12.016228+00:00"
+          },
+          "baselines": [],
+          "decision": "child exit 19; child result error: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\002\\\\tasks\\\\mutation-baseline\\\\evidence\\\\related-final\\\\boundary-isolated-000\\\\scratch\\\\mutation-baseline-pe42gops\\\\mutation\\\\mutant-0000\\\\attempt-0000\\\\result.json'"
+        }
+      ],
+      "status": "execution_error",
+      "detail": "child exit 19; child result error: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\002\\\\tasks\\\\mutation-baseline\\\\evidence\\\\related-final\\\\boundary-isolated-000\\\\scratch\\\\mutation-baseline-pe42gops\\\\mutation\\\\mutant-0000\\\\attempt-0000\\\\result.json'",
+      "seconds": 0.17
+    }
+  ]
+}

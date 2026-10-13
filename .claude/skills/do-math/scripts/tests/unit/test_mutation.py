@@ -177,13 +177,16 @@ class ChildRunTests(unittest.TestCase):
         spec.write_text(json.dumps({'tests': tests, 'folders': [], 'target': None, 'mutant': None}), encoding='utf-8')
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             mutation._child(spec)
-        return json.loads((root / 'result.json').read_text(encoding='utf-8'))['failing']
+        return json.loads((root / 'result.json').read_text(encoding='utf-8'))
 
     def test_a_mutant_child_stops_at_the_first_failing_test(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         (root / 'mutation_probe_one.py').write_text(PROBE, encoding='utf-8')
         failing = self._child(root, ['mutation_probe_one.T.test_1_fails', 'mutation_probe_one.T.test_2_runs'], {})
-        self.assertEqual(failing, ['mutation_probe_one.T.test_1_fails'])
+        self.assertEqual(failing['rows'], [{'id': 'mutation_probe_one.T.test_1_fails',
+                                           'outcome': 'failed', 'fixture': False}])
+        self.assertEqual(failing['tests_run'], 1)
+        self.assertEqual(len(failing['collected']), 2)
         self.assertFalse((root / 'mutation_probe_one.ran').exists())
 
     def test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first(self):
@@ -195,7 +198,8 @@ class ChildRunTests(unittest.TestCase):
             (root / f'{name}.py').write_text(code, encoding='utf-8')
         failing = self._child(root, ['mutation_probe_slow.T.test_1_fails', 'mutation_probe_cheap.T.test_1_fails'],
                               {'mutation_probe_slow': 50.0, 'mutation_probe_cheap': 1.0})
-        self.assertEqual(failing, ['mutation_probe_cheap.T.test_1_fails'])
+        self.assertEqual([row['id'] for row in failing['rows']], ['mutation_probe_cheap.T.test_1_fails'])
+        self.assertEqual(failing['rows'][0]['outcome'], 'failed')
         self.assertFalse((root / 'mutation_probe_slow.imported').exists(),
                          'a confirmed cheap witness must stop before loading the later module')
 
@@ -206,7 +210,9 @@ class ChildRunTests(unittest.TestCase):
         failing = self._child(root,
             ['mutation_probe_surviving.T.test_2_runs', 'mutation_probe_later.T.test_1_fails'],
             {'mutation_probe_surviving': 1.0, 'mutation_probe_later': 50.0})
-        self.assertEqual(failing, ['mutation_probe_later.T.test_1_fails'])
+        self.assertEqual([(row['id'], row['outcome']) for row in failing['rows']],
+                         [('mutation_probe_surviving.T.test_2_runs', 'passed'),
+                          ('mutation_probe_later.T.test_1_fails', 'failed')])
         self.assertEqual((root / 'mutation_probe_surviving.ran').read_text(encoding='utf-8'), 'ran')
 
     def test_module_load_exception_is_reported_as_load_failure(self):
@@ -214,58 +220,191 @@ class ChildRunTests(unittest.TestCase):
         (root / 'mutation_probe_load_error.py').write_text(
             "raise TypeError('mutation import specimen')\n", encoding='utf-8')
         failing = self._child(root, ['mutation_probe_load_error.T.test_one'], {})
-        self.assertEqual(failing, ['<test module load failure: TypeError: mutation import specimen>'])
-        result = json.loads((root / 'result.json').read_text(encoding='utf-8'))
-        self.assertEqual(result['load_error']['type'], 'TypeError')
-        self.assertEqual(result['load_error']['message'], 'mutation import specimen')
+        self.assertEqual(failing['rows'], [])
+        self.assertEqual(failing['tests_run'], 0)
+        self.assertEqual(failing['load_error']['details'], ['TypeError: mutation import specimen'])
+        self.assertEqual(failing['load_error']['selection']['tests'], ['mutation_probe_load_error.T.test_one'])
 
 
 class MutationEvidenceTests(unittest.TestCase):
-    def _run_with_child(self, child):
+    TEST = 'unit.probe.Case.test_value'
+
+    def _result(self, spec, outcome='passed'):
+        result = mutation._new_result(spec)
+        result['collected'] = list(spec['tests']) or [self.TEST]
+        result['rows'] = [{'id': name, 'outcome': outcome, 'fixture': False}
+                          for name in result['collected']]
+        result['tests_run'] = len(result['rows'])
+        return result
+
+    def _run_with_payload(self, payload, *, source='def value():\n    return 2\n',
+                          selected=None, functions=None, fallback=False):
+        """Only the child process/file boundary is doubled; parent parsing and classification are real."""
         from subprocess import CompletedProcess
         from support import branch_gate
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         scripts = root / 'scripts'
         module = scripts / 'do_math/sample.py'
         module.parent.mkdir(parents=True)
-        module.write_text('def value():\n    return 2\n', encoding='utf-8')
+        module.write_text(source, encoding='utf-8')
+        selected = selected or [self.TEST]
+        index = {'tests': selected, 'files': {'scripts/do_math/sample.py': {
+            'blob': 'blob', 'functions': functions if functions is not None else {'value': list(range(len(selected)))}}}}
+        self.calls = []
+
+        def spawn(command, **options):
+            spec_path = Path(command[-1])
+            spec = json.loads(spec_path.read_text(encoding='utf-8'))
+            self.calls.append((spec, spec_path.parent))
+            result, exit_code = payload(spec)
+            if result is not None:
+                raw = result if isinstance(result, bytes) else json.dumps(result).encode('utf-8')
+                (spec_path.parent / 'result.json').write_bytes(raw)
+            options['stdout'].write('process boundary specimen\n')
+            return mock.Mock(pid=123, wait=mock.Mock(return_value=exit_code), poll=mock.Mock(return_value=exit_code))
+
         self.enterContext(mock.patch.object(mutation, 'SCRIPTS', scripts))
         self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
-            args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b'def value():\n    return 1\n'))))
+            args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b''))))
         self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
-        self.enterContext(mock.patch.object(mutation, '_child_run', child))
-        return mutation.run('HEAD', None, {'do_math/sample.py': '1'}, root, root / 'mutants',
+        self.enterContext(mock.patch.object(mutation.subprocess, 'Popen', spawn))
+        return mutation.run('HEAD', None if fallback else index, {'do_math/sample.py': '1'}, root, root / 'mutants',
                             listing_path=root / 'pseudo.json')
 
-    def test_missing_result_cannot_certify_a_killed_mutant(self):
-        report = self._run_with_child(lambda *args: ({mutation.CHILD_NO_RESULT}, 0.1))
-        self.assertEqual(report['counts'], {'execution_error': 1})
-        self.assertFalse(mutation.passed(report))
+    def test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill(self):
+        """About 0.8s: both sides of 15 evidence faults retain actual spec/result/attempt files."""
+        for side in ('normal', 'mutant'):
+            for fault in ('missing', 'json', 'utf8', 'list', 'legacy', 'selection', 'row', 'count', 'exit',
+                          'zero', 'not_run', 'skipped', 'expected_failure', 'fixture_error', 'fixture_skip'):
+                with self.subTest(side=side, fault=fault):
+                    def payload(spec):
+                        result = self._result(spec, 'failed' if spec['target'] else 'passed')
+                        if bool(spec['target']) != (side == 'mutant'):
+                            return result, 0
+                        if fault == 'missing':
+                            return None, 0
+                        if fault == 'json':
+                            return b'{', 0
+                        if fault == 'utf8':
+                            return b'\xff', 0
+                        if fault == 'list':
+                            return [], 0
+                        if fault == 'legacy':
+                            return {'failing': []}, 0
+                        if fault == 'selection':
+                            result['selection']['tests'] = ['wrong.selection.Case.test_other']
+                        elif fault == 'row':
+                            result['rows'][0]['id'] = 'uncollected'
+                        elif fault == 'count':
+                            result['tests_run'] = 2
+                        elif fault == 'exit':
+                            return result, 17
+                        elif fault in {'zero', 'not_run'}:
+                            result['rows'] = []
+                            result['tests_run'] = 0
+                            if fault == 'zero':
+                                result['collected'] = []
+                        elif fault.startswith('fixture_'):
+                            result['rows'] = [{'id': 'setUpClass (unit.probe.Case)',
+                                               'outcome': 'error' if fault == 'fixture_error' else 'skipped',
+                                               'fixture': True}]
+                            result['tests_run'] = 0
+                        else:
+                            result['rows'][0]['outcome'] = fault
+                        return result, 0
+                    report = self._run_with_payload(payload)
+                    self.assertEqual(report['counts'], {'execution_error': 1})
+                    self.assertFalse(mutation.passed(report))
+                    self.assertEqual(report['baseline_failing'], [])
+                    self.assertIn('detail', report['outcomes'][0])
+                    self.assertEqual(len(report['baselines']), int(side == 'normal'))
+                    for _, directory in self.calls:
+                        self.assertTrue((directory / 'spec.json').is_file())
+                        self.assertTrue((directory / 'output.txt').is_file())
+                        self.assertTrue((directory / 'attempt.json').is_file())
 
     def test_elapsed_time_alone_does_not_kill_a_mutant(self):
-        def child(spec, directory):
-            return set(), 10000.0
-        report = self._run_with_child(child)
+        import itertools
+        self.enterContext(mock.patch.object(mutation.time, 'monotonic', side_effect=itertools.count(0, 10000)))
+        report = self._run_with_payload(lambda spec: (self._result(spec), 0))
         self.assertEqual(report['counts'], {'survived': 1})
+        self.assertEqual(report['baselines'], [])
+        self.assertGreaterEqual(report['outcomes'][0]['seconds'], 10000)
 
-    def test_missing_child_result_cannot_be_a_killed_mutant(self):
-        from subprocess import CompletedProcess
-        from support import branch_gate
-        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        scripts = root / 'scripts'
-        module = scripts / 'do_math/sample.py'
-        module.parent.mkdir(parents=True)
-        module.write_text('def value():\n    return 2\n', encoding='utf-8')
-        self.enterContext(mock.patch.object(mutation, 'SCRIPTS', scripts))
-        self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
-            args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b'def value():\n    return 1\n'))))
-        self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
-        self.enterContext(mock.patch.object(mutation, '_child_run', lambda *args: ({'<child produced no result>'}, 0.1)))
-        report = mutation.run('HEAD', None, {'do_math/sample.py': '1'}, root, root / 'mutants',
-                              listing_path=root / 'pseudo.json')
+    def test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success(self):
+        """About 0.3s for the 3 mutant outcomes x 4 normal outcomes through actual file parsing."""
+        for outcome in sorted(mutation.FAILURES):
+            for normal in ('passed', 'failed', 'error', 'unexpected_success'):
+                with self.subTest(mutant=outcome, normal=normal):
+                    report = self._run_with_payload(lambda spec: (
+                        self._result(spec, outcome if spec['target'] else normal), 0))
+                    self.assertEqual(report['counts'], {'killed' if normal == 'passed' else 'baseline_failing': 1})
+                    self.assertEqual(mutation.passed(report), normal == 'passed')
+                    self.assertEqual(report['baseline_failing'], [] if normal == 'passed' else [self.TEST])
+
+    def test_a_partial_successful_selection_cannot_be_reported_as_surviving(self):
+        other = 'unit.probe.Case.test_other'
+        def payload(spec):
+            result = self._result(spec)
+            result['rows'] = [row for row in result['rows'] if row['id'] == self.TEST]
+            result['tests_run'] = 1
+            return result, 0
+        report = self._run_with_payload(payload, selected=[self.TEST, other])
         self.assertEqual(report['counts'], {'execution_error': 1})
-        self.assertEqual(report['outcomes'][0]['status'], 'execution_error')
-        self.assertNotIn('killed_by', report['outcomes'][0])
+        self.assertFalse(mutation.passed(report))
+        self.assertIn(other, report['outcomes'][0]['detail'])
+        self.assertEqual(report['baselines'], [])
+
+    def test_load_error_requires_the_identical_normal_selection_to_actually_pass(self):
+        for normal in ('passed', 'load_error', 'failed'):
+            with self.subTest(normal=normal):
+                def payload(spec):
+                    if not spec['target'] and normal != 'load_error':
+                        return self._result(spec, normal), 0
+                    result = mutation._new_result(spec)
+                    result['load_error'] = {'selection': mutation._selection(spec),
+                                            'details': ['ImportError: specimen']}
+                    return result, 0
+                report = self._run_with_payload(payload)
+                self.assertEqual(report['counts'], {'killed' if normal == 'passed' else 'execution_error': 1})
+                self.assertEqual(mutation.passed(report), normal == 'passed')
+                self.assertEqual(report['baselines'][0]['selection']['tests'], [self.TEST])
+                if normal == 'passed':
+                    self.assertEqual(report['outcomes'][0]['killed_by'], [self.TEST])
+
+    def test_normal_failure_is_excluded_and_attempts_and_cached_baselines_remain_traceable(self):
+        bad, good = 'unit.probe.Case.test_bad', self.TEST
+        def payload(spec):
+            result = self._result(spec)
+            first = spec['tests'][0]
+            result['rows'] = [{'id': first, 'outcome': 'failed' if spec['target'] or first == bad else 'passed',
+                              'fixture': False}]
+            result['tests_run'] = 1
+            return result, 0
+        report = self._run_with_payload(payload, selected=[bad, good],
+            source='def value():\n    return 2\ndef another():\n    return 3\n',
+            functions={'value': [0, 1], 'another': [0, 1]})
+        self.assertEqual(report['counts'], {'killed': 2})
+        self.assertEqual(report['baseline_failing'], [bad])
+        self.assertFalse(mutation.passed(report))
+        self.assertEqual([spec['tests'] for spec, _ in self.calls if spec['target'] is None], [[bad], [good]])
+        self.assertEqual([item['status'] for item in report['baselines']], ['failing', 'passed'])
+        for outcome in report['outcomes']:
+            self.assertEqual([attempt['baselines'] for attempt in outcome['attempts']], [[0], [1]])
+            directories = [Path(attempt['execution']['directory']) for attempt in outcome['attempts']]
+            self.assertEqual(len(set(directories)), 2)
+            self.assertEqual(json.loads((directories[0] / 'spec.json').read_text())['exclude'], [])
+            self.assertEqual(json.loads((directories[1] / 'spec.json').read_text())['exclude'], [bad])
+            self.assertEqual(json.loads((directories[0] / 'result.json').read_text())['rows'][0]['id'], bad)
+
+    def test_fallback_keeps_layer_folders_and_unentered_and_trivial_functions_need_no_child(self):
+        report = self._run_with_payload(lambda spec: (self._result(spec), 0), fallback=True)
+        self.assertEqual(self.calls[0][0]['folders'], ['unit', 'contracts'])
+        self.assertEqual(report['counts'], {'survived': 1})
+        report = self._run_with_payload(lambda spec: self.fail('unentered function started a child'),
+            source='def value():\n    return 2\ndef stub():\n    pass\n', functions={})
+        self.assertEqual(report['counts'], {'not_executed': 1, 'trivial': 1})
+        self.assertEqual(self.calls, [])
         self.assertFalse(mutation.passed(report))
 
     def test_closing_requires_measured_mutants_and_a_passing_unmutated_baseline(self):

@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure",
+    "outcome": "error",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_mutation_baseline.py\", line 51, in test_actual_normal_pass_certifies_the_mutant_failure\n    report, root = self._run_fixture('        self.assertTrue(True)')\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_mutation_baseline.py\", line 33, in _run_fixture\n    'blob': git_blobs(root, [path])[path], 'functions': {'value': [0]}}}}\n            ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\branch_gate.py\", line 215, in git_blobs\n    output = subprocess.run(['git', 'hash-object', '--stdin-paths'], cwd=root, input='\\n'.join(paths) + '\\n',\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['git', 'hash-object', '--stdin-paths']' returned non-zero exit status 128.\n"
+    ]
+  }
+}

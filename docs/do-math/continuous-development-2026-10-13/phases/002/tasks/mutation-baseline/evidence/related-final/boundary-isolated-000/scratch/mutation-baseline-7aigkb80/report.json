@@ -1,0 +1,130 @@
+{
+  "base": "6385880f821743dab59bfc4853970597175e91b4",
+  "every": true,
+  "functions": 1,
+  "counts": {
+    "execution_error": 1
+  },
+  "baseline_failing": [],
+  "baselines": [
+    {
+      "id": 0,
+      "selection": {
+        "tests": [
+          "mutation_fixture_tests.Case.test_value"
+        ],
+        "folders": [],
+        "exclude": []
+      },
+      "attempt": {
+        "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\mutation\\unmutated-0000",
+        "started": "2026-10-13T12:57:24.836442+00:00",
+        "command": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+          "--child",
+          "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\mutation\\unmutated-0000\\spec.json"
+        ],
+        "pid": 28408,
+        "exit_code": 0,
+        "result": {
+          "selection": {
+            "tests": [
+              "mutation_fixture_tests.Case.test_value"
+            ],
+            "folders": [],
+            "exclude": []
+          },
+          "collected": [],
+          "rows": [],
+          "tests_run": 0,
+          "load_error": {
+            "selection": {
+              "tests": [
+                "mutation_fixture_tests.Case.test_value"
+              ],
+              "folders": [],
+              "exclude": []
+            },
+            "details": [
+              "Failed to import test module: mutation_fixture_tests\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 137, in loadTestsFromName\n    module = __import__(module_name)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\scripts\\mutation_fixture_tests.py\", line 5, in <module>\n    raise ImportError(\"specimen load\")\nImportError: specimen load\n"
+            ]
+          }
+        },
+        "error": null,
+        "seconds": 0.18800000002374873,
+        "finished": "2026-10-13T12:57:25.027342+00:00"
+      },
+      "status": "evidence_error",
+      "failing": [],
+      "detail": "normal selection failed to load: Failed to import test module: mutation_fixture_tests\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 137, in loadTestsFromName\n    module = __import__(module_name)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\scripts\\mutation_fixture_tests.py\", line 5, in <module>\n    raise ImportError(\"specimen load\")\nImportError: specimen load\n"
+    }
+  ],
+  "unreasoned_entries": 0,
+  "list": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\pseudo.json",
+  "seconds": 0.6,
+  "survived": [],
+  "outcomes": [
+    {
+      "module": "mutation_fixture_subject.py",
+      "function": "value",
+      "rule": "return_none",
+      "line": 1,
+      "tests": 1,
+      "folders": [],
+      "estimated_seconds": 0.5,
+      "attempts": [
+        {
+          "execution": {
+            "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\mutation\\mutant-0000\\attempt-0000",
+            "started": "2026-10-13T12:57:24.639162+00:00",
+            "command": [
+              "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+              "-B",
+              "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+              "--child",
+              "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\mutation\\mutant-0000\\attempt-0000\\spec.json"
+            ],
+            "pid": 32908,
+            "exit_code": 0,
+            "result": {
+              "selection": {
+                "tests": [
+                  "mutation_fixture_tests.Case.test_value"
+                ],
+                "folders": [],
+                "exclude": []
+              },
+              "collected": [],
+              "rows": [],
+              "tests_run": 0,
+              "load_error": {
+                "selection": {
+                  "tests": [
+                    "mutation_fixture_tests.Case.test_value"
+                  ],
+                  "folders": [],
+                  "exclude": []
+                },
+                "details": [
+                  "Failed to import test module: mutation_fixture_tests\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 137, in loadTestsFromName\n    module = __import__(module_name)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\scripts\\mutation_fixture_tests.py\", line 5, in <module>\n    raise ImportError(\"specimen load\")\nImportError: specimen load\n"
+                ]
+              }
+            },
+            "error": null,
+            "seconds": 0.2029999999795109,
+            "finished": "2026-10-13T12:57:24.834442+00:00"
+          },
+          "baselines": [
+            0
+          ],
+          "decision": "normal selection failed to load: Failed to import test module: mutation_fixture_tests\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 137, in loadTestsFromName\n    module = __import__(module_name)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\scripts\\mutation_fixture_tests.py\", line 5, in <module>\n    raise ImportError(\"specimen load\")\nImportError: specimen load\n"
+        }
+      ],
+      "status": "execution_error",
+      "detail": "normal selection failed to load: Failed to import test module: mutation_fixture_tests\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 137, in loadTestsFromName\n    module = __import__(module_name)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-7aigkb80\\scripts\\mutation_fixture_tests.py\", line 5, in <module>\n    raise ImportError(\"specimen load\")\nImportError: specimen load\n",
+      "seconds": 0.2
+    }
+  ]
+}

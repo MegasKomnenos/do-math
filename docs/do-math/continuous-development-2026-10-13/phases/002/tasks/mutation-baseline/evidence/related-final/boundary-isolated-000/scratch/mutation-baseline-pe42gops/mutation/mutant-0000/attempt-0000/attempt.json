@@ -1,0 +1,17 @@
+{
+ "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-pe42gops\\mutation\\mutant-0000\\attempt-0000",
+ "started": "2026-10-13T12:57:11.838251+00:00",
+ "command": [
+  "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "-B",
+  "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+  "--child",
+  "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-pe42gops\\mutation\\mutant-0000\\attempt-0000\\spec.json"
+ ],
+ "pid": 20896,
+ "exit_code": 19,
+ "result": null,
+ "error": "child exit 19; child result error: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\002\\\\tasks\\\\mutation-baseline\\\\evidence\\\\related-final\\\\boundary-isolated-000\\\\scratch\\\\mutation-baseline-pe42gops\\\\mutation\\\\mutant-0000\\\\attempt-0000\\\\result.json'",
+ "seconds": 0.1720000000204891,
+ "finished": "2026-10-13T12:57:12.016228+00:00"
+}

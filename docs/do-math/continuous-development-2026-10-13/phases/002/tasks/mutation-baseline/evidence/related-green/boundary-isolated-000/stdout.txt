@@ -1,0 +1,21 @@
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-nmo6yzpi
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-xefa8k28
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-2aca5h4u
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-nxjk9suk
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-wiupzfyp
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-uecyefwx
+Extreme mutation, every function of the chosen modules: 1 functions; killed 1; unreasoned pseudo-tested entries: 0 (0.7s)
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-1l3o9mrb\mutation\mutation.json
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-1l3o9mrb
+Extreme mutation, every function of the chosen modules: 1 functions; execution_error 1; unreasoned pseudo-tested entries: 0 (0.7s)
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-r8fofqd3\mutation\mutation.json
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-r8fofqd3
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-azict7gb
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-62a16n4r
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-o0a20plr
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-whn3bby8
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-qjmb8pcu
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-b2clu4t1
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-unu5aayu
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-thvkm83s
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-green\boundary-isolated-000\scratch\mutation-baseline-c9_mychr

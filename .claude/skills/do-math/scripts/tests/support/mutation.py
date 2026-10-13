@@ -26,9 +26,14 @@ missing or stale index, adds the module's layer folders
 is ``not_executed``; the branch gate reports it, and it does not enter the
 pseudo-tested list.
 
-Evidence failures are separate: a child that leaves no result is
-``execution_error``, never a kill. A test-module loading exception is retained
-in ``result.json`` as ``load_error`` and its traceback stays in ``output.txt``.
+Each child writes one result: ``selection`` (tests/folders/exclude), actual
+``collected`` IDs, ``rows`` (id/outcome/fixture), ``tests_run`` and ``load_error``
+(null or the failing batch's selection and diagnostic strings). ``validate_result``
+is used by both producer and reader. ``attempt.json`` adds the command, PID,
+exit code, elapsed seconds and any process/result error; ``output.txt`` keeps
+tracebacks. A missing, malformed or inconsistent result, abnormal exit, empty
+execution, fixture error/skip, test skip or expected failure is evidence failure,
+not a normal pass. Attempts have distinct directories and are never overwritten.
 The CLI and T3 use the same ``passed`` predicate: unreasoned survivors,
 unmutated baseline failures, execution/mutation errors or unexecuted targets
 prevent a pass even when the pseudo-tested list is empty.
@@ -41,8 +46,11 @@ failing test kills a mutant, so the child runs the chosen tests cheapest first
 module's tests kept together) and stops at the first failure (``failfast``).
 There is no baseline run of every chosen test (결함 D9): a test that failed a
 mutant is run once unmutated, alone, and remembered. A mutant is ``killed`` when
-a test fails, errors or unexpectedly passes that passes unmutated, or when a
-test module fails to load. A failing test that also fails unmutated is set aside
+a test fails, errors or unexpectedly passes that actually passes unmutated.
+A load error kills only if its same batch actually collects and passes unmutated;
+its diagnostic text is never a test ID. Baseline attempts and their disposition
+are retained in ``baselines`` and linked from each mutant attempt. A failing test
+that also fails unmutated is set aside
 and the mutant runs again without it. Otherwise the mutant survived. Elapsed
 time is reported, never used to terminate a child or certify a killed mutant.
 
@@ -60,6 +68,7 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 import fnmatch
 import json
 import os
@@ -75,7 +84,7 @@ TESTS = SCRIPTS / 'tests'
 PSEUDO_TESTED = TESTS / 'pseudo_tested.json'
 TIMINGS = TESTS / '.timings.json'  # the runner's unmeasured module seconds; a mutant child runs unmeasured
 UNKNOWN_TEST_SECONDS = 0.5  # a module the record does not know, per test (as run_tests)
-CHILD_NO_RESULT = '<child produced no result>'
+FAILURES = frozenset({'failed', 'error', 'unexpected_success'})
 NOTE = ('Pseudo-tested functions (설계 6.3): the extreme mutant of each survived every test that runs the '
         'function. An entry closes a sub-stage only with a reason; a function whose None return equals '
         'its behaviour says so in the reason.')
@@ -240,29 +249,115 @@ def cheapest_first(tests, seconds):
     return [tests[i] for i in order]
 
 
-def _is_test_id(name):
-    """A failing entry that names a test, not a loader error's text."""
-    return bool(name) and not any(character.isspace() for character in name)
+def _selection(spec):
+    return {key: list(spec.get(key, ())) for key in ('tests', 'folders', 'exclude')}
+
+
+def _new_result(spec):
+    return {'selection': _selection(spec), 'collected': [], 'rows': [], 'tests_run': 0, 'load_error': None}
+
+
+def validate_result(result, spec):
+    """Reject malformed/unbound child evidence at both ends; no legacy formats."""
+    def names(value):
+        return (isinstance(value, list) and all(isinstance(name, str) and name for name in value)
+                and len(set(value)) == len(value))
+
+    if not isinstance(result, dict) or set(result) != set(_new_result(spec)):
+        raise ValueError('invalid result fields')
+    chosen = result['selection']
+    if (not isinstance(chosen, dict) or set(chosen) != {'tests', 'folders', 'exclude'}
+            or not all(names(value) for value in chosen.values()) or chosen != _selection(spec)):
+        raise ValueError('result selection does not match spec')
+    if not names(result['collected']) or not isinstance(result['rows'], list):
+        raise ValueError('invalid collected IDs or rows')
+    collected, seen = set(result['collected']), set()
+    if collected & set(chosen['exclude']):
+        raise ValueError('excluded test was collected')
+    if any(name not in chosen['tests'] and not any(name.startswith(folder + '.') for folder in chosen['folders'])
+           for name in collected):
+        raise ValueError('collected test is outside the selection')
+    for row in result['rows']:
+        if (not isinstance(row, dict) or set(row) != {'id', 'outcome', 'fixture'}
+                or not isinstance(row['id'], str) or not row['id']
+                or type(row['fixture']) is not bool or not isinstance(row['outcome'], str)
+                or row['outcome'] not in FAILURES | {'passed', 'skipped', 'expected_failure'}):
+            raise ValueError('invalid result row')
+        if row['id'] in seen or (not row['fixture'] and row['id'] not in collected):
+            raise ValueError('duplicate or uncollected result row')
+        seen.add(row['id'])
+    if (type(result['tests_run']) is not int
+            or result['tests_run'] != sum(not row['fixture'] for row in result['rows'])):
+        raise ValueError('tests_run does not match executed rows')
+    error = result['load_error']
+    if error is not None:
+        if (not isinstance(error, dict) or set(error) != {'selection', 'details'}
+                or not isinstance(error['selection'], dict)
+                or set(error['selection']) != set(chosen)
+                or not all(names(value) for value in error['selection'].values())
+                or error['selection']['exclude'] != chosen['exclude']
+                or not set(error['selection']['tests']) <= set(chosen['tests'])
+                or not set(error['selection']['folders']) <= set(chosen['folders'])
+                or not (error['selection']['tests'] or error['selection']['folders'])
+                or not isinstance(error['details'], list) or not error['details']
+                or not all(isinstance(item, str) and item for item in error['details'])):
+            raise ValueError('invalid load_error')
+
+
+def _evidence_error(result):
+    """A valid shape may still contain no completed, usable test evidence."""
+    for row in result['rows']:
+        if row['fixture'] or row['outcome'] in {'skipped', 'expected_failure'}:
+            return f"{'fixture' if row['fixture'] else 'test'} {row['id']}: {row['outcome']}"
+    if result['load_error'] is not None:
+        return None  # run() checks the identical batch unmutated before judging a load failure
+    if not result['tests_run']:
+        return 'no tests executed'
+    if not any(row['outcome'] in FAILURES for row in result['rows']):
+        executed = {row['id'] for row in result['rows']}
+        missing = (set(result['collected']) | set(result['selection']['tests'])) \
+            - set(result['selection']['exclude']) - executed
+        if missing:
+            return 'expected tests did not execute: ' + ', '.join(sorted(missing))
+    return None
 
 
 def _child_run(spec, directory):
-    """Return failing ids/text or CHILD_NO_RESULT on missing evidence, and elapsed seconds."""
-    directory.mkdir(parents=True, exist_ok=True)
+    """Run one real child without a timeout; retain process, raw result and validation errors."""
+    directory = Path(directory)
+    directory.mkdir(parents=True)  # a retry must use a new path, never stale result bytes
     (directory / 'spec.json').write_text(json.dumps(spec), encoding='utf-8')
     started = time.monotonic()
-    with (directory / 'output.txt').open('w', encoding='utf-8') as output:
-        process = subprocess.Popen([sys.executable, '-B', str(Path(__file__).resolve()), '--child',
-                                    str(directory / 'spec.json')], cwd=SCRIPTS, stdout=output,
-                                   stderr=subprocess.STDOUT, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
-        try:
-            process.wait()
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.wait()
-    result = json.loads((directory / 'result.json').read_text(encoding='utf-8')) \
-        if (directory / 'result.json').exists() else {'failing': [CHILD_NO_RESULT]}
-    return set(result['failing']), time.monotonic() - started
+    attempt = {'directory': str(directory), 'started': datetime.now(timezone.utc).isoformat(),
+               'command': [sys.executable, '-B', str(Path(__file__).resolve()), '--child',
+                           str(directory / 'spec.json')], 'pid': None, 'exit_code': None,
+               'result': None, 'error': None}
+    errors = []
+    try:
+        with (directory / 'output.txt').open('w', encoding='utf-8') as output:
+            process = subprocess.Popen(attempt['command'], cwd=SCRIPTS, stdout=output,
+                                       stderr=subprocess.STDOUT, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
+            attempt['pid'] = process.pid
+            try:
+                attempt['exit_code'] = process.wait()
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+        if attempt['exit_code'] != 0:
+            errors.append(f"child exit {attempt['exit_code']}")
+    except OSError as error:
+        errors.append(f'child process error: {type(error).__name__}: {error}')
+    try:
+        result = json.loads((directory / 'result.json').read_text(encoding='utf-8'))
+        validate_result(result, spec)
+        attempt['result'] = result
+    except (OSError, ValueError, UnicodeError) as error:
+        errors.append(f'child result error: {type(error).__name__}: {error}')
+    attempt.update(seconds=time.monotonic() - started, finished=datetime.now(timezone.utc).isoformat(),
+                   error='; '.join(errors) if errors else None)
+    (directory / 'attempt.json').write_text(json.dumps(attempt, indent=1), encoding='utf-8')
+    return attempt
 
 
 def run(base, index, layers, root, directory, *, only=(), every=False, listing_path=PSEUDO_TESTED):
@@ -279,6 +374,7 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
         raise ValueError(f'base {base!r} is not a commit')
     base = resolved.stdout.decode().strip()
     directory = Path(directory).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
     prefix = SCRIPTS.relative_to(root).as_posix()
     tests = index['tests'] if index else []
     modules = sorted(m for m, layer in layers.items() if layer in ('1', '2', '3')
@@ -311,14 +407,24 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
             outcome['folders'] = list(folders)
             plans.append((outcome, mutant, {'tests': sorted(tests[o] for o in ordinals), 'folders': list(folders)}))
     seconds = recorded_seconds()
-    unmutated = {}  # test id -> whether it fails with no mutant
+    unmutated = {}  # selection -> retained baseline; reuse only this run's identical selection
 
-    def fails_unmutated(test):
-        if test not in unmutated:
-            failing, _ = _child_run({'tests': [test], 'folders': [], 'exclude': [], 'target': None, 'mutant': None},
-                                    Path(directory) / f'unmutated-{len(unmutated):04}')
-            unmutated[test] = test in failing
-        return unmutated[test]
+    def baseline(chosen):
+        key = tuple(tuple(chosen[field]) for field in ('tests', 'folders', 'exclude'))
+        if key not in unmutated:
+            number = len(unmutated)
+            attempt = _child_run({**chosen, 'target': None, 'mutant': None},
+                                 directory / f'unmutated-{number:04}')
+            result = attempt['result']
+            error = attempt['error'] or _evidence_error(result)
+            if not error and result['load_error'] is not None:
+                error = 'normal selection failed to load: ' + '; '.join(result['load_error']['details'])
+            failing = [row['id'] for row in result['rows']
+                       if not row['fixture'] and row['outcome'] in FAILURES] if result else []
+            unmutated[key] = {'id': number, 'selection': chosen, 'attempt': attempt,
+                              'status': 'evidence_error' if error else 'failing' if failing else 'passed',
+                              'failing': failing, 'detail': error}
+        return unmutated[key]
 
     for number, (outcome, mutant, chosen) in enumerate(plans):
         outcome['estimated_seconds'] = expected_seconds(chosen, seconds)
@@ -326,30 +432,67 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
         work.mkdir(parents=True, exist_ok=True)
         (work / 'mutant.py').write_text(mutant, encoding='utf-8')
         excluded, took = set(), 0.0
+        outcome['attempts'] = []
         while True:
-            failing, spent = _child_run({'tests': [t for t in chosen['tests'] if t not in excluded],
-                                         'folders': chosen['folders'], 'exclude': sorted(excluded),
-                                         'target': str(SCRIPTS / outcome['module']), 'mutant': str(work / 'mutant.py')},
-                                        work)
-            took += spent
-            if CHILD_NO_RESULT in failing:
-                outcome.update(status='execution_error', detail=CHILD_NO_RESULT)
+            remaining = {'tests': [t for t in chosen['tests'] if t not in excluded],
+                         'folders': chosen['folders'], 'exclude': sorted(excluded)}
+            if not remaining['tests'] and not remaining['folders']:
+                # All candidates really failed normally. Do not invent a zero-test pass.
+                outcome.update(status='baseline_failing', detail='all selected tests fail unmutated')
                 break
-            broken = {t for t in failing if _is_test_id(t) and fails_unmutated(t)}
-            killers = sorted(failing - broken)
+            attempt = _child_run({**remaining, 'target': str(SCRIPTS / outcome['module']),
+                                   'mutant': str(work / 'mutant.py')},
+                                  work / f'attempt-{len(outcome["attempts"]):04}')
+            record = {'execution': attempt, 'baselines': []}
+            outcome['attempts'].append(record)
+            took += attempt['seconds']
+            result = attempt['result']
+            error = attempt['error'] or _evidence_error(result)
+            if error:
+                outcome.update(status='execution_error', detail=error)
+                record['decision'] = error
+                break
+            if result['load_error'] is not None:
+                normal = baseline(result['load_error']['selection'])
+                record['baselines'].append(normal['id'])
+                if normal['status'] == 'passed':
+                    outcome.update(status='killed', killed_by=[row['id'] for row in normal['attempt']['result']['rows']],
+                                   detail='mutant batch failed to load; the same normal selection actually passed')
+                else:
+                    outcome.update(status='execution_error',
+                                   detail=normal['detail'] or 'normal selection also failed; load failure is not a kill')
+                record['decision'] = outcome['detail']
+                break
+            failing = [row['id'] for row in result['rows'] if row['outcome'] in FAILURES]
+            broken, killers, errors = set(), [], []
+            for test in failing:
+                normal = baseline({'tests': [test], 'folders': [], 'exclude': []})
+                record['baselines'].append(normal['id'])
+                if normal['status'] == 'passed':
+                    killers.append(test)
+                elif normal['status'] == 'failing':
+                    broken.add(test)
+                else:
+                    errors.append(f"normal test {test}: {normal['detail']}")
+            if errors:
+                outcome.update(status='execution_error', detail='; '.join(errors))
+                record['decision'] = outcome['detail']
+                break
             if killers or not broken:
-                outcome['status'] = 'killed' if killers else 'survived'
-                outcome['killed_by'] = killers[:5]
+                outcome.update(status='killed' if killers else 'survived', killed_by=killers[:5])
+                record['decision'] = outcome['status']
                 break
-            excluded |= broken  # it fails unmutated too: run the mutant again without it
+            record['decision'] = 'exclude normal failures and retry'
+            excluded |= broken
         outcome['seconds'] = round(took, 2)
-    baseline = {test for test, fails in unmutated.items() if fails}
+    baseline_failing = {test for item in unmutated.values() for test in item['failing']}
     listing = read_list(listing_path)
     if update_list(listing, outcomes, base):
         Path(listing_path).write_text(json.dumps(listing, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     counts = Counter(o['status'] for o in outcomes)
     return {'base': base, 'every': every, 'functions': len(outcomes), 'counts': dict(counts),
-            'baseline_failing': sorted(baseline), 'unreasoned_entries': unreasoned(listing),
+            'baseline_failing': sorted(baseline_failing), 'baselines': list(unmutated.values()),
+            'unreasoned_entries': unreasoned(listing),
             'list': str(listing_path), 'seconds': round(time.monotonic() - started, 1),
             'survived': [f"{o['module']}:{o['function']}" for o in outcomes if o['status'] == 'survived'],
             'outcomes': outcomes}
@@ -367,7 +510,7 @@ def passed(report):
     """A zero survivor count cannot cover failed measurement or untested functions."""
     return (report['unreasoned_entries'] == 0 and not report['baseline_failing']
             and not any(report['counts'].get(name, 0)
-                        for name in ('execution_error', 'mutation_error', 'not_executed')))
+                        for name in ('execution_error', 'mutation_error', 'not_executed', 'baseline_failing')))
 
 
 def _flatten(suite):
@@ -379,10 +522,53 @@ def _flatten(suite):
 
 
 def _child(spec_path):
-    """Import the mutant in place of its module and run the chosen tests; write the failing ids."""
+    """Import the temporary mutant and record actual collection and execution, including fixture events."""
     import importlib.abc
     import importlib.machinery
     import unittest
+
+    class Result(unittest.TextTestResult):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.rows = {}
+
+        def startTest(self, test):
+            super().startTest(test)
+            self.rows[test.id()] = {'id': test.id(), 'outcome': 'running', 'fixture': False}
+
+        def record(self, test, outcome):
+            row = self.rows.setdefault(test.id(), {'id': test.id(), 'fixture': True})
+            row['outcome'] = outcome
+
+        def addSuccess(self, test):
+            super().addSuccess(test)
+            self.record(test, 'passed')
+
+        def addFailure(self, test, err):
+            super().addFailure(test, err)
+            self.record(test, 'failed')
+
+        def addError(self, test, err):
+            super().addError(test, err)
+            self.record(test, 'error')
+
+        def addSkip(self, test, reason):
+            super().addSkip(test, reason)
+            self.record(getattr(test, 'test_case', test), 'skipped')
+
+        def addExpectedFailure(self, test, err):
+            super().addExpectedFailure(test, err)
+            self.record(test, 'expected_failure')
+
+        def addUnexpectedSuccess(self, test):
+            super().addUnexpectedSuccess(test)
+            self.record(test, 'unexpected_success')
+
+        def addSubTest(self, test, subtest, err):
+            super().addSubTest(test, subtest, err)
+            if err is not None:
+                self.record(test, 'failed' if issubclass(err[0], test.failureException) else 'error')
+
     spec = json.loads(Path(spec_path).read_text(encoding='utf-8'))
     sys.path[:0] = [str(SCRIPTS), str(TESTS)]
     sys.dont_write_bytecode = True
@@ -417,31 +603,36 @@ def _child(spec_path):
             seconds.get(module, UNKNOWN_TEST_SECONDS * len(modules[module])) / len(modules[module]), module))
         batches = [([], modules[module]) for module in ordered_modules]
     excluded = set(spec.get('exclude', ()))
-    failing = []
+    evidence = _new_result(spec)
     for folders, names in batches:
         suite = unittest.TestSuite()
+        load_error = None
         try:
             for folder in folders:
                 suite.addTests(loader.discover(str(TESTS / folder), pattern='test_*.py', top_level_dir=str(TESTS)))
             if names:
                 suite.addTests(loader.loadTestsFromNames(names))
         except Exception as error:
-            # Only module loading is classified here; execution errors retain
-            # the runner's actual failing test identity below.
             traceback.print_exc(file=sys.stdout)
-            result = {'failing': [f'<test module load failure: {type(error).__name__}: {error}>'],
-                      'load_error': {'type': type(error).__name__, 'message': str(error)}}
-            (Path(spec_path).parent / 'result.json').write_text(json.dumps(result), encoding='utf-8')
-            return 0
-        tests = [test for test in _flatten(suite) if test.id() not in excluded]
-        ordered = unittest.TestSuite(cheapest_first(tests, seconds))
-        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True).run(ordered)
-        failing = [test.id() for test, _ in result.failures + result.errors] \
-            + [test.id() for test in result.unexpectedSuccesses]
-        failing += [str(error) for error in loader.errors]
-        if failing:
+            load_error = [f'{type(error).__name__}: {error}']
+        if load_error or loader.errors:
+            evidence['load_error'] = {'selection': {'tests': names, 'folders': folders,
+                                                    'exclude': sorted(excluded)},
+                                      'details': load_error or list(loader.errors)}
+            for detail in evidence['load_error']['details']:
+                print(detail)
             break
-    (Path(spec_path).parent / 'result.json').write_text(json.dumps({'failing': failing}), encoding='utf-8')
+        tests = [test for test in _flatten(suite) if test.id() not in excluded]
+        evidence['collected'].extend(test.id() for test in tests)
+        ordered = unittest.TestSuite(cheapest_first(tests, seconds))
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True,
+                                         resultclass=Result).run(ordered)
+        evidence['tests_run'] += result.testsRun
+        evidence['rows'].extend(result.rows.values())
+        if not result.wasSuccessful():
+            break
+    validate_result(evidence, spec)
+    (Path(spec_path).parent / 'result.json').write_text(json.dumps(evidence), encoding='utf-8')
     return 0
 
 

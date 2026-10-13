@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+    "--check"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T12:58:17.437160+00:00",
+  "pid": 20964,
+  "exit_code": 1,
+  "ended": "2026-10-13T12:58:21.089606+00:00",
+  "seconds": 3.6410000000032596
+}

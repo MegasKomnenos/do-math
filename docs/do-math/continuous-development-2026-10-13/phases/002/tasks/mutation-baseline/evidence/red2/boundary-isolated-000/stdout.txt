@@ -1,0 +1,2 @@
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\red2\boundary-isolated-000\scratch\mutation-baseline-cv4cenw8
+Actual mutation fixture: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\red2\boundary-isolated-000\scratch\mutation-baseline-h6xyuj91

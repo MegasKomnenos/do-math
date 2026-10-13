@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "boundary.test_mutation_baseline.LazyBaselineTests.test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside",
+      "outcome": "passed",
+      "seconds": 0.43700000003445894,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_mutation_baseline": 0.43700000003445894
+  }
+}

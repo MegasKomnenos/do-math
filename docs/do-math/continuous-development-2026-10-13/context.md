@@ -50,6 +50,8 @@ B130~B134는 조회·CLI·역할 입력 metadata·복원·profile_selection 문�
 
 phase 001의 세 분석 task는 모두 A1~A4를 완료했고 manager의 report 형식 검사를 통과했다. manager가 현재 HEAD 77b8f132c056bcb222e7b6ee431742aa4dc1f27e에서 baseline 979파일(제품969·원자료6·engine4)의 바이트 불변, 원래 19/11/61/12 ID·원문 대응, B129 및 B130~B134/repair 원보고 14개의 해시·선택/row 대응을 재확인했다. B129와 현재 Python 소스 차이는 8개이며 B134 green의 28개 부분 성공은 현재 Python 판본과 일치한다. 분석 complete는 G 충족이나 제품 합격이 아니다. 근거는 run:phases/001/manager-evidence/verification.json 및 세 task의 report다.
 
+phase 002 mutation-baseline은 A1~A5를 완료했고 manager의 report 검사와 원자료 대조를 통과했다. 수리 전 실제 child 반례 1 fail/대조군 1 pass, 최종 관련 시험 58선택/58 passed와 exit 0을 보존했다. manager는 task 종료 파일 해시 2206개와 공식 보고의 Python 해시 862개가 현재와 일치하고, 전후 변경 12개가 배정 쓰기 범위와 일치함을 확인했다. 그중 2개는 생성된 .timings 캐시다. 실제 child fixture 19개(수리 전 2·최종 17)의 보고·시도 파일·정상 기준 연결도 대조했다. 검수 시 HEAD는 6385880f821743dab59bfc4853970597175e91b4이며 이번 관리 커밋 이후에도 이 해시는 당시 검증 좌표로 남는다. 이 부분 성공으로 G4~G7의 전체 실행을 대신하지 않는다. 근거는 run:phases/002/manager-evidence/verification.json과 run:phases/002/tasks/mutation-baseline/report.json이다.
+
 ## C3 현재 정본과 이력의 역할
 
 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
@@ -66,7 +68,7 @@ task의 complete는 A 완료다. 검토 task는 결함을 발견해도 배정된
 
 ## C5 병렬 실행과 검증 자원
 
-phase 001은 세 task 모두 프로젝트 writes=[]인 독립 분석으로 종료됐고 manager가 세 결과를 통합했다. phase 002는 변이 정상 기준 수리 task 하나로 운영한다. 이후에도 제품/시험을 수정하고 검사하는 phase는 기본 한 task로 운영한다. 같은 field_schemas나 Git index, 테스트 템플릿·캐시, 미완성 소스를 공유하는 작업을 파일 이름만 다르다는 이유로 병렬 배정하지 않는다. 고정판의 독립적인 읽기 검토에는 병렬성을 사용한다.
+phase 001의 독립 분석 세 task와 phase 002의 변이 정상 기준 수리 단일 task는 종료됐다. phase 003은 공급자 최소 스모크·녹화를 단일 task로 운영한다. 이후에도 제품/시험을 수정하고 검사하는 phase는 기본 한 task로 운영한다. 같은 field_schemas나 Git index, 테스트 템플릿·캐시, 미완성 소스를 공유하는 작업을 파일 이름만 다르다는 이유로 병렬 배정하지 않는다. 고정판의 독립적인 읽기 검토에는 병렬성을 사용한다.
 
 do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
 
@@ -92,13 +94,13 @@ manager는 next phase와 공용 문서·기억 등을 먼저 확정하고 pendin
 
 settings.manager={}와 task의 model/effort 생략으로 설치된 Codex 프로젝트 기본값을 사용한다. 이 준비는 지원 모델 목록을 검증하지 않았으므로 manager가 임의 모델 ID나 effort 조합을 발명하지 않는다. 명시 선택이 필요하면 실제 지원·사용자 환경을 먼저 확인한다. 전역 settings는 시작 때 한 번 읽히므로 manager가 실행 중 바꿔 반영된다고 가정하지 않는다.
 
-준비 세션은 서비스 단위 검사(가짜 Codex 사용) 31개 중 30개 통과·권한 조건의 symlink 1개 건너뜀을 확인했다. 이것은 do-math나 실제 모델 호출 완료의 증거가 아니다. 준비 당시 실제 Codex 세션은 미기동이었다. 현재는 phase 001 세 task의 report가 제출됐고 새 manager 세션이 이를 검사했다. 개발 서비스의 세션 수행과 제품의 공급자·역할 스키마 실호출은 다른 경계이며 실제 T4/T5의 책임은 G7에 남는다.
+준비 세션은 서비스 단위 검사(가짜 Codex 사용) 31개 중 30개 통과·권한 조건의 symlink 1개 건너뜀을 확인했다. 이것은 do-math나 실제 모델 호출 완료의 증거가 아니다. 준비 당시 실제 Codex 세션은 미기동이었다. 현재는 phase 001 세 task와 phase 002 한 task의 report를 각각 새 manager가 검사했다. 개발 서비스의 세션 수행과 제품의 공급자·역할 스키마 실호출은 다른 경계이며 실제 T4/T5의 책임은 G7에 남는다.
 
 ## C9 요구별 상태와 과거 검토의 재사용 범위
 
 phase 001의 requirement-state.json은 원래 19/11/61/12 항목을 각각 한 번씩 연결했고 tracking-state.json은 기존 109개 작업을 연결했다. 이들은 역사 근거와 종료 질문의 진입점이며 새로 수행한 전수 의미 감사가 아니다. 현재 판정은 이 context와 후속 report/manager의 처분을 따른다. 1-D/11-A/11-B의 검토된 성질, R17과 R07의 완료 부분, DOC-RETURN-PURE/CLI 및 B132~B134의 지정 경계는 유지하고 최종 판본 근거를 연결한다. 9-A의 R18 현재 외부 호출 전건, 1-E의 최종 반환 소유권 처분은 별도로 남는다. K-27/38/72/75와 P2 A-31/B-32는 후속 수리 이전의 낡은 remaining만으로 재수리하지 않는다.
 
-prior-review-state.json에서 실제 이전 검토는 PR23/B107~B109 완료, PR06/B22 부분 완료, 나머지 23영역 미검토다. 같은 구현을 다루는 후속 task에 해당 review_slices의 실제 diff·현재 소비자·원보고만 결합한다. 25영역 전체를 모든 수리의 선행 장벽으로 두지 않는다. phase 002는 PR01/B56 중 mutation child 결과·정상 기준·공유 passed 소비에 닿는 slice만 재검토한다. PR01 전체를 완료로 바꾸지 않는다.
+prior-review-state.json의 phase 001 당시 실제 이전 검토는 PR23/B107~B109 완료, PR06/B22 부분 완료, 나머지 23영역 미검토다. 같은 구현을 다루는 후속 task에 해당 review_slices의 실제 diff·현재 소비자·원보고만 결합한다. 25영역 전체를 모든 수리의 선행 장벽으로 두지 않는다. phase 002는 PR01/B56의 mutation child 결과·정상 기준·공유 passed 소비 slice를 실제 bbe64043/f56a2772 diff·현재 소비·새 58개 시험으로 재검토했다. B56 원보고 네 임시 경로는 현재 없으며 과거 counts를 합산하지 않았다. 정상 증거 처리 교정과 D9·모듈 비용 순서·시간 종료 제거의 유지 판단을 승인한다. PR01의 T3 저장소·전체 runner·provenance까지 완료로 바꾸지 않는다. 근거는 run:phases/002/tasks/mutation-baseline/evidence/review-notes.md 및 run:phases/002/manager-evidence/verification.json이다.
 
 저장소 원보고 100개의 해시와 그중 39개의 선택·결과를 읽었다는 것은 closure-map의 관찰이다. 외부 임시 원보고 246개 위치 레코드(236개 고유 경로)는 현재 없다. 해당 slice의 판단에 필요할 때만 보존 근거를 찾고, 없으면 과거 counts와 현재 대체 재현을 구별한다. 삭제 원인을 추측하거나 사용자가 지운 작업을 복원하지 않는다. R05/R06의 현행 시험은 tests/flows/test_provider_native_storage.py의 NativeStorageTests.test_native_numbers_and_public_blocks_survive_actual_runner_and_repository이며 과거 test_provider_close_native_storage.py 경로는 쓰지 않는다.
 
@@ -116,10 +118,12 @@ L01은 실제 운전 host/tool/version/read-call과 같은 단위의 한도가 �
 
 ## C11 최종 관문을 막는 도구·실경계 공백
 
-가장 가까운 수리는 mutation.run.fails_unmutated의 증거 부재 처리다. 현재는 정상 child의 반환 집합에 시험 ID가 없으면 통과로 기억하므로 CHILD_NO_RESULT·loader 오류·skip/빈 실행·비정상 exit를 실제 정상 통과와 구별할 정보가 부족하다. mutant의 결과 부재만 막는 검사로는 부족하다. manager는 실제 소스 분기를 대조했으며 아직 동적 재현하지 않았다. phase 002가 작은 실제 parent/child 경계와 정상 대조군으로 이를 재현·수리한다. 시간 경과는 포착 증거가 아니며 D9의 실패 후보에만 수행하는 지연 정상 기준 검사를 유지한다.
+phase 001 gate-readiness F4의 정상 child 근거 부재에 의한 거짓 포착은 phase 002에서 재현·수리됐다. 현재 mutation.py는 selection/collected/rows/tests_run/load_error의 단일 결과를 생산자·수신자의 validate_result로 검사하고 PID·exit·오류를 attempt.json에 보존한다. 정상 시험 row가 실제 passed일 때만 mutant의 failure/error/unexpected success를 포착으로 인정한다. load 오류는 동일 batch의 정상 수집·실행·통과와 대조하며 오류 문자열을 시험 ID로 쓰지 않는다. 부재·파손·skip·expected failure·fixture 오류·빈 실행·미실행·비정상 exit는 execution_error로 구별한다. 정상 실패는 제외 후 다음 후보를 검사하되 baseline_failing으로 관문을 막는다. baselines와 outcomes[].attempts의 연결 및 별도 재시도 경로를 최종 G6의 근거로 사용한다. 이전 failing 문자열 결과·옛 출력 경로 설명은 현재 계약이 아니다. D9의 지연 정상 확인·동일 선택 재사용·모듈 비용 순서·timeout 없음은 유지한다. 근거는 run:phases/002/tasks/mutation-baseline/report.json과 run:phases/002/manager-evidence/review.md다. 전체 함수 모집단·fresh T3·전체 변이는 여전히 미완료다.
 
 기존 변이17분할은 130파일이며 현재 LAYERS 1/2/3의 123모듈을 포함한다. adapter인 git_process/http_transport/powershell_scheduler/system_clock/windows_job 5개와 run_tests.py/test_categories.py는 해당 필터 밖이다. 설계 5.5/6.3 및 현재 도구 정본에 따라 이 7파일은 G6의 layer1/2/3 변이 분모에서 제외한다. adapter 5개는 T4 실제 계약·별도 분기 보고/T5로, runner·격리 표지는 관련 도구 시험과 G4/G5 선택·종료 검증으로 확인할 책임을 유지한다. 제외를 실행 성공으로 세지 않는다. 현 함수·rule·trivial·시험 진입 집합은 fresh T3 뒤 확정하고 오래된 1586함수나 17분할을 분모로 쓰지 않는다.
 
 T5의 smoke 폴더에는 현재 test_*.py가 없고 runner는 빈 선택을 거부한다. probe_cli의 files/background는 작은 protocol_probe 경계라 실제 역할 schema·Job/pythonw·Lean/Mathlib·예약 등록/발화/해제·학술 list_sources의 전체 요구를 대신하지 않는다. G7 work에서 공식 T5 진입점에 실제 smoke를 연결하고 필요한 실호출·말뭉치를 최종 소스 고정 전에 취득한다. T4 단독은 Measurement를 만들지 않아 adapter 분기 보고가 없다. 별도 T4 측정 수리를 배정하며 최종 T3 모집단에 T4를 섞어 해결하지 않는다.
+
+phase 003 provider-smoke는 이 중 공식 T5의 공급자 최소 경계만 구현·실행한다. 현행 maintenance action schema를 그대로 사용한 Codex/Claude 각 최소 호출, 실제 파일·checkpoint·종료 회수와 현재판 녹화/파서 재생을 책임진다. Claude background의 기존 녹화는 현재 identity/사건 순서와 B87 계약으로 재판정하고, 부족하면 공급자당 1~2회 범위의 추가 호출을 사용한다. 실제 모델은 설치된 설정·CLI 근거로 선택하며 인증 비밀을 출력하지 않는다. 공급자/스키마/환경 실패는 그 상태로 보고하고 통과하려고 역할 schema를 줄이지 않는다. 이 task의 T5 실행이 성공해도 Job/pythonw 전용 경계·Lean/Mathlib·예약·학술·L01과 G7 전체는 후속 책임이다. PR15/B86/B87의 해당 공급자 녹화·background slice만 함께 재검토한다.
 
 gate-readiness가 관찰한 설치 Codex는 0.162.1, 녹화 manifest는 0.160.0이며 Claude는 양쪽 2.1.289다. corpus12항목/20파일의 해시 일치는 현재 인증·모델 호출 성공을 뜻하지 않는다. Claude background는 실제 event 순서와 현 background_completed_before_result 조건을 재판정해야 한다. Lean/Lake/Mathlib·pythonw·학술 서버 자료의 존재/버전은 확인됐으나 인증·지원 모델·계정 한도·컴파일·예약 권한·MCP 응답은 미확인이다. 독립적으로 가능한 수리를 진행하면서 가까운 G7 작업에서 비밀 비노출 방식으로 조건을 확인하고, 부족한 외부 조건은 정확히 상신한다. 근거는 run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json, population-and-corpus.json, environment.json, source-contracts.json 및 manager의 verification.json이다.

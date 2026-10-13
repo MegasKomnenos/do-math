@@ -1,0 +1,126 @@
+{
+  "base": "6385880f821743dab59bfc4853970597175e91b4",
+  "every": true,
+  "functions": 1,
+  "counts": {
+    "killed": 1
+  },
+  "baseline_failing": [],
+  "baselines": [
+    {
+      "id": 0,
+      "selection": {
+        "tests": [
+          "mutation_fixture_tests.Case.test_value"
+        ],
+        "folders": [],
+        "exclude": []
+      },
+      "attempt": {
+        "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-ln9lxrhh\\mutation\\unmutated-0000",
+        "started": "2026-10-13T12:57:15.340139+00:00",
+        "command": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+          "--child",
+          "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-ln9lxrhh\\mutation\\unmutated-0000\\spec.json"
+        ],
+        "pid": 20868,
+        "exit_code": 0,
+        "result": {
+          "selection": {
+            "tests": [
+              "mutation_fixture_tests.Case.test_value"
+            ],
+            "folders": [],
+            "exclude": []
+          },
+          "collected": [
+            "mutation_fixture_tests.Case.test_value"
+          ],
+          "rows": [
+            {
+              "id": "mutation_fixture_tests.Case.test_value",
+              "outcome": "passed",
+              "fixture": false
+            }
+          ],
+          "tests_run": 1,
+          "load_error": null
+        },
+        "error": null,
+        "seconds": 0.25,
+        "finished": "2026-10-13T12:57:15.589592+00:00"
+      },
+      "status": "passed",
+      "failing": [],
+      "detail": null
+    }
+  ],
+  "unreasoned_entries": 0,
+  "list": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-ln9lxrhh\\pseudo.json",
+  "seconds": 0.7,
+  "survived": [],
+  "outcomes": [
+    {
+      "module": "mutation_fixture_subject.py",
+      "function": "value",
+      "rule": "return_none",
+      "line": 1,
+      "tests": 1,
+      "folders": [],
+      "estimated_seconds": 0.5,
+      "attempts": [
+        {
+          "execution": {
+            "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-ln9lxrhh\\mutation\\mutant-0000\\attempt-0000",
+            "started": "2026-10-13T12:57:15.141183+00:00",
+            "command": [
+              "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+              "-B",
+              "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+              "--child",
+              "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-ln9lxrhh\\mutation\\mutant-0000\\attempt-0000\\spec.json"
+            ],
+            "pid": 3788,
+            "exit_code": 0,
+            "result": {
+              "selection": {
+                "tests": [
+                  "mutation_fixture_tests.Case.test_value"
+                ],
+                "folders": [],
+                "exclude": []
+              },
+              "collected": [
+                "mutation_fixture_tests.Case.test_value"
+              ],
+              "rows": [
+                {
+                  "id": "mutation_fixture_tests.Case.test_value",
+                  "outcome": "failed",
+                  "fixture": false
+                }
+              ],
+              "tests_run": 1,
+              "load_error": null
+            },
+            "error": null,
+            "seconds": 0.2029999999795109,
+            "finished": "2026-10-13T12:57:15.337902+00:00"
+          },
+          "baselines": [
+            0
+          ],
+          "decision": "killed"
+        }
+      ],
+      "status": "killed",
+      "killed_by": [
+        "mutation_fixture_tests.Case.test_value"
+      ],
+      "seconds": 0.2
+    }
+  ]
+}

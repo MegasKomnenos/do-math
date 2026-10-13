@@ -1,0 +1,37 @@
+{
+ "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-a3od8ri5\\mutation\\mutant-0000\\attempt-0000",
+ "started": "2026-10-13T12:57:22.112296+00:00",
+ "command": [
+  "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "-B",
+  "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\mutation.py",
+  "--child",
+  "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\002\\tasks\\mutation-baseline\\evidence\\related-final\\boundary-isolated-000\\scratch\\mutation-baseline-a3od8ri5\\mutation\\mutant-0000\\attempt-0000\\spec.json"
+ ],
+ "pid": 13436,
+ "exit_code": 0,
+ "result": {
+  "selection": {
+   "tests": [
+    "mutation_fixture_tests.Case.test_value"
+   ],
+   "folders": [],
+   "exclude": []
+  },
+  "collected": [
+   "mutation_fixture_tests.Case.test_value"
+  ],
+  "rows": [
+   {
+    "id": "mutation_fixture_tests.Case.test_value",
+    "outcome": "failed",
+    "fixture": false
+   }
+  ],
+  "tests_run": 1,
+  "load_error": null
+ },
+ "error": null,
+ "seconds": 0.18800000002374873,
+ "finished": "2026-10-13T12:57:22.304829+00:00"
+}

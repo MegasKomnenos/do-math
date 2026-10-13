@@ -1,0 +1,38 @@
+Open known defects: 0
+[structure] 4 tests
+[unit] 45 tests
+[boundary] 9 tests
+  isolated: boundary.test_mutation_baseline.ActualBaselineTests
+  {'passed': 8}
+  isolated: boundary.test_mutation_baseline.LazyBaselineTests
+  {'passed': 1}
+Over budget: 7 tests
+      7.750s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+      0.563s > 0.2s unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill
+      0.266s > 0.2s unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success
+      0.234s > 0.2s unit.test_runner_tiers.ModuleFixtureTests.test_both_modes_preserve_order_fixture_counts_and_complete_module_costs
+      0.953s > 0.2s unit.test_runner_tiers.ReportTests.test_report_states_the_number_of_open_known_defects
+      0.406s > 0.2s unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages
+      0.985s > 0.2s unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost
+{"complete": true, "successful": true, "counts": {"passed": 58}, "group_seconds": {"structure": 8.5, "unit": 3.8, "boundary": 15.6}, "total_seconds": 27.9}
+    7.750s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    3.484s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_cli_and_t3_consume_actual_normal_evidence_with_the_same_verdict
+    3.359s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_normal_skip_and_fixture_events_are_evidence_errors
+    1.704s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_real_load_failure_is_a_kill_only_when_the_normal_batch_passes
+    1.687s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure
+    1.282s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_actual_mutant_exit_or_expected_failure_is_not_a_pass
+    1.250s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_failure_is_retained_while_the_next_witness_kills
+    0.985s passed             unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost
+    0.953s passed             unit.test_runner_tiers.ReportTests.test_report_states_the_number_of_open_known_defects
+    0.875s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill
+    0.859s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_a_written_passing_result_cannot_hide_an_abnormal_normal_exit
+    0.563s passed             unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill
+    0.516s passed             structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name
+    0.437s passed             boundary.test_mutation_baseline.LazyBaselineTests.test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside
+    0.406s passed             unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages
+    0.266s passed             unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success
+    0.234s passed             unit.test_runner_tiers.ModuleFixtureTests.test_both_modes_preserve_order_fixture_counts_and_complete_module_costs
+    0.203s passed             structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization
+    0.109s passed             unit.test_runner_tiers.ModuleFixtureTests.test_a_measured_run_sets_up_and_tears_down_each_module_under_its_own_fixture_label
+    0.062s passed             unit.test_mutation.MutationEvidenceTests.test_load_error_requires_the_identical_normal_selection_to_actually_pass
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\related-final\report.json

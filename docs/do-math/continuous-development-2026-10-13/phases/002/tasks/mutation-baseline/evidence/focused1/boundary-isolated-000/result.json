@@ -1,0 +1,46 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 6,
+  "rows": [
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_a_written_passing_result_cannot_hide_an_abnormal_normal_exit",
+      "outcome": "passed",
+      "seconds": 0.8439999999827705,
+      "details": []
+    },
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure",
+      "outcome": "passed",
+      "seconds": 1.0459999999729916,
+      "details": []
+    },
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_cli_and_t3_consume_actual_normal_evidence_with_the_same_verdict",
+      "outcome": "passed",
+      "seconds": 3.5320000000065193,
+      "details": []
+    },
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill",
+      "outcome": "passed",
+      "seconds": 0.9070000000065193,
+      "details": []
+    },
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_normal_skip_and_fixture_events_are_evidence_errors",
+      "outcome": "passed",
+      "seconds": 2.577999999979511,
+      "details": []
+    },
+    {
+      "id": "boundary.test_mutation_baseline.ActualBaselineTests.test_real_load_failure_is_a_kill_only_when_the_normal_batch_passes",
+      "outcome": "passed",
+      "seconds": 1.6570000000065193,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_mutation_baseline": 10.60899999999674
+  }
+}

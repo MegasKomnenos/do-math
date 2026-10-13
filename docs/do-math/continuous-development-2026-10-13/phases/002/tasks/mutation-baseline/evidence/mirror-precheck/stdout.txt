@@ -1,0 +1,6 @@
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/.timings.json
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/boundary/test_mutation_baseline.py
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/support/mutation.py
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/unit/test_mutation.py
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/unit/test_runner_tiers.py
+[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/시험-지침.md

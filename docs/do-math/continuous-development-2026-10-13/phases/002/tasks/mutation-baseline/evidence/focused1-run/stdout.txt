@@ -1,0 +1,32 @@
+Open known defects: 0
+[unit] 22 tests
+[boundary] 7 tests
+  isolated: boundary.test_mutation_baseline.ActualBaselineTests
+  {'passed': 6}
+  isolated: boundary.test_mutation_baseline.LazyBaselineTests
+  {'passed': 1}
+Over budget: 2 tests
+      0.781s > 0.2s unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill
+      0.281s > 0.2s unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success
+{"complete": true, "successful": true, "counts": {"passed": 29}, "group_seconds": {"unit": 1.4, "boundary": 11.9}, "total_seconds": 13.3}
+    3.532s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_cli_and_t3_consume_actual_normal_evidence_with_the_same_verdict
+    2.578s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_normal_skip_and_fixture_events_are_evidence_errors
+    1.657s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_real_load_failure_is_a_kill_only_when_the_normal_batch_passes
+    1.046s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure
+    0.907s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill
+    0.844s passed             boundary.test_mutation_baseline.ActualBaselineTests.test_a_written_passing_result_cannot_hide_an_abnormal_normal_exit
+    0.781s passed             unit.test_mutation.MutationEvidenceTests.test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill
+    0.500s passed             boundary.test_mutation_baseline.LazyBaselineTests.test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside
+    0.281s passed             unit.test_mutation.MutationEvidenceTests.test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success
+    0.110s passed             unit.test_mutation.MutationEvidenceTests.test_load_error_requires_the_identical_normal_selection_to_actually_pass
+    0.078s passed             unit.test_mutation.MutationEvidenceTests.test_normal_failure_is_excluded_and_attempts_and_cached_baselines_remain_traceable
+    0.031s passed             unit.test_mutation.ChildRunTests.test_a_mutant_child_stops_at_the_first_failing_test
+    0.031s passed             unit.test_mutation.ChildRunTests.test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first
+    0.031s passed             unit.test_mutation.MutationEvidenceTests.test_elapsed_time_alone_does_not_kill_a_mutant
+    0.031s passed             unit.test_mutation.ChildRunTests.test_a_surviving_cheap_module_does_not_skip_a_later_killer
+    0.031s passed             unit.test_mutation.MutationEvidenceTests.test_fallback_keeps_layer_folders_and_unentered_and_trivial_functions_need_no_child
+    0.016s passed             unit.test_mutation.ChildRunTests.test_module_load_exception_is_reported_as_load_failure
+    0.000s passed             unit.test_mutation.ChangeTests.test_a_changed_or_new_body_is_a_target_and_a_docstring_or_neighbour_edit_is_not
+    0.000s passed             unit.test_mutation.ChangeTests.test_repeated_names_are_keyed_in_order
+    0.000s passed             unit.test_mutation.ListTests.test_survivors_enter_without_a_reason_and_killed_functions_leave
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\002\tasks\mutation-baseline\evidence\focused1\report.json
