@@ -1,0 +1,276 @@
+{
+  "status": "complete",
+  "narrative": "phase011 regression-reading의 A1~A4를 완료했다. 시작2644소스는010 manager source-inspected와 전건 동일하며 관리 커밋과 기존 미커밋 제품을 구분했다. 세 시험과 SKILL 한 문단만 수리했고 runtime·helper/schema·smell규칙·생성규칙·공용 문서·원보고는 변경하지 않았다. 최종 변화10개는 정본/미러 각4개와 비용 캐시2개로 쓰기 범위와 정확히 같다.\n\n기존 취소 fixture는 현 actual real_ports의 jobs/clock/environment를 전달한다. 실제 _job_run/ModelCalls/worker/Job/clock을 유지하며 owner thread 시작/판단, 시작 뒤 명시 stop, 정확 tuple (None, 빈stdout, 빈stderr, True), 한 번 collect/continuation, 빈 named Job와 추가collect0을 확인했다. 먼저 tuple 형식을 검사해 원계산 예외의 failed dict가 KeyError로 가려지지 않는다.\n\n네 음성 단언은 정상 대조/교란 입력을 유지한 채 원인별 결속을 추가했다. deferred owner는 네 fault의 정확 missing/unexpected owner 및 method/실제 문서 검사 부재를 구별한다. 복원 오류에서 local_path 노출은 정확 assertNotIn 반려를 검사한다. 일반 continuation은 local_path 외 봉인 좌표가 정상 recovery source와 동일함과 resume-history 소유 경로를 확인한 뒤 captured exception의 정확 args를 경로 반려에 결속한다. checkpoint 교란은 두 완전한 artifact 좌표가 exception의 minus/plus 차이에 나타나는지 검사한다. 기대값은 실제 owner/file 계약과 정상·교란 입력에서 얻었고 제품 실패를 정상으로 만들거나 검사 규칙/모집단을 약화하지 않았다.\n\nSKILL14행의 기존 읽기 문단만 온전한 연속 접두 또는 명시 구간별 수신을 기준으로 모든 공백을 회수하도록 교정했다. 개별/합산 절단·긴 행 일부 문자·꼬리/끝표지/exit0/해시의 한계를 명시했다. 010 두fixture와16페이지를 원문/문자까지 재검산했다. END080이 보여도 ASCII18~63와Unicode16~65의 공백이 남는 반례와 합산절단의 별도 공백을 새 문구가 처리한다. 새 operator의 보편 한도/준수 증명이 아니며13-C 원문 출력byte 기준·L01 미인증과 Q1/Q2 미확정을 그대로 유지한다. 새 모델/Claude세션·유료호출은0이다.\n\nfocused6건과 최종 정본/미러 각각136건이 모두passed·실제exit0이다. 현재 --list를010 related61개와009 지정75개의 실제selected에 연결했고 중복/누락이 없다. 각867개 Python과 문서 등 전후/최종 해시, 고유row·skip/error/미실행0을 대조했다. 정본 114.9초/미러 116.5초이며 단언을 줄여 시간에 맞추지 않았다. 원자료 argv/cwd/PID/시각/exit/stdout/stderr를 보존했다. 생성계획5개/실제5개는 허용범위와 같고 미러 검사 뒤 캐시1개만 공식 재동기화했다. --check1307파일·skill-only가exit0이고 최종 캐시 동등이다.\n\n010 host3/미러3의 성공은 불변 host helper/시험/worker/runtime/실행 경로와 Python/pythonw SHA·PowerShell 경로/판본, 8개 원자료 해시/판정으로 한정 재사용하며 OS T5를 반복하지 않았다. PowerShell 당시 실행 파일 SHA는 미기록이라 역사 바이너리 바이트 동등성은 주장하지 않는다. runtime124·공급자입력3·양쪽corpus102 및 규칙/속성은 보존돼 기존 실호출·명시SHA/Git raw-clean의 한정 근거도 유지된다. 전체일반/T3/변이·Lean/Mathlib/실예약/학술·최종review는 별도 후속책임이다. 자기 Jobs/임시 자원은 finally/공식 runner로 정리됐다. Git stage/commit/reset/checkout/push·graphify갱신·연구 시작/재개/삭제·설치/예약변경은 수행하지 않았다. Git 마감과 기존 finding 처분은 manager가 맡는다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "현재 실제 포트 계약으로 필수 clock/environment를 전달하고 실제 owner 시작/취소·정확 tuple·한 번 수집/continuation·빈Job·추가 collect0 유지/보강. 010 related와baseline의 정확 error ID가 새 정본/미러 passed에 대응하며 runtime불변.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/start-verification.json",
+        "run:phases/011/tasks/regression-reading/evidence/changes.diff",
+        "run:phases/011/tasks/regression-reading/evidence/focused-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/review.md"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "네 AssertionError-only 지점에 원인별 메시지/구체 caught.exception 검사와 필요한 정상 좌표 대조를 추가했다. wrong/missing owner/method·오류 local_path·continuation/checkpoint 소유자 반례와 정상 저장/포장/파일 검사를 유지했고 양쪽 전건 smell도 passed. helper/schema/runtime/규칙/모집단 불변.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/changes.diff",
+        "run:phases/011/tasks/regression-reading/evidence/focused-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/review.md",
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "SKILL14행 한 문단만 교정해 온전한 연속 접두/명시 범위별 수신과 모든 공백·개별/합산절단·긴 행 일부 문자를 다룬다. 010의 ASCII18~63/Unicode16~65와 합산절단 원자료·16페이지160행을 대조했다. 필수 순서/재사용/내부 역할 경계와 원문 byte 기준·L01 미인증은 유지하며 새 유료/모델 세션과 제품 읽기 시험은 없다.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/changes.diff",
+        "run:phases/011/tasks/regression-reading/evidence/reading-verification.json",
+        "run:phases/011/tasks/regression-reading/evidence/check_reading.py",
+        "run:phases/011/tasks/regression-reading/evidence/review.md"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "010 전체61개와 지정 문서/복구75개를 합친 현재136선택을 정본/미러 각각 완결. 고유row/실제exit0·867 Python/전체전후소스 불변·skip/error/미실행0. 공식 생성5변경/캐시재동기화1변경은 사전계획과 일치하고 --check/skill-only통과. 010 host 원자료8개와runtime124/입력3/corpus102 불변에 따른 재사용 및 미검증/자원/Git 경계를 기록했다.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/selection.json",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-plan.json",
+        "run:phases/011/tasks/regression-reading/evidence/cache-plan.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-check.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/skill-only.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/review.md"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/SKILL.md",
+      "detail": "공식 생성 미러: 진입 역할의 기존 읽기 문단만 교정: 온전한 연속 접두/명시 구간별 수신과 모든 공백 회수, 개별·합산 절단, 긴 행 일부 문자 및 꼬리/끝표지/exit0/해시의 한계를 명시. 기존 순서·판본 재사용·내부 역할 경계 유지."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 생성 미러: 공식 runner의 실행 비용 캐시 갱신. 시험 결과 캐시가 아니며 최종 미러는 정본 기준 공식 생성기로 재동기화."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_call_jobs.py",
+      "detail": "공식 생성 미러: 현재 real_ports의 실제 jobs/clock/environment를 취소 fixture에 전달. callback과 stop 판단의 owner thread, 명시 취소의 정확 tuple·한 번 collect/continuation·빈 Job·추가 collect0을 검사하고 실패 dict를 tuple 인덱싱으로 가리지 않음."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py",
+      "detail": "공식 생성 미러: 세 포괄적 AssertionError 단언을 local_path 노출, 정상 source와 local_path만 다른 continuation의 owner 경로, checkpoint와 execution result의 정확 artifact 좌표 차이에 결속. 원래 정상/오류/저장/포장/소유자 반례 유지."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "detail": "공식 생성 미러: deferred owner 정상/네 교란 입력 유지. owner 집합과 누락 method의 원인 메시지를 추가하고 각 wrong/missing owner/method의 정확 반려를 별도로 결속."
+    },
+    {
+      "path": ".claude/skills/do-math/SKILL.md",
+      "detail": "진입 역할의 기존 읽기 문단만 교정: 온전한 연속 접두/명시 구간별 수신과 모든 공백 회수, 개별·합산 절단, 긴 행 일부 문자 및 꼬리/끝표지/exit0/해시의 한계를 명시. 기존 순서·판본 재사용·내부 역할 경계 유지."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 runner의 실행 비용 캐시 갱신. 시험 결과 캐시가 아니며 최종 미러는 정본 기준 공식 생성기로 재동기화."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_call_jobs.py",
+      "detail": "현재 real_ports의 실제 jobs/clock/environment를 취소 fixture에 전달. callback과 stop 판단의 owner thread, 명시 취소의 정확 tuple·한 번 collect/continuation·빈 Job·추가 collect0을 검사하고 실패 dict를 tuple 인덱싱으로 가리지 않음."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_knowledge_currentness.py",
+      "detail": "세 포괄적 AssertionError 단언을 local_path 노출, 정상 source와 local_path만 다른 continuation의 owner 경로, checkpoint와 execution result의 정확 artifact 좌표 차이에 결속. 원래 정상/오류/저장/포장/소유자 반례 유지."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "detail": "deferred owner 정상/네 교란 입력 유지. owner 집합과 누락 method의 원인 메시지를 추가하고 각 wrong/missing owner/method의 정확 반려를 별도로 결속."
+    }
+  ],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "fact",
+      "detail": "010 host-smoke F1/F2 및 A3를 막던 정확 취소error/smellfailed가 새 정본/미러136건에서 모두passed다. 기존 취소 성질과 네 정상/음성 단언은 유지·보강됐고 원 실패 보고는 보존됐다. runtime/helper/규칙 변경은 없다.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/changes.diff",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final-results/report.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final-results/report.json"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#G3",
+        "run:context.md#G7",
+        "run:plan.md",
+        "run:phases/010/tasks/host-smoke/objective.md#A3"
+      ],
+      "next_action": "manager가 원실패 두ID/현재소스/새row를 대조해010 F1/F2 남김의 해소를 처분하고010~011 제품 변경 단위를 검수·마감한다. 다른 전체G의 완료로 확대하지 않는다."
+    },
+    {
+      "id": "F2",
+      "kind": "fact",
+      "detail": "010 reading-limits F2의 마지막 표시 꼬리 다음 문구 반례를14행 한 문단 수리로 처리했다. 원fixture의 접두/누락과16페이지·합산 절단을 대조했으며 원문UTF-8 output-byte 기준과 미정operator profile/Q1/Q2·L01 미인증은 바꾸지 않았다. 문구 수리 완료는 읽기 용량/AI준수 인증이 아니다.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/changes.diff",
+        "run:phases/011/tasks/regression-reading/evidence/reading-verification.json",
+        "run:phases/011/tasks/regression-reading/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C10",
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "run:plan.md"
+      ],
+      "next_action": "manager는010 reading F2의 한정 문구 수리를 검수해 종결하되 기존 Q1/Q2 외부결정과13-C/L01 미인증을 유지한다. 운전 프로필/단위 결정 뒤 별도 실제 읽기 검증을 배정한다."
+    },
+    {
+      "id": "F3",
+      "kind": "fact",
+      "detail": "010 host helper/시험/worker/runtime·실행 경로/도구 조건과 원자료8개가 보존돼 host-final/mirror-host의 승인된3/3씩 성질을 재사용했다. Python/pythonw는 기존SHA/판본 같고 PowerShell은 경로/판본 같지만 당시binary SHA미기록의 한계를 유지한다. runtime124·입력3·corpus102/규칙/속성도 불변이며 새유료호출/OS T5 반복은 없다.",
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/source-start.json",
+        "run:phases/011/tasks/regression-reading/evidence/source-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#C12",
+        "run:context.md#G7",
+        "run:context.md#G8",
+        "run:plan.md"
+      ],
+      "next_action": "manager는 기존 한정실경계/공급자/원바이트 근거의 재사용을 유지하고 Lean·실예약·학술 및G4~G6/G8 최종관문을 별도로 배정한다. 이번136건을 전체일반/T3/변이/읽기 인증으로 합산하지 않는다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method sim.test_knowledge_currentness.RecoveryMaterialTests structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/011/tasks/regression-reading/evidence/focused-results",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/focused-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/focused.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/focused.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/focused-results/report.json"
+      ],
+      "detail": "정확 취소 ID, deferred owner 음성, RecoveryMaterialTests 3건과 전건 smell을 첫 검증: 6선택/6고유row/6passed·exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py boundary.test_scheduling_windows_job boundary.test_scheduling_owned_job_children boundary.test_scheduling_call_jobs boundary.test_role_input_snapshot_reach boundary.test_port_jobs contracts.test_port_jobs structure.test_test_smells structure.test_boundary_invariants structure.test_ports structure.test_doc_code sim.test_knowledge_currentness.RecoveryMaterialTests sim.test_role_input_context.OperationalInputTests flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests unit.test_role_input_packaging unit.test_role_input_scoped_packaging --list",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/canonical-selection-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-selection.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-selection.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/selection.json"
+      ],
+      "detail": "현재 공식 --list의 136개를 010의61개 및 009의 지정75개 selected와 대조. 중복/누락0. 실행 검사가 아닌 선택 확인."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py boundary.test_scheduling_windows_job boundary.test_scheduling_owned_job_children boundary.test_scheduling_call_jobs boundary.test_role_input_snapshot_reach boundary.test_port_jobs contracts.test_port_jobs structure.test_test_smells structure.test_boundary_invariants structure.test_ports structure.test_doc_code sim.test_knowledge_currentness.RecoveryMaterialTests sim.test_role_input_context.OperationalInputTests flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests unit.test_role_input_packaging unit.test_role_input_scoped_packaging --jobs 1 --output C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\011\\tasks\\regression-reading\\evidence\\canonical-final-results",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/canonical-final-results/report.json"
+      ],
+      "detail": "정본136선택/136고유row/136passed·exit0. skip/error/미실행0, changed_during_run0, Python867개/문서 등 전후 소스 불변(비용 캐시만 변경)."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/mirror-build-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-build.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-build.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-plan.json"
+      ],
+      "detail": "공식 사전계획과 실제5변경 동일, 모두 writes 안. 정본 네 수리와 비용 캐시만 대응 생성. manifest/규칙/010 host 파일 불변."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py boundary.test_scheduling_windows_job boundary.test_scheduling_owned_job_children boundary.test_scheduling_call_jobs boundary.test_role_input_snapshot_reach boundary.test_port_jobs contracts.test_port_jobs structure.test_test_smells structure.test_boundary_invariants structure.test_ports structure.test_doc_code sim.test_knowledge_currentness.RecoveryMaterialTests sim.test_role_input_context.OperationalInputTests flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests unit.test_role_input_packaging unit.test_role_input_scoped_packaging --jobs 1 --output C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\011\\tasks\\regression-reading\\evidence\\mirror-final-results",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-final-results/report.json"
+      ],
+      "detail": "대응 미러도 같은136선택/136고유row/136passed·exit0, Python867개/전후 소스 불변(비용 캐시만 변경)."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/cache-sync-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/cache-sync.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/cache-sync.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/cache-plan.json"
+      ],
+      "detail": "공식 계획/실제 변화 모두 미러 비용 캐시1파일뿐. 최종 양쪽 캐시 바이트 동등."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/mirror-check-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-check.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/mirror-check.stderr.log"
+      ],
+      "detail": "공식 --check exit0, 1307파일 드리프트 없음. 제품 변화0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/skill-only-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/skill-only.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/skill-only.stderr.log"
+      ],
+      "detail": "정본 probe_cli --skill-only exit0/verified. 문서 의미/전체 런타임/Lean·연구 역할 효력을 대신하지 않음."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/011/tasks/regression-reading/evidence/verify_final.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/011/tasks/regression-reading/evidence/final-verification-execution.json",
+        "run:phases/011/tasks/regression-reading/evidence/final-verification.stdout.log",
+        "run:phases/011/tasks/regression-reading/evidence/final-verification.stderr.log",
+        "run:phases/011/tasks/regression-reading/evidence/verification-final.json",
+        "run:phases/011/tasks/regression-reading/evidence/verify_final.py"
+      ],
+      "detail": "시작010 manager와2644소스 동등, 정확 허용10변경·파일 집합·선택/row/실제exit·각867 Python·원실패 두ID 새passed·runtime124/입력3/corpus102·host8원자료/도구 조건·미러계획/실제·캐시 일치를 원파일에서 대조."
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+test_executable_identity_has_one_normalization (structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization) ... ok
+test_interpreter_uses_are_declared (structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared) ... ok
+test_native_job_creation_passes_suspended_and_no_window_bits (structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits) ... ok
+test_no_script_module_shadows_a_standard_library_module (structure.test_boundary_invariants.BoundaryInvariantTests.test_no_script_module_shadows_a_standard_library_module) ... ok
+test_only_file_io_replaces_files (structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files) ... ok
+test_process_starts_are_declared_and_open_no_console_window (structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window) ... ok
+test_a_field_from_another_family_cannot_validate_a_scoped_name (structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name) ... ok
+test_all_dotted_document_fields_have_an_owner (structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner) ... ok
+test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word (structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word) ... ok
+test_another_commands_flag_cannot_validate_the_documented_command (structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command) ... ok
+test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields (structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields) ... ok
+test_cli_result_branches_and_incremental_manifest_fields_remain_separate (structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate) ... ok
+test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method (structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method) ... ok
+test_document_variables_have_line_local_owners_without_a_union_of_families (structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families) ... ok
+test_documented_commands_and_options_exist (structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist) ... ok
+test_documented_diagnostic_codes_belong_to_their_actual_owner (structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner) ... ok
+test_documented_function_references_resolve_to_callables (structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables) ... ok
+test_documented_module_constants_exist_independently_of_field_names (structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names) ... ok
+test_documented_policy_names_have_installed_owners (structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners) ... ok
+test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) ... ok
+test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings (structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings) ... ok
+test_operational_document_names_the_result_and_checkpoint_owners (structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners) ... ok
+test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) ... ok
+test_optional_reads_and_same_named_checks_keep_their_actual_owners (structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners) ... ok
+test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads (structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads) ... ok
+test_role_input_fields_do_not_borrow_names_from_the_stored_execution (structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution) ... ok
+test_every_port_has_protocol_real_fake_and_both_contract_sides (structure.test_ports.PortCompletenessTests.test_every_port_has_protocol_real_fake_and_both_contract_sides) ... ok
+test_new_system_tests_have_no_smell (structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell) ... ok
+test_product_coverage_exclusions_state_a_reason (structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason) ... ok
+test_test_side_helpers_patch_no_product_name (structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name) ... ok
+test_test_sources_are_unchanged_by_unicode_normalization (structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 19.621s
+
+OK
+test_assessment_only_input_contains_waiting_contract_and_review_history (unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history) ... ok
+test_candidate_population_is_compact_profile_bound_and_reproducible (unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible)
+Over the 0.2 s unit budget: three 100 kB tasks are sealed twice; the actual profile selection also checks the full document population. ... ok
+test_checker_sees_canonical_catalog_beyond_direct_comparison (unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison)
+About 0.25 s, over the 0.2 s unit budget: the role input with its submission tools is prepared and sealed for two roles. ... ok
+test_compaction_preserves_producer_validation_inputs (unit.test_role_input_packaging.RoleInputTests.test_compaction_preserves_producer_validation_inputs) ... ok
+test_engine_context_restores_multihop_git_artifact (unit.test_role_input_packaging.RoleInputTests.test_engine_context_restores_multihop_git_artifact)
+The engine's continuation context restores two stages of stored artifacts from Git. ... ok
+test_engine_review_context_reaches_role_input_with_bound_identity_and_policy (unit.test_role_input_packaging.RoleInputTests.test_engine_review_context_reaches_role_input_with_bound_identity_and_policy)
+The real engine's review context binds the identity basis and policy into the role input; a forged one is refused. ... ok
+test_impact_review_evidence_is_required_direct_input (unit.test_role_input_packaging.RoleInputTests.test_impact_review_evidence_is_required_direct_input) ... ok
+test_multihop_restores_latest_file_and_stage_evidence (unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence)
+Budget: full document checks and two real file restorations retain the boundary evidence. ... ok
+test_optional_display_copies_are_referenced_instead_of_reclassified_as_mandatory (unit.test_role_input_packaging.RoleInputTests.test_optional_display_copies_are_referenced_instead_of_reclassified_as_mandatory)
+Original 3-C/B-32 counterexample, across every current role. ... ok
+test_plan_receives_returned_work_separately_from_ready_selection_population (unit.test_role_input_packaging.RoleInputTests.test_plan_receives_returned_work_separately_from_ready_selection_population) ... ok
+test_preparation_compares_full_population_and_only_effective_k_summaries (unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries)
+The preparation role gets the whole selectable population and only effective K summaries from the real engine's context. ... ok
+test_required_direct_action_is_never_replaced_by_reference (unit.test_role_input_packaging.RoleInputTests.test_required_direct_action_is_never_replaced_by_reference) ... ok
+test_required_input_overflow_is_structured_and_lossless (unit.test_role_input_packaging.RoleInputTests.test_required_input_overflow_is_structured_and_lossless) ... ok
+test_review_input_matches_real_seat_view_and_rejects_peer_injection (unit.test_role_input_packaging.RoleInputTests.test_review_input_matches_real_seat_view_and_rejects_peer_injection) ... ok
+test_role_input_uses_current_schema_documents_and_private_resume_bytes (unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes)
+The manifest reuses ``fit_context``'s catalog: every catalog file is created once and none is read back. ... ok
+test_role_manifest_distinguishes_required_direct_views_from_references (unit.test_role_input_packaging.RoleInputTests.test_role_manifest_distinguishes_required_direct_views_from_references) ... ok
+test_role_overflow_keeps_original_sizes_and_waits_on_activity (unit.test_role_input_packaging.RoleInputTests.test_role_overflow_keeps_original_sizes_and_waits_on_activity) ... ok
+test_role_overflow_records_the_context_budget_it_compared (unit.test_role_input_packaging.RoleInputTests.test_role_overflow_records_the_context_budget_it_compared) ... ok
+test_submission_context_is_installed_before_single_input_seal (unit.test_role_input_packaging.RoleInputTests.test_submission_context_is_installed_before_single_input_seal) ... ok
+test_verified_summary_tracks_identity_use_withdrawal (unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal)
+The knowledge catalog's verified summary follows the identity assessment's use, on the real engine's context. ... ok
+test_identity_review_proposal_carries_only_the_judged_formal_fields (unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_identity_review_proposal_carries_only_the_judged_formal_fields) ... ok
+test_judged_formal_view_states_its_environment_allowed_axioms (unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_judged_formal_view_states_its_environment_allowed_axioms) ... ok
+test_reviewed_proposal_fixes_the_sources_it_used (unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_reviewed_proposal_fixes_the_sources_it_used) ... ok
+test_assigned_role_uses_exact_registry_references_even_below_input_limit (unit.test_role_input_scoped_packaging.InputFittingTests.test_assigned_role_uses_exact_registry_references_even_below_input_limit) ... ok
+test_continuation_preserves_older_files_and_latest_replacements (unit.test_role_input_scoped_packaging.InputFittingTests.test_continuation_preserves_older_files_and_latest_replacements) ... ok
+test_large_task_catalog_moves_to_fixed_source_without_shrinking_selection (unit.test_role_input_scoped_packaging.InputFittingTests.test_large_task_catalog_moves_to_fixed_source_without_shrinking_selection) ... ok
+test_missing_population_is_input_error (unit.test_role_input_scoped_packaging.InputFittingTests.test_missing_population_is_input_error) ... ok
+test_missing_reader_task_is_an_input_error (unit.test_role_input_scoped_packaging.InputFittingTests.test_missing_reader_task_is_an_input_error) ... ok
+test_citable_record_list_reaches_the_prompt_as_a_map_entry (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_citable_record_list_reaches_the_prompt_as_a_map_entry)
+About 0.25 s, over the 0.2 s unit budget: two scopes each package a full input into files. ... ok
+test_citable_records_cover_every_readable_work_record (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_citable_records_cover_every_readable_work_record) ... ok
+test_contract_reviewer_reads_the_ledger_records_its_contract_names (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_contract_reviewer_reads_the_ledger_records_its_contract_names) ... ok
+test_control_binding_reaches_the_checker_context_but_not_the_prompt (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_control_binding_reaches_the_checker_context_but_not_the_prompt)
+About 0.25 s, over the 0.2 s unit budget: it installs the submission and read tools it inspects. ... ok
+test_every_role_judgment_requirement_names_its_installed_contract (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_every_role_judgment_requirement_names_its_installed_contract) ... ok
+test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record) ... ok
+test_independent_judgment_never_receives_its_blocked_context (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context)
+About 0.3 s, over the 0.2 s unit budget: four scopes each package a full input into files. ... ok
+test_record_index_lists_the_snapshot_records_the_role_may_read (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_record_index_lists_the_snapshot_records_the_role_may_read) ... ok
+test_review_seat_operational_review_reads_the_evidence_its_input_supplies (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_review_seat_operational_review_reads_the_evidence_its_input_supplies) ... ok
+test_review_stage_requirements_cover_every_current_schema_branch (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_review_stage_requirements_cover_every_current_schema_branch) ... ok
+test_role_input_maps_context_its_scope_does_not_inline (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline)
+About 1.2 s, over the 0.2 s unit budget: fourteen scopes each package a full input into files. ... ok
+test_scope_follows_the_role_the_input_is_prepared_for (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_scope_follows_the_role_the_input_is_prepared_for) ... ok
+test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check (unit.test_role_input_scoped_packaging.RoleInputClassTests.test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 7.036s
+
+OK
+test_failed_execution_materials_are_restored_for_its_operational_review (sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review) ... ok
+test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources (sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources)
+Real repository reads and _context distinguish normal, missing, hash and size branches. ... ok
+test_recovery_captures_parent_and_inline_child_without_losing_action (sim.test_knowledge_currentness.RecoveryMaterialTests.test_recovery_captures_parent_and_inline_child_without_losing_action) ... ok
+test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review (sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review) ... ok
+test_changed_checkpoint_file_bytes_are_rejected_before_review (sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review) ... ok
+test_every_advertised_basis_ref_passes_the_submission_check (sim.test_role_input_context.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check) ... ok
+test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text (sim.test_role_input_context.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text) ... ok
+test_live_review_receives_exact_checkpoint_evidence_files (sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files) ... ok
+test_live_review_receives_the_already_sealed_target_checkpoint (sim.test_role_input_context.OperationalInputTests.test_live_review_receives_the_already_sealed_target_checkpoint) ... ok
+test_next_review_of_the_same_target_can_resolve_an_exhausted_review (sim.test_role_input_context.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review) ... ok
+test_packaged_operational_submission_checks_the_advertised_basis (sim.test_role_input_context.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis) ... ok
+test_review_gets_the_same_canonical_basis_set_as_application (sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application) ... ok
+test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input (sim.test_role_input_context.OperationalInputTests.test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 27.624s
+
+OK
+test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared (flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared)
+손상 제출의 검토는 한 번 정리하고 진단에는 검증 실패 좌표만 전달한다. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 12.351s
+
+OK
+test_a_job_name_nobody_created_is_empty (contracts.test_port_jobs.FakeJobsContract.test_a_job_name_nobody_created_is_empty) ... ok
+test_a_job_resumes_only_once (contracts.test_port_jobs.FakeJobsContract.test_a_job_resumes_only_once) ... ok
+test_a_launched_job_is_suspended_until_resumed (contracts.test_port_jobs.FakeJobsContract.test_a_launched_job_is_suspended_until_resumed) ... ok
+test_a_named_job_is_not_empty_until_its_program_ends (contracts.test_port_jobs.FakeJobsContract.test_a_named_job_is_not_empty_until_its_program_ends) ... ok
+test_a_resumed_program_runs_and_the_termination_barrier_is_observed (contracts.test_port_jobs.FakeJobsContract.test_a_resumed_program_runs_and_the_termination_barrier_is_observed) ... ok
+test_an_owner_on_another_host_is_unknown (contracts.test_port_jobs.FakeJobsContract.test_an_owner_on_another_host_is_unknown) ... ok
+test_identity_and_resource_usage_have_the_product_shape (contracts.test_port_jobs.FakeJobsContract.test_identity_and_resource_usage_have_the_product_shape) ... ok
+test_termination_before_resume_means_the_program_never_runs (contracts.test_port_jobs.FakeJobsContract.test_termination_before_resume_means_the_program_never_runs) ... ok
+test_the_current_owner_has_not_ended (contracts.test_port_jobs.FakeJobsContract.test_the_current_owner_has_not_ended) ... ok
+test_the_owner_identity_names_this_process_stably (contracts.test_port_jobs.FakeJobsContract.test_the_owner_identity_names_this_process_stably) ... ok
+test_the_same_pid_with_another_creation_time_has_ended (contracts.test_port_jobs.FakeJobsContract.test_the_same_pid_with_another_creation_time_has_ended) ... ok
+test_a_resumed_program_is_still_running_at_its_first_turn (contracts.test_port_jobs.LiveFakeJobTests.test_a_resumed_program_is_still_running_at_its_first_turn) ... ok
+test_a_runner_polling_with_wait_also_runs_the_program_on (contracts.test_port_jobs.LiveFakeJobTests.test_a_runner_polling_with_wait_also_runs_the_program_on)
+``formal._job_run`` polls ``wait(0)`` rather than ``inspect``; both are the runner's probe. ... ok
+test_a_turn_outside_a_live_program_does_nothing (contracts.test_port_jobs.LiveFakeJobTests.test_a_turn_outside_a_live_program_does_nothing) ... ok
+test_each_barrier_probe_runs_the_program_to_its_next_turn (contracts.test_port_jobs.LiveFakeJobTests.test_each_barrier_probe_runs_the_program_to_its_next_turn) ... ok
+test_termination_ends_the_program_at_its_turn (contracts.test_port_jobs.LiveFakeJobTests.test_termination_ends_the_program_at_its_turn) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.019s
+
+OK

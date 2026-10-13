@@ -1,0 +1,15 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/011/tasks/regression-reading/evidence/verify_final.py"
+  ],
+  "cwd": "C:\\math",
+  "started_utc": "2026-10-13T19:11:44.194074+00:00",
+  "wrapper_pid": 4364,
+  "pid": 16936,
+  "ended_utc": "2026-10-13T19:11:48.087227+00:00",
+  "exit_code": 0,
+  "changes": []
+}

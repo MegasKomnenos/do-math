@@ -15,3 +15,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 009는 기존 함수 참조 표기만 교정해 정본110·미러89 전건 관련 회귀를 통과했고 manager가 원자료/현재 소스를 대조했다. 제품 경계 계약의 개정은 없다.010 host-smoke는 기존 windows_job/Jobs·실제 worker·console_python/PowerShell 출력 계약을 소비하며 테스트 공유화는 한 task 내부다.010 reading-limits는 고정된 운전 문서·CLI 입력 경로와 외부 호스트 읽기 계약을 독립 조사한다. 서로의 결과를 제공/소비하지 않아 S 항목을 새로 만들지 않는다. runtime 경계 변경이 필요하면 별도 finding과 후속 배정으로 돌린다.
 
 010 host의기존runtime소비성과와reading조사를검수했다.011은현_job_run의필수clock/environment를기존fixture에전달하고지정음성단언·읽기문구만교정한다. 기존코드정본/실포트의입력·반환·오류의미는바꾸지않는다. 전건검사/미러/캐시소유를한task로모아제공자/소비자분리가없으며S항목·provides/uses는추가하지않는다. 읽기출력byte요구나운전host지정은이work의재량밖이다.
+
+011의 기존 포트 fixture·정확 음성 단언·읽기 문구 수리를 검수했다.012는 현재 setup_lean.verify_environment/inspect_toolchain/verify_lean과 real_ports를 소비하는 Lean/Mathlib 최소 실연쇄다. 입력/반환/실패의 정본은 기존 함수·lean_evidence·trust_inventory이며 별도 형식 복제나 제품 계약 개정은 없다. 새 smoke/helper·녹화/재생과 미러를 한 task가 소유해 provides/uses는 빈 목록이고 S 항목은 추가하지 않는다. 설치/신뢰 상태 변경이나 runtime 수리가 필요하면 반례를 다음 배정으로 반환한다.

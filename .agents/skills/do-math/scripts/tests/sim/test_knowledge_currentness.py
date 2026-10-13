@@ -172,7 +172,7 @@ class RecoveryMaterialTests(unittest.TestCase):
                            damaged['recovery_materials']['checkpoint_source'] if fault == 'missing_checkpoint' else
                            damaged['recovery_materials']['output_files'][0])
                     bad['local_path'] = 'input/unchecked-bytes.txt'
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaisesRegex(AssertionError, r"^'local_path' unexpectedly found in "):
                         assert_operational_documents(self, damaged, root, engine, owner='recovery_materials')
                 fitted_root = root / 'packaged'
                 fitted, _ = package(engine, fitted_root, role='operational_review', target='EX-formal-diagnostic')
@@ -213,12 +213,21 @@ class RecoveryMaterialTests(unittest.TestCase):
             review_workspace, snapshot=engine.head, read_artifact=lambda path: engine.store.read(path, engine.head))
         swapped = deepcopy(context)
         swapped['recovery_materials']['result_source'] = resumed['continuation_history'][-1]['result_source']
-        with self.assertRaises(AssertionError):
+        # The sealed source is identical; only the continuation's local owner differs.
+        continuation_source = swapped['recovery_materials']['result_source']
+        self.assertEqual({key: value for key, value in continuation_source.items() if key != 'local_path'},
+                         {key: value for key, value in recovery['result_source'].items() if key != 'local_path'})
+        self.assertTrue(continuation_source['local_path'].startswith('input/resume-history/'))
+        with self.assertRaises(AssertionError) as rejected_continuation:
             assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
+        self.assertEqual(rejected_continuation.exception.args, ('False is not true',))
         swapped = deepcopy(context)
         swapped['recovery_materials']['result_source'] = context['operational_evidence']['checkpoint_source']
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(AssertionError) as rejected_checkpoint:
             assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
+        self.assertIn('\n- ' + context['operational_evidence']['checkpoint_source']['artifact_ref'] + '\n',
+                      str(rejected_checkpoint.exception))
+        self.assertIn('\n+ ' + execution['result_ref'], str(rejected_checkpoint.exception))
         activity_result = b'{"report":"A separately preserved activity result."}'
         activity_ref = 'runtime/artifacts/BA-activity-result/diagnostic.json'
         engine.runtime['executions'][execution['id']]['result_ref'] = activity_ref

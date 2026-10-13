@@ -1,0 +1,23 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once",
+    "structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method",
+    "sim.test_knowledge_currentness.RecoveryMaterialTests",
+    "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/011/tasks/regression-reading/evidence/focused-results"
+  ],
+  "cwd": "C:\\math",
+  "started_utc": "2026-10-13T19:04:03.872787+00:00",
+  "wrapper_pid": 24928,
+  "pid": 38160,
+  "ended_utc": "2026-10-13T19:04:36.816893+00:00",
+  "exit_code": 0,
+  "changes": []
+}

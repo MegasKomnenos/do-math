@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 import sys
 import tempfile
-import threading
 import time
 import unittest
 
@@ -16,19 +15,10 @@ from do_math.control_transport import ControlTransport
 from do_math.system_clock import SystemClock
 from do_math.windows_job import WindowsJob
 from test_categories import test_group as category
+from support.host_live import reached
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 
-
-def reached(predicate, timeout=10):
-    """Poll ``predicate`` until it holds or ``timeout`` seconds pass; whether it held."""
-    deadline = time.monotonic() + timeout
-    pause = threading.Event()
-    while time.monotonic() < deadline:
-        if predicate():
-            return True
-        pause.wait(0.02)
-    return predicate()
 
 
 @category('resource')

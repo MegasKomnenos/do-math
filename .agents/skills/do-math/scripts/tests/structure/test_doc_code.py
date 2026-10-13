@@ -4,6 +4,7 @@ Unqualified prose field names and reading-boundary obligations still require
 separate closure; dotted references are checked against their actual owners.
 """
 from pathlib import Path
+import re
 import unittest
 from support.doc_code import (command_issues, constant_reference_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
                               field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, unowned_field_references, written_object_schema)
@@ -41,19 +42,27 @@ class DocumentCodeTests(unittest.TestCase):
             'recovery_materials': ('sim/test_knowledge_currentness.py', 'RecoveryMaterialTests',
                                   'test_failed_execution_materials_are_restored_for_its_operational_review')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(OPERATIONAL_INPUT_BOUNDARIES))
+            expected = set(OPERATIONAL_INPUT_BOUNDARIES)
+            self.assertEqual(set(mapping), expected,
+                f'deferred operational owners differ: missing={sorted(expected - set(mapping))}, '
+                f'unexpected={sorted(set(mapping) - expected)}')
             for owner, (path, class_name, method_name) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 classes = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name]
                 self.assertEqual(len(classes), 1)
                 methods = [n for n in classes[0].body if isinstance(n, ast.FunctionDef) and n.name == method_name]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method ' + method_name)
                 calls = [n for n in ast.walk(methods[0]) if isinstance(n, ast.Call)
                          and isinstance(n.func, ast.Name) and n.func.id == 'assert_operational_documents'
                          and any(k.arg == 'owner' and isinstance(k.value, ast.Constant)
                                  and k.value.value == owner for k in n.keywords)]
                 self.assertTrue(calls, owner + ' needs its actual document check')
         verify(owners)
+        rejections = {
+            'wrong_owner': "deferred operational owners differ: missing=['operational_evidence'], unexpected=['operational_evience']",
+            'missing_owner': "deferred operational owners differ: missing=['recovery_materials'], unexpected=[]",
+            'missing_method': 'recovery_materials needs assigned method test_missing',
+            'wrong_method': 'operational_evidence needs its actual document check'}
         for fault in ('wrong_owner', 'missing_owner', 'missing_method', 'wrong_method'):
             changed = dict(owners)
             if fault == 'wrong_owner':
@@ -65,7 +74,7 @@ class DocumentCodeTests(unittest.TestCase):
             else:
                 changed['operational_evidence'] = (*changed['operational_evidence'][:2],
                     'test_review_gets_the_same_canonical_basis_set_as_application')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, re.escape(rejections[fault]) + r'$'):
                 verify(changed)
 
     def test_operational_document_names_the_result_and_checkpoint_owners(self):

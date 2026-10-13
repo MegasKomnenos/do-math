@@ -1,0 +1,60 @@
+{
+  "at_utc": "2026-10-13T19:07:12.596943+00:00",
+  "result": "pass",
+  "fixtures": [
+    {
+      "fixture": "fixture-ascii.txt",
+      "sha256": "d3e74f618933c373db8459c8a89a0f136493fc00e5d0a84ace68de870a2d9b91",
+      "original_bytes": 3680,
+      "verified_pages": 8,
+      "verified_lines": 80,
+      "complete_prefix_end": 17,
+      "first_missing_line": 18,
+      "last_missing_line": 63,
+      "missing_count": 46,
+      "visible_tail_end": 80,
+      "incorrect_next_line_from_tail": 81,
+      "correct_next_line_from_prefix": 18,
+      "explicit_page_receipt_closes_all_gaps": true
+    },
+    {
+      "fixture": "fixture-unicode.txt",
+      "sha256": "9baa98b8392a053616c6eb09360de5bf26493d8851c079f5d27ac5b263470c5f",
+      "original_bytes": 4160,
+      "verified_pages": 8,
+      "verified_lines": 80,
+      "complete_prefix_end": 15,
+      "first_missing_line": 16,
+      "last_missing_line": 65,
+      "missing_count": 50,
+      "visible_tail_end": 80,
+      "incorrect_next_line_from_tail": 81,
+      "correct_next_line_from_prefix": 16,
+      "explicit_page_receipt_closes_all_gaps": true
+    }
+  ],
+  "aggregate": {
+    "inner_complete": true,
+    "outer_complete": false,
+    "ascii_missing_from_page": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "unicode_missing_from_page": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "new_procedure": "Check the final aggregate response; reduce page length or simultaneous outputs, then recover every unconfirmed range."
+  },
+  "long_line": "Partial characters never establish a complete line. Recover the remaining characters or reread the complete line with a smaller output selection.",
+  "source_observation": "Rechecked original 010 fixtures and 16 pages; no new host read trial or paid/model session.",
+  "certification": "13-C/L01 remain not certified; original output byte criterion and unspecified operator profile remain unchanged."
+}

@@ -41,7 +41,11 @@ class CallJobTests(unittest.TestCase):
     @test_group('resource')
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
     def test_real_job_cancellation_uses_owner_judgment_and_collects_once(self):
-        jobs = WindowsJobs()
+        from support.entry import entry
+        from do_math.wiring import real_ports
+        _entry = entry()
+        _entry.ports = real_ports(environment=_entry.environment)
+        jobs = _entry.ports.jobs
         owner = threading.get_ident()
         calls = ModelCalls()
         started, returned = [], []
@@ -50,23 +54,32 @@ class CallJobTests(unittest.TestCase):
             self.assertEqual(threading.get_ident(), owner)
             started.append(identity)
 
+        def should_stop():
+            self.assertEqual(threading.get_ident(), owner)
+            return bool(started)
+
         def continuation():
             returned.append((yield))
         generator = continuation()
         next(generator)
         with tempfile.TemporaryDirectory() as root:
             calls.start_call(generator, _job_run, {'command': [sys.executable, '-c', 'import time; time.sleep(30)'],
-                             'cwd': Path(root), 'on_started': on_started, 'should_stop': lambda: bool(started),
-                             'jobs': jobs}, execution_id='EX-real')
+                             'cwd': Path(root), 'on_started': on_started, 'should_stop': should_stop,
+                             'jobs': jobs, 'clock': _entry.ports.clock,
+                             'environment': _entry.environment}, execution_id='EX-real')
             deadline = time.monotonic() + 15
+            collected = 0
             try:
                 while calls.futures and time.monotonic() < deadline:
-                    calls.collect()
+                    collected += calls.collect()
                     calls.judge()
                     calls.wait(0.01)
                 self.assertFalse(calls.futures)
+                self.assertEqual(collected, 1)
+                self.assertEqual(len(started), 1)
                 self.assertEqual(len(returned), 1)
-                self.assertTrue(returned[0][-1])
+                self.assertIsInstance(returned[0], tuple, returned[0])
+                self.assertEqual(returned[0], (None, '', '', True))
                 self.assertTrue(jobs.named_job_empty(started[0]['job_name']))
                 self.assertEqual(calls.collect(), 0)
             finally:

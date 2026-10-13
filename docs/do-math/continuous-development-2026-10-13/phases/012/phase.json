@@ -1,0 +1,59 @@
+{
+  "kind": "work",
+  "purpose": "011의 관련 회귀 종료 뒤 현재 설치된 Lean/Mathlib 실연쇄를 T5와 실제 녹화·재생에 연결한다. 공유 corpus/생성기/캐시를 단일 task가 소유한다.",
+  "tasks": [
+    {
+      "id": "lean-smoke",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "run:phases/001/tasks/gate-readiness/evidence/gate-readiness.json",
+        "run:phases/001/tasks/gate-readiness/evidence/environment.json",
+        "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+        "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+        "run:phases/011/tasks/regression-reading/report.json",
+        "run:phases/011/manager-evidence/verification.json",
+        "run:phases/011/manager-evidence/review.md",
+        "run:phases/011/manager-evidence/source-inspected.json",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_inventory.py",
+        "repo:.claude/skills/do-math/scripts/do_math/wiring.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_setup_lean_compile.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/provider_inputs.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_corpus.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        "repo:.claude/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+        ".claude/skills/do-math/scripts/tests/support/lean_live.py",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        ".claude/skills/do-math/scripts/tests/시험-지침.md",
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/smoke/test_lean_live.py",
+        ".agents/skills/do-math/scripts/tests/support/lean_live.py",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/",
+        ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+        ".agents/skills/do-math/scripts/tests/시험-지침.md",
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

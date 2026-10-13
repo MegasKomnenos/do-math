@@ -18,9 +18,9 @@ import unittest
 
 from do_math.windows_job import WindowsJob
 from test_categories import test_group
+from support.host_live import WAIT_TIMEOUT, process_kernel, release_process, reached
 
 SCRIPTS = Path(__file__).resolve().parents[2]
-WAIT_TIMEOUT = 258  # WaitForSingleObject: the object is not signaled
 
 if os.name == "nt":
     _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -59,42 +59,6 @@ if os.name == "nt":
             ("PeakJobMemoryUsed", ctypes.c_size_t),
         ]
 
-
-def process_kernel():
-    """kernel32 typed for holding and signalling one process handle."""
-    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
-    kernel.OpenProcess.restype = ctypes.c_void_p
-    kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    kernel.WaitForSingleObject.restype = ctypes.c_uint32
-    kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    kernel.TerminateProcess.restype = ctypes.c_int
-    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
-    kernel.CloseHandle.restype = ctypes.c_int
-    return kernel
-
-
-def release_process(kernel, handle):
-    """End a still-live process this test holds a handle to, then close the handle."""
-    if not handle:
-        return
-    try:
-        if kernel.WaitForSingleObject(handle, 0) == WAIT_TIMEOUT:
-            kernel.TerminateProcess(handle, 1)
-            kernel.WaitForSingleObject(handle, 5000)
-    finally:
-        kernel.CloseHandle(handle)
-
-
-def reached(predicate, timeout=15.0):
-    """Poll ``predicate`` until it holds or ``timeout`` seconds pass; whether it held."""
-    deadline = time.monotonic() + timeout
-    pause = threading.Event()
-    while time.monotonic() < deadline:
-        if predicate():
-            return True
-        pause.wait(0.02)
-    return predicate()
 
 
 @test_group('resource')

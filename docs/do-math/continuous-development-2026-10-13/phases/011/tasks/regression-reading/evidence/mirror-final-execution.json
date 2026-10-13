@@ -1,0 +1,40 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".agents/skills/do-math/scripts/run_tests.py",
+    "boundary.test_scheduling_windows_job",
+    "boundary.test_scheduling_owned_job_children",
+    "boundary.test_scheduling_call_jobs",
+    "boundary.test_role_input_snapshot_reach",
+    "boundary.test_port_jobs",
+    "contracts.test_port_jobs",
+    "structure.test_test_smells",
+    "structure.test_boundary_invariants",
+    "structure.test_ports",
+    "structure.test_doc_code",
+    "sim.test_knowledge_currentness.RecoveryMaterialTests",
+    "sim.test_role_input_context.OperationalInputTests",
+    "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests",
+    "unit.test_role_input_packaging",
+    "unit.test_role_input_scoped_packaging",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\011\\tasks\\regression-reading\\evidence\\mirror-final-results"
+  ],
+  "cwd": "C:\\math",
+  "started_utc": "2026-10-13T19:08:09.171328+00:00",
+  "wrapper_pid": 25844,
+  "pid": 6240,
+  "ended_utc": "2026-10-13T19:10:11.744048+00:00",
+  "exit_code": 0,
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "before": "d3e4e80e2e0191ca6ac7f5053fa1e6f8511711d5865887676b6441698f115521",
+      "after": "ceffaeb1c5cf9c499cc6e013e5685bc9c420ad4dd66345faa50f6111acf1bda4"
+    }
+  ]
+}

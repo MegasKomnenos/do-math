@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+    "--check"
+  ],
+  "cwd": "C:\\math",
+  "exit_code": 0
+}

@@ -26,42 +26,12 @@ from support.record_builders import surface_state
 from support.fakes.git_backend import make_repository
 from support.cli_inputs import role_reach
 from support.engine_context import prepare
+from support.host_live import snapshot_read_fixture, snapshot_read_context, run_windowless_read
 
 INSTANCE = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
 SCRIPTS = Path(__file__).resolve().parents[2]
 PYTHONW = Path(sys.executable).with_name('pythonw.exe')
 
-
-WINDOWLESS_READ = r"""import ctypes, json, subprocess, sys
-from pathlib import Path
-sys.path.insert(0, sys.argv[1])
-from do_math import contracts, submission
-from do_math.system_clock import SystemClock
-
-workspace = Path.cwd()
-request = json.loads((workspace / 'read-request.json').read_bytes())
-submission.install_tools(workspace, request['context'], contracts.schema_for('maintenance'),
-                         None, clock=SystemClock())
-shell = workspace / 'read-issued-command.ps1'
-shell.write_text(r'''
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$context = Get-Content -LiteralPath 'input/submission/context.json' -Raw | ConvertFrom-Json
-$request = Get-Content -LiteralPath 'read-request.json' -Raw | ConvertFrom-Json
-$command = @($context.record_map.read_tool.command)
-$commandArguments = @($command | Select-Object -Skip 1) + @($request.arguments)
-& $command[0] @commandArguments
-exit $LASTEXITCODE
-''', encoding='utf-8')
-result = subprocess.run(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-                         '-File', str(shell)], cwd=workspace, capture_output=True,
-                        text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
-(workspace / 'read-result.json').write_text(json.dumps({
-    'parent_executable': sys.executable,
-    'parent_console': int(ctypes.windll.kernel32.GetConsoleWindow()),
-    'returncode': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr,
-}), encoding='utf-8')
-"""
 
 
 def envelope(family, record):
@@ -220,38 +190,16 @@ class SnapshotReadToolTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.repository = self.root / 'repo'
-        self.repository.mkdir()
-        make_repository(self.repository)
-        self.decision = {'id': 'DC-1', 'kind': 'approval', 'actor': 'user'}
-        self.result = b'{"report": "earlier run"}'
-        self.snapshot = GitStateStore(self.repository, INSTANCE, backend=_entry.ports.git_backend, clock=_entry.ports.clock).publish(None, {
-            'research/decisions/DC-1.json': envelope('decisions', self.decision),
-            'runtime/executions/EX-1.json': envelope('executions', {'id': 'EX-1', 'role': 'research_work'}),
-            'runtime/artifacts/BA-1/result.json': self.result}).head
+        self.repository, self.decision, self.result, self.snapshot = snapshot_read_fixture(
+            self.root, _entry.ports, INSTANCE)
 
     def workspace_context(self, ledger):
-        workspace = self.root / ledger
-        workspace.mkdir()
-        index = {'research/decisions': ['DC-1'], **({'runtime/executions': ['EX-1']} if ledger == 'readable' else {})}
-        context = {'action': {'id': 'AC-read', 'role': 'maintenance'}, 'execution_id': 'EX-read',
-                   'snapshot': self.snapshot, 'tasks': [], 'knowledge_catalog': [], 'sources': [],
-                   'kind_definitions': {}, 'record_index': index,
-                   'record_map': {'snapshot': self.snapshot, 'ledger': ledger,
-                                  'families': {family: len(ids) for family, ids in index.items()}},
-                   'record_store': {'repository': str(self.repository), 'instance_id': INSTANCE}}
-        return workspace, context
+        return snapshot_read_context(self.root, self.repository, self.snapshot, INSTANCE, ledger)
 
     def read(self, ledger, *arguments, windowless=False):
         workspace, context = self.workspace_context(ledger)
         if windowless:
-            (workspace / 'read-request.json').write_bytes(canonical_json({'context': context, 'arguments': list(arguments)}))
-            probe = workspace / 'windowless-read.py'
-            probe.write_text(WINDOWLESS_READ, encoding='utf-8')
-            process = subprocess.run([str(PYTHONW), '-B', str(probe), str(SCRIPTS)], cwd=workspace,
-                                     capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
-            observed = json.loads((workspace / 'read-result.json').read_bytes())
+            observed = run_windowless_read(workspace, context, arguments, SCRIPTS)
             self.assertEqual(Path(observed['parent_executable']), PYTHONW)
             self.assertEqual(observed['parent_console'], 0)
             issued = json.loads((workspace / 'input/submission/context.json').read_bytes())

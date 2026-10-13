@@ -1,0 +1,13 @@
+{
+  "at_utc": "2026-10-13T19:11:10.516492+00:00",
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "before": "ceffaeb1c5cf9c499cc6e013e5685bc9c420ad4dd66345faa50f6111acf1bda4",
+      "after": "d3e4e80e2e0191ca6ac7f5053fa1e6f8511711d5865887676b6441698f115521"
+    }
+  ],
+  "manifest_unchanged": true,
+  "all_changes_within_writes": true,
+  "output_count": 1307
+}

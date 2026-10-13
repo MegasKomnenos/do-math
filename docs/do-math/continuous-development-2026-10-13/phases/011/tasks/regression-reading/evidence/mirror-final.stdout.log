@@ -1,0 +1,58 @@
+Open known defects: 0
+[structure] 31 tests
+[unit] 41 tests
+[sim] 13 tests
+[flows] 1 tests
+[contracts] 16 tests
+[boundary] 34 tests
+  isolated: boundary.test_port_jobs.WindowsJobsContract
+  {'passed': 11}
+  isolated: boundary.test_role_input_snapshot_reach.SnapshotReachTests
+  {'passed': 3}
+  isolated: boundary.test_role_input_snapshot_reach.SnapshotReadToolTests
+  {'passed': 5}
+  isolated: boundary.test_scheduling_call_jobs.CallJobTests
+  {'passed': 2}
+  isolated: boundary.test_scheduling_owned_job_children.IsolatedHostTests
+  {'passed': 3}
+  isolated: boundary.test_scheduling_windows_job.KernelFailureTests
+  {'passed': 2}
+  isolated: boundary.test_scheduling_windows_job.WindowsJobTests
+  {'passed': 8}
+Over budget: 14 tests
+      2.265s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+      5.016s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+      8.157s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+      0.266s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history
+      0.453s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+      0.234s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison
+      0.297s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_engine_context_restores_multihop_git_artifact
+      0.281s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_engine_review_context_reaches_role_input_with_bound_identity_and_policy
+      0.359s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence
+      0.625s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+      0.406s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes
+      0.672s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+      0.250s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context
+      1.156s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline
+{"complete": true, "successful": true, "counts": {"passed": 136}, "group_seconds": {"structure": 19.6, "unit": 7.0, "sim": 27.6, "flows": 12.4, "contracts": 0.0, "boundary": 49.9}, "total_seconds": 116.5}
+   21.203s passed             boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_independent_judgment_cannot_reach_unpublished_work_of_the_execution_ledger
+    8.157s passed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    7.125s passed             boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_operational_review_of_an_audit_slot_cannot_reach_another_slots_judgment
+    7.031s passed             boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_goal_auditor_cannot_reach_another_auditors_judgment
+    5.016s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+    4.766s passed             flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared
+    2.516s passed             boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_ledger_artifact_is_readable_only_where_the_ledger_is
+    2.422s passed             boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_indexed_record_is_read_from_the_input_snapshot_and_logged
+    2.312s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window
+    2.265s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+    1.796s passed             boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_record_outside_the_index_is_refused_and_logged
+    1.625s passed             boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_invalid_output_path_is_refused_in_the_json_result
+    1.375s passed             boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_family_listing_summarizes_its_indexed_records
+    1.360s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files
+    1.265s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits
+    1.172s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization
+    1.156s passed             unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline
+    1.141s passed             structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared
+    1.063s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    0.906s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_recovery_captures_parent_and_inline_child_without_losing_action
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\011\tasks\regression-reading\evidence\mirror-final-results\report.json
