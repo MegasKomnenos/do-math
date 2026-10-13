@@ -1,0 +1,2477 @@
+{
+  "trees": {
+    ".claude": {
+      "entry_count": 17,
+      "file_count": 44,
+      "bytes": 200872,
+      "files": {
+        ".gitattributes": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+          "bytes": 174,
+          "sha256": "5b0effd1546a41b0a1c6cbdd749c9b7954673c5ec1fa6545f4b2b06cb29fe320"
+        },
+        "capabilities/claude-20261013-0.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+          "bytes": 22,
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e"
+        },
+        "capabilities/claude-20261013-1.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+          "bytes": 22040,
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+        },
+        "capabilities/claude-surface-0.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+          "bytes": 22,
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e"
+        },
+        "capabilities/claude-surface-1.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+          "bytes": 22040,
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+        },
+        "capabilities/codex-20261013-0.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+          "bytes": 18,
+          "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2"
+        },
+        "capabilities/codex-20261013-1.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+          "bytes": 5849,
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e"
+        },
+        "capabilities/codex-20261013-2.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+          "bytes": 4331,
+          "sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c"
+        },
+        "capabilities/codex-surface-0.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+          "bytes": 18,
+          "sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e"
+        },
+        "capabilities/codex-surface-1.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+          "bytes": 5849,
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e"
+        },
+        "capabilities/codex-surface-2.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+          "bytes": 4031,
+          "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
+        },
+        "claude/claude-background-completed-21289.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+          "bytes": 24108,
+          "sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74"
+        },
+        "claude/claude-files-completed-21289.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+          "bytes": 9359,
+          "sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a"
+        },
+        "claude/claude-maintenance-live-01-20261013.final.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+          "bytes": 183,
+          "sha256": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f"
+        },
+        "claude/claude-maintenance-live-01-20261013.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+          "bytes": 11485,
+          "sha256": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95"
+        },
+        "claude/claude-maintenance-live-01-20261013.prompt.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+          "bytes": 1234,
+          "sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4"
+        },
+        "claude/claude-maintenance-live-01-20261013.schema.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "claude/claude-maintenance-live-01-20261013.stderr.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "claude/claude-maintenance-live-01-20261013.worker-status.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c"
+        },
+        "claude/claude-maintenance-live-02-20261013.final.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+          "bytes": 183,
+          "sha256": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622"
+        },
+        "claude/claude-maintenance-live-02-20261013.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+          "bytes": 12982,
+          "sha256": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464"
+        },
+        "claude/claude-maintenance-live-02-20261013.prompt.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+          "bytes": 1442,
+          "sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722"
+        },
+        "claude/claude-maintenance-live-02-20261013.schema.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "claude/claude-maintenance-live-02-20261013.stderr.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "claude/claude-maintenance-live-02-20261013.worker-status.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af"
+        },
+        "codex/codex-cut-mid-turn.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+          "bytes": 5696,
+          "sha256": "d138e2705e199506e1b4070bd699721aa14f4bae76be311c40615040b69ee3f5"
+        },
+        "codex/codex-files-completed-0160.final.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+          "bytes": 81,
+          "sha256": "23b5b3ba269ff930cc57e2166cdd0c64f25fcb75b100729ad60ddaec91a2a7ca"
+        },
+        "codex/codex-files-completed-0160.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+          "bytes": 3576,
+          "sha256": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a"
+        },
+        "codex/codex-maintenance-live-01-20261013.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+          "bytes": 815,
+          "sha256": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070"
+        },
+        "codex/codex-maintenance-live-01-20261013.prompt.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+          "bytes": 1233,
+          "sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487"
+        },
+        "codex/codex-maintenance-live-01-20261013.schema.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "codex/codex-maintenance-live-01-20261013.stderr.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "codex/codex-maintenance-live-01-20261013.worker-status.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38"
+        },
+        "codex/codex-operational-review-completed.final.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+          "bytes": 1882,
+          "sha256": "1f534a08280c31b798a2eae56e4c8ad830896bae82df3f30af1b50293568836f"
+        },
+        "codex/codex-operational-review-completed.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+          "bytes": 10140,
+          "sha256": "12f0c854200d8effb51aa156d8e3f4dd84dfc58a3a463dadab9917238413ad91"
+        },
+        "codex/codex-schema-rejected-0160.jsonl": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+          "bytes": 853,
+          "sha256": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f"
+        },
+        "configuration/scholarly-codex.toml": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+          "bytes": 193,
+          "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926"
+        },
+        "lean/apostrophe-check.lean": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+          "bytes": 240,
+          "sha256": "9d5a8be66838b202dcc8c7cdebced4d928682a6297a04b40872d90d9eb439eee"
+        },
+        "lean/apostrophe-source.lean": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+          "bytes": 61,
+          "sha256": "796f720744b6a969cbb067424bc99eadacbf51f5b367fe465e33e14d2ecc1895"
+        },
+        "lean/lean-apostrophe-432.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+          "bytes": 173,
+          "sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305"
+        },
+        "lean/lean-nat-add-zero-beq.lean": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+          "bytes": 487,
+          "sha256": "0cbb555326ddf66dca90f65b48199afef9f27c364db1b97c24cc66252abc6d25"
+        },
+        "lean/lean-nat-add-zero-beq.txt": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+          "bytes": 1045,
+          "sha256": "07955925db4ef13cbf39cda38498adcac0cc0f6e5e213cb4b6368452ef090023"
+        },
+        "manifest.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+          "bytes": 40291,
+          "sha256": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7"
+        },
+        "scheduler/absent-tasks.json": {
+          "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+          "bytes": 45,
+          "sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5"
+        }
+      },
+      "references": [
+        {
+          "entry": "codex-operational-review-completed",
+          "field": "path",
+          "path": "codex/codex-operational-review-completed.jsonl"
+        },
+        {
+          "entry": "codex-operational-review-completed",
+          "field": "final_path",
+          "path": "codex/codex-operational-review-completed.final.txt"
+        },
+        {
+          "entry": "codex-cut-mid-turn",
+          "field": "path",
+          "path": "codex/codex-cut-mid-turn.jsonl"
+        },
+        {
+          "entry": "lean-nat-add-zero-beq",
+          "field": "path",
+          "path": "lean/lean-nat-add-zero-beq.txt"
+        },
+        {
+          "entry": "lean-nat-add-zero-beq",
+          "field": "source_path",
+          "path": "lean/lean-nat-add-zero-beq.lean"
+        },
+        {
+          "entry": "codex-schema-rejected-0160",
+          "field": "path",
+          "path": "codex/codex-schema-rejected-0160.jsonl"
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "path",
+          "path": "codex/codex-files-completed-0160.jsonl"
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "final_path",
+          "path": "codex/codex-files-completed-0160.final.txt"
+        },
+        {
+          "entry": "claude-files-completed-21289",
+          "field": "path",
+          "path": "claude/claude-files-completed-21289.jsonl"
+        },
+        {
+          "entry": "claude-background-completed-21289",
+          "field": "path",
+          "path": "claude/claude-background-completed-21289.jsonl"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "path",
+          "path": "lean/lean-apostrophe-432.txt"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "source_path",
+          "path": "lean/apostrophe-source.lean"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "compiled_path",
+          "path": "lean/apostrophe-check.lean"
+        },
+        {
+          "entry": "scholarly-actual-codex-config",
+          "field": "path",
+          "path": "configuration/scholarly-codex.toml"
+        },
+        {
+          "entry": "scheduler-absent-tasks",
+          "field": "path",
+          "path": "scheduler/absent-tasks.json"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "path",
+          "path": "capabilities/codex-20261013-0.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-0.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-1.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-2.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "path",
+          "path": "capabilities/claude-20261013-0.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/claude-20261013-0.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/claude-20261013-1.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "path",
+          "path": "claude/claude-maintenance-live-01-20261013.jsonl"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "final_path",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "schema_path",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.stderr.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.worker-status.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "path",
+          "path": "codex/codex-maintenance-live-01-20261013.jsonl"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "schema_path",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.stderr.txt"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.worker-status.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "path",
+          "path": "claude/claude-maintenance-live-02-20261013.jsonl"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "final_path",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "schema_path",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.stderr.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.worker-status.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "path",
+          "path": "capabilities/codex-surface-0.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-0.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-1.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-2.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "path",
+          "path": "capabilities/claude-surface-0.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/claude-surface-0.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/claude-surface-1.txt"
+        }
+      ],
+      "sha_bindings": [
+        {
+          "entry": "codex-schema-rejected-0160",
+          "field": "source_sha256",
+          "path": "codex/codex-schema-rejected-0160.jsonl",
+          "expected": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+          "actual": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+          "matches": true
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "source_sha256",
+          "path": "codex/codex-files-completed-0160.jsonl",
+          "expected": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+          "actual": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+          "matches": true
+        },
+        {
+          "entry": "claude-files-completed-21289",
+          "field": "source_sha256",
+          "path": "claude/claude-files-completed-21289.jsonl",
+          "expected": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+          "actual": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+          "matches": true
+        },
+        {
+          "entry": "claude-background-completed-21289",
+          "field": "source_sha256",
+          "path": "claude/claude-background-completed-21289.jsonl",
+          "expected": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+          "actual": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+          "matches": true
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "source_sha256",
+          "path": "lean/lean-apostrophe-432.txt",
+          "expected": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+          "actual": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+          "matches": true
+        },
+        {
+          "entry": "scholarly-actual-codex-config",
+          "field": "source_sha256",
+          "path": "configuration/scholarly-codex.toml",
+          "expected": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+          "actual": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+          "matches": true
+        },
+        {
+          "entry": "scheduler-absent-tasks",
+          "field": "source_sha256",
+          "path": "scheduler/absent-tasks.json",
+          "expected": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+          "actual": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "source_sha256",
+          "path": "capabilities/codex-20261013-0.txt",
+          "expected": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "actual": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-0.txt",
+          "expected": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "actual": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-1.txt",
+          "expected": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "actual": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-2.txt",
+          "expected": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+          "actual": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "source_sha256",
+          "path": "capabilities/claude-20261013-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-20261013-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-20261013-1.txt",
+          "expected": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "actual": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "source_sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.jsonl",
+          "expected": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+          "actual": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "schema_sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.worker-status.json",
+          "expected": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+          "actual": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.prompt.txt",
+          "expected": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+          "actual": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt",
+          "expected": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+          "actual": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "source_sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.jsonl",
+          "expected": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+          "actual": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "schema_sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.worker-status.json",
+          "expected": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+          "actual": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.prompt.txt",
+          "expected": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+          "actual": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "source_sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.jsonl",
+          "expected": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+          "actual": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "schema_sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.worker-status.json",
+          "expected": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+          "actual": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.prompt.txt",
+          "expected": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+          "actual": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt",
+          "expected": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+          "actual": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "source_sha256",
+          "path": "capabilities/codex-surface-0.txt",
+          "expected": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "actual": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-0.txt",
+          "expected": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "actual": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-1.txt",
+          "expected": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "actual": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-2.txt",
+          "expected": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "actual": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "source_sha256",
+          "path": "capabilities/claude-surface-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-surface-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-surface-1.txt",
+          "expected": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "actual": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "matches": true
+        }
+      ],
+      "bad_bindings": [],
+      "undeclared": []
+    },
+    ".agents": {
+      "entry_count": 17,
+      "file_count": 44,
+      "bytes": 200872,
+      "files": {
+        ".gitattributes": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+          "bytes": 174,
+          "sha256": "5b0effd1546a41b0a1c6cbdd749c9b7954673c5ec1fa6545f4b2b06cb29fe320"
+        },
+        "capabilities/claude-20261013-0.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+          "bytes": 22,
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e"
+        },
+        "capabilities/claude-20261013-1.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+          "bytes": 22040,
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+        },
+        "capabilities/claude-surface-0.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+          "bytes": 22,
+          "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e"
+        },
+        "capabilities/claude-surface-1.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+          "bytes": 22040,
+          "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+        },
+        "capabilities/codex-20261013-0.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+          "bytes": 18,
+          "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2"
+        },
+        "capabilities/codex-20261013-1.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+          "bytes": 5849,
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e"
+        },
+        "capabilities/codex-20261013-2.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+          "bytes": 4331,
+          "sha256": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c"
+        },
+        "capabilities/codex-surface-0.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+          "bytes": 18,
+          "sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e"
+        },
+        "capabilities/codex-surface-1.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+          "bytes": 5849,
+          "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e"
+        },
+        "capabilities/codex-surface-2.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+          "bytes": 4031,
+          "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
+        },
+        "claude/claude-background-completed-21289.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+          "bytes": 24108,
+          "sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74"
+        },
+        "claude/claude-files-completed-21289.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+          "bytes": 9359,
+          "sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a"
+        },
+        "claude/claude-maintenance-live-01-20261013.final.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+          "bytes": 183,
+          "sha256": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f"
+        },
+        "claude/claude-maintenance-live-01-20261013.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+          "bytes": 11485,
+          "sha256": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95"
+        },
+        "claude/claude-maintenance-live-01-20261013.prompt.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+          "bytes": 1234,
+          "sha256": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4"
+        },
+        "claude/claude-maintenance-live-01-20261013.schema.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "claude/claude-maintenance-live-01-20261013.stderr.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "claude/claude-maintenance-live-01-20261013.worker-status.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c"
+        },
+        "claude/claude-maintenance-live-02-20261013.final.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+          "bytes": 183,
+          "sha256": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622"
+        },
+        "claude/claude-maintenance-live-02-20261013.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+          "bytes": 12982,
+          "sha256": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464"
+        },
+        "claude/claude-maintenance-live-02-20261013.prompt.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+          "bytes": 1442,
+          "sha256": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722"
+        },
+        "claude/claude-maintenance-live-02-20261013.schema.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "claude/claude-maintenance-live-02-20261013.stderr.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "claude/claude-maintenance-live-02-20261013.worker-status.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af"
+        },
+        "codex/codex-cut-mid-turn.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+          "bytes": 5696,
+          "sha256": "d138e2705e199506e1b4070bd699721aa14f4bae76be311c40615040b69ee3f5"
+        },
+        "codex/codex-files-completed-0160.final.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+          "bytes": 81,
+          "sha256": "23b5b3ba269ff930cc57e2166cdd0c64f25fcb75b100729ad60ddaec91a2a7ca"
+        },
+        "codex/codex-files-completed-0160.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+          "bytes": 3576,
+          "sha256": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a"
+        },
+        "codex/codex-maintenance-live-01-20261013.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+          "bytes": 815,
+          "sha256": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070"
+        },
+        "codex/codex-maintenance-live-01-20261013.prompt.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+          "bytes": 1233,
+          "sha256": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487"
+        },
+        "codex/codex-maintenance-live-01-20261013.schema.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+          "bytes": 2531,
+          "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca"
+        },
+        "codex/codex-maintenance-live-01-20261013.stderr.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "codex/codex-maintenance-live-01-20261013.worker-status.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+          "bytes": 366,
+          "sha256": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38"
+        },
+        "codex/codex-operational-review-completed.final.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+          "bytes": 1882,
+          "sha256": "1f534a08280c31b798a2eae56e4c8ad830896bae82df3f30af1b50293568836f"
+        },
+        "codex/codex-operational-review-completed.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+          "bytes": 10140,
+          "sha256": "12f0c854200d8effb51aa156d8e3f4dd84dfc58a3a463dadab9917238413ad91"
+        },
+        "codex/codex-schema-rejected-0160.jsonl": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+          "bytes": 853,
+          "sha256": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f"
+        },
+        "configuration/scholarly-codex.toml": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+          "bytes": 193,
+          "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926"
+        },
+        "lean/apostrophe-check.lean": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+          "bytes": 240,
+          "sha256": "9d5a8be66838b202dcc8c7cdebced4d928682a6297a04b40872d90d9eb439eee"
+        },
+        "lean/apostrophe-source.lean": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+          "bytes": 61,
+          "sha256": "796f720744b6a969cbb067424bc99eadacbf51f5b367fe465e33e14d2ecc1895"
+        },
+        "lean/lean-apostrophe-432.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+          "bytes": 173,
+          "sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305"
+        },
+        "lean/lean-nat-add-zero-beq.lean": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+          "bytes": 487,
+          "sha256": "0cbb555326ddf66dca90f65b48199afef9f27c364db1b97c24cc66252abc6d25"
+        },
+        "lean/lean-nat-add-zero-beq.txt": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+          "bytes": 1045,
+          "sha256": "07955925db4ef13cbf39cda38498adcac0cc0f6e5e213cb4b6368452ef090023"
+        },
+        "manifest.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+          "bytes": 40291,
+          "sha256": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7"
+        },
+        "scheduler/absent-tasks.json": {
+          "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+          "bytes": 45,
+          "sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5"
+        }
+      },
+      "references": [
+        {
+          "entry": "codex-operational-review-completed",
+          "field": "path",
+          "path": "codex/codex-operational-review-completed.jsonl"
+        },
+        {
+          "entry": "codex-operational-review-completed",
+          "field": "final_path",
+          "path": "codex/codex-operational-review-completed.final.txt"
+        },
+        {
+          "entry": "codex-cut-mid-turn",
+          "field": "path",
+          "path": "codex/codex-cut-mid-turn.jsonl"
+        },
+        {
+          "entry": "lean-nat-add-zero-beq",
+          "field": "path",
+          "path": "lean/lean-nat-add-zero-beq.txt"
+        },
+        {
+          "entry": "lean-nat-add-zero-beq",
+          "field": "source_path",
+          "path": "lean/lean-nat-add-zero-beq.lean"
+        },
+        {
+          "entry": "codex-schema-rejected-0160",
+          "field": "path",
+          "path": "codex/codex-schema-rejected-0160.jsonl"
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "path",
+          "path": "codex/codex-files-completed-0160.jsonl"
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "final_path",
+          "path": "codex/codex-files-completed-0160.final.txt"
+        },
+        {
+          "entry": "claude-files-completed-21289",
+          "field": "path",
+          "path": "claude/claude-files-completed-21289.jsonl"
+        },
+        {
+          "entry": "claude-background-completed-21289",
+          "field": "path",
+          "path": "claude/claude-background-completed-21289.jsonl"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "path",
+          "path": "lean/lean-apostrophe-432.txt"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "source_path",
+          "path": "lean/apostrophe-source.lean"
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "compiled_path",
+          "path": "lean/apostrophe-check.lean"
+        },
+        {
+          "entry": "scholarly-actual-codex-config",
+          "field": "path",
+          "path": "configuration/scholarly-codex.toml"
+        },
+        {
+          "entry": "scheduler-absent-tasks",
+          "field": "path",
+          "path": "scheduler/absent-tasks.json"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "path",
+          "path": "capabilities/codex-20261013-0.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-0.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-1.txt"
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/codex-20261013-2.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "path",
+          "path": "capabilities/claude-20261013-0.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/claude-20261013-0.txt"
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings",
+          "path": "capabilities/claude-20261013-1.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "path",
+          "path": "claude/claude-maintenance-live-01-20261013.jsonl"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "final_path",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "schema_path",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.stderr.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.worker-status.json"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "path",
+          "path": "codex/codex-maintenance-live-01-20261013.jsonl"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "schema_path",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.stderr.txt"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.worker-status.json"
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings",
+          "path": "codex/codex-maintenance-live-01-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "path",
+          "path": "claude/claude-maintenance-live-02-20261013.jsonl"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "final_path",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "schema_path",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.stderr.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.worker-status.json"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.prompt.txt"
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "path",
+          "path": "capabilities/codex-surface-0.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-0.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-1.txt"
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/codex-surface-2.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "path",
+          "path": "capabilities/claude-surface-0.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/claude-surface-0.txt"
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings",
+          "path": "capabilities/claude-surface-1.txt"
+        }
+      ],
+      "sha_bindings": [
+        {
+          "entry": "codex-schema-rejected-0160",
+          "field": "source_sha256",
+          "path": "codex/codex-schema-rejected-0160.jsonl",
+          "expected": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+          "actual": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+          "matches": true
+        },
+        {
+          "entry": "codex-files-completed-0160",
+          "field": "source_sha256",
+          "path": "codex/codex-files-completed-0160.jsonl",
+          "expected": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+          "actual": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+          "matches": true
+        },
+        {
+          "entry": "claude-files-completed-21289",
+          "field": "source_sha256",
+          "path": "claude/claude-files-completed-21289.jsonl",
+          "expected": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+          "actual": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+          "matches": true
+        },
+        {
+          "entry": "claude-background-completed-21289",
+          "field": "source_sha256",
+          "path": "claude/claude-background-completed-21289.jsonl",
+          "expected": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+          "actual": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+          "matches": true
+        },
+        {
+          "entry": "lean-apostrophe-432",
+          "field": "source_sha256",
+          "path": "lean/lean-apostrophe-432.txt",
+          "expected": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+          "actual": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+          "matches": true
+        },
+        {
+          "entry": "scholarly-actual-codex-config",
+          "field": "source_sha256",
+          "path": "configuration/scholarly-codex.toml",
+          "expected": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+          "actual": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+          "matches": true
+        },
+        {
+          "entry": "scheduler-absent-tasks",
+          "field": "source_sha256",
+          "path": "scheduler/absent-tasks.json",
+          "expected": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+          "actual": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "source_sha256",
+          "path": "capabilities/codex-20261013-0.txt",
+          "expected": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "actual": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-0.txt",
+          "expected": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "actual": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-1.txt",
+          "expected": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "actual": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "matches": true
+        },
+        {
+          "entry": "codex-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-20261013-2.txt",
+          "expected": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+          "actual": "df0d864ca2076f7654288c6a1e3394e3eaa2ea8f15021df2524efdd90c70986c",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "source_sha256",
+          "path": "capabilities/claude-20261013-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-20261013-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-current-command-surface",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-20261013-1.txt",
+          "expected": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "actual": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "source_sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.jsonl",
+          "expected": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+          "actual": "a6ceb39eb57cc259cb8d5883d5eb4f3efb6cc684027b0901eca6de8875e9ed95",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "schema_sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.worker-status.json",
+          "expected": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+          "actual": "93444e85de53824fe87773824100829b145380c4b57833635aa70856def9c76c",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.prompt.txt",
+          "expected": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+          "actual": "26442c98066206502f9409aa80fd6ae188af4cc58b04f1a235294a8927148bb4",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-01-20261013.final.txt",
+          "expected": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+          "actual": "c49628c2c91d7f2e4403dbd2d1c0d55287ea2da6e823ecaef96bb0b12e65348f",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "source_sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.jsonl",
+          "expected": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+          "actual": "ea975797ddbb7558b9cc5d16b024570b54099808cbaa25f644d5e2a9f7ab8070",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "schema_sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.worker-status.json",
+          "expected": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+          "actual": "f23657963262141e3937e0cd0b2eb2d84a3502a8301418f5d4ebbd1bda42ca38",
+          "matches": true
+        },
+        {
+          "entry": "codex-maintenance-live-01-20261013",
+          "field": "recordings.sha256",
+          "path": "codex/codex-maintenance-live-01-20261013.prompt.txt",
+          "expected": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+          "actual": "f7e7c164c06ec8c904f379a41f1fef92547c8dda8486ea1245b9c5ff126c9487",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "source_sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.jsonl",
+          "expected": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+          "actual": "63a758caf38d087948acec7a0e8c36e21ef13d98fd9dc7576ec5d7a102aff464",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "schema_sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.schema.json",
+          "expected": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "actual": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.stderr.txt",
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.worker-status.json",
+          "expected": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+          "actual": "a3a0499e0080141a8d11d735c6f871d981c0251da0fce75660025786218222af",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.prompt.txt",
+          "expected": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+          "actual": "be14282217d9b89b26ef47a3967874be3ce3eea2691e8eae10f49a22cfe9b722",
+          "matches": true
+        },
+        {
+          "entry": "claude-maintenance-live-02-20261013",
+          "field": "recordings.sha256",
+          "path": "claude/claude-maintenance-live-02-20261013.final.txt",
+          "expected": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+          "actual": "9374f007f70a43a5ee109c5660331cceae60f12cff3aaa763af7066f98db3622",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "source_sha256",
+          "path": "capabilities/codex-surface-0.txt",
+          "expected": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "actual": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-0.txt",
+          "expected": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "actual": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-1.txt",
+          "expected": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "actual": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+          "matches": true
+        },
+        {
+          "entry": "codex-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/codex-surface-2.txt",
+          "expected": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "actual": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "source_sha256",
+          "path": "capabilities/claude-surface-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-surface-0.txt",
+          "expected": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "actual": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+          "matches": true
+        },
+        {
+          "entry": "claude-command-surface-20261004",
+          "field": "recordings.sha256",
+          "path": "capabilities/claude-surface-1.txt",
+          "expected": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "actual": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+          "matches": true
+        }
+      ],
+      "bad_bindings": [],
+      "undeclared": []
+    }
+  },
+  "byte_differences": [],
+  "git_commands": [
+    {
+      "argv": [
+        "git",
+        "hash-object",
+        "--no-filters",
+        ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+        ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": "31b540720ba98b453684a9ca50a2eb2535a4d727\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\nee4172c86797aae0b669402713b7231e9b75d68b\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\nb88670c0d8610585473501edd9dd1b0ccd499929\n37a48ad619402f192272d9b1f2dd2ec21db67bd4\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\ne18e78bcba8fecc3f2f13f5b83ba2829f88f8630\nbcf4df093145190158d5dc4216325a4076fca9dc\n97fb5700246bb4235b13bbac32035a41fac8eb89\nf2419fc800ce338046b48ed44a3a583642e59e10\n34665009be513f0b785d89d74e03df8d36f7856f\n4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\n1b06e082c03a6e39a87bca10c504418770dc1359\n0a85bd06b0880831af0383cc5b9e26ec35c8134d\n3bb51af7fd54b0462e6478c6d2818e4d1ca59af0\n8c1362f67593db26e8fb4d870d93bba742e01fe6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nb2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f\n64e7665157603686e0b5ed28460485d5da5d1ce6\na63ad4d004a9f6cb91649e776b4d4f40f1da34a0\n7cb70f9b978fce9bab291533532661838ccbcd3c\n91f73c2f2b555cf64c1a4419528a6378150f58ab\nf1e4c669af5fb1dfcf04f9544dde5223d5861e64\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nc8946824e76ca9dcb7bc91e7ae9992338a14791a\n01a3e020e38b5cd8bff7ff82cd6010f205620b20\n5a913cf4f61a48189bb6cfefefbb6c003dafdc18\n4ab78dd333888d22e8ec90a22616df6aee3b628a\nfa9f809811711ca72d5a33b8532609a2793fa22f\n5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9\n605fcca7aae1197e51ea06f5573b8f398f9d9435\ne588e3faa8797e43fdc4b54629c0c19a15330e67\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225\ndb61141dd64a6637124b623410517768fc031fe0\n58df97debc850cfd6a6d5607623969765208663e\n31b540720ba98b453684a9ca50a2eb2535a4d727\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\nee4172c86797aae0b669402713b7231e9b75d68b\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\nb88670c0d8610585473501edd9dd1b0ccd499929\n37a48ad619402f192272d9b1f2dd2ec21db67bd4\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\ne18e78bcba8fecc3f2f13f5b83ba2829f88f8630\nbcf4df093145190158d5dc4216325a4076fca9dc\n97fb5700246bb4235b13bbac32035a41fac8eb89\nf2419fc800ce338046b48ed44a3a583642e59e10\n34665009be513f0b785d89d74e03df8d36f7856f\n4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\n1b06e082c03a6e39a87bca10c504418770dc1359\n0a85bd06b0880831af0383cc5b9e26ec35c8134d\n3bb51af7fd54b0462e6478c6d2818e4d1ca59af0\n8c1362f67593db26e8fb4d870d93bba742e01fe6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nb2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f\n64e7665157603686e0b5ed28460485d5da5d1ce6\na63ad4d004a9f6cb91649e776b4d4f40f1da34a0\n7cb70f9b978fce9bab291533532661838ccbcd3c\n91f73c2f2b555cf64c1a4419528a6378150f58ab\nf1e4c669af5fb1dfcf04f9544dde5223d5861e64\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nc8946824e76ca9dcb7bc91e7ae9992338a14791a\n01a3e020e38b5cd8bff7ff82cd6010f205620b20\n5a913cf4f61a48189bb6cfefefbb6c003dafdc18\n4ab78dd333888d22e8ec90a22616df6aee3b628a\nfa9f809811711ca72d5a33b8532609a2793fa22f\n5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9\n605fcca7aae1197e51ea06f5573b8f398f9d9435\ne588e3faa8797e43fdc4b54629c0c19a15330e67\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225\ndb61141dd64a6637124b623410517768fc031fe0\n58df97debc850cfd6a6d5607623969765208663e\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "hash-object",
+        ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+        ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": "31b540720ba98b453684a9ca50a2eb2535a4d727\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\nee4172c86797aae0b669402713b7231e9b75d68b\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\nb88670c0d8610585473501edd9dd1b0ccd499929\n37a48ad619402f192272d9b1f2dd2ec21db67bd4\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\ne18e78bcba8fecc3f2f13f5b83ba2829f88f8630\nbcf4df093145190158d5dc4216325a4076fca9dc\n97fb5700246bb4235b13bbac32035a41fac8eb89\nf2419fc800ce338046b48ed44a3a583642e59e10\n34665009be513f0b785d89d74e03df8d36f7856f\n4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\n1b06e082c03a6e39a87bca10c504418770dc1359\n0a85bd06b0880831af0383cc5b9e26ec35c8134d\n3bb51af7fd54b0462e6478c6d2818e4d1ca59af0\n8c1362f67593db26e8fb4d870d93bba742e01fe6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nb2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f\n64e7665157603686e0b5ed28460485d5da5d1ce6\na63ad4d004a9f6cb91649e776b4d4f40f1da34a0\n7cb70f9b978fce9bab291533532661838ccbcd3c\n91f73c2f2b555cf64c1a4419528a6378150f58ab\nf1e4c669af5fb1dfcf04f9544dde5223d5861e64\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nc8946824e76ca9dcb7bc91e7ae9992338a14791a\n01a3e020e38b5cd8bff7ff82cd6010f205620b20\n5a913cf4f61a48189bb6cfefefbb6c003dafdc18\n4ab78dd333888d22e8ec90a22616df6aee3b628a\nfa9f809811711ca72d5a33b8532609a2793fa22f\n5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9\n605fcca7aae1197e51ea06f5573b8f398f9d9435\ne588e3faa8797e43fdc4b54629c0c19a15330e67\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225\n89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n58df97debc850cfd6a6d5607623969765208663e\n31b540720ba98b453684a9ca50a2eb2535a4d727\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\ncaa329cf25a4352c234f20fef34be8d1e7f1da1d\n80ed1f330d8629459ba3564d8403b9bf75703f97\nee4172c86797aae0b669402713b7231e9b75d68b\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\nb88670c0d8610585473501edd9dd1b0ccd499929\n37a48ad619402f192272d9b1f2dd2ec21db67bd4\n9bfe7a5a3a44d3d4b785e12822df3019bd194e1c\ne18e78bcba8fecc3f2f13f5b83ba2829f88f8630\nbcf4df093145190158d5dc4216325a4076fca9dc\n97fb5700246bb4235b13bbac32035a41fac8eb89\nf2419fc800ce338046b48ed44a3a583642e59e10\n34665009be513f0b785d89d74e03df8d36f7856f\n4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\n1b06e082c03a6e39a87bca10c504418770dc1359\n0a85bd06b0880831af0383cc5b9e26ec35c8134d\n3bb51af7fd54b0462e6478c6d2818e4d1ca59af0\n8c1362f67593db26e8fb4d870d93bba742e01fe6\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nb2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f\n64e7665157603686e0b5ed28460485d5da5d1ce6\na63ad4d004a9f6cb91649e776b4d4f40f1da34a0\n7cb70f9b978fce9bab291533532661838ccbcd3c\n91f73c2f2b555cf64c1a4419528a6378150f58ab\nf1e4c669af5fb1dfcf04f9544dde5223d5861e64\n7ea32b9635f12356607335ebf95d8598cd664ca3\ne69de29bb2d1d6434b8b29ae775ad8c2e48c5391\nc8946824e76ca9dcb7bc91e7ae9992338a14791a\n01a3e020e38b5cd8bff7ff82cd6010f205620b20\n5a913cf4f61a48189bb6cfefefbb6c003dafdc18\n4ab78dd333888d22e8ec90a22616df6aee3b628a\nfa9f809811711ca72d5a33b8532609a2793fa22f\n5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9\n605fcca7aae1197e51ea06f5573b8f398f9d9435\ne588e3faa8797e43fdc4b54629c0c19a15330e67\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225\n89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n58df97debc850cfd6a6d5607623969765208663e\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "check-attr",
+        "--all",
+        "--",
+        ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+        ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+        ".agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+        ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes: text: set\n.claude/skills/do-math/scripts/tests/corpus/.gitattributes: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/.gitattributes: whitespace: set\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: text: unset\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: text: unset\n.claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/manifest.json: text: set\n.claude/skills/do-math/scripts/tests/corpus/manifest.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/manifest.json: whitespace: set\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/.gitattributes: text: set\n.agents/skills/do-math/scripts/tests/corpus/.gitattributes: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/.gitattributes: whitespace: set\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: text: unset\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: text: unset\n.agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: text: unset\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt: whitespace: unset\n.agents/skills/do-math/scripts/tests/corpus/manifest.json: text: set\n.agents/skills/do-math/scripts/tests/corpus/manifest.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/manifest.json: whitespace: set\n.agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: text: unset\n.agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: eol: lf\n.agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: whitespace: unset\n",
+      "stderr": ""
+    }
+  ],
+  "git_clean": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+      "raw_object_id": "31b540720ba98b453684a9ca50a2eb2535a4d727",
+      "clean_object_id": "31b540720ba98b453684a9ca50a2eb2535a4d727",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+      "raw_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "clean_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+      "raw_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "clean_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+      "raw_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "clean_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+      "raw_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "clean_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+      "raw_object_id": "ee4172c86797aae0b669402713b7231e9b75d68b",
+      "clean_object_id": "ee4172c86797aae0b669402713b7231e9b75d68b",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+      "raw_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "clean_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+      "raw_object_id": "b88670c0d8610585473501edd9dd1b0ccd499929",
+      "clean_object_id": "b88670c0d8610585473501edd9dd1b0ccd499929",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+      "raw_object_id": "37a48ad619402f192272d9b1f2dd2ec21db67bd4",
+      "clean_object_id": "37a48ad619402f192272d9b1f2dd2ec21db67bd4",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+      "raw_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "clean_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+      "raw_object_id": "e18e78bcba8fecc3f2f13f5b83ba2829f88f8630",
+      "clean_object_id": "e18e78bcba8fecc3f2f13f5b83ba2829f88f8630",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+      "raw_object_id": "bcf4df093145190158d5dc4216325a4076fca9dc",
+      "clean_object_id": "bcf4df093145190158d5dc4216325a4076fca9dc",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+      "raw_object_id": "97fb5700246bb4235b13bbac32035a41fac8eb89",
+      "clean_object_id": "97fb5700246bb4235b13bbac32035a41fac8eb89",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+      "raw_object_id": "f2419fc800ce338046b48ed44a3a583642e59e10",
+      "clean_object_id": "f2419fc800ce338046b48ed44a3a583642e59e10",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+      "raw_object_id": "34665009be513f0b785d89d74e03df8d36f7856f",
+      "clean_object_id": "34665009be513f0b785d89d74e03df8d36f7856f",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+      "raw_object_id": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+      "clean_object_id": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+      "raw_object_id": "1b06e082c03a6e39a87bca10c504418770dc1359",
+      "clean_object_id": "1b06e082c03a6e39a87bca10c504418770dc1359",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+      "raw_object_id": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+      "clean_object_id": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+      "raw_object_id": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+      "clean_object_id": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+      "raw_object_id": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+      "clean_object_id": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+      "raw_object_id": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+      "clean_object_id": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+      "raw_object_id": "64e7665157603686e0b5ed28460485d5da5d1ce6",
+      "clean_object_id": "64e7665157603686e0b5ed28460485d5da5d1ce6",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+      "raw_object_id": "a63ad4d004a9f6cb91649e776b4d4f40f1da34a0",
+      "clean_object_id": "a63ad4d004a9f6cb91649e776b4d4f40f1da34a0",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+      "raw_object_id": "7cb70f9b978fce9bab291533532661838ccbcd3c",
+      "clean_object_id": "7cb70f9b978fce9bab291533532661838ccbcd3c",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+      "raw_object_id": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+      "clean_object_id": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+      "raw_object_id": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+      "clean_object_id": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+      "raw_object_id": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+      "clean_object_id": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+      "raw_object_id": "01a3e020e38b5cd8bff7ff82cd6010f205620b20",
+      "clean_object_id": "01a3e020e38b5cd8bff7ff82cd6010f205620b20",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+      "raw_object_id": "5a913cf4f61a48189bb6cfefefbb6c003dafdc18",
+      "clean_object_id": "5a913cf4f61a48189bb6cfefefbb6c003dafdc18",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+      "raw_object_id": "4ab78dd333888d22e8ec90a22616df6aee3b628a",
+      "clean_object_id": "4ab78dd333888d22e8ec90a22616df6aee3b628a",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+      "raw_object_id": "fa9f809811711ca72d5a33b8532609a2793fa22f",
+      "clean_object_id": "fa9f809811711ca72d5a33b8532609a2793fa22f",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+      "raw_object_id": "5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9",
+      "clean_object_id": "5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+      "raw_object_id": "605fcca7aae1197e51ea06f5573b8f398f9d9435",
+      "clean_object_id": "605fcca7aae1197e51ea06f5573b8f398f9d9435",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+      "raw_object_id": "e588e3faa8797e43fdc4b54629c0c19a15330e67",
+      "clean_object_id": "e588e3faa8797e43fdc4b54629c0c19a15330e67",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "raw_object_id": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f",
+      "clean_object_id": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+      "raw_object_id": "5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225",
+      "clean_object_id": "5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225",
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "raw_object_id": "db61141dd64a6637124b623410517768fc031fe0",
+      "clean_object_id": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4",
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "raw_object_id": "58df97debc850cfd6a6d5607623969765208663e",
+      "clean_object_id": "58df97debc850cfd6a6d5607623969765208663e",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+      "raw_object_id": "31b540720ba98b453684a9ca50a2eb2535a4d727",
+      "clean_object_id": "31b540720ba98b453684a9ca50a2eb2535a4d727",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-0.txt",
+      "raw_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "clean_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+      "raw_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "clean_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-0.txt",
+      "raw_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "clean_object_id": "caa329cf25a4352c234f20fef34be8d1e7f1da1d",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+      "raw_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "clean_object_id": "80ed1f330d8629459ba3564d8403b9bf75703f97",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-0.txt",
+      "raw_object_id": "ee4172c86797aae0b669402713b7231e9b75d68b",
+      "clean_object_id": "ee4172c86797aae0b669402713b7231e9b75d68b",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-1.txt",
+      "raw_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "clean_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-20261013-2.txt",
+      "raw_object_id": "b88670c0d8610585473501edd9dd1b0ccd499929",
+      "clean_object_id": "b88670c0d8610585473501edd9dd1b0ccd499929",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-0.txt",
+      "raw_object_id": "37a48ad619402f192272d9b1f2dd2ec21db67bd4",
+      "clean_object_id": "37a48ad619402f192272d9b1f2dd2ec21db67bd4",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-1.txt",
+      "raw_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "clean_object_id": "9bfe7a5a3a44d3d4b785e12822df3019bd194e1c",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/codex-surface-2.txt",
+      "raw_object_id": "e18e78bcba8fecc3f2f13f5b83ba2829f88f8630",
+      "clean_object_id": "e18e78bcba8fecc3f2f13f5b83ba2829f88f8630",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-background-completed-21289.jsonl",
+      "raw_object_id": "bcf4df093145190158d5dc4216325a4076fca9dc",
+      "clean_object_id": "bcf4df093145190158d5dc4216325a4076fca9dc",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-files-completed-21289.jsonl",
+      "raw_object_id": "97fb5700246bb4235b13bbac32035a41fac8eb89",
+      "clean_object_id": "97fb5700246bb4235b13bbac32035a41fac8eb89",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.final.txt",
+      "raw_object_id": "f2419fc800ce338046b48ed44a3a583642e59e10",
+      "clean_object_id": "f2419fc800ce338046b48ed44a3a583642e59e10",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.jsonl",
+      "raw_object_id": "34665009be513f0b785d89d74e03df8d36f7856f",
+      "clean_object_id": "34665009be513f0b785d89d74e03df8d36f7856f",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.prompt.txt",
+      "raw_object_id": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+      "clean_object_id": "4f695316d0e2b8a0e86aad70e41864e7e3c4f9e6",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-01-20261013.worker-status.json",
+      "raw_object_id": "1b06e082c03a6e39a87bca10c504418770dc1359",
+      "clean_object_id": "1b06e082c03a6e39a87bca10c504418770dc1359",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.final.txt",
+      "raw_object_id": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+      "clean_object_id": "0a85bd06b0880831af0383cc5b9e26ec35c8134d",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.jsonl",
+      "raw_object_id": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+      "clean_object_id": "3bb51af7fd54b0462e6478c6d2818e4d1ca59af0",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.prompt.txt",
+      "raw_object_id": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+      "clean_object_id": "8c1362f67593db26e8fb4d870d93bba742e01fe6",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/claude/claude-maintenance-live-02-20261013.worker-status.json",
+      "raw_object_id": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+      "clean_object_id": "b2da9ea2ae5bd720d8724eff1f16b0d6d5c98d9f",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-cut-mid-turn.jsonl",
+      "raw_object_id": "64e7665157603686e0b5ed28460485d5da5d1ce6",
+      "clean_object_id": "64e7665157603686e0b5ed28460485d5da5d1ce6",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.final.txt",
+      "raw_object_id": "a63ad4d004a9f6cb91649e776b4d4f40f1da34a0",
+      "clean_object_id": "a63ad4d004a9f6cb91649e776b4d4f40f1da34a0",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-files-completed-0160.jsonl",
+      "raw_object_id": "7cb70f9b978fce9bab291533532661838ccbcd3c",
+      "clean_object_id": "7cb70f9b978fce9bab291533532661838ccbcd3c",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.jsonl",
+      "raw_object_id": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+      "clean_object_id": "91f73c2f2b555cf64c1a4419528a6378150f58ab",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.prompt.txt",
+      "raw_object_id": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+      "clean_object_id": "f1e4c669af5fb1dfcf04f9544dde5223d5861e64",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.schema.json",
+      "raw_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "clean_object_id": "7ea32b9635f12356607335ebf95d8598cd664ca3",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.stderr.txt",
+      "raw_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "clean_object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-maintenance-live-01-20261013.worker-status.json",
+      "raw_object_id": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+      "clean_object_id": "c8946824e76ca9dcb7bc91e7ae9992338a14791a",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.final.txt",
+      "raw_object_id": "01a3e020e38b5cd8bff7ff82cd6010f205620b20",
+      "clean_object_id": "01a3e020e38b5cd8bff7ff82cd6010f205620b20",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-operational-review-completed.jsonl",
+      "raw_object_id": "5a913cf4f61a48189bb6cfefefbb6c003dafdc18",
+      "clean_object_id": "5a913cf4f61a48189bb6cfefefbb6c003dafdc18",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/codex/codex-schema-rejected-0160.jsonl",
+      "raw_object_id": "4ab78dd333888d22e8ec90a22616df6aee3b628a",
+      "clean_object_id": "4ab78dd333888d22e8ec90a22616df6aee3b628a",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/configuration/scholarly-codex.toml",
+      "raw_object_id": "fa9f809811711ca72d5a33b8532609a2793fa22f",
+      "clean_object_id": "fa9f809811711ca72d5a33b8532609a2793fa22f",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-check.lean",
+      "raw_object_id": "5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9",
+      "clean_object_id": "5e67d94b04e9fe5648156d44ad5d25ac3fcacdf9",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/apostrophe-source.lean",
+      "raw_object_id": "605fcca7aae1197e51ea06f5573b8f398f9d9435",
+      "clean_object_id": "605fcca7aae1197e51ea06f5573b8f398f9d9435",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-apostrophe-432.txt",
+      "raw_object_id": "e588e3faa8797e43fdc4b54629c0c19a15330e67",
+      "clean_object_id": "e588e3faa8797e43fdc4b54629c0c19a15330e67",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "raw_object_id": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f",
+      "clean_object_id": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.txt",
+      "raw_object_id": "5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225",
+      "clean_object_id": "5b8fdf9f1dc4428bee86cbcba92e01a8df1f1225",
+      "matches": true
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+      "raw_object_id": "db61141dd64a6637124b623410517768fc031fe0",
+      "clean_object_id": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4",
+      "matches": false
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "raw_object_id": "58df97debc850cfd6a6d5607623969765208663e",
+      "clean_object_id": "58df97debc850cfd6a6d5607623969765208663e",
+      "matches": true
+    }
+  ],
+  "git_clean_differences": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "raw_object_id": "db61141dd64a6637124b623410517768fc031fe0",
+      "clean_object_id": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4",
+      "matches": false
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+      "raw_object_id": "db61141dd64a6637124b623410517768fc031fe0",
+      "clean_object_id": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4",
+      "matches": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "run:sources/user-decisions.md": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7",
+  "run:phases/003/tasks/provider-smoke/report.json": "5cd82501102ef2dcc9827402f26ecf8bbb6037c37adda57f503f398745e47133",
+  "run:phases/003/tasks/provider-smoke/evidence/review-notes.md": "8da5ed99b63252bb6b20d6ab2ea07294921bc455d7aa912f732c47d5c7b56d59",
+  "run:phases/003/tasks/provider-smoke/evidence/mirror-plan.json": "44776c66e195cdc5b1c82c34479024305f9d26c34e9d6912f2e9609063f10d28",
+  "run:phases/003/tasks/provider-smoke/evidence/mirror-replay/report.json": "2ea779039910ac7f393cd4a33cac93cbb96b869fe40c6b27345ef4280aee3bde",
+  "run:phases/003/tasks/provider-smoke/evidence/mirror-replay-command/stderr.txt": "9b6e0383b78a64051ba469eb966c74736cf7987de7dd4f740ad678d743f27fc9",
+  "run:phases/003/manager-evidence/verification.json": "68c450809dbef1c4039f714256b2f45c53e7a679c8e8787dcbf8f4f5b865a894",
+  "run:phases/003/manager-evidence/git-clean-observation.json": "a90334a0b61355eee13486191f80769e3ec607a1915a657a09ad6d1919d32bdf",
+  "repo:.agents/diff/_rules.json": "a68e0284bf4647e154440e32e2a0e79b786c4356e1287e81b6afdee29dd13de0",
+  "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md": "4d52db145aaa203f3688b16c6e08e099c881a34bbed54cd6b0f5a975e62830ba",
+  "repo:.claude/skills/writing-skills/scripts/build_skill_mirrors.py": "1a48fd287c174d93f1405575ae63efdbbecfa03becb01b1ef9abc8771994c09c",
+  "repo:.claude/skills/writing-skills/scripts/test_build_skill_mirrors.py": "92ac2d38b903e742374418a403c3513444454d6e3185f7673fb5678cd855013e",
+  "repo:.claude/skills/do-math/AGENTS.md": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2",
+  "repo:.claude/skills/do-math/.gitattributes": "57bda072be28b9f5886f54e43ac2bcec44204e661e2b8f2c625bef5070893b72",
+  "repo:.claude/skills/do-math/scripts/tests/시험-지침.md": "96cad3616f3d960e40f218801330c71f94b609a7f5462d051627f3b1778663cd",
+  "repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7",
+  "repo:.agents/skills/do-math/scripts/tests/corpus/manifest.json": "4795cfbf783cf8136196e538487d7b2f4b35fac13e69067eeaed679c5f7c6af7",
+  "repo:.claude/skills/do-math/scripts/tests/structure/test_corpus.py": "fd6d032b9f39ad850c4e603deb6d61a87a66aebc407ec1f52deb68982d441830",
+  "repo:.claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py": "bc4ac7d1d94d4fa1b08f075da5cf142b31689167deb2d2e051e03b465cdc8dcc",
+  "repo:.claude/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py": "15afdec8b9b462d10ec60038a1ccfd92643c1b8fc470105d852d93456609758c"
+}

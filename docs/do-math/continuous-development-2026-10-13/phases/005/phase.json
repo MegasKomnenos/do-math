@@ -1,0 +1,40 @@
+{
+  "kind": "work",
+  "purpose": "phase 004 A3/F1에 남은 두 corpus manifest의 Git clean 바이트 변환을 실제 하위 속성 파일에서 수리한다. 미러 치환·재생의 검수된 성과는 보존하고 원자료 바이트와 전건 clean 결과로 원바이트 인도 조건을 닫는다.",
+  "tasks": [
+    {
+      "id": "corpus-git-bytes",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:phases/004/tasks/mirror-corpus/report.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/review-notes.md",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/proposed-corpus-attributes.diff",
+        "run:phases/004/tasks/mirror-corpus/evidence/history-attributes/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/source-final.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay/report.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay/report.json",
+        "run:phases/004/manager-evidence/verification.json",
+        "run:phases/004/manager-evidence/git-clean-observation.json",
+        "run:phases/004/manager-evidence/path-spelling-observation.json",
+        "run:phases/004/manager-evidence/review.md",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/.gitattributes",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        "repo:.agents/skills/do-math/scripts/tests/corpus/.gitattributes",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        "repo:.agents/skills/do-math/scripts/tests/corpus/manifest.json",
+        "repo:.agents/diff/_rules.json",
+        "repo:.claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        ".agents/skills/do-math/scripts/tests/corpus/.gitattributes"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

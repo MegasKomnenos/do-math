@@ -1,0 +1,293 @@
+{
+  "git_version": {
+    "argv": [
+      "git",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "git version 2.50.0.windows.2\n",
+    "stderr": ""
+  },
+  "path_spelling_observations": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\lean\\lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\lean\\lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "a15924c075bcfa0fe819a6421c12a6ec7c1dc72a\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\scheduler\\absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\scheduler\\absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "fa358cb3df06c4242650b4646add7a893459a3fd\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "matches": true
+    }
+  ],
+  "permitted_parent_trial": {
+    "parent_content": "# These files are hashed as implementation inputs.\n* text eol=lf\n\n# Corpus-only trial in the authorized parent.\nscripts/tests/corpus/** -text -eol\n",
+    "attributes": {
+      "argv": [
+        "git",
+        "check-attr",
+        "--all",
+        "--",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": ".claude/skills/do-math/scripts/tests/corpus/manifest.json: text: set\n.claude/skills/do-math/scripts/tests/corpus/manifest.json: eol: lf\n.claude/skills/do-math/scripts/tests/corpus/manifest.json: whitespace: set\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: text: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: eol: unset\n.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean: whitespace: unset\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: text: unset\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: eol: unset\n.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json: whitespace: unset\n",
+      "stderr": ""
+    },
+    "raw": {
+      "argv": [
+        "git",
+        "hash-object",
+        "--no-filters",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": "db61141dd64a6637124b623410517768fc031fe0\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n58df97debc850cfd6a6d5607623969765208663e\n",
+      "stderr": ""
+    },
+    "clean": {
+      "argv": [
+        "git",
+        "hash-object",
+        ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+        ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+        ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+      ],
+      "exit_code": 0,
+      "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n58df97debc850cfd6a6d5607623969765208663e\n",
+      "stderr": ""
+    }
+  },
+  "parent_original_sha256": "57bda072be28b9f5886f54e43ac2bcec44204e661e2b8f2c625bef5070893b72",
+  "parent_restored_sha256": "57bda072be28b9f5886f54e43ac2bcec44204e661e2b8f2c625bef5070893b72",
+  "child_path": ".claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+  "child_content": "# External recordings keep the exact captured bytes through add and checkout.\n** -text -whitespace\nmanifest.json text eol=lf whitespace\n.gitattributes text eol=lf whitespace\n"
+}

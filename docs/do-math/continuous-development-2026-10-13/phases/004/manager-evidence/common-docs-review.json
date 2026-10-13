@@ -1,0 +1,30 @@
+{
+  "changed_context_ids": [
+    "C2",
+    "C5",
+    "C8",
+    "C9",
+    "C11",
+    "C12"
+  ],
+  "unchanged_context_ids": [
+    "C1",
+    "C3",
+    "C4",
+    "C6",
+    "C7",
+    "C10"
+  ],
+  "G1_G8_section_exactly_unchanged": true,
+  "context_changes": {
+    "C2": "phase 004의 partial과 실제 종료 해시·변경·공식 실행의 검수 결과를 추가했다. 과거 phase 상태는 당시 좌표로 보존했다.",
+    "C5": "종료된 004와 다음 단일 005 작업을 반영했다. 공유 생성기·corpus에 대한 순차 운영 원칙은 유지했다.",
+    "C8": "004 report 검수와 A3 미충족을 세션 수행 현황에 반영했다. 서비스 실행을 공급자 성공과 구별한다.",
+    "C9": "현재 생성기 verbatim 기능은 유지하고 적용 누락을 교정한 한정 재검토를 승인했다. 하위 manifest 속성의 반례는 다음 수리로 유지했다.",
+    "C11": "미러 치환을 해결된 성질로 옮기고 남은 Git 속성을 C12에 연결했다. Codex와 다른 실제 연쇄·전체 관문은 그대로다.",
+    "C12": "미러 생성·재생 성공과 두 manifest의 실제 clean 실패를 분리하고 004 F1/F2를 반영했다. 실제 하위 쓰기 범위를 005에 배정하고 경로 표기 한계·원자료 보존·68파일 관리 archive를 명시했다."
+  },
+  "plan_preserved": "원래 남김 표의 Codex 조건, Job/Lean/예약/학술/L01, 문서 P01/N03와 기타 고정 범위, T4 보고, 의미·과거 검토 및 최종 관문/review 절을 유지했다. 가까운 순서만 005 Git 속성 뒤 Codex로 갱신했다.",
+  "seams_change": "공통 설명을 005의 기존 Git 속성/공식 생성 경계에 맞췄다. S ID와 제품 인터페이스 개정은 없다.",
+  "historical_evidence_policy": "기존 report/evidence/manager는 수정하지 않았다. 앞선 관찰의 한계는 현재 C12와 이번 검수에 기록했다."
+}

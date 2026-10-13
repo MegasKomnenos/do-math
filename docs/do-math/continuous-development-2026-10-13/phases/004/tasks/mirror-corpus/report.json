@@ -1,0 +1,330 @@
+{
+  "status": "partial",
+  "narrative": "phase 003 F2의 미러 원문 치환은 기존 verbatim 규칙으로 수리했다. 정본과 미러는 각각 17항목·44파일·200872바이트이고 최종 전건 바이트 및 각 41개 manifest SHA 참조가 일치한다. 기존/신규 Claude help의 원 SHA a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367를 회복했으며 정본 corpus·manifest·역사 verdict는 불변이다. 실제 저장소 규칙을 사용하는 두 회귀 시험으로 수리 전 실패와 경계 밖 정상 치환을 확인했고, 수리 뒤 생성기 전체 22개 및 정본/미러 공식 관련 시험 각 14개가 통과했다. 생성기 본문은 그대로이며 허용된 공식 생성만 수행했다.\n\n그러나 A3의 Git clean 원바이트 보존은 미충족이다. 양쪽 manifest가 하위 corpus/.gitattributes의 명시적 text 속성 때문에 변환된다. 허용된 상위 do-math/.gitattributes에 corpus 전용 -text -eol을 적용한 실제 관찰에서도 하위 규칙이 우선했다. 상위 원바이트를 복원하고 효과 없는 규칙은 남기지 않았다. 실제 수정 위치인 정본 corpus/.gitattributes는 writes 밖이고 objective가 읽기 전용으로 지정하므로 수정하지 않았다. F1에 정확한 후속 위치와 미적용 제안 패치를 남겼다. 따라서 A1/A2/A4는 pass, A3는 fail이고 task 상태는 partial이다.\n\n최종 공식 --check와 skill-only는 통과했다. 실행 전후 소스 2624개와 공식 Python 864개 해시, 선택/실제 rows, PID·시각·stdout/stderr·exit를 보존했다. 변경 9개는 모두 writes 안이며 phase 003 종료 2254개 해시가 시작 상태와 일치했다. 이전 62개 변경 중 59개는 그대로이고 양쪽 비용 캐시와 신규 미러 help만 이번 변경과 겹친다. Codex schema 거부는 수리하지 않았고 실제 모델 호출도 추가하지 않았다. 불변인 호출 경로에 대한 승인된 Claude 실호출/background 근거를 유지하며 G7/G8 전체와 후속 실제 경계·최종 review 완료를 주장하지 않는다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "현재 양쪽 전44파일과 manifest 17항목·참조를 대조했다. 변형은 기존/신규 Claude help 두 파일뿐이며 저장된 diff에서 CLAUDE.md 치환과 두 SHA를 확인했다. phase 003 공식 4선택/2통과/2실패 원보고의 Python 해시와 corpus 시작 바이트가 같다. 당시 규칙 파일은 source-final 해시 목록에 없지만 당시 Git 판본의 CRLF 바이트가 이번 초기 규칙 해시와 같고 실제 red가 같은 위반을 검출한다. 공식 --check 통과와 원자료 무결성 실패를 구분했다. Git clean 전건 관찰 및 경로 표기별 재현으로 manifest의 실제 불일치와 Lean/scheduler의 경로 표기 영향을 구별했다.",
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before-claude-surface-1.txt.diff",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before-claude-20261013-1.txt.diff",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/history-mirror/stdout.txt",
+        "run:phases/003/tasks/provider-smoke/evidence/mirror-replay/report.json",
+        "run:phases/003/tasks/provider-smoke/evidence/mirror-replay-command/stderr.txt"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "do-math/scripts/tests/corpus/* 하나를 기존 verbatim에 추가해 manifest와 모든 중첩 경로를 보호한다. 실제 규칙을 읽는 회귀 시험은 BOM·CRLF·문서명·런타임 경로·중첩 SKILL.md 보존과 corpus 밖 세 경로의 치환을 확인한다. 수리 전 2시험 중 corpus의 5개 하위 사례 실패/외부 대조군 통과, 수리 후 전체22개 통과다. 생성기 구현을 바꾸지 않았고 동기화 정본 문서에 데이터 경계·이유·실제 검증을 추가했다.",
+      "evidence": [
+        "repo:.agents/diff/_rules.json",
+        "repo:.claude/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-red/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-red/stderr.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-tests/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-tests/stderr.txt"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "fail",
+      "detail": "공식 생성의 예정/실제 4개 변경은 허용 범위와 일치한다. 최종 양쪽44파일과 각41개 SHA 참조가 같고 정본 원자료·manifest·verdict는 불변이다. writing-skills/scripts의 유일한 test_*.py는22개 통과했다. 정본과 미러 각각 공식 지정3모듈을 jobs1로 순차 실행해14선택/14실제row/14passed, skip·오류·fixture 실패·미실행 없음, exit0을 확인했다. Python 각864개가 최종과 같고 실행 중 해당 .timings.json만 바뀌었다. 다만 clean 비교88개 중 두 manifest의 object ID가 다르다. corpus/.gitattributes의 명시적 text 예외가 허용된 상위 속성을 덮으며 실제 수정 파일은 쓰기 범위 밖이다(F1). 이 요구를 미검사나 성공으로 바꾸지 않았다.",
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/build-plan.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-build/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay/report.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay/report.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-final-command/command.json"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "마지막 공식 생성은 시험이 바꾼 미러 .timings.json 하나만 동기화했다. 최종 --check는1297파일 drift 없음/exit0, probe_cli --skill-only는verified/exit0이며 최종 corpus 전44파일 일치다. 9개 실제 변경의 전후 SHA와 phase003 기존 변경 여부를 구별했고 생성기 본문/overlay manifest/호출 경로가 불변이다. phase003 A5의 미러 치환 결함에는 새 성공 근거를 제공하되 Git manifest 인도 조건 및 Codex 거부와 G7/G8 전체는 남긴다. Claude 기존 성공/background의 승인된 한정 근거만 재사용한다.",
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/final-build-plan.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-build/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-check/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-check/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/skill-check/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/skill-check/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/changes.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/review-notes.md"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "path": ".agents/diff/_rules.json",
+      "detail": "기존 verbatim에 do-math corpus 전체의 축자 복사 패턴을 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 생성기로 정본의 검사 비용 기록과 동기화했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-20261013-1.txt",
+      "detail": "공식 생성기로 Claude help의 원 CLAUDE.md와 SHA256을 복원했다. 정본 녹화는 불변이다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/corpus/capabilities/claude-surface-1.txt",
+      "detail": "공식 생성기로 Claude help의 원 CLAUDE.md와 SHA256을 복원했다. 정본 녹화는 불변이다."
+    },
+    {
+      "path": ".agents/skills/writing-skills/references/멀티런타임_동기화.md",
+      "detail": "공식 생성물. 동기화 설명에 녹화 데이터의 축자 보존 경계와 별도 바이트·해시·재생 검증을 추가했다."
+    },
+    {
+      "path": ".agents/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+      "detail": "공식 생성물. 실제 저장소 규칙의 corpus 원바이트 보존과 경계 밖 지시문 치환 회귀 시험 두 개를 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 관련 검사로 갱신된 모듈 비용 기록이다."
+    },
+    {
+      "path": ".claude/skills/writing-skills/references/멀티런타임_동기화.md",
+      "detail": "동기화 설명에 녹화 데이터의 축자 보존 경계와 별도 바이트·해시·재생 검증을 추가했다."
+    },
+    {
+      "path": ".claude/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+      "detail": "실제 저장소 규칙의 corpus 원바이트 보존과 경계 밖 지시문 치환 회귀 시험 두 개를 추가했다."
+    }
+  ],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "issue",
+      "detail": "A3의 마지막 clean 보존 실패는 양쪽 corpus manifest다. 상대 POSIX 경로 전건 비교에서 raw db61141dd64a6637124b623410517768fc031fe0와 clean 89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4가 다르다. 실제 원인은 정본 scripts/tests/corpus/.gitattributes 3행의 manifest.json text eol=lf whitespace다. 허용된 상위 .gitattributes의 corpus 전용 -text -eol로도 해결되지 않는 것을 관찰하고 원바이트로 복원했다. 하위 정본 속성은 writes 밖이며 정본 corpus 읽기 전용 약속에 포함된다.",
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/history-attributes/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/proposed-corpus-attributes.diff",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/.gitattributes",
+        "run:phases/004/phase.json"
+      ],
+      "affects": [
+        "run:phases/004/tasks/mirror-corpus/objective.md#A3",
+        "run:context.md#G7",
+        "run:context.md#G8",
+        "run:plan.md",
+        "repo:.claude/skills/do-math/scripts/tests/corpus/.gitattributes"
+      ],
+      "next_action": "manager가 정본 corpus/.gitattributes의 쓰기를 허용한 좁은 work를 배정한다. manifest 예외를 manifest.json -text whitespace로 바꾸는 미적용 제안을 검토하고 공식 생성으로 사본을 갱신한 뒤 양쪽 전건 clean/raw 및 해시·생성 검사를 확인한다. 녹화·manifest 바이트나 verdict를 변형된 clean 값에 맞춰 바꾸지 않는다. 현재 partial을 개발 완료나 G8 충족으로 올리지 않는다."
+    },
+    {
+      "id": "F2",
+      "kind": "fact",
+      "detail": "Git 2.50.0.windows.2에서 동일 Lean 입력과 scheduler 녹화에 대해 역슬래시 절대 경로를 hash-object에 전달하면 이전 manager가 관찰한 변환 값이 재현된다. 슬래시 상대 경로와 슬래시 절대 경로는 원 object ID와 같다. manifest는 세 표기 모두 실제 변환된다. 이전 기록은 정확한 argv가 없어 그 실행의 경로 표기까지 단정할 수 없다. 현재 전건 결과는 루트 cwd의 슬래시 상대 경로로 보존했다.",
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final.json",
+        "run:phases/003/manager-evidence/git-clean-observation.json"
+      ],
+      "affects": [
+        "run:context.md#C12",
+        "run:plan.md",
+        "run:phases/004/tasks/mirror-corpus/objective.md#A1"
+      ],
+      "next_action": "manager는 현재 맥락의 세 파일 clean 관찰에 경로 표기의 한계를 반영하고, 후속 검증에서는 실제 argv와 cwd를 보존하며 Git에 슬래시 경로를 전달한다. 정상 보존되는 Lean/scheduler 원자료를 재작성하지 않는다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/test_build_skill_mirrors.py TestTransform.test_repository_rules_preserve_do_math_corpus_bytes TestTransform.test_repository_rules_still_transform_instructions_outside_do_math_corpus",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-red/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-red/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-red/stderr.txt"
+      ],
+      "detail": "기대 exit1: 두 시험 중 corpus 보존의5개 하위사례 실패, 외부 치환 대조군 통과. 수리 전 실패 근거."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/audit.py corpus corpus-before",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-before-command/stderr.txt"
+      ],
+      "detail": "시작 corpus 전건 대조로 두 help 차이·원 SHA 실패와 두 manifest clean 차이를 보존했다. 수리 전 관찰을 통과 판정으로 읽지 않는다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-tests/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-tests/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/generator-tests/stderr.txt"
+      ],
+      "detail": "디렉터리의 유일한 test_*.py를 직접 실행하여 전체22개 통과."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/audit.py plan build-plan",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/build-plan-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/build-plan-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/build-plan-command/stderr.txt"
+      ],
+      "detail": "예정4개 변경이 writes 안이고 overlay manifest 바이트도 그대로임을 확인."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-build/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-build/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-build/stderr.txt"
+      ],
+      "detail": "공식 생성으로 예정4개만 변경, exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/canonical-replay",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/canonical-replay-command/stderr.txt"
+      ],
+      "detail": "정본 지정3모듈14선택/14passed, 실패·오류·skip·fixture 실패·미실행 없음, exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py structure.test_corpus unit.test_corpus_replay contracts.test_doubles_follow_corpus --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/mirror-replay",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/mirror-replay-command/stderr.txt"
+      ],
+      "detail": "미러 지정3모듈14선택/14passed, 실패·오류·skip·fixture 실패·미실행 없음, exit0."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/audit.py plan final-build-plan",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/final-build-plan-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-build-plan-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-build-plan-command/stderr.txt"
+      ],
+      "detail": "검사 뒤 미러 비용 캐시 하나만 생성 차이로 확인."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/attribute_probe.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/attribute-probe-command/stderr.txt"
+      ],
+      "detail": "허용된 상위 속성으로 manifest 변환이 해소되지 않는 반례와 경로 표기별 결과를 관찰했다. 원본 상위 속성을 복원했고 상태 해시가 같다. clean 보존 합격을 뜻하지 않는다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-build/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-build/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-build/stderr.txt"
+      ],
+      "detail": "공식 생성으로 미러 .timings.json 하나만 동기화."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-check/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-check/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/final-mirror-check/stderr.txt"
+      ],
+      "detail": "1297파일 drift 없음, exit0. 생성 일치와 Git clean 무결성은 별도."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/skill-check/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/skill-check/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/skill-check/stderr.txt"
+      ],
+      "detail": "installed_skill_structure verified, exit0. 실제 공급자 호출 없음."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/audit.py corpus corpus-final",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/corpus-final-command/stderr.txt"
+      ],
+      "detail": "양쪽44파일·각41개 SHA 참조는 일치하지만 Git clean/raw 88개 중 manifest2개가 불일치하여 A3 검증 실패. 관찰 스크립트 자체는 exit0으로 완료했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/verify.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-command/stderr.txt"
+      ],
+      "detail": "첫 자체 검산이 phase003 source-final에 _rules.json 해시가 있다고 가정하여 assertion 실패. 해당 파일은 당시 목록에 없었다. 당시 스크립트와 오류를 보존하고 실제 Git 원문 비교로 검산만 교정했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B docs/do-math/continuous-development-2026-10-13/phases/004/tasks/mirror-corpus/evidence/verify.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-final-command/command.json",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-final-command/stdout.txt",
+        "run:phases/004/tasks/mirror-corpus/evidence/verification-final-command/stderr.txt"
+      ],
+      "detail": "2624개 최종 소스·변경9개·기존2254개·공식 선택/rows/Python 판본은 일치한다. all_acceptance_conditions_met=false와 exit1은 남은 두 manifest clean 변환 때문이다."
+    }
+  ]
+}

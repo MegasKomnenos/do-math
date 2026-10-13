@@ -1,0 +1,1 @@
+{"changed": [".agents/skills/do-math/scripts/tests/.timings.json"], "outside_writes": [], "check_ok": false, "check_messages": ["[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/.timings.json"], "overlay_manifest_bytes_unchanged": true}

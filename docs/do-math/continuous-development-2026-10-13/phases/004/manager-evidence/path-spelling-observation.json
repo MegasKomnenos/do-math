@@ -1,0 +1,325 @@
+{
+  "git_version": {
+    "argv": [
+      "git",
+      "--version"
+    ],
+    "cwd": "C:\\math",
+    "pid": 13816,
+    "started_at": "2026-10-13T14:23:11.149459+00:00",
+    "ended_at": "2026-10-13T14:23:11.235060+00:00",
+    "exit_code": 0,
+    "stdout": "git version 2.50.0.windows.2\n",
+    "stderr": ""
+  },
+  "observations": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 37204,
+        "started_at": "2026-10-13T14:23:09.595213+00:00",
+        "ended_at": "2026-10-13T14:23:09.677617+00:00",
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 29316,
+        "started_at": "2026-10-13T14:23:09.677617+00:00",
+        "ended_at": "2026-10-13T14:23:09.761620+00:00",
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 26500,
+        "started_at": "2026-10-13T14:23:09.761620+00:00",
+        "ended_at": "2026-10-13T14:23:09.846833+00:00",
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 16604,
+        "started_at": "2026-10-13T14:23:09.846833+00:00",
+        "ended_at": "2026-10-13T14:23:09.933588+00:00",
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 39284,
+        "started_at": "2026-10-13T14:23:09.933588+00:00",
+        "ended_at": "2026-10-13T14:23:10.021381+00:00",
+        "exit_code": 0,
+        "stdout": "db61141dd64a6637124b623410517768fc031fe0\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/manifest.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 27412,
+        "started_at": "2026-10-13T14:23:10.021381+00:00",
+        "ended_at": "2026-10-13T14:23:10.107267+00:00",
+        "exit_code": 0,
+        "stdout": "89d1c078a9cf96b5b9b1c25c9d29484ad9f07fd4\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 40936,
+        "started_at": "2026-10-13T14:23:10.107267+00:00",
+        "ended_at": "2026-10-13T14:23:10.196789+00:00",
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 20044,
+        "started_at": "2026-10-13T14:23:10.196789+00:00",
+        "ended_at": "2026-10-13T14:23:10.279810+00:00",
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\lean\\lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 29256,
+        "started_at": "2026-10-13T14:23:10.279810+00:00",
+        "ended_at": "2026-10-13T14:23:10.365628+00:00",
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\lean\\lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 11972,
+        "started_at": "2026-10-13T14:23:10.365628+00:00",
+        "ended_at": "2026-10-13T14:23:10.453568+00:00",
+        "exit_code": 0,
+        "stdout": "a15924c075bcfa0fe819a6421c12a6ec7c1dc72a\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 21216,
+        "started_at": "2026-10-13T14:23:10.453568+00:00",
+        "ended_at": "2026-10-13T14:23:10.540684+00:00",
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/lean/lean-nat-add-zero-beq.lean"
+        ],
+        "cwd": "C:\\math",
+        "pid": 27464,
+        "started_at": "2026-10-13T14:23:10.540684+00:00",
+        "ended_at": "2026-10-13T14:23:10.624728+00:00",
+        "exit_code": 0,
+        "stdout": "44649e3af5aae2d9f0d9c0fc24fcf08a564a984f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "relative_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 22148,
+        "started_at": "2026-10-13T14:23:10.624728+00:00",
+        "ended_at": "2026-10-13T14:23:10.712281+00:00",
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 19356,
+        "started_at": "2026-10-13T14:23:10.712281+00:00",
+        "ended_at": "2026-10-13T14:23:10.801886+00:00",
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "absolute_windows",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\scheduler\\absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 24568,
+        "started_at": "2026-10-13T14:23:10.801886+00:00",
+        "ended_at": "2026-10-13T14:23:10.889342+00:00",
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\corpus\\scheduler\\absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 31240,
+        "started_at": "2026-10-13T14:23:10.889342+00:00",
+        "ended_at": "2026-10-13T14:23:10.974107+00:00",
+        "exit_code": 0,
+        "stdout": "fa358cb3df06c4242650b4646add7a893459a3fd\n",
+        "stderr": ""
+      },
+      "matches": false
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json",
+      "spelling": "absolute_posix",
+      "raw": {
+        "argv": [
+          "git",
+          "hash-object",
+          "--no-filters",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 30900,
+        "started_at": "2026-10-13T14:23:10.974107+00:00",
+        "ended_at": "2026-10-13T14:23:11.058743+00:00",
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "clean": {
+        "argv": [
+          "git",
+          "hash-object",
+          "C:/math/.claude/skills/do-math/scripts/tests/corpus/scheduler/absent-tasks.json"
+        ],
+        "cwd": "C:\\math",
+        "pid": 28368,
+        "started_at": "2026-10-13T14:23:11.058743+00:00",
+        "ended_at": "2026-10-13T14:23:11.149459+00:00",
+        "exit_code": 0,
+        "stdout": "58df97debc850cfd6a6d5607623969765208663e\n",
+        "stderr": ""
+      },
+      "matches": true
+    }
+  ],
+  "parent_restored": true,
+  "parent_trial_repeated": false
+}

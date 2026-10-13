@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/writing-skills/scripts/test_build_skill_mirrors.py",
+    "TestTransform.test_repository_rules_preserve_do_math_corpus_bytes",
+    "TestTransform.test_repository_rules_still_transform_instructions_outside_do_math_corpus"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 27644,
+  "started_at": "2026-10-13T14:07:35.788692+00:00",
+  "pid": 14820,
+  "state": "exited",
+  "ended_at": "2026-10-13T14:07:37.328164+00:00",
+  "exit_code": 1,
+  "changed_sources": []
+}

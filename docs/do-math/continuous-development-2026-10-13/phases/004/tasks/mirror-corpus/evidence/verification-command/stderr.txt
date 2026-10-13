@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\004\tasks\mirror-corpus\evidence\verify.py", line 88, in <module>
+    assert prior_reuse['python_hashes_match_initial'] and prior_reuse['rule_hash_matches_phase_003']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

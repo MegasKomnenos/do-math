@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "--format=fuller",
+    "2fc686ac7f215222702519dfaf10e6e1ec961171",
+    "--",
+    ".agents/diff/_rules.json",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 38824,
+  "started_at": "2026-10-13T14:12:57.166143+00:00",
+  "pid": 5172,
+  "state": "exited",
+  "ended_at": "2026-10-13T14:12:58.649678+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

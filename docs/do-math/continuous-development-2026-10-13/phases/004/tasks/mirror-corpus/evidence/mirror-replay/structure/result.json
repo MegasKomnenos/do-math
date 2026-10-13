@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "structure.test_corpus.CorpusCompletenessTests.test_each_provider_has_a_versioned_real_stream",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "structure.test_corpus.CorpusCompletenessTests.test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "structure.test_corpus": 0.014999999955762178
+  }
+}

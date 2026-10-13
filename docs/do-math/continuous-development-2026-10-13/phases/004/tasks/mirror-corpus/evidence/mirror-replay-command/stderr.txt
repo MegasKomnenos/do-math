@@ -1,0 +1,29 @@
+test_each_provider_has_a_versioned_real_stream (structure.test_corpus.CorpusCompletenessTests.test_each_provider_has_a_versioned_real_stream) ... ok
+test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared (structure.test_corpus.CorpusCompletenessTests.test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.020s
+
+OK
+test_every_entry_parses_to_its_recorded_judgment (unit.test_corpus_replay.CorpusReplayTests.test_every_entry_parses_to_its_recorded_judgment) ... ok
+test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final (unit.test_corpus_replay.CorpusReplayTests.test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.018s
+
+OK
+test_a_changed_body_or_declaration_set_has_no_implicit_success (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success) ... ok
+test_a_declaration_the_source_does_not_define_fails_like_lean (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_declaration_the_source_does_not_define_fails_like_lean) ... ok
+test_declared_facts_reproduce_the_recorded_signature_and_axiom_lines (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_declared_facts_reproduce_the_recorded_signature_and_axiom_lines) ... ok
+test_explicit_binder_type_value_and_shared_bodies_survive_the_parser (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_binder_type_value_and_shared_bodies_survive_the_parser) ... ok
+test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks) ... ok
+test_missing_or_conflicting_facts_are_not_silently_filled (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_missing_or_conflicting_facts_are_not_silently_filled) ... ok
+test_only_the_default_producer_source_verifies_with_evidence_by_default (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_only_the_default_producer_source_verifies_with_evidence_by_default) ... ok
+test_preview_registration_removes_previous_extraction_permission (contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_preview_registration_removes_previous_extraction_permission) ... ok
+test_current_maintenance_outputs_match_the_provider_doubles_at_the_real_parser (contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_current_maintenance_outputs_match_the_provider_doubles_at_the_real_parser) ... ok
+test_the_codex_stream_is_judged_like_a_recorded_completed_stream (contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_the_codex_stream_is_judged_like_a_recorded_completed_stream) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.082s
+
+OK
