@@ -1,0 +1,189 @@
+[
+  {
+    "history": "B117",
+    "name": "related-before-fixture-fix",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-빌더-모집단-pythonw-읽기/related-before-fixture-fix.json",
+    "sha256": "949e2a1d8707080f7fcb7b9460060cfad6c9f96109801c78d164f435c2b80008",
+    "hash_matches": true,
+    "counts": {
+      "passed": 19,
+      "error": 2
+    },
+    "relevant_rows": [
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_family_listing_summarizes_its_indexed_records",
+        "outcome": "passed",
+        "seconds": 2.0320000000065193,
+        "details": []
+      },
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_indexed_record_is_read_from_the_input_snapshot_and_logged",
+        "outcome": "error",
+        "seconds": 0.46799999999348074,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_role_input_snapshot_reach.py\", line 273, in test_indexed_record_is_read_from_the_input_snapshot_and_logged\n    code, output, log = self.read('readable', '--id', 'DC-1', windowless=True)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_role_input_snapshot_reach.py\", line 248, in read\n    (workspace / 'read-request.json').write_bytes(canonical_json({'context': context, 'arguments': arguments}))\n                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 26, in canonical_json\n    validate_storage_value(value)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 78, in validate_storage_value\n    validate_storage_value(item)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 111, in validate_storage_value\n    raise ValueError(\"value is not JSON-serializable\")\nValueError: value is not JSON-serializable\n"
+        ]
+      },
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_invalid_output_path_is_refused_in_the_json_result",
+        "outcome": "passed",
+        "seconds": 2.1570000000065193,
+        "details": []
+      },
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_ledger_artifact_is_readable_only_where_the_ledger_is",
+        "outcome": "passed",
+        "seconds": 3.187000000034459,
+        "details": []
+      },
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_record_outside_the_index_is_refused_and_logged",
+        "outcome": "error",
+        "seconds": 0.31299999996554106,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_role_input_snapshot_reach.py\", line 282, in test_record_outside_the_index_is_refused_and_logged\n    code, output, log = self.read('supplied_only', '--id', 'EX-1', windowless=True)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_role_input_snapshot_reach.py\", line 248, in read\n    (workspace / 'read-request.json').write_bytes(canonical_json({'context': context, 'arguments': arguments}))\n                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 26, in canonical_json\n    validate_storage_value(value)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 78, in validate_storage_value\n    validate_storage_value(item)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\canonical.py\", line 111, in validate_storage_value\n    raise ValueError(\"value is not JSON-serializable\")\nValueError: value is not JSON-serializable\n"
+        ]
+      }
+    ]
+  },
+  {
+    "history": "B117",
+    "name": "windowless-after",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-빌더-모집단-pythonw-읽기/windowless-after.json",
+    "sha256": "0fc175a59c806fdd77428ae53909ffe3744378ec78ef17d7a72d9ee0bc43a8b6",
+    "hash_matches": true,
+    "counts": {
+      "passed": 2
+    },
+    "relevant_rows": [
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_indexed_record_is_read_from_the_input_snapshot_and_logged",
+        "outcome": "passed",
+        "seconds": 4.655999999959022,
+        "details": []
+      },
+      {
+        "id": "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_record_outside_the_index_is_refused_and_logged",
+        "outcome": "passed",
+        "seconds": 1.797000000020489,
+        "details": []
+      }
+    ]
+  },
+  {
+    "history": "B118",
+    "name": "before",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/before.json",
+    "sha256": "def7a54e8694a0bb6d9555e2bffd04bbdb853fffd89ab54145d5b99856af78ac",
+    "hash_matches": true,
+    "counts": {
+      "passed": 3,
+      "failed": 4
+    },
+    "relevant_rows": [
+      {
+        "id": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless",
+        "outcome": "passed",
+        "seconds": 0.21899999992456287,
+        "details": []
+      },
+      {
+        "id": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
+        "outcome": "failed",
+        "seconds": 0.0470000000204891,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_submission_preview_commands.py\", line 28, in test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling\n    with self.assertRaises(FileNotFoundError) as failure:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: FileNotFoundError not raised\n"
+        ]
+      },
+      {
+        "id": "sim.test_operator_cli_reports.ScheduleFailureTests.test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless",
+        "outcome": "failed",
+        "seconds": 0.015000000013969839,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_cli_reports.py\", line 72, in test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless\n    self.assertIsNone(result['operator_schedule']['reconcile'])\nAssertionError: \"& 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpoey3jbhv\\\\Python\\\\pythonw.exe' 'C:\\\\math\\\\.claude\\\\skills\\\\do-math\\\\scripts\\\\do_math.py' operator install --repository 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpoey3jbhv\\\\repository' --instance 'RI-00000000000000000000000000'\" is not None\n"
+        ]
+      }
+    ]
+  },
+  {
+    "history": "B118",
+    "name": "fixture-path-failure",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/fixture-path-failure.json",
+    "sha256": "4609e1f6b2c2f0b0caca44760e432f3b604fcb6d1b1ad6d9d2e3b03e4499acae",
+    "hash_matches": true,
+    "counts": {
+      "passed": 1,
+      "failed": 3
+    },
+    "relevant_rows": [
+      {
+        "id": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "sim.test_operator_cli_reports.ScheduleFailureTests.test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless",
+        "outcome": "failed",
+        "seconds": 0.0,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_cli_reports.py\", line 73, in test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless\n    self.assertIn(str(interpreters / 'python.exe'), result['operator_schedule']['reconcile_error'])\nAssertionError: 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpoc3hg7gy\\\\Python\\\\python.exe' not found in \"[Errno 2] console Python sibling is not a file: 'C:\\\\\\\\Users\\\\\\\\wogud\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\tmpoc3hg7gy\\\\\\\\Python\\\\\\\\python.exe'\"\n"
+        ]
+      }
+    ]
+  },
+  {
+    "history": "B118",
+    "name": "focused",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/focused.json",
+    "sha256": "15eb58838663ad78491d366d7368e47bba51e2590b2c0fb2c2c1db0862e637c7",
+    "hash_matches": true,
+    "counts": {
+      "passed": 3
+    },
+    "relevant_rows": [
+      {
+        "id": "sim.test_operator_cli_reports.ScheduleFailureTests.test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      }
+    ]
+  },
+  {
+    "history": "B118",
+    "name": "report",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/report.json",
+    "sha256": "858210f749ba9901cebb57501f54eba9e70bfdd0aeb00ba21a74cddcb8ae795e",
+    "hash_matches": true,
+    "counts": {
+      "passed": 20
+    },
+    "relevant_rows": [
+      {
+        "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window",
+        "outcome": "passed",
+        "seconds": 2.76500000001397,
+        "details": []
+      },
+      {
+        "id": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless",
+        "outcome": "passed",
+        "seconds": 0.2190000000409782,
+        "details": []
+      },
+      {
+        "id": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "sim.test_operator_cli_reports.ScheduleFailureTests.test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      }
+    ]
+  }
+]

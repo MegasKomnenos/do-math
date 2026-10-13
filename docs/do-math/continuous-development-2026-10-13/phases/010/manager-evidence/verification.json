@@ -1,0 +1,456 @@
+{
+  "head": "03a281b13ae6f559604536b2d8450ce005106057",
+  "source_count": 2644,
+  "current_source_mismatches": [],
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_owned_job_children.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_windows_job.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_host_live.py",
+    ".agents/skills/do-math/scripts/tests/support/host_live.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_owned_job_children.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_windows_job.py",
+    ".claude/skills/do-math/scripts/tests/smoke/test_host_live.py",
+    ".claude/skills/do-math/scripts/tests/support/host_live.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "suites": {
+    "host-01": {
+      "selected_count": 3,
+      "counts": {
+        "passed": 2,
+        "failed": 1
+      },
+      "exit_code": 1,
+      "successful": false,
+      "sha256": "60c59ad30b065e6010e0bc89173473750c05bef6e46ba3983be23ca8335302bd",
+      "python_sources": 867,
+      "current_mismatches": [
+        "tests/support/host_live.py"
+      ],
+      "nonpassed": [
+        {
+          "id": "smoke.test_host_live.HostLiveTests.test_real_worker_collects_normal_output_and_exact_nonzero_exit",
+          "outcome": "failed",
+          "seconds": 1.8130000000237487,
+          "details": [
+            "test_real_worker_collects_normal_output_and_exact_nonzero_exit (smoke.test_host_live.HostLiveTests.test_real_worker_collects_normal_output_and_exact_nonzero_exit) (mode='normal')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\smoke\\test_host_live.py\", line 20, in test_real_worker_collects_normal_output_and_exact_nonzero_exit\n    self.assertTrue(report['passed'], {'checks':report['checks'], 'evidence':report['evidence_directory']})\nAssertionError: False is not true : {'checks': {'published_before_cli': True, 'worker_identity': True, 'worker_owned': True, 'descendants_owned': True, 'worker_in_kernel_list': True, 'external_cwd': True, 'stdin_exact': True, 'actual_worker': True, 'children_observed': True, 'termination_barrier': True, 'named_job_empty': True, 'held_processes_ended': True, 'cli_exit': True, 'normal_output': False, 'empty_stderr': True}, 'evidence': 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\010\\\\tasks\\\\host-smoke\\\\evidence\\\\host-01-results\\\\smoke-isolated-000\\\\scratch\\\\host-job-normal-6bmjlka3'}\n"
+          ]
+        }
+      ]
+    },
+    "host-02": {
+      "selected_count": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0,
+      "successful": true,
+      "sha256": "ae34b53b048ab7d833f644bd0c9d307a2b05b03221eae5f49ad160558f300dc5",
+      "python_sources": 867,
+      "current_mismatches": [
+        "tests/support/host_live.py"
+      ],
+      "nonpassed": []
+    },
+    "host-final": {
+      "selected_count": 3,
+      "counts": {
+        "passed": 3
+      },
+      "exit_code": 0,
+      "successful": true,
+      "sha256": "69c264b2562c8e6c55c63e6b3e5a0eff897c32899fa5126a4520a65bb79e8109",
+      "python_sources": 867,
+      "current_mismatches": [],
+      "nonpassed": []
+    },
+    "related": {
+      "selected_count": 61,
+      "counts": {
+        "passed": 59,
+        "failed": 1,
+        "error": 1
+      },
+      "exit_code": 1,
+      "successful": false,
+      "sha256": "3372d464c500b8d26833284de42e330cfa124d26892bad4a4d976f9339372538",
+      "python_sources": 867,
+      "current_mismatches": [],
+      "nonpassed": [
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "failed",
+          "seconds": 7.422000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_test_smells.py\", line 24, in test_new_system_tests_have_no_smell\n    self.assertEqual(issues, [], '\\n'.join(str(issue) for issue in issues))\nAssertionError: Lists differ: [{'file': 'structure/test_doc_code.py', 't[654 chars]181}] != []\n\nFirst list contains 4 additional elements.\nFirst extra element 0:\n{'file': 'structure/test_doc_code.py', 'test': 'test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method', 'rule': 'unpinned_rejection', 'line': 35}\n\nDiff is 766 characters long. Set self.maxDiff to None to see it. : {'file': 'structure/test_doc_code.py', 'test': 'test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method', 'rule': 'unpinned_rejection', 'line': 35}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources', 'rule': 'unpinned_rejection', 'line': 108}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_failed_execution_materials_are_restored_for_its_operational_review', 'rule': 'unpinned_rejection', 'line': 181}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_failed_execution_materials_are_restored_for_its_operational_review', 'rule': 'unpinned_rejection', 'line': 181}\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once",
+          "outcome": "error",
+          "seconds": 0.01600000000325963,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_call_jobs.py\", line 69, in test_real_job_cancellation_uses_owner_judgment_and_collects_once\n    self.assertTrue(returned[0][-1])\n                    ~~~~~~~~~~~^^^^\nKeyError: -1\n"
+          ]
+        }
+      ]
+    },
+    "mirror-host": {
+      "selected_count": 3,
+      "counts": {
+        "passed": 3
+      },
+      "exit_code": 0,
+      "successful": true,
+      "sha256": "fb1bd09681a64c2b886c198700432c80ca5605672ff52261c8944ac8bd965bd2",
+      "python_sources": 867,
+      "current_mismatches": [],
+      "nonpassed": []
+    },
+    "baseline-repro-02": {
+      "selected_count": 2,
+      "counts": {
+        "failed": 1,
+        "error": 1
+      },
+      "exit_code": 1,
+      "successful": false,
+      "sha256": "a33c2a0fc6c6a8fd2a0e34f21ceb57a280517c2a94e212e2d74e807180d40264",
+      "python_sources": 865,
+      "current_mismatches": [],
+      "nonpassed": [
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "failed",
+          "seconds": 7.889999999955762,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\host-smoke\\evidence\\baseline-tree-02\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_test_smells.py\", line 24, in test_new_system_tests_have_no_smell\n    self.assertEqual(issues, [], '\\n'.join(str(issue) for issue in issues))\nAssertionError: Lists differ: [{'file': 'structure/test_doc_code.py', 't[654 chars]181}] != []\n\nFirst list contains 4 additional elements.\nFirst extra element 0:\n{'file': 'structure/test_doc_code.py', 'test': 'test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method', 'rule': 'unpinned_rejection', 'line': 35}\n\nDiff is 766 characters long. Set self.maxDiff to None to see it. : {'file': 'structure/test_doc_code.py', 'test': 'test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method', 'rule': 'unpinned_rejection', 'line': 35}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources', 'rule': 'unpinned_rejection', 'line': 108}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_failed_execution_materials_are_restored_for_its_operational_review', 'rule': 'unpinned_rejection', 'line': 181}\n{'file': 'sim/test_knowledge_currentness.py', 'test': 'test_failed_execution_materials_are_restored_for_its_operational_review', 'rule': 'unpinned_rejection', 'line': 181}\n"
+          ]
+        },
+        {
+          "id": "boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once",
+          "outcome": "error",
+          "seconds": 0.015000000013969839,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\host-smoke\\evidence\\baseline-tree-02\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_call_jobs.py\", line 69, in test_real_job_cancellation_uses_owner_judgment_and_collects_once\n    self.assertTrue(returned[0][-1])\n                    ~~~~~~~~~~~^^^^\nKeyError: -1\n"
+          ]
+        }
+      ]
+    }
+  },
+  "baseline_files": 976,
+  "baseline_start_equivalent_noncache_files": 975,
+  "baseline_cache_note": "tests/.timings.json was copied from the current cost cache; excluded from source-start equivalence as declared by baseline-manifest.",
+  "preserved_test_methods": {
+    "test_scheduling_windows_job.py": 10,
+    "test_scheduling_owned_job_children.py": 3,
+    "test_role_input_snapshot_reach.py": 8
+  },
+  "host_recordings": [
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-cancel-iozevo7a/smoke.json",
+      "sha256": "9aff5458de828fc6ec43dfdbf3b90332785f409c5d31aeddefc0a143433abf48",
+      "mode": "cancel",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "explicit_stop": true,
+        "no_release": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-nonzero-ar4klqrv/smoke.json",
+      "sha256": "bcdd39748fd4896b734b9223ebf6027dec92f095cdd6b43507e285d1466e8437",
+      "mode": "nonzero",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "cli_exit": true,
+        "nonzero_failure": true,
+        "nonzero_reason": true,
+        "exact_error": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-job-normal-jnk3s6cq/smoke.json",
+      "sha256": "c397e5fa651b2bc01e632cc9cc8c751748c29eed62c3a4553e3c87ebf6f79067",
+      "mode": "normal",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "cli_exit": true,
+        "normal_output": true,
+        "empty_stderr": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/host-final-results/smoke-isolated-000/scratch/host-pythonw-nw9yj4cn/smoke.json",
+      "sha256": "5efe62361bd9b1628b28941c18c816a95e726222cd4a0a3f43f4e5036c69f7be",
+      "mode": "pythonw",
+      "checks": {
+        "readable_console": true,
+        "readable_interpreter": true,
+        "readable_issued_python": true,
+        "readable_exact_exit": true,
+        "readable_stderr": true,
+        "readable_json": true,
+        "readable_log": true,
+        "exact_record": true,
+        "supplied_only_console": true,
+        "supplied_only_interpreter": true,
+        "supplied_only_issued_python": true,
+        "supplied_only_exact_exit": true,
+        "supplied_only_stderr": true,
+        "supplied_only_json": true,
+        "supplied_only_log": true,
+        "refused_without_record": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-cancel-8yunjumq/smoke.json",
+      "sha256": "d9afee5ef63db9d4a13a7bbab91629bcab729f93792c4502f52a31ca404a8542",
+      "mode": "cancel",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "explicit_stop": true,
+        "no_release": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-nonzero-m1thvro0/smoke.json",
+      "sha256": "ed9b755082b00dd42c301a27edcb90b75df844f38fbb952ce2f6b7e5ad6b8320",
+      "mode": "nonzero",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "cli_exit": true,
+        "nonzero_failure": true,
+        "nonzero_reason": true,
+        "exact_error": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-job-normal-25mq7b5q/smoke.json",
+      "sha256": "1f84d1f1bc385b237ddb6a8db3f4381df3a02c2b282079dc0c8dcc57a42e5e30",
+      "mode": "normal",
+      "checks": {
+        "published_before_cli": true,
+        "worker_identity": true,
+        "worker_owned": true,
+        "descendants_owned": true,
+        "worker_in_kernel_list": true,
+        "external_cwd": true,
+        "stdin_exact": true,
+        "actual_worker": true,
+        "children_observed": true,
+        "termination_barrier": true,
+        "named_job_empty": true,
+        "held_processes_ended": true,
+        "cli_exit": true,
+        "normal_output": true,
+        "empty_stderr": true
+      }
+    },
+    {
+      "ref": "run:phases/010/tasks/host-smoke/evidence/mirror-host-results/smoke-isolated-000/scratch/host-pythonw-n2ze3yrs/smoke.json",
+      "sha256": "de7622122599d11704551bb57c03d579a895c5c308364f135a595a90ed4c5044",
+      "mode": "pythonw",
+      "checks": {
+        "readable_console": true,
+        "readable_interpreter": true,
+        "readable_issued_python": true,
+        "readable_exact_exit": true,
+        "readable_stderr": true,
+        "readable_json": true,
+        "readable_log": true,
+        "exact_record": true,
+        "supplied_only_console": true,
+        "supplied_only_interpreter": true,
+        "supplied_only_issued_python": true,
+        "supplied_only_exact_exit": true,
+        "supplied_only_stderr": true,
+        "supplied_only_json": true,
+        "supplied_only_log": true,
+        "refused_without_record": true
+      }
+    }
+  ],
+  "runtime_preserved": 124,
+  "provider_inputs_preserved": 3,
+  "corpus_raw_clean_paths": 102,
+  "reading_fixed_inputs": 50,
+  "reading_binaries": 2,
+  "reading_fixtures": [
+    {
+      "label": "ascii",
+      "pages": 8,
+      "received_lines": 80,
+      "tail": 80,
+      "missing": [
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ]
+    },
+    {
+      "label": "unicode",
+      "pages": 8,
+      "received_lines": 80,
+      "tail": 80,
+      "missing": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ]
+    }
+  ],
+  "claude_static_binding_excerpts": 7,
+  "aggregate_observation": "Preserved task observation; not a new model delivery replay.",
+  "limits": "Host partial: related failed1/error1. Reading investigation complete; output-byte/actual operator contract not certified. No product execution or edits by manager."
+}

@@ -1,0 +1,10 @@
+Open known defects: 0
+[smoke] 3 tests
+  isolated: smoke.test_host_live.HostLiveTests
+  {'passed': 3}
+Over budget: 0 tests; T5 ran 7.6s of 600s
+{"complete": true, "successful": true, "counts": {"passed": 3}, "group_seconds": {"smoke": 7.6}, "total_seconds": 7.6}
+    4.219s passed             smoke.test_host_live.HostLiveTests.test_pythonw_powershell_collects_installed_read_success_and_refusal
+    2.000s passed             smoke.test_host_live.HostLiveTests.test_real_worker_collects_normal_output_and_exact_nonzero_exit
+    1.078s passed             smoke.test_host_live.HostLiveTests.test_explicit_stop_ends_owned_worker_cli_and_descendants
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\010\tasks\host-smoke\evidence\mirror-host-results\report.json

@@ -1,0 +1,188 @@
+{
+  "at_utc": "2026-10-13T18:38:33.995216+00:00",
+  "result": "pass",
+  "source_observations": 50,
+  "source_mismatches": [],
+  "binary_edition_matches": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe",
+      "before": "dd13bdb162a184fa04039488b234a8258ef9b76f84e926c505d5742b19249a6a",
+      "after": "dd13bdb162a184fa04039488b234a8258ef9b76f84e926c505d5742b19249a6a",
+      "same": true
+    },
+    {
+      "path": "C:\\Users\\wogud\\.local\\bin\\claude.exe",
+      "before": "bcc6d9117aec30ad9414490302a25414359c871f5647e32e49b055c92bf84e0b",
+      "after": "bcc6d9117aec30ad9414490302a25414359c871f5647e32e49b055c92bf84e0b",
+      "same": true
+    }
+  ],
+  "historical_transport_reuse": [
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+      "historical_sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a",
+      "current_sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+      "historical_sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3",
+      "current_sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/model_runner.py",
+      "historical_sha256": "9a538ed1589a78ec50ec58ea974cb549f9da0629798a6ac5a8b10878b8f6dadc",
+      "current_sha256": "8bc01f55af9c68f5f497b26e78e400756df67c551711a26bf7c7b3374da22ddd",
+      "same": false,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/worker_request.py",
+      "historical_sha256": "5882bda615c700afa88c68ff44f32d44f2bad3ad0be08872b66093fc15be0bf1",
+      "current_sha256": "5882bda615c700afa88c68ff44f32d44f2bad3ad0be08872b66093fc15be0bf1",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/cli_worker.py",
+      "historical_sha256": "e3e3605a6993a90885aa1241b0f9607aeac47b614a83dd714cc18127006ea155",
+      "current_sha256": "e3e3605a6993a90885aa1241b0f9607aeac47b614a83dd714cc18127006ea155",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+      "historical_sha256": "a25067cec0e1753b6c6be577b319cc51b8af321b3b238d2ab0338e4e40ef68a0",
+      "current_sha256": "a25067cec0e1753b6c6be577b319cc51b8af321b3b238d2ab0338e4e40ef68a0",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    },
+    {
+      "file": "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+      "historical_sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05",
+      "current_sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05",
+      "same": true,
+      "scope": "Direct stdin reading-code property only; changed model_runner is reviewed at current source-excerpts, not reused as byte-identical."
+    }
+  ],
+  "historical_role_document_reuse": [
+    {
+      "path": "SKILL.md",
+      "same": true,
+      "current_sha256": "f5f9cba65d705dc6cb826cb564cb49fab9a04f129b54b241a11be08608f35c88",
+      "historical_sha256": "f5f9cba65d705dc6cb826cb564cb49fab9a04f129b54b241a11be08608f35c88"
+    },
+    {
+      "path": "GLOSSARY.md",
+      "same": true,
+      "current_sha256": "21656f01b65c6bb2c25939ff3a6426ade76d68cec0dd2344eaf44e71f987c120",
+      "historical_sha256": "21656f01b65c6bb2c25939ff3a6426ade76d68cec0dd2344eaf44e71f987c120"
+    },
+    {
+      "path": "references/공통-실행.md",
+      "same": true,
+      "current_sha256": "e8e529ee0c2699f6439b0ac99414cc3344b75c210c844462ad570154a4daaa84",
+      "historical_sha256": "e8e529ee0c2699f6439b0ac99414cc3344b75c210c844462ad570154a4daaa84"
+    },
+    {
+      "path": "references/지식-저작과-재사용.md",
+      "same": true,
+      "current_sha256": "711c8b9d2ff81659f1c528e20ba114ee7189951447bb97ade6433b3a2da96d5e",
+      "historical_sha256": "711c8b9d2ff81659f1c528e20ba114ee7189951447bb97ade6433b3a2da96d5e"
+    },
+    {
+      "path": "references/학술자료-활용.md",
+      "same": true,
+      "current_sha256": "2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2",
+      "historical_sha256": "2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2"
+    },
+    {
+      "path": "references/모델과-실행예산.md",
+      "same": true,
+      "current_sha256": "a197888224c97ea5a315949c58014acc1836ae36a3312d360b6d19bb5059778a",
+      "historical_sha256": "a197888224c97ea5a315949c58014acc1836ae36a3312d360b6d19bb5059778a"
+    },
+    {
+      "path": "references/과제-착수조건.md",
+      "same": true,
+      "current_sha256": "5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5",
+      "historical_sha256": "5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5"
+    },
+    {
+      "path": "계약/후보-준비.md",
+      "same": true,
+      "current_sha256": "2e85ca88a0ec0b24ba8a2d57f8a343eddaaf06e46550cc0ba5eccf580b86cfbb",
+      "historical_sha256": "2e85ca88a0ec0b24ba8a2d57f8a343eddaaf06e46550cc0ba5eccf580b86cfbb"
+    },
+    {
+      "path": "계약/연구-계획.md",
+      "same": true,
+      "current_sha256": "107dd250b6b2c5ec1c6243f9451f244086f7809e2696a05ea8fd66c6680e3429",
+      "historical_sha256": "107dd250b6b2c5ec1c6243f9451f244086f7809e2696a05ea8fd66c6680e3429"
+    },
+    {
+      "path": "references/자기-점검.md",
+      "same": true,
+      "current_sha256": "4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d",
+      "historical_sha256": "4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d"
+    },
+    {
+      "path": "계약/연구-수행.md",
+      "same": true,
+      "current_sha256": "949bc5d7cf9200a8e26bd24c925c97ff99b5294cb469bf21d07a5b904e262e78",
+      "historical_sha256": "949bc5d7cf9200a8e26bd24c925c97ff99b5294cb469bf21d07a5b904e262e78"
+    },
+    {
+      "path": "계약/작업-계약-검토.md",
+      "same": true,
+      "current_sha256": "ff929bdf0c299a6632c32e138553383ab5cac2517d157750d95f2d4a3b988be7",
+      "historical_sha256": "ff929bdf0c299a6632c32e138553383ab5cac2517d157750d95f2d4a3b988be7"
+    },
+    {
+      "path": "계약/동일성-검토.md",
+      "same": true,
+      "current_sha256": "de05683e4c1d1f1bb6f074b67aa6581febd4880f620d18c5544fcd2e49fd6279",
+      "historical_sha256": "de05683e4c1d1f1bb6f074b67aa6581febd4880f620d18c5544fcd2e49fd6279"
+    },
+    {
+      "path": "계약/목표-감사.md",
+      "same": true,
+      "current_sha256": "dfecc348d437b31c69acac5eb87f4abc8de9e8c02fd2592108ebe99e618b6453",
+      "historical_sha256": "dfecc348d437b31c69acac5eb87f4abc8de9e8c02fd2592108ebe99e618b6453"
+    },
+    {
+      "path": "계약/보충-조사.md",
+      "same": true,
+      "current_sha256": "d6acf59643072a3944096bad33cc38322685e70d3292d350d7c2739a1a18f92f",
+      "historical_sha256": "d6acf59643072a3944096bad33cc38322685e70d3292d350d7c2739a1a18f92f"
+    },
+    {
+      "path": "계약/운영-점검.md",
+      "same": false,
+      "current_sha256": "c5141038e028d63767a1df70bb8d9be36e4c8a89ecab98008b530b489f563480",
+      "historical_sha256": "e28aba8ff8d08c8ca1cd4b0a5c5e32e2d95206aae728bb9d3b1f08433888fdc5"
+    },
+    {
+      "path": "references/입력-소비자.md",
+      "same": true,
+      "current_sha256": "6e68e800cff4c13fabef24f49036801afc1c9efd49e909f517b8fdab4ec5f72a",
+      "historical_sha256": "6e68e800cff4c13fabef24f49036801afc1c9efd49e909f517b8fdab4ec5f72a"
+    },
+    {
+      "path": "계약/의도-해석.md",
+      "same": true,
+      "current_sha256": "ecc2265d459cea2ed77ea0ba4855fbcdeb80013b97f3c926889951da8e080f82",
+      "historical_sha256": "ecc2265d459cea2ed77ea0ba4855fbcdeb80013b97f3c926889951da8e080f82"
+    },
+    {
+      "path": "계약/유지보수.md",
+      "same": true,
+      "current_sha256": "be999a68e22179b6aa33a78555453f8b04d3538040fa55f817c8b81f679e75f6",
+      "historical_sha256": "be999a68e22179b6aa33a78555453f8b04d3538040fa55f817c8b81f679e75f6"
+    }
+  ],
+  "fixed_input_scope": "Initial 20 hashes plus discovery-time fixed-dependency hashes. Other task writes deliberately excluded; product-wide immutability is not claimed."
+}

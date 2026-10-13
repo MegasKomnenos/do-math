@@ -1,0 +1,76 @@
+{
+  "at_utc": "2026-10-13T18:26:10.591297+00:00",
+  "binary": "C:\\Users\\wogud\\.local\\bin\\claude.exe",
+  "scope": "only static excerpts, no Read call or model session",
+  "rows": [
+    {
+      "literal": "Zze=262144",
+      "matches": [
+        {
+          "offset": 206162511,
+          "excerpt": "nction Zc(e){try{return await te(e),!0}catch{return!1}}async function p$(e){return B(e).then(()=>\"present\",(n)=>z(n)||v(n)===\"ENOTDIR\"?\"gone\":\"unreadable\")}var Zze=262144;function e2e(e,{maxBytes:n,symlinkAtPath:r=\"follow\",regularFileOnly:s=r===\"refuse\"}){using u=ag`fs.readBoundedSync(${e}, max ${n} bytes)`;let i=\"r\";if(r===\"refuse\"){if(Z(e).isSymbolicLink())throw Object.assign(Error(\"ELOOP: refusing a symbolic link\"),{code:\"ELOOP\"})}let o=C(e,i);try{if(s){if(!I(o).isFile())throw Object.assign(Error(\"EINVAL: not a "
+        }
+      ]
+    },
+    {
+      "literal": "Lines longer than",
+      "matches": []
+    },
+    {
+      "literal": "lines longer than",
+      "matches": []
+    },
+    {
+      "literal": "The line number to start reading from",
+      "matches": [
+        {
+          "offset": 213015836,
+          "excerpt": "anscript\";return null}var rQn=f(()=>Ge({file_path:o().describe(\"The absolute path to the file to read\"),offset:B0(k().int().nonnegative().optional()).describe(\"The line number to start reading from. Only provide if the file is too large to read at once\"),limit:B0(k().int().positive().optional()).describe(\"The number of lines to read. Only provide if the file is too large to read at once.\"),pages:o().optional().describe(`Page range for PDF files (e.g., \"1-5\", \"3\", \"10-20\"). Only applicable to PDF files. Maximum ${g0"
+        }
+      ]
+    },
+    {
+      "literal": "The number of lines to read",
+      "matches": [
+        {
+          "offset": 213015983,
+          "excerpt": ")).describe(\"The line number to start reading from. Only provide if the file is too large to read at once\"),limit:B0(k().int().positive().optional()).describe(\"The number of lines to read. Only provide if the file is too large to read at once.\"),pages:o().optional().describe(`Page range for PDF files (e.g., \"1-5\", \"3\", \"10-20\"). Only applicable to PDF files. Maximum ${g0e} pages per request.`),...xW()})),fbt=f(()=>{let e=j([\"image/jpeg\",\"image/png\",\"image/gif\",\"image/webp\"]);return qo(\"type\",[u({type:A(\"text\"),file"
+        }
+      ]
+    },
+    {
+      "literal": "allow_large",
+      "matches": []
+    },
+    {
+      "literal": "bashOutputMaxChars",
+      "matches": [
+        {
+          "offset": 204932891,
+          "excerpt": "turn that off. Default: on when the Bash tool handles file edits. Only user, flag or policy settings can turn it on outside auto and bypassPermissions modes.\"),bashOutputMaxChars:()=>k().int().positive().optional().catch(void 0).describe(\"How many characters of a successful Bash or PowerShell command's output Claude receives inline (default 30000; values clamp to 4000-128000). Output past this is saved to a file and Claude receives a short preview plus the path. When set, this also replaces BASH_MAX_OUTPUT_LENGTH, "
+        },
+        {
+          "offset": 211708530,
+          "excerpt": "wpndqs.js\";import{W,N}from\"B:/~BUN/root/chunk-caev26jw.js\";import{ct}from\"B:/~BUN/root/chunk-y7vj225x.js\";var UWr=150000,c9n=30000;function bXe(){return S(lt().bashOutputMaxChars)??c9n}function tpe(){let e=S(lt().bashOutputMaxChars);if(e!==void 0)return e;return lOe(\"BASH_MAX_OUTPUT_LENGTH\",process.env.BASH_MAX_OUTPUT_LENGTH,c9n,UWr).effective}function S(e){if(e===void 0)return;return Math.min(Math.max(e,LXo),IZe)}import{dirname as O}from\"path\";function foe(){if(tb()!==void 0)return{dirs:[],paths:[]};return{dirs:[b"
+        },
+        {
+          "offset": 211708583,
+          "excerpt": "w.js\";import{ct}from\"B:/~BUN/root/chunk-y7vj225x.js\";var UWr=150000,c9n=30000;function bXe(){return S(lt().bashOutputMaxChars)??c9n}function tpe(){let e=S(lt().bashOutputMaxChars);if(e!==void 0)return e;return lOe(\"BASH_MAX_OUTPUT_LENGTH\",process.env.BASH_MAX_OUTPUT_LENGTH,c9n,UWr).effective}function S(e){if(e===void 0)return;return Math.min(Math.max(e,LXo),IZe)}import{dirname as O}from\"path\";function foe(){if(tb()!==void 0)return{dirs:[],paths:[]};return{dirs:[bb()],paths:[]}}function $Bt(e,r){if(!e)return;let n=O"
+        }
+      ]
+    },
+    {
+      "literal": "maxSelectedBytes:",
+      "matches": [
+        {
+          "offset": 210871856,
+          "excerpt": "stream:x?jUr(x.handle,x.positional,w):EG(e,{highWaterMark:524288,...w?{signal:w}:void 0}),decoder:new wG(\"utf8\"),offset:n,endLine:r!==void 0?n+r:1/0,maxBytes:s,maxSelectedBytes:h,hardCapBytes:g,truncateOnByteLimit:S,resolve:T,totalBytesRead:0,selectedBytes:0,truncatedByBytes:!1,currentLineIndex:0,selectedLines:[],partial:\"\",partialBytes:0,isFirstChunk:!0,resolveMtime:()=>{},mtimeReady:null};if(L.mtimeReady=new Promise((K)=>{L.resolveMtime=K}),x)L.resolveMtime(x.mtimeMs);else L.stream.once(\"open\",LG.bind(L));L.strea"
+        },
+        {
+          "offset": 213036859,
+          "excerpt": "ool\",filePath:r,content:yo.file.base64}),{data:yo}}let Re=h===0?0:h-1,Ce=await Rue(s,Re,S,S===void 0?D:void 0,K.signal,S===void 0?{handle:(await he()).handle}:{maxSelectedBytes:B*uYr,handle:(await he()).handle}),{lineCount:xe,totalLines:Pe,totalBytes:He,readBytes:$e,mtimeMs:ze}=Ce,qe=m8e(r),Je=qe!==null?K.taskRegistry.get(qe):void 0,Xe=Je&&Vu(Je)?_ut(Ce.content,{command:Je.command,pendingHint:K.session.pendingHint,isMainThread:!K.agentId,surface:\"file_read\"}):Ce.content,Qe=Xe,bt=xe,yt=S,Ot,Ft=!1,Pt=(h??1)<=1&&S===v"
+        }
+      ]
+    }
+  ]
+}

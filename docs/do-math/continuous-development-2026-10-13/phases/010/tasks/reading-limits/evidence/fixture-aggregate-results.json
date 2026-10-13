@@ -1,0 +1,52 @@
+{
+  "outer_args": {
+    "max_output_tokens": 150
+  },
+  "before_outer_delivery": [
+    {
+      "case": "ascii-aggregate-page",
+      "args": {
+        "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[0..9]",
+        "max_output_tokens": 1000
+      },
+      "result": {
+        "chunk_id": "c67d41",
+        "wall_time_seconds": 0.7098272,
+        "exit_code": 0,
+        "original_token_count": 118,
+        "output": "ascii:001|alpha beta gamma 0123456789|END:001\r\nascii:002|alpha beta gamma 0123456789|END:002\r\nascii:003|alpha beta gamma 0123456789|END:003\r\nascii:004|alpha beta gamma 0123456789|END:004\r\nascii:005|alpha beta gamma 0123456789|END:005\r\nascii:006|alpha beta gamma 0123456789|END:006\r\nascii:007|alpha beta gamma 0123456789|END:007\r\nascii:008|alpha beta gamma 0123456789|END:008\r\nascii:009|alpha beta gamma 0123456789|END:009\r\nascii:010|alpha beta gamma 0123456789|END:010\r\n"
+      }
+    },
+    {
+      "case": "unicode-aggregate-page",
+      "args": {
+        "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[0..9]",
+        "max_output_tokens": 1000
+      },
+      "result": {
+        "chunk_id": "e874e7",
+        "wall_time_seconds": 0.7008431,
+        "exit_code": 0,
+        "original_token_count": 133,
+        "output": "unicode:001|한글 가나다 café é 🙂|END:001\r\nunicode:002|한글 가나다 café é 🙂|END:002\r\nunicode:003|한글 가나다 café é 🙂|END:003\r\nunicode:004|한글 가나다 café é 🙂|END:004\r\nunicode:005|한글 가나다 café é 🙂|END:005\r\nunicode:006|한글 가나다 café é 🙂|END:006\r\nunicode:007|한글 가나다 café é 🙂|END:007\r\nunicode:008|한글 가나다 café é 🙂|END:008\r\nunicode:009|한글 가나다 café é 🙂|END:009\r\nunicode:010|한글 가나다 café é 🙂|END:010\r\n"
+      }
+    }
+  ],
+  "model_observed": {
+    "warning": "Warning: truncated output (original token count: 328)",
+    "omission_marker": "…178 tokens truncated…",
+    "complete_ascii_line_ids": [
+      1,
+      2,
+      3
+    ],
+    "complete_unicode_line_ids": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "judgment": "Inner results were complete. Outer functions.exec aggregate output was clipped, so this invocation did not deliver both pages intact. The pre-delivery JSON object is not evidence of intact model delivery."
+  }
+}

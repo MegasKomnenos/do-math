@@ -1,0 +1,258 @@
+[
+  {
+    "case": "ascii-page-1",
+    "start": 1,
+    "end": 10,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[0..9]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "c0396d",
+      "wall_time_seconds": 0.5663172,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:001|alpha beta gamma 0123456789|END:001\r\nascii:002|alpha beta gamma 0123456789|END:002\r\nascii:003|alpha beta gamma 0123456789|END:003\r\nascii:004|alpha beta gamma 0123456789|END:004\r\nascii:005|alpha beta gamma 0123456789|END:005\r\nascii:006|alpha beta gamma 0123456789|END:006\r\nascii:007|alpha beta gamma 0123456789|END:007\r\nascii:008|alpha beta gamma 0123456789|END:008\r\nascii:009|alpha beta gamma 0123456789|END:009\r\nascii:010|alpha beta gamma 0123456789|END:010\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-11",
+    "start": 11,
+    "end": 20,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[10..19]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "fb7ec9",
+      "wall_time_seconds": 0.5660197,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:011|alpha beta gamma 0123456789|END:011\r\nascii:012|alpha beta gamma 0123456789|END:012\r\nascii:013|alpha beta gamma 0123456789|END:013\r\nascii:014|alpha beta gamma 0123456789|END:014\r\nascii:015|alpha beta gamma 0123456789|END:015\r\nascii:016|alpha beta gamma 0123456789|END:016\r\nascii:017|alpha beta gamma 0123456789|END:017\r\nascii:018|alpha beta gamma 0123456789|END:018\r\nascii:019|alpha beta gamma 0123456789|END:019\r\nascii:020|alpha beta gamma 0123456789|END:020\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-1",
+    "start": 1,
+    "end": 10,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[0..9]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "74b7bc",
+      "wall_time_seconds": 0.8370481,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:001|한글 가나다 café é 🙂|END:001\r\nunicode:002|한글 가나다 café é 🙂|END:002\r\nunicode:003|한글 가나다 café é 🙂|END:003\r\nunicode:004|한글 가나다 café é 🙂|END:004\r\nunicode:005|한글 가나다 café é 🙂|END:005\r\nunicode:006|한글 가나다 café é 🙂|END:006\r\nunicode:007|한글 가나다 café é 🙂|END:007\r\nunicode:008|한글 가나다 café é 🙂|END:008\r\nunicode:009|한글 가나다 café é 🙂|END:009\r\nunicode:010|한글 가나다 café é 🙂|END:010\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-11",
+    "start": 11,
+    "end": 20,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[10..19]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "44e14d",
+      "wall_time_seconds": 0.5800624,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:011|한글 가나다 café é 🙂|END:011\r\nunicode:012|한글 가나다 café é 🙂|END:012\r\nunicode:013|한글 가나다 café é 🙂|END:013\r\nunicode:014|한글 가나다 café é 🙂|END:014\r\nunicode:015|한글 가나다 café é 🙂|END:015\r\nunicode:016|한글 가나다 café é 🙂|END:016\r\nunicode:017|한글 가나다 café é 🙂|END:017\r\nunicode:018|한글 가나다 café é 🙂|END:018\r\nunicode:019|한글 가나다 café é 🙂|END:019\r\nunicode:020|한글 가나다 café é 🙂|END:020\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-21",
+    "start": 21,
+    "end": 30,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[20..29]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "a073d8",
+      "wall_time_seconds": 0.5651193,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:021|alpha beta gamma 0123456789|END:021\r\nascii:022|alpha beta gamma 0123456789|END:022\r\nascii:023|alpha beta gamma 0123456789|END:023\r\nascii:024|alpha beta gamma 0123456789|END:024\r\nascii:025|alpha beta gamma 0123456789|END:025\r\nascii:026|alpha beta gamma 0123456789|END:026\r\nascii:027|alpha beta gamma 0123456789|END:027\r\nascii:028|alpha beta gamma 0123456789|END:028\r\nascii:029|alpha beta gamma 0123456789|END:029\r\nascii:030|alpha beta gamma 0123456789|END:030\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-31",
+    "start": 31,
+    "end": 40,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[30..39]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "2488c5",
+      "wall_time_seconds": 0.5647009,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:031|alpha beta gamma 0123456789|END:031\r\nascii:032|alpha beta gamma 0123456789|END:032\r\nascii:033|alpha beta gamma 0123456789|END:033\r\nascii:034|alpha beta gamma 0123456789|END:034\r\nascii:035|alpha beta gamma 0123456789|END:035\r\nascii:036|alpha beta gamma 0123456789|END:036\r\nascii:037|alpha beta gamma 0123456789|END:037\r\nascii:038|alpha beta gamma 0123456789|END:038\r\nascii:039|alpha beta gamma 0123456789|END:039\r\nascii:040|alpha beta gamma 0123456789|END:040\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-21",
+    "start": 21,
+    "end": 30,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[20..29]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "825ae2",
+      "wall_time_seconds": 0.5841057,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:021|한글 가나다 café é 🙂|END:021\r\nunicode:022|한글 가나다 café é 🙂|END:022\r\nunicode:023|한글 가나다 café é 🙂|END:023\r\nunicode:024|한글 가나다 café é 🙂|END:024\r\nunicode:025|한글 가나다 café é 🙂|END:025\r\nunicode:026|한글 가나다 café é 🙂|END:026\r\nunicode:027|한글 가나다 café é 🙂|END:027\r\nunicode:028|한글 가나다 café é 🙂|END:028\r\nunicode:029|한글 가나다 café é 🙂|END:029\r\nunicode:030|한글 가나다 café é 🙂|END:030\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-31",
+    "start": 31,
+    "end": 40,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[30..39]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "3bb335",
+      "wall_time_seconds": 0.5842281,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:031|한글 가나다 café é 🙂|END:031\r\nunicode:032|한글 가나다 café é 🙂|END:032\r\nunicode:033|한글 가나다 café é 🙂|END:033\r\nunicode:034|한글 가나다 café é 🙂|END:034\r\nunicode:035|한글 가나다 café é 🙂|END:035\r\nunicode:036|한글 가나다 café é 🙂|END:036\r\nunicode:037|한글 가나다 café é 🙂|END:037\r\nunicode:038|한글 가나다 café é 🙂|END:038\r\nunicode:039|한글 가나다 café é 🙂|END:039\r\nunicode:040|한글 가나다 café é 🙂|END:040\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-41",
+    "start": 41,
+    "end": 50,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[40..49]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "40c240",
+      "wall_time_seconds": 0.5836488,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:041|alpha beta gamma 0123456789|END:041\r\nascii:042|alpha beta gamma 0123456789|END:042\r\nascii:043|alpha beta gamma 0123456789|END:043\r\nascii:044|alpha beta gamma 0123456789|END:044\r\nascii:045|alpha beta gamma 0123456789|END:045\r\nascii:046|alpha beta gamma 0123456789|END:046\r\nascii:047|alpha beta gamma 0123456789|END:047\r\nascii:048|alpha beta gamma 0123456789|END:048\r\nascii:049|alpha beta gamma 0123456789|END:049\r\nascii:050|alpha beta gamma 0123456789|END:050\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-51",
+    "start": 51,
+    "end": 60,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[50..59]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "241131",
+      "wall_time_seconds": 0.5683623,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:051|alpha beta gamma 0123456789|END:051\r\nascii:052|alpha beta gamma 0123456789|END:052\r\nascii:053|alpha beta gamma 0123456789|END:053\r\nascii:054|alpha beta gamma 0123456789|END:054\r\nascii:055|alpha beta gamma 0123456789|END:055\r\nascii:056|alpha beta gamma 0123456789|END:056\r\nascii:057|alpha beta gamma 0123456789|END:057\r\nascii:058|alpha beta gamma 0123456789|END:058\r\nascii:059|alpha beta gamma 0123456789|END:059\r\nascii:060|alpha beta gamma 0123456789|END:060\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-41",
+    "start": 41,
+    "end": 50,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[40..49]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "a48c54",
+      "wall_time_seconds": 0.5796652,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:041|한글 가나다 café é 🙂|END:041\r\nunicode:042|한글 가나다 café é 🙂|END:042\r\nunicode:043|한글 가나다 café é 🙂|END:043\r\nunicode:044|한글 가나다 café é 🙂|END:044\r\nunicode:045|한글 가나다 café é 🙂|END:045\r\nunicode:046|한글 가나다 café é 🙂|END:046\r\nunicode:047|한글 가나다 café é 🙂|END:047\r\nunicode:048|한글 가나다 café é 🙂|END:048\r\nunicode:049|한글 가나다 café é 🙂|END:049\r\nunicode:050|한글 가나다 café é 🙂|END:050\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-51",
+    "start": 51,
+    "end": 60,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[50..59]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "df733b",
+      "wall_time_seconds": 0.5844072,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:051|한글 가나다 café é 🙂|END:051\r\nunicode:052|한글 가나다 café é 🙂|END:052\r\nunicode:053|한글 가나다 café é 🙂|END:053\r\nunicode:054|한글 가나다 café é 🙂|END:054\r\nunicode:055|한글 가나다 café é 🙂|END:055\r\nunicode:056|한글 가나다 café é 🙂|END:056\r\nunicode:057|한글 가나다 café é 🙂|END:057\r\nunicode:058|한글 가나다 café é 🙂|END:058\r\nunicode:059|한글 가나다 café é 🙂|END:059\r\nunicode:060|한글 가나다 café é 🙂|END:060\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-61",
+    "start": 61,
+    "end": 70,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[60..69]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "2e7fc8",
+      "wall_time_seconds": 1.0492729,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:061|alpha beta gamma 0123456789|END:061\r\nascii:062|alpha beta gamma 0123456789|END:062\r\nascii:063|alpha beta gamma 0123456789|END:063\r\nascii:064|alpha beta gamma 0123456789|END:064\r\nascii:065|alpha beta gamma 0123456789|END:065\r\nascii:066|alpha beta gamma 0123456789|END:066\r\nascii:067|alpha beta gamma 0123456789|END:067\r\nascii:068|alpha beta gamma 0123456789|END:068\r\nascii:069|alpha beta gamma 0123456789|END:069\r\nascii:070|alpha beta gamma 0123456789|END:070\r\n"
+    }
+  },
+  {
+    "case": "ascii-page-71",
+    "start": 71,
+    "end": 80,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-ascii.txt' -Encoding utf8; $readingFixtureLines[70..79]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "f93074",
+      "wall_time_seconds": 0.6706416,
+      "exit_code": 0,
+      "original_token_count": 118,
+      "output": "ascii:071|alpha beta gamma 0123456789|END:071\r\nascii:072|alpha beta gamma 0123456789|END:072\r\nascii:073|alpha beta gamma 0123456789|END:073\r\nascii:074|alpha beta gamma 0123456789|END:074\r\nascii:075|alpha beta gamma 0123456789|END:075\r\nascii:076|alpha beta gamma 0123456789|END:076\r\nascii:077|alpha beta gamma 0123456789|END:077\r\nascii:078|alpha beta gamma 0123456789|END:078\r\nascii:079|alpha beta gamma 0123456789|END:079\r\nascii:080|alpha beta gamma 0123456789|END:080\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-61",
+    "start": 61,
+    "end": 70,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[60..69]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "ac8118",
+      "wall_time_seconds": 0.9004229,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:061|한글 가나다 café é 🙂|END:061\r\nunicode:062|한글 가나다 café é 🙂|END:062\r\nunicode:063|한글 가나다 café é 🙂|END:063\r\nunicode:064|한글 가나다 café é 🙂|END:064\r\nunicode:065|한글 가나다 café é 🙂|END:065\r\nunicode:066|한글 가나다 café é 🙂|END:066\r\nunicode:067|한글 가나다 café é 🙂|END:067\r\nunicode:068|한글 가나다 café é 🙂|END:068\r\nunicode:069|한글 가나다 café é 🙂|END:069\r\nunicode:070|한글 가나다 café é 🙂|END:070\r\n"
+    }
+  },
+  {
+    "case": "unicode-page-71",
+    "start": 71,
+    "end": 80,
+    "args": {
+      "cmd": "$readingFixtureLines=Get-Content -LiteralPath 'C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\010\\tasks\\reading-limits\\evidence\\fixture-unicode.txt' -Encoding utf8; $readingFixtureLines[70..79]",
+      "max_output_tokens": 1000
+    },
+    "result": {
+      "chunk_id": "d20058",
+      "wall_time_seconds": 0.8646326,
+      "exit_code": 0,
+      "original_token_count": 133,
+      "output": "unicode:071|한글 가나다 café é 🙂|END:071\r\nunicode:072|한글 가나다 café é 🙂|END:072\r\nunicode:073|한글 가나다 café é 🙂|END:073\r\nunicode:074|한글 가나다 café é 🙂|END:074\r\nunicode:075|한글 가나다 café é 🙂|END:075\r\nunicode:076|한글 가나다 café é 🙂|END:076\r\nunicode:077|한글 가나다 café é 🙂|END:077\r\nunicode:078|한글 가나다 café é 🙂|END:078\r\nunicode:079|한글 가나다 café é 🙂|END:079\r\nunicode:080|한글 가나다 café é 🙂|END:080\r\n"
+    }
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ],
+  "outside_writes": [],
+  "manifest_semantically_unchanged": true
+}

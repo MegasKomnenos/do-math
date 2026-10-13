@@ -1,0 +1,27 @@
+{
+  "web_lookup_utc": "2026-10-13T18:31:04Z",
+  "timestamp_scope": "Clock was queried immediately before the final web re-open batch; earlier discovery queries occurred in this task.",
+  "sources": [
+    {
+      "url": "https://developers.openai.com/codex/config-reference/",
+      "resolved_url": "https://learn.chatgpt.com/docs/config-file/config-reference",
+      "short_quote": "Token budget for storing individual tool/function outputs in history.",
+      "paraphrase": "The public reference describes a per-output history token budget, not a guaranteed UTF-8 output byte bound or this session’s effective budget. Installed 0.162.1 is separately fingerprinted; current website has no matching release stamp."
+    },
+    {
+      "url": "https://developers.openai.com/codex/config-schema.json",
+      "evidence": "run:phases/010/tasks/reading-limits/evidence/public-codex-schema.json",
+      "paraphrase": "Current official JSON schema declares tool_output_token_limit an unsigned integer with minimum zero, no numeric default. This is not the installed tool definition."
+    },
+    {
+      "url": "https://code.claude.com/docs/en/tools-reference",
+      "short_quote": "PARTIAL view",
+      "paraphrase": "Public Read documentation separates 25,000-token output and 256-KB whole-file input checks; it describes prefix paging on whole-file token overflow and errors on oversized explicit ranges. It dates allow_large to 2.1.296+, beyond installed 2.1.289. Bash/PowerShell successful output normally uses a roughly 30,000-character inline/readback window and a saved-file preview on overflow; failing output uses a roughly 10,000-character excerpt. bashOutputMaxChars changes the successful window, while BASH_MAX_OUTPUT_LENGTH alone changes readback. None of those character limits is a UTF-8 byte contract, or an observed call in this task."
+    },
+    {
+      "url": "https://code.claude.com/docs/en/env-vars",
+      "short_quote": "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS",
+      "paraphrase": "The environment variable changes the Read token default. New allow_large behavior documented there is not re-certified for installed 2.1.289. Selected local environment/settings values are absent; this does not exclude another session’s per-call overrides."
+    }
+  ]
+}

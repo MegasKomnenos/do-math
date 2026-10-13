@@ -1,0 +1,30 @@
+[
+  {
+    "offset": 213026598,
+    "text": "t (${e.file.startLine}). The file has ${e.file.totalLines} lines.</system-reminder>`;return{tool_use_id:n,type:\"tool_result\",content:r+gQn(e)}}}}});async function lQn({file_path:e,offset:n=1,limit:r=void 0,pages:s},g,h){let{readFileState:S,fileReadingLimits:w}=g,D=bT(e),B=g.session.writePermissionStash,K=B.holds(g.toolUseId,D,\"read\"),V=B.takeIdentity(g.toolUseId,D),he=UAe(D),ye=he===void 0?void 0:B.takeIdentity(g.toolUseId,he),be=Qze(g,D);if(!K&&O()===\"macos\"){let{own:bt,alt:yt}=await cbt(D,be);V=bt,ye=yt?.identity}let Ee=b3(),Re=w?.maxSizeBytes??Ee.maxSizeBytes,Ce=w?.maxTokens??Ee.maxTokens;if(w!==void 0)i(\"tengu_file_read_limits_override\",{hasMaxTokens:w.maxTokens!==void 0,hasMaxSizeBytes:w.maxSizeBytes!==void 0});let xe=py.extname(e).toLowerCase().slice(1),Pe=bT(e);if(e1(Pe"
+  },
+  {
+    "offset": 213026946,
+    "text": "tity(g.toolUseId,D),he=UAe(D),ye=he===void 0?void 0:B.takeIdentity(g.toolUseId,he),be=Qze(g,D);if(!K&&O()===\"macos\"){let{own:bt,alt:yt}=await cbt(D,be);V=bt,ye=yt?.identity}let Ee=b3(),Re=w?.maxSizeBytes??Ee.maxSizeBytes,Ce=w?.maxTokens??Ee.maxTokens;if(w!==void 0)i(\"tengu_file_read_limits_override\",{hasMaxTokens:w.maxTokens!==void 0,hasMaxSizeBytes:w.maxSizeBytes!==void 0});let xe=py.extname(e).toLowerCase().slice(1),Pe=bT(e);if(e1(Pe))n=1,r=void 0;let He=S.get(Pe);if(He)i(\"tengu_file_read_reread\",{priorOp:_(He.seededFromContext?\"seeded\":He.offset===void 0?\"edit_write\":\"read\")});let ze=C(\"tengu_read_dedup_killswitch\",!1)||g.remoteCall!==void 0||g.dedupUnchangedReads===!1?void 0:S.get(Pe);if(!a.CLAUDE_CODE_SIMPLE&&g.remoteCall===void 0)await t0(g.session.host,Pe,g.dynamicSk"
+  },
+  {
+    "offset": 213028500,
+    "text": "t)){let Ot=$B(Pe);return i(\"tengu_file_read_dedup\",{...Ot!==void 0&&{ext:Ot}}),{data:{type:\"file_unchanged\",file:{filePath:e}}}}}catch{}}let Qe={file_path:e,fullFilePath:Pe,ext:xe,offset:n,limit:r,pages:s,maxSizeBytes:Re,maxTokens:Ce,context:g,messageId:h?.message.id,approvedPaths:be,checkedIdentity:V};try{return await dbt({...Qe,resolvedFilePath:Pe})}catch(bt){if(v(bt)===\"ENOENT\"){let Ot=UAe(Pe);if(Ot)try{return await dbt({...Qe,resolvedFilePath:Ot,approvedPaths:ubt(be,Ot),checkedIdentity:ye})}catch(Zt){if(!z(Zt))throw Zt}let Ft=await $ve(Pe),Pt=await fee(Pe),Bt=`File does not exist. ${f$} ${oe()}.`;if(Pt)Bt+=` Did you mean ${Pt}?`;else if(Ft)Bt+=` Did you mean ${Ft}?`;throw Bt+=x0(Ob,Pe,g),new P(Bt,\"File does not exist\")}throw bt}}var hbt=new WeakMap;function ibt(e){let n=hb"
+  },
+  {
+    "offset": 213028525,
+    "text": "i(\"tengu_file_read_dedup\",{...Ot!==void 0&&{ext:Ot}}),{data:{type:\"file_unchanged\",file:{filePath:e}}}}}catch{}}let Qe={file_path:e,fullFilePath:Pe,ext:xe,offset:n,limit:r,pages:s,maxSizeBytes:Re,maxTokens:Ce,context:g,messageId:h?.message.id,approvedPaths:be,checkedIdentity:V};try{return await dbt({...Qe,resolvedFilePath:Pe})}catch(bt){if(v(bt)===\"ENOENT\"){let Ot=UAe(Pe);if(Ot)try{return await dbt({...Qe,resolvedFilePath:Ot,approvedPaths:ubt(be,Ot),checkedIdentity:ye})}catch(Zt){if(!z(Zt))throw Zt}let Ft=await $ve(Pe),Pt=await fee(Pe),Bt=`File does not exist. ${f$} ${oe()}.`;if(Pt)Bt+=` Did you mean ${Pt}?`;else if(Ft)Bt+=` Did you mean ${Ft}?`;throw Bt+=x0(Ob,Pe,g),new P(Bt,\"File does not exist\")}throw bt}}var hbt=new WeakMap;function ibt(e){let n=hbt.get(e);if(n===void 0)return\"\""
+  },
+  {
+    "offset": 213029468,
+    "text": "ait FAe(e,n);if(r===void 0)throw Error(\"seeded file not stat-able through the storage interface\");if(r!==\"unserved\")return r}return NS(e)}async function abt(e,n,r,s,g=!1){let h=r??b3().maxTokens,S=u7e(e,n);if(!S||S<=h/4)return;if(!g&&e.length>h*uYr)throw new XIe(S,h);let D=await S_t(e,s)??S;if(D>h)throw new XIe(D,h)}function Qte(e,n,r,s){return{type:\"image\",file:{base64:e.toString(\"base64\"),type:`image/${n}`,originalSize:r,dimensions:s}}}function fO(e,n){te(\"info\",\"cli_pdf_read\",{request:n.request,render:n.render,outcome:n.outcome,file_bytes:n.fileBytes,document_pages:n.documentPages,pages_rendered:n.pagesRendered,duration_ms:Date.now()-e})}async function eNr(e,n){let r=C(\"tengu_immutable_tide\",0);if(typeof r!==\"number\"||!(r>0)||e<=r)return!1;if(n.reason===\"nonzero_exit\"||n"
+  },
+  {
+    "offset": 213030805,
+    "text": "lPath},n);throw g}finally{let g=r?.close();if(e.context.signal.aborted)g?.catch(()=>{});else await g}}async function vQn(e){let{file_path:n,fullFilePath:r,resolvedFilePath:s,ext:g,offset:h,limit:S,pages:w,maxSizeBytes:D,maxTokens:B,context:K,messageId:V,io:he}=e,{readFileState:ye}=K;if(e1(s)){let vn=await QSt((await he()).ioPath),In=b(vn),On=Buffer.byteLength(In);if(On>D){"
+  },
+  {
+    "offset": 213030830,
+    "text": "{let g=r?.close();if(e.context.signal.aborted)g?.catch(()=>{});else await g}}async function vQn(e){let{file_path:n,fullFilePath:r,resolvedFilePath:s,ext:g,offset:h,limit:S,pages:w,maxSizeBytes:D,maxTokens:B,context:K,messageId:V,io:he}=e,{readFileState:ye}=K;if(e1(s)){let vn=await QSt((await he()).ioPath),In=b(vn),On=Buffer.byteLength(In);if(On>D){"
+  }
+]

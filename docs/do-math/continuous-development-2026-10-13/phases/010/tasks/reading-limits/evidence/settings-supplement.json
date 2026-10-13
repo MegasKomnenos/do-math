@@ -1,0 +1,114 @@
+{
+  "at_utc": "2026-10-13T18:33:03.176177+00:00",
+  "claude": [
+    {
+      "path": "C:\\Users\\wogud\\.claude\\settings.json",
+      "exists": true,
+      "read_scope": [
+        "bashOutputMaxChars",
+        "env.CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS",
+        "env.MAX_MCP_OUTPUT_TOKENS",
+        "env.BASH_MAX_OUTPUT_LENGTH"
+      ],
+      "bashOutputMaxChars": {
+        "present": false,
+        "value": null
+      },
+      "env_limits": {
+        "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "MAX_MCP_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "BASH_MAX_OUTPUT_LENGTH": {
+          "present": false,
+          "value": null
+        }
+      }
+    },
+    {
+      "path": "C:\\math\\.claude\\settings.json",
+      "exists": true,
+      "read_scope": [
+        "bashOutputMaxChars",
+        "env.CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS",
+        "env.MAX_MCP_OUTPUT_TOKENS",
+        "env.BASH_MAX_OUTPUT_LENGTH"
+      ],
+      "bashOutputMaxChars": {
+        "present": false,
+        "value": null
+      },
+      "env_limits": {
+        "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "MAX_MCP_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "BASH_MAX_OUTPUT_LENGTH": {
+          "present": false,
+          "value": null
+        }
+      }
+    },
+    {
+      "path": "C:\\math\\.claude\\settings.local.json",
+      "exists": true,
+      "read_scope": [
+        "bashOutputMaxChars",
+        "env.CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS",
+        "env.MAX_MCP_OUTPUT_TOKENS",
+        "env.BASH_MAX_OUTPUT_LENGTH"
+      ],
+      "bashOutputMaxChars": {
+        "present": false,
+        "value": null
+      },
+      "env_limits": {
+        "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "MAX_MCP_OUTPUT_TOKENS": {
+          "present": false,
+          "value": null
+        },
+        "BASH_MAX_OUTPUT_LENGTH": {
+          "present": false,
+          "value": null
+        }
+      }
+    },
+    {
+      "path": "C:\\Program Files\\ClaudeCode\\managed-settings.json",
+      "exists": false,
+      "read_scope": [
+        "bashOutputMaxChars",
+        "env.CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS",
+        "env.MAX_MCP_OUTPUT_TOKENS",
+        "env.BASH_MAX_OUTPUT_LENGTH"
+      ]
+    }
+  ],
+  "codex": [
+    {
+      "path": "C:\\Users\\wogud\\.codex\\config.toml",
+      "exists": true,
+      "selected_limit_occurrences": [],
+      "profile_names_retained": false
+    },
+    {
+      "path": "C:\\math\\.codex\\config.toml",
+      "exists": true,
+      "selected_limit_occurrences": [],
+      "profile_names_retained": false
+    }
+  ],
+  "scope": "Selected non-secret limit keys only. No config changes. Other operator session, flag, managed service, SDK fileReadingLimits and hook overrides remain unobserved."
+}

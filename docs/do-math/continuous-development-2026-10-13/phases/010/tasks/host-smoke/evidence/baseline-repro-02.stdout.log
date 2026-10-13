@@ -1,0 +1,11 @@
+Open known defects: 0
+[structure] 1 tests
+[boundary] 1 tests
+  isolated: boundary.test_scheduling_call_jobs.CallJobTests
+  {'error': 1}
+Over budget: 1 tests
+      7.890s > 5.0s structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+{"complete": true, "successful": false, "counts": {"failed": 1, "error": 1}, "group_seconds": {"structure": 7.9, "boundary": 0.4}, "total_seconds": 8.3}
+    7.890s failed             structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell
+    0.015s error              boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\010\tasks\host-smoke\evidence\baseline-repro-02-results\report.json

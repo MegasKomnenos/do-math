@@ -1,0 +1,152 @@
+commit c71053d6540cfa1cfac6c6ef1d66e360aee0e0a1
+Author: MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+Date:   Mon Oct 5 11:42:36 2026 +0900
+
+    빌더 유지 모집단과 실제 pythonw 지급 명령의 출력 경계를 검증
+
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py b/.claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py
+index 78ade434..af5f72d3 100644
+--- a/.claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py
+@@ -10,6 +10,7 @@ record and every snapshot file that holds the secret.
+ """
+ from copy import deepcopy
+ import json
++import os
+ from pathlib import Path
+ import subprocess
+ import sys
+@@ -27,6 +28,40 @@ from support.cli_inputs import role_reach
+ from support.engine_context import prepare
+ 
+ INSTANCE = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
++SCRIPTS = Path(__file__).resolve().parents[2]
++PYTHONW = Path(sys.executable).with_name('pythonw.exe')
++
++
++WINDOWLESS_READ = r"""import ctypes, json, subprocess, sys
++from pathlib import Path
++sys.path.insert(0, sys.argv[1])
++from do_math import contracts, submission
++from do_math.system_clock import SystemClock
++
++workspace = Path.cwd()
++request = json.loads((workspace / 'read-request.json').read_bytes())
++submission.install_tools(workspace, request['context'], contracts.schema_for('maintenance'),
++                         None, clock=SystemClock())
++shell = workspace / 'read-issued-command.ps1'
++shell.write_text(r'''
++$ErrorActionPreference = 'Stop'
++[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
++$context = Get-Content -LiteralPath 'input/submission/context.json' -Raw | ConvertFrom-Json
++$request = Get-Content -LiteralPath 'read-request.json' -Raw | ConvertFrom-Json
++$command = @($context.record_map.read_tool.command)
++$commandArguments = @($command | Select-Object -Skip 1) + @($request.arguments)
++& $command[0] @commandArguments
++exit $LASTEXITCODE
++''', encoding='utf-8')
++result = subprocess.run(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
++                         '-File', str(shell)], cwd=workspace, capture_output=True,
++                        text=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
++(workspace / 'read-result.json').write_text(json.dumps({
++    'parent_executable': sys.executable,
++    'parent_console': int(ctypes.windll.kernel32.GetConsoleWindow()),
++    'returncode': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr,
++}), encoding='utf-8')
++"""
+ 
+ 
+ def envelope(family, record):
+@@ -195,11 +230,7 @@ class SnapshotReadToolTests(unittest.TestCase):
+             'runtime/executions/EX-1.json': envelope('executions', {'id': 'EX-1', 'role': 'research_work'}),
+             'runtime/artifacts/BA-1/result.json': self.result}).head
+ 
+-    def install(self, ledger):
+-        from support.entry import entry
+-        _entry = entry()
+-        from do_math.wiring import real_ports
+-        _entry.ports = real_ports(environment=_entry.environment)
++    def workspace_context(self, ledger):
+         workspace = self.root / ledger
+         workspace.mkdir()
+         index = {'research/decisions': ['DC-1'], **({'runtime/executions': ['EX-1']} if ledger == 'readable' else {})}
+@@ -209,25 +240,46 @@ class SnapshotReadToolTests(unittest.TestCase):
+                    'record_map': {'snapshot': self.snapshot, 'ledger': ledger,
+                                   'families': {family: len(ids) for family, ids in index.items()}},
+                    'record_store': {'repository': str(self.repository), 'instance_id': INSTANCE}}
+-        submission.install_tools(workspace, context, contracts.schema_for('maintenance'), None, clock=_entry.ports.clock)
+-        return workspace
++        return workspace, context
+ 
+-    def read(self, workspace, *arguments):
+-        result = subprocess.run([sys.executable, '-B', 'input/tools/read_input.py', *arguments], cwd=workspace,
+-                                text=True, capture_output=True, timeout=60)
++    def read(self, ledger, *arguments, windowless=False):
++        workspace, context = self.workspace_context(ledger)
++        if windowless:
++            (workspace / 'read-request.json').write_bytes(canonical_json({'context': context, 'arguments': list(arguments)}))
++            probe = workspace / 'windowless-read.py'
++            probe.write_text(WINDOWLESS_READ, encoding='utf-8')
++            process = subprocess.run([str(PYTHONW), '-B', str(probe), str(SCRIPTS)], cwd=workspace,
++                                     capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
++            self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
++            observed = json.loads((workspace / 'read-result.json').read_bytes())
++            self.assertEqual(Path(observed['parent_executable']), PYTHONW)
++            self.assertEqual(observed['parent_console'], 0)
++            issued = json.loads((workspace / 'input/submission/context.json').read_bytes())
++            self.assertEqual(issued['record_map']['read_tool']['command'][0], str(PYTHONW.with_name('python.exe')))
++            self.assertEqual(observed['stderr'], '')
++            code, stdout = observed['returncode'], observed['stdout']
++        else:
++            from support.entry import entry
++            submission.install_tools(workspace, context, contracts.schema_for('maintenance'), None, clock=entry().ports.clock)
++            result = subprocess.run([*context['record_map']['read_tool']['command'], *arguments], cwd=workspace,
++                                    text=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
++            code, stdout = result.returncode, result.stdout
+         log = (workspace / 'checks/reads.jsonl').read_text(encoding='utf-8').splitlines()
+-        return result.returncode, json.loads(result.stdout), [json.loads(line) for line in log]
++        return code, json.loads(stdout), [json.loads(line) for line in log]
+ 
++    @unittest.skipUnless(os.name == 'nt' and PYTHONW.is_file(), 'Windows pythonw required')
+     def test_indexed_record_is_read_from_the_input_snapshot_and_logged(self):
+-        code, output, log = self.read(self.install('readable'), '--id', 'DC-1')
++        """The real pythonw installer runs its issued command through PowerShell and collects JSON and exit status."""
++        code, output, log = self.read('readable', '--id', 'DC-1', windowless=True)
+         self.assertEqual(code, 0, output)
+         row, = output['records']
+         self.assertEqual((row['status'], row['path'], row['record']), ('ok', 'research/decisions/DC-1.json', self.decision))
+         self.assertEqual([(entry['request'], entry['status'], entry['snapshot']) for entry in log],
+                          [('DC-1', 'ok', self.snapshot)])
+ 
++    @unittest.skipUnless(os.name == 'nt' and PYTHONW.is_file(), 'Windows pythonw required')
+     def test_record_outside_the_index_is_refused_and_logged(self):
+-        code, output, log = self.read(self.install('supplied_only'), '--id', 'EX-1')
++        code, output, log = self.read('supplied_only', '--id', 'EX-1', windowless=True)
+         self.assertEqual(code, 1)
+         self.assertEqual(output['records'][0]['status'], 'refused')
+         self.assertNotIn('record', output['records'][0])
+@@ -235,20 +287,20 @@ class SnapshotReadToolTests(unittest.TestCase):
+ 
+     def test_ledger_artifact_is_readable_only_where_the_ledger_is(self):
+         path = 'runtime/artifacts/BA-1/result.json'
+-        code, output, _ = self.read(self.install('readable'), '--path', path)
++        code, output, _ = self.read('readable', '--path', path)
+         self.assertEqual((code, output['records'][0]['text']), (0, self.result.decode()))
+-        code, output, _ = self.read(self.install('supplied_only'), '--path', path)
++        code, output, _ = self.read('supplied_only', '--path', path)
+         self.assertEqual((code, output['records'][0]['status']), (1, 'refused'))
+ 
+     def test_family_listing_summarizes_its_indexed_records(self):
+-        code, output, log = self.read(self.install('readable'), '--list', '--family', 'research/decisions')
++        code, output, log = self.read('readable', '--list', '--family', 'research/decisions')
+         self.assertEqual(code, 0, output)
+         self.assertEqual([(row['id'], row['kind']) for row in output['records']], [('DC-1', 'approval')])
+         self.assertEqual(log[-1]['status'], 'ok')
+ 
+     def test_invalid_output_path_is_refused_in_the_json_result(self):
+         # 공통-실행.md 「읽기 도구로 읽는다」: the result is one JSON value and every request is logged.
+-        code, output, log = self.read(self.install('readable'), '--path', 'runtime/artifacts/BA-1/result.json',
++        code, output, log = self.read('readable', '--path', 'runtime/artifacts/BA-1/result.json',
+                                       '--output', '../outside.json')
+         self.assertEqual((code, output['records'][0]['status']), (1, 'refused'))
+         self.assertEqual(log[-1]['status'], 'refused')

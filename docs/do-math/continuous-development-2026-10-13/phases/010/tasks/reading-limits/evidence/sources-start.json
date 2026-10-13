@@ -1,0 +1,163 @@
+{
+  "at_utc": "2026-10-13T18:18:15.784119+00:00",
+  "files": [
+    {
+      "ref": "repo:.claude/skills/do-math/AGENTS.md",
+      "bytes": 2312,
+      "sha256": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/SKILL.md",
+      "bytes": 26704,
+      "sha256": "f5f9cba65d705dc6cb826cb564cb49fab9a04f129b54b241a11be08608f35c88"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/초기화-운전.md",
+      "bytes": 34182,
+      "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_worker.py",
+      "bytes": 4373,
+      "sha256": "e3e3605a6993a90885aa1241b0f9607aeac47b614a83dd714cc18127006ea155"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+      "bytes": 75998,
+      "sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+      "bytes": 22732,
+      "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/독립-운영.md",
+      "bytes": 12211,
+      "sha256": "87b99d32dcf72f5164f094885cac0d3d8b47a5f09633e80de896c20f70106e48"
+    },
+    {
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+      "bytes": 95948,
+      "sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83"
+    },
+    {
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+      "bytes": 199766,
+      "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336"
+    },
+    {
+      "ref": "repo:services/continuous-development/protocol.md",
+      "bytes": 32845,
+      "sha256": "07d63532457b3b5b8732bad449c779fa45c11e9be51fcec69cd35ca4a6cf002f"
+    },
+    {
+      "ref": "run:context.md",
+      "bytes": 50990,
+      "sha256": "48c9bb50cb88fb34a240cbe89fd29133226b6e6ff4d195dc74eabe79eb493056"
+    },
+    {
+      "ref": "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+      "bytes": 502623,
+      "sha256": "c7641c59f1bec47c8beb9da2111da616213f4d267bfc30aacb790509a924e325"
+    },
+    {
+      "ref": "run:phases/001/tasks/document-closeout/evidence/followup-packets.json",
+      "bytes": 445416,
+      "sha256": "0a8339d872bf77bc6a0f319ac870063a5688ebbdd614fa46e06441c2c4619269"
+    },
+    {
+      "ref": "run:phases/001/tasks/document-closeout/evidence/review-notes.md",
+      "bytes": 11973,
+      "sha256": "7391f3dcc497224ced649597c6f885eeb14c4f1fdb22e80b0ad779754b4fcbac"
+    },
+    {
+      "ref": "run:phases/010/phase.json",
+      "bytes": 4264,
+      "sha256": "3a5b81faf48af3b0a7fc3c0fdfa1527204d2b4729b62f63d9485fc75bcbbd6c1"
+    },
+    {
+      "ref": "run:phases/010/tasks/reading-limits/objective.md",
+      "bytes": 6223,
+      "sha256": "c99a143fcdc8a4eca8c8425bdab3637757dd7ecee9e361f11dd6ed9059b98ca3"
+    },
+    {
+      "ref": "run:plan.md",
+      "bytes": 14371,
+      "sha256": "5175f2131c883dc2f4df9603173dff86989685390d9e4539fddc3feff09de349"
+    },
+    {
+      "ref": "run:seams.md",
+      "bytes": 4117,
+      "sha256": "f824f3d55df37bfda50ff9111336a82a806dd9e84ab0e2f660517966c7f17773"
+    },
+    {
+      "ref": "run:sources/model-policy-2026-10-14.md",
+      "bytes": 2323,
+      "sha256": "1bb613af7f8679e62c193dee6918c246fc2661be81f50ac2d69051ad4fe11aa8"
+    },
+    {
+      "ref": "run:sources/user-decisions.md",
+      "bytes": 4439,
+      "sha256": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7"
+    }
+  ],
+  "excluded": [
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/smoke/test_host_live.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/support/host_live.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_windows_job.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_owned_job_children.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/smoke/test_host_live.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/support/host_live.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_windows_job.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_owned_job_children.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    },
+    {
+      "ref": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "reason": "Other phase task owns this mutable input; not read or fingerprinted."
+    }
+  ]
+}

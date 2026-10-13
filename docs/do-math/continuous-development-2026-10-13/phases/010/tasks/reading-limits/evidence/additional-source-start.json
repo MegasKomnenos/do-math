@@ -1,0 +1,155 @@
+{
+  "at_utc": "2026-10-13T18:25:16.074314+00:00",
+  "files": [
+    {
+      "ref": "repo:.claude/skills/do-math/GLOSSARY.md",
+      "bytes": 78105,
+      "sha256": "21656f01b65c6bb2c25939ff3a6426ade76d68cec0dd2344eaf44e71f987c120"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/README.md",
+      "bytes": 65953,
+      "sha256": "d908cb747ff6bdd68c7c78823ff7336040ad5b1e393656e6d6166966f11c64f9"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/SKILL.md",
+      "bytes": 26704,
+      "sha256": "f5f9cba65d705dc6cb826cb564cb49fab9a04f129b54b241a11be08608f35c88"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/공통-실행.md",
+      "bytes": 96083,
+      "sha256": "e8e529ee0c2699f6439b0ac99414cc3344b75c210c844462ad570154a4daaa84"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/과제-착수조건.md",
+      "bytes": 6799,
+      "sha256": "5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/모델과-실행예산.md",
+      "bytes": 18333,
+      "sha256": "a197888224c97ea5a315949c58014acc1836ae36a3312d360b6d19bb5059778a"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/입력-소비자.md",
+      "bytes": 9667,
+      "sha256": "6e68e800cff4c13fabef24f49036801afc1c9efd49e909f517b8fdab4ec5f72a"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/자기-점검.md",
+      "bytes": 11275,
+      "sha256": "4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/지식-저작과-재사용.md",
+      "bytes": 22985,
+      "sha256": "711c8b9d2ff81659f1c528e20ba114ee7189951447bb97ade6433b3a2da96d5e"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/초기화-운전.md",
+      "bytes": 34182,
+      "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/학술자료-활용.md",
+      "bytes": 8078,
+      "sha256": "2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/독립-운영.md",
+      "bytes": 12211,
+      "sha256": "87b99d32dcf72f5164f094885cac0d3d8b47a5f09633e80de896c20f70106e48"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/동일성-검토.md",
+      "bytes": 22148,
+      "sha256": "de05683e4c1d1f1bb6f074b67aa6581febd4880f620d18c5544fcd2e49fd6279"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/목표-감사.md",
+      "bytes": 8488,
+      "sha256": "dfecc348d437b31c69acac5eb87f4abc8de9e8c02fd2592108ebe99e618b6453"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/보충-조사.md",
+      "bytes": 10193,
+      "sha256": "d6acf59643072a3944096bad33cc38322685e70d3292d350d7c2739a1a18f92f"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/연구-계획.md",
+      "bytes": 31729,
+      "sha256": "107dd250b6b2c5ec1c6243f9451f244086f7809e2696a05ea8fd66c6680e3429"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/연구-수행.md",
+      "bytes": 25698,
+      "sha256": "949bc5d7cf9200a8e26bd24c925c97ff99b5294cb469bf21d07a5b904e262e78"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/운영-점검.md",
+      "bytes": 19384,
+      "sha256": "c5141038e028d63767a1df70bb8d9be36e4c8a89ecab98008b530b489f563480"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/유지보수.md",
+      "bytes": 21833,
+      "sha256": "be999a68e22179b6aa33a78555453f8b04d3538040fa55f817c8b81f679e75f6"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/의도-해석.md",
+      "bytes": 9951,
+      "sha256": "ecc2265d459cea2ed77ea0ba4855fbcdeb80013b97f3c926889951da8e080f82"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/작업-계약-검토.md",
+      "bytes": 24780,
+      "sha256": "ff929bdf0c299a6632c32e138553383ab5cac2517d157750d95f2d4a3b988be7"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/계약/후보-준비.md",
+      "bytes": 49634,
+      "sha256": "2e85ca88a0ec0b24ba8a2d57f8a343eddaaf06e46550cc0ba5eccf580b86cfbb"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+      "bytes": 151128,
+      "sha256": "8a117c782ebb6146d9622c207693758b670ba3e25bfa2bc142759f9e9a3327d1"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+      "bytes": 29744,
+      "sha256": "542c58d40a2c9b42028c9ec2f449646c6e678fbcffd6362d07dc6a25d7a93c3c"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "bytes": 36355,
+      "sha256": "8321ae4c1356a5d90854889e5af2d0ed590f774824672657a189968a0541dfc2"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/worker_request.py",
+      "bytes": 13229,
+      "sha256": "5882bda615c700afa88c68ff44f32d44f2bad3ad0be08872b66093fc15be0bf1"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/model_runner.py",
+      "bytes": 11840,
+      "sha256": "8bc01f55af9c68f5f497b26e78e400756df67c551711a26bf7c7b3374da22ddd"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+      "bytes": 2174,
+      "sha256": "a25067cec0e1753b6c6be577b319cc51b8af321b3b238d2ab0338e4e40ef68a0"
+    },
+    {
+      "ref": "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+      "bytes": 1957,
+      "sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05"
+    },
+    {
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+      "bytes": 3144094,
+      "sha256": "9f0a0e6100d70dacacc4c9a428db92903a08bd040f7bd736770b51715c98e365"
+    }
+  ]
+}

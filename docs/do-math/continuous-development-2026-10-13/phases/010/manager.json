@@ -1,0 +1,222 @@
+{
+  "next": "011",
+  "decision": "010의host-smoke는A1/A2/A4성과를승인하고A3미충족의partial을유지한다. reading-limits는조사A1~A3complete이며L01/13-C는미인증이다. 현재2644소스/14변경·최종host정본3/미러3·관련61의59pass/1fail/1error와읽기160행/절단반례를원자료로확인했다. baseline976중975비캐시파일만시작동등이라는예외를명시하고원보고는보존했다.\n\n새host성공은기존취소/네음성단언문제를대체하지않는다.011에세시험·읽기문단의좁은수리와관련전건/미러검증을배정한다. 전건검사와생성기/캐시가상대미완성파일을소비하므로한task로묶었다. 전체관문이나새유료호출을현재부분회귀와섞지않는다.\n\n읽기단위개정은사용자상신후답변전기존byte기준/미충족을유지한다. 현재taskhost를제품operator로자동지정하지않는다. 독립수리는진행하며G1~G8은축소하지않았다.010제품은011검수뒤커밋하고이번에는관리/선별원근거/raw archive/011/기억만마감한다. review phase가아니고전체G도미충족이므로next:null을제출하지않는다.",
+  "reports": [
+    {
+      "task": "host-smoke",
+      "state": "read",
+      "detail": "report형식PASS. A1/A2/A4성과·A3실패의partial을검수했다. 캐시1개예외를제외한975시작동등으로한정하며011A1/A2/A4에복구배정한다.",
+      "evidence": [
+        "run:phases/010/tasks/host-smoke/report.json",
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/011/tasks/regression-reading/objective.md"
+      ]
+    },
+    {
+      "task": "reading-limits",
+      "state": "read",
+      "detail": "report형식PASS. 조사A1~A3complete이며13-C/L01충족은아니다. 문구반례는011A3,운전/단위결정은C10/plan으로인계한다.",
+      "evidence": [
+        "run:phases/010/tasks/reading-limits/report.json",
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "010/host-smoke/F1",
+      "action": "carry",
+      "destination": [
+        "run:phases/011/tasks/regression-reading/objective.md#A1",
+        "run:phases/011/tasks/regression-reading/objective.md#A4",
+        "run:context.md#C11"
+      ],
+      "reason": "실제Job취소를실행하지못하는구fixture다. 현clock/environment전달과반환검사로수리하고정확ID/관련전건을확인한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/tasks/host-smoke/evidence/call-jobs-diagnosis.json"
+      ]
+    },
+    {
+      "item": "010/host-smoke/F2",
+      "action": "carry",
+      "destination": [
+        "run:phases/011/tasks/regression-reading/objective.md#A2",
+        "run:phases/011/tasks/regression-reading/objective.md#A4",
+        "run:context.md#C11"
+      ],
+      "reason": "원실패와현재네포괄음성단언이맞는다. 규칙/모집단을약화하지않고의도한반려원인에고정한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/tasks/host-smoke/evidence/related-results/report.json"
+      ]
+    },
+    {
+      "item": "010/host-smoke/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C11",
+        "run:context.md#C12"
+      ],
+      "reason": "실제OS성질과runtime124/입력3/corpus102불변·raw/clean을확인해한정승인한다. 다른G7/전체관문완료가아니다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "010/reading-limits/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "현재task의개별/합산token경계와160행회수만승인한다. 보편byte상한/제품operator/독해보증으로확대하지않는다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/tasks/reading-limits/evidence/fixture-verification.json",
+        "run:phases/010/tasks/reading-limits/evidence/fixture-aggregate-results.json"
+      ]
+    },
+    {
+      "item": "010/reading-limits/F2",
+      "action": "carry",
+      "destination": [
+        "run:phases/011/tasks/regression-reading/objective.md#A3",
+        "run:context.md#C10"
+      ],
+      "reason": "80행꼬리에서81행으로이어가면중간공백을놓친다. 연속접두와전구간/두출력계층을명시하는최소문구수리를배정한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/tasks/reading-limits/evidence/fixture-capped-results.json",
+        "repo:.claude/skills/do-math/SKILL.md"
+      ]
+    },
+    {
+      "item": "010/reading-limits/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "설치정적계약과바이너리판본만승인한다. 입력byteguard/기본token/override/최신문서차이를보존하고실제Claude호출미검증은F4후속에유지한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/tasks/reading-limits/evidence/claude-read-binding.json",
+        "run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json"
+      ]
+    },
+    {
+      "item": "010/reading-limits/F4",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "출력단위선택은사용자에게상신했다. 미지정실운전프로필과byte상한은유지된미충족조건이며답변전원문요구를개정하지않는다. 독립011수리는계속한다.",
+      "evidence": [
+        "run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:sources/user-decisions.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "010검수상태/현재해시/실행과조사의차이·캐시예외를추가하고역사판정을보존한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "종료된010병렬배정을011단일수리소유로교체한다. 전건검사/미러/캐시의실제독립성제약과jobs1을명시한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "010결과와011배정에도사용자지정gpt-6.1-sol/high를적용한다. manager정책은유지한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "Job/pythonw지정도입diff/현재소비자/존재원보고의한정검토를추가한다. 다른PR과없는counts는닫지않는다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "L01조사예정을관측/정적계약/문구반례/외부단위결정으로갱신한다. byte요구·B-20한계·다른문서남김을보존한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "010실연쇄성과와기존회귀실패를구분하고011A1/A2/A4에연결한다. 다른G7와최종관문을유지한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "기존공급자/원바이트재사용과010제품커밋대기·archive/로컬근거의추적경계를추가한다.",
+      "evidence": [
+        "run:phases/010/manager-evidence/verification.json",
+        "run:phases/010/manager-evidence/review.md",
+        "run:phases/010/manager-evidence/common-docs.diff"
+      ]
+    }
+  ],
+  "plan_update": "010의실제성과와미충족을반영해011regression-reading을배정했다. 전건회귀/읽기문구의선행관계와공유검사/미러제약으로단일task를선택했다. 기존G4→G5→G6및나머지G7/최종review,미결문서/의미질문은유지한다. 외부Q1/Q2는상신/미인증이며현재수리와독립적이다.010제품커밋은011검수뒤로두고원바이트를보존한다.",
+  "seam_updates": [],
+  "completion": null
+}

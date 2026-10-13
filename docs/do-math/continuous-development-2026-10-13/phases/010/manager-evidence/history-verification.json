@@ -1,0 +1,53 @@
+[
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-빌더-모집단-pythonw-읽기/related-before-fixture-fix.json",
+    "sha256": "949e2a1d8707080f7fcb7b9460060cfad6c9f96109801c78d164f435c2b80008",
+    "counts": {
+      "passed": 19,
+      "error": 2
+    },
+    "relevant_rows": 5
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-빌더-모집단-pythonw-읽기/windowless-after.json",
+    "sha256": "0fc175a59c806fdd77428ae53909ffe3744378ec78ef17d7a72d9ee0bc43a8b6",
+    "counts": {
+      "passed": 2
+    },
+    "relevant_rows": 2
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/before.json",
+    "sha256": "def7a54e8694a0bb6d9555e2bffd04bbdb853fffd89ab54145d5b99856af78ac",
+    "counts": {
+      "passed": 3,
+      "failed": 4
+    },
+    "relevant_rows": 3
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/fixture-path-failure.json",
+    "sha256": "4609e1f6b2c2f0b0caca44760e432f3b604fcb6d1b1ad6d9d2e3b03e4499acae",
+    "counts": {
+      "passed": 1,
+      "failed": 3
+    },
+    "relevant_rows": 2
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/focused.json",
+    "sha256": "15eb58838663ad78491d366d7368e47bba51e2590b2c0fb2c2c1db0862e637c7",
+    "counts": {
+      "passed": 3
+    },
+    "relevant_rows": 1
+  },
+  {
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/report.json",
+    "sha256": "858210f749ba9901cebb57501f54eba9e70bfdd0aeb00ba21a74cddcb8ae795e",
+    "counts": {
+      "passed": 20
+    },
+    "relevant_rows": 4
+  }
+]

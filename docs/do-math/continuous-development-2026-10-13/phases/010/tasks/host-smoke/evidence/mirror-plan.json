@@ -1,0 +1,13 @@
+{
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_role_input_snapshot_reach.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_owned_job_children.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_windows_job.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_host_live.py",
+    ".agents/skills/do-math/scripts/tests/support/host_live.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "outside_writes": [],
+  "manifest_semantically_unchanged": true
+}
