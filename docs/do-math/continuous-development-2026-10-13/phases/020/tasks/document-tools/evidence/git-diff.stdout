@@ -1,0 +1,124 @@
+diff --git "a/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md" "b/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+index 16cc14d2..a7f345dd 100644
+--- "a/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
++++ "b/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+@@ -29,7 +29,7 @@ python .agents/skills/write-for-reader/scripts/writing_flow.py status
+ 
+ 긴 문서의 중심 절을 먼저 검사할 때에는 `read --scope sample`을 사용한다. 같은 원고 파일을 전체 원고로 발전시킨 뒤 `read --scope whole`로 전체를 검사한다. 짧은 독립 문서는 처음부터 전체를 작성해 검사한다.
+ 
+-독해 모델의 기본값은 `gpt-5.6-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
++독해 모델의 기본값은 `gpt-6.1-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
+ 
+ ## 독해 실행
+ 
+diff --git a/.agents/skills/write-for-reader/scripts/writing_flow.py b/.agents/skills/write-for-reader/scripts/writing_flow.py
+index a6fddc57..420b5647 100644
+--- a/.agents/skills/write-for-reader/scripts/writing_flow.py
++++ b/.agents/skills/write-for-reader/scripts/writing_flow.py
+@@ -250,7 +250,7 @@ class WritingFlow:
+             return "합의 대조 결과가 다른 독해 실행에 관한 것임"
+         return None
+ 
+-    def read(self, *, scope="whole", model="gpt-5.6-sol", effort="high", timeout=600, codex=None):
++    def read(self, *, scope="whole", model="gpt-6.1-sol", effort="high", timeout=600, codex=None):
+         if scope not in {"sample", "whole"} or not math.isfinite(timeout) or timeout <= 0:
+             raise WorkflowError("독해 범위와 제한 시간이 잘못됨")
+         executable = shutil.which(str(codex or "codex"))
+@@ -452,7 +452,7 @@ def main(argv=None):
+         begin.add_argument("--" + name, type=Path, required=True)
+     read = sub.add_parser("read", help="작성 대화가 없는 별도 Codex로 원고 독해")
+     read.add_argument("--scope", choices=("sample", "whole"), default="whole")
+-    read.add_argument("--model", default="gpt-5.6-sol")
++    read.add_argument("--model", default="gpt-6.1-sol")
+     read.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default="high")
+     read.add_argument("--timeout", type=float, default=600)
+     read.add_argument("--codex")
+diff --git "a/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md" "b/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+index 81ecff93..0cc5e349 100644
+--- "a/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
++++ "b/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+@@ -29,7 +29,7 @@ python .claude/skills/write-for-reader/scripts/writing_flow.py status
+ 
+ 긴 문서의 중심 절을 먼저 검사할 때에는 `read --scope sample`을 사용한다. 같은 원고 파일을 전체 원고로 발전시킨 뒤 `read --scope whole`로 전체를 검사한다. 짧은 독립 문서는 처음부터 전체를 작성해 검사한다.
+ 
+-독해 모델의 기본값은 `gpt-5.6-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
++독해 모델의 기본값은 `gpt-6.1-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
+ 
+ ## 독해 실행
+ 
+diff --git a/.claude/skills/write-for-reader/scripts/writing_flow.py b/.claude/skills/write-for-reader/scripts/writing_flow.py
+index a6fddc57..420b5647 100644
+--- a/.claude/skills/write-for-reader/scripts/writing_flow.py
++++ b/.claude/skills/write-for-reader/scripts/writing_flow.py
+@@ -250,7 +250,7 @@ class WritingFlow:
+             return "합의 대조 결과가 다른 독해 실행에 관한 것임"
+         return None
+ 
+-    def read(self, *, scope="whole", model="gpt-5.6-sol", effort="high", timeout=600, codex=None):
++    def read(self, *, scope="whole", model="gpt-6.1-sol", effort="high", timeout=600, codex=None):
+         if scope not in {"sample", "whole"} or not math.isfinite(timeout) or timeout <= 0:
+             raise WorkflowError("독해 범위와 제한 시간이 잘못됨")
+         executable = shutil.which(str(codex or "codex"))
+@@ -452,7 +452,7 @@ def main(argv=None):
+         begin.add_argument("--" + name, type=Path, required=True)
+     read = sub.add_parser("read", help="작성 대화가 없는 별도 Codex로 원고 독해")
+     read.add_argument("--scope", choices=("sample", "whole"), default="whole")
+-    read.add_argument("--model", default="gpt-5.6-sol")
++    read.add_argument("--model", default="gpt-6.1-sol")
+     read.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default="high")
+     read.add_argument("--timeout", type=float, default=600)
+     read.add_argument("--codex")
+diff --git a/docs/do-math/continuous-development-2026-10-13/README.md b/docs/do-math/continuous-development-2026-10-13/README.md
+index 0ec89b5a..a6a7a7d5 100644
+--- a/docs/do-math/continuous-development-2026-10-13/README.md
++++ b/docs/do-math/continuous-development-2026-10-13/README.md
+@@ -16,7 +16,7 @@ python docs/do-math/continuous-development-2026-10-13/start.py --check-only
+ & ./docs/do-math/continuous-development-2026-10-13/start.ps1
+ ```
+ 
+-터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 모델·effort는 로컬 Codex 프로젝트 기본값을 따른다.
++터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 작업자는 `gpt-6.1-sol/high`, manager는 settings.json의 `gpt-6-astra/xhigh`를 사용한다. 2026-10-14의 기존 실행기 교체 이후 상태는 `runtime/model-change.json`을 확인한다. 원 `launch-001.json`의 종료는 전체 목표 완료를 뜻하지 않는다. 자세한 전환 기록은 [모델 정책](sources/model-policy-2026-10-14.md)에 있다.
+ 
+ 처음에는 3개 읽기 전용 task가 병렬로 요구별 상태, 문서 검사기 마감 범위, 최종 관문 준비도를 판단한다. 첫 phase부터 전체 일반/T3/변이를 돌리거나 기존 구현을 다시 쓰지 않는다. 모든 task가 끝나면 새로운 manager 세션이 보고를 검사하고 실제 다음 phase를 작성한다.
+ 
+diff --git a/docs/do-math/continuous-development-2026-10-13/settings.json b/docs/do-math/continuous-development-2026-10-13/settings.json
+index aefa462d..d536d5f9 100644
+--- a/docs/do-math/continuous-development-2026-10-13/settings.json
++++ b/docs/do-math/continuous-development-2026-10-13/settings.json
+@@ -1,3 +1,6 @@
+ {
+-  "manager": {}
++  "manager": {
++    "model": "gpt-6-astra",
++    "effort": "xhigh"
++  }
+ }
+diff --git a/docs/do-math/continuous-development-2026-10-13/start.py b/docs/do-math/continuous-development-2026-10-13/start.py
+index c09a4f57..884ad4da 100644
+--- a/docs/do-math/continuous-development-2026-10-13/start.py
++++ b/docs/do-math/continuous-development-2026-10-13/start.py
+@@ -35,7 +35,8 @@ def main():
+     if checked.returncode:
+         return checked.returncode
+     command = [sys.executable, str(engine / 'run.py'), str(repo), str(records), args.phase,
+-               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"']
++               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"',
++               '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"']
+     if args.check_only:
+         print(json.dumps({'state': 'ready_not_started', 'repo': str(repo), 'records': str(records),
+                           'codex': codex, 'command': command}, ensure_ascii=False))
+diff --git "a/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md" "b/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
+index 395fe468..89758044 100644
+--- "a/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
++++ "b/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
+@@ -2,6 +2,10 @@
+ 
+ 설계는 같은 폴더의 `설계.md`가 정본이다. 이 문서는 하위 단계(설계 9.1절 표의 한 행)마다 상태, 실행한 검증과 보고서 경로, 확정한 결정, 남은 작업과 재개 지점을 적는다. 재개하는 AI는 `설계.md`를 읽은 뒤 이 문서의 마지막 "재개 지점"에서 시작한다.
+ 
++2026-10-03 재개 위치 정정: 최신 통합 작업은 main보다 앞선 `codex-close-integration` 작업 트리에 있다. 이 main 문서의 아래 재개 절보다 [재개-검토-2026-10-03.md](재개-검토-2026-10-03.md)와 거기서 연결한 통합 진행 원장을 우선한다. 이후 전체 T3 완주, A31·A32, 부분 교정과 이번 7-A 검증은 그 기록에 있다. 1e·1f 완료 판정은 아직 남아 있다.
++
++사용자의 끝까지 수행 지시로 활성화한 목표의 현재 작업·정확한 보고와 진행 중인 실행은 [목표-진행-2026-10-03.md](목표-진행-2026-10-03.md)를 따른다. 초기 상태 복원과 변이 도구의 결과 누락 처리, 활동·스키마 후속은 해당 기록이 최신이다.
++
+ ## 상태 요약
+ 
+ | 하위 단계 | 상태 | 기준점 커밋(단계를 연 커밋) | 닫은 커밋 |

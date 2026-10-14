@@ -678,6 +678,121 @@ class InputManifestConnections(unittest.TestCase):
 
 
 class PreparedInputTests(unittest.TestCase):
+    def test_installed_tools_match_the_final_role_input_and_reject_damage(self):
+        """About 3 s: direct, mapped and private inputs; actual installation, no worker call."""
+        from support.engine_context import assert_tool_documents, tool_input_value
+        sim = Sim.activated()
+        engine = sim.engine
+        for role in ('research_plan', 'maintenance', 'goal_audit'):
+            if role == 'maintenance':
+                engine.instance['config'].update(scholarly_enabled=True,
+                    scholarly_server={'command': 'fixture-scholarly', 'args': []})
+                engine.instance.update(execution_profiles.build_profiles(engine.instance['config'],
+                                       host=sim.ports.host))
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                profile = execution_profiles.resolve_profile(engine.instance['execution_profiles'],
+                    engine.instance['role_profile_refs'][role][0])
+                action = {'id': 'AC-tools', 'role': role,
+                          'profile_ref': execution_profiles.profile_ref(profile)}
+                produced = engine._context(action, root)
+                self.assertNotIn('preview', produced['formal_verifier'])
+                self.assertNotIn('submission_contract', produced)
+                self.assertFalse((root / 'input/tools/check_lean.py').exists())
+                fitted = prepare_role_input(produced, instance=engine.instance, runtime=engine.runtime,
+                    role=role, profile=profile, snapshot=engine.head, workspace=root,
+                    activity_id='AY-tools', install_submission_tools=True,
+                    max_artifact_bytes=1000000, clock=sim.clock)
+                self.assertIsNone(fitted['overflow'])
+                context = fitted['context']
+                self.assertEqual(context['record_map']['ledger'],
+                                 'supplied_only' if role == 'goal_audit' else 'readable')
+                for owner in ('execution_window', 'scholarly', 'formal_verifier'):
+                    actual = tool_input_value(self, context, root, owner)
+                    original = deepcopy(produced[owner])
+                    if owner == 'formal_verifier':
+                        actual = {k: v for k, v in actual.items() if k != 'preview'}
+                    self.assertEqual(actual, original)
+                assert_tool_documents(self, context, root, owner='execution_window')
+                assert_tool_documents(self, context, root, owner='scholarly')
+                assert_tool_documents(self, context, root, owner='formal_verifier')
+                assert_tool_documents(self, context, root, owner='preview')
+                assert_tool_documents(self, context, root, owner='record_map.read_tool')
+                assert_tool_documents(self, context, root, owner='submission_contract')
+                self.assertEqual(tool_input_value(self, context, root, 'scholarly')['configured'],
+                                 role != 'research_plan')
+                if role == 'goal_audit':
+                    self.assertIn('source_ref', context['formal_verifier'])
+                    ref = context['formal_verifier']['source_ref']
+                    source = root / ref['path']
+                    raw = source.read_bytes()
+                    changed = json.loads(raw)
+                    del changed['preview']['command']
+                    source.write_bytes(canonical_json(changed))
+                    with self.assertRaises(AssertionError):
+                        assert_tool_documents(self, context, root, owner='preview')
+                    source.write_bytes(raw)
+                self.assertEqual(tool_input_value(self, context, root, 'submission_contract')
+                                 ['limits']['max_artifact_bytes'], 1000000)
+                # Copies after production: the same command key cannot borrow
+                # another issued tool, nor can missing limits become evidence.
+                checks = [('execution_window', 'self_check_directory'),
+                          ('submission_contract', 'checkpoint_bytes'),
+                          ('submission_contract', 'max_artifact_bytes'),
+                          ('preview', 'command'), ('record_map.read_tool', 'command'),
+                          ('submission_contract', 'command')]
+                for owner, field in checks:
+                    damaged = deepcopy(fitted['validation_context'])
+                    value = tool_input_value(self, damaged, root, owner)
+                    del (value['limits'] if field.endswith('_bytes') else value)[field]
+                    with self.subTest(owner=owner, missing=field), self.assertRaises(AssertionError):
+                        assert_tool_documents(self, damaged, root, owner=owner)
+                for owner in ('preview', 'record_map.read_tool', 'submission_contract'):
+                    damaged = deepcopy(fitted['validation_context'])
+                    other = 'submission_contract' if owner != 'submission_contract' else 'preview'
+                    tool_input_value(self, damaged, root, owner)['command'] = deepcopy(
+                        tool_input_value(self, damaged, root, other)['command'])
+                    with self.subTest(owner=owner, fault='borrowed_command'), self.assertRaises(AssertionError):
+                        assert_tool_documents(self, damaged, root, owner=owner)
+                damaged = deepcopy(fitted['validation_context'])
+                damaged['submission_contract']['tool_sha256'] = '0' * 64
+                with self.assertRaises(AssertionError):
+                    assert_tool_documents(self, damaged, root, owner='submission_contract')
+                read_path = root / 'input/tools/read_input.py'
+                original = read_path.read_bytes()
+                read_path.write_bytes((root / 'input/tools/check_lean.py').read_bytes())
+                with self.assertRaises(AssertionError):
+                    assert_tool_documents(self, context, root, owner='record_map.read_tool')
+                read_path.write_bytes(original)
+                # Borrow a file and its matching hash together. Validate the
+                # member population as well as the archive's self-consistency.
+                archive = root / 'input/tools/submission-support.zip'
+                original = archive.read_bytes()
+                import io, zipfile
+                borrowed = io.BytesIO()
+                with zipfile.ZipFile(borrowed, 'w') as wrong:
+                    wrong.writestr('do_math/formal_preview.py', b'pass\n')
+                archive.write_bytes(borrowed.getvalue())
+                damaged = deepcopy(fitted['validation_context'])
+                damaged['submission_contract']['tool_sha256'] = hashlib.sha256(archive.read_bytes()).hexdigest()
+                machine_path = root / 'input/submission/context.json'
+                machine_raw = machine_path.read_bytes()
+                machine_path.write_bytes(canonical_json(damaged))
+                with self.assertRaises(AssertionError):
+                    assert_tool_documents(self, damaged, root, owner='submission_contract')
+                archive.write_bytes(original)
+                machine_path.write_bytes(machine_raw)
+                # An uninstalled role input has no positive preview sample.
+                bare_root = root / 'uninstalled'
+                bare = prepare_role_input(produced, instance=engine.instance, runtime=engine.runtime,
+                    role=role, profile=profile, snapshot=engine.head, workspace=bare_root,
+                    activity_id='AY-bare', clock=sim.clock)
+                self.assertNotIn('preview', tool_input_value(self, bare['context'], bare_root, 'formal_verifier'))
+                self.assertNotIn('submission_contract', bare['context'])
+                self.assertFalse((bare_root / 'input/tools').exists())
+                with self.assertRaises(KeyError):
+                    assert_tool_documents(self, bare['context'], bare_root, owner='preview')
+
     def test_discard_records_cancelled_preparation_and_explicit_continuation(self):
         engine = Sim.activated().engine
         action = {"id": "AC-one", "role": "research_preparation"}

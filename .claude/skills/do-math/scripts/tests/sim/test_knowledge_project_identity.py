@@ -211,6 +211,8 @@ class FormalInputManifestTests(unittest.TestCase):
             self.assertEqual(visible['observed_toolchain']['version'], toolchain['version'])
             self.assertEqual(visible['expected_toolchain'], toolchain)
             self.assertEqual(context['formal_verifier'], verifier)
+            from support.engine_context import assert_tool_documents
+            assert_tool_documents(self, fitted['context'], workspace, owner='preview')
             # The installed manifest is the verifier's actual input. A later file
             # change must reach currentness through Git + real filesystem reads.
             (project / 'Late.lean').write_bytes(b'theorem late : True := True.intro\n')

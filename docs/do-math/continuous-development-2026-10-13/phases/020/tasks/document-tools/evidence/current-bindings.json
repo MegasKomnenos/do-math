@@ -1,0 +1,355 @@
+{
+  "owners": [
+    "execution_window",
+    "formal_verifier",
+    "preview",
+    "record_map",
+    "scholarly",
+    "submission_contract"
+  ],
+  "document_locations": [
+    {
+      "path": ".claude/skills/do-math/README.md",
+      "line": 302,
+      "heading": "## 역할 산출과 실패 처리",
+      "tokens": [
+        "submission_contract.command"
+      ],
+      "text": "모든 내부 작업자에게 실행별 주 JSON·확장 스키마, 고정 입력과 `submission_contract.command`를 제공한다. 작업자는 스키마를 만족하는 완전한 JSON 값 하나를 최종 응답으로 반환한다. 중앙은 정상 완료한 native stream의 정확한 최종 바이트와 로컬 종료 뒤 작업 공간 산출을 같은 접수 절차로 포착해 검사·봉인한다. 실행 중 결과를 먼저 봉인하려면 `.scratch/submission.json` 같은 초안 경로를 `--submit` 또는 `submit_draft`에 넘길 수 있다. 이 명시 제출은 선택적 조기 전달이며, 이미 접수된 봉인 후보가 있으면 뒤의 다른 최종 응답으로 대체하지 않는다. 명령의 무옵션 로컬 검사와 preview도 오류를 미리 찾는 선택적 진단이며, 그 결과를 최종 접수 증거로 제출하지 않는다. `.scratch/`와 그 아래 `.scratch/.execution-temp/`는 버릴 중간 파일용이며 산출·근거로 수집하지 않는다. 검사 범위, 파일 한도와 정확한 제출 절차는 [공통 실행](references/공통-실행.md)을 따른다. 검사 통과나 정상 CLI 완료는 수학적 승인, 과제 완료 또는 수신 시점의 현재성 승인이 아니다."
+    },
+    {
+      "path": ".claude/skills/do-math/GLOSSARY.md",
+      "line": 470,
+      "heading": "### 기록 지도",
+      "tokens": [
+        "record_map"
+      ],
+      "text": "한 실행의 입력 스냅숏에서 그 역할이 읽고 인용할 수 있는 기록의 ID 목록(`record_index`)과, 가족별 건수·읽기 도구를 요약한 안내(`record_map`)다. 프롬프트에 직접 싣지 않은 자료가 어디에 있고 어떻게 읽는지 알려 주며, 무엇을 더 읽을지는 역할이 정한다. 독립 판단의 기록 지도는 연구 정본(그 판단이 차단한 기록 가족은 빼고)과 입력이 지급한 실행 원장 기록만 담는다. 기록 지도에 있다는 사실은 제공의 증거이지 열람이나 사용의 증거가 아니다. 읽기 도구의 읽기 로그는 도구로 읽은 것만 보여 준다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 284,
+      "heading": "### `init`",
+      "tokens": [
+        "submission_contract.command",
+        "formal_verifier.preview.command"
+      ],
+      "text": "독립 운영이 활성인 설정이면 CLI는 저장 뒤 Windows 작업 두 개를 등록한다. 예약 등록이 실패해도 이미 생성된 인스턴스를 다시 만들지 않는다. 응답에 남은 ID·snapshot과 실패·재조정 명령을 사용한다. 저장과 운영체제의 예약 효과는 별도의 성공 조건이다. 재조정 명령과 작업자에게 지급하는 검사 명령(`submission_contract.command`, `formal_verifier.preview.command`)의 Python은, 실행기가 예약 작업에서 콘솔 없는 `pythonw.exe`로 돌 때에도 같은 설치의 `python.exe`다. PowerShell은 `pythonw.exe`를 기다리지 않고 그 출력도 보여 주지 않기 때문이다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 686,
+      "heading": "## AI 실행 입력",
+      "tokens": [
+        "record_map",
+        "formal_verifier"
+      ],
+      "text": "입력 context의 구성요소는 싣기·지도·차단 세 분류 가운데 하나다. 모든 역할에 싣는 필드는 현재 snapshot과 workspace, 통치 기록 `governance`, action, 대상 task, knowledge catalog, sources, grant 요지, kind definitions, 학술자료 도구 안내, 시간 한도, 제출 계약과 참조 목록, 기록 지도 요약 `record_map`이다. 과제 목록은 과제를 비교·선택하거나 집계하는 의도 해석·후보 준비·연구 계획·운영 점검·목표 감사·유지보수에 싣고, 과제 하나를 배정받은 연구 수행·보충 조사·작업 계약 검토에는 지도로 준다. goal·policies와 그 판본, relations, 사용자 입력, 열린 질문, 최근 이력, 자원 표와 모델 정책, 중앙 형식 검사 설명(`formal_verifier`), 학술 요구·상태, 외부 operation과 거부, 반복 보류는 역할 계약이나 제출 검사가 그 필드를 읽는 역할과 단계에 싣고, 다른 역할과 단계에는 `input/catalog/<key>.json`의 원문 참조 `{source_ref, total}`(지도)로만 준다. 실행 프로필 전체 목록과 역할별 프로필 선택(`execution_profiles`, `role_profile_refs`)은 모든 역할에 지도로 준다. 독립 판단(동일성 검토, 검토 자리의 고정 질문 조사, 검토 자리 실행의 운영 점검, 목표 감사, 의도 해석의 검사·위임, 작업 계약 검토)은 계약이 막은 비공개 필드와 기록 가족을 받지 않고(차단, 예: 목표 감사는 감사 자리마다 봉인되는 `research/goal_judgments`를 읽거나 인용하지 않는다), 실행 원장 기록은 입력이 지급한 것만 읽고 인용한다. 세 분류의 정본은 `scripts/do_math/context_store.py`의 `INLINE_SCOPES`, `BLOCKED_KEYS`와 `input_class`다. 모든 역할은 읽고 인용할 수 있는 입력 스냅숏 기록의 ID를 `root/family`별로 담은 `record_index`(지도)를 받는다. 제출 검사는 입력이 보여 준 참조와 이 ID를 인용 모집단으로 쓰고, 필드별 규칙을 따로 적용한다. 읽기 도구 `input/tools/read_input.py`는 입력 스냅숏 커밋만 읽고 요청마다 `checks/reads.jsonl`에 기록하며, 중앙 봉인은 그 기록을 제출 산출물 `reads.jsonl`로 보존한다. 역할용 설명은 「공통 실행」의 「기록 지도와 읽기 도구」에 있다. 후보 준비·연구 계획과 위임 판단이 아닌 의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·후보 준비의 입력에 전 과제의 착수 판정으로, 연구 수행의 입력에 자기 과제의 착수 판정으로만 들어간다. `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어가며, 입력이 보여 주거나 `record_index`에 있는 기록 색인(`planning.record_index(...)`)의 ID다. 제어 통로 결박 `control_binding`과 읽기 도구의 저장소 결박 `record_store`는 도구가 읽는 `input/submission/context.json`에만 두고 프롬프트에는 넣지 않는다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 851,
+      "heading": "## 제출, 보존과 편입",
+      "tokens": [
+        "submission_contract.command --new-knowledge-id"
+      ],
+      "text": "묶음 안에서 새 형제 지식을 참조할 때는 `submission_contract.command --new-knowledge-id`로 `{\"replacement_id\":\"KN-...\"}`를 얻는다. 이 명령에는 `--output`이나 대기 시간을 주지 않는다. ID 생성은 저장·예약·허가가 아니며, 이를 사용하는 변경은 최종 편입의 전역 중복·참조 검사와 Git 공개를 거친다. 다른 새 형제 참조가 없는 변경은 `replacement_id`를 생략할 수 있다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 853,
+      "heading": "## 제출, 보존과 편입",
+      "tokens": [
+        "submission_contract.command --output <draft> --submit --wait-seconds N"
+      ],
+      "text": "작업자는 실행별 스키마를 만족하는 완전한 JSON 값 하나를 정상 최종 응답으로 반환한다. 중앙은 native stream의 정상 완료, 입력·출력 결속과 로컬 종료를 확인한 뒤 정확한 최종 응답 바이트와 종료된 작업 공간의 확장·참조·모집단·수집 파일을 한 번 포착한다. 같은 실행 중 결과를 먼저 봉인해야 할 때에는 `submit_draft(draft_path=<draft>)` 또는 `submission_contract.command --output <draft> --submit --wait-seconds N`으로 초안 하나를 명시적으로 조기 제출할 수 있다. 두 조기 제출 경로가 중앙에 보내는 의미 입력은 작업 공간 상대 `draft_path` 하나다. 중앙은 어느 전달 방식에서도 실제 포착본에서 검사 ID·해시·스키마·도구 판본·파일 크기와 manifest를 자동 생성하며, 작업자는 이 값을 전사하거나 검사 보고를 증빙으로 다시 제출하지 않는다. 명시 제출의 CLI 반환은 `delivery`이며 `state=accepted`일 때만 조기 접수됐다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 855,
+      "heading": "## 제출, 보존과 편입",
+      "tokens": [
+        "preview=true"
+      ],
+      "text": "필요할 때만 `submit_draft`의 `preview=true` 또는 셸 명령의 `--preview --wait-seconds N`으로 경로를 미리 진단한다. 셸에서 `--submit`과 `--preview` 없이 `--output <draft>`만 실행하면 로컬 `producer_check`의 `passed`와 문제 목록을 얻지만, 이 결과는 최종 접수의 필수 증거가 아니며 중앙으로 전송되지 않는다. `--preview`는 로컬 `check`와 별도로 중앙이 그 호출에서 포착한 후보의 `delivery.state=previewed`를 돌려준다. Preview는 비권위 결과이며 Git 공개, 외부 효과, 운영 수리, 수학 판정을 실행하지 않는다. 명시적 조기 제출과 정상 final은 각각의 호출 또는 정상 완료에서 포착한 정확한 바이트를 같은 봉인 규칙으로 처리한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "line": 909,
+      "heading": "## 형식 검사, 동일성 검토와 목표",
+      "tokens": [
+        "formal_verifier.preview.command"
+      ],
+      "text": "작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리로 커널 검사, 선언 서명과 `#print axioms` 공리 감사를 하지만 의존 증거는 추출하지 않는다. 반환 JSON은 `status`, `reason`, `source_sha256`, `declarations`, `declaration_signatures`, `axioms`, `toolchain`, 신뢰 환경 거부의 `identity_errors`, Lean 출력 `stdout`·`stderr`와 `authoritative`, `input_snapshot`, `assurance`만 담는다. 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 다만 preview는 작업자의 로컬 Job 소유 범위에 속하므로 작업자의 기한·정지에 따라 함께 종료될 수 있다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 9,
+      "heading": "## 시작할 때 입력을 확인한다",
+      "tokens": [
+        "submission_contract"
+      ],
+      "text": "작업을 시작할 때 `submission_contract`도 읽는다. 이 항목은 이번 실행의 검사·제출 명령 `command`, 그 명령을 실행할 절대 경로 `workspace`, 주 산출의 `schema_path`, 확장의 `extensions_schema_path`, 고정 검사 입력의 `context_path`, 파일 한도 `limits`를 제공한다. 주 산출의 필드·필수 여부·허용값은 이번 실행의 주 응답 스키마에서, 사용할 수 있는 확장 가족과 각 항목의 필드는 이번 확장 스키마에서 확인한다. 아래 「최종 응답을 전달하고 필요한 오류를 수리한다」의 절차는 모든 내부 역할의 최종 제출에 적용한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 59,
+      "heading": "## 기록 지도와 읽기 도구",
+      "tokens": [
+        "record_map",
+        "record_map.ledger"
+      ],
+      "text": "지도 항목을 찾는 출발점은 두 필드다(GLOSSARY 「기록 지도」). 프롬프트에 직접 실린 `record_map`은 스냅숏, 이 역할이 읽을 수 있는 기록의 가족별 건수(`families`, `record_index`의 건수와 같다), 이 역할이 실행 원장을 어디까지 읽는지(`ledger`), 이번 입력에서 차단으로 뺀 문맥 키와 기록 가족(`blocked_keys`, 기록 가족은 `root/family`로 적고 지도 키는 여기에 들지 않는다), 읽기 도구(`read_tool`)를 알려 준다. `record_index`는 이 역할이 읽고 인용할 수 있는 스냅숏 기록의 ID를 저장 가족(`root/family`)별로 나열한 지도 항목이며, `source_ref`의 원문을 열거나 읽기 도구의 `--list --family <root/family>`로 본다. 자기 역할이 아래 「독립 판단의 차단」에 해당하는지는 `record_map.ledger`로 확인한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 63,
+      "heading": "### 기록을 찾는다",
+      "tokens": [
+        "record_map.families"
+      ],
+      "text": "`record_map.families`에서 가족별 건수를 보고, 필요한 가족의 ID는 `record_index`에서 찾는다. 가족의 뜻은 GLOSSARY의 「연구 정본」, 「실행 원장」, 「기록 지도」와 각 기록의 용어를 따른다. 다음 표는 가족을 판단 용도로 묶고 먼저 볼 곳을 적는다. 한 칸의 가족은 모두 첫 항목의 root(`research/` 또는 `runtime/`)에 속하며, 도구의 `--family`에는 `research/formal_results`처럼 root를 붙인 이름을 쓴다. 아래 「독립 판단의 차단」에 해당하는 역할은 받지 않은 문맥 키를 \"먼저 볼 곳\"에서 건너뛰고 차단된 기록 가족은 읽지 않으며, `runtime/` 가족은 `record_index`에 있는 기록만, 실행 원장 산출물은 입력 문맥에 경로가 적힌 것만 읽을 수 있다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 75,
+      "heading": "### 기록을 찾는다",
+      "tokens": [
+        "record_map.families"
+      ],
+      "text": "실행 결과·입력 묶음·체크포인트 원문 같은 산출물은 `runtime/artifacts/<묶음>/...` 경로의 파일이다. 산출물 경로는 그것을 만든 기록(대개 실행 기록의 `result_ref`, `input_bundle`, `output_files`)에서 찾는다. 독립 판단 범위는 이렇게 찾은 실행 원장 경로를 아래 「독립 판단의 차단」의 조건에 맞을 때만 읽는다. 기록 하나씩 ID를 갖지 않는 가족(실행 이력, 체크포인트 모음 등)은 `record_index`와 `record_map.families`에 나오지 않으며 `<root>/<family>/state.json` 경로로 읽는다. 이런 가족의 이름은 `research/_state/manifest.json`과 `runtime/_state/manifest.json`을 `--path`로 읽어 `containers`에서 확인한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 79,
+      "heading": "### 읽기 도구로 읽는다",
+      "tokens": [
+        "record_map.read_tool.command"
+      ],
+      "text": "`record_map.read_tool.command`의 명령 뒤에 아래 인자를 붙여 이번 작업 공간에서 실행한다. 도구는 입력 스냅숏의 판본만 읽는다. 저장소의 현재 상태가 더 새로워도 이번 판단의 근거는 입력 판본이다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 101,
+      "heading": "### 인용한다",
+      "tokens": [
+        "submission_contract.command"
+      ],
+      "text": "인용이 이 규칙에 맞는지는 제출 전에 `submission_contract.command`로 확인한다. 이 검사는 중앙 수신자가 같은 고정 입력으로 실행하는 검사와 같은 함수이므로 같은 결과를 낸다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 107,
+      "heading": "### 독립 판단의 차단",
+      "tokens": [
+        "record_map.ledger"
+      ],
+      "text": "독립 판단 범위의 `record_map.ledger`는 `supplied_only`다. 입력이 지급한 실행 원장 기록은 `record_index`에 나오므로 `--id`로 읽고 인용할 수 있다. 배정된 과제(`task`)의 계약이 참조 목록(`inputs`, `reuse`, `dependencies`, `basis_refs`, `authority_refs`, `profile_refs`), 발생 조건, 진전 기준과 완료 의무의 `evidence_required`로 가리키는 기록도 지급된 기록이다. 공개된 계약이 스스로 밝힌 근거이기 때문이다. 실행 원장의 산출물과 가족 파일은 입력 문맥 안에 그 경로가 적혀 있을 때, 곧 그 경로가 `reference_catalog`의 `value`로 나올 때만 `--path`로 읽을 수 있다. `--id`로 읽은 기록 안에 적힌 경로는 입력 문맥의 경로가 아니므로 여기에 들지 않는다. 그 밖의 실행 원장 경로는 `refused`로 돌아온다. 연구 정본의 기록과 가족 파일은 표가 적은 가족의 것을 빼고 모두 읽을 수 있다. 차단된 가족의 기록은 `record_index`에 없고 인용할 수도 없다. 독립 판단 범위가 아닌 역할의 `ledger`는 `readable`이며 실행 원장 전체를 읽는다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 148,
+      "heading": "## 작업 공간과 도구를 사용한다",
+      "tokens": [
+        "formal_verifier.mechanism=central_after_submission",
+        "formal_verifier.preview"
+      ],
+      "text": "`formal_verifier.mechanism=central_after_submission`이면 완전한 Lean 원문과 선언명을 주 산출에 제출하고 실행기의 중앙 검사를 받는다. `formal_verifier.preview`가 있고 `command`가 구성되어 있으면 제출 전에 제공된 사전 검사 명령으로 작성 중인 소스를 검사할 수 있다. 사전 검사는 형식 승인이나 K 편입을 만들지 않는다. 구성된 명령 문자열이나 과거 도구판을 현재 검증 성공으로 보고하지 않는다. 그 밖의 도구도 현재 세션에 실제로 노출되고 역할 계약이 허용한 것만 사용한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 150,
+      "heading": "## 작업 공간과 도구를 사용한다",
+      "tokens": [
+        "preview",
+        "formal_verifier.preview",
+        "preview.command"
+      ],
+      "text": "사전 검사의 `preview`는 도구 설치 후 `formal_verifier.preview`에 지급된 객체다. 그 객체가 없으면 지급 명령이 있다고 가정하지 않는다. 현재 작업 공간에서 `preview.command` 뒤에 `--source 초안.lean --declaration 선언명`을 붙여 실행한다. 여러 선언은 `--declaration`을 반복한다. 소스는 작업 공간 안의 파일이어야 한다. 반환 JSON의 `status`, `reason`, `source_sha256`, 실제 `toolchain`, 선언 서명(`declaration_signatures`), 공리 의존(`axioms`)과 Lean 출력(`stdout`, `stderr`)의 오류를 확인하고, 수정한 소스에는 이전 결과를 승계하지 않는다. 같은 지급 검증기 코드·구성 명령·허용 공리로 커널 검사와 공리 감사를 하지만, 중앙이 편입에 쓰는 의존 증거는 만들지 않는다. 그래서 의존 증거 추출의 실패는 중앙 검사에서만 드러난다. 계산 시간 상한은 적용하지 않으며, 작업 실행의 정지 요청이나 기한에 따라 종료될 수 있다. 공유 라이브러리와 Lake 캐시까지 격리하지는 않는다. 중앙 실행기는 제출된 정확한 소스를 다시 검사한다. 사전 검사를 실행하지 못했으면 그 한계를 보고하며, 사전 검사 미실행 자체가 중앙 검사 요청을 금지하지는 않는다. 정지 요청 파일이 있으면 새 사전 검사를 시작하지 않고, 진행 중 검사도 정지한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 152,
+      "heading": "## 작업 공간과 도구를 사용한다",
+      "tokens": [
+        "scholarly.configured"
+      ],
+      "text": "`scholarly.configured`와 `tool:scholarly`는 scholarly 서버 설정이 실행에 전달되도록 구성됐다는 뜻이다. 실제 도구 노출과 호출 성공은 이번 실행에서 확인한다. 학술자료의 검색·확보·추출·이미지 판독은 「학술자료 활용」을 따르고, 받은 파일은 `scholarly-data/`와 연구 산출물에 보존한다. 현재 역할의 질문 안에서 허용된 학술자료 조회는 아래의 발표·결제 등 외부 효과 요청과 구별한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 183,
+      "heading": "## 진행을 기록한다",
+      "tokens": [
+        "submission_contract.limits.checkpoint_bytes"
+      ],
+      "text": "체크포인트는 `submission_contract.limits.checkpoint_bytes`가 지급한 크기 이하의 JSON 파일이어야 한다. `evidence_paths`에는 작업 공간 기준의 상대 POSIX 경로를 쓴다. 제공된 `input/` 파일이나 수집할 근거 파일이 실제로 있어야 하며 `.scratch/` 파일은 근거로 사용하지 않는다. 파일이 존재하기만 하면 보존된 것이 아니다. 실행기가 유효한 스키마와 안정된 바이트를 관찰해 불변 산출로 복사한 시점부터 재개 근거가 된다. 파일이 너무 크거나 쓰는 중이거나 스키마·근거 경로가 틀리면 마지막 유효 체크포인트를 대체하지 않는다. 체크포인트는 수학적 진전 판정이나 최종 제출도 아니다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 241,
+      "heading": "## 최종 응답을 전달하고 필요한 오류를 수리한다",
+      "tokens": [
+        "submission_contract.workspace",
+        "submission_contract.command"
+      ],
+      "text": "2. 결과를 실행 중에 먼저 봉인해야 할 때에만 명시적 조기 제출을 사용한다. 실행 입력에 `submit_draft` 도구가 있으면 `draft_path`에 작업 공간 상대 초안 경로를 주어 호출한다. 셸 경로만 제공된 실행에서는 `submission_contract.workspace`를 작업 디렉터리로 지정하고 `submission_contract.command` 뒤에 `--output`과 초안 경로, 조기 접수를 위한 `--submit --wait-seconds <남은 호출 예산>`을 붙인다. 실행기와 같은 Python이 PATH에 있는 환경의 셸 예는 아래와 같다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 253,
+      "heading": "## 최종 응답을 전달하고 필요한 오류를 수리한다",
+      "tokens": [
+        "preview=true"
+      ],
+      "text": "중앙 후보 적용을 미리 확인할 필요가 있을 때만 `submit_draft`에 `preview=true`를 주거나 셸 명령에 `--preview --wait-seconds <남은 호출 예산>`을 붙인다. Preview는 그 호출에서 중앙이 따로 포착한 후보의 적용·현재성·권한 경로를 복사본에서 시험하는 선택적 진단이다. 이후 최종 제출은 경로를 다시 포착하므로 preview 후보와 같은 바이트라고 가정하지 않는다. `authoritative=false`이며 실제 정본을 쓰거나 수리·외부 효과를 실행하지 않고 수학 의미·Lean·최종 적용 시점의 상태를 승인하지 않는다. Preview를 실행하지 않았다는 이유로 유효한 최종 제출을 거부하지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 305,
+      "heading": "### 주 응답의 의미와 보존",
+      "tokens": [
+        "submission_contract.limits.max_artifact_bytes"
+      ],
+      "text": "수집할 파일의 합계는 `submission_contract.limits.max_artifact_bytes` 이하여야 한다. 검사 결과가 한도 초과나 읽기 실패를 알리면 해당 경로를 확인한다. 재사용에 필요 없는 임시 파일은 `.scratch/`로 옮길 수 있지만, 필요한 근거는 누락시키지 않는다. 필요한 자료를 현재 한도에서 보존할 수 없으면 그 크기와 용도, 영향을 받은 결과를 운영 담당에게 돌린다. 수집 실패를 무시해 완전한 보존을 선언하지 않는다. 보고서에는 파일 경로와 실제 확인할 내용을 설명하고, 파일의 존재만으로 완료 기준의 충족을 주장하지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "line": 356,
+      "heading": "## 주 산출 밖의 요청을 확장 파일에 적는다",
+      "tokens": [
+        "submission_contract.command"
+      ],
+      "text": "기존 지식을 개정하는 역할은 허용된 생산 역할에 한정된다. 현재 실행기는 후보 준비, 연구 수행과 보충 조사의 결과에서만 `knowledge_changes` 가족을 받으며, 검토 자리의 고정 질문을 맡은 보충 조사는 이 가족을 쓰지 않는다. 각 항목은 개정할 기존 지식의 정확한 `id`, 바꿀 필드와 새 값을 담은 비어 있지 않은 객체 `changes`, 개정 근거 `reason`, 계산된 영향 밖에서 그 개정 때문에 추가로 다시 판단할 기록의 ID를 적은 배열 `impact_set`을 가진다. `impact_set`은 그런 기록이 없으면 빈 배열로 쓰되 생략하지 않으며, 편입 묶음의 `impact_set`과 마찬가지로 읽거나 인용한 출처 목록이 아니다. 실행기가 이 선언을 계산된 영향과 대조하는 규칙도 편입 묶음의 `impact_set`과 같다. 선택 필드 `replacement_id`는 정규 KN ULID이며, 없으면 중앙이 대체 기록 ID를 만든다. 같은 묶음의 다른 대체 기록을 명시적으로 참조해야 할 때만 미리 고정한 `replacement_id`를 사용한다. 실행기는 모든 대체 후보를 만든 뒤 형제 참조·중복·기존 ID 재사용·자기 의존을 검사하며, 옛 ID나 비슷한 제목을 근거로 새 형제 참조를 추측해 바꾸지 않는다. 새 형제 ID가 필요하면 제공된 `submission_contract.command`에 `--new-knowledge-id`를 붙여 실행하고 반환된 `replacement_id`를 사용한다. 이 명령은 ID만 생성하며 예약·허가·기록 공개를 하지 않는다. 생성한 ID를 해당 변경의 `replacement_id`와 형제의 의존 참조에 함께 쓰고, 최종 편입에서 전역 중복·참조 검사를 받는다. `changes`의 키는 저작 필드 `kind`, `title`, `statement`, `explanation`, `summary`, `definitions`, `assumptions`, `lean_code`, `declaration_names`, `dependencies`, `source_refs`, `origin_refs`, `confirmed_scope`, `epistemic_status`, `selection_relevance`, `uncertainty_assessment`, `relation_claim` 가운데서만 고른다. 이 목록의 정본은 `knowledge.AUTHORED_FIELDS`다. 식별·수명주기·이력·검토·형식 증거·출처 계보 같은 그 밖의 필드는 모두 실행기가 소유하므로, 목록 밖의 키가 하나라도 있는 변경은 제출 검사와 적용에서 반려된다. 개정된 기록은 후보 상태로 돌아가고, Lean 원문이 있으면 중앙 형식 검사와 새 동일성 검토를 다시 받는다. 질문·정의·명제의 의미가 바뀌어 기존 관계를 그대로 쓸 수 없으면 같은 ID를 개정하지 않고 새 지식 항목으로 제출한다. 수학 관계는 정확한 양끝과 범위에 맞는 형식 결과·최종 판정 없이 확정할 수 없다. 보충 조사 요청은 원 검토 자리의 고정 질문을 열 뿐 새 과제나 권한을 만들지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/입력-소비자.md",
+      "line": 7,
+      "heading": "# 사용자 입력을 받을 소비자",
+      "tokens": [
+        "submission_contract.command"
+      ],
+      "text": "단위와 payload 형태의 정본은 제출 검사(`governance.validate_import_units(...)`, 통치 기록은 `validate_governance_record`)다. 생산자는 `submission_contract.command`로 같은 검사를 제출 전에 실행할 수 있다. 아래 설명은 작성을 돕는 안내이며, 이 설명과 검사 결과가 다르면 검사가 정한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/자기-점검.md",
+      "line": 25,
+      "heading": "## 자기 점검 요청에 응답한다",
+      "tokens": [
+        "execution_window.self_check_directory"
+      ],
+      "text": "요청 ID는 작업 공간의 `execution_window.self_check_directory`(`.control/self-checks/`)에 있는 JSON 알림에서 찾는다. 알림의 ID로 `control_self_check`를 조회해 정확한 요청을 읽는다. 알림 파일은 전달 사본이며 권위 있는 응답 영수증이나 의무 해소 기록이 아니다. 이미 처리한 ID를 다시 수행하지 않고 중앙 영수증을 확인한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+      "line": 63,
+      "heading": "## 새 결과를 저작하고 후속에 연결한다",
+      "tokens": [
+        "formal_verifier.mechanism"
+      ],
+      "text": "형식 결과를 제안하면 `lean_code`에 실행기가 그대로 검사할 수 있는 완전한 Lean 원문을 넣고, `declaration_names`에는 그 원문이 내보내는 정확한 선언명을 적는다. 작업 공간에 Lean이 있을 것이라고 추측해 로컬 실행 성공을 꾸미지 않는다. `formal_verifier.mechanism`이 `central_after_submission`이면 제출 뒤 실행기가 형식 검사를 열며, 주 산출의 수신 성공은 형식 타당성이나 해설 동일성의 성공이 아니다. 비형식 결과에는 빈 `lean_code`와 빈 `declaration_names`를 사용한다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/초기화-운전.md",
+      "line": 180,
+      "heading": "## 4. 현행 프로필의 능력을 관측하고 채택한다",
+      "tokens": [
+        "scholarly"
+      ],
+      "text": "`probe` 호출은 관측하는 프로필의 어댑터 `describe()`를 공급자마다 한 번 실제로 실행하고, 그 결과로 프로필마다 능력 증거를 만든다. 프로필·호스트·CLI 판본과 관측 시각에 결박된 증거이며, 능력 식별은 `{cli_path, cli_sha256, module_sha256, host}` 모양이다. `module_sha256`은 어댑터가 지정한 식별 모듈마다 그 파일의 해시를 담는다. Codex 어댑터의 식별 모듈은 `cli_worker`, `codex_worker`, `control_transport`, `file_io`, `windows_job`, `scholarly`, `codex_adapter`이고, Claude 어댑터는 여기에 `claude_worker`, `claude_adapter`, `claude_stream`을 더한다. 이 모듈 가운데 하나라도 바뀌면 기존 능력 증거는 현재 증거로 쓰이지 않는다. 증거는 `supported/unsupported/unknown`의 범위를 그대로 읽는다. 정적 `profile` 명령이나 시험용 fake CLI의 통과를 모든 실행 능력의 증거로 바꾸지 않는다. 실제 시작 실패의 증거는 단순 help/version 재관측으로 지워지지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/학술자료-활용.md",
+      "line": 11,
+      "heading": "## 사용할 수 있는지 먼저 확인한다",
+      "tokens": [
+        "scholarly"
+      ],
+      "text": "현재 세션에 `scholarly` 도구가 실제로 제공되는지 먼저 확인한다. 제공되면 `list_sources`로 자료원과 구현 상태를 읽고, 사용할 자료원의 `describe_source`에서 현재 검색 문법, 지원하는 부분, 페이지 한도와 결과 형식을 확인한다. 자료원 수나 프로젝트의 절대 경로는 규칙으로 삼지 않는다. 실제 세션의 반환과 `describe_source`가 이번 호출의 근거다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-수행.md",
+      "line": 52,
+      "heading": "## 방법을 선택하고 실제 범위를 기록한다",
+      "tokens": [
+        "formal_verifier"
+      ],
+      "text": "- 그 정의 위에서 현재 `formal_verifier`가 제공하는 환경으로 결과를 형식화할 수 있다. 현재 환경에 없는 라이브러리가 필요한 결과는 이 조건에 들지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-수행.md",
+      "line": 84,
+      "heading": "## 형식 결과를 제출하는 경우",
+      "tokens": [
+        "formal_verifier.mechanism",
+        "preview"
+      ],
+      "text": "`formal_verifier.mechanism`이 `central_after_submission`이면 최종 주 산출에 완전한 Lean 원문과 정확한 선언명을 넣어 중앙 검사를 요청한다. 제공된 `preview` 명령으로 작성 중 오류를 확인하는 절차는 공통 실행 문서의 사전 검사 규칙을 따른다. 새 지식 항목의 `lean_code`에는 독립적으로 검사할 수 있는 전체 소스를 넣고, `declaration_names`에는 그 소스가 내보내는 선언명을 정확히 적는다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-수행.md",
+      "line": 163,
+      "heading": "### 중앙 Lean 검사 전 제출하는 경우",
+      "tokens": [
+        "formal_verifier.mechanism"
+      ],
+      "text": "작업자가 완전한 Lean 원문과 선언명을 작성했지만 현재 세션에서 Lean을 실행하지 못했다고 하자. `formal_verifier.mechanism`이 `central_after_submission`이면 이를 도구 부족으로 실패 처리할 필요는 없다. 새 지식의 `lean_code`와 `declaration_names`를 정확히 제출하고, `report`에는 로컬 검사를 수행하지 않았으며 중앙 형식 검사와 동일성 검토가 남았다고 적는다. 제출을 형식 타당성으로 표현하지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/유지보수.md",
+      "line": 15,
+      "heading": "## 시작 전에 호출 절차를 확정한다",
+      "tokens": [
+        "record_map.ledger"
+      ],
+      "text": "`action`에서 유지보수를 요청한 이유, 대상과 절차 식별자, 현재 단계와 다음 소비자가 실제로 제공됐는지 확인한다. 현재 컨텍스트가 제공한 범위에서 연구 인스턴스의 목표·정책, 과제, 지식·관계, 원자료, 허가, 외부 행동과 자원 상태를 읽는다. 활동·실행·신뢰 환경·미정산 자원처럼 이번 판단에 필요한 자료가 실제 입력에 있는지 각각 확인하고, 필드 이름만 예상해 제공됐다고 추측하지 않는다. 상세가 `source_ref`로 대체돼 있으면 원문을 회수한다. 입력 문맥에 없는 기록도 입력 스냅숏에 있으면 읽을 수 있다. 유지보수는 독립 판단 범위가 아니어서 `record_map.ledger`가 `readable`이므로, 실행·활동·외부 행동 같은 실행 원장 기록과 그 산출물, 신뢰 환경 같은 연구 정본 기록을 「공통 실행」의 「기록 지도와 읽기 도구」로 찾아 읽는다. 입력 문맥과 입력 스냅숏 어디에서도 찾지 못한 자료만 없는 자료로 보고한다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "line": 77,
+      "heading": "### 6. 도구·권한과 현재 실행 지원이 계약에 맞는가",
+      "tokens": [
+        "formal_verifier",
+        "preview"
+      ],
+      "text": "`work_class=formal`이면 현재 `formal_verifier`의 제공 방식을 확인한다. `mechanism=central_after_submission`에서는 작업자가 완전한 Lean 원문과 선언명을 제출하고 실행기가 뒤에서 검사한다. `preview`는 작성 중 오류를 고칠 보조 도구이며 중앙 인증을 대신하지 않는다. 그 도구가 제공되지 않은 작업에 사전 검사 성공을 완료 기준으로 요구하지 않는다. 구성된 명령이 있다는 사실로 설치 판본이나 형식 검사 성공을 추측하지 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "line": 125,
+      "heading": "### 중앙 Lean 검사를 올바르게 요구한 계약",
+      "tokens": [
+        "formal_verifier"
+      ],
+      "text": "형식 과제가 완전한 Lean 원문과 선언명을 산출하고, 그 뒤 중앙 형식 검사 결과를 받도록 완료 기준을 나누었다고 하자. 현재 `formal_verifier`가 `central_after_submission`이면 작업자에게 로컬 Lean 성공을 요구하지 않은 점은 적합하다. 질문·범위·입력·재사용과 다른 완료 기준도 충족하면 이 항목은 통과할 수 있다. 구성된 명령이 보인다는 이유로 미래 형식 검사까지 통과했다고 쓰지는 않는다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/후보-준비.md",
+      "line": 47,
+      "heading": "### 1. 현재 질문과 남은 차이를 찾는다",
+      "tokens": [
+        "formal_verifier"
+      ],
+      "text": "이 기초 정의 과제를 비형식 연구 과제의 착수 `dependencies`에 넣지 않는다. 비형식 연구는 기초 정의를 기다리지 않고 병행한다. 현재 `formal_verifier`가 제공하는 환경에서 목표의 대상을 정의할 수 없다고 판단하면 제안하지 않고 그 이유를 `summary`에 남긴다."
+    },
+    {
+      "path": ".claude/skills/do-math/계약/후보-준비.md",
+      "line": 51,
+      "heading": "### 1. 현재 질문과 남은 차이를 찾는다",
+      "tokens": [
+        "formal_verifier"
+      ],
+      "text": "연구 수행은 조건이 맞으면 자기가 증명한 결과를 같은 실행에서 형식화한다. 그렇게 형식화되지 못한 결과를 위해, 남은 차이 가운데 형식화는 다음 경우에 과제로 제안한다. 연구 수행이 증명했다고 보고한 비형식 결과가 있고, 두 개 이상의 과제가 그 결과의 기록을 `inputs`나 `reuse`로 참조하는 경우다. 이번에 쓰는 계약의 참조도 센다. 여러 과제가 기대는 전제에 오류가 있으면 그 과제들의 결과가 함께 무너진다. 같은 모델의 검토는 작성자와 같은 곳에서 틀릴 수 있고 유한 범위의 계산은 전칭 주장을 확인하지 못하므로, 이런 전제는 형식 검사로 확인할 가치가 있다. 이 과제는 `work_class`를 `formal`로 두고, 형식화할 정확한 진술과 그 결과를 담은 기록의 ID를 계약에 적는다. 검증된 K에 기초 정의가 있으면 그 기록을 `reuse`에 넣어 같은 정의 위에 세우게 한다. 현재 `formal_verifier`가 제공하는 환경에서 그 진술을 형식화할 수 없다고 판단하면 제안하지 않는다. 제공된 환경에 없는 라이브러리가 있어야 하는 해석적 추정이 그 예다. 같은 결과의 형식화 과제가 이미 있을 때, 그 결과의 Lean 원문이 이미 제출되어 형식 검사나 동일성 검토를 받고 있을 때, 그 결과가 이미 검증된 K일 때도 제안하지 않는다. 위 조건에 드는 결과인데 이런 이유로 제안하지 않았으면, 어느 결과를 어떤 이유로 형식화하지 않았는지 `summary`에 남긴다. 이 조건에 들지 않는 결과의 형식화는 다른 남은 차이와 같이 현재 근거로 판단한다."
+    }
+  ],
+  "production": [
+    "CoreEngineMixin._context",
+    "context_store.record_map",
+    "context_store.prepare_role_input",
+    "submission.install_tools"
+  ],
+  "actual_check": "sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage",
+  "preview_source": "same formal_verifier.preview child, not a separately produced result",
+  "execution_window": "path guidance, not evidence that dynamic notification files occurred",
+  "scholarly": "pinned configuration, not live exposure/call success"
+}

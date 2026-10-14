@@ -1,0 +1,72 @@
+test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) ... 
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='execution_window.self_check_directory') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='scholarly.configured') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='formal_verifier.mechanism') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='preview.command') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='record_map.read_tool.command') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+  test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='submission_contract.limits.checkpoint_bytes') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\structure\failures\5a8cbdf8426bf9fedb6178cfd4f2aee5f0545d0c29dfc94dea9590c4c6e66c39.json
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='execution_window.self_check_directory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='scholarly.configured')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='formal_verifier.mechanism')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='preview.command')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='record_map.read_tool.command')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='submission_contract.limits.checkpoint_bytes')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 23, in test_tool_fields_require_their_actual_installed_input
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.128s
+
+FAILED (failures=6)

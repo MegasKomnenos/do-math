@@ -1,0 +1,6 @@
+Open known defects: 0
+[structure] 1 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"structure": 0.1}, "total_seconds": 0.1}
+    0.125s failed             structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\red\report.json

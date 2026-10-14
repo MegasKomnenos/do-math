@@ -33,3 +33,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 018의 기존 Jobs API 소비와 최종 양쪽T4 연결을 검수했다.019는 기존 write_source_catalog·_preserve_outputs·_apply·_context·prepare_role_input의 생산/저장/복원을 실제 소비하는 문서 검사 수리다. 정본은 해당 함수·contracts/record schema이며 별도 제품 형식을 만들지 않는다. 같은task가 doc_code와 직접소비/helper·미러를 소유하고 독립 제공자/소비자로 나누지 않으므로 S항목·provides/uses는 추가하지 않는다. runtime/입출력 의미 개정이 필요하면 반례로 후속 판단에 반환한다.
 
 019의 P02 실제 생산/저장/복원 문서 결속을 검수했다.020은 기존 _context·record_map·prepare_role_input·install_tools의 실행 안내와 지급 도구 경계를 소비한다. 명령/설치파일/오류/조건부 부재는 현 코드가 정본이고 문서 검사용 별도 schema를 제품 계약으로 만들지 않는다. 같은task가 helper와 직접 소비·미러를 소유하며 제품 인터페이스를 개정하지 않으므로 S항목·provides/uses는 추가하지 않는다. record_map 기본 반환, preview 지급과 실제 검증 결과의 차이, scholarly 설정과 실호출의 차이를 유지한다.
+
+020의 P03 실제 설치/최종 입력 결속을 검수했다.021은 기존 review_cycle.context_for/accept_result·ReviewEngineMixin의 검토 준비/봉인/고정 조사/원자료 물질화 경계를 소비한다. stage별 가시성·정확 ref·proposal/request digest·고정 snapshot/복원 오류는 기존 코드/공유 계약이 정본이며 새 의미를 만들지 않는다. P04/P05 네 owner와 helper·직접 소비·미러를 한 task가 소유하므로 S항목·provides/uses는 추가하지 않는다. runtime나 권한 계약 개정은 범위 밖 반례로 반환한다.

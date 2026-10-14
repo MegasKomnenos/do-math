@@ -40,6 +40,9 @@ OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
                               ('operational_evidence', 'recovery_materials')}
 RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
                          ('source_ref', 'materialized_output_files', 'research_sources', 'results')}
+TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
+                        ('execution_window', 'scholarly', 'formal_verifier', 'preview',
+                         'record_map.read_tool', 'submission_contract')}
 
 
 def documents(skill):
@@ -327,15 +330,11 @@ def field_schemas():
     schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
         "cycle['findings'][key]", variants=True))
     schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
-    for name in ('execution_window', 'scholarly', 'formal_verifier'):
-        schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
-    schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
-    schemas['formal_verifier']['properties']['preview'] = schemas['preview']
+    schemas.update({name: boundary for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                    if name != 'record_map.read_tool'})
     schemas['record_map'] = {'type': 'object', 'properties': {
         name: {} for name in context_store.record_map({}, 'research_work', 'fixed')}, 'additionalProperties': False}
-    schemas['record_map']['properties']['read_tool'] = produced_object_schema(
-        submission.install_tools, 'context["record_map"]["read_tool"]')
-    schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
+    schemas['record_map']['properties']['read_tool'] = TOOL_INPUT_BOUNDARIES['record_map.read_tool']
     from support.state_builders import current_state
     instance, runtime = current_state()
     summary = reporting.operating_summary(instance, runtime)
@@ -447,7 +446,7 @@ def unowned_field_references(text, schemas):
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
-                        defer_result_inputs=()):
+                        defer_result_inputs=(), defer_tool_inputs=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -464,6 +463,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_result_inputs) - RESULT_INPUT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred result input owners: {sorted(unknown)}')
+    unknown = set(defer_tool_inputs) - TOOL_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred tool input owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -474,6 +476,17 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            owner = next((name for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if (owner is None and parts and parts[0] == 'read_tool'
+                    and isinstance(local[root], dict)
+                    and local[root].get('properties', {}).get('read_tool')
+                    is TOOL_INPUT_BOUNDARIES['record_map.read_tool']):
+                owner = 'record_map.read_tool'
+            if owner is not None:
+                if owner in defer_tool_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual tool input')
             if local[root] is STATUS_REPORT_BOUNDARY:
                 if defer_status:
                     continue
@@ -527,6 +540,38 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def tool_field_issues(text, owner, value):
+    """Traverse one installed input value; preview is the verifier's child.
+
+    No installation, missing field or another tool's command can establish
+    a positive sample. File/command identity is checked by engine_context.
+    """
+    if owner not in TOOL_INPUT_BOUNDARIES:
+        raise ValueError('Unknown tool input owner: ' + owner)
+    bindings = {key: boundary for key, boundary in TOOL_INPUT_BOUNDARIES.items()
+                if key != 'record_map.read_tool'}
+    bindings['record_map'] = {'properties': {'read_tool': TOOL_INPUT_BOUNDARIES['record_map.read_tool']}}
+    def visit(node, parts):
+        for part in parts:
+            if not isinstance(node, dict) or part not in node:
+                return False
+            node = node[part]
+        return True
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, bindings)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = token.split('.')
+            selected = local.get(root) is TOOL_INPUT_BOUNDARIES[owner]
+            if owner == 'record_map.read_tool' and local.get(root) is bindings['record_map']:
+                selected = bool(parts and parts.pop(0) == 'read_tool')
+            if selected and not visit(value, parts):
+                issues.append(('actual field', token))
     return sorted(set(issues))
 
 

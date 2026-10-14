@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/020/tasks/document-tools/evidence/preserve.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p020",
+    "TMP": "C:\\t\\p020",
+    "TMPDIR": "C:\\t\\p020",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 29452,
+  "start": "2026-10-14T04:00:08.517855+00:00",
+  "end": "2026-10-14T04:00:24.512924+00:00",
+  "exit_code": 0,
+  "changes": []
+}

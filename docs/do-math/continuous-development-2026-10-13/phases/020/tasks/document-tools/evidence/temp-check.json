@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "git",
+    "rev-parse",
+    "--show-toplevel"
+  ],
+  "cwd": "C:\\t\\p020",
+  "exit_code": 128,
+  "outside_repo": true,
+  "stdout": "",
+  "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+}

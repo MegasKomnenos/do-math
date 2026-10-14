@@ -14,6 +14,50 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_tool_fields_require_their_actual_installed_input(self):
+        schemas = field_schemas()
+        fields = ('execution_window.self_check_directory', 'scholarly.configured',
+                  'formal_verifier.mechanism', 'preview.command',
+                  'record_map.read_tool.command', 'submission_contract.limits.checkpoint_bytes')
+        for field in fields:
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):
+                scoped_field_issues('`' + field + '`', schemas)
+        from support.doc_code import TOOL_INPUT_BOUNDARIES
+        for field, owner in zip(fields, TOOL_INPUT_BOUNDARIES):
+            with self.subTest(owner=owner):
+                with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                    scoped_field_issues('`' + field + '`', schemas,
+                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner})
+                self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+                                 defer_tool_inputs=(owner,)), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',))
+        for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+            with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES)
+
+    def test_deferred_tools_have_their_actual_document_check(self):
+        import ast
+        from support.doc_code import TOOL_INPUT_BOUNDARIES
+        tree = ast.parse((SCRIPTS / 'tests/sim/test_role_input_context.py').read_text(encoding='utf-8'))
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'PreparedInputTests')
+        method = next(n for n in cls.body if isinstance(n, ast.FunctionDef)
+                      and n.name == 'test_installed_tools_match_the_final_role_input_and_reject_damage')
+        calls = [k.value.value for n in ast.walk(method) if isinstance(n, ast.Call)
+                 and isinstance(n.func, ast.Name) and n.func.id == 'assert_tool_documents'
+                 for k in n.keywords if k.arg == 'owner' and isinstance(k.value, ast.Constant)]
+        def verify(owners):
+            self.assertEqual(set(owners), set(TOOL_INPUT_BOUNDARIES))
+            self.assertLessEqual(set(owners), set(calls))
+        verify(TOOL_INPUT_BOUNDARIES)
+        for changed in (set(TOOL_INPUT_BOUNDARIES) - {'preview'},
+                        (set(TOOL_INPUT_BOUNDARIES) - {'preview'}) | {'preveiw'}):
+            with self.assertRaises(AssertionError):
+                verify(changed)
+        calls.remove('scholarly')
+        with self.assertRaises(AssertionError):
+            verify(TOOL_INPUT_BOUNDARIES)
+
     def test_result_fields_require_their_actual_input_owner(self):
         schemas = field_schemas()
         owners = {'source_ref': '.path', 'materialized_output_files': '[].local_path',
@@ -286,7 +330,9 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                                                   defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
-                                                  defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))]
+                                                  defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                  defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+                                                                     'record_map.read_tool', 'submission_contract'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -302,17 +348,19 @@ class DocumentCodeTests(unittest.TestCase):
     def test_role_input_fields_do_not_borrow_names_from_the_stored_execution(self):
         schemas = field_schemas()
         self.assertEqual(scoped_field_issues(
-            '`execution_window.self_check_directory` `execution.execution_window.effective_deadline_at` '
-            '`formal_verifier.preview.command` `record_map.read_tool.command` '
+            '`execution.execution_window.effective_deadline_at` '
             '`record_map.snapshot` `record_map.ledger` `record_map.families` '
             '`record_map.blocked_keys` `record_map.instruction` '
-            '`submission_contract.limits.checkpoint_bytes` `assessment.current` `runtime.user_pause`', schemas), [])
+            '`assessment.current` `runtime.user_pause`', schemas), [])
         self.assertEqual(scoped_field_issues('`execution.execution_window.self_check_directory`', schemas),
                          [('scoped field', 'execution.execution_window.self_check_directory')])
-        self.assertEqual(scoped_field_issues('`execution_window.effective_deadline_at`', schemas),
-                         [('scoped field', 'execution_window.effective_deadline_at')])
-        self.assertEqual(scoped_field_issues('`record_map.read_tool.nonexistent` `runtime.checkpoint_bytes`', schemas),
-                         [('scoped field', 'record_map.read_tool.nonexistent'), ('scoped field', 'runtime.checkpoint_bytes')])
+        from support.doc_code import tool_field_issues
+        self.assertEqual(tool_field_issues('`execution_window.effective_deadline_at`', 'execution_window', {}),
+                         [('actual field', 'execution_window.effective_deadline_at')])
+        self.assertEqual(tool_field_issues('`record_map.read_tool.nonexistent`', 'record_map.read_tool', {}),
+                         [('actual field', 'record_map.read_tool.nonexistent')])
+        self.assertEqual(scoped_field_issues('`runtime.checkpoint_bytes`', schemas),
+                         [('scoped field', 'runtime.checkpoint_bytes')])
         self.assertEqual(scoped_field_issues('`record_map.nonexistent` `record_map.families.nonexistent`', schemas),
                          [('scoped field', 'record_map.families.nonexistent'), ('scoped field', 'record_map.nonexistent')])
 

@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "structure.test_doc_code",
+    "sim.test_role_input_context.PreparedInputTests",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\020\\tasks\\document-tools\\evidence\\focus"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p020",
+    "TMP": "C:\\t\\p020",
+    "TMPDIR": "C:\\t\\p020",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 37288,
+  "start": "2026-10-14T03:46:02.381841+00:00",
+  "end": "2026-10-14T03:46:14.180460+00:00",
+  "exit_code": 1,
+  "changes": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

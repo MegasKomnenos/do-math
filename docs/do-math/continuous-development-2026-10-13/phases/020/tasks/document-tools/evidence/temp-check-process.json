@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/020/tasks/document-tools/evidence/check_temp.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p020",
+    "TMP": "C:\\t\\p020",
+    "TMPDIR": "C:\\t\\p020",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 31420,
+  "start": "2026-10-14T03:58:55.054824+00:00",
+  "end": "2026-10-14T03:58:56.955248+00:00",
+  "exit_code": 0,
+  "changes": []
+}

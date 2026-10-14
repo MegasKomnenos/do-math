@@ -53,3 +53,5 @@ class LeanPreviewTests(unittest.TestCase):
             self.assertEqual(contract['command'][0], str(interpreters / 'python.exe'))
             self.assertEqual(context['formal_verifier']['preview']['command'][0], str(interpreters / 'python.exe'))
             self.assertEqual(context['record_map']['read_tool']['command'][0], str(interpreters / 'python.exe'))
+            from support.engine_context import assert_tool_documents
+            assert_tool_documents(self, context, workspace, owner='preview')

@@ -1,0 +1,46 @@
+@@ -279,7 +279,7 @@ init --repository PATH [--create-repository] --workspace PATH
+ 
+ 원입력은 `lifecycle.immutable_input`의 `text`, `sha256`, `bytes`에 하나의 정확한 UTF-8 표현으로 보존한다. 수학 목표와 전체 요청이 다르면 `--request-text` 또는 `--request-text-file`을 지정한다. 이 원문을 의도 해석과 독립 검사의 대상으로 삼고, 수학 목표는 `runtime.inputs`의 최초 입력 행에 있는 `config` 객체의 `goal`로 별도로 보존한다. 이는 연구 설정 레코드의 필드가 아니다. 별도 원문을 지정하지 않은 경우에는 goal 자체가 원문이다. 결정론 JSON은 문자열과 객체 키의 코드 포인트열을 바꾸지 않으며 NFC 사본이나 별도 Base64 원문을 만들지 않는다. 바이트 보존과 그 원문을 의미 해석에 실제 사용했다는 보증은 별개이므로, 문자열의 철자·코드 포인트 자체가 의미인 입력에서는 해석·피복·검사 대상이 이 `text`와 일치하는지 확인한다.
+ 
+-공개 명령의 실행 순서, 완전한 요청 객체, 현행 프로필의 능력 관측과 채택, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 초기화의 probe와 채택은 대상 설정을 `config_sha256`(`status`의 `result.config_sha256`)으로 지정하며, 현재 설정의 해시와 다르면 거부된다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 채택된 설정의 역할별 현행 프로필과 그 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다.
++공개 명령의 실행 순서, 완전한 요청 객체, 현행 프로필의 능력 관측과 채택, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 초기화의 probe와 채택은 대상 설정을 `config_sha256`(`status`의 `result.config_sha256`)으로 지정하며, 현재 설정의 해시와 다르면 거부된다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 채택된 설정의 역할별 현행 프로필과 그 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다. <!-- do-math fields: result=status -->
+ 
+ 독립 운영이 활성인 설정이면 CLI는 저장 뒤 Windows 작업 두 개를 등록한다. 예약 등록이 실패해도 이미 생성된 인스턴스를 다시 만들지 않는다. 응답에 남은 ID·snapshot과 실패·재조정 명령을 사용한다. 저장과 운영체제의 예약 효과는 별도의 성공 조건이다. 재조정 명령과 작업자에게 지급하는 검사 명령(`submission_contract.command`, `formal_verifier.preview.command`)의 Python은, 실행기가 예약 작업에서 콘솔 없는 `pythonw.exe`로 돌 때에도 같은 설치의 `python.exe`다. PowerShell은 `pythonw.exe`를 기다리지 않고 그 출력도 보여 주지 않기 때문이다.
+ 
+
+@@ -161,6 +216,35 @@ def field_schemas():
+             ('session_limits', 'config', 'session_limits')):
+         schemas[name] = schemas[parent]['properties'][key]
+     schemas['revisit'] = PLAN_DISPOSITION['properties']['revisit']
++    from do_math import contracts, knowledge_io, model_policy, repair_execution
++    schemas['activation'] = RESEARCH_FIELDS['lifecycle']['properties']['activation']
++    schemas['disposition'] = contracts.disposition_schema()
++    schemas['observation'] = RECORDS['execution_profiles']['properties']['observation']
++    schemas['role_tiers'] = {'properties': {key: {} for key in model_policy.ROLE_TIERS}}
++    schemas['user_request'] = RECORDS['inputs']
++    schemas['governance_record'] = RECORDS['governance']
++    schemas['governance_content'] = RECORDS['governance']['properties']['content']
++    schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
++    schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
++        bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
++    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
++    schemas['result_source'] = produced_object_schema(context_store.restore_continuation, "stage['result_source']")
++    schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
++    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
++    from do_math import cli, core_engine
++    schemas['query_record'] = written_object_schema(core_engine._query_record, 'record')
++    schemas['input_manifest'] = produced_object_schema(context_store.build_role_manifest)
++    schemas['input_manifest']['properties'].update(written_object_schema(
++        context_store.prepare_role_input, 'manifest')['properties'])
++    schemas['prompt'] = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='prompt')
++    schemas['prompt']['properties'].update(written_object_schema(
++        context_store.prepare_role_input, "manifest['prompt']")['properties'])
++    schemas['input_manifest']['properties']['prompt'] = schemas['prompt']
++    schemas['init_result'] = produced_object_schema(core_engine.initialize_instance)
++    schemas['scheduling_result'] = written_object_schema(cli.execute, 'result', branch="command == 'init'")
++    schemas['init_result']['properties'].update(schemas['scheduling_result']['properties'])
++    schemas['selection_result'] = produced_object_schema(cli.execute, branch="command == 'select-profile'", return_item=0,
++        bindings={'selected': RECORDS['executions']['properties']['model_selection']})
+     for name in ('execution_window', 'scholarly', 'formal_verifier'):
+         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')

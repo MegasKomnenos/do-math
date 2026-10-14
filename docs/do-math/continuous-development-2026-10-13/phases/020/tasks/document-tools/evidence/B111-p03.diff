@@ -1,0 +1,108 @@
+@@ -683,13 +683,13 @@ export --destination PATH [--snapshot OID] [--all]
+ 
+ `references/CLI-실행-계약.md`는 CLI를 운전하거나 구현을 고치는 독자를 위한 참조이며 모든 AI 역할에 자동 주입되지 않는다. 역할이 판단할 현행 필드와 단계는 자기 계약, canonical input context와 실행별 출력 schema가 소유한다.
+ 
+-입력 context의 구성요소는 싣기·지도·차단 세 분류 가운데 하나다. 모든 역할에 싣는 필드는 현재 snapshot과 workspace, 통치 기록 `governance`, action, 대상 task, knowledge catalog, sources, grant 요지, kind definitions, 학술자료 도구 안내, 시간 한도, 제출 계약과 참조 목록, 기록 지도 요약 `record_map`이다. 과제 목록은 과제를 비교·선택하거나 집계하는 의도 해석·후보 준비·연구 계획·운영 점검·목표 감사·유지보수에 싣고, 과제 하나를 배정받은 연구 수행·보충 조사·작업 계약 검토에는 지도로 준다. goal·policies와 그 판본, relations, 사용자 입력, 열린 질문, 최근 이력, 자원 표와 모델 정책, 중앙 형식 검사 설명(`formal_verifier`), 학술 요구·상태, 외부 operation과 거부, 반복 보류는 역할 계약이나 제출 검사가 그 필드를 읽는 역할과 단계에 싣고, 다른 역할과 단계에는 `input/catalog/<key>.json`의 원문 참조 `{source_ref, total}`(지도)로만 준다. 실행 프로필 전체 목록과 역할별 프로필 선택(`execution_profiles`, `role_profile_refs`)은 모든 역할에 지도로 준다. 독립 판단(동일성 검토, 검토 자리의 고정 질문 조사, 검토 자리 실행의 운영 점검, 목표 감사, 의도 해석의 검사·위임, 작업 계약 검토)은 계약이 막은 비공개 필드와 기록 가족을 받지 않고(차단, 예: 목표 감사는 감사 자리마다 봉인되는 `research/goal_judgments`를 읽거나 인용하지 않는다), 실행 원장 기록은 입력이 지급한 것만 읽고 인용한다. 세 분류의 정본은 `scripts/do_math/context_store.py`의 `INLINE_SCOPES`, `BLOCKED_KEYS`와 `input_class`다. 모든 역할은 읽고 인용할 수 있는 입력 스냅숏 기록의 ID를 `root/family`별로 담은 `record_index`(지도)를 받는다. 제출 검사는 입력이 보여 준 참조와 이 ID를 인용 모집단으로 쓰고, 필드별 규칙을 따로 적용한다. 읽기 도구 `input/tools/read_input.py`는 입력 스냅숏 커밋만 읽고 요청마다 `checks/reads.jsonl`에 기록하며, 중앙 봉인은 그 기록을 제출 산출물 `reads.jsonl`로 보존한다. 역할용 설명은 「공통 실행」의 「기록 지도와 읽기 도구」에 있다. 후보 준비·연구 계획과 위임 판단이 아닌 의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·후보 준비의 입력에 전 과제의 착수 판정으로, 연구 수행의 입력에 자기 과제의 착수 판정으로만 들어간다. `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어가며, 입력이 보여 주거나 `record_index`에 있는 기록 색인(`planning.record_index`)의 ID다. 제어 통로 결박 `control_binding`과 읽기 도구의 저장소 결박 `record_store`는 도구가 읽는 `input/submission/context.json`에만 두고 프롬프트에는 넣지 않는다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
++입력 context의 구성요소는 싣기·지도·차단 세 분류 가운데 하나다. 모든 역할에 싣는 필드는 현재 snapshot과 workspace, 통치 기록 `governance`, action, 대상 task, knowledge catalog, sources, grant 요지, kind definitions, 학술자료 도구 안내, 시간 한도, 제출 계약과 참조 목록, 기록 지도 요약 `record_map`이다. 과제 목록은 과제를 비교·선택하거나 집계하는 의도 해석·후보 준비·연구 계획·운영 점검·목표 감사·유지보수에 싣고, 과제 하나를 배정받은 연구 수행·보충 조사·작업 계약 검토에는 지도로 준다. goal·policies와 그 판본, relations, 사용자 입력, 열린 질문, 최근 이력, 자원 표와 모델 정책, 중앙 형식 검사 설명(`formal_verifier`), 학술 요구·상태, 외부 operation과 거부, 반복 보류는 역할 계약이나 제출 검사가 그 필드를 읽는 역할과 단계에 싣고, 다른 역할과 단계에는 `input/catalog/<key>.json`의 원문 참조 `{source_ref, total}`(지도)로만 준다. 실행 프로필 전체 목록과 역할별 프로필 선택(`execution_profiles`, `role_profile_refs`)은 모든 역할에 지도로 준다. 독립 판단(동일성 검토, 검토 자리의 고정 질문 조사, 검토 자리 실행의 운영 점검, 목표 감사, 의도 해석의 검사·위임, 작업 계약 검토)은 계약이 막은 비공개 필드와 기록 가족을 받지 않고(차단, 예: 목표 감사는 감사 자리마다 봉인되는 `research/goal_judgments`를 읽거나 인용하지 않는다), 실행 원장 기록은 입력이 지급한 것만 읽고 인용한다. 세 분류의 정본은 `scripts/do_math/context_store.py`의 `INLINE_SCOPES`, `BLOCKED_KEYS`와 `input_class`다. 모든 역할은 읽고 인용할 수 있는 입력 스냅숏 기록의 ID를 `root/family`별로 담은 `record_index`(지도)를 받는다. 제출 검사는 입력이 보여 준 참조와 이 ID를 인용 모집단으로 쓰고, 필드별 규칙을 따로 적용한다. 읽기 도구 `input/tools/read_input.py`는 입력 스냅숏 커밋만 읽고 요청마다 `checks/reads.jsonl`에 기록하며, 중앙 봉인은 그 기록을 제출 산출물 `reads.jsonl`로 보존한다. 역할용 설명은 「공통 실행」의 「기록 지도와 읽기 도구」에 있다. 후보 준비·연구 계획과 위임 판단이 아닌 의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·후보 준비의 입력에 전 과제의 착수 판정으로, 연구 수행의 입력에 자기 과제의 착수 판정으로만 들어간다. `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어가며, 입력이 보여 주거나 `record_index`에 있는 기록 색인(`planning.record_index(...)`)의 ID다. 제어 통로 결박 `control_binding`과 읽기 도구의 저장소 결박 `record_store`는 도구가 읽는 `input/submission/context.json`에만 두고 프롬프트에는 넣지 않는다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
+ 
+ 모든 knowledge와 source 원문은 `input/knowledge/`, `input/sources/`, `input/task-results/` 아래의 실행별 사본으로 물질화한다. 완료된 동일성 검토의 기록은 그것을 읽는 목표 감사의 입력에만 `input/review-cycles/` 아래에 물질화한다. 독립 판단이 아닌 역할은 `runtime/review_cycles`를 읽기 도구로 읽는다. catalog의 `path`나 `local_path`는 이 workspace 안의 파일을 가리킨다. 해시와 목록이 있다는 사실은 모델이 원문을 읽었다는 뜻이 아니다.
+ 
+ ### 입력 크기 조정
+ 
+-기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, policies와 action별 필수 판단 정보를 보존한다. 현재 작업 계약과 검토 제안의 전문은 필요한 역할에 제공하고, 누적 이력 때문에 같은 전문을 여러 곳에 중복하지 않는다. 검토 계보의 제안은 `role_review.proposal`에 한 번 제공한다. 판단 역할이 받는 형식 결과는 동일성 검토의 제안, 목표 감사의 `eligible_knowledge`, 지식 사본이 모두 같은 판단용 투영(`knowledge_records.judged_verification`: 선언·타입·서명, 공리와 신뢰 환경의 허용 공리, 검사한 원문 해시, 검사 결과 원문 참조)이다. 검사 원출력과 커널 의존 증거는 이 투영에 넣지 않고, 그것을 쓰는 기계 검사가 저장 기록에서 읽는다. 판정 전제는 형식 결과의 `verification` 전체를 해시하므로 투영 밖 필드가 바뀌어도 편입 관문이 거부한다.
++기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, policies와 action별 필수 판단 정보를 보존한다. 현재 작업 계약과 검토 제안의 전문은 필요한 역할에 제공하고, 누적 이력 때문에 같은 전문을 여러 곳에 중복하지 않는다. 검토 계보의 제안은 `role_review.proposal`에 한 번 제공한다. 판단 역할이 받는 형식 결과는 동일성 검토의 제안, 목표 감사의 `eligible_knowledge`, 지식 사본이 모두 같은 판단용 투영(`knowledge_records.judged_verification(...)`: 선언·타입·서명, 공리와 신뢰 환경의 허용 공리, 검사한 원문 해시, 검사 결과 원문 참조)이다. 검사 원출력과 커널 의존 증거는 이 투영에 넣지 않고, 그것을 쓰는 기계 검사가 저장 기록에서 읽는다. 판정 전제는 형식 결과의 `verification` 전체를 해시하므로 투영 밖 필드가 바뀌어도 편입 관문이 거부한다.
+ 
+ 크기가 넘으면 필수 직접 입력이 아닌 항목을 큰 것부터 통째로 `{source_ref, total}`로 바꾼다. `source_ref`는 `input/catalog/<key>.json`의 exact source reference이고 `total`은 원래 항목 수다. action, 역할별 대상 task·검토 자리·운영 대상, 재개·진단 자료 같은 필수 직접 입력은 줄이지 않는다. 지도 필드는 크기와 관계없이 항상 참조로 준다. 모든 역할의 `execution_profiles`·`role_profile_refs`와 연구 수행·보충 조사·작업 계약 검토의 `tasks`도 지도 필드다. tasks 목록의 표현을 바꿔도 계획이 대조할 고정 모집단 `ready_task_ids`를 보존한다. 역할은 필요한 원문을 그 경로에서 읽어야 한다.
+ 
+
+@@ -4,7 +4,7 @@
+ 
+ 각 단위의 `owner_kind`와 비어 있지 않은 `payload.kind`는 같아야 한다. `owner_ref`는 아래 표가 정한 정확한 대상이다. 이미 적용된 내용을 확인하거나 적용할 변경이 없는 단위는 `payload={}`로 남길 수 있다. 이때도 원문 구간, 해석, 담당자와 기존 결정 근거를 보존한다. 아래 필드 설명은 사용자 결정이나 예시 값의 승인을 만들지 않는다.
+ 
+-단위와 payload 형태의 정본은 제출 검사(`governance.validate_import_units`, 통치 기록은 `validate_governance_record`)다. 생산자는 `submission_contract.command`로 같은 검사를 제출 전에 실행할 수 있다. 아래 설명은 작성을 돕는 안내이며, 이 설명과 검사 결과가 다르면 검사가 정한다.
++단위와 payload 형태의 정본은 제출 검사(`governance.validate_import_units(...)`, 통치 기록은 `validate_governance_record`)다. 생산자는 `submission_contract.command`로 같은 검사를 제출 전에 실행할 수 있다. 아래 설명은 작성을 돕는 안내이며, 이 설명과 검사 결과가 다르면 검사가 정한다.
+ 
+ ## charter, policy, research_context, additional_audit
+ 
+diff --git "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\355\232\250\354\234\250\352\263\274-\354\240\225\353\271\204.md" "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\355\232\250\354\234\250\352\263\274-\354\240\225\353\271\204.md"
+index 330ee1dd..bd8ed692 100644
+--- "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\355\232\250\354\234\250\352\263\274-\354\240\225\353\271\204.md"
++++ "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\355\232\250\354\234\250\352\263\274-\354\240\225\353\271\204.md"
+
+@@ -84,6 +84,52 @@ class DocumentCodeTests(unittest.TestCase):
+         with self.assertRaisesRegex(ValueError, 'Unresolved object keys'):
+             produced_object_schema(spread)
+ 
++    def test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings(self):
++        def result(extra):
++            return {'own': 1, **extra}
++        def alternatives(choice):
++            if choice:
++                return {'left': 1}
++            return {'right': 1}
++        schema = produced_object_schema(result, bindings={'extra': {'properties': {'observed': {}}}})
++        self.assertEqual(scoped_field_issues('`view.own` `view.observed`', {'view': schema}), [])
++        with self.assertRaisesRegex(ValueError, 'Unused producer bindings'):
++            produced_object_schema(result, bindings={'extra': {'properties': {}}, 'obsolete': {'properties': {}}})
++        schema = produced_object_schema(alternatives, variants=True)
++        self.assertEqual(scoped_field_issues('`view.left` `view.right`', {'view': schema}), [])
++        with self.assertRaisesRegex(ValueError, 'Review document field producer'):
++            produced_object_schema(alternatives)
++        schemas = field_schemas()
++        self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
++            '`status.budget` `profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
++        self.assertEqual(scoped_field_issues('`status.allowed_profiles`', schemas), [('scoped field', 'status.allowed_profiles')])
++
++    def test_documented_function_references_resolve_to_callables(self):
++        issues = [(document.relative_to(SKILL).as_posix(), *issue)
++                  for document in documents(SKILL)
++                  for issue in function_reference_issues(document.read_text(encoding='utf-8'))]
++        self.assertEqual(issues, [])
++        self.assertEqual(function_reference_issues('`os.scandir(...)` `governance.mathematical_goal_basis(...)` '
++                         '`knowledge_records.judged_verification(...)`'), [])
++        self.assertEqual(function_reference_issues('`governance.missing_function(...)`'),
++                         [('function reference', 'governance.missing_function(...)')])
++        self.assertEqual(function_reference_issues('`planning.RECORD_FAMILIES(...)`'),
++                         [('function reference', 'planning.RECORD_FAMILIES(...)')])
++        self.assertEqual(scoped_field_issues('`governance.charter`', field_schemas()), [])
++        self.assertEqual(scoped_field_issues('`governance.mathematical_goal_basis`', field_schemas()),
++                         [('scoped field', 'governance.mathematical_goal_basis')])
++
++    def test_documented_diagnostic_codes_belong_to_their_actual_owner(self):
++        names = diagnostic_names(SCRIPTS)
++        issues = [(document.relative_to(SKILL).as_posix(), *issue)
++                  for document in documents(SKILL)
++                  for issue in diagnostic_reference_issues(document.read_text(encoding='utf-8'), names)]
++        self.assertEqual(issues, [])
++        self.assertEqual(diagnostic_reference_issues('`contract_check.coverage` `integration.currentness`', names), [])
++        self.assertEqual(diagnostic_reference_issues('`integration.py` `integration.preview_bundles(...)`', names), [])
++        self.assertEqual(diagnostic_reference_issues('`integration.coverage` `contract_check.currentness`', names),
++                         [('diagnostic code', 'contract_check.currentness'), ('diagnostic code', 'integration.coverage')])
++
+     def test_documented_policy_names_have_installed_owners(self):
+         names = declared_policy_names(SCRIPTS)
+         mentioned = set().union(*(documented_policies(document.read_text(encoding='utf-8'))
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 8659ae36..d51a4f04 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+
+@@ -152,6 +169,18 @@ def field_schemas():
+     schemas['record_map']['properties']['read_tool'] = produced_object_schema(
+         submission.install_tools, 'context["record_map"]["read_tool"]')
+     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
++    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
++    schemas['operating_summary'] = produced_object_schema(reporting.operating_summary)
++    schemas['governance'] = produced_object_schema(governance.governance_view)
++    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
++    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
++    schemas['status'] = produced_object_schema(reporting.status_report, bindings={
++        'supervision_facts(instance, runtime)': produced_object_schema(supervision.supervision_facts),
++        'operating_summary(instance, runtime)': schemas['operating_summary'],
++        'observed': {'type': 'object', 'properties': {name: {} for name in reporting.OBSERVED_FIELDS}}})
++    schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
++    schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
++        CoreEngineMixin._context, "evidence['activity_continuations']")
+     return schemas
+ 
+ 

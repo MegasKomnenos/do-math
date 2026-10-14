@@ -1,0 +1,20 @@
+{
+  "reason": "Post-publication Git whitespace check found exactly one new blank line at context EOF. Removed one LF only, regenerated the common-document diff, and rechecked the published manager candidate before committing. No product, requirement, assignment or manager decision changed.",
+  "before_context_sha256": "9f9142039a097bbbcd4683714a98630ab5c3acdf1f609da9f4c41fc17211aa92",
+  "after_context_sha256": "827e2d677375d3d8d8bfb894c8b6fc863de48aa0d8d3d19f4dd7a7e8cdafb3a6",
+  "removed_bytes": 1,
+  "original_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "cwd": "C:\\math",
+    "exit_code": 2,
+    "stdout": "docs/do-math/continuous-development-2026-10-13/context.md:312: new blank line at EOF.\n",
+    "stderr": ""
+  },
+  "manager_sha256": "4f0c74ef9d49e7a7a1b445b88819dbaf4dc2c75f07ca32759f7edf7534509715",
+  "recheck_candidate": "manager.json"
+}

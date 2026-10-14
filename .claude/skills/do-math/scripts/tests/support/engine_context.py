@@ -252,6 +252,109 @@ def is_map_entry(value):
     return isinstance(value, dict) and set(value) == {'source_ref', 'total'}
 
 
+def tool_input_value(case, context, workspace, owner):
+    """Read the exact fitted source when a role receives a map entry."""
+    import hashlib
+    import json
+    key = 'formal_verifier' if owner == 'preview' else owner.split('.')[0]
+    value = context[key]
+    if is_map_entry(value):
+        ref = value['source_ref']
+        path = (Path(workspace) / ref['path']).resolve()
+        case.assertTrue(path.is_relative_to(Path(workspace).resolve() / 'input'))
+        raw = path.read_bytes()
+        case.assertEqual(hashlib.sha256(raw).hexdigest(), ref['sha256'])
+        case.assertEqual(len(raw), ref['bytes'])
+        value = json.loads(raw)
+    if owner == 'preview':
+        return value['preview']
+    if owner == 'record_map.read_tool':
+        return value['read_tool']
+    return value
+
+
+def assert_tool_documents(case, context, workspace, *, owner):
+    """P03 document fields and files from actual installation and packaging.
+
+    This checks issued commands and their installed code. Existing host/Lean
+    tests own command execution and preview JSON, not this field traversal.
+    """
+    import hashlib
+    import json
+    import zipfile
+    from support.doc_code import documents, tool_field_issues
+    from do_math import contracts
+    from do_math.context_store import READ_LOG, record_map
+    from do_math.observations import CHECKPOINT_MAX_BYTES
+    root = Path(workspace).resolve()
+    value = tool_input_value(case, context, root, owner)
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(tool_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
+                         str(document))
+    if owner == 'execution_window':
+        case.assertEqual(value['self_check_directory'], '.control/self-checks')
+        case.assertEqual(value['path'], '.control/execution-window.json')
+        case.assertEqual(value['finish_request_path'], '.control/finish-request.json')
+        case.assertEqual(value['stop_request_path'], '.control/stop-request.json')
+        case.assertEqual(value['feedback_path'], '.control/observation-feedback.json')
+        return
+    if owner == 'scholarly':
+        from do_math.execution_profiles import runner_tools
+        profile = tool_input_value(case, context, root, 'execution_profile')
+        configured = runner_tools(profile)['scholarly_server'] is not None
+        case.assertEqual(value['enabled'], configured)
+        case.assertEqual(value['configured'], configured)
+        case.assertEqual(value['artifact_directory'], 'scholarly-data')
+        return
+    machine = json.loads((root / 'input/submission/context.json').read_bytes())
+    case.assertEqual(value, tool_input_value(case, machine, root, owner))
+    contract = tool_input_value(case, context, root, 'submission_contract')
+    archive_path = root / 'input/tools/submission-support.zip'
+    case.assertEqual(hashlib.sha256(archive_path.read_bytes()).hexdigest(), contract['tool_sha256'])
+    # Match every archive member to the current installed source population;
+    # an unrelated archive with a self-consistent borrowed hash still fails.
+    package = Path(submission.__file__).parent
+    sources = {p.relative_to(package).as_posix(): p for p in package.rglob('*.py')
+               if p.name != 'engine.py' and not p.name.endswith('_engine.py')}
+    with zipfile.ZipFile(archive_path) as archive:
+        case.assertEqual(set(archive.namelist()), {'do_math/' + p for p in sources})
+        for path, source in sources.items():
+            case.assertEqual(archive.read('do_math/' + path), source.read_bytes(), path)
+    if owner == 'formal_verifier':
+        case.assertEqual(value['mechanism'], 'central_after_submission')
+        case.assertFalse(value['preview']['authoritative'])
+        return
+    script, module = {
+        'preview': ('check_lean.py', 'formal_preview'),
+        'record_map.read_tool': ('read_input.py', 'input_tool'),
+        'submission_contract': ('check_submission.py', 'submission_tool')}[owner]
+    case.assertEqual(value['command'][1:], ['-B', 'input/tools/' + script])
+    case.assertEqual(Path(value['command'][0]).name.lower(), 'python.exe')
+    case.assertTrue(Path(value['command'][0]).is_file())
+    wrapper = (root / value['command'][2]).read_text(encoding='utf-8')
+    case.assertIn('from do_math.' + module + ' import ', wrapper)
+    if owner == 'preview':
+        case.assertIs(value['authoritative'], False)
+    elif owner == 'record_map.read_tool':
+        case.assertEqual(value['log_path'], READ_LOG)
+        actual = context['record_map']
+        index = tool_input_value(case, context, root, 'record_index')
+        expected = record_map(index, machine['action'].get('role'), machine['snapshot'])
+        case.assertEqual({k: v for k, v in actual.items() if k != 'read_tool'}, expected)
+    else:
+        case.assertEqual(value['workspace'], str(root))
+        case.assertEqual(value['schema_path'], 'input/submission/schema.json')
+        case.assertEqual(value['context_path'], 'input/submission/context.json')
+        case.assertEqual(value['extensions_schema_path'], 'input/submission/extensions.schema.json')
+        schema = json.loads((root / value['schema_path']).read_bytes())
+        case.assertEqual(schema, contracts.action_schema(machine['action']))
+        case.assertEqual(value['schema_ref'], contracts.schema_reference(schema))
+        case.assertEqual(json.loads((root / value['extensions_schema_path']).read_bytes()),
+                         submission.extension_schema(machine['action']))
+        case.assertEqual(value['limits']['checkpoint_bytes'], CHECKPOINT_MAX_BYTES)
+        case.assertIn('max_artifact_bytes', value['limits'])
+
+
 def prepare(action, direct=None, *, instance=None, runtime=None, extra=None, root=None, snapshot='a' * 40,
             install=False):
     """One role input whose engine context held every scoped key.

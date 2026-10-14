@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    "--skill-only"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p020",
+    "TMP": "C:\\t\\p020",
+    "TMPDIR": "C:\\t\\p020",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 12864,
+  "start": "2026-10-14T03:59:55.409247+00:00",
+  "end": "2026-10-14T03:59:57.972923+00:00",
+  "exit_code": 0,
+  "changes": []
+}

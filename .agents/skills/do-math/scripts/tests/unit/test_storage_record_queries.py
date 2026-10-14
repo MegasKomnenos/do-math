@@ -36,7 +36,7 @@ class QueryFamilyNameTests(unittest.TestCase):
                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
 
         alias = '`record.family` <!-- do-math fields: record=query_record -->'
         for name, (_, stored) in RECORD_FAMILIES.items():

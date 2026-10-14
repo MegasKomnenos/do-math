@@ -1,0 +1,235 @@
+{
+  "head": "06a5aa0ee2de8f45c6487e6b467fddc9b81960fb",
+  "sources": 2675,
+  "start_equal_previous": true,
+  "current_equal_final": true,
+  "changes": [
+    ".agents/skills/do-math/references/공통-실행.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_knowledge_project_identity.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_preview_commands.py",
+    ".claude/skills/do-math/references/공통-실행.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_knowledge_project_identity.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_preview_commands.py"
+  ],
+  "outside_writes": [],
+  "receipts": [
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/red-process.json",
+      "exit_code": 1,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/focus-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/corrected-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/augmented-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/c-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/mirror-plan-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/mirror-build-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/m-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/bindings-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/temp-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/cache-sync-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/mirror-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/skill-only-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/preservation-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/020/tasks/document-tools/evidence/output-audit-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    }
+  ],
+  "suites": {
+    "red": {
+      "selected": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1,
+      "nonpassed": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input",
+          "outcome": "failed",
+          "seconds": 0.125,
+          "details": [
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='execution_window.self_check_directory')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='scholarly.configured')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='formal_verifier.mechanism')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='preview.command')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='record_map.read_tool.command')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) (field='submission_contract.limits.checkpoint_bytes')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 23, in test_tool_fields_require_their_actual_installed_input\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual tool input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ]
+    },
+    "focus": {
+      "selected": 27,
+      "counts": {
+        "passed": 26,
+        "error": 1
+      },
+      "exit_code": 1,
+      "nonpassed": [
+        {
+          "id": "sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage",
+          "outcome": "error",
+          "seconds": 1.2969999999622814,
+          "details": [
+            "test_installed_tools_match_the_final_role_input_and_reject_damage (sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage) (role='research_plan')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 713, in test_installed_tools_match_the_final_role_input_and_reject_damage\n    assert_tool_documents(self, context, root, owner='submission_contract')\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 354, in assert_tool_documents\n    contracts.extension_schema(machine['action']))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'do_math.contracts' has no attribute 'extension_schema'. Did you mean: 'action_schema'?\n",
+            "test_installed_tools_match_the_final_role_input_and_reject_damage (sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage) (role='maintenance')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 713, in test_installed_tools_match_the_final_role_input_and_reject_damage\n    assert_tool_documents(self, context, root, owner='submission_contract')\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\engine_context.py\", line 354, in assert_tool_documents\n    contracts.extension_schema(machine['action']))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'do_math.contracts' has no attribute 'extension_schema'. Did you mean: 'action_schema'?\n"
+          ]
+        }
+      ]
+    },
+    "corrected": {
+      "selected": 4,
+      "counts": {
+        "passed": 4
+      },
+      "exit_code": 0,
+      "nonpassed": []
+    },
+    "augmented": {
+      "selected": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1,
+      "nonpassed": [
+        {
+          "id": "sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage",
+          "outcome": "failed",
+          "seconds": 2.7660000000032596,
+          "details": [
+            "test_installed_tools_match_the_final_role_input_and_reject_damage (sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage) (role='maintenance')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_role_input_context.py\", line 725, in test_installed_tools_match_the_final_role_input_and_reject_damage\n    self.assertIn('source_ref', context['formal_verifier'])\nAssertionError: 'source_ref' not found in {'reference': 'tool:lean', 'mechanism': 'central_after_submission', 'environment_id': 'TE-03E6TRPT00000000000000000F', 'environment_status': 'active', 'command': ['C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe'], 'observed_toolchain': {'configured_command': ['C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe'], 'executable': 'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe', 'executables': {'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lake.exe': '736dba819abd53fd524259edc941f1333a889d162f58c95edfa622213d18bb7a', 'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe': '72958114d9436186875efa577fa4c4f689ad0f3c59a9758c7055c9df65468db0'}, 'project': None, 'sha256': '72958114d9436186875efa577fa4c4f689ad0f3c59a9758c7055c9df65468db0', 'verifier_path': 'C:\\\\math\\\\.claude\\\\skills\\\\do-math\\\\scripts\\\\do_math\\\\formal.py', 'verifier_sha256': 'fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc', 'version': 'Lean test 4.32.0', 'version_exit': 0}, 'expected_toolchain': {'configured_command': ['C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe'], 'executable': 'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe', 'executables': {'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lake.exe': '736dba819abd53fd524259edc941f1333a889d162f58c95edfa622213d18bb7a', 'C:\\\\t\\\\p020\\\\do-math-sim-zp32gltb\\\\shared\\\\trust\\\\toolchain\\\\bin\\\\lean.exe': '72958114d9436186875efa577fa4c4f689ad0f3c59a9758c7055c9df65468db0'}, 'project': None, 'sha256': '72958114d9436186875efa577fa4c4f689ad0f3c59a9758c7055c9df65468db0', 'verifier_path': 'C:\\\\math\\\\.claude\\\\skills\\\\do-math\\\\scripts\\\\do_math\\\\formal.py', 'verifier_sha256': 'fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc', 'version': 'Lean test 4.32.0', 'version_exit': 0}, 'allowed_axioms': ['Classical.choice', 'Quot.sound', 'propext'], 'instruction': 'Submit self-contained lean_code and declaration_names. Use preview for non-authoritative compiler feedback when a command is supplied. It uses this verifier edition and configured command, but does not isolate shared libraries or Lake caches. The executor always verifies the submitted exact source again. A configured command is not a completed verification; report only the toolchain actually observed.', 'preview': {'command': ['C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe', '-B', 'input/tools/check_lean.py'], 'arguments': '--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)', 'authoritative': False, 'environment': 'Same verifier edition and configured command for the kernel check, signatures and axioms; dependency evidence is not extracted. Shared libraries and Lake caches are not isolated. Central verification is mandatory.'}}\n"
+          ]
+        }
+      ]
+    },
+    "c": {
+      "selected": 200,
+      "counts": {
+        "passed": 199,
+        "skipped": 1
+      },
+      "exit_code": 0,
+      "nonpassed": [
+        {
+          "id": "unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\t\\\\p020\\\\tmp6r255a1i\\\\secret' -> 'C:\\\\t\\\\p020\\\\tmpylcuk51z\\\\link'"
+          ]
+        }
+      ],
+      "python_files": 875,
+      "source_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ]
+    },
+    "m": {
+      "selected": 200,
+      "counts": {
+        "passed": 199,
+        "skipped": 1
+      },
+      "exit_code": 0,
+      "nonpassed": [
+        {
+          "id": "unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\t\\\\p020\\\\tmpfia1upe1\\\\secret' -> 'C:\\\\t\\\\p020\\\\tmppc4wsn8c\\\\link'"
+          ]
+        }
+      ],
+      "python_files": 875,
+      "source_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ]
+    }
+  },
+  "original_failure_ids_passed_final": true,
+  "preservation": {
+    "runtime_and_live_inputs": 139,
+    "fixed_runtime_and_t4_paths": 258,
+    "host_recordings": 8,
+    "tools": 5,
+    "corpus_paths": 144,
+    "explicit_sha": 150,
+    "baseline_files": 910
+  },
+  "task_files_unchanged": 171
+}

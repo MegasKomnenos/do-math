@@ -1,0 +1,6 @@
+warning: in the working copy of '.agents/skills/do-math/references/공통-실행.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.agents/skills/do-math/scripts/tests/support/doc_code.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.agents/skills/do-math/scripts/tests/support/engine_context.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/references/공통-실행.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/support/doc_code.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/support/engine_context.py', CRLF will be replaced by LF the next time Git touches it
