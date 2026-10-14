@@ -1,0 +1,9 @@
+Open known defects: 0
+[structure] 1 tests
+[unit] 2 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"passed": 1, "error": 2}, "group_seconds": {"structure": 0.1, "unit": 0.4}, "total_seconds": 0.5}
+    0.156s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+    0.062s passed             structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema
+    0.047s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_review_stage_documents_reach_the_final_seat_input
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\corrected\report.json

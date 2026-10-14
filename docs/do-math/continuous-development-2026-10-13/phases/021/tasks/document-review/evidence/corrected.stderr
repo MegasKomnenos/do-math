@@ -1,0 +1,39 @@
+test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+OK
+test_fixed_question_context_keeps_original_bytes_after_unrelated_publication (unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\corrected\unit\failures\5486aa15a451e92fbd19213606b4326d54d3f9516dba32f3c04d488cf1dee86a.json
+test_review_stage_documents_reach_the_final_seat_input (unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_review_stage_documents_reach_the_final_seat_input) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\corrected\unit\failures\b50f8fdf97b3f7014d1ca8e45fc18857c4a6e3f656cc9f5bedcf8773d7d02a69.json
+
+======================================================================
+ERROR: test_fixed_question_context_keeps_original_bytes_after_unrelated_publication (unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_review_research_owner_contract.py", line 211, in test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+    direct = self.engine._context(action, workspace)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\core_engine.py", line 1646, in _context
+    "instance_id": self.instance["id"], "question_links": self._question_view(),
+                   ~~~~~~~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_review_stage_documents_reach_the_final_seat_input (unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_review_stage_documents_reach_the_final_seat_input)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_review_research_owner_contract.py", line 26, in test_review_stage_documents_reach_the_final_seat_input
+    context = self.engine._context(action, workspace)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\core_engine.py", line 1646, in _context
+    "instance_id": self.instance["id"], "question_links": self._question_view(),
+                   ~~~~~~~~~~~~~^^^^^^
+KeyError: 'id'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.384s
+
+FAILED (errors=2)

@@ -1,0 +1,59 @@
+{
+  "preservation_noncache_equal_final": true,
+  "cache_differences": [],
+  "duplicate_complete_map_equal": true,
+  "duplicate_canonical_bytes": 1817,
+  "duplicate_canonical_sha256": "826108c68c417ceb5a7f61fabbb1dc7f7fa59a5ef6196b9d330626d6a83bf3d4",
+  "expected_copies": 1,
+  "observed_copies": 2,
+  "duplicate_paths": [
+    "context.role_review.proposal",
+    "context.role_review.self_messages[0].content"
+  ],
+  "exact_diff_whitespace_argv": [
+    "git",
+    "diff",
+    "--check",
+    "--",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py"
+  ],
+  "exact_diff_whitespace_exit": 0,
+  "final_counts": {
+    "c": {
+      "passed": 269,
+      "skipped": 1
+    },
+    "m": {
+      "passed": 269,
+      "skipped": 1
+    }
+  },
+  "changes": 28
+}

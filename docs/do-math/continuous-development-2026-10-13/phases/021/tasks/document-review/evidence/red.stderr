@@ -1,0 +1,50 @@
+test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) ... 
+  test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='role_review.proposal') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\red\structure\failures\f35c05235280a7dd2ef3d71c1533cbd8dfc6559d333ed6e8d420830c9441f3a2.json
+  test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='pending_findings[].ref') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\red\structure\failures\f35c05235280a7dd2ef3d71c1533cbd8dfc6559d333ed6e8d420830c9441f3a2.json
+  test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='review_research.question') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\red\structure\failures\f35c05235280a7dd2ef3d71c1533cbd8dfc6559d333ed6e8d420830c9441f3a2.json
+  test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='review_sources[].ref') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\red\structure\failures\f35c05235280a7dd2ef3d71c1533cbd8dfc6559d333ed6e8d420830c9441f3a2.json
+
+======================================================================
+FAIL: test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='role_review.proposal')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_review_fields_require_their_actual_input_owner
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='pending_findings[].ref')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_review_fields_require_their_actual_input_owner
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='review_research.question')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_review_fields_require_their_actual_input_owner
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) (field='review_sources[].ref')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_review_fields_require_their_actual_input_owner
+    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.065s
+
+FAILED (failures=4)

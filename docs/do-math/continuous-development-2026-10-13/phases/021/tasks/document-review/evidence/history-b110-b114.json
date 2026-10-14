@@ -1,0 +1,4798 @@
+[
+  {
+    "id": "B110",
+    "scope": "저장 스키마와 역할 입력 생산 객체를 구별하는 명시 필드 공간24개 검증",
+    "state": "부분 구현·구조 검증 완료",
+    "memory_node": "M-0527",
+    "reports": {
+      "producer-scope-red": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/producer-scope-red.json",
+        "sha256": "aff932545ab4be6ffa6ec2a860101fd77f293d1001867e498feca5ace2cbed7b",
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 0.0,
+        "complete": true,
+        "successful": false,
+        "changed_during_run": []
+      },
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/report.json",
+        "sha256": "0472912099fe3ec486e4a68d7fff58e96ae84d21ba59dababd34f88be4927ae2",
+        "counts": {
+          "passed": 50
+        },
+        "total_seconds": 36.2,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    "namespaces": [
+      "action",
+      "ai",
+      "assessment",
+      "config",
+      "execution",
+      "execution_to_review",
+      "execution_window",
+      "expected",
+      "formal_result",
+      "formal_verifier",
+      "immutable_input",
+      "instance",
+      "lifecycle",
+      "maintenance_fence",
+      "preview",
+      "profile",
+      "record_map",
+      "revisit",
+      "runtime",
+      "scholarly",
+      "scope",
+      "session_limits",
+      "submission_contract",
+      "task"
+    ],
+    "checked_occurrences": [
+      {
+        "document": "SKILL.md",
+        "line": 12,
+        "token": "action.role"
+      },
+      {
+        "document": "SKILL.md",
+        "line": 95,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "SKILL.md",
+        "line": 147,
+        "token": "action.role"
+      },
+      {
+        "document": "SKILL.md",
+        "line": 147,
+        "token": "action.stage"
+      },
+      {
+        "document": "README.md",
+        "line": 302,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "README.md",
+        "line": 352,
+        "token": "assessment.current"
+      },
+      {
+        "document": "GLOSSARY.md",
+        "line": 452,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 99,
+        "token": "runtime.status"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 99,
+        "token": "task.status"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 101,
+        "token": "runtime.status"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 114,
+        "token": "task.status"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 225,
+        "token": "session_limits.work"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 280,
+        "token": "lifecycle.immutable_input"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 280,
+        "token": "runtime.inputs"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 284,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 284,
+        "token": "formal_verifier.preview.command"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 313,
+        "token": "runtime.user_pause"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 722,
+        "token": "scope.included"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 722,
+        "token": "scope.excluded"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 722,
+        "token": "expected.outputs"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 722,
+        "token": "expected.research_change"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 754,
+        "token": "action.stage"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 907,
+        "token": "formal_verifier.preview.command"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 977,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 27,
+        "token": "action.reasons"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 59,
+        "token": "record_map.ledger"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 63,
+        "token": "record_map.families"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 75,
+        "token": "record_map.families"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 79,
+        "token": "record_map.read_tool.command"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 101,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 107,
+        "token": "record_map.ledger"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 126,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 148,
+        "token": "formal_verifier.preview"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 150,
+        "token": "preview.command"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 152,
+        "token": "scholarly.configured"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 183,
+        "token": "submission_contract.limits.checkpoint_bytes"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 241,
+        "token": "submission_contract.workspace"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 241,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 271,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 305,
+        "token": "submission_contract.limits.max_artifact_bytes"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 315,
+        "token": "action.assessment_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 315,
+        "token": "action.observation_rule_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 326,
+        "token": "action.assessment_targets"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 356,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 386,
+        "token": "action.refresh"
+      },
+      {
+        "document": "references/모델과-실행예산.md",
+        "line": 9,
+        "token": "session_limits.work"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 7,
+        "token": "submission_contract.command"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 50,
+        "token": "session_limits.work"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 50,
+        "token": "session_limits.work"
+      },
+      {
+        "document": "references/자기-점검.md",
+        "line": 25,
+        "token": "execution_window.self_check_directory"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 63,
+        "token": "formal_verifier.mechanism"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 33,
+        "token": "lifecycle.immutable_input"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 299,
+        "token": "immutable_input.text"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 136,
+        "token": "maintenance_fence.state"
+      },
+      {
+        "document": "계약/동일성-검토.md",
+        "line": 9,
+        "token": "action.stage"
+      },
+      {
+        "document": "계약/목표-감사.md",
+        "line": 19,
+        "token": "formal_result.verification"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 72,
+        "token": "revisit.event_refs"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 72,
+        "token": "revisit.at"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 109,
+        "token": "action.rejection_id"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 133,
+        "token": "action.recovery.reason"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 84,
+        "token": "formal_verifier.mechanism"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 96,
+        "token": "task.knowledge_revision_targets"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 96,
+        "token": "action.revision_targets"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 163,
+        "token": "formal_verifier.mechanism"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 11,
+        "token": "action.target"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 19,
+        "token": "execution_to_review.observation_stream"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 39,
+        "token": "action.refresh"
+      },
+      {
+        "document": "계약/유지보수.md",
+        "line": 15,
+        "token": "record_map.ledger"
+      },
+      {
+        "document": "계약/유지보수.md",
+        "line": 26,
+        "token": "action.reason"
+      },
+      {
+        "document": "계약/유지보수.md",
+        "line": 76,
+        "token": "action.input_basis.impact_review"
+      },
+      {
+        "document": "계약/유지보수.md",
+        "line": 138,
+        "token": "action.reason"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 6,
+        "token": "immutable_input.text"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 15,
+        "token": "action.target"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 15,
+        "token": "task.id"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 15,
+        "token": "action.contract_basis"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 17,
+        "token": "action.review_basis_key"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 19,
+        "token": "task.producer_execution"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 27,
+        "token": "scope.included"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 27,
+        "token": "scope.excluded"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 27,
+        "token": "expected.outputs"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 27,
+        "token": "expected.research_change"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 35,
+        "token": "scope.included"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 35,
+        "token": "scope.excluded"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 45,
+        "token": "expected.research_change"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 51,
+        "token": "expected.outputs"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 51,
+        "token": "expected.research_change"
+      },
+      {
+        "document": "계약/작업-계약-검토.md",
+        "line": 105,
+        "token": "action.contract_basis"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 86,
+        "token": "expected.research_change"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 88,
+        "token": "ai.tier"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 95,
+        "token": "task.profile_refs"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 194,
+        "token": "scope.included"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 194,
+        "token": "scope.excluded"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 194,
+        "token": "expected.research_change"
+      }
+    ],
+    "checked_distinct_fields": 49,
+    "unbound_dotted_occurrences": [
+      {
+        "document": "README.md",
+        "line": 47,
+        "token": "requirements.txt"
+      },
+      {
+        "document": "README.md",
+        "line": 62,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "README.md",
+        "line": 134,
+        "token": "result.instance_id"
+      },
+      {
+        "document": "README.md",
+        "line": 140,
+        "token": "result.operator_schedule"
+      },
+      {
+        "document": "README.md",
+        "line": 186,
+        "token": "result.json"
+      },
+      {
+        "document": "README.md",
+        "line": 442,
+        "token": "role_tiers.recovery"
+      },
+      {
+        "document": "README.md",
+        "line": 452,
+        "token": "operator_bootstrap.py"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 32,
+        "token": "result.operator_schedule"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 66,
+        "token": "prompt.artifact_ref"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 116,
+        "token": "status.waiting_actions"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 128,
+        "token": "status.budget"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 136,
+        "token": "academic_validation.status"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 136,
+        "token": "status.knowledge"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 230,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 230,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 233,
+        "token": "activation.observation_errors"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 234,
+        "token": "dispatch_wait.kind"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 235,
+        "token": "role_tiers.recovery"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 282,
+        "token": "result.config_sha256"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 284,
+        "token": "pythonw.exe"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 284,
+        "token": "python.exe"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 284,
+        "token": "pythonw.exe"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 452,
+        "token": "record.content.academic_requirements"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 650,
+        "token": "record.family"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 686,
+        "token": "reads.jsonl"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 686,
+        "token": "planning.record_index"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 692,
+        "token": "role_review.proposal"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 692,
+        "token": "knowledge_records.judged_verification"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 704,
+        "token": "input_manifest.prompt.sha256"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 716,
+        "token": "schema.json"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 804,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 806,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 825,
+        "token": "observation.rule_bindings"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 833,
+        "token": "submission.py"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 855,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 867,
+        "token": "disposition.kind"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 919,
+        "token": "governance.mathematical_goal_basis"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 964,
+        "token": "final.txt"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 970,
+        "token": "probe_cli.py"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 988,
+        "token": "integration.currentness"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 1016,
+        "token": "status.operating_summary"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 19,
+        "token": "profile_selection.allowed_profiles"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 25,
+        "token": "repair.previous_output"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 33,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 45,
+        "token": "result_source.local_path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 45,
+        "token": "rejected_response.local_path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 99,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 124,
+        "token": "governance.charter"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 164,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 204,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 204,
+        "token": "observation.rule_bindings"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.kind"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.id"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 230,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 248,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 257,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 301,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 380,
+        "token": "integration.currentness"
+      },
+      {
+        "document": "references/과제-착수조건.md",
+        "line": 17,
+        "token": "change.value"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 5,
+        "token": "payload.kind"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 7,
+        "token": "governance.validate_import_units"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 11,
+        "token": "record.id"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.source_refs"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.origin_refs"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.confirmed_scope"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.epistemic_status"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.uncertainty_assessment"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.explanation"
+      },
+      {
+        "document": "references/자기-점검.md",
+        "line": 39,
+        "token": "payload.deadline_offset_ms"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 23,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 27,
+        "token": "result.snapshot"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 33,
+        "token": "user_request.text"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 166,
+        "token": "result.config_sha256"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 197,
+        "token": "result.selection.profile_ref"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 201,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 210,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 216,
+        "token": "toolchain.project.search_paths"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 240,
+        "token": "operating_summary.primary_blocker"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 261,
+        "token": "check.sha256"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 299,
+        "token": "user_request.text"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 13,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 15,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 21,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 34,
+        "token": "environment_check.changed_files"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 36,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 62,
+        "token": "lean.exe"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 63,
+        "token": "formal.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 67,
+        "token": "formal.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 67,
+        "token": "project.source_identity"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 69,
+        "token": "os.scandir"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 79,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 85,
+        "token": "setup_lean.py"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 157,
+        "token": "operation_progress.telemetry_errors"
+      },
+      {
+        "document": "계약/목표-감사.md",
+        "line": 37,
+        "token": "content.assessor"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 17,
+        "token": "review_research.question"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 19,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 66,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 133,
+        "token": "checkpoint.json"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 15,
+        "token": "checkpoint_source.local_path"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 21,
+        "token": "result_source.local_path"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 21,
+        "token": "checkpoint_source.local_path"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 95,
+        "token": "operational_evidence.activity_continuations"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 6,
+        "token": "user_request.text"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 10,
+        "token": "user_request.text"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.start"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.end"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "user_request.text"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 88,
+        "token": "profile_selection.allowed_profiles"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 144,
+        "token": "contract_check.coverage"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 145,
+        "token": "contract_check.cited_record"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 146,
+        "token": "contract_check.sibling_boundary"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 147,
+        "token": "contract_check.sibling_revision"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 148,
+        "token": "contract_check.sibling_under_revision"
+      }
+    ],
+    "limits": "남은113개 점 표기는 파일명·함수·오류 코드·다른 입력 공간을 포함하므로 미검증 필드113개라는 뜻이 아니다. 무공간 이름/역할별 산출/외부 도구 어휘와 실제 읽기 한도는 아직 전건 인증하지 않음.",
+    "reading_boundary": {
+      "actual_tool_byte_limit": null,
+      "status": "not_certified_unknown_byte_limit",
+      "rule": "한도를 발명하지 않고 현재 구간별 완독 지침을 유지한다."
+    }
+  },
+  {
+    "id": "B111",
+    "scope": "필드31공간과 함수/진단/파일 표기를 구별하고 명시 생산자 합성을 검증",
+    "state": "부분 구현·구조 검증 완료",
+    "memory_node": "M-0528",
+    "report": {
+      "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-함수-진단/report.json",
+      "sha256": "1e53bae06f882685a3aea885ee2eed607c6e4fed1cb50c5a621e89334bbd16ad",
+      "counts": {
+        "passed": 53
+      },
+      "total_seconds": 52.5,
+      "complete": true,
+      "successful": true,
+      "changed_during_run": []
+    },
+    "namespaces": [
+      "academic_validation",
+      "action",
+      "ai",
+      "assessment",
+      "config",
+      "execution",
+      "execution_to_review",
+      "execution_window",
+      "expected",
+      "formal_result",
+      "formal_verifier",
+      "governance",
+      "immutable_input",
+      "instance",
+      "lifecycle",
+      "maintenance_fence",
+      "operating_summary",
+      "operation_progress",
+      "operational_evidence",
+      "preview",
+      "profile",
+      "profile_selection",
+      "record_map",
+      "revisit",
+      "runtime",
+      "scholarly",
+      "scope",
+      "session_limits",
+      "status",
+      "submission_contract",
+      "task"
+    ],
+    "classified": {
+      "field": [
+        {
+          "document": "SKILL.md",
+          "line": 12,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 95,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.stage"
+        },
+        {
+          "document": "README.md",
+          "line": 302,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "README.md",
+          "line": 352,
+          "token": "assessment.current"
+        },
+        {
+          "document": "GLOSSARY.md",
+          "line": 452,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 101,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 114,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 116,
+          "token": "status.waiting_actions"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 128,
+          "token": "status.budget"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "academic_validation.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "status.knowledge"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 225,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "runtime.inputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 313,
+          "token": "runtime.user_pause"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.included"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 754,
+          "token": "action.stage"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 907,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 977,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 1016,
+          "token": "status.operating_summary"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 19,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 27,
+          "token": "action.reasons"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 59,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 63,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 75,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 79,
+          "token": "record_map.read_tool.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 101,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 107,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 124,
+          "token": "governance.charter"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 126,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 148,
+          "token": "formal_verifier.preview"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 150,
+          "token": "preview.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 152,
+          "token": "scholarly.configured"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 183,
+          "token": "submission_contract.limits.checkpoint_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.workspace"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 271,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 305,
+          "token": "submission_contract.limits.max_artifact_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.observation_rule_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 326,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 356,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 386,
+          "token": "action.refresh"
+        },
+        {
+          "document": "references/모델과-실행예산.md",
+          "line": 9,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/자기-점검.md",
+          "line": 25,
+          "token": "execution_window.self_check_directory"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 63,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 33,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 240,
+          "token": "operating_summary.primary_blocker"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 299,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 136,
+          "token": "maintenance_fence.state"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 157,
+          "token": "operation_progress.telemetry_errors"
+        },
+        {
+          "document": "계약/동일성-검토.md",
+          "line": 9,
+          "token": "action.stage"
+        },
+        {
+          "document": "계약/목표-감사.md",
+          "line": 19,
+          "token": "formal_result.verification"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.event_refs"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.at"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 109,
+          "token": "action.rejection_id"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 133,
+          "token": "action.recovery.reason"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 84,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "task.knowledge_revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 163,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 11,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 19,
+          "token": "execution_to_review.observation_stream"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 39,
+          "token": "action.refresh"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 95,
+          "token": "operational_evidence.activity_continuations"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 15,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 26,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 76,
+          "token": "action.input_basis.impact_review"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 138,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 6,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "task.id"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 17,
+          "token": "action.review_basis_key"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 19,
+          "token": "task.producer_execution"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 45,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 105,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 86,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "ai.tier"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 95,
+          "token": "task.profile_refs"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "expected.research_change"
+        }
+      ],
+      "filename_not_a_field": [
+        {
+          "document": "README.md",
+          "line": 47,
+          "token": "requirements.txt"
+        },
+        {
+          "document": "README.md",
+          "line": 62,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "README.md",
+          "line": 186,
+          "token": "result.json"
+        },
+        {
+          "document": "README.md",
+          "line": 452,
+          "token": "operator_bootstrap.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "python.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "reads.jsonl"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 716,
+          "token": "schema.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 804,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 806,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 833,
+          "token": "submission.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 964,
+          "token": "final.txt"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 970,
+          "token": "probe_cli.py"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 164,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 230,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 301,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 201,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 210,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 13,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 15,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 21,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 36,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 62,
+          "token": "lean.exe"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 63,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 67,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 79,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 85,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 66,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 133,
+          "token": "checkpoint.json"
+        }
+      ],
+      "function": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "planning.record_index(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 692,
+          "token": "knowledge_records.judged_verification(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 919,
+          "token": "governance.mathematical_goal_basis(...)"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "governance.validate_import_units(...)"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 69,
+          "token": "os.scandir(...)"
+        }
+      ],
+      "diagnostic": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 988,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 380,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 144,
+          "token": "contract_check.coverage"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 145,
+          "token": "contract_check.cited_record"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 146,
+          "token": "contract_check.sibling_boundary"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 147,
+          "token": "contract_check.sibling_revision"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 148,
+          "token": "contract_check.sibling_under_revision"
+        }
+      ]
+    },
+    "pending_dotted_references": [
+      {
+        "document": "README.md",
+        "line": 134,
+        "token": "result.instance_id"
+      },
+      {
+        "document": "README.md",
+        "line": 140,
+        "token": "result.operator_schedule"
+      },
+      {
+        "document": "README.md",
+        "line": 442,
+        "token": "role_tiers.recovery"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 32,
+        "token": "result.operator_schedule"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 66,
+        "token": "prompt.artifact_ref"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 233,
+        "token": "activation.observation_errors"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 234,
+        "token": "dispatch_wait.kind"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 235,
+        "token": "role_tiers.recovery"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 282,
+        "token": "result.config_sha256"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 452,
+        "token": "record.content.academic_requirements"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 650,
+        "token": "record.family"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 692,
+        "token": "role_review.proposal"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 704,
+        "token": "input_manifest.prompt.sha256"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 825,
+        "token": "observation.rule_bindings"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 855,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 867,
+        "token": "disposition.kind"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 25,
+        "token": "repair.previous_output"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 33,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 45,
+        "token": "result_source.local_path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 45,
+        "token": "rejected_response.local_path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 99,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 204,
+        "token": "observation.rule_bindings"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.kind"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.id"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 248,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 257,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/과제-착수조건.md",
+        "line": 17,
+        "token": "change.value"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 5,
+        "token": "payload.kind"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 11,
+        "token": "record.id"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.source_refs"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.origin_refs"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.confirmed_scope"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.epistemic_status"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.uncertainty_assessment"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 58,
+        "token": "record.explanation"
+      },
+      {
+        "document": "references/자기-점검.md",
+        "line": 39,
+        "token": "payload.deadline_offset_ms"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 23,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 27,
+        "token": "result.snapshot"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 33,
+        "token": "user_request.text"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 166,
+        "token": "result.config_sha256"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 197,
+        "token": "result.selection.profile_ref"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 216,
+        "token": "toolchain.project.search_paths"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 261,
+        "token": "check.sha256"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 299,
+        "token": "user_request.text"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 34,
+        "token": "environment_check.changed_files"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 67,
+        "token": "project.source_identity"
+      },
+      {
+        "document": "계약/목표-감사.md",
+        "line": 37,
+        "token": "content.assessor"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 17,
+        "token": "review_research.question"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 19,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 15,
+        "token": "checkpoint_source.local_path"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 21,
+        "token": "result_source.local_path"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 21,
+        "token": "checkpoint_source.local_path"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 6,
+        "token": "user_request.text"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 10,
+        "token": "user_request.text"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.start"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.end"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "user_request.text"
+      }
+    ],
+    "counts": {
+      "field": 104,
+      "filename_not_a_field": 33,
+      "function": 5,
+      "diagnostic": 7
+    },
+    "pending_count": 57,
+    "limits": "파일명 분류는 필드에서 제외한 것이며 생성 파일이 현재 디스크에 존재한다는 인증이 아니다. 문맥별 record/result/change/content와 무공간 이름 전건, 실제 도구 바이트 한도는 계속 미확인.",
+    "source_composition": "실제 함수의 literal 객체, 명시 bindings와 선택한 복수 반환 모양을 결합한다. 알 수 없는 spread와 사용되지 않은 binding은 실패한다."
+  },
+  {
+    "id": "B112",
+    "scope": "문서의 동명 변수에 행별 실제 소유자를 연결하고 CLI 분기·중첩 생산자·추가 대입을 구별",
+    "state": "부분 구현·구조 검증 완료",
+    "memory_node": "M-0529",
+    "report": {
+      "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-문맥-소유자/report.json",
+      "sha256": "bda9af16977f3a4dcbb2c98a87da25311d4fec06b960e466faef2d4deb9ef9dc",
+      "counts": {
+        "passed": 55
+      },
+      "total_seconds": 42.2,
+      "complete": true,
+      "successful": true,
+      "changed_during_run": []
+    },
+    "namespaces": [
+      "academic_validation",
+      "action",
+      "activation",
+      "ai",
+      "assessment",
+      "candidate_record",
+      "checkpoint_source",
+      "config",
+      "disposition",
+      "execution",
+      "execution_to_review",
+      "execution_window",
+      "expected",
+      "formal_result",
+      "formal_verifier",
+      "governance",
+      "governance_content",
+      "governance_record",
+      "immutable_input",
+      "init_result",
+      "input_manifest",
+      "instance",
+      "lifecycle",
+      "maintenance_fence",
+      "observation",
+      "operating_summary",
+      "operation_progress",
+      "operational_evidence",
+      "preview",
+      "profile",
+      "profile_selection",
+      "prompt",
+      "query_record",
+      "record_map",
+      "recovery_source",
+      "rejected_response",
+      "repair",
+      "result_source",
+      "revisit",
+      "role_tiers",
+      "runtime",
+      "scheduling_result",
+      "scholarly",
+      "scope",
+      "selection_result",
+      "session_limits",
+      "status",
+      "submission_contract",
+      "task",
+      "user_request"
+    ],
+    "classified": {
+      "field": [
+        {
+          "document": "SKILL.md",
+          "line": 12,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 95,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.stage"
+        },
+        {
+          "document": "README.md",
+          "line": 134,
+          "token": "result.instance_id"
+        },
+        {
+          "document": "README.md",
+          "line": 140,
+          "token": "result.operator_schedule"
+        },
+        {
+          "document": "README.md",
+          "line": 302,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "README.md",
+          "line": 352,
+          "token": "assessment.current"
+        },
+        {
+          "document": "README.md",
+          "line": 442,
+          "token": "role_tiers.recovery"
+        },
+        {
+          "document": "GLOSSARY.md",
+          "line": 452,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 32,
+          "token": "result.operator_schedule"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 66,
+          "token": "prompt.artifact_ref"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 101,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 114,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 116,
+          "token": "status.waiting_actions"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 128,
+          "token": "status.budget"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "academic_validation.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "status.knowledge"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 225,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 233,
+          "token": "activation.observation_errors"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 235,
+          "token": "role_tiers.recovery"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "runtime.inputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 282,
+          "token": "result.config_sha256"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 313,
+          "token": "runtime.user_pause"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 452,
+          "token": "record.content.academic_requirements"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 650,
+          "token": "record.family"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 704,
+          "token": "input_manifest.prompt.sha256"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.included"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 754,
+          "token": "action.stage"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 825,
+          "token": "observation.rule_bindings"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 867,
+          "token": "disposition.kind"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 907,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 977,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 1016,
+          "token": "status.operating_summary"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 19,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 25,
+          "token": "repair.previous_output"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 27,
+          "token": "action.reasons"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 45,
+          "token": "result_source.local_path"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 45,
+          "token": "rejected_response.local_path"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 59,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 63,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 75,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 79,
+          "token": "record_map.read_tool.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 101,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 107,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 124,
+          "token": "governance.charter"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 126,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 148,
+          "token": "formal_verifier.preview"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 150,
+          "token": "preview.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 152,
+          "token": "scholarly.configured"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 183,
+          "token": "submission_contract.limits.checkpoint_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "observation.rule_bindings"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.workspace"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 271,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 305,
+          "token": "submission_contract.limits.max_artifact_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.observation_rule_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 326,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 356,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 386,
+          "token": "action.refresh"
+        },
+        {
+          "document": "references/모델과-실행예산.md",
+          "line": 9,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 11,
+          "token": "record.id"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.source_refs"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.origin_refs"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.confirmed_scope"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.epistemic_status"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.uncertainty_assessment"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.explanation"
+        },
+        {
+          "document": "references/자기-점검.md",
+          "line": 25,
+          "token": "execution_window.self_check_directory"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 63,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 33,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 33,
+          "token": "user_request.text"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 166,
+          "token": "result.config_sha256"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 197,
+          "token": "result.selection.profile_ref"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 240,
+          "token": "operating_summary.primary_blocker"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 299,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 299,
+          "token": "user_request.text"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 136,
+          "token": "maintenance_fence.state"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 157,
+          "token": "operation_progress.telemetry_errors"
+        },
+        {
+          "document": "계약/동일성-검토.md",
+          "line": 9,
+          "token": "action.stage"
+        },
+        {
+          "document": "계약/목표-감사.md",
+          "line": 19,
+          "token": "formal_result.verification"
+        },
+        {
+          "document": "계약/목표-감사.md",
+          "line": 37,
+          "token": "content.assessor"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.event_refs"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.at"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 109,
+          "token": "action.rejection_id"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 133,
+          "token": "action.recovery.reason"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 84,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "task.knowledge_revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 163,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 11,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 15,
+          "token": "checkpoint_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 19,
+          "token": "execution_to_review.observation_stream"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 21,
+          "token": "result_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 21,
+          "token": "checkpoint_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 39,
+          "token": "action.refresh"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 95,
+          "token": "operational_evidence.activity_continuations"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 15,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 26,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 76,
+          "token": "action.input_basis.impact_review"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 138,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 6,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 6,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 10,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 29,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "task.id"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 17,
+          "token": "action.review_basis_key"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 19,
+          "token": "task.producer_execution"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 45,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 105,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 86,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "ai.tier"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 95,
+          "token": "task.profile_refs"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "expected.research_change"
+        }
+      ],
+      "filename_not_a_field": [
+        {
+          "document": "README.md",
+          "line": 47,
+          "token": "requirements.txt"
+        },
+        {
+          "document": "README.md",
+          "line": 62,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "README.md",
+          "line": 186,
+          "token": "result.json"
+        },
+        {
+          "document": "README.md",
+          "line": 452,
+          "token": "operator_bootstrap.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "reads.jsonl"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 716,
+          "token": "schema.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 804,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 806,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 833,
+          "token": "submission.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 964,
+          "token": "final.txt"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 970,
+          "token": "probe_cli.py"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 164,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 230,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 301,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 201,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 210,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 13,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 15,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 21,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 36,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 63,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 67,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 79,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 85,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 66,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 133,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "python.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 62,
+          "token": "lean.exe"
+        }
+      ],
+      "function": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "planning.record_index(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 692,
+          "token": "knowledge_records.judged_verification(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 919,
+          "token": "governance.mathematical_goal_basis(...)"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "governance.validate_import_units(...)"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 69,
+          "token": "os.scandir(...)"
+        }
+      ],
+      "diagnostic": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 988,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 380,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 144,
+          "token": "contract_check.coverage"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 145,
+          "token": "contract_check.cited_record"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 146,
+          "token": "contract_check.sibling_boundary"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 147,
+          "token": "contract_check.sibling_revision"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 148,
+          "token": "contract_check.sibling_under_revision"
+        }
+      ]
+    },
+    "pending": [
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 234,
+        "token": "dispatch_wait.kind"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 692,
+        "token": "role_review.proposal"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 855,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 33,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 99,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.kind"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 208,
+        "token": "subject.id"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 248,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 257,
+        "token": "check.passed"
+      },
+      {
+        "document": "references/과제-착수조건.md",
+        "line": 17,
+        "token": "change.value"
+      },
+      {
+        "document": "references/입력-소비자.md",
+        "line": 5,
+        "token": "payload.kind"
+      },
+      {
+        "document": "references/자기-점검.md",
+        "line": 39,
+        "token": "payload.deadline_offset_ms"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 23,
+        "token": "source_ref.path"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 27,
+        "token": "result.snapshot"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 216,
+        "token": "toolchain.project.search_paths"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 261,
+        "token": "check.sha256"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 34,
+        "token": "environment_check.changed_files"
+      },
+      {
+        "document": "references/초기화-효율과-정비.md",
+        "line": 67,
+        "token": "project.source_identity"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 17,
+        "token": "review_research.question"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 19,
+        "token": "review_research.sources"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.start"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 29,
+        "token": "source_range.end"
+      }
+    ],
+    "counts": {
+      "field": 139,
+      "filename_not_a_field": 33,
+      "function": 5,
+      "diagnostic": 7
+    },
+    "pending_count": 22,
+    "limits": "단순 소문자 점 표기의 필드139곳을 검증한다. 미결22곳, 무공간 이름·배열/상수 표기·역할별 산출 전건과 실제 읽기 도구 출력 한도는 남음. 파일명33곳은 분류이며 파일 존재 인증이 아니다.",
+    "source_composition": "행별 alias는 실제 schema/producer 소유자에 연결하며 canonical 공간 재정의·없는 소유자·미사용 alias를 거부한다. CLI 조건 분기, 명시 중첩 함수, tuple 반환과 고정 키 대입/update를 각각 선택하며 동적 키는 묵인하지 않는다.",
+    "budget_note": "구조 전체42.2초. smell 검사7.953초는 개별5초 기준을 넘었으나 정확성 검사를 유지했고 시간 초과를 실패로 취급하지 않았다."
+  },
+  {
+    "id": "B113",
+    "scope": "입력·검사·도구 환경의 나머지22개 점 표기를 실제 소유자에 연결하고 미소유 이름 누락을 실패시킴",
+    "state": "단순 점 표기 모집단 검증 완료·13-C 전체는 일부 구현",
+    "memory_node": "M-0530",
+    "report": {
+      "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-점표기-전건/report.json",
+      "sha256": "372effb98582be9b5d7639c5ccaab40925953055fd4cea0908161189e99be7db",
+      "counts": {
+        "passed": 57
+      },
+      "total_seconds": 51.0,
+      "complete": true,
+      "successful": true,
+      "changed_during_run": []
+    },
+    "namespaces": [
+      "academic_validation",
+      "action",
+      "activation",
+      "ai",
+      "assessment",
+      "candidate_record",
+      "change",
+      "checkpoint_source",
+      "config",
+      "disposition",
+      "environment_check",
+      "execution",
+      "execution_to_review",
+      "execution_window",
+      "expected",
+      "formal_result",
+      "formal_verifier",
+      "governance",
+      "governance_content",
+      "governance_record",
+      "immutable_input",
+      "import_check",
+      "import_payload",
+      "init_result",
+      "input_manifest",
+      "instance",
+      "lifecycle",
+      "maintenance_fence",
+      "observation",
+      "operating_summary",
+      "operation_progress",
+      "operational_evidence",
+      "plan_settle_wait",
+      "preview",
+      "profile",
+      "profile_selection",
+      "project",
+      "prompt",
+      "query_record",
+      "query_result",
+      "record_map",
+      "recovery_source",
+      "rejected_response",
+      "repair",
+      "result_source",
+      "review_research",
+      "revisit",
+      "role_review",
+      "role_tiers",
+      "runtime",
+      "scheduling_result",
+      "scholarly",
+      "scope",
+      "selection_result",
+      "session_limits",
+      "source_range",
+      "source_ref",
+      "status",
+      "subject",
+      "submission_check",
+      "submission_contract",
+      "task",
+      "toolchain",
+      "user_request",
+      "worker_feedback"
+    ],
+    "classified": {
+      "field": [
+        {
+          "document": "SKILL.md",
+          "line": 12,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 95,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.role"
+        },
+        {
+          "document": "SKILL.md",
+          "line": 147,
+          "token": "action.stage"
+        },
+        {
+          "document": "README.md",
+          "line": 134,
+          "token": "result.instance_id"
+        },
+        {
+          "document": "README.md",
+          "line": 140,
+          "token": "result.operator_schedule"
+        },
+        {
+          "document": "README.md",
+          "line": 302,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "README.md",
+          "line": 352,
+          "token": "assessment.current"
+        },
+        {
+          "document": "README.md",
+          "line": 442,
+          "token": "role_tiers.recovery"
+        },
+        {
+          "document": "GLOSSARY.md",
+          "line": 452,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 32,
+          "token": "result.operator_schedule"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 66,
+          "token": "prompt.artifact_ref"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 99,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 101,
+          "token": "runtime.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 114,
+          "token": "task.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 116,
+          "token": "status.waiting_actions"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 128,
+          "token": "status.budget"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "academic_validation.status"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 136,
+          "token": "status.knowledge"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 225,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 233,
+          "token": "activation.observation_errors"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 234,
+          "token": "dispatch_wait.kind"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 235,
+          "token": "role_tiers.recovery"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 280,
+          "token": "runtime.inputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 282,
+          "token": "result.config_sha256"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 313,
+          "token": "runtime.user_pause"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 452,
+          "token": "record.content.academic_requirements"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 650,
+          "token": "record.family"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 692,
+          "token": "role_review.proposal"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 704,
+          "token": "input_manifest.prompt.sha256"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.included"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 722,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 754,
+          "token": "action.stage"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 825,
+          "token": "observation.rule_bindings"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 855,
+          "token": "check.passed"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 867,
+          "token": "disposition.kind"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 907,
+          "token": "formal_verifier.preview.command"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 977,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 1016,
+          "token": "status.operating_summary"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 19,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 25,
+          "token": "repair.previous_output"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 27,
+          "token": "action.reasons"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 33,
+          "token": "source_ref.path"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 45,
+          "token": "result_source.local_path"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 45,
+          "token": "rejected_response.local_path"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 59,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 63,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 75,
+          "token": "record_map.families"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 79,
+          "token": "record_map.read_tool.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 99,
+          "token": "review_research.sources"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 101,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 107,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 124,
+          "token": "governance.charter"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 126,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 148,
+          "token": "formal_verifier.preview"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 150,
+          "token": "preview.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 152,
+          "token": "scholarly.configured"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 183,
+          "token": "submission_contract.limits.checkpoint_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "observation.rule_bindings"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 208,
+          "token": "subject.kind"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 208,
+          "token": "subject.id"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.workspace"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 241,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 248,
+          "token": "check.passed"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 257,
+          "token": "check.passed"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 271,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 305,
+          "token": "submission_contract.limits.max_artifact_bytes"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 315,
+          "token": "action.observation_rule_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 326,
+          "token": "action.assessment_targets"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 356,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 386,
+          "token": "action.refresh"
+        },
+        {
+          "document": "references/과제-착수조건.md",
+          "line": 17,
+          "token": "change.value"
+        },
+        {
+          "document": "references/모델과-실행예산.md",
+          "line": 9,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 5,
+          "token": "payload.kind"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "submission_contract.command"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 11,
+          "token": "record.id"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 50,
+          "token": "session_limits.work"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.source_refs"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.origin_refs"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.confirmed_scope"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.epistemic_status"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.uncertainty_assessment"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 58,
+          "token": "record.explanation"
+        },
+        {
+          "document": "references/자기-점검.md",
+          "line": 25,
+          "token": "execution_window.self_check_directory"
+        },
+        {
+          "document": "references/자기-점검.md",
+          "line": 39,
+          "token": "payload.deadline_offset_ms"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 23,
+          "token": "source_ref.path"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 63,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 27,
+          "token": "result.snapshot"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 33,
+          "token": "lifecycle.immutable_input"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 33,
+          "token": "user_request.text"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 166,
+          "token": "result.config_sha256"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 197,
+          "token": "result.selection.profile_ref"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 216,
+          "token": "toolchain.project.search_paths"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 240,
+          "token": "operating_summary.primary_blocker"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 261,
+          "token": "check.sha256"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 299,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 299,
+          "token": "user_request.text"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 34,
+          "token": "environment_check.changed_files"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 67,
+          "token": "project.source_identity"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 136,
+          "token": "maintenance_fence.state"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 157,
+          "token": "operation_progress.telemetry_errors"
+        },
+        {
+          "document": "계약/동일성-검토.md",
+          "line": 9,
+          "token": "action.stage"
+        },
+        {
+          "document": "계약/목표-감사.md",
+          "line": 19,
+          "token": "formal_result.verification"
+        },
+        {
+          "document": "계약/목표-감사.md",
+          "line": 37,
+          "token": "content.assessor"
+        },
+        {
+          "document": "계약/보충-조사.md",
+          "line": 17,
+          "token": "review_research.question"
+        },
+        {
+          "document": "계약/보충-조사.md",
+          "line": 19,
+          "token": "review_research.sources"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.event_refs"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 72,
+          "token": "revisit.at"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 109,
+          "token": "action.rejection_id"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 133,
+          "token": "action.recovery.reason"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 84,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "task.knowledge_revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "action.revision_targets"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 163,
+          "token": "formal_verifier.mechanism"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 11,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 15,
+          "token": "checkpoint_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 19,
+          "token": "execution_to_review.observation_stream"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 21,
+          "token": "result_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 21,
+          "token": "checkpoint_source.local_path"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 39,
+          "token": "action.refresh"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 95,
+          "token": "operational_evidence.activity_continuations"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 15,
+          "token": "record_map.ledger"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 26,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 76,
+          "token": "action.input_basis.impact_review"
+        },
+        {
+          "document": "계약/유지보수.md",
+          "line": 138,
+          "token": "action.reason"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 6,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 6,
+          "token": "immutable_input.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 10,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 29,
+          "token": "source_range.start"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 29,
+          "token": "source_range.end"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 29,
+          "token": "user_request.text"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.target"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "task.id"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 15,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 17,
+          "token": "action.review_basis_key"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 19,
+          "token": "task.producer_execution"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 27,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 35,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 45,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.outputs"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 51,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/작업-계약-검토.md",
+          "line": 105,
+          "token": "action.contract_basis"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 86,
+          "token": "expected.research_change"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "profile_selection.allowed_profiles"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 88,
+          "token": "ai.tier"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 95,
+          "token": "task.profile_refs"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.included"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "scope.excluded"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 194,
+          "token": "expected.research_change"
+        }
+      ],
+      "filename_not_a_field": [
+        {
+          "document": "README.md",
+          "line": 47,
+          "token": "requirements.txt"
+        },
+        {
+          "document": "README.md",
+          "line": 62,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "README.md",
+          "line": 186,
+          "token": "result.json"
+        },
+        {
+          "document": "README.md",
+          "line": 452,
+          "token": "operator_bootstrap.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 230,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "python.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 284,
+          "token": "pythonw.exe"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "reads.jsonl"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 716,
+          "token": "schema.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 804,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 806,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 833,
+          "token": "submission.py"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 964,
+          "token": "final.txt"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 970,
+          "token": "probe_cli.py"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 164,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 230,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 301,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 201,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 210,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 13,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 15,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 21,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 36,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 62,
+          "token": "lean.exe"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 63,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 67,
+          "token": "formal.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 79,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 85,
+          "token": "setup_lean.py"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 66,
+          "token": "checkpoint.json"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 133,
+          "token": "checkpoint.json"
+        }
+      ],
+      "function": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 686,
+          "token": "planning.record_index(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 692,
+          "token": "knowledge_records.judged_verification(...)"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 919,
+          "token": "governance.mathematical_goal_basis(...)"
+        },
+        {
+          "document": "references/입력-소비자.md",
+          "line": 7,
+          "token": "governance.validate_import_units(...)"
+        },
+        {
+          "document": "references/초기화-효율과-정비.md",
+          "line": 69,
+          "token": "os.scandir(...)"
+        }
+      ],
+      "diagnostic": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 988,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 380,
+          "token": "integration.currentness"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 144,
+          "token": "contract_check.coverage"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 145,
+          "token": "contract_check.cited_record"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 146,
+          "token": "contract_check.sibling_boundary"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 147,
+          "token": "contract_check.sibling_revision"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 148,
+          "token": "contract_check.sibling_under_revision"
+        }
+      ]
+    },
+    "counts": {
+      "field": 161,
+      "filename_not_a_field": 33,
+      "function": 5,
+      "diagnostic": 7
+    },
+    "pending": [],
+    "pending_count": 0,
+    "limits": "소문자 단순 점 표기에 한정한다. 단독 이름·배열 인덱스·대문자 상수 표기 및 역할별 산출 전건과 실제 운전 도구 바이트 한도는 미해소다. 파일명 분류는 존재 검증이 아니다.",
+    "owner_evidence": "제출 check.passed와 수입 check.sha256를 분리. 선택적 change.value 및 payload.kind는 실제 소유자의 고정 키 읽기에 결속하며 쓰기·타 객체·중첩 함수·동적 키는 이름 근거로 쓰지 않는다. plan_settle_wait는 계획 정착 대기의 생산자 하나에 명시 결속한다.",
+    "budget_note": "구조57개51.0초. smell 검사9.032초는 개별5초 기준을 초과했으나 정확성 검사를 유지했다."
+  },
+  {
+    "id": "B114",
+    "scope": "배열 항목28곳과 모듈 상수3곳을 실제 저장·입력 생산자에 연결",
+    "state": "배열/상수 표기 검증 완료·13-C 전체는 일부 구현",
+    "memory_node": "M-0531",
+    "reports": {
+      "before": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/before.json",
+        "sha256": "b79bc453f5cf3043ee588ff36a98b4903e6ed38e55a112f79b8cfe920617e169",
+        "counts": {
+          "error": 10,
+          "passed": 7
+        },
+        "total_seconds": 4.2,
+        "complete": true,
+        "successful": false,
+        "changed_during_run": []
+      },
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/report.json",
+        "sha256": "2d77ce2d52f8b98b0c792d80022107231aa4126318eec06716c5c65f8a559af2",
+        "counts": {
+          "passed": 59
+        },
+        "total_seconds": 51.7,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    "counts": {
+      "field": 189,
+      "filename_not_a_field": 33,
+      "function": 5,
+      "diagnostic": 7,
+      "constant": 3
+    },
+    "namespaces": [
+      "academic_validation",
+      "action",
+      "activation",
+      "ai",
+      "assessment",
+      "candidate_record",
+      "candidates",
+      "change",
+      "checkpoint_files",
+      "checkpoint_source",
+      "config",
+      "contract_checks",
+      "disposition",
+      "documents",
+      "environment_check",
+      "execution",
+      "execution_to_review",
+      "execution_window",
+      "expected",
+      "external_rejections",
+      "formal_result",
+      "formal_verifier",
+      "governance",
+      "governance_content",
+      "governance_record",
+      "immutable_input",
+      "import_check",
+      "import_payload",
+      "init_result",
+      "input_manifest",
+      "instance",
+      "item_dispositions",
+      "knowledge_changes",
+      "lifecycle",
+      "maintenance_fence",
+      "materialized_output_files",
+      "observation",
+      "operating_summary",
+      "operation_progress",
+      "operational_evidence",
+      "pending_findings",
+      "plan_settle_wait",
+      "preview",
+      "previous_output_files",
+      "profile",
+      "profile_selection",
+      "project",
+      "prompt",
+      "query_record",
+      "query_result",
+      "question_details",
+      "record_map",
+      "recovered_output_files",
+      "recovery_materials",
+      "recovery_source",
+      "rejected_response",
+      "repair",
+      "research_sources",
+      "result_source",
+      "results",
+      "review_research",
+      "review_sources",
+      "revision_resolutions",
+      "revisit",
+      "role_review",
+      "role_tiers",
+      "runtime",
+      "scheduling_result",
+      "scholarly",
+      "scope",
+      "selection_result",
+      "session_limits",
+      "source_range",
+      "source_ref",
+      "status",
+      "subject",
+      "submission_check",
+      "submission_contract",
+      "task",
+      "task_assessments",
+      "task_conditions",
+      "toolchain",
+      "user_request",
+      "worker_feedback"
+    ],
+    "added_references": [
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 70,
+        "token": "documents[].artifact_ref",
+        "kind": "field"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 650,
+        "token": "planning.RECORD_FAMILIES",
+        "kind": "constant"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 732,
+        "token": "item_dispositions[].evidence_refs",
+        "kind": "field"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 873,
+        "token": "recovery_materials.output_files[].restoration_error",
+        "kind": "field"
+      },
+      {
+        "document": "references/CLI-실행-계약.md",
+        "line": 929,
+        "token": "results[].report",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 29,
+        "token": "results[].report",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 31,
+        "token": "sources[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 31,
+        "token": "output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 31,
+        "token": "previous_output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 45,
+        "token": "previous_output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 49,
+        "token": "results[].output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 49,
+        "token": "previous_output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 126,
+        "token": "candidates[].revises_task_id",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 126,
+        "token": "knowledge_changes[].id",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 130,
+        "token": "task_conditions[].knowledge_revision_targets",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 204,
+        "token": "observations.OPERATORS",
+        "kind": "constant"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 206,
+        "token": "task_conditions[].observation_rules",
+        "kind": "field"
+      },
+      {
+        "document": "references/공통-실행.md",
+        "line": 356,
+        "token": "knowledge.AUTHORED_FIELDS",
+        "kind": "constant"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 25,
+        "token": "results[].output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/지식-저작과-재사용.md",
+        "line": 25,
+        "token": "previous_output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "references/초기화-운전.md",
+        "line": 27,
+        "token": "result.items[].path",
+        "kind": "field"
+      },
+      {
+        "document": "계약/동일성-검토.md",
+        "line": 65,
+        "token": "pending_findings[].ref",
+        "kind": "field"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 35,
+        "token": "sources[].ref",
+        "kind": "field"
+      },
+      {
+        "document": "계약/보충-조사.md",
+        "line": 35,
+        "token": "sources[].ref",
+        "kind": "field"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 49,
+        "token": "task_assessments[].item_dispositions",
+        "kind": "field"
+      },
+      {
+        "document": "계약/연구-계획.md",
+        "line": 109,
+        "token": "external_rejections[].id",
+        "kind": "field"
+      },
+      {
+        "document": "계약/연구-수행.md",
+        "line": 96,
+        "token": "revision_resolutions[].disposition",
+        "kind": "field"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 15,
+        "token": "checkpoint_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "계약/운영-점검.md",
+        "line": 21,
+        "token": "output_files[].local_path",
+        "kind": "field"
+      },
+      {
+        "document": "계약/의도-해석.md",
+        "line": 34,
+        "token": "question_details[].id",
+        "kind": "field"
+      },
+      {
+        "document": "계약/후보-준비.md",
+        "line": 154,
+        "token": "contract_checks[].sibling_boundaries",
+        "kind": "field"
+      }
+    ],
+    "pending_dotted_count": 0,
+    "failure_correction": "초기 검사10오류는 존재하지 않는 RECORDS.checkpoints를 읽은 검사 지원 코드의 동일 원인이다. 실제 runtime.checkpoints의 map item schema로 수정했다. 제품 결함으로 세지 않는다.",
+    "boundary": "배열 suffix는 실제 items를 따라간다. 객체/map 키를 항목 필드로 사용하지 않는다. 인덱스는 필드 소유자 확인이며 실제 배열 길이 인증이 아니다. 저장 execution.output_files에는 없는 local_path를 복원 생산자에 결속한다.",
+    "limits": "기존 단순 점 표기161곳과 새 배열28곳으로 필드189곳이다. 단독 이름·문장 내 조합 표기·역할별 산출 전건 및 실제 읽기 도구 출력 한도는 남음.",
+    "next_candidate_evidence": {
+      "scope": "현재24문서의 단일 ASCII 식별자 표기, lexical presence only",
+      "unique": 1029,
+      "occurrences": 3537,
+      "without_python_lexical_match": [
+        "ProcessId",
+        "ParentProcessId",
+        "CommandLine",
+        "PT0S",
+        "F",
+        "U",
+        "needs_revision",
+        "import_unit",
+        "rg",
+        "TaskOutput",
+        "checkpoint_schema",
+        "FileRenameInfoEx",
+        "describe_source",
+        "not_implemented",
+        "restricted",
+        "LIVE_INSTALLATION_ROOT",
+        "question_detail"
+      ],
+      "caveat": "AST keyword 이름과 PowerShell 등은 이 사전 탐색에서 제외했다.17개 모두 결함이라는 뜻이 아니다."
+    },
+    "budget_note": "구조59개51.7초; 전체 의미를 약화하거나 timeout을 추가하지 않았다."
+  }
+]

@@ -1,0 +1,47 @@
+@@ -291,6 +311,46 @@ def field_schemas():
+     environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
+     schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
+         bindings={'result': environment_base})
++    def array(item):
++        return {'type': 'array', 'items': item}
++    schemas['candidates'] = contracts.schema_for('research_preparation')['properties']['candidates']
++    schemas['task_assessments'] = contracts.schema_for('research_plan')['properties']['task_assessments']
++    schemas['item_dispositions'] = schemas['task_assessments']['items']['properties']['item_dispositions']
++    extensions = submission.extension_schema({'role': 'research_preparation'})['properties']
++    for name in ('task_conditions', 'knowledge_changes', 'revision_resolutions', 'contract_checks'):
++        schemas[name] = extensions[name]
++    schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
++    schemas['external_rejections'] = array(RECORDS['external_rejections'])
++    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
++        "cycle['findings'][key]", variants=True))
++    document = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='documents', list_item=True)
++    document['properties'].update(written_object_schema(context_store.prepare_role_input, 'row',
++        iteration="zip(manifest['documents'], documents)")['properties'])
++    schemas['documents'] = array(document)
++    stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
++    restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
++    schemas['materialized_output_files'] = array(restored_file)
++    previous_file = produced_object_schema(context_store.restore_continuation, 'latest[logical]', bindings={'deepcopy(entry)': stored_file})
++    schemas['previous_output_files'] = array(produced_object_schema(context_store.restore_continuation,
++        'restored.append', argument=0, bindings={'entry': previous_file}))
++    schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
++        bindings={'source': RECORDS['sources']}))
++    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
++        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
++    schemas['recovered_output_files'] = array(schemas['recovery_source'])
++    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
++        bindings={'output_files': array(schemas['recovery_source'])})
++    # The task result retains the research response, then _context restores its files.
++    research_output = contracts.schema_for('research_work')
++    retained = {'properties': {key: value for key, value in research_output['properties'].items()
++                              if key not in {'knowledge', 'relations', 'integration_bundles'}}}
++    result = produced_object_schema(CoreEngineMixin._apply, "task['results'].append", argument=0, bindings={
++        "{key: deepcopy(value) for key, value in output.items() if key not in {'knowledge', 'relations', 'integration_bundles'}}": retained,
++        "deepcopy(self.runtime['executions'][execution_id].get('output_files', []))": array(stored_file)})
++    result['properties']['output_files'] = schemas['materialized_output_files']
++    schemas['results'] = array(result)
++    schemas['query_result']['properties']['items'] = array(produced_object_schema(core_engine._record_evidence))
++    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
+     for name in ('execution_window', 'scholarly', 'formal_verifier'):
+         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')

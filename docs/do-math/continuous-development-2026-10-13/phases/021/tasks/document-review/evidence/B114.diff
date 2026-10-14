@@ -1,0 +1,389 @@
+commit 136dc3d578a06caaba5712e1fae101f29815c6b8
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Mon Oct 5 06:39:06 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Mon Oct 5 06:39:06 2026 +0900
+
+    문서의 배열 항목과 상수를 실제 입력 생산자에 연결
+
+diff --git "a/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md" "b/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
+index 8598a768..c960465d 100644
+--- "a/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
++++ "b/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
+@@ -28,7 +28,7 @@
+ 
+ 두 역할의 `tasks`는 이번에 비교하거나 처분할 과제만 담는다. `task_catalog`는 완료·진행 중 과제를 포함한 현재 과제 전건의 ID, 제목, 판본, 상태, 결과 수와 `source_ref`를 담는다. 이번 판단에 관련된 과제가 `tasks`에 없더라도, 그 과제는 `task_catalog`의 `source_ref`를 열어 계약과 `results[].report`, 평가, 복원된 산출 파일의 `local_path`를 확인한다. `task_catalog` 전체가 다시 `source_ref`로 바뀌었으면 그 목록 원문부터 연다. `ongoing_work`는 미종결 실행과 대기 중인 행동의 역할·대상·단계·상태·이유·공개 근거 참조를 직접 제공한다. 이 목록에는 검토자의 미공개 초안이나 잠정 판정을 넣지 않는다. 과제 원문을 참조할 수 있다는 사실은 이번 계획의 선택 모집단이나 후보 개정 권한을 넓히지 않는다.
+ 
+-모델이 읽을 원문은 작업 공간의 `input/` 아래에 복원된다. 기존 지식은 `input/knowledge/<ID>.json`, 수입 원자료는 `sources[].local_path`, 이전 과제의 파일 산출은 각 `output_files[].local_path`, 같은 과제를 이어갈 때의 파일은 `previous_output_files[].local_path`에서 찾는다. 이 경로는 입력 문맥에 상대 경로로 주어지므로, 문맥의 `workspace` 절대 경로와 결합해 읽는다. 셸을 사용할 때는 매 호출에 그 정확한 작업 공간을 지정한다. 도구가 작업 디렉터리와 login 인자를 제공하면 해당 경로와 `login=false`를 사용한다. 그런 인자가 없는 도구는 명령 안에서 작업 공간을 명시하고 그 호출 안에서만 이동한다. Windows의 셸 기본 디렉터리가 실행 작업 공간과 다를 수 있고 로그인 셸 초기화가 경로 해석을 바꿀 수 있으므로, 실제 도구가 지원하는 경로·셸 설정을 호출마다 명시해야 같은 파일을 읽고 쓴다는 근거가 선다. 입력 스냅숏의 다른 기록은 「기록 지도와 읽기 도구」의 읽기 도구로 읽고, 중앙 저장소나 다른 실행 공간을 직접 찾아 읽지 않는다.
++모델이 읽을 원문은 작업 공간의 `input/` 아래에 복원된다. 기존 지식은 `input/knowledge/<ID>.json`, 수입 원자료는 `sources[].local_path`, 이전 과제의 파일 산출은 각 `output_files[].local_path`, 같은 과제를 이어갈 때의 파일은 `previous_output_files[].local_path`에서 찾는다. 이 경로는 입력 문맥에 상대 경로로 주어지므로, 문맥의 `workspace` 절대 경로와 결합해 읽는다. 셸을 사용할 때는 매 호출에 그 정확한 작업 공간을 지정한다. 도구가 작업 디렉터리와 login 인자를 제공하면 해당 경로와 `login=false`를 사용한다. 그런 인자가 없는 도구는 명령 안에서 작업 공간을 명시하고 그 호출 안에서만 이동한다. Windows의 셸 기본 디렉터리가 실행 작업 공간과 다를 수 있고 로그인 셸 초기화가 경로 해석을 바꿀 수 있으므로, 실제 도구가 지원하는 경로·셸 설정을 호출마다 명시해야 같은 파일을 읽고 쓴다는 근거가 선다. 입력 스냅숏의 다른 기록은 「기록 지도와 읽기 도구」의 읽기 도구로 읽고, 중앙 저장소나 다른 실행 공간을 직접 찾아 읽지 않는다. <!-- do-math fields: sources=research_sources, output_files=materialized_output_files -->
+ 
+ 필수 직접 입력이 아닌 큰 목록과 객체는 프롬프트 안에서 원래 항목 수 `total`과 `source_ref`만 가진 객체로 통째로 바뀔 수 있다. 이 역할이 직접 싣지 않는 지도 항목은 크기와 관계없이 항상 이 형태로 온다. `source_ref`는 원문이 없다는 표시가 아니라 `input/catalog/` 아래에 보존한 정규 JSON의 경로·해시·바이트 수다. 판단에 그 목록의 항목이나 상세가 필요하면 `source_ref.path`를 열고, 기록된 해시와 크기에 대응하는 원문을 읽는다. 연구 계획에서 `tasks`가 참조로 바뀌어도 `ready_task_ids`의 ID 전건을 선택 모집단으로 유지한다. `source_ref` 파일을 읽지 못하면 빈 목록으로 해석하지 말고 읽기 실패와 경로를 반환한다.
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index b05626f3..a00c6235 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -1,11 +1,11 @@
+-"""13-C command names and command-specific flags across the operating/role documents.
++"""13-C commands, policies, dotted fields, functions and constants in role documents.
+ 
+-Fields, policies and reading-boundary obligations have separate closure work;
+-this test does not substitute flag vocabulary for those requirements.
++Unqualified prose field names and reading-boundary obligations still require
++separate closure; dotted references are checked against their actual owners.
+ """
+ from pathlib import Path
+ import unittest
+-from support.doc_code import (command_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
++from support.doc_code import (command_issues, constant_reference_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
+                               field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, unowned_field_references, written_object_schema)
+ 
+ SKILL = Path(__file__).resolve().parents[3]
+@@ -91,6 +91,20 @@ class DocumentCodeTests(unittest.TestCase):
+             if choice:
+                 return {'left': 1}
+             return {'right': 1}
++        def conditional(choice):
++            return {'base': 1, **({'optional': 1} if choice else {})}
++        def array_producer():
++            values = [{'item': 1} for _ in range(1)]
++            target = []
++            target.append({'own': 1})
++            other = []
++            other.append({'foreign': 1})
++        schema = produced_object_schema(conditional)
++        self.assertEqual(scoped_field_issues('`view.base` `view.optional`', {'view': schema}), [])
++        self.assertEqual(set(produced_object_schema(array_producer, 'values', list_item=True)['properties']), {'item'})
++        self.assertEqual(set(produced_object_schema(array_producer, 'target.append', argument=0)['properties']), {'own'})
++        with self.assertRaisesRegex(ValueError, 'Review producer list item'):
++            produced_object_schema(array_producer, 'target', list_item=True)
+         schema = produced_object_schema(result, bindings={'extra': {'properties': {'observed': {}}}})
+         self.assertEqual(scoped_field_issues('`view.own` `view.observed`', {'view': schema}), [])
+         with self.assertRaisesRegex(ValueError, 'Unused producer bindings'):
+@@ -168,6 +182,13 @@ class DocumentCodeTests(unittest.TestCase):
+         self.assertEqual(set(schema['properties']), {'second'})
+         with self.assertRaisesRegex(ValueError, 'Review producer branch'):
+             written_object_schema(producer, 'result', branch="command == 'missing'")
++        def loop_producer(first, second):
++            for row in first:
++                row['first'] = 1
++            for row in second:
++                row['second'] = 2
++        schema = written_object_schema(loop_producer, 'row', iteration='first')
++        self.assertEqual(set(schema['properties']), {'first'})
+         schemas = field_schemas()
+         self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref` '
+             '`init_result.instance_id` `selection_result.selection.profile_ref` `query_record.family`', schemas), [])
+@@ -197,7 +218,7 @@ class DocumentCodeTests(unittest.TestCase):
+         self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+                          [('scoped field', 'payload.deadline_offset_ms')])
+ 
+-    def test_all_simple_dotted_document_fields_have_an_owner(self):
++    def test_all_dotted_document_fields_have_an_owner(self):
+         schemas = field_schemas()
+         pending = [(document.relative_to(SKILL).as_posix(), token)
+                    for document in documents(SKILL)
+@@ -208,6 +229,32 @@ class DocumentCodeTests(unittest.TestCase):
+         self.assertEqual(unowned_field_references('`record.id` <!-- do-math fields: record=governance_record -->', schemas), [])
+         self.assertEqual(unowned_field_references('`pythonw.exe` `integration.currentness` `os.scandir(...)`', schemas), [])
+ 
++    def test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields(self):
++        item = {'properties': {'own': {}, 'nested': {'type': 'array', 'items': {'properties': {'leaf': {}}}}}}
++        schemas = {'rows': {'type': 'array', 'items': item},
++                   'mapping': {'type': 'object', 'additionalProperties': item},
++                   'object': {'properties': {'own': {}}}}
++        self.assertEqual(scoped_field_issues('`rows[].own` `rows[0].nested[].leaf`', schemas), [])
++        for token in ('rows.own', 'rows[].leaf', 'mapping[].own', 'object[].own'):
++            self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
++        self.assertEqual(unowned_field_references('`unknown[].own` `integration[].currentness` `unknown[].json`', schemas),
++                         ['integration[].currentness', 'unknown[].json', 'unknown[].own'])
++        self.assertEqual(scoped_field_issues('`data[].own` <!-- do-math fields: data=rows -->', schemas), [])
++        actual = field_schemas()
++        self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
++            '`documents[].artifact_ref` `question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
++        self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
++                         [('scoped field', 'execution.output_files[].local_path')])
++
++    def test_documented_module_constants_exist_independently_of_field_names(self):
++        issues = [(document.relative_to(SKILL).as_posix(), *issue)
++                  for document in documents(SKILL)
++                  for issue in constant_reference_issues(document.read_text(encoding='utf-8'))]
++        self.assertEqual(issues, [])
++        self.assertEqual(constant_reference_issues('`planning.RECORD_FAMILIES` `observations.OPERATORS` `knowledge.AUTHORED_FIELDS`'), [])
++        self.assertEqual(constant_reference_issues('`planning.MISSING_CONSTANT` `missing_module.OPERATORS`'),
++                         [('constant reference', 'missing_module.OPERATORS'), ('constant reference', 'planning.MISSING_CONSTANT')])
++
+     def test_documented_policy_names_have_installed_owners(self):
+         names = declared_policy_names(SCRIPTS)
+         mentioned = set().union(*(documented_policies(document.read_text(encoding='utf-8'))
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index d26597f9..7fc83db2 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -9,7 +9,8 @@ Dotted fields use their actual schema or an explicitly selected producer. A
+ prose variable with different owners, such as record or result, can declare
+ its owner on the same line: <!-- do-math fields: record=governance_record -->.
+ These bindings never leak to later lines or override canonical namespaces.
+-Unknown namespaces are coverage gaps, not evidence of a valid field.
++The document test rejects unknown namespaces. Array suffixes traverse item
++shapes; an index proves field ownership, not that a runtime array has that index.
+ """
+ import ast
+ import inspect
+@@ -22,6 +23,7 @@ import shlex
+ ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
+ SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
+ FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
++FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?)+')
+ 
+ 
+ def documents(skill):
+@@ -90,7 +92,7 @@ def command_issues(text, options, flags):
+     return sorted(issues)
+ 
+ 
+-def producer_nodes(function, scope=None, branch=None):
++def producer_nodes(function, scope=None, branch=None, iteration=None):
+     tree = ast.parse(textwrap.dedent(inspect.getsource(inspect.unwrap(function))))
+     function_node = tree.body[0]
+     if scope is not None:
+@@ -106,11 +108,14 @@ def producer_nodes(function, scope=None, branch=None):
+             continue
+         nodes.append(node)
+         pending.extend(ast.iter_child_nodes(node))
+-    if branch is not None:
+-        expected = ast.unparse(ast.parse(branch, mode='eval').body)
+-        matches = [node for node in nodes if isinstance(node, ast.If) and ast.unparse(node.test) == expected]
++    if branch is not None or iteration is not None:
++        expression = branch if branch is not None else iteration
++        expected = ast.unparse(ast.parse(expression, mode='eval').body)
++        matches = [node for node in nodes if
++                   (isinstance(node, ast.If) and branch is not None and ast.unparse(node.test) == expected) or
++                   (isinstance(node, ast.For) and iteration is not None and ast.unparse(node.iter) == expected)]
+         if len(matches) != 1:
+-            raise ValueError(f'Review producer branch {function.__qualname__}: {branch}')
++            raise ValueError(f'Review producer branch {function.__qualname__}: {expression}')
+         pending, nodes = list(matches[0].body), []
+         while pending:
+             node = pending.pop()
+@@ -121,19 +126,28 @@ def producer_nodes(function, scope=None, branch=None):
+     return nodes
+ 
+ 
+-def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None):
++def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None, argument=None, list_item=False):
+     """Read explicitly selected producer objects; unknown fields require review."""
+     nodes = producer_nodes(function, scope, branch)
+-    if keyword is not None:
++    if keyword is not None or argument is not None:
+         expected = ast.unparse(ast.parse(target, mode='eval').body)
+-        values = [item.value for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected
+-                  for item in node.keywords if item.arg == keyword]
++        calls = [node for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected]
++        if argument is not None:
++            if any(argument >= len(node.args) for node in calls):
++                raise ValueError(f'Review producer call argument {function.__qualname__}')
++            values = [node.args[argument] for node in calls]
++        else:
++            values = [item.value for node in calls for item in node.keywords if item.arg == keyword]
+     elif target is None:
+         values = [node.value for node in nodes if isinstance(node, ast.Return)]
+     else:
+         expected = ast.unparse(ast.parse(target, mode='eval').body)
+         values = [node.value for node in nodes if isinstance(node, ast.Assign)
+                   and any(ast.unparse(item) == expected for item in node.targets)]
++    if list_item:
++        if any(not isinstance(value, ast.ListComp) for value in values):
++            raise ValueError(f'Review producer list item {function.__qualname__}')
++        values = [value.elt for value in values]
+     if return_item is not None:
+         if any(not isinstance(value, ast.Tuple) or return_item >= len(value.elts) for value in values):
+             raise ValueError(f'Review producer result tuple {function.__qualname__}')
+@@ -146,31 +160,37 @@ def produced_object_schema(function, target=None, *, bindings=None, variants=Fal
+         if expression in bindings:
+             used.add(expression)
+             return bindings[expression]
++        if isinstance(node, ast.IfExp) and isinstance(node.body, ast.Dict) and isinstance(node.orelse, ast.Dict):
++            return {'anyOf': [shape(node.body), shape(node.orelse)]}
+         if not isinstance(node, ast.Dict):
+             return {}
+-        properties = {}
++        properties, compositions = {}, []
+         for key, value in zip(node.keys, node.values):
+             if key is None:
+                 expanded = shape(value)
+-                if 'properties' not in expanded:
++                if 'properties' in expanded:
++                    properties.update(expanded['properties'])
++                elif 'anyOf' in expanded or 'allOf' in expanded:
++                    compositions.append(expanded)
++                else:
+                     raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
+-                properties.update(expanded['properties'])
+             elif isinstance(key, ast.Constant) and isinstance(key.value, str):
+                 properties[key.value] = shape(value)
+             else:
+                 raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
+-        return {'type': 'object', 'properties': properties, 'additionalProperties': False}
++        own = {'type': 'object', 'properties': properties, 'additionalProperties': False}
++        return {'allOf': [own, *compositions]} if compositions else own
+     shapes = [shape(value) for value in values]
+     if used != set(bindings):
+         raise ValueError(f'Unused producer bindings in {function.__qualname__}: {sorted(set(bindings) - used)}')
+     return {'anyOf': shapes} if variants else shapes[0]
+ 
+ 
+-def written_object_schema(function, target, *, branch=None):
++def written_object_schema(function, target, *, branch=None, iteration=None):
+     """Fixed subscript/keyword additions to one selected object, not other CLI branches."""
+     expected = ast.unparse(ast.parse(target, mode='eval').body)
+     properties = {}
+-    for node in producer_nodes(function, branch=branch):
++    for node in producer_nodes(function, branch=branch, iteration=iteration):
+         if isinstance(node, ast.Assign):
+             for destination in node.targets:
+                 if isinstance(destination, ast.Subscript) and ast.unparse(destination.value) == expected:
+@@ -291,6 +311,46 @@ def field_schemas():
+     environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
+     schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
+         bindings={'result': environment_base})
++    def array(item):
++        return {'type': 'array', 'items': item}
++    schemas['candidates'] = contracts.schema_for('research_preparation')['properties']['candidates']
++    schemas['task_assessments'] = contracts.schema_for('research_plan')['properties']['task_assessments']
++    schemas['item_dispositions'] = schemas['task_assessments']['items']['properties']['item_dispositions']
++    extensions = submission.extension_schema({'role': 'research_preparation'})['properties']
++    for name in ('task_conditions', 'knowledge_changes', 'revision_resolutions', 'contract_checks'):
++        schemas[name] = extensions[name]
++    schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
++    schemas['external_rejections'] = array(RECORDS['external_rejections'])
++    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
++        "cycle['findings'][key]", variants=True))
++    document = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='documents', list_item=True)
++    document['properties'].update(written_object_schema(context_store.prepare_role_input, 'row',
++        iteration="zip(manifest['documents'], documents)")['properties'])
++    schemas['documents'] = array(document)
++    stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
++    restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
++    schemas['materialized_output_files'] = array(restored_file)
++    previous_file = produced_object_schema(context_store.restore_continuation, 'latest[logical]', bindings={'deepcopy(entry)': stored_file})
++    schemas['previous_output_files'] = array(produced_object_schema(context_store.restore_continuation,
++        'restored.append', argument=0, bindings={'entry': previous_file}))
++    schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
++        bindings={'source': RECORDS['sources']}))
++    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
++        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
++    schemas['recovered_output_files'] = array(schemas['recovery_source'])
++    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
++        bindings={'output_files': array(schemas['recovery_source'])})
++    # The task result retains the research response, then _context restores its files.
++    research_output = contracts.schema_for('research_work')
++    retained = {'properties': {key: value for key, value in research_output['properties'].items()
++                              if key not in {'knowledge', 'relations', 'integration_bundles'}}}
++    result = produced_object_schema(CoreEngineMixin._apply, "task['results'].append", argument=0, bindings={
++        "{key: deepcopy(value) for key, value in output.items() if key not in {'knowledge', 'relations', 'integration_bundles'}}": retained,
++        "deepcopy(self.runtime['executions'][execution_id].get('output_files', []))": array(stored_file)})
++    result['properties']['output_files'] = schemas['materialized_output_files']
++    schemas['results'] = array(result)
++    schemas['query_result']['properties']['items'] = array(produced_object_schema(core_engine._record_evidence))
++    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
+     for name in ('execution_window', 'scholarly', 'formal_verifier'):
+         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
+@@ -330,6 +390,23 @@ def property_variants(schema, name):
+     return variants
+ 
+ 
++
++def item_variants(schema):
++    """Array notation traverses declared items, never an arbitrary object map."""
++    variants = []
++    if not isinstance(schema, dict):
++        return variants
++    if isinstance(schema.get('items'), dict):
++        variants.append(schema['items'])
++    for keyword in ('allOf', 'anyOf', 'oneOf'):
++        for child in schema.get(keyword, []):
++            variants.extend(item_variants(child))
++    for keyword in ('then', 'else'):
++        if keyword in schema:
++            variants.extend(item_variants(schema[keyword]))
++    return variants
++
++
+ def field_bindings(line, schemas):
+     """Line-local prose variables may name owners; canonical namespaces cannot be rebound."""
+     local, issues, aliases = dict(schemas), [], set()
+@@ -343,25 +420,26 @@ def field_bindings(line, schemas):
+             else:
+                 local[alias] = schemas[owner]
+                 aliases.add(alias)
+-        used = {span.split('.')[0] for span in SPAN.findall(line)
+-                if re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span)}
++        used = {re.split(r'[.\[]', span)[0] for span in SPAN.findall(line)
++                if FIELD.fullmatch(span)}
+         issues.extend(('unused field binding', alias) for alias in sorted(aliases - used))
+     return local, issues
+ 
+ 
+ 
+ def unowned_field_references(text, schemas):
+-    """Unbound simple dotted names cannot silently escape the document population."""
++    """Unbound dotted names, including array items, cannot silently escape the population."""
+     pending = set()
+     for line in text.splitlines():
+         local, _ = field_bindings(line, schemas)
+         for token in SPAN.findall(line):
+-            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', token):
++            if not FIELD.fullmatch(token):
+                 continue
+-            if token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
++            if '[' not in token and token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
+                 continue  # Filename classification does not prove file existence.
+-            root = token.split('.')[0]
+-            if root not in local and root not in {'contract_check', 'integration'}:
++            root = re.split(r'[.\[]', token)[0]
++            diagnostic = '[' not in token and root in {'contract_check', 'integration'}
++            if root not in local and not diagnostic:
+                 pending.add(token)
+     return sorted(pending)
+ 
+@@ -373,14 +451,15 @@ def scoped_field_issues(text, schemas):
+         local, binding_issues = field_bindings(line, schemas)
+         issues.extend(binding_issues)
+         for span in SPAN.findall(line):
+-            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span):
++            if not FIELD.fullmatch(span):
+                 continue
+-            root, *parts = span.split('.')
++            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
+             candidates = [local[root]]
+             for part in parts:
+-                candidates = [child for schema in candidates for child in property_variants(schema, part)]
++                candidates = [child for schema in candidates for child in
++                              (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
+                 if not candidates:
+                     issues.append(('scoped field', span))
+                     break
+@@ -456,3 +535,19 @@ def diagnostic_reference_issues(text, names):
+                    if re.fullmatch(r'[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*', token)
+                    and not token.endswith('.py') and token.split('.')[0] in names
+                    and token not in names[token.split('.')[0]]})
++
++
++def constant_reference_issues(text):
++    issues = []
++    for token in SPAN.findall(text):
++        if not re.fullmatch(r'[a-z][a-z0-9_]*\.[A-Z][A-Z0-9_]*', token):
++            continue
++        module, name = token.split('.')
++        try:
++            value = getattr(importlib.import_module('do_math.' + module), name)
++        except (ImportError, AttributeError):
++            issues.append(('constant reference', token))
++        else:
++            if callable(value):
++                issues.append(('constant reference', token))
++    return sorted(set(issues))

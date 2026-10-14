@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "services/continuous-development/check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "021",
+    "document-review"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p021",
+    "TMP": "C:\\t\\p021",
+    "TMPDIR": "C:\\t\\p021",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 12680,
+  "start": "2026-10-14T04:49:32.852546+00:00",
+  "end": "2026-10-14T04:49:34.724693+00:00",
+  "exit_code": 0,
+  "changes": []
+}

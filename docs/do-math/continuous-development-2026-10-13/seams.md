@@ -35,3 +35,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 019의 P02 실제 생산/저장/복원 문서 결속을 검수했다.020은 기존 _context·record_map·prepare_role_input·install_tools의 실행 안내와 지급 도구 경계를 소비한다. 명령/설치파일/오류/조건부 부재는 현 코드가 정본이고 문서 검사용 별도 schema를 제품 계약으로 만들지 않는다. 같은task가 helper와 직접 소비·미러를 소유하며 제품 인터페이스를 개정하지 않으므로 S항목·provides/uses는 추가하지 않는다. record_map 기본 반환, preview 지급과 실제 검증 결과의 차이, scholarly 설정과 실호출의 차이를 유지한다.
 
 020의 P03 실제 설치/최종 입력 결속을 검수했다.021은 기존 review_cycle.context_for/accept_result·ReviewEngineMixin의 검토 준비/봉인/고정 조사/원자료 물질화 경계를 소비한다. stage별 가시성·정확 ref·proposal/request digest·고정 snapshot/복원 오류는 기존 코드/공유 계약이 정본이며 새 의미를 만들지 않는다. P04/P05 네 owner와 helper·직접 소비·미러를 한 task가 소유하므로 S항목·provides/uses는 추가하지 않는다. runtime나 권한 계약 개정은 범위 밖 반례로 반환한다.
+
+021의 실제 검토 필드/고정원자료 결속을 검수했지만 현재 제안 단일 지급은 미충족이다.022는 기존 CLI-실행-계약의 한 번 지급 약속에 맞게 review_cycle.context_for와 review_engine의 준비/봉인/복원만 수리한다. 저장 원메시지·정확ref·판본/slot·가시성/복원오류 계약을 유지하며 반환의중복을 계약으로 승인하지 않는다. P07은 기존 submission.check_submission·RepairExecutionMixin.route_submission_return의 실제 반환/입력소비를 검사하고 pass/capture/접수/편입을 구별한다. 같은 task가 구현/직접소비/helper·미러를 맡고 별도 병렬 제공자/소비자가 없어 S항목·provides/uses는 추가하지 않는다. 새 공개 형식이나 권한 개정이 필요하면 근거를 반환한다.

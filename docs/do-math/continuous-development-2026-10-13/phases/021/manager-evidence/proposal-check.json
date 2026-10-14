@@ -1,0 +1,127 @@
+{
+  "expected_count": 1,
+  "rows": [
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "count": 1,
+      "paths": [
+        "context.role_review.proposal"
+      ]
+    },
+    {
+      "stage": "answer",
+      "slot": "initial-0",
+      "count": 2,
+      "paths": [
+        "context.role_review.proposal",
+        "context.role_review.self_messages[0].content"
+      ]
+    }
+  ],
+  "requirement_satisfied": false
+}

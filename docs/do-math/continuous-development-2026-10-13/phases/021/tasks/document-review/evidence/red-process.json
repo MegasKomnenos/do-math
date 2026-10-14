@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\021\\tasks\\document-review\\evidence\\red"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p021",
+    "TMP": "C:\\t\\p021",
+    "TMPDIR": "C:\\t\\p021",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 37800,
+  "start": "2026-10-14T04:14:34.763892+00:00",
+  "end": "2026-10-14T04:14:39.476085+00:00",
+  "exit_code": 1,
+  "changes": []
+}

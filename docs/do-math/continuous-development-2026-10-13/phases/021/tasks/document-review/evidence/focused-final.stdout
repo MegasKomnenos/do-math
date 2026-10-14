@@ -1,0 +1,31 @@
+Open known defects: 0
+[structure] 26 tests
+[unit] 35 tests
+[sim] 3 tests
+[flows] 1 tests
+[boundary] 2 tests
+Over budget: 2 tests
+     18.516s > 2.0s sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+      0.500s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+{"complete": true, "successful": true, "counts": {"passed": 67}, "group_seconds": {"structure": 2.6, "unit": 1.9, "sim": 25.0, "flows": 41.7, "boundary": 4.4}, "total_seconds": 75.6}
+   18.906s passed             flows.test_review_research_flows.ResearchFlowTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot
+   18.516s passed             sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+    2.203s passed             boundary.test_review_source_restoration.FixedSourceRestorationTests.test_missing_fixed_artifact_returns_a_coordinate_restoration_fault
+    2.172s passed             boundary.test_review_source_restoration.FixedSourceRestorationTests.test_damaged_materialization_preserves_the_fixed_source_coordinate
+    1.234s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    1.093s passed             sim.test_submission_review_inputs.ReviewInputTests.test_large_own_review_history_does_not_request_mathematical_reconstruction
+    0.500s passed             unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+    0.454s passed             sim.test_submission_review_inputs.ReviewInputTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases
+    0.219s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_result_inputs_have_a_document_check_in_the_assigned_method
+    0.188s passed             unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_prepared_source_uses_its_snapshot_after_head_advances
+    0.156s passed             unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_followup_reservation_evidence_cannot_omit_mandatory_slots
+    0.110s passed             unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_failed_investigation_returns_once_with_original_wait_and_question
+    0.109s passed             structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables
+    0.094s passed             structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner
+    0.093s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings
+    0.078s passed             unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_completed_investigation_is_private_until_requesting_slot_is_sealed
+    0.063s passed             unit.test_review_cycle_stages.ReviewCycleTests.test_organizer_omission_forgery_and_owner_checks
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\focused-final\report.json

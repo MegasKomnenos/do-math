@@ -1,0 +1,18 @@
+test_deferred_reviews_have_their_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_reviews_have_their_actual_document_check) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.060s
+
+OK
+test_fixed_question_context_keeps_original_bytes_after_unrelated_publication (unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.713s
+
+OK
+test_review_stage_documents_reach_the_final_seat_input (sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 20.990s
+
+OK

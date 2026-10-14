@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/021/tasks/document-review/evidence/mirror_plan.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p021",
+    "TMP": "C:\\t\\p021",
+    "TMPDIR": "C:\\t\\p021",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 26492,
+  "start": "2026-10-14T04:37:01.270904+00:00",
+  "end": "2026-10-14T04:37:04.203583+00:00",
+  "exit_code": 0,
+  "changes": []
+}

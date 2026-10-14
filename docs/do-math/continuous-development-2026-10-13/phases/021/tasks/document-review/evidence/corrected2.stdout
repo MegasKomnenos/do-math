@@ -1,0 +1,8 @@
+Open known defects: 0
+[unit] 2 tests
+Over budget: 1 tests
+      0.469s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+{"complete": true, "successful": false, "counts": {"error": 2}, "group_seconds": {"unit": 0.9}, "total_seconds": 0.9}
+    0.469s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+    0.110s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_review_stage_documents_reach_the_final_seat_input
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\corrected2\report.json

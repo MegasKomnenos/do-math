@@ -1,0 +1,19 @@
+{
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py"
+  ],
+  "all_within_writes": true
+}

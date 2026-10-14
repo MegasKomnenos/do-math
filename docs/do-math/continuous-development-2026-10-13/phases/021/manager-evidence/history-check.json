@@ -1,0 +1,37 @@
+[
+  {
+    "id": "B110",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/producer-scope-red.json",
+    "sha256": "aff932545ab4be6ffa6ec2a860101fd77f293d1001867e498feca5ace2cbed7b"
+  },
+  {
+    "id": "B110",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/report.json",
+    "sha256": "0472912099fe3ec486e4a68d7fff58e96ae84d21ba59dababd34f88be4927ae2"
+  },
+  {
+    "id": "B111",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-함수-진단/report.json",
+    "sha256": "1e53bae06f882685a3aea885ee2eed607c6e4fed1cb50c5a621e89334bbd16ad"
+  },
+  {
+    "id": "B112",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-문맥-소유자/report.json",
+    "sha256": "bda9af16977f3a4dcbb2c98a87da25311d4fec06b960e466faef2d4deb9ef9dc"
+  },
+  {
+    "id": "B113",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-점표기-전건/report.json",
+    "sha256": "372effb98582be9b5d7639c5ccaab40925953055fd4cea0908161189e99be7db"
+  },
+  {
+    "id": "B114",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/before.json",
+    "sha256": "b79bc453f5cf3043ee588ff36a98b4903e6ed38e55a112f79b8cfe920617e169"
+  },
+  {
+    "id": "B114",
+    "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/report.json",
+    "sha256": "2d77ce2d52f8b98b0c792d80022107231aa4126318eec06716c5c65f8a559af2"
+  }
+]

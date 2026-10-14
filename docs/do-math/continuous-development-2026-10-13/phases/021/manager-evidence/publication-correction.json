@@ -1,0 +1,20 @@
+{
+  "reason": "Removed exactly one administrative EOF LF found by Git whitespace check. Reconstructed the original context from the previously inspected diff and verified its original SHA before regenerating that diff. Requirements, assignment, product bytes and manager decision are unchanged. Recheck the published candidate.",
+  "before_context_sha256": "4cf29fefcaf60fd7c10b48a75b9104573920e734565331299a79bd3ac791f6cf",
+  "after_context_sha256": "67c0a9736d54d2412daea8866f3e0d5291a3b555599ec9c574b03669e22e4d5b",
+  "removed_bytes": 1,
+  "original_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "cwd": "C:\\math",
+    "exit_code": 2,
+    "stdout": "docs/do-math/continuous-development-2026-10-13/context.md:326: new blank line at EOF.\n",
+    "stderr": ""
+  },
+  "manager_sha256": "9a1acd39c49a80738954819f444f8fa8d56ede81a2158a735e274f2b977ce708",
+  "recheck_candidate": "manager.json"
+}
