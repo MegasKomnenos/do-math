@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe_path_observer.py",
+    "short"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T00:19:36.071510+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\probe-path-short",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\probe-path-short",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\probe-path-short",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 6616,
+  "output": null,
+  "pid": 28656,
+  "ended": "2026-10-14T00:19:44.970425+00:00",
+  "exit_code": 0,
+  "seconds": 7.204000000027008,
+  "source_changes": []
+}

@@ -1,0 +1,78 @@
+{
+  "complete": true,
+  "successful": false,
+  "tests_run": 11,
+  "rows": [
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_a_job_name_nobody_created_is_empty",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_a_job_resumes_only_once",
+      "outcome": "error",
+      "seconds": 0.06300000002374873,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 637, in _rmtree_unsafe\n    os.rmdir(path)\nPermissionError: [WinError 32] 다른 프로세스가 파일을 사용 중이기 때문에 프로세스가 액세스 할 수 없습니다: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\017\\\\tasks\\\\t4-baseline-integration\\\\evidence\\\\c4\\\\boundary-isolated-027\\\\scratch\\\\tmpnekib242'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 909, in onexc\n    _os.unlink(path)\nPermissionError: [WinError 5] 액세스가 거부되었습니다: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\017\\\\tasks\\\\t4-baseline-integration\\\\evidence\\\\c4\\\\boundary-isolated-027\\\\scratch\\\\tmpnekib242'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 950, in __exit__\n    self.cleanup()\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 954, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 934, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 781, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 639, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 924, in onexc\n    cls._rmtree(path, ignore_errors=ignore_errors,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\tempfile.py\", line 934, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 781, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 639, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 637, in _rmtree_unsafe\n    os.rmdir(path)\nPermissionError: [WinError 32] 다른 프로세스가 파일을 사용 중이기 때문에 프로세스가 액세스 할 수 없습니다: 'C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\017\\\\tasks\\\\t4-baseline-integration\\\\evidence\\\\c4\\\\boundary-isolated-027\\\\scratch\\\\tmpnekib242'\n"
+      ]
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_a_launched_job_is_suspended_until_resumed",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_a_named_job_is_not_empty_until_its_program_ends",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_a_resumed_program_runs_and_the_termination_barrier_is_observed",
+      "outcome": "passed",
+      "seconds": 0.14100000000325963,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_an_owner_on_another_host_is_unknown",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_identity_and_resource_usage_have_the_product_shape",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_termination_before_resume_means_the_program_never_runs",
+      "outcome": "passed",
+      "seconds": 0.03200000000651926,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_the_current_owner_has_not_ended",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_the_owner_identity_names_this_process_stably",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "boundary.test_port_jobs.WindowsJobsContract.test_the_same_pid_with_another_creation_time_has_ended",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_port_jobs": 0.5780000000377186
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\writing-skills\\scripts\\build_skill_mirrors.py",
+    "--check"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T01:16:05.377690+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-check",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-check",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-check",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 32820,
+  "output": null,
+  "pid": 1736,
+  "ended": "2026-10-14T01:16:08.326376+00:00",
+  "exit_code": 0,
+  "seconds": 1.5310000000172295,
+  "source_changes": []
+}

@@ -1,0 +1,16 @@
+{
+  "label": "mirror-exact",
+  "selected": 2,
+  "unique_rows": 2,
+  "counts": {
+    "passed": 2
+  },
+  "exit_code": 0,
+  "seconds": 19.764999999955762,
+  "complete": true,
+  "successful": true,
+  "fixture_counts": {},
+  "python_files": 875,
+  "nonpassed": [],
+  "source_changes": []
+}

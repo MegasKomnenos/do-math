@@ -1,0 +1,9 @@
+Open known defects: 0
+[boundary] 2 tests
+  isolated: boundary.test_shared_input_provenance.SharedInputProvenanceTests
+  {'passed': 2}
+Over budget: 0 tests
+{"complete": true, "successful": true, "counts": {"passed": 2}, "group_seconds": {"boundary": 15.8}, "total_seconds": 15.8}
+   11.016s passed             boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences
+    4.531s passed             boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\017\tasks\t4-baseline-integration\evidence\mirror-exact\report.json

@@ -1,0 +1,60 @@
+{
+  "kind": "work",
+  "purpose": "정본 전체 T4의 실제 Job cleanup 오류를 현 종료 계약에 맞춰 검증·수리하고, 짧고 격리된 실행 경로에서 양쪽 전체 T4를 완결한다.",
+  "tasks": [
+    {
+      "id": "job-cleanup",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/source-inspected.json",
+        "run:phases/017/tasks/t4-baseline-integration/report.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/job-cleanup-review.md",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/administrative-observations.md",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/report.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/boundary-isolated-027/result.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/boundary-isolated-027/stderr.txt",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/canonical-t4-short.command.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/mirror-t4-short.command.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/probe-long-observation.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/probe-short-observation.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/preservation.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/baseline-manifest.json",
+        "run:phases/016/tasks/t4-fixture-repair/report.json",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "repo:.claude/skills/do-math/scripts/tests/support/port_contracts/jobs.py",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_port_jobs.py",
+        "repo:.claude/skills/do-math/scripts/tests/contracts/test_port_jobs.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/fakes/jobs.py",
+        "repo:.claude/skills/do-math/scripts/do_math/windows_job.py",
+        "repo:.claude/skills/do-math/scripts/do_math/ports/jobs.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/adapter_coverage.py",
+        "repo:.claude/skills/do-math/scripts/run_tests.py",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/tests/support/port_contracts/jobs.py",
+        ".claude/skills/do-math/scripts/tests/boundary/test_port_jobs.py",
+        ".claude/skills/do-math/scripts/tests/contracts/test_port_jobs.py",
+        ".claude/skills/do-math/scripts/tests/시험-지침.md",
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".claude/skills/do-math/scripts/tests/.timings-t3.json",
+        ".agents/skills/do-math/scripts/tests/support/port_contracts/jobs.py",
+        ".agents/skills/do-math/scripts/tests/boundary/test_port_jobs.py",
+        ".agents/skills/do-math/scripts/tests/contracts/test_port_jobs.py",
+        ".agents/skills/do-math/scripts/tests/시험-지침.md",
+        ".agents/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}

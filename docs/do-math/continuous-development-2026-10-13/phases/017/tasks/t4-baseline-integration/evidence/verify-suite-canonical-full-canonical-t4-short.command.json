@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\verify_task.py",
+    "suite",
+    "canonical",
+    "full",
+    "canonical-t4-short"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T00:45:16.479158+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\verify-suite-canonical-full-canonical-t4-short",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\verify-suite-canonical-full-canonical-t4-short",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\verify-suite-canonical-full-canonical-t4-short",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 28780,
+  "output": null,
+  "pid": 27000,
+  "ended": "2026-10-14T00:45:22.072729+00:00",
+  "exit_code": 0,
+  "seconds": 3.35999999998603,
+  "source_changes": []
+}

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\verify_task.py",
+    "baseline-git"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T23:32:31.570128+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\verify-baseline-git",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\verify-baseline-git",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "parent_pid": 25640,
+  "output": null,
+  "pid": 22456,
+  "ended": "2026-10-13T23:32:34.124487+00:00",
+  "exit_code": 0,
+  "seconds": 0.9380000000237487,
+  "source_changes": []
+}

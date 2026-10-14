@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\writing-skills\\scripts\\build_skill_mirrors.py"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T01:15:58.194715+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-build",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-build",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\mirror-build",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 8740,
+  "output": null,
+  "pid": 34312,
+  "ended": "2026-10-14T01:16:01.490036+00:00",
+  "exit_code": 0,
+  "seconds": 1.8439999999827705,
+  "source_changes": [
+    ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+  ]
+}

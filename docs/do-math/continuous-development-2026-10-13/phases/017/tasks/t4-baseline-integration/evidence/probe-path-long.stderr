@@ -1,0 +1,26 @@
+test_empty_installed_document_reports_incomplete_with_nonzero_exit (boundary.test_operator_installation_probe.OperatorInstallationProbeTests.test_empty_installed_document_reports_incomplete_with_nonzero_exit) ... ERROR
+
+======================================================================
+ERROR: test_empty_installed_document_reports_incomplete_with_nonzero_exit (boundary.test_operator_installation_probe.OperatorInstallationProbeTests.test_empty_installed_document_reports_incomplete_with_nonzero_exit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math/.claude/skills/do-math/scripts/tests\boundary\test_operator_installation_probe.py", line 32, in test_empty_installed_document_reports_incomplete_with_nonzero_exit
+    normal = subprocess.run(command, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\017\tasks\t4-baseline-integration\evidence\probe_path_observer.py", line 39, in observe
+    p=real_run(*args,**kwargs)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NotADirectoryError: [WinError 267] 디렉터리 이름이 올바르지 않습니다
+
+----------------------------------------------------------------------
+Ran 1 test in 4.013s
+
+FAILED (errors=1)

@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences",
+    "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\canonical-exact"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T23:27:54.078898+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\canonical-exact",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\canonical-exact",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "parent_pid": 12308,
+  "output": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\canonical-exact",
+  "pid": 11580,
+  "ended": "2026-10-13T23:28:13.513543+00:00",
+  "exit_code": 0,
+  "seconds": 18.125,
+  "source_changes": []
+}

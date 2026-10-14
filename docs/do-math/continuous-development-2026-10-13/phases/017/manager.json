@@ -1,0 +1,184 @@
+{
+  "next": "018",
+  "decision": "017 report를 전문으로 읽고 형식 검사와 원자료 검산을 통과시켰다. A1/A2/A4를 승인하고 A3는 fail인 partial로 유지한다. 두 exact 비교는 양쪽 각2passed이고 정본6fixture/30snapshot/16DB/30child의 literal·읽기·분기·marker·merge를 실제 원자료에서 확인했다.015의10failed/error·2skip은 새 양쪽 전체에서 passed다. 최종 c4의294passed/1error와 m4의295passed를 합산해 정본 합격으로 만들지 않는다. 각60worker의 측정complete·adapter5개102/142 정보도 기능 오류와 별개다.\n\n초기 내부TEMP의 Git6건과 resource cwd262자의267은 소스 불변의 외부TEMP/짧은output 대조로 처리됐고 원실패는 보존했다. c4의 정확 Job 재resume 시험은 TemporaryDirectory cleanup에서32/5가 났다. 현 close의 핸들 닫기/kill-on-close와 root/빈Job 확인은 서로 다른 계약이며 shared fixture에는 후자가 없다. 역사 오류 순간 상태는 없으므로 원인을 transient나 runtime 결함으로 확정하지 않는다.\n\n018 job-cleanup은 실제 종료/정리 관측과 최소 shared fixture 수리, real/fake 회귀, 최종 양쪽 전체T4를 맡는다. 현 runtime·요구·baseline은 고정하고 필요한 계약 변경은 반례로 반환한다. parent TEMP와 resource output 경로 조건을 명시한다. 시험 소스/캐시/미러의 고정이 필요한 단일 변경이므로 병렬 제품 task를 두지 않는다. 현재 보고에 없는 무관한 조사 task를 추가하지 않는다. 기존139입력·144corpus·host8·910baseline·22제품 바이트와 승인 성질의 한정 재사용을 유지한다. 제품22경로는018 검수까지 보류하고 관리 인계·선별 근거·기억만 커밋한다. 최종review가 아니고 G4~G6/G8 및 다른 의미/문서/L01이 남아 next:null을 제출하지 않는다.",
+  "reports": [
+    {
+      "task": "t4-baseline-integration",
+      "state": "read",
+      "detail": "A1/A2/A4 pass·A3 fail의 partial을 원보고/현재 소스/각 공식 선택·row·exit/원DB·cleanup trace와 대조했다. 보고 자체는 유효하고 누락은 없다.",
+      "evidence": [
+        "run:phases/017/tasks/t4-baseline-integration/report.json",
+        "run:phases/017/manager-evidence/report-check.json",
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "017/t4-baseline-integration/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:context.md#C11"
+      ],
+      "reason": "두exact 성공과01512미통과 해소를 승인한다. 전체 T4의 남은 기능 오류는 F4로 명시 승계하며 이 사실 보고를 전체 합격으로 확대하지 않는다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/rechecked-raw-verification.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/report.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/m4/report.json"
+      ]
+    },
+    {
+      "item": "017/t4-baseline-integration/F2",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C5",
+        "run:context.md#C11",
+        "run:phases/018/tasks/job-cleanup/objective.md#A4"
+      ],
+      "reason": "초기 환경 반례와 소스 불변의 새 대조를 승인하고 다음 실행 조건에 반영했다.262/241은 관측값이며 bootstrap의 과거5 원인은 미확인으로 유지한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/probe-long-observation.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/probe-short-observation.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/administrative-observations.md"
+      ]
+    },
+    {
+      "item": "017/t4-baseline-integration/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C12",
+        "run:phases/018/tasks/job-cleanup/objective.md#A4"
+      ],
+      "reason": "139입력·corpus144/150SHA·host8/도구·910baseline·22제품·index/store의 불변과미러/check를검산했다. 한정 재사용과 제품커밋 대기를 보존한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/preservation.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/corpus-raw-clean.json"
+      ]
+    },
+    {
+      "item": "017/t4-baseline-integration/F4",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ],
+      "reason": "정확 Job cleanup 오류가 실제 c4 결과에 남는다. 현 close 의미는 유지하면서018이 실제 상태 대조·공유 fixture 종료순서 수리·관련real/fake·최종양쪽전체를 책임진다. 역사 오류 순간 상태를 추측하지 않는다.",
+      "evidence": [
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/boundary-isolated-027/result.json",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/c4/boundary-isolated-027/stderr.txt",
+        "run:phases/017/tasks/t4-baseline-integration/evidence/job-cleanup-review.md",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "017 partial의 A1/A2/A4 성과와 A3 오류를 원자료 검산으로 추가한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "018 단독 소유와 parent TEMP/resource output 경로 조건을 명시한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "기존 사용자 지정 gpt-6.1-sol/high를018에도 적용한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "두 exact 비교의 미실행 남김만 종결하고 PR01/역사raw/미러raw 한계를 보존한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "L01 외부 결정과 독립적인 작업 상태를017 검수/018 수리로 최신화한다. 질문과 byte 기준은 유지한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "baseline 비교·01512미통과 해소와017 환경 대조를 기록하고 새 Job cleanup 오류의 원인 가설/관측 한계·후속책임을 명시한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "불변 입력·기존 실호출의 한정 재사용·원자료 보존과22제품 마감 대기를 갱신한다.",
+      "evidence": [
+        "run:phases/017/manager-evidence/verification.json",
+        "run:phases/017/manager-evidence/review.md",
+        "run:phases/017/manager-evidence/common-docs.diff",
+        "run:phases/018/tasks/job-cleanup/objective.md"
+      ]
+    }
+  ],
+  "plan_update": "017 exact 비교와01512미통과 남김을 검수해 닫고, 새 c4 Job cleanup 한 오류를018의 실제 상태 관측·fixture 수리·real/fake 회귀·최종 양쪽 전체T4에 배정했다. parent TEMP와resource output을 함께 짧게 통제한다. 동일판본/공유캐시 때문에 단일work다.22제품마감은 수리/연결 검수 뒤로 유지하며 L01·나머지의미/문서·G4~G6/G8·최종review의 선행관계는 유지한다.",
+  "seam_updates": [],
+  "completion": null
+}

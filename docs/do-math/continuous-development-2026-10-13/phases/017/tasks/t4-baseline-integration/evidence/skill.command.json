@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\probe_cli.py",
+    "--skill-only"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T01:16:12.187097+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\skill",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\skill",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\scratch\\skill",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 40976,
+  "output": null,
+  "pid": 3596,
+  "ended": "2026-10-14T01:16:14.715420+00:00",
+  "exit_code": 0,
+  "seconds": 1.0929999999934807,
+  "source_changes": []
+}

@@ -1,0 +1,152 @@
+Open known defects: 0
+[boundary] 295 tests
+GAP_INPUT {"case": "R6-OS", "errno": 22, "winerror": 216, "error": "[WinError 216] %1의 버전이 실행 중인 Windows 버전과 호환되지 않습니다. 컴퓨터의 시스템 정보를 확인하고 소프트웨어 게시자에게 문의하십시오", "diagnostics": {"cause_kind": "fixed_source_io_unavailable", "coordinate": {"slot": "initial-0", "source_index": 0, "source_ref": "S-fixed", "artifact_ref": "runtime/artifacts/review-fixed/source.txt", "snapshot": "5f89171cf2fdc636daf5c840984ca1d95796c774", "errno": 22, "path": null}, "expected_sha256": "d06df94998f45da6f6487a626d00ca43d1342b0ef47bd4715b6dc08ea272f783", "observed_sha256": null, "preserved_range": {"slot": "initial-0", "verified_indices": []}, "retryable": false, "continuity_broken": false}, "lines": [1108, 1109, 1110, 1111, 1112, 1113, 1114, 1115, 1116, 1115, 1117, 1118, 1119, 1120, 1121, 1122, 1123, 1122, 1124, 1125, 1121, 1125, 1121], "read_spec": "5f89171cf2fdc636daf5c840984ca1d95796c774:runtime/artifacts/review-fixed/source.txt", "recovered": true}
+  isolated: boundary.test_branch_gate_report.MissingSourceTests
+  {'passed': 1}
+  isolated: boundary.test_engine_cli.CliExitTests
+  {'passed': 1}
+  isolated: boundary.test_engine_cli_control_shapes.CliControlShapeTests
+  {'passed': 1}
+  isolated: boundary.test_engine_control_transport.ChildProcessTests
+  {'passed': 3}
+  isolated: boundary.test_engine_model_process.ModelProcessJobTests
+  {'passed': 4}
+  isolated: boundary.test_formal_foundation_environment.FormalFoundationEnvironmentTests
+  {'passed': 1}
+  isolated: boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests
+  {'passed': 4}
+  isolated: boundary.test_knowledge_formal_consumer.InstalledCompilerTests
+  {'passed': 2}
+  isolated: boundary.test_knowledge_formal_runtime.FormalRuntimeTests
+  {'passed': 6}
+  isolated: boundary.test_knowledge_lean_storage.InstalledLeanStorageTests
+  {'passed': 2}
+  isolated: boundary.test_knowledge_lean_verifier.InstalledLeanTests
+  {'passed': 7}
+  isolated: boundary.test_knowledge_lean_verifier.LakeEnvironmentTests
+  {'passed': 1}
+  isolated: boundary.test_knowledge_lean_verifier.RealJobTests
+  {'passed': 3}
+  isolated: boundary.test_knowledge_lean_verifier.ToolchainContractTests
+  {'passed': 1}
+  isolated: boundary.test_lean_default_facts.LeanDefaultFactsTests
+  {'passed': 1}
+  isolated: boundary.test_mutation_baseline.ActualBaselineTests
+  {'passed': 8}
+  isolated: boundary.test_mutation_baseline.LazyBaselineTests
+  {'passed': 1}
+  isolated: boundary.test_observation_real_job.RealJobObservationTests
+  {'passed': 1}
+  isolated: boundary.test_operator_bootstrap.BootstrapTests
+  {'passed': 3}
+  isolated: boundary.test_operator_bootstrap.BrokenEngineProbeTests
+  {'passed': 1}
+  isolated: boundary.test_operator_bootstrap_info.BootstrapInfoTests
+  {'passed': 2}
+  isolated: boundary.test_operator_installation_probe.OperatorInstallationProbeTests
+  {'passed': 1}
+  isolated: boundary.test_operator_owner_barrier.OperatorOwnerBarrierTests
+  {'passed': 2}
+  isolated: boundary.test_operator_schedule_adapter.ScheduleLifetimeTests
+  {'passed': 1}
+  isolated: boundary.test_operator_schedule_adapter.SchedulePythonwTests
+  {'passed': 2}
+  isolated: boundary.test_operator_standalone.StandaloneTests
+  {'passed': 2}
+  isolated: boundary.test_port_host.LocalHostContract
+  {'passed': 3}
+  isolated: boundary.test_port_jobs.WindowsJobsContract
+  {'passed': 11}
+  isolated: boundary.test_port_scheduler.PowerShellSchedulerContract
+  {'passed': 1}
+  isolated: boundary.test_provider_cli_surface.DescribeTests
+  {'passed': 1}
+  isolated: boundary.test_provider_control_server.ControlServerTests
+  {'passed': 1}
+  isolated: boundary.test_provider_wait_probe_race.ProbeRaceTests
+  {'passed': 1}
+  isolated: boundary.test_provider_worker_roots.WorkerRootTests
+  {'passed': 2}
+  isolated: boundary.test_review_research_reach.ResearchReachTests
+  {'passed': 2}
+  isolated: boundary.test_role_input_snapshot_reach.SnapshotReachTests
+  {'passed': 3}
+  isolated: boundary.test_role_input_snapshot_reach.SnapshotReadToolTests
+  {'passed': 5}
+  isolated: boundary.test_runner_incremental_t3.IncrementalT3Tests
+  {'passed': 2}
+  isolated: boundary.test_runner_native_exit.NativeExitTests
+  {'passed': 1}
+  isolated: boundary.test_runner_parallel_t3.ParallelT3Tests
+  {'passed': 1}
+  isolated: boundary.test_scheduling_background_processes.BackgroundProcessTests
+  {'passed': 2}
+  isolated: boundary.test_scheduling_call_jobs.CallJobTests
+  {'passed': 2}
+  isolated: boundary.test_scheduling_host_jobs.HostJobTests
+  {'passed': 7}
+  isolated: boundary.test_scheduling_host_jobs.HostRepositoryJobTests
+  {'passed': 1}
+  isolated: boundary.test_scheduling_host_processes.NamedJobTests
+  {'passed': 1}
+  isolated: boundary.test_scheduling_host_processes.WriterLockTests
+  {'passed': 1}
+  isolated: boundary.test_scheduling_launch_recovery.LaunchRecoveryTests
+  {'passed': 3}
+  isolated: boundary.test_scheduling_owned_job_children.IsolatedHostTests
+  {'passed': 3}
+  isolated: boundary.test_scheduling_windows_job.KernelFailureTests
+  {'passed': 2}
+  isolated: boundary.test_scheduling_windows_job.WindowsJobTests
+  {'passed': 8}
+  isolated: boundary.test_setup_lean_compile.RepresentativeCompileTests
+  {'passed': 2}
+  isolated: boundary.test_setup_lean_compile.SetupProcessTests
+  {'passed': 1}
+  isolated: boundary.test_shared_input_provenance.SharedInputProvenanceTests
+  {'passed': 6}
+  isolated: boundary.test_standalone_foundation_installation.StandaloneFoundationTests
+  {'passed': 1}
+  isolated: boundary.test_submission_installed_tool.InstalledCheckerTests
+  {'passed': 3}
+  isolated: boundary.test_submission_installed_tool.LivePreviewConnections
+  {'passed': 1}
+  isolated: boundary.test_submission_installed_tool.PreparationCacheTests
+  {'passed': 2}
+  isolated: boundary.test_submission_lean_preview.LeanPreviewTests
+  {'passed': 5}
+  isolated: boundary.test_submission_mcp_server.InstalledToolTests
+  {'passed': 1}
+  isolated: boundary.test_submission_mcp_server.LocalControlProtocolTests
+  {'passed': 6}
+  isolated: boundary.test_submission_native_job.NativeFinalJobTests
+  {'passed': 1}
+Over budget: 6 tests; T4 ran 1380.3s of 300s (over)
+     42.875s > 30.0s boundary.test_review_research_reach.ResearchReachTests.test_initial_peer_question_is_not_exposed_before_phase_seal
+     50.891s > 30.0s boundary.test_review_research_reach.ResearchReachTests.test_investigator_does_not_receive_unsealed_peer_summary
+     36.843s > 30.0s boundary.test_runner_incremental_t3.IncrementalT3Tests.test_a_parallel_run_with_nothing_to_measure_still_measures_import_time_and_keeps_the_gate
+     48.907s > 30.0s boundary.test_runner_incremental_t3.IncrementalT3Tests.test_a_second_run_reuses_the_unchanged_modules_with_the_same_gate_and_a_full_run_measures_again
+     35.515s > 30.0s boundary.test_runner_parallel_t3.ParallelT3Tests.test_parallel_measurement_matches_the_one_process_gate_and_credits
+     35.891s > 30.0s boundary.test_storage_batch_process_counts.BatchProcessCounts.test_export_and_query_start_one_git_child_per_batch
+{"complete": true, "successful": false, "counts": {"passed": 289, "failed": 4, "error": 2}, "group_seconds": {"boundary": 1380.3}, "total_seconds": 1380.3}
+   50.891s passed             boundary.test_review_research_reach.ResearchReachTests.test_investigator_does_not_receive_unsealed_peer_summary
+   48.907s passed             boundary.test_runner_incremental_t3.IncrementalT3Tests.test_a_second_run_reuses_the_unchanged_modules_with_the_same_gate_and_a_full_run_measures_again
+   42.875s passed             boundary.test_review_research_reach.ResearchReachTests.test_initial_peer_question_is_not_exposed_before_phase_seal
+   36.843s passed             boundary.test_runner_incremental_t3.IncrementalT3Tests.test_a_parallel_run_with_nothing_to_measure_still_measures_import_time_and_keeps_the_gate
+   35.891s passed             boundary.test_storage_batch_process_counts.BatchProcessCounts.test_export_and_query_start_one_git_child_per_batch
+   35.515s passed             boundary.test_runner_parallel_t3.ParallelT3Tests.test_parallel_measurement_matches_the_one_process_gate_and_credits
+   22.984s passed             boundary.test_submission_lean_preview.LeanPreviewTests.test_actual_standalone_preview_checks_code_axioms_and_stop
+   22.312s passed             boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_independent_judgment_cannot_reach_unpublished_work_of_the_execution_ledger
+   20.438s passed             boundary.test_scheduling_host_jobs.HostJobTests.test_cpu_hard_cap_reduces_local_cpu_time_in_isolated_busy_child
+   20.422s passed             boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_approved_command_seals_result_and_ends_execution
+   14.454s passed             boundary.test_knowledge_formal_consumer.ImportedRecordQueryTests.test_imported_record_query_has_snapshot_evidence
+   13.844s passed             boundary.test_knowledge_lean_verifier.InstalledLeanTests.test_actual_shared_closure_traversal_matches_each_declaration_checked_alone
+   11.969s passed             boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_identity_change_after_actual_compile_is_caught_at_publication
+   11.891s passed             boundary.test_submission_installed_tool.LivePreviewConnections.test_installed_preview_uses_receiver_domain_callback_without_publication
+   11.422s passed             boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_current_environment_change_after_actual_compile_prevents_publication
+   11.359s passed             boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact
+   11.250s passed             boundary.test_review_cli_reassessment.CliReassessmentReportTests.test_cli_report_reaches_qualified_reassessment_and_replay_is_idempotent
+   10.953s passed             boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences
+   10.562s passed             boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence
+   10.047s passed             boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\017\tasks\t4-baseline-integration\evidence\canonical-t4-full\report.json

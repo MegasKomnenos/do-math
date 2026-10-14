@@ -1,0 +1,35 @@
+{
+  "mode": "long",
+  "owned_temp": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe-owned\\ppppppppppppppppppppppppppppppppppppppppp",
+  "temp_characters": 158,
+  "matched_worker_temp_characters": 158,
+  "source_sha256": "105e9005b5d33d2f3e7ddee8e06bc927afc2f93ad90119ee01c2cbc90bc47b8f",
+  "calls": [
+    {
+      "argv": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-c",
+        "import sys\nfrom pathlib import Path\nsys.path.insert(0, sys.argv[1])\nfrom support.entry import entry\nimport probe_cli\nassert Path(probe_cli.__file__).resolve().parent == Path.cwd().resolve()\nvalues = entry()\nraise SystemExit(probe_cli.main(['--skill-only'], ports=values.ports, environment=values.environment, host_id=values.host_id, codex_home=values.codex_home))\n",
+        "C:\\math\\.claude\\skills\\do-math\\scripts\\tests"
+      ],
+      "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe-owned\\ppppppppppppppppppppppppppppppppppppppppp\\tmpeu7r44n6\\operator\\bootstrap\\662d9ff878e314e7da4c7a8d8eb5fc5086dba8be9bff18638e64271557f3f4d2\\scripts",
+      "cwd_characters": 262,
+      "cwd_is_directory": true,
+      "preserved_snapshot": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe-long-raw\\snapshot-0",
+      "manifest_sha256": "86c80261687147f57796b5a2595b6924b4ae8ff20c9293050ff996a80fbf37a6",
+      "exception": "NotADirectoryError",
+      "winerror": 267,
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe_path_observer.py\", line 39, in observe\n    p=real_run(*args,**kwargs)\n      ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1026, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1538, in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNotADirectoryError: [WinError 267] 디렉터리 이름이 올바르지 않습니다\n"
+    }
+  ],
+  "successful": false,
+  "errors": [
+    [
+      "boundary.test_operator_installation_probe.OperatorInstallationProbeTests.test_empty_installed_document_reports_incomplete_with_nonzero_exit",
+      "Traceback (most recent call last):\n  File \"C:\\math/.claude/skills/do-math/scripts/tests\\boundary\\test_operator_installation_probe.py\", line 32, in test_empty_installed_document_reports_incomplete_with_nonzero_exit\n    normal = subprocess.run(command, **options)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\017\\tasks\\t4-baseline-integration\\evidence\\probe_path_observer.py\", line 39, in observe\n    p=real_run(*args,**kwargs)\n      ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1026, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1538, in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNotADirectoryError: [WinError 267] 디렉터리 이름이 올바르지 않습니다\n"
+    ]
+  ],
+  "failures": [],
+  "tests_run": 1
+}
