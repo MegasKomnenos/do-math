@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.agents\\skills\\do-math\\scripts\\run_tests.py",
+    "structure.test_doc_code",
+    "sim.test_role_input_context",
+    "unit.test_context_catalog",
+    "sim.test_submission_receiver",
+    "flows.test_submission_acceptance",
+    "unit.test_role_input_packaging",
+    "unit.test_role_input_scoped_packaging",
+    "unit.test_preflight",
+    "unit.test_storage_report_projections",
+    "unit.test_engine_trace_report_corruption",
+    "unit.test_storage_record_queries",
+    "boundary.test_engine_cli",
+    "sim.test_knowledge_currentness.RecoveryMaterialTests",
+    "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\019\\tasks\\document-results\\evidence\\m"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p019",
+    "TMP": "C:\\t\\p019",
+    "TMPDIR": "C:\\t\\p019",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 1948,
+  "start": "2026-10-14T03:05:20.460001+00:00",
+  "end": "2026-10-14T03:09:41.358526+00:00",
+  "exit_code": 0,
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

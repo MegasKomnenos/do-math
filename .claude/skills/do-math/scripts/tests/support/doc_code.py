@@ -38,6 +38,8 @@ CONTINUATION_BOUNDARIES = {owner: object() for owner in
                            ('result_source', 'rejected_response', 'previous_output_files')}
 OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
                               ('operational_evidence', 'recovery_materials')}
+RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
+                         ('source_ref', 'materialized_output_files', 'research_sources', 'results')}
 
 
 def documents(skill):
@@ -289,7 +291,7 @@ def field_schemas():
     from do_math.dispatch_engine import DispatchEngineMixin
     from do_math.review_engine import ReviewEngineMixin
     schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
-    schemas['source_ref'] = produced_object_schema(context_store.write_source_catalog, 'ref')
+    schemas.update(RESULT_INPUT_BOUNDARIES)
     schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
     schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
         "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
@@ -324,20 +326,6 @@ def field_schemas():
     schemas['external_rejections'] = array(RECORDS['external_rejections'])
     schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
         "cycle['findings'][key]", variants=True))
-    stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
-    restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
-    schemas['materialized_output_files'] = array(restored_file)
-    schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
-        bindings={'source': RECORDS['sources']}))
-    # The task result retains the research response, then _context restores its files.
-    research_output = contracts.schema_for('research_work')
-    retained = {'properties': {key: value for key, value in research_output['properties'].items()
-                              if key not in {'knowledge', 'relations', 'integration_bundles'}}}
-    result = produced_object_schema(CoreEngineMixin._apply, "task['results'].append", argument=0, bindings={
-        "{key: deepcopy(value) for key, value in output.items() if key not in {'knowledge', 'relations', 'integration_bundles'}}": retained,
-        "deepcopy(self.runtime['executions'][execution_id].get('output_files', []))": array(stored_file)})
-    result['properties']['output_files'] = schemas['materialized_output_files']
-    schemas['results'] = array(result)
     schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
     for name in ('execution_window', 'scholarly', 'formal_verifier'):
         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
@@ -458,7 +446,8 @@ def unowned_field_references(text, schemas):
 
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
-                        defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=()):
+                        defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+                        defer_result_inputs=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -472,6 +461,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_operational_inputs) - OPERATIONAL_INPUT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred operational input owners: {sorted(unknown)}')
+    unknown = set(defer_result_inputs) - RESULT_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred result input owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -523,12 +515,50 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if owner in defer_operational_inputs:
                     continue
                 raise ValueError(owner + ' fields require the actual operational input')
+            owner = next((name for name, boundary in RESULT_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_result_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual result input')
             for part in parts:
                 candidates = [child for schema in candidates for child in
                               (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def result_field_issues(text, owner, value):
+    """Read fields of one actual catalog/restoration result, including line aliases.
+
+    Empty arrays establish only the empty case. Populated producer tests own
+    item fields; an index requires that actual item. Other owners remain under
+    their own checks and cannot lend their fields to this value.
+    """
+    if owner not in RESULT_INPUT_BOUNDARIES:
+        raise ValueError('Unknown result input owner: ' + owner)
+    def visit(node, parts):
+        if not parts:
+            return True
+        part, *tail = parts
+        if part.startswith('['):
+            if not isinstance(node, list):
+                return False
+            index = part[1:-1]
+            items = node if not index else node[int(index):int(index) + 1]
+            return (not index or bool(items)) and all(visit(item, tail) for item in items)
+        return isinstance(node, dict) and part in node and visit(node[part], tail)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, RESULT_INPUT_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
+            if local.get(root) is RESULT_INPUT_BOUNDARIES[owner] and not visit(value, parts):
+                issues.append(('actual field', token))
     return sorted(set(issues))
 
 

@@ -1,0 +1,20 @@
+@@ -8,7 +8,7 @@
+ 
+ ## charter, policy, research_context, additional_audit
+ 
+-이 네 종류의 payload는 `{kind, record}`다. `owner_ref`는 새 `record.id`와 같다. 기록은 `id`, `kind`, 양의 정수 `revision`, `supersedes`, `content`를 갖는다. 기존 기록은 불변이므로 변경할 때 새 ID를 정하고 대체할 현행 기록의 ID를 `supersedes`에 적는다. 초기 헌장이 이미 같은 의미를 담고 있으면 새 헌장을 중복 제안하지 않고 빈 payload와 기존 승인 근거를 사용한다.
++이 네 종류의 payload는 `{kind, record}`다. `owner_ref`는 새 `record.id`와 같다. 기록은 `id`, `kind`, 양의 정수 `revision`, `supersedes`, `content`를 갖는다. 기존 기록은 불변이므로 변경할 때 새 ID를 정하고 대체할 현행 기록의 ID를 `supersedes`에 적는다. 초기 헌장이 이미 같은 의미를 담고 있으면 새 헌장을 중복 제안하지 않고 빈 payload와 기존 승인 근거를 사용한다. <!-- do-math fields: record=governance_record -->
+ 
+ `governance_records`에서 실제 기록을 읽는다. `status`, `approval_ref`, `source_ref`, `content_sha256` 같은 저장 메타데이터는 새 제안에 전사하지 않는다. 각 `content`는 다음을 갖춘다.
+ 
+
+@@ -55,4 +55,4 @@ payload는 `{kind, record}`이고 `owner_ref=record.id`다. record는 새 지식
+ 
+ 두 소비자는 저자의 연구 기록을 보존하는 경로다. `evidence`라는 이름을 사용해도 형식 검증이나 동일성 승인이 자동으로 생기지 않는다. 기록을 실제 증거 수준보다 강한 결론으로 올려 쓰지 않는다.
+ 
+-원자료는 `record.source_refs`, 작성·수입의 출처는 `record.origin_refs`, 확인한 범위는 `record.confirmed_scope`에 적는다. 정보 상태와 불확실성을 추가할 때는 `record.epistemic_status`, `record.uncertainty_assessment`를 사용하고 해당 종류의 제약을 따른다. 논증과 계산의 구체적인 근거 설명은 `record.explanation`에 보존한다. 종류가 요구하는 의미를 이 필드들로 표현할 수 없으면 지원하지 않는 필드를 추가하지 않고 필요한 계약을 질문한다.
++원자료는 `record.source_refs`, 작성·수입의 출처는 `record.origin_refs`, 확인한 범위는 `record.confirmed_scope`에 적는다. 정보 상태와 불확실성을 추가할 때는 `record.epistemic_status`, `record.uncertainty_assessment`를 사용하고 해당 종류의 제약을 따른다. 논증과 계산의 구체적인 근거 설명은 `record.explanation`에 보존한다. 종류가 요구하는 의미를 이 필드들로 표현할 수 없으면 지원하지 않는 필드를 추가하지 않고 필요한 계약을 질문한다. <!-- do-math fields: record=candidate_record -->
+diff --git "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md" "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"
+index 85fff89d..c8f9830b 100644
+--- "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"
++++ "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"

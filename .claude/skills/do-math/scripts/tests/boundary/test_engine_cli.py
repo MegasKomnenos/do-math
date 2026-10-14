@@ -61,6 +61,7 @@ def cli_field_issues(text, schemas, owner, result):
     return scoped_field_issues(text, {**schemas, owner: schema},
         defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
         defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
         defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner})
@@ -351,6 +352,7 @@ class CliTests(CliInstanceTest):
                 for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
                     defer_query_record=True, defer_query_result=True,
                     defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                    defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                     defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
@@ -445,6 +447,7 @@ class CliTests(CliInstanceTest):
             return scoped_field_issues(text, {**schemas, 'query_result': schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True,
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))

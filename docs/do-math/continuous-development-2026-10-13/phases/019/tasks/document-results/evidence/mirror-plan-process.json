@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/019/tasks/document-results/evidence/history_slice.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p019",
+    "TMP": "C:\\t\\p019",
+    "TMPDIR": "C:\\t\\p019",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 40980,
+  "start": "2026-10-14T03:00:14.291242+00:00",
+  "end": "2026-10-14T03:00:17.315714+00:00",
+  "exit_code": 0,
+  "changes": []
+}

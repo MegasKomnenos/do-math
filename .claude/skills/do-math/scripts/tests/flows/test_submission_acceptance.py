@@ -271,6 +271,7 @@ class AcceptanceTests(unittest.TestCase):
                              for a in sim.runtime['queue']))
 
     def test_large_accepted_report_survives_revision_review_and_resumed_work(self):
+        from support.engine_context import assert_result_documents, assert_result_damage_rejected
         sim = ready_work_sim(1, **NO_REPAIR)
         model = submission_model(sim)
         work_calls, resumed = [], []
@@ -280,6 +281,13 @@ class AcceptanceTests(unittest.TestCase):
             if len(work_calls) == 1:
                 (Path(workspace) / "evidence.txt").write_bytes(b"preserved partial evidence")
                 return
+            prior_task = next(t for t in context['tasks'] if t['id'] == context['task']['id'])
+            assert_result_documents(self, prior_task['results'], workspace, sim.engine,
+                                    owner='results', task_id=prior_task['id'], snapshot=context['snapshot'])
+            assert_result_documents(self, prior_task['results'][0]['output_files'], workspace, sim.engine,
+                                    owner='materialized_output_files', task_id=prior_task['id'], snapshot=context['snapshot'])
+            assert_result_damage_rejected(self, prior_task['results'], workspace, sim.engine,
+                task_id=prior_task['id'], borrowed_path='input/sources/0000-unrelated.txt')
             previous = next(f for prior_task in context['tasks'] if prior_task['id'] == context['task']['id']
                             for result in prior_task['results']
                             for f in result.get('output_files', []) if f['path'] == 'evidence.txt')

@@ -65,6 +65,107 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
                       'admissible_basis_refs': []}
 
 
+def assert_result_documents(case, value, workspace, engine=None, *, owner, task_id=None,
+                            expected=None, total=None, snapshot=None):
+    """Check actual P02 values against documents, their origin and workspace bytes.
+
+    Catalog references come from write_source_catalog/prepare_role_input. Task
+    results come from _apply in producer tests; synthetic result fixtures only
+    establish restoration. Stored executions never supply local_path evidence.
+    """
+    import hashlib
+    import json
+    from support.doc_code import documents, result_field_issues
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(result_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
+                         str(document))
+    root = Path(workspace).resolve()
+    def local_bytes(path, expected_path):
+        case.assertEqual(path, expected_path)
+        local = (root / path).resolve()
+        case.assertTrue(local.is_relative_to(root / 'input'))
+        return local.read_bytes()
+    if owner == 'source_ref':
+        case.assertTrue(value['path'].startswith(('input/catalog/', 'input/details/')))
+        raw = local_bytes(value['path'], value['path'])
+        case.assertEqual(hashlib.sha256(raw).hexdigest(), value['sha256'])
+        case.assertEqual(len(raw), value['bytes'])
+        if value['path'].startswith('input/catalog/'):
+            case.assertEqual(value['format'], 'canonical-json')
+        else:
+            case.assertEqual(value['snapshot'], engine.head if snapshot is None else snapshot)
+        decoded = json.loads(raw)
+        case.assertEqual(raw, canonical_json(decoded))
+        if expected is not None:
+            case.assertEqual(decoded, expected)
+        if total is not None:
+            case.assertEqual(total, len(decoded))
+        return decoded
+    snapshot = engine.head if snapshot is None else snapshot
+    if owner == 'research_sources':
+        case.assertEqual(len(value), len(engine.instance['sources']))
+        for index, (row, stored) in enumerate(zip(value, engine.instance['sources'])):
+            case.assertNotIn('local_path', stored)
+            case.assertEqual({k: v for k, v in row.items() if k != 'local_path'}, stored)
+            raw = local_bytes(row['local_path'], f"input/sources/{index:04d}-{stored['name']}")
+            case.assertEqual(hashlib.sha256(raw).hexdigest(), stored['sha256'])
+            case.assertEqual(raw, engine.store.read(stored['path'], snapshot))
+        return
+    stored_results = engine.runtime['tasks'][task_id]['results']
+    def files(rows, stored_rows, execution_id):
+        case.assertEqual(len(rows), len(stored_rows))
+        for row, stored in zip(rows, stored_rows):
+            case.assertIn('local_path', row)
+            case.assertNotIn('local_path', stored)
+            case.assertEqual({k: v for k, v in row.items() if k != 'local_path'}, stored)
+            raw = local_bytes(row['local_path'], f"input/task-results/{task_id}/{execution_id}/{stored['path']}")
+            case.assertEqual(hashlib.sha256(raw).hexdigest(), stored['sha256'])
+            case.assertEqual(len(raw), stored['bytes'])
+            case.assertEqual(raw, engine.store.read(stored['artifact_ref'], snapshot))
+    if owner == 'results':
+        case.assertEqual(len(value), len(stored_results))
+        for row, stored in zip(value, stored_results):
+            case.assertIn('report', row)
+            case.assertEqual({k: v for k, v in row.items() if k != 'output_files'},
+                             {k: v for k, v in stored.items() if k != 'output_files'})
+            for excluded in ('knowledge', 'relations', 'integration_bundles'):
+                case.assertNotIn(excluded, row)
+            execution = engine.runtime['executions'].get(stored['execution_id'], {})
+            for output in execution.get('output_files', []):
+                case.assertNotIn('local_path', output)
+            files(row['output_files'], stored.get('output_files', execution.get('output_files', [])),
+                  stored['execution_id'])
+    elif owner == 'materialized_output_files':
+        case.assertEqual(len(stored_results), 1, 'select one actual result for the file owner')
+        stored = stored_results[0]
+        files(value, stored['output_files'], stored['execution_id'])
+    else:
+        raise ValueError('Unknown result input owner: ' + owner)
+
+
+def assert_result_damage_rejected(case, value, workspace, engine, *, task_id, borrowed_path):
+    """Corrupt copies of a real restored result, never its production or store."""
+    from copy import deepcopy
+    changed = deepcopy(value)
+    del changed[0]['report']
+    with case.subTest(fault='report'), case.assertRaises(AssertionError):
+        assert_result_documents(case, changed, workspace, engine, owner='results', task_id=task_id)
+    for index in range(len(value[0]['output_files'])):
+        for fault in ('local_path', 'borrowed_path', 'sha256', 'bytes'):
+            changed = deepcopy(value)
+            row = changed[0]['output_files'][index]
+            if fault == 'local_path':
+                del row['local_path']
+            elif fault == 'borrowed_path':
+                row['local_path'] = borrowed_path
+            elif fault == 'sha256':
+                row['sha256'] = '0' * 64
+            else:
+                row['bytes'] += 1
+            with case.subTest(file=index, fault=fault), case.assertRaises(AssertionError):
+                assert_result_documents(case, changed, workspace, engine, owner='results', task_id=task_id)
+
+
 def assert_operational_documents(case, context, workspace, engine, *, owner, snapshot=None):
     """Bind document fields to one real _context/packaging result and sealed bytes."""
     import hashlib

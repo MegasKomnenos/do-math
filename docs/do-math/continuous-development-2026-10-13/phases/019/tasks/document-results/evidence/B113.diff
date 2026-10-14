@@ -1,0 +1,245 @@
+commit 7823c9a02fddb832fde3330da27b95f4911af517
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Mon Oct 5 06:28:49 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Mon Oct 5 06:28:49 2026 +0900
+
+    문서의 단순 점 표기 전건을 실제 소유자에 결속
+
+diff --git "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md" "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+index 30045875..b584b223 100644
+--- "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
++++ "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+@@ -231,7 +231,7 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
+ - 관찰: 설정은 새 프로필을 저작하는 입력이다. 실행은 선택한 프로필의 모드·고정 window와 `{source,operator,subject_kind,unit}` 항목으로 이루어진 `rule_bindings`를 사용한다. 실제 실행 ID와 카운터 이름은 실행 문맥에서 결박한다. 연구 수행의 자기 점검, 다른 작업 예산 AI의 주기 관찰, 운영 AI·기계의 `deadline_only` 책임을 구별한다. `tool_review_window_seconds`, `self_check_response_window_seconds` 같은 필요한 값이 없으면 임의 기본값이나 작업자의 timeout으로 대신하지 않는다. 아래 관찰 계약과 「공통 실행」·「자기 점검」 문서를 따른다.
+ 
+ 프로필 채택·활성화와 실행 직전은 같은 관찰 설정 검사를 사용한다. 주기·사건 관찰에는 `tool_review_window_seconds`·`observation_interval_seconds`, 연구 수행에는 `self_check_response_window_seconds`가 필요하다. 누락이나 잘못된 값은 `observation_configuration`과 역할·프로필 ID·필드별 오류로 표시한다. 초기화의 `activation.observation_errors`는 활성화 검사에서 확인한 세부 오류다. 초기화에서는 아직 없는 과제의 규칙을 요구하지 않는다. 이미 활성화된 인스턴스에서 설정 문제를 만나면 해당 실행을 기다리게 하고 다른 허용된 역할은 계속 처리한다. 새 설정 프로필은 원래 프로필과 함께 보존하며, 과제에 고정된 참조의 변경은 재준비와 새 독립 계약 검토를 거친다.
+-- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다.
++- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->
+ - 독립 운영: `operator_enabled`는 예약 감독의 활성 여부이고, `operator_interval_seconds`는 정상 감독의 주기다. `operator_timeout_seconds`는 설치 복구 AI 호출 하나의 기한이며, 운영 예약 작업의 시간 상한은 이 값에 종료 여유 300초를 더한 값이다. `operator_effort`는 설치 복구 AI의 추론 노력이다. 정상 감독은 모델 없이 상태·예약·HOLD를 검사하고 엔진 작업을 요청한다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 복구 AI를 열며, 이 AI는 `role_tiers.recovery` 등급에 대응한 `tier_models`의 모델로 작업 슬롯을 예약하지 않고 실행된다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
+ - 학술자료: `scholarly_enabled`는 학술자료 도구를 실행에 연결할지 정한다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
+ 
+@@ -852,7 +852,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source
+ 
+ 필요할 때만 `submit_draft`의 `preview=true` 또는 셸 명령의 `--preview --wait-seconds N`으로 경로를 미리 진단한다. 셸에서 `--submit`과 `--preview` 없이 `--output <draft>`만 실행하면 로컬 `producer_check`의 `passed`와 문제 목록을 얻지만, 이 결과는 최종 접수의 필수 증거가 아니며 중앙으로 전송되지 않는다. `--preview`는 로컬 `check`와 별도로 중앙이 그 호출에서 포착한 후보의 `delivery.state=previewed`를 돌려준다. Preview는 비권위 결과이며 Git 공개, 외부 효과, 운영 수리, 수학 판정을 실행하지 않는다. 명시적 조기 제출과 정상 final은 각각의 호출 또는 정상 완료에서 포착한 정확한 바이트를 같은 봉인 규칙으로 처리한다.
+ 
+-검사 결과의 `check.passed`는 전건 구조 검사 통과를 뜻한다. `capture_eligible`은 그 정확한 후보를 봉인할 수 있는지를 뜻하며, 두 값은 중앙 접수 결과인 `delivery.state=accepted`와 별개다. 「공통 실행」의 독립 묶음 조건을 만족하면 국소 오류가 남아도 후보를 접수하여 정상 묶음부터 적용할 수 있다. 로컬 `--output`의 종료 코드는 전체 검사 결과를 나타내므로 중앙 `delivery.state=accepted`와 구별한다. 접수된 후보의 국소 오류는 후속 수리에서 다루며 다른 final로 후보를 대체하지 않는다. Preview와 로컬 검사를 생략해도 정상 최종 응답을 접수할 수 있다.
++검사 결과의 `check.passed`는 전건 구조 검사 통과를 뜻한다. `capture_eligible`은 그 정확한 후보를 봉인할 수 있는지를 뜻하며, 두 값은 중앙 접수 결과인 `delivery.state=accepted`와 별개다. 「공통 실행」의 독립 묶음 조건을 만족하면 국소 오류가 남아도 후보를 접수하여 정상 묶음부터 적용할 수 있다. 로컬 `--output`의 종료 코드는 전체 검사 결과를 나타내므로 중앙 `delivery.state=accepted`와 구별한다. 접수된 후보의 국소 오류는 후속 수리에서 다루며 다른 final로 후보를 대체하지 않는다. Preview와 로컬 검사를 생략해도 정상 최종 응답을 접수할 수 있다. <!-- do-math fields: check=submission_check -->
+ 
+ 중앙 실행기는 구조 검사 뒤 실제 권한·입력 판본·현재성·참조·영향을 추가 대조한다. 정확한 제출 바이트와 확장·수집 파일·기계 검사·manifest를 불변 후보로 보존하고 정상 종료·허가된 복구·재시작에서 같은 후보를 사용한다. 이미 접수된 조기 봉인 후보가 있으면 그것만 사용하고 뒤의 다른 final로 바꾸지 않으며, 봉인본이 손상돼도 다른 final로 fallback하지 않는다. 봉인 후보가 없을 때에만 완전한 native stream, 정상 완료, 입력·출력 결속, 현재 권한과 로컬 종료가 확인된 final을 같은 중앙 경로로 포착한다. 오류·중단·불완전하거나 혼합된 stream, 정지, 권한·현재성 위반의 응답과 파일은 보존만 한다.
+ 
+diff --git "a/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md" "b/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
+index ba72a3ae..8598a768 100644
+--- "a/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
++++ "b/.claude/skills/do-math/references/\352\263\265\355\206\265-\354\213\244\355\226\211.md"
+@@ -245,7 +245,7 @@
+    ```
+ 
+    실제 Python 경로는 `command`의 첫 항목을 따른다. 중앙 제출 도구는 주 응답과 확장, 사용한 참조, 계획의 대상 전건과 완료 기준, 검토 단계의 공개된 할당, 체크포인트·관찰 파일과 수집 한도를 확인한다. 검사 ID, 원문·입력·스키마·도구 해시, 파일 크기와 manifest는 도구가 포착한 실제 파일에서 만들고 보존한다. 생산자는 이 값들을 초안에 쓰거나 다른 보고서에서 옮기지 않는다. 현재성·권한의 최종 적용, 수학 의미와 Lean 검사는 이 구조 검사의 완료 범위에 포함되지 않는다.
+-3. 명시적 조기 제출의 반환에서는 `delivery`를 읽는다. `delivery.state=accepted`는 중앙이 정확한 후보를 봉인하여 접수했다는 뜻이다. 일부 독립 묶음에 반환할 오류가 남아 있을 수 있으므로 접수와 편입·수학 승인·과제 완료를 구별한다. 거부되면 반환 이유가 가리키는 초안·확장·참조를 고친 뒤 새 제출 시도로 전달한다. `--submit`은 로컬 `producer_check` 결과를 보내거나 그 통과를 접수의 필수 증거로 요구하지 않는다. 별도의 `--output <draft>` 실행은 로컬 `check.passed`만 돌려주는 선택적 진단이고, `--preview`는 로컬 `check`와 중앙 `delivery.state=previewed`를 함께 돌려준다. 누락된 근거를 만들어 넣거나 완료 기준의 뜻을 바꾸어 통과시키지 않는다.
++3. 명시적 조기 제출의 반환에서는 `delivery`를 읽는다. `delivery.state=accepted`는 중앙이 정확한 후보를 봉인하여 접수했다는 뜻이다. 일부 독립 묶음에 반환할 오류가 남아 있을 수 있으므로 접수와 편입·수학 승인·과제 완료를 구별한다. 거부되면 반환 이유가 가리키는 초안·확장·참조를 고친 뒤 새 제출 시도로 전달한다. `--submit`은 로컬 `producer_check` 결과를 보내거나 그 통과를 접수의 필수 증거로 요구하지 않는다. 별도의 `--output <draft>` 실행은 로컬 `check.passed`만 돌려주는 선택적 진단이고, `--preview`는 로컬 `check`와 중앙 `delivery.state=previewed`를 함께 돌려준다. 누락된 근거를 만들어 넣거나 완료 기준의 뜻을 바꾸어 통과시키지 않는다. <!-- do-math fields: check=submission_check -->
+ 4. 자기 권한으로 해결할 수 없는 입력·공유 도구 문제가 있으면 실제 오류, 영향을 받은 판단, 보존한 자료와 필요한 수리를 현재 역할의 지원 필드와 체크포인트에 남긴다. 입력·검사 코드를 임의로 고치거나 검사 성공을 선언하지 않는다. 현재 스키마의 부분 결과·대기·미해결 표현으로 다음 소유자에게 돌린다.
+ 
+ 제출·미리보기 명령을 새로 호출하면 도구가 새 요청 ID를 만든다. 따라서 같은 경로의 초안을 고친 뒤 새로 제출할 수 있다. 반환 상태가 아직 `submitted`이면 거부가 아니라 처리 대기다. 그때는 반환된 `request_id`로 `control_receipt`를 조회하여 기존 요청의 결과를 확인한다. 같은 요청 ID의 재전송은 같은 요청의 조회·전달 복구이며 새 초안 제출로 사용하지 않는다.
+@@ -254,7 +254,7 @@
+ 
+ 중앙 수신자는 정상 완료한 native final 또는 명시적 조기 제출에서 정확한 바이트를 포착하고 확장·수집 파일과 함께 검사한 뒤, 그 포착본과 기계 생성 검사·manifest를 하나의 제출 후보로 봉인한다. 먼저 접수한 봉인 후보가 있으면 그것만 소비하고 뒤의 다른 final로 대체하지 않는다. 봉인 후보가 손상돼도 다른 final로 fallback하지 않는다. 봉인 후보가 없을 때에만 정상 native stream의 완전성, 입력·출력 결속, 현재 권한과 로컬 종료가 확인된 final을 같은 경로로 포착한다. 오류·중단·불완전하거나 혼합된 stream, 정지, 권한·현재성 위반에서 얻은 응답과 파일은 보존만 한다. 정상 종료, 중앙 처리 재시작과 허가된 복구는 같은 봉인 후보의 정체성을 유지한다.
+ 
+-`check.passed`는 구성원 전건의 구조 검사 통과이고, `capture_eligible`은 후보의 봉인 가능 여부다. 일부 묶음에 오류가 있어도 나머지를 봉인하는 부분 접수는 `research_work`와 일반 `supplemental_research`에만 적용한다. 고정 검토 보충 조사와 `revision_targets`가 있는 실행에는 적용하지 않는다. 부분 접수에는 세 조건이 모두 필요하다. 생산자가 `integration_bundles`로 둘 이상의 독립 묶음을 명시했고, 선언·소유·참조 결속과 필수 파일 보존이 온전하며, 국소 오류가 없는 묶음이 하나 이상 남아 있어야 한다. JSON·공통 응답 형식·묶음 결속이 깨졌거나 모든 묶음에 오류가 있으면 전체 반환한다. 중앙은 정상 묶음만 추출해 원 응답을 새로 만들지 않고 원문 전체를 봉인한 뒤 묶음별로 적용·반환한다. 부분 편입 뒤에는 수락된 묶음 ID와 주 응답 해시를 유지하고 반환된 범위만 수리한다.
++`check.passed`는 구성원 전건의 구조 검사 통과이고, `capture_eligible`은 후보의 봉인 가능 여부다. 일부 묶음에 오류가 있어도 나머지를 봉인하는 부분 접수는 `research_work`와 일반 `supplemental_research`에만 적용한다. 고정 검토 보충 조사와 `revision_targets`가 있는 실행에는 적용하지 않는다. 부분 접수에는 세 조건이 모두 필요하다. 생산자가 `integration_bundles`로 둘 이상의 독립 묶음을 명시했고, 선언·소유·참조 결속과 필수 파일 보존이 온전하며, 국소 오류가 없는 묶음이 하나 이상 남아 있어야 한다. JSON·공통 응답 형식·묶음 결속이 깨졌거나 모든 묶음에 오류가 있으면 전체 반환한다. 중앙은 정상 묶음만 추출해 원 응답을 새로 만들지 않고 원문 전체를 봉인한 뒤 묶음별로 적용·반환한다. 부분 편입 뒤에는 수락된 묶음 ID와 주 응답 해시를 유지하고 반환된 범위만 수리한다. <!-- do-math fields: check=submission_check -->
+ 
+ 5. 마지막에는 주 JSON 값 하나만 최종 응답으로 반환한다. 도구의 검사 결과나 로그를 주 응답 대신 보내지 않는다. 명시적 조기 제출이 거부됐다면 내용을 고쳐 새 제출 시도로 보낼 수 있다. 이미 접수됐다면 그 실행의 후보는 고정되며, 뒤의 최종 응답으로 바꿀 수 없다. 접수 후 필요한 수정은 후속 배정의 수리·개정 범위에 따라 처리한다.
+ 
+diff --git "a/.claude/skills/do-math/references/\354\236\205\353\240\245-\354\206\214\353\271\204\354\236\220.md" "b/.claude/skills/do-math/references/\354\236\205\353\240\245-\354\206\214\353\271\204\354\236\220.md"
+index bf065ba8..8c4096ba 100644
+--- "a/.claude/skills/do-math/references/\354\236\205\353\240\245-\354\206\214\353\271\204\354\236\220.md"
++++ "b/.claude/skills/do-math/references/\354\236\205\353\240\245-\354\206\214\353\271\204\354\236\220.md"
+@@ -2,7 +2,7 @@
+ 
+ 의도 해석과 독립 검사는 입력의 `import_consumers`에 실제로 등록된 종류만 사용한다. 이 문서는 그 목록에 나타나는 기본 소비자의 payload와 대상 연결을 설명한다. 확장 소비자가 있으면 목록에 제공된 `payload_contract`를 읽는다. 종류가 목록에 없거나 계약을 읽을 수 없으면 임의의 payload를 만들지 않고 부족한 지원을 보고한다.
+ 
+-각 단위의 `owner_kind`와 비어 있지 않은 `payload.kind`는 같아야 한다. `owner_ref`는 아래 표가 정한 정확한 대상이다. 이미 적용된 내용을 확인하거나 적용할 변경이 없는 단위는 `payload={}`로 남길 수 있다. 이때도 원문 구간, 해석, 담당자와 기존 결정 근거를 보존한다. 아래 필드 설명은 사용자 결정이나 예시 값의 승인을 만들지 않는다.
++각 단위의 `owner_kind`와 비어 있지 않은 `payload.kind`는 같아야 한다. `owner_ref`는 아래 표가 정한 정확한 대상이다. 이미 적용된 내용을 확인하거나 적용할 변경이 없는 단위는 `payload={}`로 남길 수 있다. 이때도 원문 구간, 해석, 담당자와 기존 결정 근거를 보존한다. 아래 필드 설명은 사용자 결정이나 예시 값의 승인을 만들지 않는다. <!-- do-math fields: payload=import_payload -->
+ 
+ 단위와 payload 형태의 정본은 제출 검사(`governance.validate_import_units(...)`, 통치 기록은 `validate_governance_record`)다. 생산자는 `submission_contract.command`로 같은 검사를 제출 전에 실행할 수 있다. 아래 설명은 작성을 돕는 안내이며, 이 설명과 검사 결과가 다르면 검사가 정한다.
+ 
+diff --git "a/.claude/skills/do-math/references/\354\236\220\352\270\260-\354\240\220\352\262\200.md" "b/.claude/skills/do-math/references/\354\236\220\352\270\260-\354\240\220\352\262\200.md"
+index 87419dcd..0b8185f2 100644
+--- "a/.claude/skills/do-math/references/\354\236\220\352\270\260-\354\240\220\352\262\200.md"
++++ "b/.claude/skills/do-math/references/\354\236\220\352\270\260-\354\240\220\352\262\200.md"
+@@ -36,7 +36,7 @@ native 관찰은 한 번 읽은 순서 보존 묶음으로 중앙에 적용한
+ 
+ 종료 사건이 아직 중앙 관측에 반영되지 않아 요청이 거절되면, 도구 종료와 거절 이유를 대조한 뒤 새 요청 ID로 다시 제출한다. 이미 수락된 요청은 같은 ID의 영수증을 조회하며 효과를 반복하지 않는다. 안전 경계 영수증은 의무를 읽었다는 근거나 자기 점검 응답을 대신하지 않는다.
+ 
+-응답 마감이 있는 의무가 열려 있는 동안 연구 도구 호출이 시작되면, 실행기는 진행 중인 연구 호출이 모두 끝날 때까지 그 마감을 멈춘다. 호출이 이어지거나 겹치면 마지막 호출이 끝날 때까지 멈춤이 이어지고, 마감은 멈춘 시간만큼 늦춰진다. 제어 도구 호출과 안전 경계 요청의 `call_ids`로 보고한 호출은 마감을 멈추지 않으며, 마감이 이미 지난 뒤 시작한 호출도 마감을 멈추지 않는다. 의무 기록의 `deadline_held_offset_ms`는 멈춤이 시작된 시점이고, 멈춤이 끝나면 이 필드가 사라지고 `deadline_offset_ms`가 늦춰진다. 이미 전달된 요청의 `payload.deadline_offset_ms`는 바뀌지 않으므로 늦춰진 실제 마감은 중앙이 판정한다. 마감이 멈춰도 응답 전 행동 판정은 그대로다. 응답 마감이 있는 요청을 조회해 읽은 뒤 응답하기 전에 새 연구 행동을 시작하면, 마감이 멈춰 있어도 응답 전 행동으로 기록된다.
++응답 마감이 있는 의무가 열려 있는 동안 연구 도구 호출이 시작되면, 실행기는 진행 중인 연구 호출이 모두 끝날 때까지 그 마감을 멈춘다. 호출이 이어지거나 겹치면 마지막 호출이 끝날 때까지 멈춤이 이어지고, 마감은 멈춘 시간만큼 늦춰진다. 제어 도구 호출과 안전 경계 요청의 `call_ids`로 보고한 호출은 마감을 멈추지 않으며, 마감이 이미 지난 뒤 시작한 호출도 마감을 멈추지 않는다. 의무 기록의 `deadline_held_offset_ms`는 멈춤이 시작된 시점이고, 멈춤이 끝나면 이 필드가 사라지고 `deadline_offset_ms`가 늦춰진다. 이미 전달된 요청의 `payload.deadline_offset_ms`는 바뀌지 않으므로 늦춰진 실제 마감은 중앙이 판정한다. 마감이 멈춰도 응답 전 행동 판정은 그대로다. 응답 마감이 있는 요청을 조회해 읽은 뒤 응답하기 전에 새 연구 행동을 시작하면, 마감이 멈춰 있어도 응답 전 행동으로 기록된다. <!-- do-math fields: payload=worker_feedback -->
+ 
+ 규칙 결과는 `normal`, `defect`, `indeterminate`다. `normal`이나 `defect`를 내리려면 필수 증거 전부를 현재 사용 가능한 실제 참조로 읽어야 한다. 필수 증거는 요청에 실린 각 규칙의 `required_evidence`이며, 읽은 참조를 그 문자열 그대로 `evidence_refs`에 쓴다. 인용할 수 있는 참조는 「공통 실행」의 「인용한다」와 같다. 입력이 보여 준 참조와 `record_index`의 기록 외에, `workspace:checkpoint.json`처럼 이 실행의 작업 공간에 보존되는 파일도 인용할 수 있다. 필수 근거가 부족하면 `indeterminate`로 확인하지 못한 참조와 이유를 남긴다. `progress`는 `progress`, `no_progress`, `contract_mismatch` 중 실제 상태를 사용하고 실제 시도 목록과 다음 방법을 적는다. 일반 체크포인트 파일 갱신이나 제어 도구의 이름만으로 응답 수신을 대신하지 않는다.
+ 
+diff --git "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md" "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"
+index c8f9830b..a85a9d10 100644
+--- "a/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"
++++ "b/.claude/skills/do-math/references/\354\264\210\352\270\260\355\231\224-\354\232\264\354\240\204.md"
+@@ -24,7 +24,7 @@ python $dmCli query --repository $dmRepository --instance $dmInstance --files --
+ python $dmCli query --repository $dmRepository --instance $dmInstance --files --prefix runtime/ --limit 1000
+ ```
+ 
+-CLI의 JSON 조회 결과는 최상위 `result` 안에 있다. 그 안의 `next_cursor`가 있으면 같은 조건에 `--cursor`를 추가해 다음 쪽도 읽는다. 각 조회의 `result.snapshot`을 후속 `--snapshot`에 지정하면 같은 판본을 대조할 수 있다. 경로 조회의 실제 `result.items[].path`를 복사해 다음처럼 읽는다.
++CLI의 JSON 조회 결과는 최상위 `result` 안에 있다. 그 안의 `next_cursor`가 있으면 같은 조건에 `--cursor`를 추가해 다음 쪽도 읽는다. 각 조회의 `result.snapshot`을 후속 `--snapshot`에 지정하면 같은 판본을 대조할 수 있다. 경로 조회의 실제 `result.items[].path`를 복사해 다음처럼 읽는다. <!-- do-math fields: result=query_result -->
+ 
+ ```powershell
+ python $dmCli read --repository $dmRepository --instance $dmInstance --snapshot '<조회 snapshot>' --path '<조회한 lifecycle 또는 config 파일 경로>'
+@@ -258,7 +258,7 @@ python $dmCli input --repository $dmRepository --instance $dmInstance --file act
+ python $dmCli run --repository $dmRepository --instance $dmInstance --until-active
+ ```
+ 
+-독립 검사가 승인해도 사용자 권한이 필요한 payload의 적용은 별도다. 검사된 수입 기록에서 `id`, `sha256`, `check.sha256`, 비어 있지 않은 payload 전건의 `unit_id`와 정규 의미 해시를 확인한다. 이미 승인된 기록과 동일한 의미·권한이면 그 승인 근거를 재사용한다. 새로운 목표·허가를 예시나 모델의 추천으로 승인하지 않는다.
++독립 검사가 승인해도 사용자 권한이 필요한 payload의 적용은 별도다. 검사된 수입 기록에서 `id`, `sha256`, `check.sha256`, 비어 있지 않은 payload 전건의 `unit_id`와 정규 의미 해시를 확인한다. 이미 승인된 기록과 동일한 의미·권한이면 그 승인 근거를 재사용한다. 새로운 목표·허가를 예시나 모델의 추천으로 승인하지 않는다. <!-- do-math fields: check=import_check -->
+ 
+ 현행 공개 CLI는 승인 JSON을 한 번 읽은 payload와 같은 정확한 원문으로 control에 전달한다. `decision`의 `kind=import_approval`은 이 경로에서 `apply_import_control`로 간다. 먼저 같은 snapshot에서 검사된 수입을 조회하고 정확한 record를 읽는다.
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index b0536dda..b05626f3 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -5,8 +5,8 @@ this test does not substitute flag vocabulary for those requirements.
+ """
+ from pathlib import Path
+ import unittest
+-from support.doc_code import (command_issues, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
+-                              field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, written_object_schema)
++from support.doc_code import (command_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
++                              field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, unowned_field_references, written_object_schema)
+ 
+ SKILL = Path(__file__).resolve().parents[3]
+ SCRIPTS = SKILL / 'scripts'
+@@ -173,6 +173,41 @@ class DocumentCodeTests(unittest.TestCase):
+             '`init_result.instance_id` `selection_result.selection.profile_ref` `query_record.family`', schemas), [])
+         self.assertEqual(scoped_field_issues('`init_result.selection`', schemas), [('scoped field', 'init_result.selection')])
+ 
++    def test_optional_reads_and_same_named_checks_keep_their_actual_owners(self):
++        def consumer(payload, other, field):
++            payload['written_only'] = 1
++            def nested():
++                return payload.get('nested_only')
++            return payload.get('kind'), other.get('foreign'), payload.get(field)
++        schema = consumed_object_schema(consumer, 'payload')
++        self.assertEqual(set(schema['properties']), {'kind'})
++        with self.assertRaisesRegex(ValueError, 'No fixed read fields'):
++            consumed_object_schema(consumer, 'missing')
++        schemas = field_schemas()
++        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas), [])
++        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
++        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
++                         [('scoped field', 'check.passed')])
++        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->', schemas),
++                         [('scoped field', 'check.sha256')])
++        self.assertEqual(scoped_field_issues('`change.value` `review_research.question` `source_ref.path` '
++            '`toolchain.project.search_paths` `environment_check.changed_files` `role_review.proposal`', schemas), [])
++        self.assertEqual(scoped_field_issues('`change.nonexistent` `source_ref.passed`', schemas),
++                         [('scoped field', 'change.nonexistent'), ('scoped field', 'source_ref.passed')])
++        self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
++                         [('scoped field', 'payload.deadline_offset_ms')])
++
++    def test_all_simple_dotted_document_fields_have_an_owner(self):
++        schemas = field_schemas()
++        pending = [(document.relative_to(SKILL).as_posix(), token)
++                   for document in documents(SKILL)
++                   for token in unowned_field_references(document.read_text(encoding='utf-8'), schemas)]
++        self.assertEqual(pending, [])
++        self.assertEqual(unowned_field_references('`recrod.id` `new_space.value`', schemas),
++                         ['new_space.value', 'recrod.id'])
++        self.assertEqual(unowned_field_references('`record.id` <!-- do-math fields: record=governance_record -->', schemas), [])
++        self.assertEqual(unowned_field_references('`pythonw.exe` `integration.currentness` `os.scandir(...)`', schemas), [])
++
+     def test_documented_policy_names_have_installed_owners(self):
+         names = declared_policy_names(SCRIPTS)
+         mentioned = set().union(*(documented_policies(document.read_text(encoding='utf-8'))
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 2944916d..d26597f9 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -187,6 +187,25 @@ def written_object_schema(function, target, *, branch=None):
+     return {'type': 'object', 'properties': properties}
+ 
+ 
++
++def consumed_object_schema(function, target, *, scope=None):
++    """Fixed keys explicitly read from an open object; this is not a closed schema."""
++    expected = ast.unparse(ast.parse(target, mode='eval').body)
++    properties = {}
++    for node in producer_nodes(function, scope=scope):
++        key = None
++        if isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) and ast.unparse(node.value) == expected:
++            key = node.slice
++        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
++                and node.func.attr == 'get' and ast.unparse(node.func.value) == expected and node.args:
++            key = node.args[0]
++        if isinstance(key, ast.Constant) and isinstance(key.value, str):
++            properties[key.value] = {}
++    if not properties:
++        raise ValueError(f'No fixed read fields in {function.__qualname__}: {target}')
++    return {'type': 'object', 'properties': properties}
++
++
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+     from do_math import academic, context_store, governance, reporting, submission, supervision, trace_report
+@@ -245,6 +264,33 @@ def field_schemas():
+     schemas['init_result']['properties'].update(schemas['scheduling_result']['properties'])
+     schemas['selection_result'] = produced_object_schema(cli.execute, branch="command == 'select-profile'", return_item=0,
+         bindings={'selected': RECORDS['executions']['properties']['model_selection']})
++    from do_math import formal, observations, planning, review_cycle, trust_validation
++    from do_math.dispatch_engine import DispatchEngineMixin
++    from do_math.review_engine import ReviewEngineMixin
++    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
++    schemas['source_ref'] = produced_object_schema(context_store.write_source_catalog, 'ref')
++    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
++    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
++        "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
++            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
++    schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
++    schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
++    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
++    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
++    schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
++    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
++    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
++        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
++    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
++    schemas['query_result'] = produced_object_schema(core_engine.query_records)
++    schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
++    schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
++    schemas['toolchain'] = produced_object_schema(formal.inspect_toolchain, 'result', bindings={
++        '_project_identity(command, should_stop, workspace=workspace, jobs=jobs, clock=clock, environment=environment, git_backend=git_backend)': schemas['project']})
++    environment_base = produced_object_schema(trust_validation.check_environment, 'result')
++    environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
++    schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
++        bindings={'result': environment_base})
+     for name in ('execution_window', 'scholarly', 'formal_verifier'):
+         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
+@@ -303,6 +349,23 @@ def field_bindings(line, schemas):
+     return local, issues
+ 
+ 
++
++def unowned_field_references(text, schemas):
++    """Unbound simple dotted names cannot silently escape the document population."""
++    pending = set()
++    for line in text.splitlines():
++        local, _ = field_bindings(line, schemas)
++        for token in SPAN.findall(line):
++            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', token):
++                continue
++            if token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
++                continue  # Filename classification does not prove file existence.
++            root = token.split('.')[0]
++            if root not in local and root not in {'contract_check', 'integration'}:
++                pending.add(token)
++    return sorted(pending)
++
++
+ def scoped_field_issues(text, schemas):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     issues = []

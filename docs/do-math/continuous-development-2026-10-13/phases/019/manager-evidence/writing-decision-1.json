@@ -1,0 +1,31 @@
+{
+  "verdict": "revise",
+  "alignment": "독해자는019 P02의 실제 생산/복원과 권한skip의 한계,020 P03의 여섯 소유자·설치 후 최종 입력과 전체G 미완료를 구별했다. 기술 원자료가 별도라는 불확실성은 실제 task의 필수 inputs 회수로 해소하는 경계다. 다만 현재/과거의 표현과 종료 시점, A20 소속, preview 소유관계 및 한 문장의 띄어쓰기를 명확히 한다. 합의의 검수 판정·후속 범위는 바꾸지 않는다.",
+  "findings": [
+    {
+      "index": 1,
+      "action": "revise",
+      "reason": "C6에 이 실행의 관리 마감은 게시 후 정확한 커밋 확인까지이고 그 뒤 세션이 끝난다는 문장을 추가한다. protocol의 제출 후 계약 불변 조건을 유지한다."
+    },
+    {
+      "index": 2,
+      "action": "revise",
+      "reason": "C8의 현재는008 당시 모델 전환 이력을 서술한 말이다. phase008까지의 기록임을 명시해019까지의 검수 범위와 구별한다."
+    },
+    {
+      "index": 3,
+      "action": "revise",
+      "reason": "설계.md 3.3절과 결정A20에서 필수+선택 역방향을 확인했다. task의 A완료조건과 구별하도록 원문 문서와 절을 명시한다."
+    },
+    {
+      "index": 4,
+      "action": "revise",
+      "reason": "기존 seam 역사 문장의 띄어쓰기를 교정한다.011의 과거 범위/제품 의미는 그대로다."
+    },
+    {
+      "index": 5,
+      "action": "revise",
+      "reason": "doc_code에서 preview는 install_tools가 formal_verifier에 추가한 preview객체의 별도 문서owner다. A1에서 이 관계를 설명하고 서로 다른생산자로 해석하지 않게 한다."
+    }
+  ]
+}

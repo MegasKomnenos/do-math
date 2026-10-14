@@ -1,0 +1,32 @@
+[
+  {
+    "id": "B110",
+    "commit": "0c5ebdb7",
+    "actual_diff_equal": true,
+    "reports": 2
+  },
+  {
+    "id": "B111",
+    "commit": "2b78e597",
+    "actual_diff_equal": true,
+    "reports": 1
+  },
+  {
+    "id": "B112",
+    "commit": "8af6e011",
+    "actual_diff_equal": true,
+    "reports": 1
+  },
+  {
+    "id": "B113",
+    "commit": "7823c9a0",
+    "actual_diff_equal": true,
+    "reports": 1
+  },
+  {
+    "id": "B114",
+    "commit": "136dc3d5",
+    "actual_diff_equal": true,
+    "reports": 2
+  }
+]

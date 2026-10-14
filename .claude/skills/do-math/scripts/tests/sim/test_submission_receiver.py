@@ -24,6 +24,7 @@ from do_math.repository import ResearchRepository
 from support.knowledge_builders import knowledge_candidate
 from support.role_answers import seal_response
 from support.engine_context import damage
+from support.engine_context import assert_result_documents
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template
 from support.submission_receiver import held_ref, history, order, receive, research, submit
@@ -463,6 +464,11 @@ class KnowledgeConnections(unittest.TestCase):
         self.assertIn(record["formal_result_id"], engine.instance["formal_results"])
         self.assertIn(record["exposition_id"], engine.instance["expositions"])
         self.assertEqual(len(engine.runtime["tasks"]["TK-work"]["results"]), 1)
+        stored = engine.runtime['tasks']['TK-work']['results'][0]
+        self.assertEqual(stored['report'], output['report'])
+        for excluded in ('knowledge', 'relations', 'integration_bundles'):
+            self.assertNotIn(excluded, stored)
+        self.assertEqual(stored['output_files'], [])
         self.assertEqual(engine.runtime["tasks"]["TK-work"]["status"], "waiting")
 
     def test_independent_bundle_does_not_repeat_the_task_report(self):
@@ -493,6 +499,10 @@ class ReceiptPreservationTests(unittest.TestCase):
                                                                              declaration_names=[])
                                                          for i in range(count)]}
                 engine._apply({'id': 'AC', 'role': 'research_work', 'target': 'TK'}, output, 'EX')
+                stored = engine.runtime['tasks']['TK']['results']
+                self.assertEqual(stored[0]['report'], output['report'])
+                assert_result_documents(self, stored, Path(engine.instance['workspace']), engine,
+                                        owner='results', task_id='TK')
                 plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
                 self.assertEqual(len(plans), 1, plans)
                 self.assertEqual(set(plans[0]['evidence_refs']), set(engine.instance['knowledge']))

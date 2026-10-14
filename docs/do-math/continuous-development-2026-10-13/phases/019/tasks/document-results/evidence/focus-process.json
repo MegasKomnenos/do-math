@@ -1,0 +1,34 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "structure.test_doc_code",
+    "sim.test_role_input_context.PackagedInputTests",
+    "unit.test_context_catalog.ContextStoreTests.test_new_catalog_is_hashed_from_the_bytes_it_wrote",
+    "unit.test_context_catalog.ContextStoreTests.test_catalog_and_overflow_history_preserve_exact_values",
+    "sim.test_submission_receiver.ReceiptPreservationTests",
+    "sim.test_submission_receiver.KnowledgeConnections",
+    "flows.test_submission_acceptance.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\019\\tasks\\document-results\\evidence\\focus"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p019",
+    "TMP": "C:\\t\\p019",
+    "TMPDIR": "C:\\t\\p019",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 41924,
+  "start": "2026-10-14T02:55:22.738303+00:00",
+  "end": "2026-10-14T02:56:31.716871+00:00",
+  "exit_code": 1,
+  "changes": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

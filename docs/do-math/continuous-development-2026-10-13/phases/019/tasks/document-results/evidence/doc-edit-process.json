@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/019/tasks/document-results/evidence/edit_documents.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p019",
+    "TMP": "C:\\t\\p019",
+    "TMPDIR": "C:\\t\\p019",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "pid": 34052,
+  "start": "2026-10-14T02:58:58.296877+00:00",
+  "end": "2026-10-14T02:58:59.987209+00:00",
+  "exit_code": 0,
+  "changes": [
+    ".claude/skills/do-math/references/지식-저작과-재사용.md"
+  ]
+}

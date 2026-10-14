@@ -1,0 +1,2 @@
+{'red': {'selected': 1, 'counts': {'failed': 1}, 'exit_code': 1, 'source_sha256_count': 875}, 'focus': {'selected': 35, 'counts': {'error': 13, 'passed': 22}, 'exit_code': 1, 'source_sha256_count': 875}, 'corrected': {'selected': 23, 'counts': {'passed': 23}, 'exit_code': 0, 'source_sha256_count': 875}, 'c': {'selected': 187, 'counts': {'passed': 186, 'skipped': 1}, 'exit_code': 0, 'source_sha256_count': 875}}
+changes 30 source count 2675

@@ -26,6 +26,7 @@ from support.default_responder import common
 from support.role_answers import seal_response
 from support.engine_context import JUDGED, central_check_knowledge, context_engine, issue, package
 from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
+from support.engine_context import assert_result_documents, assert_result_damage_rejected
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
@@ -379,21 +380,61 @@ class PackagedInputTests(unittest.TestCase):
         raw = b'\xff exact result bytes\n'
         result = {'execution_id': 'EX-work', 'report': 'Returned evidence', 'output_files': [
             {'path': 'proof.bin', 'artifact_ref': 'runtime/artifacts/BA-work/proof.bin',
-             'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}]}
+             'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)},
+            {'path': 'second.bin', 'artifact_ref': 'runtime/artifacts/BA-work/second.bin',
+             'sha256': hashlib.sha256(raw + b'second').hexdigest(), 'bytes': len(raw + b'second')}]}
         task = {'id': 'TK-result', 'revision': 1, 'status': 'waiting', 'results': [result]}
-        engine = context_engine(runtime={'tasks': {task['id']: task}}, files={'runtime/artifacts/BA-work/proof.bin': raw})
+        other = deepcopy(task)
+        other['id'] = 'TK-other'
+        other['results'][0]['execution_id'] = 'EX-other'
+        engine = context_engine(runtime={'tasks': {task['id']: task, other['id']: other}},
+                                files={'runtime/artifacts/BA-work/proof.bin': raw,
+                                       'runtime/artifacts/BA-work/second.bin': raw + b'second'})
         original = deepcopy(task)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context({'id': 'AC-read', 'role': 'research_plan'}, root)
+            restored = next(row for row in context['tasks'] if row['id'] == task['id'])
+            assert_result_documents(self, restored['results'], root, engine, owner='results', task_id=task['id'])
         for role in ('research_plan', 'research_preparation'):
             for _ in range(2):
                 with tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)
                     fitted, fixed = package(engine, root, role, target=task['id'])
-                    ref = fitted['context']['tasks'][0]['source_ref']
+                    rows = fitted['context']['tasks']
+                    ref = next(row['source_ref'] for row in rows if row['id'] == task['id'])
                     detail = json.loads((root / ref['path']).read_bytes())
                     file = detail['results'][0]['output_files'][0]
                     self.assertEqual((root / file['local_path']).read_bytes(), raw)
-                    self.assertEqual(fixed['tasks'][0], original)
+                    self.assertEqual(next(row for row in fixed['tasks'] if row['id'] == task['id']), original)
                     self.assertEqual(engine.runtime['tasks'][task['id']], original)
+                    assert_result_documents(self, ref, root, engine, owner='source_ref', expected=detail)
+                    assert_result_documents(self, detail['results'], root, engine, owner='results', task_id=task['id'])
+                    assert_result_documents(self, detail['results'][0]['output_files'], root, engine,
+                                            owner='materialized_output_files', task_id=task['id'])
+                    from support.doc_code import result_field_issues
+                    for text, owner, value in (
+                            ('`results[].repotr`', 'results', detail['results']),
+                            ('`files[].report` <!-- do-math fields: files=materialized_output_files -->',
+                             'materialized_output_files', detail['results'][0]['output_files']),
+                            ('`results[].local_path`', 'results', detail['results'])):
+                        self.assertEqual(result_field_issues(text, owner, value),
+                            [('actual field', text.split('`')[1])])
+                    catalog = fitted['context']['task_catalog']
+                    if isinstance(catalog, dict):
+                        catalog = assert_result_documents(self, catalog['source_ref'], root, engine,
+                                                          owner='source_ref', total=catalog['total'])
+                    other_ref = next(row['source_ref'] for row in catalog if row['id'] == other['id'])
+                    other_detail = json.loads((root / other_ref['path']).read_bytes())
+                    borrowed = other_detail['results'][0]['output_files'][0]['local_path']
+                    self.assertEqual((root / borrowed).read_bytes(), raw, 'even identical bytes cannot lend ownership')
+                    assert_result_damage_rejected(self, detail['results'], root, engine,
+                                                 task_id=task['id'], borrowed_path=borrowed)
+                    engine.runtime['executions']['EX-work'] = {'output_files': [{**result['output_files'][0],
+                        'local_path': file['local_path']}]}
+                    with self.assertRaises(AssertionError):
+                        assert_result_documents(self, detail['results'], root, engine, owner='results', task_id=task['id'])
+                    del engine.runtime['executions']['EX-work']
 
     def test_planning_keeps_completed_report_and_active_work_as_readable_context(self):
         selected, instance, runtime = approved_task()
@@ -420,6 +461,26 @@ class PackagedInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fitted, fixed = package(engine, root)
+            sources = fitted['context']['sources']
+            if isinstance(sources, dict):
+                sources = assert_result_documents(self, sources['source_ref'], root, engine,
+                    owner='source_ref', total=sources['total'])
+            assert_result_documents(self, sources, root, engine, owner='research_sources')
+            from support.doc_code import result_field_issues
+            self.assertEqual(result_field_issues('`sources[].report` <!-- do-math fields: sources=research_sources -->',
+                'research_sources', sources), [('actual field', 'sources[].report')])
+            for fault in ('local_path', 'sha256', 'bytes', 'foreign_path'):
+                changed = deepcopy(sources)
+                if fault == 'local_path':
+                    del changed[0][fault]
+                elif fault == 'sha256':
+                    changed[0][fault] = '0' * 64
+                elif fault == 'bytes':
+                    changed[0][fault] = len(source) + 1
+                else:
+                    changed[0]['local_path'] = fixed['task_catalog'][0]['source_ref']['path']
+                with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                    assert_result_documents(self, changed, root, engine, owner='research_sources')
             self.assertEqual(fixed['ready_task_ids'], [selected['id']])
             self.assertEqual({row['id'] for row in fixed['tasks']},
                              {selected['id'], finished['id'], active['id']})
@@ -432,6 +493,40 @@ class PackagedInputTests(unittest.TestCase):
             self.assertNotIn('unpublished judgment', json.dumps(fixed['ongoing_work']))
             submission.validate_reference(finished['id'], fixed, root)
             self.assertEqual(fitted['manifest']['candidate_order']['ids'], [selected['id']])
+
+    def test_empty_results_and_sources_do_not_establish_populated_item_fields(self):
+        task = {'id': 'TK-empty', 'revision': 1, 'status': 'waiting', 'results': []}
+        engine = context_engine(instance={'sources': []}, runtime={'tasks': {task['id']: task}})
+        from support.doc_code import result_field_issues
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context({'id': 'AC-empty', 'role': 'research_plan'}, root)
+            self.assertEqual(context['sources'], [])
+            self.assertEqual(context['tasks'][0]['results'], [])
+            assert_result_documents(self, context['sources'], root, engine, owner='research_sources')
+            assert_result_documents(self, context['tasks'][0]['results'], root, engine,
+                                    owner='results', task_id=task['id'])
+            self.assertEqual(result_field_issues('`results[0].report`', 'results', []),
+                             [('actual field', 'results[0].report')])
+
+    def test_changed_source_and_task_artifact_hashes_are_rejected_before_materialization(self):
+        for owner in ('source', 'task'):
+            path = 'runtime/artifacts/BA-' + uuid4().hex + '/original.bin'
+            raw = b'original bytes'
+            task = {'id': 'TK-damaged', 'status': 'waiting', 'results': [{'execution_id': 'EX-damaged',
+                'report': 'Preserved report', 'output_files': [{'path': 'original.bin', 'artifact_ref': path,
+                    'sha256': '0' * 64, 'bytes': len(raw)}]}]}
+            instance = {'sources': [{'name': 'original.bin', 'path': path, 'sha256': '0' * 64}]}
+            engine = context_engine(instance=instance if owner == 'source' else {'sources': []},
+                runtime={'tasks': {task['id']: task}} if owner == 'task' else {'tasks': {}}, files={path: raw})
+            message = 'source artifact hash changed' if owner == 'source' else 'task result artifact hash changed'
+            with self.subTest(owner=owner), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                with self.assertRaises(ValueError) as rejected:
+                    engine._context({'id': 'AC-damaged', 'role': 'research_plan'}, root)
+                self.assertEqual(str(rejected.exception), message + ': ' + path)
+                self.assertFalse(any(root.glob('input/sources/*')))
+                self.assertFalse(any(root.glob('input/task-results/**/*')))
 
     def test_manifest_batch_read_keeps_exact_validation_and_missing_bindings(self):
         from do_math.context_store import verify_manifest_artifacts

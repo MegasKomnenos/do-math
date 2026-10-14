@@ -18,6 +18,7 @@ from do_math.canonical import canonical_json
 from do_math.file_io import PhysicalBoundary
 from support.storage_files import audit_events, unlistable
 from support.storage_role_inputs import catalog_opens
+from support.engine_context import assert_result_documents
 
 
 class ChangingMetadata:
@@ -120,6 +121,23 @@ class ContextStoreTests(unittest.TestCase):
                 self.assertEqual(catalog['files'][logical], data)
                 self.assertEqual(catalog['entries'][key]['sha256'], hashlib.sha256(data).hexdigest())
                 self.assertEqual((root / logical).read_bytes(), data)
+                ref = catalog['entries'][key]
+                self.assertEqual(ref['path'], logical)
+                assert_result_documents(self, ref, root, owner='source_ref', expected=value)
+                from support.doc_code import result_field_issues
+                self.assertEqual(result_field_issues('`source_ref.passed`', 'source_ref', ref),
+                                 [('actual field', 'source_ref.passed')])
+                for fault in ('path', 'sha256', 'bytes'):
+                    changed = dict(ref)
+                    if fault == 'path':
+                        changed['path'] = catalog['entries']['tasks' if key == 'goal' else 'goal']['path']
+                    elif fault == 'sha256':
+                        changed['sha256'] = '0' * 64
+                    else:
+                        changed['bytes'] += 1
+                    with self.subTest(key=key, fault=fault), self.assertRaises(AssertionError):
+                        assert_result_documents(self, changed, root, owner='source_ref', expected=value)
+            self.assertEqual(catalog['total'], len(context))
             # Existing catalog files are still compared before reuse.
             (root / 'input/catalog/goal.json').write_bytes(b'"other"')
             with self.assertRaisesRegex(FileExistsError, 'catalog path contains different bytes: input/catalog/goal.json'):
@@ -206,6 +224,11 @@ class ContextStoreTests(unittest.TestCase):
             ref = next(x for x in fitted['manifest'] if x['key'] == 'recent_history')
             raw = store.read_source(root, ref, limit=10 ** 7)
             self.assertEqual(json.loads(raw['bytes']), context['recent_history'])
+            for key in ('tasks', 'knowledge_catalog', 'recent_history'):
+                projected = fitted['context'][key]
+                if isinstance(projected, dict) and 'source_ref' in projected:
+                    assert_result_documents(self, projected['source_ref'], root, owner='source_ref',
+                                            expected=context[key], total=projected['total'])
 
     def test_packed_sizes_equal_the_canonical_bytes_of_the_packed_context(self):
         nested = {'deep': [{'a': [1, [2, {}], []], 'b': '\u00e9\u2028'}], 'empty': {}}
@@ -238,7 +261,14 @@ class ContextStoreTests(unittest.TestCase):
             self.assertTrue(part['truncated'])
             self.assertEqual(part['range'], {'start': 0, 'end': 2, 'total': 6})
             self.assertEqual(store.read_source(root, {'path': 'input/nope', 'sha256': '0', 'bytes': 1})['status'], 'missing')
-            self.assertEqual(store.read_source(root, {**ref, 'sha256': '0' * 64})['status'], 'error')
+            for fault, expected in (('sha256', 'source hash differs from reference'),
+                                    ('bytes', 'source size differs from reference')):
+                changed = {**ref, fault: '0' * 64 if fault == 'sha256' else ref['bytes'] + 1}
+                error = store.read_source(root, changed)
+                self.assertEqual((error['status'], error['error_type'], error['reason']),
+                                 ('error', 'ValueError', expected))
+                self.assertEqual(error['bytes'], b'')
+                self.assertIsNone(error['range'])
 
 
 if __name__ == '__main__':
