@@ -69,10 +69,67 @@ class RecordCase(unittest.TestCase):
     def check(self, binding=None, **options):
         from support.entry import entry
         _entry = entry()
-        return check_environment(self.environment, self.binding if binding is None else binding, host=self.host, **options, clock=_entry.ports.clock)
+        result = check_environment(self.environment, self.binding if binding is None else binding, host=self.host,
+                                   **options, clock=_entry.ports.clock)
+        from support.engine_context import assert_trust_documents
+        assert_trust_documents(self, result, owner='environment_check', expected={
+            'environment_id': self.environment['id'], 'toolchain_record': self.environment['toolchain_record']})
+        return result
 
 
 class ToolchainRecordTests(RecordCase):
+    def test_documented_environment_branches_keep_absence_and_exact_changes(self):
+        from support.engine_context import assert_trust_documents
+        from support.doc_code import trust_field_issues
+        original = self.record_path.read_bytes()
+        def checked(*, status, errors=None, changes=None):
+            value = self.check()
+            expected = {'environment_id': self.environment['id'],
+                        'toolchain_record': self.request['toolchain_record'],
+                        'binding': self.binding, 'status': status}
+            if errors is not None:
+                expected['errors'] = errors
+            assert_trust_documents(self, value, owner='environment_check', expected=expected)
+            self.assertNotIn('rebind', value)
+            if changes is None:
+                self.assertNotIn('changed_files', value)
+                self.assertNotIn('changed_file_count', value)
+            else:
+                self.assertEqual(value['changed_files'], changes[:50])
+                self.assertEqual(value['changed_file_count'], len(changes))
+                self.assertTrue(value['errors'][0].startswith('olean fingerprint differs'))
+                broken = deepcopy(value)
+                del broken['changed_files']
+                self.assertEqual(trust_field_issues('`environment_check.changed_files`',
+                    'environment_check', broken), [('actual field', 'environment_check.changed_files')])
+                with self.assertRaises(AssertionError):
+                    assert_trust_documents(self, {**value, 'changed_file_count': 0},
+                        owner='environment_check', expected={'changed_file_count': len(changes)})
+            return value
+        checked(status='verified', errors=[])
+        added = []
+        for index in range(55):
+            path = self.olean.with_name(f'Extra{index:02d}.olean')
+            path.write_bytes(b'explicit extra module')
+            added.append(path)
+        checked(status='invalid', changes=[f'toolchain/lib/lean/Init/Extra{i:02d}.olean' for i in range(55)])
+        self.assertEqual(self.record_path.read_bytes(), original, 'admission never writes a baseline')
+        for path in added:
+            path.unlink()
+        self.olean.write_bytes(b'changed judgment bytes')
+        checked(status='invalid', changes=['toolchain/lib/lean/Init/Prelude.olean'])
+        self.olean.unlink()
+        checked(status='invalid', changes=['toolchain/lib/lean/Init/Prelude.olean'])
+        self.record_path.write_bytes(b'{corrupt')
+        value = checked(status='invalid')
+        self.assertTrue(value['errors'][0].startswith('toolchain record unavailable: '))
+        self.assertNotIn('fingerprint_sha256', value)
+        self.record_path.unlink()
+        missing = checked(status='invalid')
+        self.assertIsNone(missing['record_state'])
+        self.assertTrue(missing['errors'][0].startswith('toolchain record unavailable: '))
+        self.assertNotEqual(value['errors'], missing['errors'])
+
     def test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes(self):
         note = self.olean.parent / 'notes.txt'
         note.write_bytes(b'not a judgment module')
@@ -199,12 +256,21 @@ class ToolchainRecordTests(RecordCase):
                 self.assertEqual(rebound['rebind'], {'previous': self.binding, 'current': current,
                                                      'recorded_at': record['baselines'][1]['recorded_at']})
                 self.assertEqual(rebound['binding'], current)
+                from support.engine_context import assert_trust_documents
+                assert_trust_documents(self, rebound, owner='environment_check', expected={
+                    'status': 'verified', 'errors': [], 'binding': current,
+                    'rebind': {'previous': self.binding, 'current': current,
+                               'recorded_at': record['baselines'][1]['recorded_at']}})
+                self.assertNotIn('changed_files', rebound)
+                self.assertNotIn('changed_file_count', rebound)
+                self.assertEqual(len(self.record()['baselines']), 2)
         replaced = self.request['toolchain']['executable']
         self.host.toolchain_errors = [CHANGED + replaced]
         result = self.check(identity=False)
         self.assertEqual(result['status'], 'invalid')
         self.assertEqual(result['errors'], [CHANGED + replaced])
         self.assertNotIn('rebind', result)
+        self.assertNotIn('changed_files', result)
 
 
 class EnvironmentContractTests(unittest.TestCase):

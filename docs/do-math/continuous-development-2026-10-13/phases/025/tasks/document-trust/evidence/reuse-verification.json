@@ -1,0 +1,129 @@
+{
+  "unchanged_runtime_functions": [
+    {
+      "phase": "012",
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+      "unchanged": true
+    },
+    {
+      "phase": "012",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+      "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+      "unchanged": true
+    },
+    {
+      "phase": "012",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+      "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b",
+      "unchanged": true
+    },
+    {
+      "phase": "012",
+      "path": ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+      "sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+      "unchanged": true
+    },
+    {
+      "phase": "012",
+      "path": ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+      "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43",
+      "unchanged": true
+    },
+    {
+      "phase": "016",
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+      "unchanged": true
+    },
+    {
+      "phase": "016",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+      "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+      "unchanged": true
+    },
+    {
+      "phase": "016",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+      "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b",
+      "unchanged": true
+    },
+    {
+      "phase": "016",
+      "path": ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+      "sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+      "unchanged": true
+    },
+    {
+      "phase": "016",
+      "path": ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+      "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43",
+      "unchanged": true
+    },
+    {
+      "phase": "018",
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+      "unchanged": true
+    },
+    {
+      "phase": "018",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+      "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+      "unchanged": true
+    },
+    {
+      "phase": "018",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+      "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b",
+      "unchanged": true
+    },
+    {
+      "phase": "018",
+      "path": ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+      "sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+      "unchanged": true
+    },
+    {
+      "phase": "018",
+      "path": ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+      "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43",
+      "unchanged": true
+    },
+    {
+      "phase": "024",
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+      "unchanged": true
+    },
+    {
+      "phase": "024",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+      "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+      "unchanged": true
+    },
+    {
+      "phase": "024",
+      "path": ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+      "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b",
+      "unchanged": true
+    },
+    {
+      "phase": "024",
+      "path": ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+      "sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+      "unchanged": true
+    },
+    {
+      "phase": "024",
+      "path": ".claude/skills/do-math/scripts/do_math/lean_evidence.py",
+      "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43",
+      "unchanged": true
+    }
+  ],
+  "B38": "Use only the formal/project Git port slice retained at 012. Same runtime source bytes, new actual read-only Git and dedicated Lake observation plus current project scene tests. 012 missing raw reports/counts remain missing.",
+  "012": "Retain Mathlib full evidence/representative compile and installed lower-boundary properties with their original scope. This narrow task adds current P08 inspection/positive null samples and does not approve shared trust.",
+  "016": "Retain the actual compiler/storage/currentness slice and correction to installed fixture content population; no installed-request producer change here.",
+  "018": "Retain Job cleanup/stop contracts on unchanged fixture/runtime; this is not a new complete T4 claim.",
+  "024": "Retain P09/P11 exact condition/wait/retry properties and helper bytes. Other policy/N/L01 meaning and all final gates remain outside this task."
+}

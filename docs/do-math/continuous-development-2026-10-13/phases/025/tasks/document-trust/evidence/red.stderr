@@ -1,0 +1,39 @@
+test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) ... 
+  test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='project.source_identity') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\red\structure\failures\cce207efabf5c4c970c281d75f6bb5c3cd9971f3f96f227488aebc15b3849716.json
+  test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='toolchain.project.search_paths') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\red\structure\failures\cce207efabf5c4c970c281d75f6bb5c3cd9971f3f96f227488aebc15b3849716.json
+  test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='environment_check.changed_files') ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\red\structure\failures\cce207efabf5c4c970c281d75f6bb5c3cd9971f3f96f227488aebc15b3849716.json
+
+======================================================================
+FAIL: test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='project.source_identity')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_trust_fields_require_actual_inspection_and_environment_return
+    with self.subTest(token=token), self.assertRaisesRegex(ValueError, 'actual trust boundary'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='toolchain.project.search_paths')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_trust_fields_require_actual_inspection_and_environment_return
+    with self.subTest(token=token), self.assertRaisesRegex(ValueError, 'actual trust boundary'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) (token='environment_check.changed_files')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 21, in test_trust_fields_require_actual_inspection_and_environment_return
+    with self.subTest(token=token), self.assertRaisesRegex(ValueError, 'actual trust boundary'):
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=3)

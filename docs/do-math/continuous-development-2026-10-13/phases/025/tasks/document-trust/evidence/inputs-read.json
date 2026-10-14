@@ -1,0 +1,242 @@
+[
+  {
+    "reference": "run:sources/user-decisions.md",
+    "sha256": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7",
+    "bytes": 4439
+  },
+  {
+    "reference": "run:sources/model-policy-2026-10-14.md",
+    "sha256": "1bb613af7f8679e62c193dee6918c246fc2661be81f50ac2d69051ad4fe11aa8",
+    "bytes": 2323
+  },
+  {
+    "reference": "run:sources/document-batching-2026-10-14.md",
+    "sha256": "e1c49aa20373f1a13fe138586b8eec241591060b4b2aadca06bf9fd39e336b41",
+    "bytes": 3730
+  },
+  {
+    "reference": "run:phases/001/tasks/document-closeout/evidence/followup-packets.json",
+    "sha256": "0a8339d872bf77bc6a0f319ac870063a5688ebbdd614fa46e06441c2c4619269",
+    "bytes": 445416
+  },
+  {
+    "reference": "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+    "sha256": "c7641c59f1bec47c8beb9da2111da616213f4d267bfc30aacb790509a924e325",
+    "bytes": 502623
+  },
+  {
+    "reference": "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+    "sha256": "6552f056d4073d5f559ec10f20821c0860ee809b12688c9712fa22efd031b6a6",
+    "bytes": 350840
+  },
+  {
+    "reference": "run:phases/024/tasks/document-waits/report.json",
+    "sha256": "8c93bf9842baa5ab525dde4313f874d866c6cd11c74c48a946c6f557ab2a1c25",
+    "bytes": 42388
+  },
+  {
+    "reference": "run:phases/024/tasks/document-waits/evidence/selection-decisions.json",
+    "sha256": "c7f569e8cdc94717ff35046d79e7824eca02beacbd3d773109c83bf1068d875f",
+    "bytes": 15060
+  },
+  {
+    "reference": "run:phases/024/tasks/document-waits/evidence/policy-name-decisions.json",
+    "sha256": "afb86df5e463805b50ef232ce4479f6744680e9727d8f5d9ca0563bb624316be",
+    "bytes": 39426
+  },
+  {
+    "reference": "run:phases/024/tasks/document-waits/evidence/binding-review.md",
+    "sha256": "d019ccbc1df56f61555347381380db5caa47efe4f7e44da0820c1da2949c37d5",
+    "bytes": 11845
+  },
+  {
+    "reference": "run:phases/024/tasks/document-waits/evidence/preservation.json",
+    "sha256": "b5a54b400cb242fcfb53ecbc18f61b7dff3d21253e09f68409c5053332ed789b",
+    "bytes": 203706
+  },
+  {
+    "reference": "run:phases/024/manager-evidence/verification.json",
+    "sha256": "51d98248d7eae51853934db4265c296ac54356fa9eaa7f9f8ad59fffdef1773f",
+    "bytes": 15068
+  },
+  {
+    "reference": "run:phases/024/manager-evidence/source-inspected.json",
+    "sha256": "215f49904ef2921264f1fa78682e5de8577cb993f2c6ba8370352650561d24dc",
+    "bytes": 377678
+  },
+  {
+    "reference": "run:phases/024/manager-evidence/return-check.json",
+    "sha256": "4fc1b92acfa3c69ff83078bd18cec900c20859d3086da69c785c09076fa0fd70",
+    "bytes": 6526
+  },
+  {
+    "reference": "run:phases/024/manager-evidence/review.md",
+    "sha256": "534cd23bede6289757b1f8f616905394c12429abe61770dea00c1142e03ab98e",
+    "bytes": 3637
+  },
+  {
+    "reference": "run:phases/012/tasks/lean-smoke/evidence/review.md",
+    "sha256": "ba090fc29e1c1bf1ccb8456ef93e077fbf2eb218cea87b838c6392d41e9c5a78",
+    "bytes": 6017
+  },
+  {
+    "reference": "run:phases/016/tasks/t4-fixture-repair/report.json",
+    "sha256": "bf1adf0f351c4081e38169ce827d0204e6df3b48c2ca1d0915d0cb5dc390cb60",
+    "bytes": 30209
+  },
+  {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+    "sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83",
+    "bytes": 95948
+  },
+  {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+    "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+    "bytes": 199766
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/AGENTS.md",
+    "sha256": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2",
+    "bytes": 2312
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+    "sha256": "3eefbcd1a7f98e8db2d50e26885366161ee52e0dcb91c3dfe14fb8dc9255301e",
+    "bytes": 42970
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+    "sha256": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519",
+    "bytes": 84516
+  },
+  {
+    "reference": "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md",
+    "sha256": "b7479fbfe8550341b595e01eb21634d116575c4dc0345a79bc716d6be5c1ac54",
+    "bytes": 4848
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/초기화-운전.md",
+    "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34",
+    "bytes": 34182
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+    "sha256": "542c58d40a2c9b42028c9ec2f449646c6e678fbcffd6362d07dc6a25d7a93c3c",
+    "bytes": 29744
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+    "bytes": 151635
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+    "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+    "bytes": 19651
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+    "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+    "bytes": 11211
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/trust_inventory.py",
+    "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b",
+    "bytes": 16633
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+    "sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+    "bytes": 35908
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "sha256": "531697d1648968e4e25a4e5306f788ea09071a68a3c44718c6837a029e202a82",
+    "bytes": 49415
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "sha256": "cadd4e71a36f9dc4bffc022799bd9bcbee95375e091d17629eddbae3dfca0a36",
+    "bytes": 5998
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "sha256": "a13ff8426e1ef63d87f44289f89363e767995dfdc86def49d890c738072c4e7b",
+    "bytes": 62318
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "sha256": "9092951836238dea8e48ad83b630a01409a28755423073078c77841f729ea6cf",
+    "bytes": 6056
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "sha256": "5fafc84e2604983ad8f5ace7e9eb6087dff3c8786460ddcab4ade0a0b63d9383",
+    "bytes": 15750
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "sha256": "574c1a5079b7d596ae9a692c41728e7c9fd4364871c466d710c2fdca2155e8b8",
+    "bytes": 63855
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "sha256": "8dea7e3cf964731b1ce1e12450b6b2923ae03feed0bf716b3cc70a55867fd9b1",
+    "bytes": 45450
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "sha256": "fd9757c8d883a7032fdccf9383cb20e54bdae68a3a3b19d671fb0459e0828678",
+    "bytes": 42880
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/support/trust_inputs.py",
+    "sha256": "2e0575a317720eaccdae1eea523d1665f5dd5951185cc5ea1ef52d3a9c6b868c",
+    "bytes": 3921
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+    "sha256": "a571f6898b439f4d4ba7a508c95688c8a3c5dc8cd372547f23a3943309cdbb42",
+    "bytes": 9859
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+    "sha256": "68b88917ebe02dc995588438f4cad0483bd47f086b18ef835c413ae676166cc4",
+    "bytes": 17031
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+    "sha256": "052cdff7049889508a113cb2e6fcaada00315797316d941461860fe9af80ff93",
+    "bytes": 26213
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_toolchain_records.py",
+    "sha256": "f6453439e3091607c71401f4d7e803c5c484a9dce547d89cedd91dba24e987b4",
+    "bytes": 16051
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_trust_transition.py",
+    "sha256": "91ab8c89acde248ad96c35e55e0515083d13c7d7758bede2d84be7f03bbe7b2b",
+    "bytes": 3922
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    "sha256": "f518148097bf32221be382ebdfb1244bb73eb1abaed6b0d82e6dcf29d2b14e13",
+    "bytes": 2851
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_formal_runtime.py",
+    "sha256": "c364eb78f4655960d95e956cf4657e3649de5190669a7c188dc516f187266b99",
+    "bytes": 5586
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_formal_consumer.py",
+    "sha256": "e66a79e0720b96f914478e835a07c79550d0d1d449b271c05d34a6d1268988c5",
+    "bytes": 14780
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_formal_runtime.py",
+    "sha256": "11fcf1f5b60f4097bba9fda9a4f550dd8ed80477bcd3dde9bd97b22f8ba1480d",
+    "bytes": 6177
+  }
+]

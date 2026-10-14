@@ -49,6 +49,7 @@ DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', '
 GOVERNANCE_BOUNDARIES = {owner: object() for owner in
                          ('import_payload', 'import_check', 'governance', 'academic_validation')}
 WAIT_BOUNDARIES = {owner: object() for owner in ('change', 'plan_settle_wait')}
+TRUST_BOUNDARIES = {owner: object() for owner in ('project', 'toolchain', 'environment_check')}
 
 
 def documents(skill):
@@ -118,140 +119,6 @@ def command_issues(text, options, flags):
     return sorted(issues)
 
 
-def producer_nodes(function, scope=None, branch=None, iteration=None):
-    tree = ast.parse(textwrap.dedent(inspect.getsource(inspect.unwrap(function))))
-    function_node = tree.body[0]
-    if scope is not None:
-        matches = [node for node in ast.walk(function_node)
-                   if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == scope]
-        if len(matches) != 1:
-            raise ValueError(f'Review nested producer scope {function.__qualname__}: {scope}')
-        function_node = matches[0]
-    pending, nodes = list(function_node.body), []
-    while pending:
-        node = pending.pop()
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
-            continue
-        nodes.append(node)
-        pending.extend(ast.iter_child_nodes(node))
-    if branch is not None or iteration is not None:
-        expression = branch if branch is not None else iteration
-        expected = ast.unparse(ast.parse(expression, mode='eval').body)
-        matches = [node for node in nodes if
-                   (isinstance(node, ast.If) and branch is not None and ast.unparse(node.test) == expected) or
-                   (isinstance(node, ast.For) and iteration is not None and ast.unparse(node.iter) == expected)]
-        if len(matches) != 1:
-            raise ValueError(f'Review producer branch {function.__qualname__}: {expression}')
-        pending, nodes = list(matches[0].body), []
-        while pending:
-            node = pending.pop()
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
-                continue
-            nodes.append(node)
-            pending.extend(ast.iter_child_nodes(node))
-    return nodes
-
-
-def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None, argument=None, list_item=False):
-    """Read explicitly selected producer objects; unknown fields require review."""
-    nodes = producer_nodes(function, scope, branch)
-    if keyword is not None or argument is not None:
-        expected = ast.unparse(ast.parse(target, mode='eval').body)
-        calls = [node for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected]
-        if argument is not None:
-            if any(argument >= len(node.args) for node in calls):
-                raise ValueError(f'Review producer call argument {function.__qualname__}')
-            values = [node.args[argument] for node in calls]
-        else:
-            values = [item.value for node in calls for item in node.keywords if item.arg == keyword]
-    elif target is None:
-        values = [node.value for node in nodes if isinstance(node, ast.Return)]
-    else:
-        expected = ast.unparse(ast.parse(target, mode='eval').body)
-        values = [node.value for node in nodes if isinstance(node, ast.Assign)
-                  and any(ast.unparse(item) == expected for item in node.targets)]
-    if list_item:
-        if any(not isinstance(value, ast.ListComp) for value in values):
-            raise ValueError(f'Review producer list item {function.__qualname__}')
-        values = [value.elt for value in values]
-    if return_item is not None:
-        if any(not isinstance(value, ast.Tuple) or return_item >= len(value.elts) for value in values):
-            raise ValueError(f'Review producer result tuple {function.__qualname__}')
-        values = [value.elts[return_item] for value in values]
-    if not values or (not variants and len(values) != 1) or any(not isinstance(value, ast.Dict) for value in values):
-        raise ValueError(f'Review document field producer {function.__qualname__}: {target or "return"}')
-    bindings, used = bindings or {}, set()
-    def shape(node):
-        expression = ast.unparse(node)
-        if expression in bindings:
-            used.add(expression)
-            return bindings[expression]
-        if isinstance(node, ast.IfExp) and isinstance(node.body, ast.Dict) and isinstance(node.orelse, ast.Dict):
-            return {'anyOf': [shape(node.body), shape(node.orelse)]}
-        if not isinstance(node, ast.Dict):
-            return {}
-        properties, compositions = {}, []
-        for key, value in zip(node.keys, node.values):
-            if key is None:
-                expanded = shape(value)
-                if 'properties' in expanded:
-                    properties.update(expanded['properties'])
-                elif 'anyOf' in expanded or 'allOf' in expanded:
-                    compositions.append(expanded)
-                else:
-                    raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
-            elif isinstance(key, ast.Constant) and isinstance(key.value, str):
-                properties[key.value] = shape(value)
-            else:
-                raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
-        own = {'type': 'object', 'properties': properties, 'additionalProperties': False}
-        return {'allOf': [own, *compositions]} if compositions else own
-    shapes = [shape(value) for value in values]
-    if used != set(bindings):
-        raise ValueError(f'Unused producer bindings in {function.__qualname__}: {sorted(set(bindings) - used)}')
-    return {'anyOf': shapes} if variants else shapes[0]
-
-
-def written_object_schema(function, target, *, branch=None, iteration=None):
-    """Fixed subscript/keyword additions to one selected object, not other CLI branches."""
-    expected = ast.unparse(ast.parse(target, mode='eval').body)
-    properties = {}
-    for node in producer_nodes(function, branch=branch, iteration=iteration):
-        if isinstance(node, ast.Assign):
-            for destination in node.targets:
-                if isinstance(destination, ast.Subscript) and ast.unparse(destination.value) == expected:
-                    if not isinstance(destination.slice, ast.Constant) or not isinstance(destination.slice.value, str):
-                        raise ValueError(f'Unresolved written field in {function.__qualname__}: {target}')
-                    properties[destination.slice.value] = {}
-        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'update' \
-                and ast.unparse(node.func.value) == expected:
-            if node.args or any(item.arg is None for item in node.keywords):
-                raise ValueError(f'Unresolved object update in {function.__qualname__}: {target}')
-            properties.update({item.arg: {} for item in node.keywords})
-    if not properties:
-        raise ValueError(f'No written fields in {function.__qualname__}: {target}')
-    return {'type': 'object', 'properties': properties}
-
-
-
-def consumed_object_schema(function, target, *, scope=None):
-    """Fixed keys explicitly read from an open object; this is not a closed schema."""
-    expected = ast.unparse(ast.parse(target, mode='eval').body)
-    properties = {}
-    for node in producer_nodes(function, scope=scope):
-        key = None
-        if isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) and ast.unparse(node.value) == expected:
-            key = node.slice
-        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
-                and node.func.attr == 'get' and ast.unparse(node.func.value) == expected and node.args:
-            key = node.args[0]
-        if isinstance(key, ast.Constant) and isinstance(key.value, str):
-            properties[key.value] = {}
-    if not properties:
-        raise ValueError(f'No fixed read fields in {function.__qualname__}: {target}')
-    return {'type': 'object', 'properties': properties}
-
-
 def field_schemas():
     """Bind stored records separately from the role-input objects built from them."""
     from do_math import context_store, governance, reporting, submission
@@ -295,7 +162,7 @@ def field_schemas():
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas.update(ROLE_INPUT_BOUNDARIES)
     schemas.update(CLI_RESULT_BOUNDARIES)
-    from do_math import formal, observations, planning, trust_validation
+    from do_math import observations
     schemas.update(WAIT_BOUNDARIES)
     schemas.update(RESULT_INPUT_BOUNDARIES)
     schemas.update(REVIEW_INPUT_BOUNDARIES)
@@ -304,14 +171,7 @@ def field_schemas():
     schemas.update(GOVERNANCE_BOUNDARIES)
     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
     schemas['query_result'] = QUERY_RESULT_BOUNDARY
-    schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
-    schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
-    schemas['toolchain'] = produced_object_schema(formal.inspect_toolchain, 'result', bindings={
-        '_project_identity(command, should_stop, workspace=workspace, jobs=jobs, clock=clock, environment=environment, git_backend=git_backend)': schemas['project']})
-    environment_base = produced_object_schema(trust_validation.check_environment, 'result')
-    environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
-    schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
-        bindings={'result': environment_base})
+    schemas.update(TRUST_BOUNDARIES)
     def array(item):
         return {'type': 'array', 'items': item}
     schemas['candidates'] = contracts.schema_for('research_preparation')['properties']['candidates']
@@ -437,7 +297,7 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
-                        defer_delivery_inputs=(), defer_governance=(), defer_waits=()):
+                        defer_delivery_inputs=(), defer_governance=(), defer_waits=(), defer_trust=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -470,6 +330,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_waits) - WAIT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred wait owners: {sorted(unknown)}')
+    unknown = set(defer_trust) - TRUST_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred trust owners: {sorted(unknown)}')
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
         issues.extend(binding_issues)
@@ -479,6 +342,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            owner = next((name for name, boundary in TRUST_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_trust:
+                    continue
+                raise ValueError(owner + ' fields require the actual trust boundary')
             owner = next((name for name, boundary in WAIT_BOUNDARIES.items()
                           if local[root] is boundary), None)
             if owner is not None:
@@ -567,6 +436,44 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def trust_field_issues(text, owner, value):
+    """Read actual trust returns, retaining the documented conditional absences.
+
+    Non-Lake project is null. changed_files exists only for a fingerprint
+    mismatch, not for verified/rebind or an earlier record/identity error.
+    Positive Lake and mismatch scenes separately check these spellings.
+    """
+    if owner not in TRUST_BOUNDARIES:
+        raise ValueError('Unknown trust owner: ' + owner)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, TRUST_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = token.split('.')
+            if local.get(root) is not TRUST_BOUNDARIES[owner]:
+                continue
+            if owner == 'project' and value is None and parts == ['source_identity']:
+                continue
+            if (owner == 'toolchain' and isinstance(value, dict) and 'project' in value
+                    and value['project'] is None and parts == ['project', 'search_paths']):
+                continue
+            if (owner == 'environment_check' and isinstance(value, dict)
+                    and parts == ['changed_files'] and 'changed_files' not in value
+                    and (value.get('status') == 'verified' or value.get('status') == 'invalid'
+                         and value.get('errors') and not any(
+                             error.startswith('olean fingerprint differs') for error in value['errors']))):
+                continue
+            node = value
+            for part in parts:
+                if not isinstance(node, dict) or part not in node:
+                    issues.append(('actual field', token))
+                    break
+                node = node[part]
     return sorted(set(issues))
 
 

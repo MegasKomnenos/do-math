@@ -1,0 +1,306 @@
+[
+  {
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "--version"
+    ],
+    "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-002\\scratch\\tmp7zjbhqjx",
+    "characters": 140,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-002\\scratch\\tmp7zjbhqjx\\tmphs90_imn\\proposal.lean"
+    ],
+    "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-002\\scratch\\tmp7zjbhqjx\\tmphs90_imn",
+    "characters": 152,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\formal\\EX-03E6TRPT000000000000000029\\tmpdkoajlff\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\formal\\EX-03E6TRPT000000000000000029\\tmpdkoajlff",
+    "characters": 89,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\formal\\EX-03E6TRPT00000000000000002J\\tmp06uuzllh\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\formal\\EX-03E6TRPT00000000000000002J\\tmp06uuzllh",
+    "characters": 89,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-5b6k86yd\\shared\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-5b6k86yd\\live\\work\\formal\\EX-03E6TRPT000000000000000024\\tmp3j8tk8ni\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-5b6k86yd\\live\\work\\formal\\EX-03E6TRPT000000000000000024\\tmp3j8tk8ni",
+    "characters": 89,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006V\\tmplsste_df\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006V\\tmplsste_df",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpxvo3dl0z\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpxvo3dl0z",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp8sl7ovd5\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp8sl7ovd5",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpmeqx3dd5\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpmeqx3dd5",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp5xyyg8w7\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp5xyyg8w7",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpz37e_5vl\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpz37e_5vl",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpmmooo46b\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpmmooo46b",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmprxrbdiqf\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmprxrbdiqf",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpcv7jngyz\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpcv7jngyz",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpbawe1ivm\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpbawe1ivm",
+    "characters": 88,
+    "exit_code": 1,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp825ioqvk\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmp825ioqvk",
+    "characters": 88,
+    "exit_code": 1,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\rerecorded\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006D\\tmp1_j2pb2x\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006D\\tmp1_j2pb2x",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\rerecorded\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006Q\\tmpsha3l6p7\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006Q\\tmpsha3l6p7",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000069\\tmphv4tqrmt\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000069\\tmphv4tqrmt",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006P\\tmp7_x27nh5\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006P\\tmp7_x27nh5",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006W\\tmptvh55l6g\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006W\\tmptvh55l6g",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpkgav02uf\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpkgav02uf",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpfyx1i8z9\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpfyx1i8z9",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpq5b2jsaf\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpq5b2jsaf",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpxhj0ztg7\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT00000000000000006F\\tmpxhj0ztg7",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\t\\p025\\do-math-sim-t87yutly\\shared\\next\\trust\\toolchain\\bin\\lean.exe",
+      "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpxa5qlhug\\proposal.lean"
+    ],
+    "cwd": "C:\\t\\p025\\do-math-sim-t87yutly\\live\\work\\trust\\EX-03E6TRPT000000000000000066\\tmpxa5qlhug",
+    "characters": 88,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+      "--dir",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui\\project",
+      "env",
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-c",
+      "import os,json; print(json.dumps({\"cwd\":os.getcwd(),\"paths\":[p for k in (\"LEAN_PATH\",\"LEAN_SRC_PATH\") for p in os.environ.get(k,\"\").split(os.pathsep) if p]}))"
+    ],
+    "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui",
+    "characters": 140,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+      "--dir",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui\\project",
+      "env",
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-c",
+      "import os,json; print(json.dumps({\"cwd\":os.getcwd(),\"paths\":[p for k in (\"LEAN_PATH\",\"LEAN_SRC_PATH\") for p in os.environ.get(k,\"\").split(os.pathsep) if p]}))"
+    ],
+    "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui",
+    "characters": 140,
+    "exit_code": 0,
+    "stopped": false
+  },
+  {
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lake.exe",
+      "--dir",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui\\project",
+      "env",
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "--version"
+    ],
+    "cwd": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\c2\\boundary-isolated-001\\scratch\\tmpa9p7oaui",
+    "characters": 140,
+    "exit_code": 0,
+    "stopped": false
+  }
+]

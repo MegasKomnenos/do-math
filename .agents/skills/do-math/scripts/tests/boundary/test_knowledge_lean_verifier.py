@@ -173,6 +173,16 @@ class ToolchainContractTests(unittest.TestCase):
             root = Path(directory)
             observed = inspect_toolchain(command, root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(toolchain_errors(observed), [])
+            from support.engine_context import assert_trust_documents
+            from do_math.file_io import sha256_file
+            assert_trust_documents(self, observed, owner='toolchain', expected={
+                'project': None, 'configured_command': command, 'executable': str(Path(command[0]).resolve()),
+                'sha256': sha256_file(command[0]), 'version_exit': 0,
+                'verifier_path': str(Path(formal.__file__).resolve()),
+                'verifier_sha256': sha256_file(formal.__file__),
+                'executables': {str(Path(command[0]).resolve()): sha256_file(command[0])}})
+            assert_trust_documents(self, observed['project'], owner='project', expected=None)
+            self.assertTrue(observed['version'].startswith('Lean (version '))
             result = verify_lean(source='theorem repair_probe : True := True.intro', declarations=['repair_probe'],
                                  workspace=root, lean_command=command, expected_toolchain=observed, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(result['status'], 'verified', result)
@@ -210,6 +220,47 @@ class LakeEnvironmentTests(unittest.TestCase):
                 formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
                 self.assertEqual(calls.count('job_run'), 2, 'a changed project input is observed again')
             self.assertIn(str(project / '.lake' / 'build' / 'lib' / 'lean'), first['search_paths'])
+            from support.engine_context import assert_trust_documents
+            from support.doc_code import trust_field_issues
+            from do_math.file_io import sha256_file
+            from do_math.values import json_digest
+            import hashlib
+            manifest.write_text(MANIFEST, encoding='utf-8')
+            lean = lake.with_name('lean.exe')
+            command = [str(lake), '--dir', str(project), 'env', str(lean)]
+            observed = inspect_toolchain(command, root, clock=_entry.ports.clock,
+                environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
+            expected_source = {'root': str(project), 'git_tree': None,
+                'working_diff_hash': hashlib.sha256(b'').hexdigest(), 'untracked_file_count': 2,
+                'untracked_sha256': json_digest({name: sha256_file(project / name)
+                                                for name in ('lakefile.toml', 'lake-manifest.json')})}
+            expected_project = {'manifest_hashes': {name: sha256_file(project / name)
+                                                   for name in ('lakefile.toml', 'lake-manifest.json')},
+                'source_identity': expected_source,
+                # Installed Lake's augmentedLeanPath/augmentedLeanSrcPath add
+                # its library and source directories to this package's path.
+                'search_paths': sorted(str(path) for path in (
+                    lean.parents[1] / 'lib' / 'lean', lean.parents[1] / 'src' / 'lean' / 'lake',
+                    project / '.lake' / 'build' / 'lib' / 'lean'))}
+            assert_trust_documents(self, observed['project'], owner='project', expected=expected_project)
+            assert_trust_documents(self, observed, owner='toolchain', expected={
+                'project': expected_project, 'configured_command': command, 'version_exit': 0,
+                'executable': str(lake), 'sha256': sha256_file(lake),
+                'verifier_sha256': sha256_file(formal.__file__),
+                'verifier_path': str(Path(formal.__file__).resolve()),
+                'executables': {str(path): sha256_file(path) for path in (lake, lean)}})
+            for owner, token, path in (
+                    ('project', 'project.source_identity', ('source_identity',)),
+                    ('toolchain', 'toolchain.project.search_paths', ('project', 'search_paths'))):
+                from copy import deepcopy
+                value = deepcopy(observed['project'] if owner == 'project' else observed)
+                parent = value
+                for key in path[:-1]: parent = parent[key]
+                del parent[path[-1]]
+                self.assertEqual(trust_field_issues('`' + token + '`', owner, value), [('actual field', token)])
+            wrong = {**observed['project'], 'source_identity': {**expected_source, 'untracked_file_count': 0}}
+            with self.assertRaises(AssertionError):
+                assert_trust_documents(self, wrong, owner='project', expected=expected_project)
 
 
 @category('resource')

@@ -1,0 +1,46 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.agents\\skills\\do-math\\scripts\\run_tests.py",
+    "boundary.test_engine_cli",
+    "structure.test_doc_code",
+    "unit.test_engine_trace_report_corruption",
+    "unit.test_role_input_packaging",
+    "unit.test_storage_record_queries",
+    "unit.test_storage_report_projections",
+    "unit.test_trust_environment",
+    "unit.test_toolchain_records",
+    "sim.test_toolchain_tools",
+    "sim.test_knowledge_project_identity",
+    "sim.test_trust_transition",
+    "sim.test_formal_wait_contract",
+    "unit.test_knowledge_formal_runtime",
+    "boundary.test_knowledge_lean_verifier.ToolchainContractTests",
+    "boundary.test_knowledge_lean_verifier.LakeEnvironmentTests",
+    "unit.test_review_research_owner_contract",
+    "sim.test_submission_review_inputs",
+    "boundary.test_review_source_restoration",
+    "flows.test_lifecycle_engine_trust",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\025\\tasks\\document-trust\\evidence\\m"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p025",
+    "TMP": "C:\\t\\p025",
+    "TMPDIR": "C:\\t\\p025",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "start": "2026-10-14T13:58:31.620983+00:00",
+  "exit_code": 0,
+  "pid": 40432,
+  "end": "2026-10-14T14:02:42.092729+00:00",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

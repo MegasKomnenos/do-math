@@ -43,3 +43,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 023의실제수입/헌장/학술소비를검수했다.024는기존planning.evaluate_condition/task_scope.decision_is_current와DispatchEngineMixin._plan_settle_waits/_dispatchable, input_overflow/운영처분의기존생산/소비경계를문서검사에연결한다. 입력/반환/권한/해소의정본은현재함수와공유schema이며문서용제품계약을복제하지않는다. 같은task가helper·직접소비·미러를소유하므로S항목·provides/uses는추가하지않는다. runtime계약변화가필요하면정확반례를후속으로반환한다.
 
 024의 실제 조건/대기 문서 결속을 검수했다.025는 기존 formal._project_identity/inspect_toolchain 및 trust_validation.check_environment와 trust_inventory의 실제 생산/소비를 사용한다. project의 null, 환경 검사 분기별 부재·오류·재결박 및 등록/활성화/컴파일 권한은 현 함수·공유 schema가 정본이다. 같은 task가 helper·소비 시험·미러를 소유하고 제품 인터페이스를 개정하지 않으므로 S항목·provides/uses는 추가하지 않는다. runtime 수리가 필요하면 정확 반례를 반환한다.
+
+025의 기존 project/toolchain/environment_check 경계 소비를 검수했다.026은 고정된 문서·현재 코드·기존 실행 근거를 독립 판정하며 제품 제공자/소비자나 새 인터페이스를 구현하지 않는다. 세 task의 writes/provides/uses는 비어 있고 S항목 개정은 없다. 새 수리가 필요하면 현재 정본과 최소 반례로 후속 배정에 반환한다.

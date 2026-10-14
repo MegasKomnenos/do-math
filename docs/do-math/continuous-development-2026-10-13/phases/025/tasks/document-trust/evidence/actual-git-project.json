@@ -1,0 +1,64 @@
+{
+  "producer": "formal.project_source_identity",
+  "ports": "real_ports.git_backend",
+  "actual": {
+    "root": "C:\\math\\.claude\\skills\\do-math\\scripts\\tests",
+    "git_tree": "65c085ea97ca117d84a815c40cb112bc70e63b45",
+    "working_diff_hash": "68d1b17ff0fa87c5307ec8871a4212fbd2fa8a3ad5b5f66ae0278f49dac478da",
+    "untracked_file_count": 0,
+    "untracked_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "expected_from_native_Git_and_files": {
+    "root": "C:\\math\\.claude\\skills\\do-math\\scripts\\tests",
+    "git_tree": "65c085ea97ca117d84a815c40cb112bc70e63b45",
+    "working_diff_hash": "68d1b17ff0fa87c5307ec8871a4212fbd2fa8a3ad5b5f66ae0278f49dac478da",
+    "untracked_file_count": 0,
+    "untracked_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "untracked_inputs": {},
+  "queries": [
+    {
+      "argv": [
+        "git",
+        "-C",
+        "C:\\math",
+        "rev-parse",
+        "--verify",
+        "HEAD:.claude/skills/do-math/scripts/tests"
+      ],
+      "exit_code": 0,
+      "stdout_file": "git-identity-0.stdout",
+      "stderr_file": "git-identity-0.stderr"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "C:\\math",
+        "diff",
+        "--no-ext-diff",
+        "HEAD",
+        "--",
+        ".claude/skills/do-math/scripts/tests"
+      ],
+      "exit_code": 0,
+      "stdout_file": "git-identity-1.stdout",
+      "stderr_file": "git-identity-1.stderr"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "C:\\math",
+        "ls-files",
+        "-z",
+        "--",
+        ".claude/skills/do-math/scripts/tests"
+      ],
+      "exit_code": 0,
+      "stdout_file": "git-identity-2.stdout",
+      "stderr_file": "git-identity-2.stderr"
+    }
+  ],
+  "scope": "Read-only observation of the actual tracked current test subtree and its working diff; dedicated positive/untracked and .lake-exclusion axes use the retained project scene tests. No Git init/add/commit/reset/checkout/push."
+}

@@ -86,6 +86,34 @@ def review_input_value(case, context, key, workspace, *, manifest):
     return value
 
 
+def assert_trust_documents(case, value, *, owner, expected, texts=None):
+    """Actual P08 samples; expected facts come from each owning scene's inputs."""
+    from support.doc_code import TRUST_BOUNDARIES, documents, field_bindings, SPAN, trust_field_issues
+    if owner not in TRUST_BOUNDARIES:
+        raise ValueError('Unknown trust owner: ' + owner)
+    if texts is None:
+        texts = [p.read_text(encoding='utf-8') for p in documents(Path(__file__).resolve().parents[3])]
+    mentioned = set()
+    for text in texts:
+        case.assertEqual(trust_field_issues(text, owner, value), [])
+        for line in text.splitlines():
+            local, _ = field_bindings(line, TRUST_BOUNDARIES)
+            for token in SPAN.findall(line):
+                root, dot, suffix = token.partition('.')
+                if dot and local.get(root) is TRUST_BOUNDARIES[owner]:
+                    mentioned.add(suffix)
+    case.assertIn({'project': 'source_identity', 'toolchain': 'project.search_paths',
+                   'environment_check': 'changed_files'}[owner], mentioned)
+    if expected is None:
+        case.assertIsNone(value)
+    else:
+        case.assertIsInstance(value, dict)
+        for key, fact in expected.items():
+            case.assertIn(key, value)
+            case.assertIs(type(value[key]), type(fact))
+            case.assertEqual(value[key], fact, key)
+
+
 def assert_wait_documents(case, value, *, owner, expected, texts=None):
     """P09 input spelling and P11's actual wait, with independent scene facts."""
     from support.doc_code import WAIT_BOUNDARIES, documents, field_bindings, SPAN, wait_field_issues

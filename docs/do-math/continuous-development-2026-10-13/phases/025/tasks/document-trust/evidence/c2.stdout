@@ -1,0 +1,54 @@
+Open known defects: 0
+[structure] 33 tests
+[unit] 88 tests
+[sim] 18 tests
+[flows] 18 tests
+[boundary] 28 tests
+  isolated: boundary.test_engine_cli.CliExitTests
+  {'passed': 1}
+  isolated: boundary.test_knowledge_lean_verifier.LakeEnvironmentTests
+  {'passed': 1}
+  isolated: boundary.test_knowledge_lean_verifier.ToolchainContractTests
+  {'passed': 1}
+Over budget: 19 tests
+      6.468s > 2.0s sim.test_formal_wait_contract.FormalWaitContractTests.test_every_declared_formal_wait_has_a_negative_condition_and_exact_release
+     20.891s > 2.0s sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+      3.515s > 2.0s sim.test_trust_transition.TrustContinuationTests.test_interrupted_activation_preserves_explicit_lineage_through_save_and_retry
+      4.859s > 0.2s unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure
+     18.172s > 0.2s unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected
+      0.500s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+      0.204s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_prepared_source_uses_its_snapshot_after_head_advances
+      0.282s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+      0.218s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison
+      0.469s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+      0.234s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes
+      0.657s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+      0.968s > 0.2s unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names
+      0.219s > 0.2s unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding
+      0.703s > 0.2s unit.test_trust_environment.ToolchainRecordTests.test_documented_environment_branches_keep_absence_and_exact_changes
+      0.469s > 0.2s unit.test_trust_environment.ToolchainRecordTests.test_fingerprint_detects_size_modification_creation_and_recreation
+      0.203s > 0.2s unit.test_trust_environment.ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes
+      0.406s > 0.2s unit.test_trust_environment.ToolchainRecordTests.test_rebind_requires_the_current_baseline_and_the_same_identity
+      0.234s > 0.2s unit.test_trust_environment.ToolchainRecordTests.test_unknown_record_field_and_other_schema_are_rejected
+{"complete": true, "successful": true, "counts": {"passed": 185}, "group_seconds": {"structure": 1.9, "unit": 32.7, "sim": 42.9, "flows": 85.6, "boundary": 75.6}, "total_seconds": 238.7}
+   20.891s passed             sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+   18.172s passed             unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected
+   13.812s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_partial_failure_cannot_activate
+   12.313s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_stop_and_resume_trust_check_preserves_attempt_lineage
+   11.328s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_rerecorded_baseline_is_followed_once_with_an_event
+   10.344s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_full_transition_preserves_old_formal_records_and_full_command
+    6.468s passed             sim.test_formal_wait_contract.FormalWaitContractTests.test_every_declared_formal_wait_has_a_negative_condition_and_exact_release
+    5.406s passed             boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes
+    4.859s passed             unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure
+    4.781s passed             flows.test_lifecycle_engine_trust.TrustInvalidationPlanningTests.test_invalidated_environment_opens_one_plan_and_control_replay_opens_none
+    4.406s passed             boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning
+    4.250s passed             boundary.test_knowledge_lean_verifier.ToolchainContractTests.test_inspection_matches_actual_formal_verifier
+    4.109s passed             boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces
+    4.078s passed             boundary.test_knowledge_lean_verifier.LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input
+    3.953s passed             boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model
+    3.672s passed             boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause
+    3.563s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_trust_recheck_needs_no_grant_naming_the_trust_roles
+    3.515s passed             sim.test_trust_transition.TrustContinuationTests.test_interrupted_activation_preserves_explicit_lineage_through_save_and_retry
+    3.515s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_changed_semantics_requires_independent_review
+    3.515s passed             flows.test_lifecycle_engine_trust.TransitionTests.test_the_activation_a_finished_recheck_queues_names_its_source
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\c2\report.json

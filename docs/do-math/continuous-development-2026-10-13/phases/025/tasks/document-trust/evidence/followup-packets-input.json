@@ -1,0 +1,4783 @@
+{
+  "status": "proposals_for_manager_not_new_assignments",
+  "packets": [
+    {
+      "id": "P08",
+      "title": "도구 사슬·프로젝트와 신뢰 검사",
+      "legacy_work": "DOC-RETURN-TRUST",
+      "requirement": {
+        "path": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "lines": [
+          1181,
+          1184,
+          1201,
+          1600,
+          1613
+        ]
+      },
+      "owners": [
+        "project",
+        "toolchain",
+        "environment_check"
+      ],
+      "ast_sites": [
+        307,
+        308,
+        309,
+        311,
+        312,
+        313
+      ],
+      "original_document_locations": [
+        {
+          "path": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 216,
+          "text": "등록은 툴체인 기록 파일을 읽는다. 기록의 ID와 판본 식별이 요청과 같고, 요청이 결박한 기준 항목의 다이제스트가 기록의 해당 항목과 같으며, 현재 기준의 대표 검사가 성공했고 현재 기준에 대해 `mismatch`로 끝난 전수 점검 결과가 없을 때만 등록한다. 설치 파일은 읽지 않는다. Lake가 구성한 검색 경로 `toolchain.project.search_paths`가 Lean 설치와 Lake 프로젝트 밖에 있으면 등록을 거부한다. Lean 관련 검색 경로 환경 변수는 호스트에서 상속하지 않는다."
+        },
+        {
+          "path": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "line": 34,
+          "text": "현재 지문이 결박한 기준과 다르면 활성화는 환경을 활성화하지 않고, 형식 검사는 컴파일을 시작하지 않는다. 활성화는 전환 실패로 끝나고 이전 환경이 계속 효력을 가진다. 전환의 기존 K 재검사는 실패 결과로 기록되므로 그 전환은 활성화되지 않는다. 형식 검사는 달라진 파일 목록(`environment_check.changed_files`)을 보존하고 `formal_environment` 대기로 멈춘다. 지문이 같아도 검사기가 컴파일 직전에 승인된 판본 식별과 다른 점을 찾으면 형식 검사는 같은 대기로 멈춘다. 이때 도구 모음이나 프로젝트 입력 파일이 달라졌으면 그 목록(`identity_errors`)을 함께 보존하고, 실행 명령이나 실행 파일 경로가 달라졌으면 그 사유만 보존한다. 이 대기의 다음 담당은 `trust_governance`이며, 다음 담당은 원인을 둘로 나눈다."
+        },
+        {
+          "path": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "line": 67,
+          "text": "**판본 식별**은 `inspect_toolchain`이 관측한 `toolchain` 객체다. `lean --version` 출력, 구성된 명령과 첫 실행 파일의 경로·SHA-256, 명령 인자의 `.exe`·`.dll` SHA-256, 검사기 `formal.py`의 경로·SHA-256을 담는다. 실행 중인 검사기는 경로가 아니라 적재한 모듈 바이트의 SHA-256으로 판본 식별의 검사기와 대조한다. 그래서 작업 공간 미리보기처럼 zip에서 적재한 같은 바이트도 같은 검사기다. 기록된 경로의 파일은 그 SHA-256과 계속 대조한다. Lake 프로젝트를 쓰면 `lean-toolchain`·`lake-manifest.json`·lakefile의 SHA-256, **프로젝트 소스 식별**(`project.source_identity`: 프로젝트의 추적된 git 트리, 작업 트리 diff, 추적되지 않은 입력의 해시), Lake가 구성한 검색 경로도 담는다. 검색 경로는 Lean 설치와 Lake 프로젝트 안에 있어야 한다. 판본 식별 다이제스트는 이 객체의 정규 JSON SHA-256이다."
+        }
+      ],
+      "producers": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+          "symbol": "_project_identity",
+          "line": 171,
+          "end_line": 196
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+          "symbol": "inspect_toolchain",
+          "line": 199,
+          "end_line": 218
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+          "symbol": "check_environment",
+          "line": 117,
+          "end_line": 169
+        }
+      ],
+      "reuse_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+          "symbol": "HostIdentityTests.test_identity_detects_executable_checker_and_project_input_changes",
+          "line": 33,
+          "end_line": 72
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input",
+          "line": 190,
+          "end_line": 212
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "ToolchainContractTests.test_inspection_matches_actual_formal_verifier",
+          "line": 164,
+          "end_line": 179
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+          "symbol": "ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes",
+          "line": 76,
+          "end_line": 90
+        }
+      ],
+      "normal": "기존 실제 formal inspection/프로젝트 경계의 source_identity/search_paths와 실제 check_environment의 changed_files를 사용한다.",
+      "counterexamples": "non-Lake의 project=None, verified/rebind에서 changed_files 부재, 파일 추가/삭제/변경 invalid, nested key 삭제를 조건별로 확인한다.",
+      "exit": "environment_base 및 project/toolchain 수동 조립을 제거한다. 이름의 변형 모집단을 닫되 실제 Lean/Job 전관문은 gate task 책임으로 남긴다.",
+      "remaining": "13-C의 다른 packet과 최종 판본 관문은 별도다. 이 packet의 실제 소유자 외에 새 추론 규칙을 발견하며 범위를 늘리지 않는다.",
+      "execution": "manager가 정확한 writes를 배정한 뒤 한 task로 수행. doc_code 및 공유 검사 소비자를 같이 고치므로 제품 변경 task끼리 병렬 실행하지 않는다.",
+      "verification": "기존 공식 run_tests.py로 수정 전 반례와 수정 후 직접 관련 시험을 실행하고 원보고/판본을 보존한다. 현재 조사에서는 실행하지 않았다."
+    },
+    {
+      "id": "P11",
+      "title": "대기 정책 의미와 plan_settle 결속",
+      "legacy_work": "13-C / D-06",
+      "requirement": {
+        "path": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+        "lines": [
+          1181,
+          1184,
+          1201,
+          1600,
+          1613
+        ]
+      },
+      "owners": [
+        "plan_settle_wait"
+      ],
+      "ast_sites": [
+        291
+      ],
+      "original_document_locations": [
+        {
+          "path": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 234,
+          "text": "- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->"
+        }
+      ],
+      "producers": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+          "symbol": "DispatchEngineMixin._plan_settle_waits",
+          "line": 126,
+          "end_line": 138
+        }
+      ],
+      "reuse_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+          "symbol": "PlanSettleTests.test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision",
+          "line": 151,
+          "end_line": 156
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+          "symbol": "PlanSettleTests.test_the_settle_wait_ends_at_its_configured_limit",
+          "line": 158,
+          "end_line": 162
+        }
+      ],
+      "normal": "CLI-실행-계약.md:234의 대기 조건·최초 준비 설명을 _plan_settle_waits/_dispatchable와 기존 시계 주입 시험에 대조한다.",
+      "counterexamples": "pending contract review 유무, 제한 전/동일 시각, requested_by/recovery 우회, 처음부터 후보 전부를 기다린다는 잘못된 문장을 구별한다. 원문에 이름만 존재하는 정책도 이름과 의미 판정을 구분한다.",
+      "exit": "plan_settle_wait를 실제 dispatch_wait에 연결하고 D-06의 조건·예외 표를 종료한다. 아래 5개 lexical policy 후보는 각 문서 문장과 소유자 정의로 분류하되 일반 자연어 정책 엔진을 만들지 않는다.",
+      "remaining": "13-C의 다른 packet과 최종 판본 관문은 별도다. 이 packet의 실제 소유자 외에 새 추론 규칙을 발견하며 범위를 늘리지 않는다.",
+      "execution": "manager가 정확한 writes를 배정한 뒤 한 task로 수행. doc_code 및 공유 검사 소비자를 같이 고치므로 제품 변경 task끼리 병렬 실행하지 않는다.",
+      "verification": "기존 공식 run_tests.py로 수정 전 반례와 수정 후 직접 관련 시험을 실행하고 원보고/판본을 보존한다. 현재 조사에서는 실행하지 않았다.",
+      "policy_name_only_candidates": [
+        {
+          "document": "repo:.claude/skills/do-math/README.md",
+          "line": 152,
+          "token": "conversation_loss_policy=continue_authorized",
+          "text": "독립 인계에는 `conversation_loss_policy=continue_authorized`가 승인·적용되어 있는지도 확인한다. 이 정책에서는 대화의 attach·heartbeat 없이 허가된 연구를 계속할 수 있다. 초기화 관문은 `pause` 정책도 허용하므로, 활성화만으로 대화 종료 후의 지속 실행을 보장하지 않는다. 기존 승인 근거를 재사용하고, 다른 정책이 승인되어 있으면 그 결정을 임의로 바꾸지 않는다. 새 사용자 결정이 필요한 경우에는 그 조건의 영향과 대기 범위를 명시한다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다.",
+          "policy": "conversation_loss_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 152,
+          "token": "model_policy",
+          "text": "허용 설정 키와 각 키의 자료형·범위의 기계 정본은 저장 스키마의 설정 절 `record_schemas.config_schema()`이고, 기본값의 기계 정본은 `scripts/do_math/configuration.py`의 `DEFAULT_CONFIG`다. 모델 대응·역할 등급·세션 용량의 기본값은 `model_policy`가 정한다. 인스턴스에 실제 적용된 값은 해당 snapshot에서 재구성한 `config` 기록이 소유한다.",
+          "policy": "model_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 628,
+          "token": "disconnect_policy",
+          "text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+          "policy": "disconnect_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 628,
+          "token": "conversation_loss_policy",
+          "text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+          "policy": "conversation_loss_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 991,
+          "token": "model_policy",
+          "text": "| `model_policy` | 잠금과 다른 실제 모델이 보고되어 후속을 정지한다 |",
+          "policy": "model_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "conversation_loss_policy='continue_authorized'",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "conversation_loss_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "external_policy",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "external_policy"
+        },
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "adopt_default_review_policy",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "adopt_default_review_policy"
+        }
+      ],
+      "policy_semantic_boundary": "현재 code에 있는 policy 접미 5개 이름은 존재 검사 유지 판정이다. 이 packet의 의미 수리는 원문 검산 D-06의 plan_settle 조건으로 한정한다. 다른 명시 정책 문장은 N slice에서 해당 소유자 의미로 연결하고, 새 실제 불일치만 별도 finding으로 반환한다."
+    },
+    {
+      "id": "N01",
+      "title": "고정 문서의 단독/조합 이름 및 역할 산출 이름 판정",
+      "legacy_work": "R27 및 R28의 산출 이름 부분",
+      "document_partition": [
+        "repo:.claude/skills/do-math/SKILL.md",
+        "repo:.claude/skills/do-math/README.md",
+        "repo:.claude/skills/do-math/GLOSSARY.md",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+        "repo:.claude/skills/do-math/references/초기화-운전.md",
+        "repo:.claude/skills/do-math/references/초기화-효율과-정비.md"
+      ],
+      "candidate_occurrences": 1636,
+      "candidate_distinct_tokens": 815,
+      "candidate_index": "source-census.json.all_inline_spans (document로 선택; 코드/산문 문맥은 현재 원문에서 읽음)",
+      "required_slices": [
+        {
+          "id": "N01-001",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 1,
+          "end_line": 9,
+          "heading": "도입",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-002",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 10,
+          "end_line": 24,
+          "heading": "## 이 문서를 읽는 실행의 역할",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-003",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 25,
+          "end_line": 30,
+          "heading": "## 연구의 목적과 공통 정의",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-004",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 31,
+          "end_line": 50,
+          "heading": "## 스킬의 구성과 입력",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-005",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 51,
+          "end_line": 52,
+          "heading": "## 연구를 이어 가는 방식",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-006",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 53,
+          "end_line": 60,
+          "heading": "### 축적한 지식에서 질문을 만든다",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-007",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 61,
+          "end_line": 76,
+          "heading": "### 질문을 수행할 수 있는 과제로 정련한다",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-008",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 77,
+          "end_line": 88,
+          "heading": "### 준비된 과제 중 다음 연구를 선택한다",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "not_assessable",
+            "not_selected",
+            "operator",
+            "plan_settle_seconds",
+            "selected"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-009",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 89,
+          "end_line": 102,
+          "heading": "### 변경될 전제와 이미 유효한 판단을 구별한다",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "integration_bundles"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-010",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 103,
+          "end_line": 112,
+          "heading": "### 실제 수행 범위와 근거를 남긴다",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-011",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 113,
+          "end_line": 122,
+          "heading": "### 수학적 주장과 목표 충족을 각각 검토한다",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-012",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 123,
+          "end_line": 128,
+          "heading": "### 결과를 다음 연구 판단에 반영한다",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-013",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 129,
+          "end_line": 136,
+          "heading": "## 같은 연구에서 구별해야 하는 결과",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-014",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 137,
+          "end_line": 163,
+          "heading": "## 역할 읽기 대응표",
+          "candidate_occurrences": 29,
+          "distinct_tokens": [
+            "GLOSSARY.md",
+            "SKILL.md",
+            "identity_review",
+            "implementation_documents",
+            "intent_interpretation",
+            "references/공통-실행.md",
+            "references/과제-착수조건.md",
+            "references/모델과-실행예산.md",
+            "references/입력-소비자.md",
+            "references/자기-점검.md",
+            "references/지식-저작과-재사용.md",
+            "references/학술자료-활용.md",
+            "stage=check",
+            "stage=scope",
+            "계약/독립-운영.md",
+            "계약/동일성-검토.md",
+            "계약/목표-감사.md",
+            "계약/보충-조사.md",
+            "계약/연구-계획.md",
+            "계약/연구-수행.md",
+            "계약/운영-점검.md",
+            "계약/유지보수.md",
+            "계약/의도-해석.md",
+            "계약/작업-계약-검토.md",
+            "계약/후보-준비.md"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-015",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 1,
+          "end_line": 20,
+          "heading": "도입",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "quiesce"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-016",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 21,
+          "end_line": 32,
+          "heading": "## 운전 책임과 실행 구조",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "next_owner"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-017",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 33,
+          "end_line": 36,
+          "heading": "## 새 연구를 시작하고 인계하기",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-018",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 37,
+          "end_line": 119,
+          "heading": "### 1. 요청과 설정 확정",
+          "candidate_occurrences": 41,
+          "distinct_tokens": [
+            ".agents/skills/do-math/",
+            ".codex/config.toml",
+            ".olean",
+            ".skill-workspace/do-math-toolchains/",
+            ".skill-workspace/do-math-toolchains/records/<기록 ID>.json",
+            ".skill-workspace/do-math-toolchains/validation/",
+            "args",
+            "binding",
+            "command",
+            "effort",
+            "gpt-5.6-sol",
+            "high",
+            "init",
+            "jsonschema==4.26.0",
+            "lean_command",
+            "low",
+            "mathematically_solved",
+            "max",
+            "medium",
+            "minimal",
+            "operator_effort",
+            "profile",
+            "python .agents/skills/do-math/scripts/do_math.py profile --provider claude",
+            "role_tiers",
+            "scholarly_server",
+            "self_check_response_window_seconds",
+            "session_limits",
+            "setup_lean.py --inspect-only",
+            "tier_models",
+            "tool_review_window_seconds",
+            "ultra",
+            "verified=true",
+            "work",
+            "xhigh"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-019",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 120,
+          "end_line": 145,
+          "heading": "### 2. 인스턴스 생성",
+          "candidate_occurrences": 7,
+          "distinct_tokens": [
+            "init",
+            "instance_id",
+            "null",
+            "reconcile_error",
+            "result",
+            "snapshot",
+            "status"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-020",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 146,
+          "end_line": 157,
+          "heading": "### 3. 초기화 완료",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "conversation_loss_policy=continue_authorized",
+            "immutable_input.text/sha256/bytes",
+            "init",
+            "pause"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-021",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 158,
+          "end_line": 191,
+          "heading": "### 4. 독립 실행 시작과 관측",
+          "candidate_occurrences": 11,
+          "distinct_tokens": [
+            "<workspace>/operator/latest-engine.json",
+            "do_math.py run --repository <대상 저장소> --instance <대상 ID> --watch",
+            "held",
+            "latest-engine.json",
+            "not_started",
+            "operator_interval_seconds",
+            "outcome=completed",
+            "outcome=engine_busy",
+            "outcome=running",
+            "paused",
+            "run"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-022",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 192,
+          "end_line": 211,
+          "heading": "### 5. 인계 결과 보고",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-023",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 212,
+          "end_line": 215,
+          "heading": "## 기존 연구 조회·제어",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-024",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 216,
+          "end_line": 260,
+          "heading": "### 현재 상태를 읽는다",
+          "candidate_occurrences": 30,
+          "distinct_tokens": [
+            "academic_validation",
+            "active_trust_environment",
+            "assessment_pending",
+            "assurance",
+            "budget",
+            "dispatch_waits",
+            "expositions",
+            "external_operations",
+            "formal_results",
+            "goal_status",
+            "identity_assessments",
+            "knowledge",
+            "operating_summary",
+            "operation_progress",
+            "pending_actions",
+            "pending_controls",
+            "provider_waits",
+            "query",
+            "questions",
+            "read",
+            "research_observed_at",
+            "research_wake_reasons",
+            "snapshot",
+            "status",
+            "tasks",
+            "user_pause",
+            "waiting_actions",
+            "waiting_activities"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-025",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 261,
+          "end_line": 268,
+          "heading": "## 직접 전진·수동 운전",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "call_timeout_seconds",
+            "run",
+            "status"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-026",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 269,
+          "end_line": 288,
+          "heading": "### 정해진 수만큼 전진시킨다",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "run",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-027",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 289,
+          "end_line": 299,
+          "heading": "### 반환 상태를 다시 확인한다",
+          "candidate_occurrences": 14,
+          "distinct_tokens": [
+            "capacity_waiting",
+            "check",
+            "closed",
+            "completed",
+            "paused",
+            "questions",
+            "ready",
+            "resume",
+            "run",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-028",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 300,
+          "end_line": 311,
+          "heading": "## 역할 산출과 실패 처리",
+          "candidate_occurrences": 10,
+          "distinct_tokens": [
+            ".scratch/",
+            ".scratch/.execution-temp/",
+            ".scratch/submission.json",
+            "input_overflow",
+            "request --retry-action AC-... --request-id UC-...",
+            "request --role operational_review --target EX-...",
+            "resume",
+            "retry",
+            "submit_draft"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-029",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 312,
+          "end_line": 313,
+          "heading": "## 입력과 결정을 제공하는 법",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-030",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 314,
+          "end_line": 326,
+          "heading": "### 자유 형식 사용자 입력",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "input"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-031",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 327,
+          "end_line": 339,
+          "heading": "### 구조화된 사용자 결정",
+          "candidate_occurrences": 7,
+          "distinct_tokens": [
+            "content",
+            "effect",
+            "kind=\"charter\"",
+            "reason",
+            "record",
+            "supersedes"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-032",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 340,
+          "end_line": 353,
+          "heading": "### 원자료 수입",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "completed",
+            "invalidated_reason",
+            "source"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-033",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 354,
+          "end_line": 355,
+          "heading": "## 조회와 결과 회수",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-034",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 356,
+          "end_line": 370,
+          "heading": "### 기록 조회",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "loaded",
+            "next_cursor",
+            "query",
+            "snapshot",
+            "total",
+            "truncated"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-035",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 371,
+          "end_line": 382,
+          "heading": "### 정확한 기록 읽기",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "base64",
+            "text"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-036",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 383,
+          "end_line": 407,
+          "heading": "### 파일 목록과 snapshot 내보내기",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "export"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-037",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 408,
+          "end_line": 439,
+          "heading": "## 정지, 재개와 종결",
+          "candidate_occurrences": 12,
+          "distinct_tokens": [
+            ".control/",
+            "close",
+            "closed",
+            "completed",
+            "effect=\"pending engine processing\"",
+            "input_overflow",
+            "lock=\"busy\"",
+            "replayed=true",
+            "resume",
+            "run",
+            "status",
+            "unknown"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-038",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 440,
+          "end_line": 453,
+          "heading": "### 독립 운영의 설정과 정지",
+          "candidate_occurrences": 12,
+          "distinct_tokens": [
+            "configure",
+            "execution_limit",
+            "operator_effort",
+            "operator_enabled",
+            "operator_interval_seconds",
+            "operator_timeout_seconds",
+            "probe_cli.py --skill-only",
+            "scripts/operator_schedule.ps1",
+            "tier_models",
+            "user"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-039",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 454,
+          "end_line": 468,
+          "heading": "## 운영 제어 명령의 용도",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "check",
+            "confirmed",
+            "request --retry-action AC-...",
+            "request --role ..."
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-040",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 469,
+          "end_line": 472,
+          "heading": "## 오류와 반환 코드",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "accepted",
+            "effect",
+            "reason"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-041",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 473,
+          "end_line": 478,
+          "heading": "## 현재 지원 범위",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "never"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-042",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 479,
+          "end_line": 492,
+          "heading": "## 저장 계약과 결과의 시각을 확인한다",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "provider_waits",
+            "question_links",
+            "questions",
+            "waiting_actions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-043",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 493,
+          "end_line": 506,
+          "heading": "## 설치본 검사",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "python .agents/skills/do-math/scripts/run_tests.py",
+            "scope=\"installed_skill_structure\"",
+            "status=\"verified\""
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-044",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 507,
+          "end_line": 516,
+          "heading": "### Claude 전용 검사와 실행 제한",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "background",
+            "claude_only_assigned_model=true",
+            "files",
+            "probe_cli.py --skill-only",
+            "stop",
+            "structured"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-045",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 517,
+          "end_line": 520,
+          "heading": "### 공급자 한도와 재관찰",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "dispatch_waits",
+            "kind=provider_limit",
+            "uninstall",
+            "waiting_actions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-046",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 521,
+          "end_line": 523,
+          "heading": "### 사용자 질문에 답하기",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "resolves_questions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-047",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 1,
+          "end_line": 8,
+          "heading": "도입",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "references/CLI-실행-계약.md"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-048",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 9,
+          "end_line": 10,
+          "heading": "## 주체와 통치",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-049",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 11,
+          "end_line": 14,
+          "heading": "### AI 연구 체계",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-050",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 15,
+          "end_line": 18,
+          "heading": "### 연구 책임자",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-051",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 19,
+          "end_line": 22,
+          "heading": "### 연구 운영자",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-052",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 23,
+          "end_line": 26,
+          "heading": "### 기계 실행기",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-053",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 27,
+          "end_line": 32,
+          "heading": "### AI 활동",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "finished",
+            "ready",
+            "waiting",
+            "working"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-054",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 33,
+          "end_line": 36,
+          "heading": "### 사용자 대화",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-055",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 37,
+          "end_line": 42,
+          "heading": "### 예약 감독과 설치 복구 담당",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-056",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 43,
+          "end_line": 46,
+          "heading": "### 연구 대상",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-057",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 47,
+          "end_line": 50,
+          "heading": "### 중요 문제",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-058",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 51,
+          "end_line": 54,
+          "heading": "### 현상금",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-059",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 55,
+          "end_line": 58,
+          "heading": "### 연구 인스턴스",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "active",
+            "initializing",
+            "paused"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-060",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 59,
+          "end_line": 62,
+          "heading": "### 연구 헌장",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-061",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 63,
+          "end_line": 66,
+          "heading": "### 연구 정책",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-062",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 67,
+          "end_line": 70,
+          "heading": "### 연구 맥락",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-063",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 71,
+          "end_line": 74,
+          "heading": "### 연구 설정",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-064",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 75,
+          "end_line": 78,
+          "heading": "### 초기 제안값",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-065",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 79,
+          "end_line": 82,
+          "heading": "### 생산자와 수신자",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-066",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 83,
+          "end_line": 86,
+          "heading": "### 다음 소유자",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-067",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 87,
+          "end_line": 88,
+          "heading": "## 수학 상태와 연구 방향",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-068",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 89,
+          "end_line": 94,
+          "heading": "### 형식 정본 (`K`)",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-069",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 95,
+          "end_line": 98,
+          "heading": "### Lean 정본",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-070",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 99,
+          "end_line": 102,
+          "heading": "### 형식 결과",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-071",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 103,
+          "end_line": 106,
+          "heading": "### 형식 사용 효력",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "active",
+            "historical",
+            "suspended"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-072",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 107,
+          "end_line": 110,
+          "heading": "### 형식 타당성",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-073",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 111,
+          "end_line": 114,
+          "heading": "### 신뢰 환경",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-074",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 115,
+          "end_line": 118,
+          "heading": "### 기초 프로필",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-075",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 119,
+          "end_line": 122,
+          "heading": "### 가시 연구 프런티어 (`F`)",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-076",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 123,
+          "end_line": 126,
+          "heading": "### 미지 지평 (`U`)",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-077",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 127,
+          "end_line": 130,
+          "heading": "### 탐색",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-078",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 131,
+          "end_line": 134,
+          "heading": "### 집중 활용",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-079",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 135,
+          "end_line": 138,
+          "heading": "### 연구 진전",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-080",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 139,
+          "end_line": 142,
+          "heading": "### 진전 신호",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-081",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 143,
+          "end_line": 146,
+          "heading": "### 수학적 해결",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "unsolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-082",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 147,
+          "end_line": 152,
+          "heading": "### K 편입",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "match"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-083",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 153,
+          "end_line": 154,
+          "heading": "## 기록, 온톨로지와 지식 재사용",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-084",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 155,
+          "end_line": 158,
+          "heading": "### 연구 정본",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-085",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 159,
+          "end_line": 162,
+          "heading": "### 실행 원장",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-086",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 163,
+          "end_line": 166,
+          "heading": "### 정본",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-087",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 167,
+          "end_line": 170,
+          "heading": "### 상태 공개",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-088",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 171,
+          "end_line": 174,
+          "heading": "### 기록 ID",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-089",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 175,
+          "end_line": 178,
+          "heading": "### 정확한 참조",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-090",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 179,
+          "end_line": 182,
+          "heading": "### 읽기 스냅샷",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-091",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 183,
+          "end_line": 186,
+          "heading": "### 현재성",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-092",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 187,
+          "end_line": 190,
+          "heading": "### 봉인",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-093",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 191,
+          "end_line": 196,
+          "heading": "### 최종 응답, 제출 초안과 제출 접수",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "output_accepted",
+            "submit_draft"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-094",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 197,
+          "end_line": 200,
+          "heading": "### 제출 preview",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-095",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 201,
+          "end_line": 204,
+          "heading": "### 관리 디렉터리",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            ".control/"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-096",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 205,
+          "end_line": 208,
+          "heading": "### 전건",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-097",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 209,
+          "end_line": 212,
+          "heading": "### 원자료",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-098",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 213,
+          "end_line": 216,
+          "heading": "### 지식 문서",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-099",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 217,
+          "end_line": 220,
+          "heading": "### F 객체",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-100",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 221,
+          "end_line": 224,
+          "heading": "### 자료·근거",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-101",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 225,
+          "end_line": 230,
+          "heading": "### 관계",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "challenges",
+            "generated_from",
+            "refines",
+            "refutes",
+            "solves",
+            "supports"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-102",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 231,
+          "end_line": 234,
+          "heading": "### 연구 기억",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-103",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 235,
+          "end_line": 238,
+          "heading": "### 인식 상태",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-104",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 239,
+          "end_line": 244,
+          "heading": "### 정보 상태",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-105",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 245,
+          "end_line": 248,
+          "heading": "### 확인 범위",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-106",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 249,
+          "end_line": 252,
+          "heading": "### 기록 효력",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "active",
+            "superseded",
+            "withdrawn"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-107",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 253,
+          "end_line": 258,
+          "heading": "### 종류 정의",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "kind_definitions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-108",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 259,
+          "end_line": 262,
+          "heading": "### 온톨로지",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-109",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 263,
+          "end_line": 266,
+          "heading": "### 시맨틱 레이어",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-110",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 267,
+          "end_line": 270,
+          "heading": "### 항해 색인",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-111",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 271,
+          "end_line": 276,
+          "heading": "### 지식 재사용",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-112",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 277,
+          "end_line": 278,
+          "heading": "## 후보, 과제와 계획",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-113",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 279,
+          "end_line": 282,
+          "heading": "### 연구 후보",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-114",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 283,
+          "end_line": 286,
+          "heading": "### 정련",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-115",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 287,
+          "end_line": 292,
+          "heading": "### 과제",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "active",
+            "closed",
+            "completed",
+            "planned",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-116",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 293,
+          "end_line": 296,
+          "heading": "### 작업 계약",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-117",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 297,
+          "end_line": 300,
+          "heading": "### 진전 기준",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-118",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 301,
+          "end_line": 304,
+          "heading": "### 발생 조건",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-119",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 305,
+          "end_line": 312,
+          "heading": "### 작업 계약 검토",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "approved",
+            "revision_required",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-120",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 313,
+          "end_line": 316,
+          "heading": "### 배정 후보",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-121",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 317,
+          "end_line": 320,
+          "heading": "### 과제 대기",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-122",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 321,
+          "end_line": 326,
+          "heading": "### 범위 처분",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-123",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 327,
+          "end_line": 332,
+          "heading": "### 후보 준비",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "candidates",
+            "research_insights"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-124",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 333,
+          "end_line": 336,
+          "heading": "### 고갈",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-125",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 337,
+          "end_line": 344,
+          "heading": "### 연구 계획",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-126",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 345,
+          "end_line": 348,
+          "heading": "### 계획 입력",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-127",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 349,
+          "end_line": 352,
+          "heading": "### 목차",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-128",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 353,
+          "end_line": 356,
+          "heading": "### 후보 목차",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-129",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 357,
+          "end_line": 360,
+          "heading": "### K 목차",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-130",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 361,
+          "end_line": 364,
+          "heading": "### 정기 탐색",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-131",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 365,
+          "end_line": 381,
+          "heading": "### 반복 교정 문턱",
+          "candidate_occurrences": 12,
+          "distinct_tokens": [
+            "continuation_of",
+            "exhaustion_empty",
+            "import_rework",
+            "item_reviews",
+            "owner",
+            "repair_responses",
+            "repetition_continue",
+            "repetition_hold",
+            "resume",
+            "retry",
+            "selection_failure",
+            "user"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-132",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 382,
+          "end_line": 383,
+          "heading": "## 실행, 입력과 인계",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-133",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 384,
+          "end_line": 387,
+          "heading": "### 실행",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "ended",
+            "queued",
+            "running",
+            "starting",
+            "stopping"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-134",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 388,
+          "end_line": 391,
+          "heading": "### 활동",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-135",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 392,
+          "end_line": 395,
+          "heading": "### 루트와 래퍼",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-136",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 396,
+          "end_line": 401,
+          "heading": "### 연구 수행",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-137",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 402,
+          "end_line": 405,
+          "heading": "### 유지보수",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-138",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 406,
+          "end_line": 409,
+          "heading": "### 기계 작업",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-139",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 410,
+          "end_line": 413,
+          "heading": "### 실행 프로필",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-140",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 414,
+          "end_line": 417,
+          "heading": "### 실행 어댑터",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-141",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 418,
+          "end_line": 421,
+          "heading": "### 작업 예산",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-142",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 422,
+          "end_line": 425,
+          "heading": "### 운영 역할",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-143",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 426,
+          "end_line": 429,
+          "heading": "### 자원 예약",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-144",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 430,
+          "end_line": 433,
+          "heading": "### 모델 등급과 동시 세션 슬롯",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-145",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 434,
+          "end_line": 437,
+          "heading": "### 공급자 호출",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-146",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 438,
+          "end_line": 441,
+          "heading": "### 실질 행동",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-147",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 442,
+          "end_line": 445,
+          "heading": "### 종료 장벽",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-148",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 446,
+          "end_line": 449,
+          "heading": "### 산출 묶음",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-149",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 450,
+          "end_line": 455,
+          "heading": "### 편입 묶음",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-150",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 456,
+          "end_line": 459,
+          "heading": "### 작업 공간",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-151",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 460,
+          "end_line": 463,
+          "heading": "### 입력 manifest",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-152",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 464,
+          "end_line": 467,
+          "heading": "### 입력 생성기",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-153",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 468,
+          "end_line": 471,
+          "heading": "### 기록 지도",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "record_index",
+            "record_map"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-154",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 472,
+          "end_line": 475,
+          "heading": "### 체크포인트",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-155",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 476,
+          "end_line": 479,
+          "heading": "### 정지 직전 기록",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-156",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 480,
+          "end_line": 483,
+          "heading": "### 자기 메시지",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-157",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 484,
+          "end_line": 487,
+          "heading": "### 참조 대체",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-158",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 488,
+          "end_line": 493,
+          "heading": "### 기록 기반 대체 실행",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-159",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 494,
+          "end_line": 495,
+          "heading": "## 관찰과 운영 판단",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-160",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 496,
+          "end_line": 499,
+          "heading": "### 관찰 규칙",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-161",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 500,
+          "end_line": 503,
+          "heading": "### 자기 점검 의무",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-162",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 504,
+          "end_line": 507,
+          "heading": "### 안전 제어 경계",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-163",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 508,
+          "end_line": 511,
+          "heading": "### 자기 점검",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-164",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 512,
+          "end_line": 515,
+          "heading": "### 운영 점검",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-165",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 516,
+          "end_line": 519,
+          "heading": "### 점검 발동 조건",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-166",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 520,
+          "end_line": 523,
+          "heading": "### 운영 처분",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-167",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 524,
+          "end_line": 525,
+          "heading": "## 수입, 허가와 외부 행동",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-168",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 526,
+          "end_line": 529,
+          "heading": "### 프로젝트 입력",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-169",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 530,
+          "end_line": 533,
+          "heading": "### 수입",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-170",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 534,
+          "end_line": 537,
+          "heading": "### 의도 해석",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-171",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 538,
+          "end_line": 541,
+          "heading": "### 결정 질문",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-172",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 542,
+          "end_line": 545,
+          "heading": "### 상신",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-173",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 546,
+          "end_line": 549,
+          "heading": "### 사용자 결정",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-174",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 550,
+          "end_line": 553,
+          "heading": "### 허가",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-175",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 554,
+          "end_line": 557,
+          "heading": "### 사례 기반 위임",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-176",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 558,
+          "end_line": 563,
+          "heading": "### 외부 행동",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-177",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 564,
+          "end_line": 567,
+          "heading": "### 크리덴셜",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-178",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 568,
+          "end_line": 569,
+          "heading": "## 수학 제안과 검증",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-179",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 570,
+          "end_line": 573,
+          "heading": "### 수학 해설",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-180",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 574,
+          "end_line": 577,
+          "heading": "### 수학 제안",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-181",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 578,
+          "end_line": 581,
+          "heading": "### 해설 요약",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-182",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 582,
+          "end_line": 585,
+          "heading": "### 검토 방침",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-183",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 586,
+          "end_line": 589,
+          "heading": "### 검토 계획",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-184",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 590,
+          "end_line": 595,
+          "heading": "### 동일성 검토",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-185",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 596,
+          "end_line": 599,
+          "heading": "### 검토 계보",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-186",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 600,
+          "end_line": 605,
+          "heading": "### 검토 자리",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-187",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 606,
+          "end_line": 609,
+          "heading": "### 이의",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "mismatch"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-188",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 610,
+          "end_line": 613,
+          "heading": "### 쟁점",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-189",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 614,
+          "end_line": 621,
+          "heading": "### 동일성 판정",
+          "candidate_occurrences": 17,
+          "distinct_tokens": [
+            "match",
+            "mismatch",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-190",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 622,
+          "end_line": 629,
+          "heading": "### 판정 사용 효력",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "active",
+            "suspended",
+            "withdrawn"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-191",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 630,
+          "end_line": 633,
+          "heading": "### 보충 조사",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-192",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 634,
+          "end_line": 637,
+          "heading": "### 목표 감사",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "not_satisfied",
+            "satisfied",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-193",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 638,
+          "end_line": 641,
+          "heading": "### 추가 감사",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-194",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 642,
+          "end_line": 645,
+          "heading": "### 연구 생산",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-195",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 646,
+          "end_line": 649,
+          "heading": "### 학술 검증",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-196",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 650,
+          "end_line": 653,
+          "heading": "### 외부 거부",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-197",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 654,
+          "end_line": 657,
+          "heading": "### 공용 편입",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-198",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 658,
+          "end_line": 659,
+          "heading": "## 운전, 복구와 보증 범위",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-199",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 660,
+          "end_line": 663,
+          "heading": "### 일시 정지",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-200",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 664,
+          "end_line": 667,
+          "heading": "### 실행기 복구",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-201",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 668,
+          "end_line": 671,
+          "heading": "### 실행 능력 검증",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-202",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 672,
+          "end_line": 675,
+          "heading": "### 연구 효능 평가",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-203",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 676,
+          "end_line": 679,
+          "heading": "### 상태 검사",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-204",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 680,
+          "end_line": 681,
+          "heading": "## 공통 판정 원칙",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-205",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 682,
+          "end_line": 691,
+          "heading": "### 서로 대신할 수 없는 다섯 판단",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-206",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 692,
+          "end_line": 697,
+          "heading": "### 부재, 오류와 불확실성",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-207",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 698,
+          "end_line": 701,
+          "heading": "### 문면과 기계 정보의 소유",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-208",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 702,
+          "end_line": 704,
+          "heading": "### 대기와 종료",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-209",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 1,
+          "end_line": 10,
+          "heading": "도입",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "GLOSSARY.md",
+            "SKILL.md",
+            "launch_ticket",
+            "maintenance_fence",
+            "operation_progress",
+            "quiesce"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-210",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 11,
+          "end_line": 24,
+          "heading": "## 호출과 공통 반환",
+          "candidate_occurrences": 11,
+          "distinct_tokens": [
+            ".agents/skills/do-math/",
+            "configure",
+            "init",
+            "operator",
+            "pause",
+            "profile",
+            "quiesce",
+            "request",
+            "resume",
+            "source",
+            "user"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-211",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 25,
+          "end_line": 55,
+          "heading": "### 종료 코드",
+          "candidate_occurrences": 86,
+          "distinct_tokens": [
+            "accepted",
+            "applied",
+            "check",
+            "close",
+            "command",
+            "config",
+            "configure",
+            "conversation",
+            "decision",
+            "effect",
+            "effect=\"pending engine processing\"",
+            "effect=\"rejected\"",
+            "environment_id",
+            "error",
+            "exit_code",
+            "external",
+            "field",
+            "idempotency_key",
+            "init",
+            "input",
+            "kind",
+            "kind=contract_error",
+            "kind=initialization",
+            "kind=input_error",
+            "kind=tool_error",
+            "knowledge",
+            "lock=\"busy\"",
+            "message",
+            "next_owner=maintenance",
+            "observation_window_warnings",
+            "operation=adopt",
+            "operation=register",
+            "pause",
+            "profile",
+            "profile_id",
+            "quiesce",
+            "reason",
+            "reconcile",
+            "reconcile=null",
+            "reconcile_error",
+            "rejected",
+            "replayed=true",
+            "representative_check_seconds",
+            "request",
+            "request_id",
+            "response_contract",
+            "result",
+            "resume",
+            "role",
+            "run",
+            "schema_version",
+            "self_check_response_window_seconds",
+            "snapshot",
+            "source",
+            "status",
+            "status=\"failed\"",
+            "timeline",
+            "tool_review_window_seconds",
+            "trust",
+            "verified",
+            "window_seconds"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-212",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 56,
+          "end_line": 94,
+          "heading": "## 현재 저장과 작업 경로",
+          "candidate_occurrences": 20,
+          "distinct_tokens": [
+            "events",
+            "instance",
+            "research/<family>/...",
+            "runtime",
+            "runtime/<family>/...",
+            "runtime/artifacts/<bundle_id>/...",
+            "runtime/artifacts/<formal_bundle>/formal.json",
+            "runtime/artifacts/<formal_bundle>/proposal.lean",
+            "runtime/artifacts/<input_bundle>/input.txt",
+            "runtime/artifacts/<input_bundle>/input/catalog/<key>.json",
+            "runtime/artifacts/<input_bundle>/manifest.json",
+            "runtime/artifacts/<input_bundle>/schema.json",
+            "runtime/artifacts/<result_bundle>/checkpoint-recovery.json",
+            "runtime/artifacts/<result_bundle>/omitted.json",
+            "runtime/artifacts/<result_bundle>/output-manifest.json",
+            "runtime/artifacts/<result_bundle>/output.json",
+            "runtime/artifacts/<result_bundle>/result.json",
+            "source_ref",
+            "task_readiness",
+            "updated_at"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-213",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 95,
+          "end_line": 100,
+          "heading": "## CLI 상태와 보편 개념의 대응",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "completed",
+            "ready",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-214",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 101,
+          "end_line": 113,
+          "heading": "### 인스턴스 실행 루프 `runtime.status`",
+          "candidate_occurrences": 14,
+          "distinct_tokens": [
+            "active",
+            "capacity_waiting",
+            "closed",
+            "completed",
+            "dispatch_waits",
+            "initializing",
+            "paused",
+            "ready",
+            "run",
+            "running",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-215",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 114,
+          "end_line": 131,
+          "heading": "### 과제 `task.status`",
+          "candidate_occurrences": 34,
+          "distinct_tokens": [
+            "active",
+            "active_execution_ids",
+            "assessing",
+            "assessment_pending=true",
+            "capacity",
+            "closed",
+            "completed",
+            "constraint_id",
+            "coordinates",
+            "current=false",
+            "dispatch_waits",
+            "host_capacity",
+            "invalidated_reason",
+            "kind",
+            "needs_revision",
+            "next_owner",
+            "performing",
+            "planned",
+            "profile_ref",
+            "provider",
+            "readiness",
+            "ready",
+            "reason",
+            "returned_task_ids",
+            "status",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-216",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 132,
+          "end_line": 137,
+          "heading": "### 목표와 학술 후속 상태",
+          "candidate_occurrences": 7,
+          "distinct_tokens": [
+            "expositions",
+            "formal_results",
+            "identity_assessments",
+            "mathematically_solved",
+            "unsolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-217",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 138,
+          "end_line": 149,
+          "heading": "### 활동·실행·외부 operation",
+          "candidate_occurrences": 20,
+          "distinct_tokens": [
+            "cancelled",
+            "confirmed",
+            "ended",
+            "failed",
+            "finished",
+            "output_accepted",
+            "prepared",
+            "queued",
+            "ready",
+            "running",
+            "starting",
+            "stopping",
+            "succeeded",
+            "unknown",
+            "unresolved",
+            "waiting",
+            "working"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-218",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 150,
+          "end_line": 266,
+          "heading": "## 설정 계약",
+          "candidate_occurrences": 172,
+          "distinct_tokens": [
+            ".codex/config.toml",
+            "CODEX_HOME/config.toml",
+            "Classical.choice",
+            "ExecutionTimeLimit=PT0S",
+            "Quot.sound",
+            "active_execution",
+            "active_executions",
+            "approved-host.json",
+            "args",
+            "authority_refs",
+            "available",
+            "budget",
+            "budget_unit=concurrent_sessions",
+            "call_timeout_seconds",
+            "capacity_waiting",
+            "claude_only_assigned_model",
+            "command",
+            "config",
+            "configure",
+            "constraint",
+            "contract_revision_limit",
+            "control_reserve",
+            "cpu_rate_basis_points",
+            "deadline_only",
+            "demands_by_role",
+            "dependency_closure",
+            "dependency_evidence",
+            "effort",
+            "event_driven",
+            "execution_attempts",
+            "execution_ids",
+            "execution_profiles.host_constraint(host_id=..., limits=..., control_reserve=..., authority_refs=...)",
+            "exhaustion_empty_limit",
+            "false",
+            "finish_notice_seconds",
+            "formal_check",
+            "goal_auditors",
+            "high",
+            "host_id",
+            "host_resources",
+            "host_resources=null",
+            "import_rework_limit",
+            "init",
+            "jobs",
+            "jobs=1",
+            "lean",
+            "lean_command",
+            "limit",
+            "limits",
+            "low",
+            "max",
+            "max_artifact_bytes",
+            "max_input_bytes",
+            "max_output_repairs",
+            "max_runtime_seconds=null",
+            "medium",
+            "memory_bytes",
+            "minimal",
+            "model_policy",
+            "no_progress_limit",
+            "null",
+            "observation_configuration",
+            "observation_interval_seconds",
+            "observation_mode",
+            "operations",
+            "operator",
+            "operator_effort",
+            "operator_enabled",
+            "operator_interval_seconds",
+            "operator_timeout_seconds",
+            "periodic",
+            "plan_settle",
+            "plan_settle_seconds",
+            "propext",
+            "proposal_version_limit",
+            "provider_retry_initial_seconds",
+            "provider_retry_max_seconds",
+            "record_schemas.config_schema()",
+            "research_reconsider_seconds",
+            "resources",
+            "review_research_limit",
+            "review_rounds",
+            "reviewers",
+            "role_tiers",
+            "rule_bindings",
+            "run",
+            "scholarly_enabled",
+            "scholarly_server",
+            "scripts/do_math/configuration.py",
+            "selection_failure_limit",
+            "self_check_response_window_seconds",
+            "session_limits",
+            "tier_models",
+            "tool_review_window_seconds",
+            "true",
+            "trust_activate",
+            "trust_check",
+            "ultra",
+            "used",
+            "verified",
+            "work",
+            "xhigh"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-219",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 267,
+          "end_line": 268,
+          "heading": "## 명령 표면",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-220",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 269,
+          "end_line": 285,
+          "heading": "### `init`",
+          "candidate_occurrences": 13,
+          "distinct_tokens": [
+            "bytes",
+            "config",
+            "config_sha256",
+            "goal",
+            "init",
+            "initializing",
+            "instance_id",
+            "sha256",
+            "snapshot",
+            "status",
+            "text"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-221",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 286,
+          "end_line": 298,
+          "heading": "### `run`, `status`, `check`, `profile`",
+          "candidate_occurrences": 19,
+          "distinct_tokens": [
+            "check",
+            "check [--snapshot OID] [--kinds AREA ...]",
+            "checked_invariants",
+            "codex",
+            "config_sha256",
+            "init",
+            "inspection",
+            "inspection.status=incomplete",
+            "profile",
+            "run",
+            "start_import_input",
+            "status",
+            "submission_checks.status=not_evaluated",
+            "verified=true",
+            "{passed, errors, ...}"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-222",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 299,
+          "end_line": 314,
+          "heading": "### `pause`, `resume`, `close`, `input`, `configure`, `request`",
+          "candidate_occurrences": 38,
+          "distinct_tokens": [
+            "assessment_id",
+            "assessment_sha256",
+            "close",
+            "closed",
+            "completed",
+            "configure",
+            "continuation_of",
+            "decision",
+            "evidence",
+            "evidence.kind=author_context",
+            "execution_failure",
+            "execution_id",
+            "execution_incomplete",
+            "finding_id",
+            "independent_objection",
+            "initializing",
+            "input",
+            "input (--text TEXT|--file PATH) [--responds-to QU-ID ...]",
+            "intent_interpretation",
+            "maintenance",
+            "operational_review",
+            "output_validation",
+            "pause",
+            "ready",
+            "request",
+            "research_plan",
+            "research_preparation",
+            "result_key",
+            "resume",
+            "review_cycle_id",
+            "revision_dependency",
+            "supplemental_research",
+            "waiting_actions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-223",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 315,
+          "end_line": 329,
+          "heading": "### `operator`",
+          "candidate_occurrences": 14,
+          "distinct_tokens": [
+            "ExecutionTimeLimit=PT0S",
+            "check",
+            "engine",
+            "hold",
+            "install",
+            "model_called=false",
+            "operational_review",
+            "operator",
+            "probe",
+            "release",
+            "start",
+            "status",
+            "uninstall",
+            "계약/독립-운영.md"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-224",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 330,
+          "end_line": 335,
+          "heading": "## 구조화 제어 JSON",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "conversation",
+            "decision",
+            "external",
+            "knowledge",
+            "trust"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-225",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 336,
+          "end_line": 474,
+          "heading": "### `decision`",
+          "candidate_occurrences": 100,
+          "distinct_tokens": [
+            "allowed_action",
+            "approval_ref",
+            "assessment_targets",
+            "assessor=\"research_plan\"",
+            "baseline_revision",
+            "bundle_sha256",
+            "charter",
+            "check_sha256",
+            "content",
+            "content_sha256",
+            "continuation_of",
+            "contract_revision",
+            "contract_sha256",
+            "credential_env",
+            "criteria",
+            "decision",
+            "decision_id",
+            "disposition",
+            "exhaustion_empty",
+            "expires_at",
+            "external_effects",
+            "grant_id",
+            "hold_event_ref",
+            "id",
+            "import_approval",
+            "import_id",
+            "import_rework",
+            "input",
+            "intent_imports",
+            "intent_repair",
+            "kind=\"charter\"",
+            "kind=\"policy\"",
+            "kind=repetition_continue",
+            "lineage",
+            "lineage_id",
+            "obligation_ids",
+            "observation_rule_targets",
+            "once",
+            "owner_activity_id",
+            "previous_import_id",
+            "proposal_version",
+            "read --snapshot OID --id IM-...",
+            "reason",
+            "record",
+            "repetition_bases",
+            "repetition_hold",
+            "required_inputs",
+            "reusable",
+            "reuse",
+            "review_cycle_id",
+            "revise",
+            "revision",
+            "revision_targets",
+            "role",
+            "roles",
+            "rule_id",
+            "run",
+            "scope",
+            "selection_failure",
+            "snapshot",
+            "source_ref",
+            "stage",
+            "status",
+            "supersedes",
+            "target",
+            "target_task_id",
+            "task_ids",
+            "task_scope",
+            "transfer",
+            "unit_hashes",
+            "valid_from",
+            "waive"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-226",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 475,
+          "end_line": 484,
+          "heading": "### `source`",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "runtime/artifacts/<bundle>/source.bin",
+            "source"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-227",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 485,
+          "end_line": 574,
+          "heading": "### `knowledge`",
+          "candidate_occurrences": 27,
+          "distinct_tokens": [
+            "assessment_refs",
+            "changes",
+            "closed",
+            "completed",
+            "declaration_names",
+            "dependencies",
+            "explanation",
+            "family",
+            "formal_result_refs",
+            "id",
+            "import",
+            "kind",
+            "knowledge",
+            "lean_code",
+            "operation=\"revise\"",
+            "relation",
+            "relation_claim",
+            "requires_assessments",
+            "requires_formal_results",
+            "statement",
+            "summary",
+            "title",
+            "token"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-228",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 575,
+          "end_line": 594,
+          "heading": "### `trust`",
+          "candidate_occurrences": 21,
+          "distinct_tokens": [
+            "active_trust_environment",
+            "allowed_axioms",
+            "binding",
+            "invalidate",
+            "register",
+            "run",
+            "setup_lean.py --rerecord",
+            "setup_lean.py --verify-only --trust-file <새 경로>",
+            "toolchain",
+            "toolchain_record",
+            "transition",
+            "trust",
+            "trust_activate",
+            "trust_check"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-229",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 595,
+          "end_line": 621,
+          "heading": "### `external`",
+          "candidate_occurrences": 44,
+          "distinct_tokens": [
+            ".",
+            "..",
+            "cancelled",
+            "confirmed",
+            "effect_absent",
+            "evidence",
+            "evidence_ref",
+            "external",
+            "external_id",
+            "fact",
+            "failed",
+            "http_status",
+            "id",
+            "idempotency_evidence",
+            "idempotency_key",
+            "not_transmitted",
+            "observed_at",
+            "operation_id",
+            "prepared",
+            "request_sha256",
+            "running",
+            "succeeded",
+            "transmitted=true",
+            "unknown",
+            "verified_idempotency"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-230",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 622,
+          "end_line": 639,
+          "heading": "### `conversation`",
+          "candidate_occurrences": 8,
+          "distinct_tokens": [
+            "continue_authorized",
+            "conversation",
+            "conversation_loss_policy",
+            "disconnect_policy",
+            "generation",
+            "pause"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-231",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 640,
+          "end_line": 641,
+          "heading": "## 조회 명령",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-232",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 642,
+          "end_line": 653,
+          "heading": "### record `query`",
+          "candidate_occurrences": 21,
+          "distinct_tokens": [
+            "both",
+            "byte_scope",
+            "bytes",
+            "items",
+            "json_pointer_scope=decoded_record",
+            "kind",
+            "loaded",
+            "logical_sha256",
+            "next_cursor",
+            "path",
+            "payload_refs",
+            "persisted_file",
+            "planning.RECORD_FAMILIES",
+            "query",
+            "question",
+            "record",
+            "sha256",
+            "snapshot",
+            "total",
+            "truncated"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-233",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 654,
+          "end_line": 662,
+          "heading": "### raw file `query --files`",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-234",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 663,
+          "end_line": 671,
+          "heading": "### `read`",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "base64",
+            "logical_sha256",
+            "read",
+            "record",
+            "sha256",
+            "text"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-235",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 672,
+          "end_line": 679,
+          "heading": "### `export`",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "export"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-236",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 680,
+          "end_line": 689,
+          "heading": "## AI 실행 입력",
+          "candidate_occurrences": 24,
+          "distinct_tokens": [
+            "SKILL.md",
+            "available_input_refs",
+            "checks/reads.jsonl",
+            "configuration_source",
+            "control_binding",
+            "execution_profiles",
+            "formal_verifier",
+            "governance",
+            "input/catalog/<key>.json",
+            "input/submission/context.json",
+            "input/tools/read_input.py",
+            "input_class",
+            "local_path",
+            "path",
+            "planning.record_index(...)",
+            "record_index",
+            "record_map",
+            "record_store",
+            "references/CLI-실행-계약.md",
+            "role_profile_refs",
+            "scripts/do_math/context_store.py",
+            "supplied_record_ids",
+            "task_readiness"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-237",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 690,
+          "end_line": 701,
+          "heading": "### 입력 크기 조정",
+          "candidate_occurrences": 20,
+          "distinct_tokens": [
+            "context_budget_bytes",
+            "eligible_knowledge",
+            "execution_profiles",
+            "input/catalog/<key>.json",
+            "input_overflow",
+            "input_overflow_retry_failed",
+            "input_overflow_retry_resolved",
+            "knowledge_records.judged_verification(...)",
+            "limit_bytes",
+            "max_input_bytes",
+            "question_links",
+            "ready_task_ids",
+            "resume",
+            "review_followups",
+            "role_profile_refs",
+            "source_ref",
+            "tasks",
+            "total",
+            "verification"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-238",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 702,
+          "end_line": 713,
+          "heading": "### 입력 고정과 현재성",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "used_sources"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-239",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 714,
+          "end_line": 719,
+          "heading": "## 역할별 주 JSON",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "integration_bundles",
+            "questions",
+            "repair_responses",
+            "summary",
+            "used_sources"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-240",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 720,
+          "end_line": 725,
+          "heading": "### 후보 준비 `research_preparation`",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "candidates",
+            "profile_refs",
+            "research_preparation",
+            "revises_task_id=null"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-241",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 726,
+          "end_line": 729,
+          "heading": "### 작업 계약 검토 `task_contract_review`",
+          "candidate_occurrences": 10,
+          "distinct_tokens": [
+            "approved",
+            "inputs_reuse",
+            "item_reviews",
+            "outputs_obligations_judges",
+            "question_scope",
+            "revision_required",
+            "stage_boundaries",
+            "task_contract_review",
+            "tools_authority_profiles",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-242",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 730,
+          "end_line": 741,
+          "heading": "### 연구 계획 `research_plan`",
+          "candidate_occurrences": 28,
+          "distinct_tokens": [
+            "closed",
+            "completed",
+            "dispositions",
+            "duplicate",
+            "evidence_refs",
+            "evidence_required",
+            "evidence_requirements",
+            "fulfilled",
+            "goal_audit",
+            "item_dispositions",
+            "missing",
+            "not_assessable",
+            "not_selected",
+            "open",
+            "preparation_requests",
+            "ready_task_ids",
+            "research_plan",
+            "selected",
+            "task_assessments",
+            "transferred",
+            "unexpected",
+            "unresolved",
+            "waived"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-243",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 742,
+          "end_line": 749,
+          "heading": "### 연구 수행 `research_work`와 과제 기반 `supplemental_research`",
+          "candidate_occurrences": 13,
+          "distinct_tokens": [
+            "activity-extensions.json",
+            "evidence",
+            "kind",
+            "no_result",
+            "outcome",
+            "partial",
+            "report",
+            "research_work",
+            "source",
+            "submitted",
+            "supplemental_research",
+            "target",
+            "waiting"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-244",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 750,
+          "end_line": 755,
+          "heading": "### 기본 동일성 검토 `identity_review`",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "action.stage=scope",
+            "defer",
+            "identity_review",
+            "scope_assessment",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-245",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 756,
+          "end_line": 759,
+          "heading": "### 목표 감사 `goal_audit`",
+          "candidate_occurrences": 7,
+          "distinct_tokens": [
+            "decision",
+            "goal_audit",
+            "not_satisfied",
+            "reason",
+            "satisfied",
+            "scope_complete",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-246",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 760,
+          "end_line": 763,
+          "heading": "### 운영 점검 `operational_review`",
+          "candidate_occurrences": 9,
+          "distinct_tokens": [
+            "continue",
+            "decision",
+            "disposition",
+            "operational_review",
+            "repair",
+            "resume",
+            "retry",
+            "task_disposition",
+            "user_decision"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-247",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 764,
+          "end_line": 769,
+          "heading": "### 의도 해석 `intent_interpretation`",
+          "candidate_occurrences": 24,
+          "distinct_tokens": [
+            "action.stage=check",
+            "action.stage=interpret",
+            "bundle_sha256",
+            "decision=approved|revision_required|unresolved",
+            "delegation_judgment",
+            "findings",
+            "import_unit",
+            "import_units",
+            "intent_interpretation",
+            "outside_scope",
+            "owner_kind",
+            "owner_ref",
+            "payload",
+            "question_details",
+            "question_ids",
+            "questions",
+            "repair",
+            "scope_complete",
+            "source_range",
+            "summary",
+            "unit_ids",
+            "unresolved",
+            "used_sources",
+            "within_scope"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-248",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 770,
+          "end_line": 777,
+          "heading": "### 유지보수 `maintenance`",
+          "candidate_occurrences": 14,
+          "distinct_tokens": [
+            "approved",
+            "decision",
+            "definition_id",
+            "definition_sha256",
+            "findings",
+            "impact_review",
+            "kind_definition_check",
+            "maintenance",
+            "remaining_work",
+            "report",
+            "retry",
+            "revision_required",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-249",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 778,
+          "end_line": 781,
+          "heading": "## 동일성 검토 계보의 동적 JSON",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "proposal_digest",
+            "questions",
+            "summary",
+            "used_sources"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-250",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 782,
+          "end_line": 785,
+          "heading": "### `initial`",
+          "candidate_occurrences": 6,
+          "distinct_tokens": [
+            "decision=match|mismatch|unresolved",
+            "findings",
+            "id",
+            "initial",
+            "scope_complete",
+            "statement"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-251",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 786,
+          "end_line": 789,
+          "heading": "### `organize`",
+          "candidate_occurrences": 9,
+          "distinct_tokens": [
+            "answer_role_slot_id",
+            "finding_refs",
+            "id",
+            "issues",
+            "organize",
+            "round",
+            "slot",
+            "stage=initial|judge|answer"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-252",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 790,
+          "end_line": 793,
+          "heading": "### `answer`",
+          "candidate_occurrences": 8,
+          "distinct_tokens": [
+            "answer",
+            "answers",
+            "disposition=maintain|revise|split|withdraw",
+            "id",
+            "issue_id",
+            "new_findings",
+            "statement"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-253",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 794,
+          "end_line": 797,
+          "heading": "### `judge`",
+          "candidate_occurrences": 8,
+          "distinct_tokens": [
+            "decision=approved|rejected|unresolved",
+            "decision=match|mismatch|unresolved",
+            "issue_id",
+            "issue_verdicts",
+            "judge",
+            "new_findings",
+            "reason",
+            "scope_complete"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-254",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 798,
+          "end_line": 801,
+          "heading": "### 검토 자리의 고정 질문 보충 조사",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "activity-extensions.json",
+            "answered",
+            "supplemental_research",
+            "unresolved"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-255",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 802,
+          "end_line": 803,
+          "heading": "## 작업 공간의 보조 파일",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-256",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 804,
+          "end_line": 822,
+          "heading": "### `checkpoint.json`",
+          "candidate_occurrences": 11,
+          "distinct_tokens": [
+            ".scratch/",
+            ".scratch/.execution-temp/",
+            "blocked",
+            "checkpoint",
+            "counters",
+            "evidence_paths",
+            "iteration",
+            "no_progress",
+            "progress_state",
+            "ready_to_submit",
+            "working"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-257",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 823,
+          "end_line": 830,
+          "heading": "### 자기 점검 규칙의 실행 중 교체",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "observation_unavailable",
+            "rule_proposal",
+            "validate_execution_rules",
+            "validate_rules"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-258",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 831,
+          "end_line": 842,
+          "heading": "### `activity-extensions.json`",
+          "candidate_occurrences": 7,
+          "distinct_tokens": [
+            "activity-extensions.json",
+            "closed",
+            "confirmed_scope",
+            "contract_checks",
+            "references/공통-실행.md",
+            "task_dispositions"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-259",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 843,
+          "end_line": 846,
+          "heading": "### 정지·운영 피드백 파일",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            ".control/",
+            ".control/observation-feedback.json",
+            "stop-request.json"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-260",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 847,
+          "end_line": 874,
+          "heading": "## 제출, 보존과 편입",
+          "candidate_occurrences": 39,
+          "distinct_tokens": [
+            "authority_refs",
+            "basis_refs",
+            "capture_eligible",
+            "check",
+            "continue",
+            "delivery",
+            "delivery.state=accepted",
+            "delivery.state=previewed",
+            "draft_path",
+            "impact_set",
+            "integration_bundles",
+            "local_path",
+            "max_output_repairs",
+            "passed",
+            "pause",
+            "preview=true",
+            "producer_check",
+            "profile_refs",
+            "repair",
+            "repair_target",
+            "replacement_id",
+            "replay_safety",
+            "resume",
+            "retry",
+            "scope",
+            "state=accepted",
+            "submission_contract.command --new-knowledge-id",
+            "submission_contract.command --output <draft> --submit --wait-seconds N",
+            "submit_draft",
+            "submit_draft(draft_path=<draft>)",
+            "task_disposition",
+            "user_decision",
+            "{\"replacement_id\":\"KN-...\"}"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-261",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 875,
+          "end_line": 882,
+          "heading": "## 실행 수명과 복구",
+          "candidate_occurrences": 9,
+          "distinct_tokens": [
+            "continuation_of",
+            "finished_at",
+            "installation_repair_pending",
+            "installation_repair_waiting",
+            "local_termination_confirmed",
+            "probe",
+            "remote_termination=\"unknown\"",
+            "repair_target=installation:<스킬 상대 파일 경로>",
+            "run"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-262",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 883,
+          "end_line": 894,
+          "heading": "### 실행기 소실 뒤 처분",
+          "candidate_occurrences": 3,
+          "distinct_tokens": [
+            "paused",
+            "queued",
+            "unknown"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-263",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 895,
+          "end_line": 900,
+          "heading": "### 정지와 현재성",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            ".control/finish-request.json",
+            ".control/stop-request.json",
+            "finish_notice_seconds",
+            "run"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-264",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 901,
+          "end_line": 922,
+          "heading": "## 형식 검사, 동일성 검토와 목표",
+          "candidate_occurrences": 43,
+          "distinct_tokens": [
+            "allowed_axioms",
+            "assessment_targets",
+            "assurance",
+            "authoritative",
+            "authoritative=false",
+            "axioms",
+            "completed",
+            "confirmed",
+            "declaration_signatures",
+            "declarations",
+            "failed",
+            "formal_check",
+            "goal_basis_sha256",
+            "goal_revision",
+            "governance.mathematical_goal_basis(...)",
+            "identity_errors",
+            "input/tools/check_lean.py",
+            "input_snapshot",
+            "match",
+            "mathematically_solved",
+            "minimum_scope_execution_limit",
+            "not_applicable",
+            "observation_rule_targets",
+            "overflow_disposition",
+            "reason",
+            "rejected",
+            "research_plan",
+            "retained_reviewer_slots",
+            "review_followups",
+            "review_rounds",
+            "scope_assessment",
+            "scope_executions_used",
+            "source_sha256",
+            "status",
+            "stderr",
+            "stdout",
+            "stopped",
+            "submission-support.zip",
+            "succeeded=true",
+            "toolchain",
+            "unavailable",
+            "verified"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-265",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 923,
+          "end_line": 938,
+          "heading": "## 계획 이력과 현재 입력 범위",
+          "candidate_occurrences": 43,
+          "distinct_tokens": [
+            "SKILL.md",
+            "action",
+            "action_source",
+            "artifact_ref",
+            "assessment_targets",
+            "bytes",
+            "configuration_source",
+            "error",
+            "event_refs",
+            "execution_id",
+            "goal_revision",
+            "input_snapshot",
+            "local_path",
+            "observation_rule_targets",
+            "ongoing_work",
+            "outcome",
+            "policy_revision",
+            "preparation_history",
+            "ready_task_ids",
+            "reason",
+            "reasons",
+            "recent_history",
+            "requested_by_refs",
+            "research_plan",
+            "research_preparation",
+            "revision_targets",
+            "role",
+            "role=research_preparation",
+            "running",
+            "sha256",
+            "source_ref",
+            "stage",
+            "starting",
+            "status",
+            "stopping",
+            "target",
+            "task_catalog",
+            "tasks"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-266",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 939,
+          "end_line": 965,
+          "heading": "## 표현 방식과 보증 범위의 차이",
+          "candidate_occurrences": 13,
+          "distinct_tokens": [
+            "agent_message",
+            "execution_attempts",
+            "final_path",
+            "init",
+            "never",
+            "not_assessable",
+            "not_selected",
+            "research",
+            "result",
+            "runtime",
+            "scope_assessment",
+            "structured_output",
+            "submit_draft"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-267",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 966,
+          "end_line": 974,
+          "heading": "## 검증 근거의 해석",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "scripts/probe_cli.py --skill-only"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-268",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 975,
+          "end_line": 1016,
+          "heading": "## 전제·대기·조회 계약",
+          "candidate_occurrences": 56,
+          "distinct_tokens": [
+            ".control/execution-window.json",
+            ".control/finish-request.json",
+            ".control/stop-request.json",
+            "blocked_actions",
+            "claude_only_assigned_model",
+            "confirmed_question_ids",
+            "currentness_changed",
+            "deadline_source=none",
+            "decision_basis",
+            "delegated_targets",
+            "effective_deadline_at",
+            "effective_notice_ms",
+            "evidence",
+            "execution_failure",
+            "finish_notice_at",
+            "finish_notice_seconds",
+            "hold",
+            "import_application_authority",
+            "import_user_decision",
+            "input_failure",
+            "input_metrics",
+            "kind=output_validation",
+            "lineage_id",
+            "max_output_repairs",
+            "model_policy",
+            "model_usage_reported",
+            "open",
+            "output_contract",
+            "output_parse",
+            "output_schema",
+            "pending_revisions",
+            "provider_limit",
+            "provider_waits",
+            "publication_failure",
+            "question_links",
+            "questions",
+            "recovery",
+            "refresh",
+            "remaining_ms_at_start",
+            "resolution_history",
+            "resolves_questions",
+            "review_basis_key",
+            "revision_request_action_id",
+            "revision_resolutions",
+            "revision_targets",
+            "source_ref",
+            "submission_failure",
+            "target_ids",
+            "unresolved_target_ids",
+            "usage",
+            "usage_scope",
+            "usage_segments",
+            "waiting_actions.kind=revision_dependency",
+            "{\"kind\":\"question_answer\",\"text\":\"사용자 답변\",\"resolves_questions\":[\"QU-...\"],\"target_ids\":[\"실제-미해소-대상-ID\"]}"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-269",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 1,
+          "end_line": 17,
+          "heading": "도입",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "accepted=true",
+            "effect",
+            "init",
+            "payloads",
+            "trust_activate"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-270",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 18,
+          "end_line": 46,
+          "heading": "## 1. 보존된 입력과 설정을 확인한다",
+          "candidate_occurrences": 17,
+          "distinct_tokens": [
+            "bytes",
+            "config_sha256",
+            "init",
+            "next_cursor",
+            "observation-settings.json",
+            "observation_interval_seconds",
+            "observation_window_warnings",
+            "operation=probe",
+            "representative_check_seconds",
+            "result",
+            "self_check_response_window_seconds",
+            "setup_lean.py --verify-only",
+            "sha256",
+            "status",
+            "text",
+            "tool_review_window_seconds"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-271",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 47,
+          "end_line": 115,
+          "heading": "## 2. 승인된 초기 헌장을 등록한다",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "01-governance.json",
+            "kind=initialization",
+            "operation=governance",
+            "records"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-272",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 116,
+          "end_line": 161,
+          "heading": "## 3. 초기화 권한과 연구 권한을 나눈다",
+          "candidate_occurrences": 9,
+          "distinct_tokens": [
+            "02-initial-grant.json",
+            "03-research-grant.json",
+            "active",
+            "decision_id",
+            "grant_id",
+            "intent_interpretation",
+            "maintenance",
+            "reuse=\"reusable\"",
+            "task_ids=[]"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-273",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 162,
+          "end_line": 198,
+          "heading": "## 4. 현행 프로필의 능력을 관측하고 채택한다",
+          "candidate_occurrences": 29,
+          "distinct_tokens": [
+            "--task TK-...",
+            "adopt_default_review_policy",
+            "claude_adapter",
+            "claude_stream",
+            "claude_worker",
+            "cli_worker",
+            "codex_adapter",
+            "codex_worker",
+            "config_sha256",
+            "control_transport",
+            "conversation_loss_policy='continue_authorized'",
+            "external_policy",
+            "file_io",
+            "id",
+            "initial_profile_ref",
+            "module_sha256",
+            "probe",
+            "profile",
+            "profile_ref",
+            "profile_refs",
+            "research/role_profile_refs/state.json",
+            "revision",
+            "scholarly",
+            "sha256",
+            "status",
+            "windows_job"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-274",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 199,
+          "end_line": 241,
+          "heading": "## 5. 툴체인 기록을 등록한다",
+          "candidate_occurrences": 20,
+          "distinct_tokens": [
+            "07-trust-transition.json",
+            "Classical.choice",
+            "Quot.sound",
+            "allowed_axioms",
+            "binding",
+            "mismatch",
+            "norm_num",
+            "operation",
+            "propext",
+            "representative_check_seconds",
+            "setup_lean.py --verify-only --trust-file <새 경로>",
+            "status=failed",
+            "status=rerecord_required",
+            "toolchain",
+            "toolchain_record"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-275",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 242,
+          "end_line": 305,
+          "heading": "## 6. 최초 해석·독립 검사·실제 적용을 확인한다",
+          "candidate_occurrences": 20,
+          "distinct_tokens": [
+            "active",
+            "active_trust_environment",
+            "apply_import_control",
+            "decision",
+            "event_refs",
+            "id",
+            "import_units",
+            "intent_interpretation",
+            "kind=import_approval",
+            "knowledge",
+            "ready",
+            "request --retry-action AC-... --request-id UC-...",
+            "resume",
+            "retry",
+            "run",
+            "sha256",
+            "unit_id",
+            "wait"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-276",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 1,
+          "end_line": 4,
+          "heading": "도입",
+          "candidate_occurrences": 0,
+          "distinct_tokens": [],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-277",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 5,
+          "end_line": 16,
+          "heading": "## 신뢰 환경 확인의 개요",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            ".olean"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-278",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 17,
+          "end_line": 31,
+          "heading": "## 언제 무엇을 확인하는가",
+          "candidate_occurrences": 8,
+          "distinct_tokens": [
+            "environment_check",
+            "formal_usable",
+            "match",
+            "satisfied",
+            "setup_lean.py --check-contents",
+            "status",
+            "toolchain",
+            "trust_activate"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-279",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 32,
+          "end_line": 49,
+          "heading": "## 지문 불일치와 재기록",
+          "candidate_occurrences": 10,
+          "distinct_tokens": [
+            "formal_authority",
+            "formal_environment",
+            "formal_stopped",
+            "identity_errors",
+            "run",
+            "setup_lean.py --rerecord",
+            "submission_publication",
+            "trust_environment_rebound",
+            "trust_governance"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-280",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 50,
+          "end_line": 55,
+          "heading": "## 선택적 전수 점검",
+          "candidate_occurrences": 5,
+          "distinct_tokens": [
+            "mismatch",
+            "passed",
+            "setup_lean.py --check-contents"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-281",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 56,
+          "end_line": 70,
+          "heading": "## 판정 파일, 판본 식별과 지문",
+          "candidate_occurrences": 21,
+          "distinct_tokens": [
+            ".c",
+            ".dll",
+            ".dylib",
+            ".exe",
+            ".hash",
+            ".ilean",
+            ".ir",
+            ".lake",
+            ".lean",
+            ".olean",
+            ".so",
+            ".trace",
+            "inspect_toolchain",
+            "lake-manifest.json",
+            "os.scandir(...)",
+            "toolchain"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-282",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 71,
+          "end_line": 84,
+          "heading": "## 툴체인 기록과 인스턴스 결박",
+          "candidate_occurrences": 12,
+          "distinct_tokens": [
+            ".skill-workspace/do-math-toolchains/records/<기록 ID>.json",
+            "baselines",
+            "checks",
+            "identity",
+            "n + 0 = n",
+            "norm_num",
+            "representative_check_seconds",
+            "runtime.trust_bindings[<환경 ID>]",
+            "schema",
+            "toolchain",
+            "toolchain_record",
+            "validation_receipt"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-283",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 85,
+          "end_line": 98,
+          "heading": "## `setup_lean.py`의 모드",
+          "candidate_occurrences": 19,
+          "distinct_tokens": [
+            "binding",
+            "error",
+            "failed",
+            "lean_command",
+            "mismatch",
+            "mismatched",
+            "observed",
+            "passed",
+            "reason",
+            "record_id",
+            "record_path",
+            "recorded",
+            "records/.lock",
+            "refused",
+            "rerecord_required",
+            "status",
+            "toolchain"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-284",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 99,
+          "end_line": 106,
+          "heading": "## 남는 위험",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            ".lake"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-285",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 107,
+          "end_line": 118,
+          "heading": "## 불변 payload와 조회",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "json_pointer_scope=decoded_record",
+            "payload_refs",
+            "payloads",
+            "request_source_ref"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-286",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 119,
+          "end_line": 126,
+          "heading": "## 시작과 종료",
+          "candidate_occurrences": 2,
+          "distinct_tokens": [
+            "launch_ticket",
+            "not_started"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-287",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 127,
+          "end_line": 146,
+          "heading": "## 정상 정비",
+          "candidate_occurrences": 4,
+          "distinct_tokens": [
+            "blocked",
+            "draining",
+            "effect=applied",
+            "quiescent"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        },
+        {
+          "id": "N01-288",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 147,
+          "end_line": 159,
+          "heading": "## 운영 계측",
+          "candidate_occurrences": 1,
+          "distinct_tokens": [
+            "run"
+          ],
+          "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+        }
+      ],
+      "reuse_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py"
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+          "symbol": "ReadinessConditionTests.test_readiness_document_tables_match_the_condition_grammar",
+          "line": 349,
+          "end_line": 379
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+          "symbol": "ReadinessConditionTests.test_documented_readiness_examples_match_the_live_grammar",
+          "line": 340,
+          "end_line": 347
+        }
+      ],
+      "normal": "현재 문서에 이름으로 드는 명령·인자·필드·정책·산출 이름을 해당 실제 정의/역할 스키마에 연결한다. 코드펜스 JSON과 표·산문도 해당 파일의 문맥으로 분류한다.",
+      "counterexamples": "존재하는 타 역할의 동명 필드, 단독 이름 오타, config.ghost=1 같은 조합, 잘못된 단축 명령을 전역 어휘 존재만으로 통과시키지 않는다.",
+      "exit": "각 배정 문서/절의 현재 이름에 정의 또는 구체적 비코드/파일명 제외 사유를 남긴다. 같은 소유자의 dotted 반환 교체는 P01~P11 결과를 참조하고 재구현하지 않는다.",
+      "remaining": "이 lexical 후보 수는 전체 요구 이름의 분모가 아니다. 코드펜스/산문을 살펴 누락을 분류한 뒤 각 파일 판정을 닫는다. 전체24파일의 배정 합집합과 중복을 manager가 대조한다.",
+      "slice_interpretation": "제목별 좌표는 작업 수가 아니다. 이미 정본/실제 반환에 연결된 이름은 재구현하지 않고 현재 의미가 달라지는 미결만 배정한다. 3494회 같은 lexical 출현을 3494개 결함/작업으로 세지 않는다.",
+      "legacy_candidates": [
+        {
+          "token": "ProcessId",
+          "classification": "external_name",
+          "judgment": "README의 Win32_Process 속성. do-math 필드로 새 namespace를 만들지 않는다. 실제 OS 조회 범위는 별도 경계 확인이다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/README.md",
+              "line": 184,
+              "token": "ProcessId"
+            }
+          ]
+        },
+        {
+          "token": "ParentProcessId",
+          "classification": "external_name",
+          "judgment": "README의 Win32_Process 속성으로 문서가 소유자를 명시한다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/README.md",
+              "line": 184,
+              "token": "ParentProcessId"
+            }
+          ]
+        },
+        {
+          "token": "CommandLine",
+          "classification": "external_name",
+          "judgment": "README의 Win32_Process 속성으로 문서가 소유자를 명시한다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/README.md",
+              "line": 184,
+              "token": "CommandLine"
+            }
+          ]
+        },
+        {
+          "token": "PT0S",
+          "classification": "representation_not_python_name",
+          "judgment": "PowerShell의 TimeSpan.Zero를 scheduler가 표시하는 값. Python 문자열 어휘 누락을 제품 결함으로 세지 않는다.",
+          "definitions_or_tests": [
+            {
+              "path": "repo:.claude/skills/do-math/scripts/operator_schedule.ps1"
+            },
+            {
+              "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_operator_schedule_adapter.py"
+            }
+          ],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/README.md",
+              "line": 444,
+              "token": "PT0S"
+            }
+          ]
+        },
+        {
+          "token": "F",
+          "classification": "glossary_not_code",
+          "judgment": "가시 연구 프런티어를 설명하는 용어집 표기다. 코드 필드 존재 의무와 구별한다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+              "line": 119,
+              "token": "F"
+            }
+          ]
+        },
+        {
+          "token": "U",
+          "classification": "glossary_not_code",
+          "judgment": "미지 지평을 설명하는 용어집 표기다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+              "line": 123,
+              "token": "U"
+            }
+          ]
+        },
+        {
+          "token": "needs_revision",
+          "classification": "explicit_negative_example",
+          "judgment": "CLI 문장이 이 API의 과제 상태값이 아니라고 명시한다. 정상 enum에 추가하면 의미를 뒤집는다.",
+          "definitions_or_tests": [],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+              "line": 126,
+              "token": "needs_revision"
+            }
+          ]
+        },
+        {
+          "token": "import_unit",
+          "classification": "singular_prose_for_array_item",
+          "judgment": "import_units 배열 원소의 산문 단수형. interpretation_schema의 unit 정의와 validate_import_units가 소유한다.",
+          "definitions_or_tests": [
+            {
+              "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+              "symbol": "interpretation_schema",
+              "line": 1163,
+              "end_line": 1195
+            },
+            {
+              "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+              "symbol": "validate_import_units",
+              "line": 842,
+              "end_line": 919
+            }
+          ],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+              "line": 766,
+              "token": "import_unit"
+            },
+            {
+              "document": "repo:.claude/skills/do-math/계약/의도-해석.md",
+              "line": 26,
+              "token": "import_unit"
+            }
+          ]
+        },
+        {
+          "token": "FileRenameInfoEx",
+          "classification": "external_api_numeric_binding",
+          "judgment": "file_io._replace_once가 클래스 번호22/flag3으로 호출한다. Python 변수명 부재는 API 결속 부재가 아니다. Windows 의미 전체는 여기서 재인증하지 않는다.",
+          "definitions_or_tests": [
+            {
+              "path": "repo:.claude/skills/do-math/scripts/do_math/file_io.py",
+              "symbol": "_replace_once",
+              "line": 65,
+              "end_line": 89
+            }
+          ],
+          "occurrences": [
+            {
+              "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+              "line": 159,
+              "token": "FileRenameInfoEx"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sequencing": "P01 동명 소유자 교정 우선. P02/P03로 ROLE의 나머지 실제 경계를 닫고 P04~P11에서 고정된 잔여를 마감한다. 이름은 N 각 파일/절 한정 slice로, 읽기 한도는 L01의 실제 호스트 결정 뒤 처리한다. 공통 helper/소비자를 수정하는 task는 한 번에 하나다.",
+  "closed_work_not_redispatched": []
+}

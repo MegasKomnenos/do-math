@@ -1,0 +1,6 @@
+Open known defects: 0
+[structure] 1 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"structure": 0.0}, "total_seconds": 0.0}
+    0.032s failed             structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\red\report.json

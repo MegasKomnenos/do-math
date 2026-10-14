@@ -1,0 +1,96 @@
+test_a_field_from_another_family_cannot_validate_a_scoped_name (structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name) ... ok
+test_all_dotted_document_fields_have_an_owner (structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner) ... ok
+test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word (structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word) ... ok
+test_another_commands_flag_cannot_validate_the_documented_command (structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command) ... ok
+test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields (structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields) ... ok
+test_cli_result_branches_and_incremental_manifest_fields_remain_separate (structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate) ... ok
+test_deferred_delivery_has_the_assigned_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_delivery_has_the_assigned_actual_document_check) ... ok
+test_deferred_governance_has_the_assigned_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_governance_has_the_assigned_actual_document_check) ... ok
+test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method (structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method) ... ok
+test_deferred_result_inputs_have_a_document_check_in_the_assigned_method (structure.test_doc_code.DocumentCodeTests.test_deferred_result_inputs_have_a_document_check_in_the_assigned_method) ... ok
+test_deferred_reviews_have_their_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_reviews_have_their_actual_document_check) ... ok
+test_deferred_tools_have_their_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_tools_have_their_actual_document_check) ... ok
+test_deferred_trust_has_the_assigned_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_trust_has_the_assigned_actual_document_check) ... ok
+test_deferred_waits_have_the_assigned_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_waits_have_the_assigned_actual_document_check) ... ok
+test_delivery_fields_require_their_actual_return_owner (structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner) ... ok
+test_document_variables_have_line_local_owners_without_a_union_of_families (structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families) ... ok
+test_documented_commands_and_options_exist (structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist) ... ok
+test_documented_diagnostic_codes_belong_to_their_actual_owner (structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner) ... ok
+test_documented_function_references_resolve_to_callables (structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables) ... ok
+test_documented_module_constants_exist_independently_of_field_names (structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names) ... ok
+test_documented_policy_names_have_installed_owners (structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners) ... ok
+test_documented_scoped_fields_belong_to_their_actual_schema (structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema) ... ok
+test_governance_fields_require_their_actual_boundary_owner (structure.test_doc_code.DocumentCodeTests.test_governance_fields_require_their_actual_boundary_owner) ... ok
+test_operating_summary_and_operational_input_keep_their_owners (structure.test_doc_code.DocumentCodeTests.test_operating_summary_and_operational_input_keep_their_owners) ... ok
+test_operational_document_names_the_result_and_checkpoint_owners (structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners) ... ok
+test_operational_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner) ... ok
+test_optional_reads_and_same_named_checks_keep_their_actual_owners (structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners) ... ERROR
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\025\tasks\document-trust\evidence\focus\structure\failures\4d21aa6ebf6e8101fc50a04f76909b530c84e5818e17e5cd76a3c354aad28bec.json
+test_result_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_result_fields_require_their_actual_input_owner) ... ok
+test_review_fields_require_their_actual_input_owner (structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner) ... ok
+test_role_input_fields_do_not_borrow_names_from_the_stored_execution (structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution) ... ok
+test_tool_fields_require_their_actual_installed_input (structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input) ... ok
+test_trust_fields_require_actual_inspection_and_environment_return (structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return) ... ok
+test_wait_fields_require_actual_condition_input_and_dispatch_wait (structure.test_doc_code.DocumentCodeTests.test_wait_fields_require_actual_condition_input_and_dispatch_wait) ... ok
+
+======================================================================
+ERROR: test_optional_reads_and_same_named_checks_keep_their_actual_owners (structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\structure\test_doc_code.py", line 764, in test_optional_reads_and_same_named_checks_keep_their_actual_owners
+    self.assertEqual(scoped_field_issues(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\doc_code.py", line 350, in scoped_field_issues
+    raise ValueError(owner + ' fields require the actual trust boundary')
+ValueError: toolchain fields require the actual trust boundary
+
+----------------------------------------------------------------------
+Ran 33 tests in 1.899s
+
+FAILED (errors=1)
+test_changed_files_lists_added_removed_and_different_rows (unit.test_toolchain_records.FingerprintTests.test_changed_files_lists_added_removed_and_different_rows) ... ok
+test_fingerprint_and_content_name_every_judgment_file (unit.test_toolchain_records.FingerprintTests.test_fingerprint_and_content_name_every_judgment_file) ... ok
+test_a_record_names_its_identity_and_first_content_baseline (unit.test_toolchain_records.RecordContractTests.test_a_record_names_its_identity_and_first_content_baseline) ... ok
+test_every_baseline_inventory_and_validation_digest_binds_its_exact_content (unit.test_toolchain_records.RecordContractTests.test_every_baseline_inventory_and_validation_digest_binds_its_exact_content) ... ok
+test_read_record_refuses_a_record_that_breaks_its_contract (unit.test_toolchain_records.RecordContractTests.test_read_record_refuses_a_record_that_breaks_its_contract) ... ok
+test_recomputed_inventory_digest_cannot_hide_a_different_file_population_or_source_text (unit.test_toolchain_records.RecordContractTests.test_recomputed_inventory_digest_cannot_hide_a_different_file_population_or_source_text) ... ok
+test_record_errors_name_the_broken_rule (unit.test_toolchain_records.RecordContractTests.test_record_errors_name_the_broken_rule) ... ok
+test_representative_check_seconds_round_up (unit.test_toolchain_records.RecordContractTests.test_representative_check_seconds_round_up) ... ok
+test_the_validation_program_follows_the_project (unit.test_toolchain_records.RecordContractTests.test_the_validation_program_follows_the_project) ... ok
+test_usable_needs_a_verified_current_compile_and_no_later_mismatch (unit.test_toolchain_records.RecordContractTests.test_usable_needs_a_verified_current_compile_and_no_later_mismatch) ... ok
+test_validation_summary_fields_are_sensitive_and_recording_metadata_is_not (unit.test_toolchain_records.RecordContractTests.test_validation_summary_fields_are_sensitive_and_recording_metadata_is_not) ... ok
+test_a_baseline_needs_a_verified_compile_and_unmoved_files (unit.test_toolchain_records.WriterJudgmentTests.test_a_baseline_needs_a_verified_compile_and_unmoved_files) ... ok
+test_a_command_without_a_record_name_needs_exactly_one_record (unit.test_toolchain_records.WriterJudgmentTests.test_a_command_without_a_record_name_needs_exactly_one_record) ... ok
+test_a_compile_is_verified_only_when_it_ran_to_exit_code_zero (unit.test_toolchain_records.WriterJudgmentTests.test_a_compile_is_verified_only_when_it_ran_to_exit_code_zero) ... ok
+test_a_content_check_compares_with_the_current_baseline (unit.test_toolchain_records.WriterJudgmentTests.test_a_content_check_compares_with_the_current_baseline) ... ok
+test_a_rerecord_keeps_the_identity_and_the_judgment_file_contents (unit.test_toolchain_records.WriterJudgmentTests.test_a_rerecord_keeps_the_identity_and_the_judgment_file_contents) ... ok
+test_a_writer_excludes_other_writers (unit.test_toolchain_records.WriterJudgmentTests.test_a_writer_excludes_other_writers) ... ok
+test_evidence_must_be_outside_the_recorded_roots (unit.test_toolchain_records.WriterJudgmentTests.test_evidence_must_be_outside_the_recorded_roots) ... ok
+test_the_matching_usable_record_is_reused_and_a_changed_one_is_not (unit.test_toolchain_records.WriterJudgmentTests.test_the_matching_usable_record_is_reused_and_a_changed_one_is_not) ... ok
+test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings (unit.test_trust_environment.ActivationProfileTests.test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings) ... ok
+test_formal_use_needs_the_active_valid_environment_and_its_current_identity (unit.test_trust_environment.EnvironmentCheckTests.test_formal_use_needs_the_active_valid_environment_and_its_current_identity) ... ok
+test_formal_verification_runs_only_after_the_environment_is_admitted (unit.test_trust_environment.EnvironmentCheckTests.test_formal_verification_runs_only_after_the_environment_is_admitted) ... ok
+test_record_state_marks_a_record_change_and_a_missing_record (unit.test_trust_environment.EnvironmentCheckTests.test_record_state_marks_a_record_change_and_a_missing_record) ... ok
+test_the_current_identity_is_observed_only_when_asked (unit.test_trust_environment.EnvironmentCheckTests.test_the_current_identity_is_observed_only_when_asked) ... ok
+test_the_record_must_be_the_registered_one_with_the_registered_identity (unit.test_trust_environment.EnvironmentCheckTests.test_the_record_must_be_the_registered_one_with_the_registered_identity) ... ok
+test_unreadable_judgment_files_invalidate_the_check (unit.test_trust_environment.EnvironmentCheckTests.test_unreadable_judgment_files_invalidate_the_check) ... ok
+test_a_registration_request_has_exactly_its_fields (unit.test_trust_environment.EnvironmentContractTests.test_a_registration_request_has_exactly_its_fields) ... ok
+test_each_environment_rule_names_what_it_refuses (unit.test_trust_environment.EnvironmentContractTests.test_each_environment_rule_names_what_it_refuses) ... ok
+test_a_stale_profile_reference_is_passed_over_and_a_repeated_profile_warned_once (unit.test_trust_environment.ObservationWindowWarningTests.test_a_stale_profile_reference_is_passed_over_and_a_repeated_profile_warned_once) ... ok
+test_an_invalid_or_unreadable_toolchain_gives_no_warning (unit.test_trust_environment.ObservationWindowWarningTests.test_an_invalid_or_unreadable_toolchain_gives_no_warning) ... ok
+test_the_self_check_response_window_is_not_bound_by_a_compile (unit.test_trust_environment.ObservationWindowWarningTests.test_the_self_check_response_window_is_not_bound_by_a_compile) ... ok
+test_windows_shorter_than_the_representative_compile_are_warned (unit.test_trust_environment.ObservationWindowWarningTests.test_windows_shorter_than_the_representative_compile_are_warned) ... ok
+test_current_environment_is_verified_from_record_identity_and_fingerprint (unit.test_trust_environment.ToolchainRecordTests.test_current_environment_is_verified_from_record_identity_and_fingerprint) ... ok
+test_documented_environment_branches_keep_absence_and_exact_changes (unit.test_trust_environment.ToolchainRecordTests.test_documented_environment_branches_keep_absence_and_exact_changes) ... ok
+test_fingerprint_detects_size_modification_creation_and_recreation (unit.test_trust_environment.ToolchainRecordTests.test_fingerprint_detects_size_modification_creation_and_recreation) ... ok
+test_live_admission_rejects_a_missing_recorded_member_even_when_installed_files_are_unchanged (unit.test_trust_environment.ToolchainRecordTests.test_live_admission_rejects_a_missing_recorded_member_even_when_installed_files_are_unchanged) ... ok
+test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes (unit.test_trust_environment.ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes) ... ok
+test_rebind_requires_the_current_baseline_and_the_same_identity (unit.test_trust_environment.ToolchainRecordTests.test_rebind_requires_the_current_baseline_and_the_same_identity) ... ok
+test_search_paths_outside_the_recorded_roots_are_rejected (unit.test_trust_environment.ToolchainRecordTests.test_search_paths_outside_the_recorded_roots_are_rejected) ... ok
+test_success_label_cannot_replace_failed_representative_evidence (unit.test_trust_environment.ToolchainRecordTests.test_success_label_cannot_replace_failed_representative_evidence) ... ok
+test_unknown_record_field_and_other_schema_are_rejected (unit.test_trust_environment.ToolchainRecordTests.test_unknown_record_field_and_other_schema_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 3.459s
+
+OK

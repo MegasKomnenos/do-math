@@ -1,0 +1,299 @@
+{
+  "scope": "001/document-closeout A1~A4; 현재 문서 결속의 정적 조사. 13-C 완료 선언이 아니다.",
+  "documents": [],
+  "documents_rule": "def documents(skill):\n    skill = Path(skill)\n    return [skill / name for name in ('SKILL.md', 'README.md', 'GLOSSARY.md')] + \\\n        sorted((skill / 'references').glob('*.md')) + sorted((skill / '계약').glob('*.md'))",
+  "denominators": {
+    "documents": 24,
+    "declared_schema_owners": 84,
+    "inline_dotted_field_occurrences": 189,
+    "lexical_owners": 79,
+    "ast_call_sites": 34,
+    "note": "34는 구문 호출 지점 수다. 348행 loop가 세 owner를 만들며 한 owner에 여러 호출도 있다. 79는 이름 분류이며 두 동명 오결속이 있어 의미상 생산자 수가 아니다. 완료율 분모로 쓰지 않는다."
+  },
+  "bindings": [
+    {
+      "owner": "environment_check",
+      "definition": "trust_validation.py:check_environment",
+      "mode": "ast_or_manual_composition",
+      "binding_source": {
+        "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "lines": [
+          311,
+          312,
+          313
+        ]
+      },
+      "ast_sites": [
+        311,
+        312,
+        313
+      ],
+      "documents": [
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "line": 34,
+          "token": "environment_check.changed_files",
+          "text": "현재 지문이 결박한 기준과 다르면 활성화는 환경을 활성화하지 않고, 형식 검사는 컴파일을 시작하지 않는다. 활성화는 전환 실패로 끝나고 이전 환경이 계속 효력을 가진다. 전환의 기존 K 재검사는 실패 결과로 기록되므로 그 전환은 활성화되지 않는다. 형식 검사는 달라진 파일 목록(`environment_check.changed_files`)을 보존하고 `formal_environment` 대기로 멈춘다. 지문이 같아도 검사기가 컴파일 직전에 승인된 판본 식별과 다른 점을 찾으면 형식 검사는 같은 대기로 멈춘다. 이때 도구 모음이나 프로젝트 입력 파일이 달라졌으면 그 목록(`identity_errors`)을 함께 보존하고, 실행 명령이나 실행 파일 경로가 달라졌으면 그 사유만 보존한다. 이 대기의 다음 담당은 `trust_governance`이며, 다음 담당은 원인을 둘로 나눈다.",
+          "aliases": {}
+        }
+      ],
+      "producers_or_contracts": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+          "symbol": "check_environment",
+          "line": 117,
+          "end_line": 169
+        }
+      ],
+      "existing_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+          "symbol": "HostIdentityTests.test_identity_detects_executable_checker_and_project_input_changes",
+          "line": 33,
+          "end_line": 72
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input",
+          "line": 190,
+          "end_line": 212
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "ToolchainContractTests.test_inspection_matches_actual_formal_verifier",
+          "line": 164,
+          "end_line": 179
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+          "symbol": "ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes",
+          "line": 76,
+          "end_line": 90
+        }
+      ],
+      "dependencies": [],
+      "decision": "replace_bounded_binding",
+      "next_packet": "P08",
+      "assessment": "project의 비-Lake null과 성공 경로, check_environment의 verified/rebind/invalid 변형을 구별한다. observed identity와 승인 성공은 같지 않다.",
+      "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+    },
+    {
+      "owner": "plan_settle_wait",
+      "definition": "DispatchEngineMixin._plan_settle_waits action['dispatch_wait']",
+      "mode": "ast_selected_object",
+      "binding_source": {
+        "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "lines": [
+          291
+        ]
+      },
+      "ast_sites": [
+        291
+      ],
+      "documents": [
+        {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 234,
+          "token": "dispatch_wait.kind",
+          "text": "- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->",
+          "aliases": {
+            "dispatch_wait": "plan_settle_wait"
+          }
+        }
+      ],
+      "producers_or_contracts": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+          "symbol": "DispatchEngineMixin._plan_settle_waits",
+          "line": 126,
+          "end_line": 138
+        }
+      ],
+      "existing_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+          "symbol": "PlanSettleTests.test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision",
+          "line": 151,
+          "end_line": 156
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+          "symbol": "PlanSettleTests.test_the_settle_wait_ends_at_its_configured_limit",
+          "line": 158,
+          "end_line": 162
+        }
+      ],
+      "dependencies": [],
+      "decision": "replace_bounded_binding",
+      "next_packet": "P11",
+      "assessment": "13-C D-06 의미 대조와 함께 실제 dispatch_wait에 연결한다. 대기 이름 존재만으로 최초 준비/명시 요청/회복 예외를 증명하지 않는다.",
+      "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+    },
+    {
+      "owner": "project",
+      "definition": "formal.py:_project_identity",
+      "mode": "ast_or_manual_composition",
+      "binding_source": {
+        "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "lines": [
+          307,
+          308
+        ]
+      },
+      "ast_sites": [
+        307,
+        308
+      ],
+      "documents": [
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "line": 67,
+          "token": "project.source_identity",
+          "text": "**판본 식별**은 `inspect_toolchain`이 관측한 `toolchain` 객체다. `lean --version` 출력, 구성된 명령과 첫 실행 파일의 경로·SHA-256, 명령 인자의 `.exe`·`.dll` SHA-256, 검사기 `formal.py`의 경로·SHA-256을 담는다. 실행 중인 검사기는 경로가 아니라 적재한 모듈 바이트의 SHA-256으로 판본 식별의 검사기와 대조한다. 그래서 작업 공간 미리보기처럼 zip에서 적재한 같은 바이트도 같은 검사기다. 기록된 경로의 파일은 그 SHA-256과 계속 대조한다. Lake 프로젝트를 쓰면 `lean-toolchain`·`lake-manifest.json`·lakefile의 SHA-256, **프로젝트 소스 식별**(`project.source_identity`: 프로젝트의 추적된 git 트리, 작업 트리 diff, 추적되지 않은 입력의 해시), Lake가 구성한 검색 경로도 담는다. 검색 경로는 Lean 설치와 Lake 프로젝트 안에 있어야 한다. 판본 식별 다이제스트는 이 객체의 정규 JSON SHA-256이다.",
+          "aliases": {}
+        }
+      ],
+      "producers_or_contracts": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+          "symbol": "_project_identity",
+          "line": 171,
+          "end_line": 196
+        }
+      ],
+      "existing_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+          "symbol": "HostIdentityTests.test_identity_detects_executable_checker_and_project_input_changes",
+          "line": 33,
+          "end_line": 72
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input",
+          "line": 190,
+          "end_line": 212
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "ToolchainContractTests.test_inspection_matches_actual_formal_verifier",
+          "line": 164,
+          "end_line": 179
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+          "symbol": "ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes",
+          "line": 76,
+          "end_line": 90
+        }
+      ],
+      "dependencies": [],
+      "decision": "replace_bounded_binding",
+      "next_packet": "P08",
+      "assessment": "project의 비-Lake null과 성공 경로, check_environment의 verified/rebind/invalid 변형을 구별한다. observed identity와 승인 성공은 같지 않다.",
+      "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+    },
+    {
+      "owner": "toolchain",
+      "definition": "formal.py:inspect_toolchain",
+      "mode": "ast_or_manual_composition",
+      "binding_source": {
+        "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "lines": [
+          309
+        ]
+      },
+      "ast_sites": [
+        309
+      ],
+      "documents": [
+        {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 216,
+          "token": "toolchain.project.search_paths",
+          "text": "등록은 툴체인 기록 파일을 읽는다. 기록의 ID와 판본 식별이 요청과 같고, 요청이 결박한 기준 항목의 다이제스트가 기록의 해당 항목과 같으며, 현재 기준의 대표 검사가 성공했고 현재 기준에 대해 `mismatch`로 끝난 전수 점검 결과가 없을 때만 등록한다. 설치 파일은 읽지 않는다. Lake가 구성한 검색 경로 `toolchain.project.search_paths`가 Lean 설치와 Lake 프로젝트 밖에 있으면 등록을 거부한다. Lean 관련 검색 경로 환경 변수는 호스트에서 상속하지 않는다.",
+          "aliases": {}
+        }
+      ],
+      "producers_or_contracts": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+          "symbol": "inspect_toolchain",
+          "line": 199,
+          "end_line": 218
+        }
+      ],
+      "existing_tests": [
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+          "symbol": "HostIdentityTests.test_identity_detects_executable_checker_and_project_input_changes",
+          "line": 33,
+          "end_line": 72
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input",
+          "line": 190,
+          "end_line": 212
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+          "symbol": "ToolchainContractTests.test_inspection_matches_actual_formal_verifier",
+          "line": 164,
+          "end_line": 179
+        },
+        {
+          "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+          "symbol": "ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes",
+          "line": 76,
+          "end_line": 90
+        }
+      ],
+      "dependencies": [],
+      "decision": "replace_bounded_binding",
+      "next_packet": "P08",
+      "assessment": "project의 비-Lake null과 성공 경로, check_environment의 verified/rebind/invalid 변형을 구별한다. observed identity와 승인 성공은 같지 않다.",
+      "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+    }
+  ],
+  "ast_site_inventory": [],
+  "manual_compositions": [
+    {
+      "lines": [
+        307,
+        314
+      ],
+      "kind": "project_and_environment_base",
+      "consumer_owners": [
+        "project",
+        "toolchain",
+        "environment_check"
+      ],
+      "packet": "P08"
+    }
+  ],
+  "unused_direct_owners": {
+    "config": "session_limits parent and negative cross-family tests",
+    "execution": "stored-versus-role-input negative tests; execution_to_review is a separate semantic alias",
+    "profile": "ai/observation parents and schema tests",
+    "instance": "No current explicit document, child-binding or document-test consumer found; removal candidate, not an obligation to exercise an invented document path",
+    "recovery_source": "indirect recovered_output_files and recovery_materials.output_files; retain until P01 replacement"
+  },
+  "removal_candidates": [
+    "P04/P08 완료 뒤 source-expression bindings와 environment_base 조립을 제거한다."
+  ],
+  "other_reference_census": {
+    "command_mentions": [],
+    "policy_mentions": [],
+    "command_and_flag_candidates": {
+      "source": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+      "literal_parser_commands": [],
+      "short_or_bare_command_candidates": [],
+      "inline_flag_mentions": [],
+      "note": "참조 모집단의 정적 목록이다. parser를 실행하지 않았고 인자 유효성을 새로 검증한 결과가 아니다. 실제 검증 소유자는 structure.test_doc_code와 cli_contract이다."
+    },
+    "lexical_policy_names": [],
+    "limitations": "명령은 ENTRY 및 코드 예시의 실제 parser 소유자, bare flag는 전역 어휘다. 함수/상수/진단은 이름 존재 범위. 단독/조합/코드펜스와 정책 의미/도구 읽기 한도는 N01~N03/P11/L01에 남는다."
+  },
+  "legacy_17_lexical_candidates": []
+}

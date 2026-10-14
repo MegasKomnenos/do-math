@@ -39,6 +39,15 @@ class HostIdentityTests(unittest.TestCase):
         wrong = {**self.request['toolchain'], 'sha256': '0' * 64}
         self.assertEqual(toolchain_identity_errors(wrong, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend),
                          ['approved toolchain file changed: ' + self.request['toolchain']['executable']])
+        dll = Path(self.request['toolchain']['executable']).with_name('libleanshared.dll')
+        identity = deepcopy(self.request['toolchain'])
+        identity['executables'][str(dll)] = hashlib.sha256(dll.read_bytes()).hexdigest()
+        original = dll.read_bytes()
+        dll.write_bytes(b'replaced recorded DLL argument')
+        self.assertEqual(toolchain_identity_errors(identity, clock=_entry.ports.clock, jobs=_entry.ports.jobs,
+            environment=_entry.environment, git_backend=_entry.ports.git_backend),
+            ['approved toolchain file changed: ' + str(dll)])
+        dll.write_bytes(original)
         lake = Path(self.request['toolchain']['executable']).with_name('lake.exe')
         lake.write_bytes(b'replaced by an update')
         self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend),

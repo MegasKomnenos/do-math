@@ -1,0 +1,7 @@
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/support/doc_code.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/support/engine_context.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py', CRLF will be replaced by LF the next time Git touches it

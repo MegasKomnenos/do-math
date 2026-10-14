@@ -1,0 +1,59 @@
+{
+  "board": {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+    "exists": true,
+    "selector": "current_work.independent_execution.prior_review",
+    "sha256": "9f0a0e6100d70dacacc4c9a428db92903a08bd040f7bd736770b51715c98e365"
+  },
+  "mapping_is_not_review": true,
+  "review_units": [],
+  "reused_pr23": [],
+  "pr23_current_diff": "run:phases/001/tasks/closure-map/evidence/pr23-current-diff.txt",
+  "reused_b115_document_review": {
+    "selector": "current_work.independent_execution.document_review",
+    "review_status": "bounded_review_complete_not_implementation_or_full_test_completion",
+    "reviewed_head": "136dc3d5 (B114)",
+    "summary": {
+      "decision": "전체 삭제하지 않는다. 스키마 소유자·배열·이름 검사는 유지하고, 생산자 AST 해석의 확대는 중단하여 해당 결과를 실제 반환 계약 증명으로 쓰지 않는다. 생산자별 기존 경계 시험/공유 계약으로 제한하여 교체한다.",
+      "reason": "저장 execution과 역할 입력, CLI 명령별 인자, 동명 record/check 소유자를 구분하는 결함 탐지 이익은 실재한다. 반면 대입문 수집은 삭제·재대입 이후 존재하지 않는 필드를 통과시키며 동일한 반환 객체를 만드는 dict() 변경에 실패한다. 코드 길이만으로 판단하지 않았다.",
+      "next_single_change": "command_issues의 문서 명령 개요에서 선택 인자 대괄호를 처리하도록 한정 수정한다. 현행 CLI 문서가 사용하는 [--flag VALUE] 표기에서 타 명령 인자가 조용히 통과하는 재현을 먼저 반영하고, 실제 옵션 소유자 검사를 보존한다.",
+      "not_claimed": [
+        "D-06 정책 의미 불일치 탐지 완료"
+      ]
+    },
+    "judgments": [
+      {
+        "id": "J7",
+        "feature": "정책 이름 검사",
+        "decision": "유지하되 의미 일치 완료 주장은 삭제",
+        "actual_benefit": "undefined_recovery_policy처럼 policy 접미 이름이 어떤 스키마/모듈에도 없는 경우를 거부한다.",
+        "error_examples": [
+          "R8: plan_settle_seconds에 관한 잘못된 대기 문장은 이름 추출 대상도 아니어서 issues=[]",
+          "R9: 존재하는 external_policy에 모든 외부 호출 허용이라는 문장을 붙여도 issues=[]"
+        ],
+        "preserve": [
+          "정책 이름이 코드 어휘에 존재하는 최소 검사"
+        ],
+        "recommended_scope": "이름 검사 그대로 한정. D-06의 대기 조건 의미는 해당 정책 정본/기존 동작 시험과 문서 설명의 대응으로 별도 닫는다. 일반 자연어 정책 판정기를 만들지 않는다.",
+        "exit_condition": "이름 존재와 정책 의미 대응의 상태가 분리되어 허위 완료가 없으면 이 검토 조치 종료."
+      }
+    ],
+    "later_disposition": "선택 인자는 B115, PURE/CLI는 B119~B131, ROLE 일부는 B132~B134에서 수리. 남은 반환 결속을 다른 task가 검토하므로 여기서 같은 코드를 재감사하지 않는다."
+  },
+  "reused_b116_b117_schema_review": {
+    "selector": "current_work.independent_schema_boundary_followup.schema_review",
+    "decision": {
+      "B22": "retain",
+      "replace": false,
+      "reason": "정본 json_copy에 따른 최소 복사 수리이며, 원 실패→수리 통과 보고가 실제 존재하고 SHA 일치한다. 현재 확인한 28개 빌더/변환기 정의와 json_copy 정의는 B22와 AST가 동일하고, 검사 파일 바이트 SHA도 B22 기록과 같다. 기존 수리 재구현/되돌림 근거 없음.",
+      "whole_requirement_closed": false,
+      "current_status": "기존 모집단 격리 수리 유지; 구체 입력축 및 표 밖 모집단 처분이 남음",
+      "can_this_review_close_whole_requirement": false,
+      "can_bounded_followup_close": true,
+      "closure_condition": "아래 G1~G5의 구체 항목을 기존 시험 표와 원소별 포함/제외 근거로 처리하고 관련 시험을 현행 판본에서 검증하면 닫을 수 있다. 전 제품 재설계나 새 관리 프레임워크는 필요 없다."
+    },
+    "what_is_already_proved": [],
+    "latest_disposition": "B116 유한 입력축과 B117 클래스4/상수6의 추가 검증을 재사용. R07의 remaining은 새 후보 발굴이 아니라 현행 선언과 원문 모집단 최종 대응이다."
+  },
+  "remaining_non_b_review": "PR03/PR05의 foundation_to_unit·migration_artifact_to_unit 항목도 같은 구조/처분 파일 소비자에서 다룬다. B01~B109 매핑으로 기반 전체 리뷰를 대신하지 않는다."
+}

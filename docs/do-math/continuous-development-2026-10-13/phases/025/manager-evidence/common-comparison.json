@@ -1,0 +1,25 @@
+{
+  "changed": [
+    "C2",
+    "C5",
+    "C8",
+    "C9",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "unchanged": [
+    "C1",
+    "C3",
+    "C4",
+    "C6",
+    "C7"
+  ],
+  "removed_meaning": "C5와plan의025 미래 배정을 검수 결과/026 고정판 독립 배정으로 교체했다. 기존 완료 기준·예외·미해결 외부 결정·역사실패는 삭제하지 않았다.",
+  "seams": "제품 인터페이스/권한 의미 개정 없음.026 읽기 work 경계 설명만 추가했다.",
+  "next_tasks": [
+    "policy-semantics",
+    "reference-names",
+    "role-contract-names"
+  ]
+}

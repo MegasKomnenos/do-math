@@ -1,0 +1,112 @@
+{
+  "P08": [
+    {
+      "historical": {
+        "path": "repo:.claude/skills/do-math/references/초기화-운전.md",
+        "line": 216,
+        "text": "등록은 툴체인 기록 파일을 읽는다. 기록의 ID와 판본 식별이 요청과 같고, 요청이 결박한 기준 항목의 다이제스트가 기록의 해당 항목과 같으며, 현재 기준의 대표 검사가 성공했고 현재 기준에 대해 `mismatch`로 끝난 전수 점검 결과가 없을 때만 등록한다. 설치 파일은 읽지 않는다. Lake가 구성한 검색 경로 `toolchain.project.search_paths`가 Lean 설치와 Lake 프로젝트 밖에 있으면 등록을 거부한다. Lean 관련 검색 경로 환경 변수는 호스트에서 상속하지 않는다."
+      },
+      "current_line": 216,
+      "heading": "## 5. 툴체인 기록을 등록한다",
+      "text": "등록은 툴체인 기록 파일을 읽는다. 기록의 ID와 판본 식별이 요청과 같고, 요청이 결박한 기준 항목의 다이제스트가 기록의 해당 항목과 같으며, 현재 기준의 대표 검사가 성공했고 현재 기준에 대해 `mismatch`로 끝난 전수 점검 결과가 없을 때만 등록한다. 설치 파일은 읽지 않는다. Lake가 구성한 검색 경로 `toolchain.project.search_paths`가 Lean 설치와 Lake 프로젝트 밖에 있으면 등록을 거부한다. Lake 프로젝트를 쓰지 않는 명령의 `toolchain.project`는 `null`이다. Lean 관련 검색 경로 환경 변수는 호스트에서 상속하지 않는다.",
+      "path_sha256": "8fa7631e0d0f29d3cf4f96eae54caf4d0ee987c5fd56020f75c81281e306b84e"
+    },
+    {
+      "historical": {
+        "path": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+        "line": 34,
+        "text": "현재 지문이 결박한 기준과 다르면 활성화는 환경을 활성화하지 않고, 형식 검사는 컴파일을 시작하지 않는다. 활성화는 전환 실패로 끝나고 이전 환경이 계속 효력을 가진다. 전환의 기존 K 재검사는 실패 결과로 기록되므로 그 전환은 활성화되지 않는다. 형식 검사는 달라진 파일 목록(`environment_check.changed_files`)을 보존하고 `formal_environment` 대기로 멈춘다. 지문이 같아도 검사기가 컴파일 직전에 승인된 판본 식별과 다른 점을 찾으면 형식 검사는 같은 대기로 멈춘다. 이때 도구 모음이나 프로젝트 입력 파일이 달라졌으면 그 목록(`identity_errors`)을 함께 보존하고, 실행 명령이나 실행 파일 경로가 달라졌으면 그 사유만 보존한다. 이 대기의 다음 담당은 `trust_governance`이며, 다음 담당은 원인을 둘로 나눈다."
+      },
+      "current_line": 34,
+      "heading": "## 지문 불일치와 재기록",
+      "text": "현재 지문이 결박한 기준과 다르면 활성화는 환경을 활성화하지 않고, 형식 검사는 컴파일을 시작하지 않는다. 활성화는 전환 실패로 끝나고 이전 환경이 계속 효력을 가진다. 전환의 기존 K 재검사는 실패 결과로 기록되므로 그 전환은 활성화되지 않는다. 형식 검사는 달라진 파일 목록(`environment_check.changed_files`)의 앞 50개와 전체 변화 개수(`changed_file_count`)를 보존하고 `formal_environment` 대기로 멈춘다. 이 목록은 지문 불일치 분기에만 있다. 성공과 재결박, 기록 부재·파손이나 판본 식별 오류로 먼저 반려된 검사에는 목록과 개수 필드가 없고, 각 반려 사유는 `errors`에 남는다. 지문이 같아도 검사기가 컴파일 직전에 승인된 판본 식별과 다른 점을 찾으면 형식 검사는 같은 대기로 멈춘다. 이때 도구 모음이나 프로젝트 입력 파일이 달라졌으면 그 목록(`identity_errors`)을 함께 보존하고, 실행 명령이나 실행 파일 경로가 달라졌으면 그 사유만 보존한다. 이 대기의 다음 담당은 `trust_governance`이며, 다음 담당은 원인을 둘로 나눈다.",
+      "path_sha256": "9c8007baa44e8d559d5568158328e34b78adecdeeff62366bc4c8a551e75f761"
+    },
+    {
+      "historical": {
+        "path": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+        "line": 67,
+        "text": "**판본 식별**은 `inspect_toolchain`이 관측한 `toolchain` 객체다. `lean --version` 출력, 구성된 명령과 첫 실행 파일의 경로·SHA-256, 명령 인자의 `.exe`·`.dll` SHA-256, 검사기 `formal.py`의 경로·SHA-256을 담는다. 실행 중인 검사기는 경로가 아니라 적재한 모듈 바이트의 SHA-256으로 판본 식별의 검사기와 대조한다. 그래서 작업 공간 미리보기처럼 zip에서 적재한 같은 바이트도 같은 검사기다. 기록된 경로의 파일은 그 SHA-256과 계속 대조한다. Lake 프로젝트를 쓰면 `lean-toolchain`·`lake-manifest.json`·lakefile의 SHA-256, **프로젝트 소스 식별**(`project.source_identity`: 프로젝트의 추적된 git 트리, 작업 트리 diff, 추적되지 않은 입력의 해시), Lake가 구성한 검색 경로도 담는다. 검색 경로는 Lean 설치와 Lake 프로젝트 안에 있어야 한다. 판본 식별 다이제스트는 이 객체의 정규 JSON SHA-256이다."
+      },
+      "current_line": 67,
+      "heading": "## 판정 파일, 판본 식별과 지문",
+      "text": "**판본 식별**은 `inspect_toolchain`이 관측한 `toolchain` 객체다. `lean --version` 출력, 구성된 명령과 첫 실행 파일의 경로·SHA-256, 명령 인자의 `.exe`·`.dll` SHA-256, 검사기 `formal.py`의 경로·SHA-256을 담는다. 실행 중인 검사기는 경로가 아니라 적재한 모듈 바이트의 SHA-256으로 판본 식별의 검사기와 대조한다. 그래서 작업 공간 미리보기처럼 zip에서 적재한 같은 바이트도 같은 검사기다. 기록된 경로의 파일은 그 SHA-256과 계속 대조한다. Lake 프로젝트를 쓰면 `lean-toolchain`·`lake-manifest.json`·lakefile의 SHA-256, **프로젝트 소스 식별**(`project.source_identity`: 프로젝트의 추적된 git 트리, 작업 트리 diff, 추적되지 않은 입력의 해시), Lake가 구성한 검색 경로도 담는다. 프로젝트 소스 식별에는 추적된 트리와 diff의 해시, 추적되지 않은 입력의 개수와 이름·내용 해시의 다이제스트가 들어간다. `.lake`의 소스와 빌드 산출물은 이 입력에서 제외한다. Lake 프로젝트를 쓰지 않으면 프로젝트 값은 `null`이다. 검색 경로는 Lean 설치와 Lake 프로젝트 안에 있어야 한다. 판본 식별 다이제스트는 이 객체의 정규 JSON SHA-256이다.",
+      "path_sha256": "9c8007baa44e8d559d5568158328e34b78adecdeeff62366bc4c8a551e75f761"
+    }
+  ],
+  "N01_slices": [
+    {
+      "id": "N01-274",
+      "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+      "start_line": 199,
+      "end_line": 241,
+      "heading": "## 5. 툴체인 기록을 등록한다",
+      "candidate_occurrences": 20,
+      "distinct_tokens": [
+        "07-trust-transition.json",
+        "Classical.choice",
+        "Quot.sound",
+        "allowed_axioms",
+        "binding",
+        "mismatch",
+        "norm_num",
+        "operation",
+        "propext",
+        "representative_check_seconds",
+        "setup_lean.py --verify-only --trust-file <새 경로>",
+        "status=failed",
+        "status=rerecord_required",
+        "toolchain",
+        "toolchain_record"
+      ],
+      "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+    },
+    {
+      "id": "N01-279",
+      "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+      "start_line": 32,
+      "end_line": 49,
+      "heading": "## 지문 불일치와 재기록",
+      "candidate_occurrences": 10,
+      "distinct_tokens": [
+        "formal_authority",
+        "formal_environment",
+        "formal_stopped",
+        "identity_errors",
+        "run",
+        "setup_lean.py --rerecord",
+        "submission_publication",
+        "trust_environment_rebound",
+        "trust_governance"
+      ],
+      "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+    },
+    {
+      "id": "N01-281",
+      "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+      "start_line": 56,
+      "end_line": 70,
+      "heading": "## 판정 파일, 판본 식별과 지문",
+      "candidate_occurrences": 21,
+      "distinct_tokens": [
+        ".c",
+        ".dll",
+        ".dylib",
+        ".exe",
+        ".hash",
+        ".ilean",
+        ".ir",
+        ".lake",
+        ".lean",
+        ".olean",
+        ".so",
+        ".trace",
+        "inspect_toolchain",
+        "lake-manifest.json",
+        "os.scandir(...)",
+        "toolchain"
+      ],
+      "dispatch_rule": "이 고정 절의 현재 이름·표·코드펜스만 검토한다. 인접 절을 묶을 때도 합집합 원소를 먼저 명시한다."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "suite": "red",
+    "id": "structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_knowledge_lean_verifier.LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input",
+    "original": "failed",
+    "final": "passed"
+  }
+]

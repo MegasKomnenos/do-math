@@ -1,0 +1,73 @@
+[
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "changed_existing_functions": [
+      "consumed_object_schema",
+      "field_schemas",
+      "produced_object_schema",
+      "producer_nodes",
+      "scoped_field_issues",
+      "written_object_schema"
+    ],
+    "unchanged_existing_functions": [
+      "code_examples",
+      "command_issues",
+      "constant_reference_issues",
+      "declared_policy_names",
+      "delivery_field_issues",
+      "diagnostic_names",
+      "diagnostic_reference_issues",
+      "documented_policies",
+      "documents",
+      "field_bindings",
+      "function_reference_issues",
+      "governance_field_issues",
+      "item_variants",
+      "operational_field_issues",
+      "parser_options",
+      "policy_issues",
+      "property_variants",
+      "result_field_issues",
+      "review_field_issues",
+      "status_field_schema",
+      "tool_field_issues",
+      "tool_options",
+      "unowned_field_references",
+      "wait_field_issues"
+    ],
+    "added_functions": [
+      "trust_field_issues"
+    ]
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "changed_existing_functions": [],
+    "unchanged_existing_functions": [
+      "assert_delivery_documents",
+      "assert_governance_documents",
+      "assert_operational_damage_rejected",
+      "assert_operational_documents",
+      "assert_result_damage_rejected",
+      "assert_result_documents",
+      "assert_review_documents",
+      "assert_tool_documents",
+      "assert_wait_documents",
+      "central_check_knowledge",
+      "context_engine",
+      "context_state",
+      "damage",
+      "is_map_entry",
+      "issue",
+      "observe_review_documents",
+      "package",
+      "prepare",
+      "publish",
+      "record_contexts",
+      "review_input_value",
+      "tool_input_value"
+    ],
+    "added_functions": [
+      "assert_trust_documents"
+    ]
+  }
+]
