@@ -1,0 +1,230 @@
+{
+  "task": "r02-fix",
+  "decision": "accepted",
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "base": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112",
+      "submitted": "60f6aab127283614d1915bffb22d8e4db3cd42153f5932ac7c1b08bc4ac5e481",
+      "common_before": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+      "base": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2",
+      "submitted": "cfe32011985ae9274507886c913207f21f57192c03bd81c46dc4c821902f4aa0",
+      "common_before": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "base": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f",
+      "submitted": "f2c3c3a5f3ad4f0f3699469406805e6344bb09bca8d9f39c8dd223e2c972f9ec",
+      "common_before": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "base": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112",
+      "submitted": "60f6aab127283614d1915bffb22d8e4db3cd42153f5932ac7c1b08bc4ac5e481",
+      "common_before": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+      "base": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2",
+      "submitted": "cfe32011985ae9274507886c913207f21f57192c03bd81c46dc4c821902f4aa0",
+      "common_before": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "base": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f",
+      "submitted": "f2c3c3a5f3ad4f0f3699469406805e6344bb09bca8d9f39c8dd223e2c972f9ec",
+      "common_before": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f"
+    }
+  ],
+  "diffs_match_task_evidence": true,
+  "runs": [
+    {
+      "edition": "red",
+      "report_sha256": "d84a5481dadae0d0bfe760daaeb21e44fa4d206e0ac8c798584f298cd2e55d06",
+      "selected": [
+        "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment"
+      ],
+      "counts": {
+        "failed": 1
+      },
+      "rows": [
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+          "outcome": "failed",
+          "seconds": 0.06300000002374873,
+          "details": [
+            "test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment (contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment) (provider='codex')\nTraceback (most recent call last):\n  File \"C:\\math\\.async\\dm\\tasks\\r02-fix\\workspace\\.claude\\skills\\do-math\\scripts\\tests\\contracts\\test_pairs.py\", line 76, in test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment\n    self.assertTrue(Path(request['prompt_path']).is_file(),\nAssertionError: False is not true : worker samples must come from the runner saved input\n",
+            "test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment (contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment) (provider='claude')\nTraceback (most recent call last):\n  File \"C:\\math\\.async\\dm\\tasks\\r02-fix\\workspace\\.claude\\skills\\do-math\\scripts\\tests\\contracts\\test_pairs.py\", line 76, in test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment\n    self.assertTrue(Path(request['prompt_path']).is_file(),\nAssertionError: False is not true : worker samples must come from the runner saved input\n"
+          ]
+        }
+      ],
+      "complete": true,
+      "successful": false,
+      "observed_exit_code_task_evidence": 1,
+      "changed_during_run": []
+    },
+    {
+      "edition": "green1",
+      "report_sha256": "6d8c20e075122e87f703e2ce97078361dfbe70bca19afdcbe1b8f3dedd44455f",
+      "selected": [
+        "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+        "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+        "contracts.test_pairs.ContractPairTests.test_scholarly_args_zero_one_and_many_reach_both_worker_commands",
+        "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+        "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+        "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration"
+      ],
+      "counts": {
+        "passed": 6
+      },
+      "rows": [
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+          "outcome": "passed",
+          "seconds": 4.485000000044238,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+          "outcome": "passed",
+          "seconds": 0.375,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_scholarly_args_zero_one_and_many_reach_both_worker_commands",
+          "outcome": "passed",
+          "seconds": 0.42199999996228144,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+          "outcome": "passed",
+          "seconds": 2.3429999999934807,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+          "outcome": "passed",
+          "seconds": 0.0,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
+          "outcome": "passed",
+          "seconds": 0.0,
+          "details": []
+        }
+      ],
+      "complete": true,
+      "successful": true,
+      "observed_exit_code_task_evidence": 0,
+      "changed_during_run": []
+    },
+    {
+      "edition": "final",
+      "report_sha256": "7d751a8bccb2abf2b79981f1f9a0e6beb7b29efbb743727c56ff5299dc9d508c",
+      "selected": [
+        "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+        "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+        "contracts.test_pairs.ContractPairTests.test_scholarly_args_zero_one_and_many_reach_both_worker_commands",
+        "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+        "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+        "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration"
+      ],
+      "counts": {
+        "passed": 6
+      },
+      "rows": [
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+          "outcome": "passed",
+          "seconds": 5.922000000020489,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped",
+          "outcome": "passed",
+          "seconds": 0.40600000001722947,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_scholarly_args_zero_one_and_many_reach_both_worker_commands",
+          "outcome": "passed",
+          "seconds": 0.5309999999590218,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+          "outcome": "passed",
+          "seconds": 2.922000000020489,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+          "outcome": "passed",
+          "seconds": 0.0,
+          "details": []
+        },
+        {
+          "id": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
+          "outcome": "passed",
+          "seconds": 0.0,
+          "details": []
+        }
+      ],
+      "complete": true,
+      "successful": true,
+      "observed_exit_code_task_evidence": 0,
+      "changed_during_run": []
+    }
+  ],
+  "final_python_sha_count": 875,
+  "final_python_mismatches": [],
+  "mirror_bytes": [
+    {
+      "path": "contracts/pairs.py",
+      "sha256": "cfe32011985ae9274507886c913207f21f57192c03bd81c46dc4c821902f4aa0",
+      "equal": true
+    },
+    {
+      "path": "contracts/test_pairs.py",
+      "sha256": "f2c3c3a5f3ad4f0f3699469406805e6344bb09bca8d9f39c8dd223e2c972f9ec",
+      "equal": true
+    },
+    {
+      "path": ".timings.json",
+      "sha256": "60f6aab127283614d1915bffb22d8e4db3cd42153f5932ac7c1b08bc4ac5e481",
+      "equal": true
+    }
+  ],
+  "cache_changed_top_level_keys": [
+    "contracts.test_pairs"
+  ],
+  "manager_product_test_runs": 0,
+  "limits": [
+    "Exit codes are task-recorded observations; manager directly checked original reports and submitted source hashes.",
+    "No live model/Windows Job/server was exercised by these contract runs.",
+    "G4-G8 final gates and other requirement families remain open."
+  ],
+  "integration": {
+    "task": "r02-fix",
+    "files": [
+      ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+      ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      ".claude/skills/do-math/scripts/tests/.timings.json",
+      ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+      ".agents/skills/do-math/scripts/tests/.timings.json",
+      ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py"
+    ]
+  },
+  "integrated_changes_match_submitted": true,
+  "common_mirror_check": {
+    "command": "python -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check --target .agents",
+    "exit_code": 0,
+    "files": 1336,
+    "drift": false
+  }
+}

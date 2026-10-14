@@ -38,46 +38,91 @@ class Pair:
     written: Callable[[Any], set] = lambda value: set(value)
 
 
-def _worker_request_samples(provider):
-    """The worker request ``ModelRunner`` writes (``model_call.worker_request_fields``) on each assignment branch."""
+def worker_request_run(root, provider, *, identity, limits, control, scholarly, only,
+                       evidence_name='evidence', scholarly_args=None):
+    """One real runner/store/adapter/worker/collector call, observed at the external Job and CLI fakes.
+
+    All files remain under ``root`` until its caller finishes checking them.
+    The fixture inputs are returned separately from the requests read from disk.
+    """
+    from copy import deepcopy
+    import json
+    import sys
+    from do_math.control_transport import ControlTransport
+    from do_math.execution_profiles import build_profiles, prepare_prompt, prompt_seal, with_host_resources
     from support.entry import entry
-    _entry = entry()
+    from support.fakes.clock import FakeClock
+    from support.provider_inputs import PROFILE_CONFIG, host_capacity_fixture
+    from support.provider_runs import ProviderJobs, dispatched, model_runner
+    workspace, evidence = root / 'workspace', root / evidence_name
+    workspace.mkdir(parents=True, exist_ok=True)
+    clock, publications = FakeClock(), []
+    jobs = ProviderJobs(clock=clock)
+    model = 'gpt-6-astra' if provider == 'codex' else 'claude:claude-sonnet-5'
+    server_path = root / 'server.py'
+    server_path.write_text('# CLI fixture; this server is never started.\n', encoding='utf-8')
+    server = {'command': sys.executable,
+              'args': [str(server_path)] if scholarly_args is None else list(scholarly_args)} if scholarly else None
+    profile, ticket, binding, resource_limits = None, None, None, None
+    execution_id = 'EX-pair' if identity else None
+    prompt, options = 'Return an empty object. 한글', {}
+    if identity:
+        config = deepcopy(PROFILE_CONFIG)
+        config.update(tier_models={tier: model for tier in ('high', 'medium', 'low')},
+                      session_limits={'work': {model: 3}}, scholarly_enabled=scholarly,
+                      scholarly_server=server, claude_only_assigned_model=only)
+        profiles = build_profiles(config, host=entry().ports.host)
+        profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'research_work')
+        if limits:
+            _, selected, constraint = host_capacity_fixture()
+            demands = selected['research_work']['host_resources']['demands']
+            profile = with_host_resources(profile, constraint, demands)
+            resource_limits = {k: demands[k] for k in ('memory_bytes', 'cpu_rate_basis_points')}
+
+            def publish(started):
+                publications.append({'started': deepcopy(started), 'resumed': jobs.launched[0].resumed,
+                                     'cli_calls': len(jobs.cli.calls)})
+            options['on_started'] = publish
+        prompt = prepare_prompt(prompt, profile)
+        ticket = dispatched(execution_id, profile, jobs, clock)
+        options.update(execution_id=execution_id, profile=profile, launch_ticket=ticket,
+                       input_seal=prompt_seal(prompt))
+    else:
+        options.update(scholarly_server=server, claude_only_assigned_model=only)
+    if control:
+        binding = ControlTransport(root / 'control', clock=clock).issue(execution_id, 'GR-pair', workspace=workspace)
+        options['control_binding'] = binding
+    schema, effort = {'type': 'object'}, profile['ai']['effort'] if identity else 'medium'
+    result = model_runner(root, jobs, clock).run(
+        prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=evidence,
+        model=model, effort=effort, timeout_seconds=600, **options)
+    # Pair.samples must never silently return an accepted request from a failed run.
+    assert result['status'] == 'completed', result
+    assert len(jobs.launched) == len(jobs.cli.calls) == 1
+    assert all(job.done and job.closed for job in jobs.launched)
+    request_path, staged_path = evidence / 'request.json', Path(jobs.launched[0].argv[2])
+    return {'request': json.loads(request_path.read_bytes()), 'staged': json.loads(staged_path.read_bytes()),
+            'request_path': request_path, 'staged_path': staged_path, 'result': result, 'jobs': jobs,
+            'publications': publications, 'profile': profile, 'ticket': ticket, 'binding': binding,
+            'resource_limits': resource_limits, 'server': server, 'prompt': prompt, 'schema': schema,
+            'model': model, 'effort': effort, 'execution_id': execution_id, 'only': only}
+
+
+def worker_request_runs(root, provider):
+    """The original twenty legal settings, each through the real producer and both worker loads."""
+    for identity, limits, control, scholarly, only in product((False, True), repeat=5):
+        if (limits or control) and not identity:
+            continue
+        branch = ','.join(name for name, on in (('schema', not control), ('identity', identity), ('limits', limits),
+                          ('control', control), ('scholarly', scholarly), ('claude_only', only)) if on) or 'bare'
+        yield branch, worker_request_run(root, provider, identity=identity, limits=limits, control=control,
+                                        scholarly=scholarly, only=only, evidence_name=branch)
+
+
+def _worker_request_samples(provider):
+    """Requests read from the files ``ModelRunner.run`` actually stored on every legal assignment branch."""
     def samples(root):
-        from copy import deepcopy
-        from do_math.claude_adapter import ADAPTERS
-        from do_math.configuration import DEFAULT_CONFIG
-        from do_math.control_transport import ControlTransport
-        from do_math.execution_profiles import build_profiles, profile_ref
-        from do_math.model_call import worker_request_fields
-        from support.fakes.clock import FakeClock
-        workspace, evidence = root / 'workspace', root / 'evidence'
-        workspace.mkdir()
-        options = ADAPTERS[provider](str(root / (provider + '.exe')), jobs=_entry.ports.jobs, clock=_entry.ports.clock).worker_options(evidence)
-        profile = next(iter(build_profiles(deepcopy(DEFAULT_CONFIG), host=_entry.ports.host)['execution_profiles'].values()))
-        reference, execution_id = profile_ref(profile), 'EX-01M3HM0X0000000000000000AB'
-        binding = ControlTransport(root / 'control', clock=FakeClock()).issue(execution_id, 'GR-pair',
-                                                                                workspace=workspace)
-        # ModelRunner gives the CLI a schema file exactly when the call is unbound, and passes a configured
-        # "claude:<name>" model to the CLI as <name>.
-        cli_model = DEFAULT_CONFIG['tier_models']['high'] if provider == 'codex' else 'claude:claude-sonnet-5'.removeprefix('claude:')
-        rows = []
-        for bound, limits, control, scholarly, only in product((False, True), repeat=5):
-            schema = not control
-            if (limits or control) and not bound:
-                continue  # the runner pins limits and a control binding only to an identified execution
-            branch = ','.join(name for name, on in (('schema', schema), ('identity', bound), ('limits', limits),
-                              ('control', control), ('scholarly', scholarly), ('claude_only', only)) if on) or 'bare'
-            rows.append((branch, worker_request_fields(
-                options, prompt_path=evidence / 'input.txt', workspace=workspace, evidence_dir=evidence,
-                cli_model=cli_model, effort='high', timeout_seconds=600.0,
-                schema_path=evidence / 'output.schema.json' if schema else None,
-                execution_id=execution_id if bound else None, reference=reference if bound else None,
-                resource_limits={'memory_bytes': 1 << 30, 'cpu_rate_basis_points': 5000} if limits else None,
-                control_binding=binding if control else None,
-                scholarly_server={'command': str(root / 'python.exe'), 'args': [str(root / 'server.py')]}
-                if scholarly else None,
-                claude_only_assigned_model=only)))
-        return rows
+        return [(branch, run['request']) for branch, run in worker_request_runs(root, provider)]
     return samples
 
 

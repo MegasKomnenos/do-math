@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 from contracts.pairs import (PAIRS, TEXT_RULE_ID_SAMPLES, accepted_condition, accepted_rule_ids, enumerated_pointers,
-                             stored_rule_id_errors)
+                             stored_rule_id_errors, worker_request_run, worker_request_runs)
 
 
 class ContractPairTests(unittest.TestCase):
@@ -46,6 +46,10 @@ class ContractPairTests(unittest.TestCase):
                     self.assertEqual(collected['final']['raw'], b'Draft submitted.')
 
     def test_every_producer_branch_is_received_and_every_named_field_is_produced(self):
+        """All pairs, including forty real worker requests and two sets of eight results (~4.5s locally).
+
+        Storing and receiving real producer values is necessary for the reverse field contract.
+        """
         self.assertGreater(len(PAIRS), 0)
         for pair in PAIRS:
             with self.subTest(pair=pair.name), tempfile.TemporaryDirectory() as directory:
@@ -65,6 +69,11 @@ class ContractPairTests(unittest.TestCase):
 
 
     def test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment(self):
+        """Twenty real runs per provider preserve assignments, snapshots and CLI tool/lock semantics.
+
+        The runner must store and collect each branch; pure request dictionaries cannot establish this contract.
+        Forty file/worker/CLI/collector runs took ~2.4s locally, above the pure contract budget.
+        """
         from do_math.claude_adapter import ADAPTERS
         prefix = 'worker request ('
         pairs = {pair.name[len(prefix):-1]: pair for pair in PAIRS if pair.name.startswith(prefix)}
@@ -72,21 +81,209 @@ class ContractPairTests(unittest.TestCase):
         for provider, pair in pairs.items():
             with self.subTest(provider=provider), tempfile.TemporaryDirectory() as directory:
                 assignments = {}
-                for label, request in pair.samples(Path(directory)):
+                for label, run in worker_request_runs(Path(directory), provider):
+                    with self.subTest(branch=label):
+                        self.assert_worker_run(provider, run)
+                    request = run['request']
                     flags = label.split(',') if label != 'bare' else []
                     only = 'claude_only' in flags
                     key = tuple(flag for flag in flags if flag != 'claude_only')
                     choices = assignments.setdefault(key, {})
                     self.assertNotIn(only, choices, (provider, label))
-                    choices[only] = request
-                self.assertTrue(assignments, 'no worker assignments were examined')
+                    choices[only] = run
+                self.assertEqual(len(assignments), 10, 'twenty legal inputs per provider, paired by lock')
                 for assignment, choices in assignments.items():
                     with self.subTest(assignment=assignment):
                         self.assertEqual(set(choices), {False, True})
-                        expected = deepcopy(choices[False])
+                        unlocked, locked = choices[False], choices[True]
+                        # Exact identity/ref/binding checks above precede this comparison.
+                        # Lock changes a pinned profile's edition; it must not be normalized as an equal ref.
+                        if unlocked['profile'] is not None:
+                            self.assertNotEqual(unlocked['request']['profile_ref'], locked['request']['profile_ref'])
+                        expected = self.request_without_run_paths(unlocked)
                         if provider == 'claude':
                             expected['claude_only_assigned_model'] = True
-                        self.assertEqual(choices[True], expected)
+                        self.assertEqual(self.request_without_run_paths(locked), expected)
+                        if provider == 'codex':
+                            # The only different CLI paths are the final file and private schema snapshot.
+                            commands = []
+                            for run in (unlocked, locked):
+                                command = list(run['jobs'].cli.calls[0]['command'])
+                                for flag in ('--output-last-message', '--output-schema'):
+                                    if flag in command:
+                                        command[command.index(flag) + 1] = flag + '-per-run-path'
+                                commands.append(command)
+                            self.assertEqual(*commands, 'Codex lock has no CLI argv effect')
+                            self.assertEqual(unlocked['jobs'].cli.calls[0]['stdin'], locked['jobs'].cli.calls[0]['stdin'])
+
+    @staticmethod
+    def request_without_run_paths(run):
+        """Remove only checked profile refs and per-call evidence paths for the lock effect comparison.
+
+        Workspace, tools and control bindings remain exact (the runs share these inputs).
+        """
+        request = deepcopy(run['request'])
+        request.pop('profile_ref', None)
+        for key in ('prompt_path', 'stdout_path', 'stderr_path', 'status_path', 'final_path', 'output_schema_path'):
+            if key in request:
+                request[key] = key + '-per-run-path'
+        return request
+
+    def assert_worker_run(self, provider, run):
+        """Check fixture inputs against stored files and the existing external fakes while paths still exist."""
+        from do_math import claude_worker, codex_worker
+        from do_math.control_server import mcp_server_config
+        from do_math.execution_profiles import profile_ref, prompt_seal
+        from do_math.provider_final import output_contract
+        worker = codex_worker if provider == 'codex' else claude_worker
+        request, staged, jobs = run['request'], run['staged'], run['jobs']
+        self.assertTrue(Path(request['prompt_path']).is_file(),
+                        'worker samples must come from the runner saved input')
+        self.assertEqual(worker.load_request(run['request_path']), request)
+        self.assertEqual(worker.load_request(run['staged_path']), staged)
+        self.assertEqual(len(jobs.launched), 1)
+        job = jobs.launched[0]
+        self.assertEqual(Path(job.argv[1]).name, provider + '_worker.py')
+        self.assertEqual(job.argv[2], str(run['staged_path']))
+        self.assertTrue(job.resumed and job.done and job.closed)
+        self.assertEqual(job.exit_code, 0)
+        self.assertEqual(job.terminations, 0)
+        self.assertEqual(job.resource_limits, run['resource_limits'])
+        self.assertEqual(len(jobs.cli.calls), 1)
+        call = jobs.cli.calls[0]
+        command = call['command']
+        self.assertFalse(call['shell'])
+        self.assertEqual(call['cwd'], request['cwd'])
+        self.assertEqual(command[0], request[provider + '_path'])
+        self.assertEqual(command[command.index('--model') + 1], run['model'].removeprefix('claude:'))
+        self.assertEqual(request['model'], run['model'].removeprefix('claude:'))
+        self.assertEqual(request['effort'], run['effort'])
+        self.assertEqual(request['max_runtime_seconds'], 600)
+        prompt_raw = run['prompt'].encode('utf-8')
+        self.assertEqual(Path(request['prompt_path']).read_bytes(), prompt_raw)
+        self.assertEqual(Path(staged['prompt_path']).read_bytes(), prompt_raw)
+        self.assertEqual(call['stdin'], prompt_raw)
+        self.assertNotEqual(request['prompt_path'], staged['prompt_path'])
+        expected_staged = deepcopy(request)
+        expected_staged['prompt_path'] = staged['prompt_path']
+        profile = run['profile']
+        if profile is None:
+            for key in ('execution_id', 'profile_ref', 'resource_limits', 'control_binding'):
+                self.assertNotIn(key, request)
+            self.assertIsNone(run['ticket'])
+        else:
+            self.assertEqual(profile['role'], 'research_work')
+            self.assertEqual(profile['actor_kind'], 'ai')
+            self.assertEqual(profile['ai']['model'], run['model'])
+            self.assertEqual(profile['ai']['effort'], run['effort'])
+            self.assertEqual(profile['ai']['scholarly_server'], run['server'])
+            self.assertEqual(profile['ai']['claude_only_assigned_model'], run['only'])
+            self.assertEqual(request['execution_id'], run['execution_id'])
+            self.assertEqual(request['profile_ref'], profile_ref(profile))
+            self.assertEqual(job.name, run['ticket']['job_name'])
+        if run['resource_limits'] is None:
+            self.assertNotIn('resource_limits', request)
+            self.assertEqual(run['publications'], [])
+        else:
+            self.assertEqual(request['resource_limits'], run['resource_limits'])
+            self.assertEqual(len(run['publications']), 1)
+            publication = run['publications'][0]
+            self.assertFalse(publication['resumed'])
+            self.assertEqual(publication['cli_calls'], 0)
+            self.assertEqual(publication['started']['execution_id'], run['execution_id'])
+            self.assertEqual(publication['started']['profile_ref'], profile_ref(profile))
+            self.assertEqual(publication['started']['host_resources']['limits'], run['resource_limits'])
+            self.assertEqual(publication['started'], run['result']['execution']['started'])
+        if run['binding'] is None:
+            self.assertNotIn('control_binding', request)
+            self.assertIn('output_schema_path', request)
+            expected_schema = output_contract(provider, run['schema'])
+            self.assertEqual(json.loads(Path(request['output_schema_path']).read_bytes()), expected_schema)
+            self.assertEqual(Path(staged['output_schema_path']).read_bytes(),
+                             Path(request['output_schema_path']).read_bytes())
+            self.assertNotEqual(request['output_schema_path'], staged['output_schema_path'])
+            expected_staged['output_schema_path'] = staged['output_schema_path']
+            self.assertEqual(json.loads((run['request_path'].parent / 'output.schema.json').read_bytes()), run['schema'])
+            if provider == 'codex':
+                self.assertEqual(command[command.index('--output-schema') + 1], staged['output_schema_path'])
+            else:
+                self.assertEqual(json.loads(command[command.index('--json-schema') + 1]), run['schema'])
+        else:
+            self.assertEqual(request['control_binding'], run['binding'])
+            self.assertEqual(request['control_binding']['execution_id'], run['execution_id'])
+            self.assertEqual(request['control_binding']['workspace'], request['cwd'])
+            self.assertNotIn('output_schema_path', request)
+            self.assertFalse((run['request_path'].parent / 'output.schema.json').exists())
+            self.assertNotIn('--output-schema', command)
+            self.assertNotIn('--json-schema', command)
+            self.assertEqual(run['result']['collection'], 'provider_evidence_only')
+        self.assertEqual(staged, expected_staged, 'only prompt/schema paths change during staging')
+        server = run['server']
+        if server is None:
+            self.assertNotIn('scholarly_server', request)
+        else:
+            self.assertEqual(request['scholarly_server'], server)
+        if provider == 'codex':
+            config = dict(command[i + 1].split('=', 1) for i, arg in enumerate(command) if arg == '--config')
+            self.assertEqual(json.loads(config['model_reasoning_effort']), run['effort'])
+            self.assertNotIn('claude_only_assigned_model', request)
+            servers = {name: {key: json.loads(config[f'mcp_servers.{name}.{key}']) for key in ('command', 'args')}
+                       for name in ('execution_control', 'scholarly') if f'mcp_servers.{name}.command' in config}
+        else:
+            self.assertEqual(command[command.index('--effort') + 1], run['effort'])
+            self.assertEqual('claude_only_assigned_model' in request, run['only'])
+            if run['only']:
+                self.assertIs(request['claude_only_assigned_model'], True)
+            settings = json.loads(command[command.index('--settings') + 1])
+            expected_settings = {'disableAllHooks': True, 'autoMemoryEnabled': False}
+            if run['only']:
+                model = run['model'].removeprefix('claude:')
+                expected_settings.update(availableModels=[model], fallbackModel=[], switchModelsOnFlag=False,
+                                         env={'ANTHROPIC_DEFAULT_HAIKU_MODEL': model,
+                                              'CLAUDE_CODE_SUBAGENT_MODEL': model,
+                                              'CLAUDE_CODE_SUBAGENT_MODEL_FORCE': '1'})
+            self.assertEqual(settings, expected_settings)
+            servers = json.loads(command[command.index('--mcp-config') + 1])['mcpServers']
+        expected_servers = {}
+        if run['binding'] is not None:
+            expected_servers['execution_control'] = mcp_server_config(run['binding'])
+        if server is not None:
+            expected_servers['scholarly'] = {**server, 'args': [*server['args'], '--data-dir',
+                                                              str(Path(request['cwd']) / 'scholarly-data')]}
+        self.assertEqual(servers, expected_servers)
+        result = run['result']
+        self.assertEqual(result['status'], 'completed')
+        collected = result['execution']['collect']
+        self.assertEqual(collected['result'], 'output_collected')
+        self.assertEqual(collected['reasons'], [])
+        self.assertTrue(collected['termination_barrier']['confirmed'])
+        status = json.loads(Path(request['status_path']).read_bytes())
+        self.assertEqual(status['state'], 'exited')
+        self.assertEqual(status['cli_exit_code'], 0)
+        self.assertEqual(status['request_sha256'], hashlib.sha256(run['staged_path'].read_bytes()).hexdigest())
+        self.assertEqual(status['stdin_sha256'], prompt_seal(run['prompt'])['sha256'])
+        self.assertEqual(status['argv_sha256'], hashlib.sha256('\0'.join(command).encode('utf-8')).hexdigest())
+        self.assertEqual(status['schema_sha256'], hashlib.sha256(Path(staged['output_schema_path']).read_bytes()).hexdigest()
+                         if 'output_schema_path' in staged else None)
+        for key in ('execution_id', 'profile_ref'):
+            self.assertEqual(key in status, profile is not None)
+            if profile is not None:
+                self.assertEqual(status[key], request[key])
+        self.assertEqual(collected['source_request']['raw'], run['staged_path'].read_bytes())
+
+    def test_scholarly_args_zero_one_and_many_reach_both_worker_commands(self):
+        """Six stored calls (~0.4s locally) are needed to check ordered args at both actual worker CLI seams."""
+        for provider in ('codex', 'claude'):
+            with self.subTest(provider=provider), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                absolute_server = str(root / 'server.py')
+                for index, args in enumerate(([], [absolute_server], [absolute_server, '--flag'])):
+                    with self.subTest(args=args):
+                        run = worker_request_run(root, provider, identity=True, limits=True, control=True,
+                                                 scholarly=True, only=True, scholarly_args=args,
+                                                 evidence_name='args-' + str(index))
+                        self.assertEqual(run['server']['args'], args)
+                        self.assert_worker_run(provider, run)
 
 
 class KnownPairDefectTests(unittest.TestCase):

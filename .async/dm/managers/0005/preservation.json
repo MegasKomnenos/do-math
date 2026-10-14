@@ -1,0 +1,135 @@
+{
+  "archive": "r02-fix-result.zip",
+  "sha256": "70c544a7efe9a24555ff42b0849ae95ec265229a7ff2e47867e36a164e1c96db",
+  "files": [
+    {
+      "entry": "task/objective.md",
+      "sha256": "abc977685c063727335c1383ea05d0b1d0756081bc1847cb65007e07ef3356de"
+    },
+    {
+      "entry": "task/task.json",
+      "sha256": "17e8240382a3ec81f3b55bbf4962f5c4ed140800315988d995b248b8df624648"
+    },
+    {
+      "entry": "task/report.json",
+      "sha256": "2f8670047080e3368393882855cd81ec1c3a9b7bd0ba2205d7993a84d09f4a8a"
+    },
+    {
+      "entry": "task/integration.json",
+      "sha256": "eb3f26fd95f617448604655c2f1aebb90917df4316a4bef7ec9967c690c8b90d"
+    },
+    {
+      "entry": "task/evidence/verification.json",
+      "sha256": "267cf2acc05024741719b61382d4edf1bf03fde71f31c5a128ed65c4cce9d7cb"
+    },
+    {
+      "entry": "task/evidence/branch-assertion-map.json",
+      "sha256": "4886f3259a5c937eb90dd7dd68f9f23c017f748f525c4604827dffa7f0006e31"
+    },
+    {
+      "entry": "task/evidence/conclusion.md",
+      "sha256": "e794f1491fe5ab281cc1ea3d254564c4c30664c196e6c3c38315c167c5d3c55a"
+    },
+    {
+      "entry": "task/evidence/pairs.py.diff",
+      "sha256": "473c3518420ed03056bde17fd4dc946bd440a636880f606912bc9e4b1cae566f"
+    },
+    {
+      "entry": "task/evidence/test_pairs.py.diff",
+      "sha256": "2187f72f85187a171c3a683bd2ba2940218af31dac43409ecff0b2b489a7f0b0"
+    },
+    {
+      "entry": "task/evidence/red-test_pairs.py",
+      "sha256": "22b5c989c8ee1f3627d2cd5a19e5c5d727fceb40201cf29d5f78f0a7a90c0c03"
+    },
+    {
+      "entry": "task/evidence/red/report.json",
+      "sha256": "d84a5481dadae0d0bfe760daaeb21e44fa4d206e0ac8c798584f298cd2e55d06"
+    },
+    {
+      "entry": "task/evidence/red/contracts/result.json",
+      "sha256": "94cab3bc59561a98462481bbba32839e8eb8f79090618fa2a87e9288cbda3010"
+    },
+    {
+      "entry": "task/evidence/green1/report.json",
+      "sha256": "6d8c20e075122e87f703e2ce97078361dfbe70bca19afdcbe1b8f3dedd44455f"
+    },
+    {
+      "entry": "task/evidence/green1/contracts/result.json",
+      "sha256": "76bb2c8fb9cb63d7443831201d99971e827b0ab6742635b981ae3e68ef8ae54e"
+    },
+    {
+      "entry": "task/evidence/final/report.json",
+      "sha256": "7d751a8bccb2abf2b79981f1f9a0e6beb7b29efbb743727c56ff5299dc9d508c"
+    },
+    {
+      "entry": "task/evidence/final/contracts/result.json",
+      "sha256": "c59adaba729eb39e58211c51be6ff2a09cd262a05038ab9f6468eebe9e49dcad"
+    },
+    {
+      "entry": "base/.agents/skills/do-math/scripts/tests/.timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "workspace/.agents/skills/do-math/scripts/tests/.timings.json",
+      "sha256": "60f6aab127283614d1915bffb22d8e4db3cd42153f5932ac7c1b08bc4ac5e481"
+    },
+    {
+      "entry": "base/.agents/skills/do-math/scripts/tests/contracts/pairs.py",
+      "sha256": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2"
+    },
+    {
+      "entry": "workspace/.agents/skills/do-math/scripts/tests/contracts/pairs.py",
+      "sha256": "cfe32011985ae9274507886c913207f21f57192c03bd81c46dc4c821902f4aa0"
+    },
+    {
+      "entry": "base/.agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "sha256": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f"
+    },
+    {
+      "entry": "workspace/.agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "sha256": "f2c3c3a5f3ad4f0f3699469406805e6344bb09bca8d9f39c8dd223e2c972f9ec"
+    },
+    {
+      "entry": "base/.claude/skills/do-math/scripts/tests/.timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "workspace/.claude/skills/do-math/scripts/tests/.timings.json",
+      "sha256": "60f6aab127283614d1915bffb22d8e4db3cd42153f5932ac7c1b08bc4ac5e481"
+    },
+    {
+      "entry": "base/.claude/skills/do-math/scripts/tests/contracts/pairs.py",
+      "sha256": "ef40b92197a7e69fbc34e32caa9f3d1065fbd9291774936ebefb1c61dfbb21e2"
+    },
+    {
+      "entry": "workspace/.claude/skills/do-math/scripts/tests/contracts/pairs.py",
+      "sha256": "cfe32011985ae9274507886c913207f21f57192c03bd81c46dc4c821902f4aa0"
+    },
+    {
+      "entry": "base/.claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "sha256": "4278dba4d06030deb79d7753ce84504e152f720cdd943d25374140fbcd17a16f"
+    },
+    {
+      "entry": "workspace/.claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+      "sha256": "f2c3c3a5f3ad4f0f3699469406805e6344bb09bca8d9f39c8dd223e2c972f9ec"
+    },
+    {
+      "entry": "manager/review.md",
+      "sha256": "a700f648fcf376c44fa2b4edd32208fcb7b750d3cee37ef550718e8d9488bf72"
+    },
+    {
+      "entry": "manager/source-review.json",
+      "sha256": "1071e7f52618fcd03f1563c9d2b04cca485f11c636587aca1111f4dd15e99610"
+    },
+    {
+      "entry": "manager/pairs.py.diff",
+      "sha256": "473c3518420ed03056bde17fd4dc946bd440a636880f606912bc9e4b1cae566f"
+    },
+    {
+      "entry": "manager/test_pairs.py.diff",
+      "sha256": "2187f72f85187a171c3a683bd2ba2940218af31dac43409ecff0b2b489a7f0b0"
+    }
+  ],
+  "scope": "R02-fix task/report/diffs/original official reports, six base/submitted paths, manager decision; session logs and full workspace remain local."
+}
