@@ -17,6 +17,22 @@ INSTANCE = ('--repository', '.', '--instance', 'RI-test')
 
 
 class RequestModeTests(unittest.TestCase):
+    def test_query_json_arguments_preserve_valid_modes_and_refuse_incompatible_combinations(self):
+        parser = build_parser()
+        def arguments(**payload):
+            return _json_arguments(parser, {'schema_version': 5, 'command': 'query',
+                'payload': {'repository': '.', 'instance': 'RI-test', **payload}})
+        self.assertFalse(arguments().files)
+        self.assertTrue(arguments(files=True, prefix='runtime/').files)
+        self.assertEqual(arguments(related_to='KN-test', direction='incoming').direction, 'incoming')
+        for payload in ({'related_to': 'KN-test', 'direction': 'sideways'},
+                        {'files': True, 'kind': 'grant'}, {'files': True, 'direction': 'both'},
+                        {'prefix': 'runtime/'}, {'direction': 'incoming'}):
+            with self.subTest(payload=payload), self.assertRaisesRegex(CliInputError, 'invalid command payload'):
+                arguments(**payload)
+        with self.assertRaisesRegex(CliInputError, "argument --direction: invalid choice: 'sideways'"):
+            parser.parse_args(['query', *INSTANCE, '--related-to', 'KN-test', '--direction', 'sideways'])
+
     def test_retry_action_is_a_distinct_request_mode(self):
         parser = build_parser()
         retry = parser.parse_args(('request', *INSTANCE, '--retry-action', 'AC-held'))

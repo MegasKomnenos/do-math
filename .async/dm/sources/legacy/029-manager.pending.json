@@ -1,0 +1,143 @@
+{
+  "next": "030",
+  "decision": "029 doc-names의 A1~A5를 승인한다. 현재2675소스·허용22변경·양쪽동일183선택/고유passed/exit0·각875Python과 기존38문서ID/시험메서드/parser선언 보존을 실제 파일에 대조했다. 여덟028 발견은 문구와 실제정의·정확반례/현재직접소비로 해소됐으며 전체G로 확대하지 않는다. F2의 판본/외부결정/관문 한계를 유지한다. 다음030은 기존 R02/R07/R18의 구체적 미종결 질문을 세 독립 읽기로 판정한다. 공유파일·캐시·미완성 결과에 대한 의존이 없어 병렬가능하며, 완료된 문서/기존 후보의 재감사는 피한다. 각 결과의 실제 공백만 후속 수리·연결검증으로 묶는다. manager는 제품을 수정하지 않고 검수된20제품경로와 관리인계/기억을 마감한다.",
+  "reports": [
+    {
+      "task": "doc-names",
+      "state": "read",
+      "detail": "report 전문을 읽고 형식검사exit0 후 A1~A5의 실제 자료를 검수했다. 초기2실패/중간성공/관찰자오류를 최종c2/m2 성공과 구분한다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/report.json",
+        "run:phases/029/manager-evidence/report-check.stdout",
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "029/doc-names/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "여덟원finding의 실제정의/문구/반례와 양쪽정확passed ID, 기존단언 보존을 확인해 지정남김을 종결한다. 전체 자연어/독해 인증으로 확대하지 않는다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json"
+      ]
+    },
+    {
+      "item": "029/doc-names/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:context.md#C12",
+        "run:plan.md"
+      ],
+      "reason": "새 parser/문서판본의 관련성공은 과거전체설치/실호출동등성이나 모델독해를 보증하지 않는다. 불변하위성질만 재사용하고 L01/byte·symlink·G4~G8의 미충족 책임을 보존한다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "029 A1~A5와 독립 원자료/현재판 검수 사실을 추가했다. 기존 역사 실패와 전체G 미충족은 유지한다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "완료된029 구현 배정 문단을030 세 독립 읽기/무공유실행 규칙으로 교체했다. 공식 검사 자원 조건은 유지한다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "030 세 task에도 사용자 지정 gpt-6.1-sol/high를 명시했다. manager/제품 호출 설정은 그대로다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "R02/R07/R18과 관련 과거slice의 한정 후속 판단을 지정하고 다른 의미·PR 남김을 유지했다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "여덟 문구/검사 issue의 지정 종결과 실제 parser/schema 소비·부재 반려를 반영했다. L01/instance 남김을 유지한다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "부분183passed의 한계와 setup/probe 변경 뒤 전체판본 재사용 제한, 최종 관문을 유지했다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "20비캐시 제품 마감과 원task129파일 보존, 바뀐설치/prompt와 불변하위성질의 한정 재사용을 기록했다.",
+      "evidence": [
+        "run:phases/029/manager-evidence/verification.json",
+        "run:phases/029/manager-evidence/review.md",
+        "run:phases/029/manager-evidence/common-docs.diff"
+      ]
+    }
+  ],
+  "plan_update": "029 여덟수리 검수를 기록하고 다음을030 R02/R07/R18 세 고정판 독립판정으로 교체했다. 원래 G/외부결정/나머지의미질문은 유지하며 판정결과의 확인된 공백만 후속 구현·미러·실제연결로 묶는다. 최종review나 종료를 배정하지 않았다.",
+  "seam_updates": [],
+  "completion": null
+}

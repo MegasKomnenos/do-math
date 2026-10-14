@@ -205,12 +205,8 @@ def install(root):
     return [lake, "--dir", str(project), "env", str(bin_dir / "lean.exe")]
 
 
-def main(argv=None, *, ports=None, environment=None):
-    import os
-    from do_math.wiring import real_ports
-    environment = dict(os.environ) if environment is None else environment
-    ports = real_ports(environment=environment) if ports is None else ports
-    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
+def build_parser():
+    """The setup command definition, available without installing a toolchain."""
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--inspect-only', action='store_true', help='observe an installed command without installing or recording it')
@@ -225,6 +221,11 @@ def main(argv=None, *, ports=None, environment=None):
     parser.add_argument('--records-dir', type=Path, help='toolchain record directory; default: <toolchain root>/records')
     parser.add_argument('--evidence-dir', type=Path, help='parent directory for representative compile evidence')
     parser.add_argument('--trust-file', type=Path, help='write a new registration request for the resulting record baseline')
+    return parser
+
+
+def parse_arguments(argv=None):
+    parser = build_parser()
     args = parser.parse_args(argv)
     installing = not (args.inspect_only or args.verify_only or args.rerecord or args.check_contents)
     if args.command_file and installing:
@@ -235,6 +236,17 @@ def main(argv=None, *, ports=None, environment=None):
         parser.error('--check-contents runs no compile and writes no registration request')
     if args.record and not (args.rerecord or args.check_contents):
         parser.error('--record names the record for --rerecord or --check-contents')
+    return args
+
+
+def main(argv=None, *, ports=None, environment=None):
+    args = parse_arguments(argv)
+    import os
+    from do_math.wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
+    installing = not (args.inspect_only or args.verify_only or args.rerecord or args.check_contents)
     root = toolchain_root()
     try:
         if installing:

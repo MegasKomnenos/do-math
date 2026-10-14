@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-10-14T17:03:56.661972+00:00",
+  "source_repo": "C:\\math",
+  "records": "C:\\math\\.async\\dm",
+  "engine": "C:\\math\\services\\async-development",
+  "legacy_records": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+  "interruption_record": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\runtime\\operator-restart-2026-10-15.json",
+  "last_completed_manager": "028",
+  "completed_task_pending_acceptance": "029/doc-names",
+  "legacy_029_manager": "interrupted; manager.pending.json is a draft, not published acceptance",
+  "legacy_030": "prepared objectives, no task execution",
+  "source_count": 2681,
+  "snapshot_bytes": 230574500,
+  "accepted_imported": false
+}

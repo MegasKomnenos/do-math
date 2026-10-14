@@ -143,7 +143,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 |---|---|---|
 | 활동 | `ready`, `working`, `waiting`, `finished` | 배정 가능, 수행 중, 조건 대기, 활동 종결을 구별한다. `finished`의 결과가 미해결일 수 있다 |
 | 실행 | `queued`, `starting`, `running`, `stopping`, `ended` | 준비부터 종료까지의 실행 수명이다. 종료 종류·산출 처분은 별도 필드다 |
-| 외부 operation | `prepared`, `running`, `confirmed`, `failed`, `unknown`, `cancelled` | 전송·결과 대조의 상태다. `confirmed`에서도 `succeeded`를 별도로 확인한다 |
+| 외부 operation | `prepared`, `confirmed`, `failed`, `unknown`, `cancelled` | 전송·결과 대조의 상태다. `confirmed`에서도 `succeeded`를 별도로 확인한다 |
 
 `unresolved`는 의미 판정이나 활동 결과에 나타날 수 있으며 활동의 생명주기 값이 아니다. 실행의 `output_accepted`도 수학적 성공이나 과제 완료를 대신하지 않는다.
 
@@ -484,7 +484,7 @@ source --file PATH [--name FILE_NAME]
 
 ### `knowledge`
 
-`knowledge`는 다섯 operation을 지원한다. `closed`·`completed` 인스턴스에는 어느 operation도 적용하지 않고 거부된 제어로 기록한다.
+`knowledge`는 `import`, `register-kind`, `withdraw-kind`, `import-relation`, `revise`, `invalidate` 여섯 operation을 지원한다. `closed`·`completed` 인스턴스에는 어느 operation도 적용하지 않고 거부된 제어로 기록한다.
 
 #### candidate 수입
 
@@ -509,9 +509,9 @@ source --file PATH [--name FILE_NAME]
 }
 ```
 
-`kind`는 현재 종류 정의 레지스트리에 있어야 한다. `title`, `statement`, `explanation`, `summary`는 비어 있지 않아야 하고 `lean_code`가 있으면 중복 없는 `declaration_names`가 필요하고, 각 선언명은 형식 검사가 받는 선언명 문법(「연구 수행」의 선언명 절)을 따라야 한다. 문법에 맞지 않는 선언명은 가져오기 단계에서 거부된다. `dependencies`는 존재하는 다른 knowledge ID만 받는다. `id`를 제공해 기존 기록을 개정할 수 있으며 revision과 history를 보존한다. 실행기 소유 필드인 검증 status·formal 결과·review·identity assessment는 candidate가 제공할 수 없다.
+`kind`는 현재 종류 정의 레지스트리에 있어야 한다. `title`, `statement`, `explanation`, `summary`는 비어 있지 않아야 하고 `lean_code`가 있으면 중복 없는 `declaration_names`가 필요하고, 각 선언명은 형식 검사가 받는 선언명 문법(「연구 수행」의 선언명 절)을 따라야 한다. 문법에 맞지 않는 선언명은 가져오기 단계에서 거부된다. `dependencies`는 존재하는 다른 knowledge ID만 받는다. `id`를 제공하면 아직 사용하지 않은 새 canonical knowledge ID여야 한다. 기존 ID의 수입은 거부된다. 실행기 소유 필드인 검증 status·formal 결과·review·identity assessment는 candidate가 제공할 수 없다.
 
-`import`에 기존 ID를 넣는 방식은 완전한 후보 본문으로 그 기록을 대체할 때 사용한다. 필요한 필드를 모두 제출하며 생략한 선택 필드가 옛 값으로 유지된다고 가정하지 않는다. 기존 기록의 일부 필드만 바꾸려면 아래의 `operation="revise"`와 `changes`를 사용한다. 두 경로 모두 과거 판본을 보존하고 후보 상태로 돌아가며, Lean 원문이 있으면 형식·동일성 검토를 다시 받는다.
+기존 기록의 변경에는 아래의 `operation="revise"`와 `changes`를 사용한다. 개정은 새 replacement ID의 후보를 만들고 `supersedes`로 이전 기록을 연결하며 revision을 1 올린다. 옛 기록과 형식 결과·판정을 보존한다. Lean 원문·선언·의존이 바뀌지 않았고 기존 형식 결과가 현재 사용 가능하면 그 formal을 재사용하고 새 동일성 검토로 보낸다. 형식 결과를 재사용할 수 없는 Lean 후보는 새 형식 검사부터 진행하고, 형식 결과가 없는 후보는 연구 계획으로 연결한다.
 
 수학 관계를 입증하는 형식 candidate에는 선택적으로 다음 `relation_claim`을 둔다.
 
@@ -540,7 +540,7 @@ source --file PATH [--name FILE_NAME]
 }
 ```
 
-`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 기존 token과 중복될 수 없다. 스킬에 설치된 지식·관계 종류의 token은 인스턴스를 만들 때 이미 활성으로 정의되므로 다시 등록하지 않는다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.
+`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 현재 철회되지 않은 같은 family/token과 중복될 수 없다. `withdraw-kind`로 철회된 정의는 새 정의로 재등록할 수 있으며 이전 정의를 보존한다. 스킬에 설치된 활성 지식·관계 종류의 token은 인스턴스를 만들 때 이미 정의되므로 다시 등록하지 않는다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.
 
 #### 관계 수입
 
@@ -570,7 +570,7 @@ source --file PATH [--name FILE_NAME]
 {"operation":"invalidate","id":"KN-...","reason":"사용 정지 근거"}
 ```
 
-개정은 이전 revision과 검토 계보를 보존하고 candidate·새 형식 검사·새 동일성 검토로 돌린다. 무효화는 기록을 삭제하지 않고 현재 사용을 정지하며 실제 의존을 다음 연구 계획에 알린다.
+개정은 새 replacement ID·revision+1·`supersedes`를 갖는 candidate를 만들고 옛 기록과 판정을 보존한다. 변경되지 않은 Lean 원문·선언·의존의 현재 사용 가능한 formal만 재사용하며, 새 동일성 검토는 다시 받는다. 형식 결과를 재사용할 수 없는 Lean 후보는 새 형식 검사부터 진행하고, 형식 결과가 없는 후보는 연구 계획으로 연결한다. 무효화는 기록을 삭제하지 않고 현재 사용을 정지하며 실제 의존을 다음 연구 계획에 알린다.
 
 ### `trust`
 
@@ -605,7 +605,7 @@ source --file PATH [--name FILE_NAME]
 
 현재 HTTP method는 `GET`, `POST`, `PUT`, `DELETE`다. URL은 http/https, host와 안전한 path를 가져야 하고 userinfo·fragment·`.`·`..` path segment를 허용하지 않는다. redirect는 거부한다. body는 문자열이어야 하며 `GET`·`DELETE`에서는 생략하거나 빈 문자열만 허용한다. `POST`·`PUT`의 비어 있지 않은 body는 UTF-8로 전송한다. 이 형식은 요청 해시를 만들기 전과 전송 전에 검사한다. request를 정규화해 hash와 idempotency key를 만들고 active HTTP grant의 origin·method·path·기간을 검사한다.
 
-실행기는 `prepared`·`running` 상태를 기록하고, 전송 직전에 불리언 `transmitted=true`를 저장한 뒤 전송한다. transport 결과를 확정할 수 없으면 `unknown`이다. HTTP 응답을 받으면 `confirmed`, `http_status`, body hash를 기록하고 `succeeded`는 실행 기록에서 2xx 여부로 별도 계산한다.
+외부 operation 원장은 `prepared`를 유지한 채 전송 직전에 불리언 `transmitted=true`를 저장한다. 전송을 맡은 별도 execution의 상태는 `running`이다. HTTP 결과가 2xx이면 operation은 `confirmed`, `succeeded=true`가 된다. 비2xx 응답에서 효과 부재가 입증되면 `failed`, `succeeded=false`이고, 효과가 입증되지 않으면 `unknown`, `succeeded=null`이다. 응답의 `http_status`와 body hash를 보존하며 transport 결과를 확정할 수 없는 경우도 `unknown`으로 남긴다.
 
 ```json
 {"operation":"reconcile","id":"EO-...","result":"confirmed","evidence":{"operation_id":"EO-...","request_sha256":"<operation의 request_sha256>","idempotency_key":"<operation의 idempotency_key>","fact":"succeeded","evidence_ref":"외부 영수증 좌표","observed_at":"2026-09-20T00:00:00+00:00"}}
@@ -745,7 +745,7 @@ export --destination PATH [--snapshot OID] [--all]
 
 두 역할의 기본 주 schema는 같다. `outcome`은 `submitted`, `partial`, `waiting`, `no_result`를 구별하고, `report`는 실제 수행 범위·근거·결과·한계를 설명한다. 새 knowledge와 relations, remaining_work의 남은 의무와 문자열 checkpoint의 최종 인계 요지도 함께 반환한다.
 
-knowledge 항목은 주장·해설·목차 요지와 형식 원문·선언·의존을 함께 표현한다. kind enum은 실행 시점의 active knowledge 종류 정의에서 동적으로 만든다. Lean 원문이 있으면 정확한 declaration names가 필요하다. dependencies는 기존 knowledge ID 또는 같은 응답의 유일한 title을 사용한다.
+knowledge 항목은 주장·해설·목차 요지와 형식 원문·선언·의존을 함께 표현한다. knowledge 항목의 `kind`는 구조 검사에서 문자열(TEXT)로 받는다. 중앙 수신의 의미 검사는 입력의 활성 종류 또는 같은 편입 묶음에서 제안한 종류인지 확인하고, 미등록 종류는 반려한다. 신규 종류의 제안은 독립 의미 검사와 활성화 권한을 별도로 통과해야 한다. Lean 원문이 있으면 정확한 declaration names가 필요하다. dependencies는 기존 knowledge ID 또는 같은 응답의 유일한 title을 사용한다.
 
 relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source와 target은 기존 ID 또는 같은 응답의 유일한 title이다. 종류·근거·수학 판정의 추가 제약은 적용 시 kind definitions와 `activity-extensions.json`의 metadata를 함께 검사한다.
 

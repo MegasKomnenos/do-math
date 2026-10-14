@@ -14,6 +14,163 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_named_examples_and_declarations_are_checked_in_the_document_population(self):
+        from support.doc_code import named_document_issues
+        population = documents(SKILL)
+        required = {'README.md', 'references/초기화-운전.md', 'references/CLI-실행-계약.md'}
+        self.assertLessEqual(required, {path.relative_to(SKILL).as_posix() for path in population})
+        issues = [(path.relative_to(SKILL).as_posix(), *issue)
+                  for path in population
+                  for issue in named_document_issues(path.read_text(encoding='utf-8'), path.relative_to(SKILL).as_posix())]
+        self.assertEqual(issues, [])
+
+    def test_setup_and_probe_examples_use_their_own_parser_and_input_rules(self):
+        from support.doc_code import tool_command_issues
+        for text in ('`setup_lean.py --verify-only --trust-file new.json`', '`probe_cli.py --skill-only`'):
+            self.assertEqual(tool_command_issues(text), [])
+        for text, owner, reason in (
+                ('`setup_lean.py --verify-only --watch`', 'setup_lean.py', 'unrecognized arguments: --watch'),
+                ('`probe_cli.py --skill-only --verify-only`', 'probe_cli.py', 'unrecognized arguments: --verify-only'),
+                ('`setup_lean.py --inspect-only --verify-only`', 'setup_lean.py', 'not allowed with argument'),
+                ('`setup_lean.py --inspect-only --trust-file new.json`', 'setup_lean.py', 'neither records nor validates'),
+                ('`probe_cli.py --provider other`', 'probe_cli.py', 'invalid choice'),
+                ('`probe_cli.py --provider codex`', 'probe_cli.py', 'live probes require explicit')):
+            with self.subTest(text=text):
+                issue, = tool_command_issues(text)
+                self.assertEqual(issue[:2], ('tool arguments', owner))
+                self.assertIn(reason, issue[2])
+
+    def test_initialization_examples_reject_misspellings_borrowed_fields_and_absence(self):
+        from support.doc_code import initialization_example_issues, _document_section
+        cases = (
+            ('README.md', '모델과 동시실행 예산 설정', ('"session_limits"', '"session_limitz"')),
+            ('references/초기화-운전.md', '3. 초기화 권한과 연구 권한을 나눈다', ('"reuse": "reusable",', '"reuse": "reusable", "budget_kind": "work",')))
+        for document, heading, (old, new) in cases:
+            text = (SKILL / document).read_text(encoding='utf-8')
+            check = lambda value: initialization_example_issues(value, document)
+            with self.subTest(document=document):
+                self.assertEqual(check(text), [])
+                self.assertTrue(check(text.replace(old, new)))
+                self.assertTrue(check(text.replace(heading, 'removed')))
+                section = _document_section(text, heading)
+                fences = re.findall(r'^```json\n.*?\n```', section, flags=re.M | re.S)
+                for fence in fences:
+                    self.assertTrue(check(text.replace(fence, '')))
+        config = (SKILL / 'README.md').read_text(encoding='utf-8')
+        self.assertTrue(initialization_example_issues(config.replace('"tier_models":', '"tier_modelz":'), 'README.md'))
+        grant = (SKILL / 'references/초기화-운전.md').read_text(encoding='utf-8')
+        self.assertTrue(initialization_example_issues(grant.replace('    "roles": ["intent_interpretation", "maintenance"],\n', ''), 'references/초기화-운전.md'))
+
+    def test_identity_module_sentence_matches_both_actual_adapter_declarations(self):
+        from support.doc_code import identity_module_issues
+        text = (SKILL / 'references/초기화-운전.md').read_text(encoding='utf-8')
+        self.assertEqual(identity_module_issues(text), [])
+        for old, new in (('`control_protocol`, ', ''), ('`codex_adapter`이고', '`claude_adapter`이고')):
+            with self.subTest(old=old):
+                issues = identity_module_issues(text.replace(old, new))
+                self.assertTrue(issues)
+                self.assertEqual(issues[0][1], 'CodexExecAdapter')
+        self.assertTrue(identity_module_issues(text.replace('Codex 어댑터의 식별 모듈은', 'removed')))
+
+    def test_cli_tables_bind_state_default_enum_and_required_table_coverage(self):
+        from support.doc_code import cli_table_issues, _document_section
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        self.assertEqual(cli_table_issues(text), [])
+        for old, new, owner in (
+                ('| `capacity_waiting` |', '| `capacity_waitng` |', 'runtime.status'),
+                ('| `reviewers` | 2 |', '| `reviewers` | 200 |', 'reviewers'),
+                ('| `observation_mode` | `event_driven` | `event_driven`, `periodic` |',
+                 '| `observation_mode` | `event_driven` | `event_driven`, `periodical` |', 'observation_mode')):
+            with self.subTest(owner=owner):
+                issues = cli_table_issues(text.replace(old, new))
+                self.assertTrue(any(issue[1] == owner for issue in issues), issues)
+        for heading in ('인스턴스 실행 루프 `runtime.status`', '설정 계약'):
+            self.assertTrue(cli_table_issues(text.replace(heading, 'removed')))
+            self.assertTrue(cli_table_issues(text.replace(_document_section(text, heading), '')))
+
+    def test_cli_query_synopsis_uses_actual_choices_and_requires_its_fence(self):
+        from support.doc_code import cli_query_issues
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        self.assertEqual(cli_query_issues(text), [])
+        self.assertEqual(cli_query_issues(text.replace('[--direction incoming|outgoing|both]',
+                        '[--direction incoming|outgoing|sideways]'))[0][0], 'query direction choices')
+        self.assertTrue(cli_query_issues(text.replace('### record `query`', '### removed')))
+        self.assertTrue(cli_query_issues(text.replace('[--direction incoming|outgoing|both]', '')))
+
+    def test_cli_knowledge_json_checks_control_shape_and_candidate_semantics_separately(self):
+        from support.doc_code import cli_knowledge_example_issues, _document_section
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        self.assertEqual(cli_knowledge_example_issues(text), [])
+        self.assertEqual(cli_knowledge_example_issues(text.replace('"operation":"import"',
+                         '"operation":"improt"'))[0][0], 'document knowledge control')
+        self.assertEqual(cli_knowledge_example_issues(text.replace('"summary":"목차 요약"',
+                         '"summray":"목차 요약"')), [('document knowledge candidate', 'candidate summary is invalid')])
+        for heading in ('candidate 수입', '종류 정의 등록', '관계 수입', '기존 지식 개정·무효화'):
+            self.assertTrue(cli_knowledge_example_issues(text.replace(heading, 'removed')))
+            section = _document_section(text, heading)
+            for fence in re.findall(r'^```json\n.*?\n```', section, flags=re.M | re.S):
+                self.assertTrue(cli_knowledge_example_issues(text.replace(fence, '')))
+
+    def test_cli_review_stage_declarations_keep_root_item_and_enum_owners(self):
+        from support.doc_code import cli_stage_issues, _document_section
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        self.assertEqual(cli_stage_issues(text), [])
+        cases = (
+            ('`scope_complete`, `findings`를 추가한다', '`scope_complete`, `findingz`를 추가한다', 'initial'),
+            ('`issues`를 추가하며', '`issues`와 `decision`을 추가하며', 'organize'),
+            ('`answers`와 `new_findings`를 추가한다', '`answerz`와 `new_findings`를 추가한다', 'answer'),
+            ('`decision=approved|rejected|unresolved`, `reason`', '`decision=match|rejected|unresolved`, `reason`', 'judge/issue_verdicts[]'))
+        for old, new, owner in cases:
+            with self.subTest(owner=owner):
+                self.assertIn(old, text)
+                issues = cli_stage_issues(text.replace(old, new))
+                self.assertTrue(any(issue[1] == owner for issue in issues), issues)
+        for stage in ('initial', 'organize', 'answer', 'judge'):
+            heading = '`' + stage + '`'
+            self.assertTrue(cli_stage_issues(text.replace('### ' + heading, '### removed')))
+            self.assertTrue(cli_stage_issues(text.replace(_document_section(text, heading), '')))
+
+    def test_cli_checkpoint_file_example_uses_the_actual_value_checker(self):
+        from support.doc_code import cli_checkpoint_issues, _document_section
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        self.assertEqual(cli_checkpoint_issues(text), [])
+        issues = cli_checkpoint_issues(text.replace('"current_claim":', '"current_cliam":'))
+        self.assertTrue(issues)
+        self.assertEqual(issues[0][0], 'document checkpoint')
+        self.assertTrue(cli_checkpoint_issues(text.replace('### `checkpoint.json`', '### removed')))
+        section = _document_section(text, '`checkpoint.json`')
+        fence, = re.findall(r'^```json\n.*?\n```', section, flags=re.M | re.S)
+        self.assertTrue(cli_checkpoint_issues(text.replace(fence, '')))
+
+    def test_corrected_cli_meanings_keep_their_current_structure_and_authority_boundaries(self):
+        from support.doc_code import _document_section, _schema_path
+        from do_math.control_contracts import PAYLOADS
+        from do_math.contracts import action_schema
+        from do_math.record_schemas.schemas import RECORDS
+        text = (SKILL / 'references/CLI-실행-계약.md').read_text(encoding='utf-8')
+        knowledge = _document_section(text, '`knowledge`')
+        first = knowledge.split('\n\n', 1)[0]
+        self.assertEqual(set(re.findall(r'`([a-z-]+)`', first)) - {'knowledge', 'closed', 'completed'},
+                         set(PAYLOADS['knowledge']['properties']['operation']['enum']))
+        for phrase in ('기존 ID의 수입은 거부된다', '새 replacement ID', '`supersedes`',
+                       'revision을 1 올린다', '옛 기록과 형식 결과·판정', '현재 사용 가능', '`withdraw-kind`로 철회'):
+            self.assertIn(phrase, knowledge)
+        external = _document_section(text, '`external`')
+        for phrase in ('별도 execution', '`running`', '`transmitted=true`', '2xx이면',
+                       '`confirmed`, `succeeded=true`', '비2xx', '`failed`, `succeeded=false`',
+                       '`unknown`, `succeeded=null`'):
+            self.assertIn(phrase, external)
+        operation_row, = [line for line in text.splitlines() if line.startswith('| 외부 operation |')]
+        self.assertEqual(set(re.findall(r'`([a-z_]+)`', operation_row.split('|')[2])),
+                         set(RECORDS['external_operations']['properties']['status']['enum']))
+        schema = _schema_path(action_schema({'role': 'research_work'}), 'knowledge[].kind')[0]
+        self.assertEqual(schema['type'], 'string')
+        self.assertNotIn('enum', schema)
+        work = _document_section(text, '연구 수행 `research_work`와 과제 기반 `supplemental_research`')
+        for phrase in ('문자열(TEXT)', '중앙 수신의 의미 검사', '활성 종류', '같은 편입 묶음',
+                       '미등록 종류는 반려', '독립 의미 검사와 활성화 권한'):
+            self.assertIn(phrase, work)
+
     def test_identity_output_declarations_use_their_exact_stage_and_item(self):
         from support.doc_code import review_output_issues
         text = (SKILL / '계약/동일성-검토.md').read_text(encoding='utf-8')

@@ -127,12 +127,47 @@ def command_issues(text, options, flags):
                     flag = argument.split('=', 1)[0]
                     if flag not in options[name]:
                         issues.add(('command option', name, flag))
+    issues.update(tool_command_issues(text))
+    return sorted(issues)
+
+
+def tool_command_issues(text):
+    """Parse only setup/probe command examples, using the same entry as main."""
+    from contextlib import redirect_stderr
+    import io
+    import setup_lean
+    import probe_cli
+    parsers = {'setup_lean.py': setup_lean.parse_arguments,
+               'probe_cli.py': probe_cli.parse_arguments}
+    issues = set()
+    for example in code_examples(text):
+        match = re.search(r'\b(setup_lean\.py|probe_cli\.py)\b', example)
+        if match is None:
+            continue
+        owner = match.group(1)
+        try:
+            tail = re.sub(r'<[^<>]+>', lambda value: value.group().replace(' ', '_'), example[match.end():])
+            argv = [part.strip('"\'') for part in shlex.split(tail, posix=False)]
+        except ValueError:
+            issues.add(('tool arguments', owner, 'unparseable command example'))
+            continue
+        if '|' in argv:
+            argv = argv[:argv.index('|')]  # A shell pipeline is outside this tool's argv.
+        if not argv:
+            continue  # A bare filename is also used as a file reference in prose.
+        error = io.StringIO()
+        try:
+            with redirect_stderr(error):
+                parsers[owner](argv)
+        except SystemExit as exit:
+            if exit.code != 0:
+                issues.add(('tool arguments', owner, error.getvalue().split('error: ', 1)[-1].strip()))
     return sorted(issues)
 
 
 def _document_section(text, heading):
     """An explicit document coordinate, not inferred ownership of arbitrary prose."""
-    headings = list(re.finditer(r'^(#{2,3}) (.+)$', text, flags=re.M))
+    headings = list(re.finditer(r'^(#{2,4}) (.+)$', text, flags=re.M))
     selected = [i for i, match in enumerate(headings) if match.group(2) == heading]
     if len(selected) != 1:
         raise ValueError('expected one document section: ' + heading)
@@ -228,6 +263,275 @@ def preparation_example_issues(text):
                             key=lambda error: (str(list(error.absolute_path)), error.validator, error.message)):
             path = '/'.join(map(str, error.absolute_path))
             issues.append(('preparation example schema', owner, path, error.validator, error.message))
+    return issues
+
+
+def _required_section(text, heading, owner, issues):
+    try:
+        return _document_section(text, heading)
+    except ValueError as error:
+        issues.append(('document section', owner, str(error)))
+        return None
+
+
+def _json_examples(section, owner, count, issues):
+    if section is None:
+        return []
+    fences = re.findall(r'^```json\n(.*?)\n```', section, flags=re.M | re.S)
+    if len(fences) != count:
+        issues.append(('document JSON count', owner, len(fences), count))
+        return []
+    values = []
+    for fence in fences:
+        try:
+            values.append(json.loads(fence))
+        except ValueError as error:
+            issues.append(('document JSON', owner, str(error)))
+    return values
+
+
+def _schema_issues(value, schema, owner):
+    import jsonschema
+    return [('document schema', owner, '/'.join(map(str, error.absolute_path)),
+             error.validator, error.message)
+            for error in sorted(jsonschema.Draft202012Validator(schema).iter_errors(value),
+                                key=lambda error: (str(list(error.absolute_path)), error.validator, error.message))]
+
+
+def initialization_example_issues(text, document):
+    """The README setting and the two grant requests; placeholders stay symbolic."""
+    from do_math.configuration import validate_config
+    from do_math.control_contracts import DECISION, GRANT
+    issues = []
+    if document == 'README.md':
+        section = _required_section(text, '모델과 동시실행 예산 설정', 'config', issues)
+        for value in _json_examples(section, 'config', 1, issues):
+            if not isinstance(value, dict):
+                issues.append(('document config', 'config must be an object'))
+                continue
+            # This setting example promises both model mapping and slot mapping;
+            # other configuration fields intentionally use product defaults.
+            for field in ('tier_models', 'session_limits'):
+                if field not in value:
+                    issues.append(('document config missing field', field))
+            try:
+                validate_config(value, host_id='document-example')
+            except ValueError as error:
+                issues.append(('document config', str(error)))
+    elif document == 'references/초기화-운전.md':
+        section = _required_section(text, '3. 초기화 권한과 연구 권한을 나눈다', 'grant', issues)
+        for value in _json_examples(section, 'grant', 2, issues):
+            issues.extend(_schema_issues(value, DECISION, 'decision'))
+            if not isinstance(value, dict) or value.get('kind') != 'grant' or not isinstance(value.get('grant'), dict):
+                issues.append(('document grant request', 'expected kind=grant and grant object'))
+                continue
+            grant = value['grant']
+            issues.extend(_schema_issues(grant, GRANT, 'grant'))
+            # Required declarations in these complete request examples, not a
+            # stronger grant schema or an authorization/expiry-time check.
+            for field in ('id', 'kind', 'roles', 'task_ids', 'reuse', 'expires_at'):
+                if field not in grant:
+                    issues.append(('document grant missing field', field))
+    return issues
+
+
+def identity_module_issues(text):
+    """Bind this one enumerating sentence to the actual adapter declarations."""
+    from do_math.codex_adapter import CodexExecAdapter
+    from do_math.claude_adapter import ClaudePrintAdapter
+    issues = []
+    section = _required_section(text, '4. 현행 프로필의 능력을 관측하고 채택한다', 'identity_modules', issues)
+    if section is None:
+        return issues
+    match = re.search(r'Codex 어댑터의 식별 모듈은 (.*?)이고, Claude 어댑터는 여기에 (.*?)을 더한다\.', section)
+    if match is None:
+        return issues + [('identity modules declaration', 'missing')]
+    codex = SPAN.findall(match.group(1))
+    extra = SPAN.findall(match.group(2))
+    for owner, names, adapter in (
+            ('CodexExecAdapter', codex, CodexExecAdapter),
+            ('ClaudePrintAdapter', codex + extra, ClaudePrintAdapter)):
+        expected = set(adapter.identity_modules)
+        actual = set(names)
+        if actual != expected or len(names) != len(actual):
+            issues.append(('identity modules', owner, tuple(sorted(expected - actual)),
+                           tuple(sorted(actual - expected)), len(names) != len(actual)))
+    return issues
+
+
+def cli_table_issues(text):
+    from do_math.configuration import DEFAULT_CONFIG
+    from do_math.record_schemas import config_schema
+    from do_math.record_schemas.schemas import RUNTIME_FIELDS
+    issues = []
+    section = _required_section(text, '인스턴스 실행 루프 `runtime.status`', 'runtime.status', issues)
+    if section is not None:
+        names = re.findall(r'^\| `([a-z_]+)` \|', section, flags=re.M)
+        expected = set(RUNTIME_FIELDS['status']['enum'])
+        if set(names) != expected or len(names) != len(set(names)):
+            issues.append(('document state table', 'runtime.status', tuple(sorted(expected - set(names))),
+                           tuple(sorted(set(names) - expected))))
+    section = _required_section(text, '설정 계약', 'config', issues)
+    if section is None:
+        return issues
+    schema = config_schema()['properties']
+    seen = []
+    for line in section.splitlines():
+        if not line.startswith('| `'):
+            continue
+        cells = line.strip('|').split('|')
+        if len(cells) != 3:
+            issues.append(('document config row', line))
+            continue
+        key_cell, default, allowed = (cell.strip() for cell in cells)
+        keys = SPAN.findall(key_cell)
+        seen.extend(keys)
+        for key in keys:
+            if key not in schema:
+                issues.append(('document config key', key))
+        if len(keys) != 1 or keys[0] not in schema:
+            continue
+        key = keys[0]
+        if default.startswith('없음'):
+            if key in DEFAULT_CONFIG:
+                issues.append(('document config absent default', key))
+        elif schema[key].get('type') != 'object':
+            literal = default.strip('`')
+            try:
+                value = json.loads(literal)
+            except ValueError:
+                value = literal
+            if key not in DEFAULT_CONFIG or value != DEFAULT_CONFIG[key] or type(value) is not type(DEFAULT_CONFIG[key]):
+                issues.append(('document config default', key, default, repr(DEFAULT_CONFIG.get(key))))
+        if 'enum' in schema[key]:
+            names = set(SPAN.findall(allowed))
+            if key == 'operator_effort' and 'effort' in names:
+                names.remove('effort')
+                names.update(schema['effort']['enum'])
+            if names != set(schema[key]['enum']):
+                issues.append(('document config enum', key, tuple(sorted(names)), tuple(sorted(schema[key]['enum']))))
+    if set(seen) != set(schema) or len(seen) != len(set(seen)):
+        issues.append(('document config table coverage', tuple(sorted(set(schema) - set(seen))),
+                       tuple(sorted(set(seen) - set(schema)))))
+    return issues
+
+
+def cli_query_issues(text):
+    from do_math.cli_contract import build_parser, _command_parsers
+    issues = []
+    section = _required_section(text, 'record `query`', 'query', issues)
+    if section is None:
+        return issues
+    synopsis = re.findall(r'^```text\n(.*?)\n```', section, flags=re.M | re.S)
+    if len(synopsis) != 1:
+        return issues + [('query synopsis count', len(synopsis))]
+    match = re.search(r'\[--direction ([a-z|]+)\]', synopsis[0])
+    parser = _command_parsers(build_parser())['query']
+    expected = next(action.choices for action in parser._actions if action.dest == 'direction')
+    if match is None or set(match.group(1).split('|')) != set(expected):
+        issues.append(('query direction choices', match.group(1) if match else 'missing', tuple(expected)))
+    return issues
+
+
+def cli_knowledge_example_issues(text):
+    from do_math.control_contracts import validate_control_payload
+    from do_math.knowledge_io import candidate_shape_errors
+    issues = []
+    coordinates = (('candidate 수입', 2), ('종류 정의 등록', 1), ('관계 수입', 1), ('기존 지식 개정·무효화', 2))
+    for heading, count in coordinates:
+        section = _required_section(text, heading, 'knowledge', issues)
+        values = _json_examples(section, 'knowledge/' + heading, count, issues)
+        # The second candidate fence is explicitly a partial relation_claim.
+        complete = values[:1] if heading == 'candidate 수입' else values
+        for value in complete:
+            try:
+                validate_control_payload('knowledge', '', value)
+            except ValueError as error:
+                issues.append(('document knowledge control', str(error)))
+            if heading == 'candidate 수입':
+                if not isinstance(value, dict) or not isinstance(value.get('candidate'), dict):
+                    issues.append(('document knowledge candidate', 'missing candidate object'))
+                else:
+                    issues.extend(('document knowledge candidate', error)
+                                  for error in candidate_shape_errors(value['candidate']))
+    return issues
+
+
+def _declared_fields_issues(sentence, schema, owner):
+    """Explicit backtick output declarations only; enum values keep their owner."""
+    issues = []
+    names = set()
+    for token in SPAN.findall(sentence):
+        name, equals, alternatives = token.partition('=')
+        name = name.removesuffix('[]')
+        names.add(name)
+        variants = property_variants(schema, name)
+        if not variants:
+            issues.append(('CLI stage field', owner, name))
+        elif equals and not any(set(alternatives.split('|')) == set(value.get('enum', [])) for value in variants):
+            issues.append(('CLI stage enum', owner, name, alternatives))
+    for name in sorted(set(schema.get('required', [])) - names):
+        issues.append(('CLI stage missing field', owner, name))
+    return issues
+
+
+def cli_stage_issues(text):
+    from do_math.review_cycle import stage_schema
+    issues = []
+    section = _required_section(text, '동일성 검토 계보의 동적 JSON', 'stage common', issues)
+    if section is None:
+        return issues
+    preamble = section.split('###', 1)[0]
+    common = set(SPAN.findall(preamble))
+    # Root schemas define the common fields; the preamble must name them.
+    baseline = set(stage_schema('initial')['properties']) & set(stage_schema('organize')['properties'])
+    if common != baseline:
+        issues.append(('CLI stage common declaration', tuple(sorted(common)), tuple(sorted(baseline))))
+    item_coordinates = {
+        'initial': (('각 finding은 ', 'findings[]'),),
+        'organize': (('각 issue는 ', 'issues[]'), ('finding ref는 ', 'issues[].finding_refs[]')),
+        'answer': (('answer는 ', 'answers[]'), ('new finding은 ', 'new_findings[]')),
+        'judge': (('issue verdict는 ', 'issue_verdicts[]'),)}
+    for stage in item_coordinates:
+        part = _required_section(section, '`' + stage + '`', stage, issues)
+        if part is None:
+            continue
+        schema = stage_schema(stage)
+        sentence = part.split('. ', 1)[0]
+        root_schema = {**schema, 'required': sorted(set(schema['required']) - baseline)}
+        issues.extend(_declared_fields_issues(sentence, root_schema, stage))
+        for prefix, path in item_coordinates[stage]:
+            match = re.search(re.escape(prefix) + r'(.*?)(?:\. |\.$)', part)
+            if match is None:
+                issues.append(('CLI stage item declaration', stage, path))
+                continue
+            item = _schema_path(schema, path)[0]
+            issues.extend(_declared_fields_issues(match.group(1), item, stage + '/' + path))
+    return issues
+
+
+def cli_checkpoint_issues(text):
+    from do_math.observations import checkpoint_value
+    from jsonschema import ValidationError
+    issues = []
+    section = _required_section(text, '`checkpoint.json`', 'checkpoint', issues)
+    for value in _json_examples(section, 'checkpoint', 1, issues):
+        try:
+            checkpoint_value(json.dumps(value, ensure_ascii=False).encode('utf-8'))
+        except (ValueError, ValidationError) as error:
+            issues.append(('document checkpoint', str(error)))
+    return issues
+
+
+def named_document_issues(text, document):
+    """Mandatory coordinates in three documents, never inferred from arbitrary words."""
+    issues = initialization_example_issues(text, document)
+    if document == 'references/초기화-운전.md':
+        issues.extend(identity_module_issues(text))
+    if document == 'references/CLI-실행-계약.md':
+        for check in (cli_table_issues, cli_query_issues, cli_knowledge_example_issues,
+                      cli_stage_issues, cli_checkpoint_issues):
+            issues.extend(check(text))
     return issues
 
 

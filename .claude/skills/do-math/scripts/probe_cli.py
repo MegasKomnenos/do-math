@@ -111,15 +111,8 @@ def run_case(destination, case, *, ports, provider, model, effort, only_assigned
     return {"case": case, "passed": report["passed"], "checks": checks, "report": str(root / "report.json")}
 
 
-def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None):
-    import os
-    import platform
-    from do_math.wiring import real_ports
-    environment = dict(os.environ) if environment is None else environment
-    host_id = platform.node() if host_id is None else host_id
-    codex_home = (Path(environment["CODEX_HOME"]) if environment.get("CODEX_HOME") else Path.home() / ".codex") if codex_home is None else codex_home
-    ports = real_ports(environment=environment) if ports is None else ports
-    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
+def build_parser():
+    """The probe command definition, available without invoking a provider."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skill-only", action="store_true")
     parser.add_argument("--provider", choices=("claude", "codex"))
@@ -129,11 +122,14 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
     parser.add_argument("--scholarly", action="store_true")
     parser.add_argument("--cases", nargs="+", choices=("structured", "files", "background", "stop"), default=["structured", "files", "stop"])
     parser.add_argument("--output-dir", type=Path)
+    return parser
+
+
+def parse_arguments(argv=None):
+    parser = build_parser()
     args = parser.parse_args(argv)
     if args.skill_only:
-        result = inspect_bundle()
-        print(json.dumps(result, ensure_ascii=False))
-        return 0 if result["status"] == "verified" else 1
+        return args
     if not args.provider or not args.model or not args.output_dir:
         parser.error("live probes require explicit --provider, --model and --output-dir")
     if args.provider == "claude" and args.only_assigned_model and not args.model.startswith("claude-"):
@@ -144,6 +140,23 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
         parser.error("background and --only-assigned-model require --provider claude")
     if len(set(args.cases)) != len(args.cases):
         parser.error("cases must be distinct")
+    return args
+
+
+def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None):
+    args = parse_arguments(argv)
+    import os
+    import platform
+    from do_math.wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    host_id = platform.node() if host_id is None else host_id
+    codex_home = (Path(environment["CODEX_HOME"]) if environment.get("CODEX_HOME") else Path.home() / ".codex") if codex_home is None else codex_home
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
+    if args.skill_only:
+        result = inspect_bundle()
+        print(json.dumps(result, ensure_ascii=False))
+        return 0 if result["status"] == "verified" else 1
     args.output_dir.mkdir(parents=True, exist_ok=False)
     results = []
     for case in args.cases:

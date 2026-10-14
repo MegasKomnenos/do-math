@@ -19,6 +19,17 @@ from support.provider_runs import ProviderJobs
 
 
 class ProbeContractTests(unittest.TestCase):
+    def test_probe_parser_refuses_a_borrowed_setup_flag_before_host_effects(self):
+        args = probe_cli.parse_arguments(['--skill-only'])
+        self.assertTrue(args.skill_only)
+        self.assertEqual(args.effort, 'low')
+        self.assertEqual(args.cases, ['structured', 'files', 'stop'])
+        errors = io.StringIO()
+        with redirect_stderr(errors), self.assertRaises(SystemExit) as result:
+            probe_cli.main(['--skill-only', '--verify-only'], ports=object(), environment={})
+        self.assertEqual(result.exception.code, 2)
+        self.assertIn('unrecognized arguments: --verify-only', errors.getvalue())
+
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.values = entry()

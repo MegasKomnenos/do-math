@@ -23,6 +23,50 @@ from support.sim import Sim
 WINDOWS = {'tool_review_window_seconds': 120, 'self_check_response_window_seconds': 60}
 
 
+class SetupParserTests(unittest.TestCase):
+    def test_valid_inspection_arguments_reach_the_actual_main_without_installing(self):
+        from contextlib import redirect_stdout
+        import io
+        from support.entry import entry
+        values = entry()
+        with tempfile.TemporaryDirectory() as directory:
+            command_file = Path(directory) / 'command.json'
+            command_file.write_text('{"lean_command":[]}', encoding='utf-8')
+            output = io.StringIO()
+            with redirect_stdout(output), self.assertRaises(SystemExit) as result:
+                setup_lean.main(['--inspect-only', '--command-file', str(command_file)],
+                                ports=values.ports, environment=values.environment)
+            self.assertEqual(result.exception.code, 2)
+            self.assertEqual(json.loads(output.getvalue()), {'status': 'error',
+                'error': 'ValueError: Lean was not found; supply --command-file'})
+            self.assertEqual(list(Path(directory).iterdir()), [command_file])
+
+    def test_parser_preserves_defaults_modes_paths_and_rejects_before_host_effects(self):
+        from contextlib import redirect_stderr
+        import io
+        defaults = setup_lean.parse_arguments([])
+        self.assertFalse(defaults.verify_only)
+        self.assertIsNone(defaults.trust_file)
+        selected = setup_lean.parse_arguments(['--verify-only', '--trust-file', 'new.json'])
+        self.assertTrue(selected.verify_only)
+        self.assertEqual(selected.trust_file, Path('new.json'))
+        for argv, reason in (
+                (['--verify-only', '--watch'], 'unrecognized arguments: --watch'),
+                (['--inspect-only', '--verify-only'], 'not allowed with argument'),
+                (['--command-file', 'unused.json'], '--command-file requires'),
+                (['--inspect-only', '--trust-file', 'new.json'], 'neither records nor validates'),
+                (['--check-contents', '--trust-file', 'new.json'], 'runs no compile'),
+                (['--record', 'TC-test'], '--record names the record')):
+            with self.subTest(argv=argv):
+                errors = io.StringIO()
+                # An opaque port object cannot install, read a toolchain, create
+                # a Job or fetch a backend; invalid input must precede them all.
+                with redirect_stderr(errors), self.assertRaises(SystemExit) as result:
+                    setup_lean.main(argv, ports=object(), environment={})
+                self.assertEqual(result.exception.code, 2)
+                self.assertIn(reason, errors.getvalue())
+
+
 class HostIdentityTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
