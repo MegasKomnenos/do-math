@@ -15,6 +15,7 @@ from do_math.canonical import exact_content_hash
 from do_math.governance import apply_decision, authorize
 from support.record_builders import domain_governance
 from support.state_builders import charter, governance_start
+from support.engine_context import assert_governance_documents
 
 SKILL = Path(__file__).resolve().parents[3]
 
@@ -24,7 +25,23 @@ class DomainGovernanceTests(unittest.TestCase):
         i = domain_governance()
         self.assertNotIn("goal", i)
         self.assertNotIn("policies", i)
-        self.assertEqual(gov.governance_view(i)["goal"], "Prove P")
+        view = gov.governance_view(i)
+        self.assertEqual(view["goal"], "Prove P")
+        assert_governance_documents(self, view, owner='governance', instance=i)
+        for key in view:
+            damaged = deepcopy(view); del damaged[key]
+            with self.subTest(missing=key), self.assertRaises((AssertionError, KeyError)):
+                assert_governance_documents(self, damaged, owner='governance', instance=i)
+        for key, wrong in (('goal_revision', 2), ('policy_revision', '0' * 64),
+                           ('charter', charter('OTHER', 'Unapproved Q')), ('goal', 'Prove Q')):
+            damaged = {**deepcopy(view), key: wrong}
+            with self.subTest(changed=key), self.assertRaises((AssertionError, KeyError)):
+                assert_governance_documents(self, damaged, owner='governance', instance=i)
+        with self.assertRaises((AssertionError, KeyError)):
+            assert_governance_documents(self, {'status': 'completed'}, owner='governance', instance=i)
+        for charters in ({}, {**deepcopy(i['governance']), 'CH2': {**deepcopy(i['governance']['CH1']), 'id': 'CH2'}}):
+            with self.subTest(charters=list(charters)), self.assertRaisesRegex(ValueError, '^no unique approved charter$'):
+                gov.governance_view({**i, 'governance': charters})
         self.assertEqual(i["governance"]["CH1"]["approval_ref"], "D")
         changed = deepcopy(i["governance_sources"]["S"]); changed["text"] += "!"
         with self.assertRaisesRegex(ValueError, "^immutable source bytes or revision changed$"):
@@ -45,6 +62,7 @@ class DomainGovernanceTests(unittest.TestCase):
             change = {"kind": "policy", "record": record, "decision_id": "D" + identifier}
             i, runtime, _ = gov.apply_decision(i, runtime, change, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual({r["id"] for r in gov.governance_view(i)["policy_records"]}, {"P2", "P3"})
+        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
         self.assertEqual(i["governance"]["P1"]["status"], "superseded")
         with self.assertRaisesRegex(ValueError, "^governance decision requires a structured governance record$"):
             gov.apply_decision(i, runtime, {"kind": "policy", "text": "replace all"}, source_ref="S", clock=_entry.ports.clock)
@@ -62,6 +80,7 @@ class DomainGovernanceTests(unittest.TestCase):
                              "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
         i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual(gov.governance_view(i)["additional_audits"][0]["id"], "AU")
+        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
         audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "unsupported_assurance"
         with self.assertRaisesRegex(ValueError, r"^change/record/content/verdict_mapping/pass: invalid enum"):
             gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)

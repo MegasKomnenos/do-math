@@ -1,0 +1,125 @@
+{
+  "selected_modules": [
+    "unit.test_review_research_owner_contract",
+    "sim.test_submission_review_inputs",
+    "boundary.test_review_source_restoration",
+    "structure.test_doc_code",
+    "sim.test_role_input_context",
+    "unit.test_submission_preview_commands",
+    "sim.test_knowledge_project_identity",
+    "unit.test_role_input_packaging",
+    "unit.test_role_input_scoped_packaging",
+    "unit.test_preflight",
+    "unit.test_context_catalog",
+    "sim.test_submission_receiver",
+    "flows.test_submission_acceptance",
+    "unit.test_storage_report_projections",
+    "unit.test_engine_trace_report_corruption",
+    "unit.test_storage_record_queries",
+    "boundary.test_engine_cli",
+    "sim.test_knowledge_currentness.RecoveryMaterialTests",
+    "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests",
+    "unit.test_submission_checks",
+    "unit.test_submission_check_invariants",
+    "sim.test_repair_routing",
+    "unit.test_governance_imports",
+    "unit.test_governance_records",
+    "unit.test_academic_requirements",
+    "sim.test_governance_interpretation",
+    "sim.test_governance_context",
+    "sim.test_academic_consumers",
+    "sim.test_academic_assessment_flow",
+    "sim.test_academic_public_currentness",
+    "flows.test_academic_requirement_flows",
+    "unit.test_governance_decision_basis",
+    "unit.test_knowledge_impact_review",
+    "unit.test_submission_extension_semantics",
+    "unit.test_planning_revision_validation",
+    "sim.test_planning_revision_transitions",
+    "sim.test_planning_revision_obligations"
+  ],
+  "excluded_previous_modules": [
+    {
+      "module": "unit.test_review_cycle_stages",
+      "source_sha256": "ea64dbfe47628b420ff865d94f3aaf05b6167cb528ea7afbebc204c296504af4",
+      "imports": [
+        "from support.review_inputs import review_stage_output, scoped_start",
+        "from support.engine_context import assert_review_documents",
+        "from support.engine_context import assert_review_documents"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "unit.test_review_research_slots",
+      "source_sha256": "e1d62487020c31f407f161f3e85027b1dceb76c05c1798cb07d704c350cf9674",
+      "imports": [
+        "from support.review_inputs import deferred_research_cycle, research_answer",
+        "from support.review_research import defer_review_for_research, research_profile",
+        "from support.review_scene import ReviewScene, warm",
+        "from support.entry import entry",
+        "from support.entry import entry"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "sim.test_review_research_replay_evidence",
+      "source_sha256": "b3f8cf17404d167c3b6f2841c5c59287ff0be4c8b2767aa26fa89319290bfb1c",
+      "imports": [
+        "from support.review_replay_inputs import replay_sim"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "flows.test_review_research_flows",
+      "source_sha256": "dddebbbaa6f9548b0f11c721c4523848e58d9b7aeddd19c0dd5c11c2d0343d07",
+      "imports": [
+        "from support.purpose_answers import EXPLANATION",
+        "from support.engine_lifecycle import applied",
+        "from support.engine_overflow import apply_limit",
+        "from support.engine_purpose import drive",
+        "from support.fakes.jobs import job_turn",
+        "from support.review_research import InvestigationResponder, research_sim",
+        "from support.engine_context import observe_review_documents",
+        "from support.role_input_requirements import observe_judgment_inputs"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "unit.test_review_transcript_contract",
+      "source_sha256": "6c1c73fa64a3e1e661d049cd0cd75db6ef1bae5e9da9bde58401c3bd53689d51",
+      "imports": [
+        "from support.review_transition_inputs import cycle_at, replace_path"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "unit.test_review_engine_transcripts",
+      "source_sha256": "b71a177bf7a5d7b2aa19effb95e0da911b6f5d4d963cf4178f7f272ec185ca71",
+      "imports": [
+        "from support.review_scene import ReviewScene, warm"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "unit.test_review_engine_stages",
+      "source_sha256": "628bbcdd656398ee7960ddbeb4344b4c161e585ddd5c6907832283f8deb67b9c",
+      "imports": [
+        "from support.state_builders import charter",
+        "from support.review_scene import ReviewScene, warm"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    },
+    {
+      "module": "flows.test_review_owner_flows",
+      "source_sha256": "164f6dcabccc76373456ee4f28aa328434a17f0614c7112938b038eb325dd181",
+      "imports": [
+        "from support.engine_lifecycle import applied",
+        "from support.cross_contracts import assert_call_records",
+        "from support.model import amend",
+        "from support.review_sim import cycle_of, dispute, opened_sim, review_executions, theorem_id, warm_opened"
+      ],
+      "reason": "No field_schemas/scoped_field_issues consumer. Its review_cycle/review_engine/transcript/replay/overflow behavior and the called review helpers are unchanged. Existing 022 evidence is reused for those exact properties; final-seat single-body and exact-source coverage remain in sim.test_submission_review_inputs and boundary.test_review_source_restoration. P04/P05 document owner methods remain in unit.test_review_research_owner_contract and sim.test_submission_review_inputs."
+    }
+  ],
+  "reason": "Retain every owner document walk and its real assigned check, P01-P05/P07 delivery/packaging/restoration, and add the specified import/governance/academic/revision consumers. The final suite is determined from shared-helper impact, not a fixed accumulation of all historical selections."
+}

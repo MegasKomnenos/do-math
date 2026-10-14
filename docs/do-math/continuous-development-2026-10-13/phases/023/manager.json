@@ -1,0 +1,190 @@
+{
+  "next": "024",
+  "decision": "사용자재시작요청에따라완료된023 task를재실행하지않고원report/evidence와현재파일을검수했다. 이전manager.log의503/capacity종료와제출부재를확인했고기존자료를보존했다. A1~A5를지정범위에서승인한다. 현재2675파일/허용34변경, 양쪽460선택의459passed·권한1skip, 실제최종반환/수입check와역사·보존경계를대조했다. P06/P10과022 F5중개정네이름만닫으며skip/다른의미/최종G는남는다. 다음024는P09/P11조건·대기와F5의입력초과/운영처분정확문장을공유helper·소비검사경계로묶는다. 같은doc_code/engine_context·미러/캐시와공식검사를한담당자가소유한다. 기존packet/현재소스가유한한종료질문을제공해별도독립조사의실익이없으며병렬구현은공유쓰기가충돌한다. task는gpt-6.1-sol/high로명시하고manager설정은유지한다. 이번은work검수이며G4~G8등이남아next:null을제출하지않는다. 원task891파일·32검수제품·이전로그를보존하고정확파일과하나의기억노드를커밋해관리마감하며push하지않는다.",
+  "reports": [
+    {
+      "task": "document-governance",
+      "state": "read",
+      "detail": "report전문을읽고형식검사및원자료/현재파일대조를통과했다. A1~A5의완료를승인하며전체N/PR24/최종G합격으로확대하지않는다. 초기task실패와manager검산문자열오류의원자료도보존한다.",
+      "evidence": [
+        "run:phases/023/tasks/document-governance/report.json",
+        "run:phases/023/manager-evidence/report-check.json",
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/023/manager-evidence/return-check.json"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "023/document-governance/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "실제payload/check·현재헌장/학술조회/최종입력과손상반례를대조해P06/P10지정남김을종결한다. runtime/권한의미는불변이다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/023/manager-evidence/return-check.json"
+      ]
+    },
+    {
+      "item": "023/document-governance/F2",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "B111/B113관련hunk와7원보고·PURE4원보고SHA/기존단언불변을확인해한정교체를승인한다. 다른PR/slice는유지한다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/023/manager-evidence/history-check.json"
+      ]
+    },
+    {
+      "item": "023/document-governance/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md",
+        "run:phases/024/tasks/document-waits/objective.md#A4"
+      ],
+      "reason": "022 F5의개정네이름만현재소비/기존검사와새두반례로종결한다. 나머지입력초과/운영처분정확문장은024로넘기며다른N/P08/L01은유지한다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/023/tasks/document-governance/evidence/section-name-decisions.json"
+      ]
+    },
+    {
+      "item": "023/document-governance/F4",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "Windows1314조건으로실제symlink탈출반려는미검사다. G4최종기본전체에서원문상환경조건정당성을판정하며passed로세지않는다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "023/document-governance/F5",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C12",
+        "run:plan.md",
+        "run:phases/024/tasks/document-waits/objective.md#A5"
+      ],
+      "reason": "현재불변경계의승인성질만재사용하며원바이트/정확32제품을관리마감한다. G4전체/G5freshT3/G6전수변이/G7최종판연결/G8review는별도후속책임이다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/023/tasks/document-governance/evidence/preservation.json"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "023완료범위와현재소스/원결과대조를추가하고역사실패를유지했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "023종료및024공유수정묶음·단일담당/병렬비배정이유를반영했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C7",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C7"
+      ],
+      "reason": "사용자승인재시작의실제상태와원로그/완료task보존·별도로그를추가했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "024에도지정task모델/effort를명시하고manager정책유지를기록했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "P06/P10의B111/B113한정교체와PURE근거보존을추가했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "P06/P10·개정네이름을닫고F5의정확나머지문장을024에연결했다. 다른N/L01은보존했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "023권한skip과G4최종환경판정책임을추가했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "불변경계재사용·원task/이전로그/32제품인도및로컬보관한계를기록했다.",
+      "evidence": [
+        "run:phases/023/manager-evidence/verification.json",
+        "run:phases/023/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "plan_update": "즉시배정을023에서024 P09/P11의두owner와022 F5의입력초과/운영처분정확문장으로전환했다. 공유helper·소비·문서순회·미러/검사를통합하고관련선택은변경영향으로정한다. P08/TRUST·다른N/L01·권한skip·전체관문/review는유지하며완료task를재실행하지않는다.",
+  "seam_updates": [],
+  "completion": null
+}

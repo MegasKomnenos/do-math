@@ -1,0 +1,9 @@
+{
+  "runtime139": true,
+  "fixed_boundary258": true,
+  "corpus144": true,
+  "tools5": true,
+  "host8": true,
+  "baseline910": true,
+  "comparison": "Fresh post-suite bytes against the verified preservation metadata and current 022 baseline."
+}

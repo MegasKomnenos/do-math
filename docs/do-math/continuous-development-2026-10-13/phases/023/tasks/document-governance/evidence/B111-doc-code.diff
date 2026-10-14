@@ -1,0 +1,133 @@
+commit 2b78e5973d5936de10d53186da4cc5cc81a4cccc
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Mon Oct 5 06:00:07 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Mon Oct 5 06:00:07 2026 +0900
+
+    문서의 합성 출력 필드와 함수 및 진단 코드의 소유자를 구별해 검증한다
+
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 8659ae36..d51a4f04 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -7,6 +7,7 @@ tool-vocabulary check; they are not evidence for a command-specific binding.
+ """
+ import ast
+ import inspect
++import importlib
+ import textwrap
+ from pathlib import Path
+ import re
+@@ -83,7 +84,7 @@ def command_issues(text, options, flags):
+     return sorted(issues)
+ 
+ 
+-def produced_object_schema(function, target=None):
++def produced_object_schema(function, target=None, *, bindings=None, variants=False):
+     """Read one literal object at its actual producer, without executing the producer.
+ 
+     A changed builder must be reviewed; unknown spreads/keys are not a field vocabulary.
+@@ -103,21 +104,37 @@ def produced_object_schema(function, target=None):
+         expected = ast.unparse(ast.parse(target, mode='eval').body)
+         values = [node.value for node in nodes if isinstance(node, ast.Assign)
+                   and any(ast.unparse(item) == expected for item in node.targets)]
+-    if len(values) != 1 or not isinstance(values[0], ast.Dict):
++    if not values or (not variants and len(values) != 1) or any(not isinstance(value, ast.Dict) for value in values):
+         raise ValueError(f'Review document field producer {function.__qualname__}: {target or "return"}')
++    bindings, used = bindings or {}, set()
+     def shape(node):
++        expression = ast.unparse(node)
++        if expression in bindings:
++            used.add(expression)
++            return bindings[expression]
+         if not isinstance(node, ast.Dict):
+             return {}
+-        if any(not isinstance(key, ast.Constant) or not isinstance(key.value, str) for key in node.keys):
+-            raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
+-        return {'type': 'object', 'properties': {key.value: shape(value)
+-                for key, value in zip(node.keys, node.values)}, 'additionalProperties': False}
+-    return shape(values[0])
++        properties = {}
++        for key, value in zip(node.keys, node.values):
++            if key is None:
++                expanded = shape(value)
++                if 'properties' not in expanded:
++                    raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
++                properties.update(expanded['properties'])
++            elif isinstance(key, ast.Constant) and isinstance(key.value, str):
++                properties[key.value] = shape(value)
++            else:
++                raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
++        return {'type': 'object', 'properties': properties, 'additionalProperties': False}
++    shapes = [shape(value) for value in values]
++    if used != set(bindings):
++        raise ValueError(f'Unused producer bindings in {function.__qualname__}: {sorted(set(bindings) - used)}')
++    return {'anyOf': shapes} if variants else shapes[0]
+ 
+ 
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+-    from do_math import context_store, submission
++    from do_math import academic, context_store, governance, reporting, submission, supervision, trace_report
+     from do_math.contracts import PLAN_DISPOSITION
+     from do_math.core_engine import CoreEngineMixin
+     from do_math.record_schemas import config_schema
+@@ -152,6 +169,18 @@ def field_schemas():
+     schemas['record_map']['properties']['read_tool'] = produced_object_schema(
+         submission.install_tools, 'context["record_map"]["read_tool"]')
+     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
++    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
++    schemas['operating_summary'] = produced_object_schema(reporting.operating_summary)
++    schemas['governance'] = produced_object_schema(governance.governance_view)
++    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
++    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
++    schemas['status'] = produced_object_schema(reporting.status_report, bindings={
++        'supervision_facts(instance, runtime)': produced_object_schema(supervision.supervision_facts),
++        'operating_summary(instance, runtime)': schemas['operating_summary'],
++        'observed': {'type': 'object', 'properties': {name: {} for name in reporting.OBSERVED_FIELDS}}})
++    schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
++    schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
++        CoreEngineMixin._context, "evidence['activity_continuations']")
+     return schemas
+ 
+ 
+@@ -226,3 +255,39 @@ def policy_issues(text, names):
+ def documented_policies(text):
+     return {name for span in SPAN.findall(text)
+             for name in re.findall(r'\b[a-z][a-z0-9_]*policy\b', span)}
++
++
++def function_reference_issues(text):
++    """Explicit module.function(...) notation names a callable, never a state field."""
++    issues = []
++    for token in SPAN.findall(text):
++        if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\(\.\.\.\)', token):
++            continue
++        root, *attributes = token[:-5].split('.')
++        try:
++            value = importlib.import_module(root if root == 'os' else 'do_math.' + root)
++            for attribute in attributes:
++                value = getattr(value, attribute)
++        except (ImportError, AttributeError):
++            issues.append(('function reference', token))
++        else:
++            if not callable(value):
++                issues.append(('function reference', token))
++    return sorted(set(issues))
++
++
++def diagnostic_names(scripts):
++    """Qualified check codes belong to their actual emitting/checking modules."""
++    owners = {'contract_check': 'submission.py', 'integration': 'integration.py'}
++    return {prefix: {node.value for node in ast.walk(ast.parse(
++                (Path(scripts) / 'do_math' / filename).read_text(encoding='utf-8')))
++            if isinstance(node, ast.Constant) and isinstance(node.value, str)
++            and re.fullmatch(re.escape(prefix) + r'\.[a-z][a-z0-9_]*', node.value)}
++            for prefix, filename in owners.items()}
++
++
++def diagnostic_reference_issues(text, names):
++    return sorted({('diagnostic code', token) for token in SPAN.findall(text)
++                   if re.fullmatch(r'[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*', token)
++                   and not token.endswith('.py') and token.split('.')[0] in names
++                   and token not in names[token.split('.')[0]]})

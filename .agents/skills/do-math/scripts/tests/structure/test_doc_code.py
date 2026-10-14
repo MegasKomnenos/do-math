@@ -14,6 +14,69 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_governance_fields_require_their_actual_boundary_owner(self):
+        schemas = field_schemas()
+        from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
+        for owner, text in (
+                ('import_payload', '`payload.kind` <!-- do-math fields: payload=import_payload -->'),
+                ('import_check', '`check.sha256` <!-- do-math fields: check=import_check -->'),
+                ('governance', '`governance.charter`'),
+                ('academic_validation', '`academic_validation.status`')):
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual governance value'):
+                scoped_field_issues(text, schemas)
+            with self.assertRaisesRegex(ValueError, 'actual governance value'):
+                scoped_field_issues(text, schemas, defer_governance=set(GOVERNANCE_BOUNDARIES) - {owner})
+            self.assertEqual(scoped_field_issues(text, schemas, defer_governance=(owner,)), [])
+            self.assertEqual(governance_field_issues(text, owner, None),
+                             [('actual field', text.split('`')[1])])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred governance owners'):
+            scoped_field_issues('', schemas, defer_governance=('import_checks',))
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual'):
+            scoped_field_issues('`status.budget`', schemas, defer_governance=GOVERNANCE_BOUNDARIES)
+        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
+            'import_check', {'sha256': 'seal'}), [('actual field', 'check.passed')])
+        self.assertEqual(governance_field_issues('`payload.kind` <!-- do-math fields: payload=import_payload -->',
+            'import_payload', {}), [])
+        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
+            'import_payload', {}), [('actual field', 'payload.deadline_offset_ms')])
+
+    def test_deferred_governance_has_the_assigned_actual_document_check(self):
+        import ast
+        from support.doc_code import GOVERNANCE_BOUNDARIES
+        owners = {
+            'import_payload': ('unit/test_governance_imports.py', 'ImportSealTests',
+                'test_import_unit_target_matches_each_governance_consumer'),
+            'import_check': ('unit/test_governance_imports.py', 'ImportSealTests',
+                'test_documented_import_check_is_bound_to_its_exact_bundle'),
+            'governance': ('unit/test_governance_records.py', 'DomainGovernanceTests',
+                'test_initialized_charter_is_single_authority_and_binds_approved_original'),
+            'academic_validation': ('unit/test_academic_requirements.py', 'Tests',
+                'test_documented_status_keeps_each_current_query_branch')}
+        def verify(mapping):
+            self.assertEqual(set(mapping), set(GOVERNANCE_BOUNDARIES))
+            for owner, (path, class_name, method) in mapping.items():
+                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
+                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
+                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
+                self.assertEqual(len(methods), 1)
+                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id == 'assert_governance_documents' and any(k.arg == 'owner'
+                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
+                    for n in ast.walk(methods[0])))
+        verify(owners)
+        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
+            changed = dict(owners)
+            if fault == 'missing_owner':
+                del changed['import_check']
+            elif fault == 'wrong_owner':
+                changed['import_checks'] = changed.pop('import_check')
+            elif fault == 'missing_method':
+                changed['import_check'] = (*changed['import_check'][:2], 'missing')
+            else:
+                changed['import_check'] = (*changed['import_check'][:2], 'test_import_reapplication_is_idempotent')
+            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                verify(changed)
+
     def test_delivery_fields_require_their_actual_return_owner(self):
         schemas = field_schemas()
         from support.doc_code import DELIVERY_INPUT_BOUNDARIES, delivery_field_issues
@@ -138,14 +201,14 @@ class DocumentCodeTests(unittest.TestCase):
             with self.subTest(owner=owner):
                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
                     scoped_field_issues('`' + field + '`', schemas,
-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
+                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair')), [])
+                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
+            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
+                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
 
     def test_deferred_tools_have_their_actual_document_check(self):
         import ast
@@ -443,7 +506,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))]
+                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -551,9 +614,10 @@ class DocumentCodeTests(unittest.TestCase):
                          [('function reference', 'governance.missing_function(...)')])
         self.assertEqual(function_reference_issues('`planning.RECORD_FAMILIES(...)`'),
                          [('function reference', 'planning.RECORD_FAMILIES(...)')])
-        self.assertEqual(scoped_field_issues('`governance.charter`', field_schemas()), [])
-        self.assertEqual(scoped_field_issues('`governance.mathematical_goal_basis`', field_schemas()),
-                         [('scoped field', 'governance.mathematical_goal_basis')])
+        from support.doc_code import governance_field_issues
+        self.assertEqual(governance_field_issues('`governance.charter`', 'governance', {'charter': {}}), [])
+        self.assertEqual(governance_field_issues('`governance.mathematical_goal_basis`', 'governance', {'charter': {}}),
+                         [('actual field', 'governance.mathematical_goal_basis')])
 
     def test_documented_diagnostic_codes_belong_to_their_actual_owner(self):
         names = diagnostic_names(SCRIPTS)
@@ -647,9 +711,13 @@ class DocumentCodeTests(unittest.TestCase):
         schemas = field_schemas()
         with self.assertRaisesRegex(ValueError, 'actual delivery input'):
             scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas)
-        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
-        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
-                         [('scoped field', 'check.passed')])
+        from support.doc_code import governance_field_issues
+        with self.assertRaisesRegex(ValueError, 'actual governance value'):
+            scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas)
+        self.assertEqual(governance_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->',
+                         'import_check', {'sha256': 'actual'}), [])
+        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
+                         'import_check', {'sha256': 'actual'}), [('actual field', 'check.passed')])
         from support.doc_code import delivery_field_issues
         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
@@ -657,8 +725,8 @@ class DocumentCodeTests(unittest.TestCase):
             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
                          [('scoped field', 'change.nonexistent')])
-        self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
-                         [('scoped field', 'payload.deadline_offset_ms')])
+        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
+                         'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
 
     def test_all_dotted_document_fields_have_an_owner(self):
         schemas = field_schemas()

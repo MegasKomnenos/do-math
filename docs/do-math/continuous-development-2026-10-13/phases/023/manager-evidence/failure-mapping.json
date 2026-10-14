@@ -1,0 +1,44 @@
+[
+  {
+    "suite": "red",
+    "id": "structure.test_doc_code.DocumentCodeTests.test_governance_fields_require_their_actual_boundary_owner",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_governance_has_the_assigned_actual_document_check",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "unit.test_governance_imports.ImportSealTests.test_import_unit_target_matches_each_governance_consumer",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "sim.test_governance_context.InterpretationContextTests.test_intent_input_exposes_actual_consumers_and_exact_source",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_keeps_original_sizes_and_waits_on_activity",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_records_the_context_budget_it_compared",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_scope_follows_the_role_the_input_is_prepared_for",
+    "original": "error",
+    "final": "passed"
+  }
+]

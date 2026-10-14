@@ -46,6 +46,8 @@ TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
 REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
                           ('role_review', 'pending_findings', 'review_research', 'review_sources')}
 DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
+GOVERNANCE_BOUNDARIES = {owner: object() for owner in
+                         ('import_payload', 'import_check', 'governance', 'academic_validation')}
 
 
 def documents(skill):
@@ -251,7 +253,7 @@ def consumed_object_schema(function, target, *, scope=None):
 
 def field_schemas():
     """Bind stored records separately from the role-input objects built from them."""
-    from do_math import academic, context_store, governance, reporting, submission
+    from do_math import context_store, governance, reporting, submission
     from do_math.contracts import PLAN_DISPOSITION
     from do_math.core_engine import CoreEngineMixin
     from do_math.record_schemas import config_schema
@@ -299,12 +301,9 @@ def field_schemas():
     schemas.update(REVIEW_INPUT_BOUNDARIES)
     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
-    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
+    schemas.update(GOVERNANCE_BOUNDARIES)
     schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
-    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
-        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
-    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
     schemas['query_result'] = QUERY_RESULT_BOUNDARY
     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
     schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
@@ -339,8 +338,6 @@ def field_schemas():
     schemas['operating_summary']['properties']['supervision'] = {
         'type': 'object', 'properties': {name: {} for name in summary['supervision']},
         'additionalProperties': False}
-    schemas['governance'] = produced_object_schema(governance.governance_view)
-    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
     schemas['status'] = STATUS_REPORT_BOUNDARY
     schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
@@ -441,7 +438,7 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
-                        defer_delivery_inputs=()):
+                        defer_delivery_inputs=(), defer_governance=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -468,6 +465,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_delivery_inputs) - DELIVERY_INPUT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred delivery input owners: {sorted(unknown)}')
+    unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
         issues.extend(binding_issues)
@@ -477,6 +477,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_governance:
+                    continue
+                raise ValueError(owner + ' fields require the actual governance value')
             owner = next((name for name, boundary in DELIVERY_INPUT_BOUNDARIES.items()
                           if local[root] is boundary), None)
             if owner is not None:
@@ -553,6 +559,42 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def governance_field_issues(text, owner, value):
+    """Read one real import input/check or current query, retaining its owner.
+
+    Only payload.kind is conditional on a nonempty payload, as the document
+    explicitly states. A valid no-change payload does not establish any other
+    field. Query failures do not provide a positive document sample.
+    """
+    if owner not in GOVERNANCE_BOUNDARIES:
+        raise ValueError('Unknown governance owner: ' + owner)
+    def visit(node, parts):
+        if not parts:
+            return True
+        part, *tail = parts
+        if part.startswith('['):
+            if not isinstance(node, list) or not node:
+                return False
+            index = part[1:-1]
+            items = node if not index else node[int(index):int(index) + 1]
+            return bool(items) and all(visit(item, tail) for item in items)
+        return isinstance(node, dict) and part in node and visit(node[part], tail)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, GOVERNANCE_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
+            if local.get(root) is not GOVERNANCE_BOUNDARIES[owner]:
+                continue
+            if owner == 'import_payload' and value == {} and parts == ['kind']:
+                continue
+            if not visit(value, parts):
+                issues.append(('actual field', token))
     return sorted(set(issues))
 
 

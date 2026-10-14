@@ -1,0 +1,450 @@
+{
+  "changes": [
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "start": {
+        "sha256": "d9c7b1e038e820cc3c9b381f6f5af0ff6d9749b1c44583251113cc69cbe016de",
+        "bytes": 31112
+      },
+      "final": {
+        "sha256": "cc66a89f06724c6966b5b062e9abd8c39889c53e290e358068c5e93f9e99f1a6",
+        "bytes": 31075
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "start": {
+        "sha256": "1e6efc7aeb0bcbe5baa4caba82ca4014344df0abcb6210e86c0b1d1924b5af5d",
+        "bytes": 48293
+      },
+      "final": {
+        "sha256": "75289ad1034161e395846567c763e9f1b6461753ec416f5ed44e31239d169b98",
+        "bytes": 49283
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_academic_consumers.py",
+      "start": {
+        "sha256": "9c4707e8781f632c3137c8dd7216bff5d0b5abc9f3460887478051107f7fbd7c",
+        "bytes": 14556
+      },
+      "final": {
+        "sha256": "092722d9ca4f2b6e950312aad8732d27178f23be9bddef55c4a3a817f1d8421a",
+        "bytes": 15828
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_governance_context.py",
+      "start": {
+        "sha256": "6b5ea1ece1037839dfdf7d2e389243c8a464cd21921649dd3e4eb5eeb15b7121",
+        "bytes": 6563
+      },
+      "final": {
+        "sha256": "b4750db71b2b2a740ffdc19e40193116b0ed29ff869dae1728ea15de8ed543d1",
+        "bytes": 6962
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_governance_interpretation.py",
+      "start": {
+        "sha256": "7554594714d25e98856e5ebe574e52ea877998588b16090c5ddabc9a41db7e7d",
+        "bytes": 5935
+      },
+      "final": {
+        "sha256": "25445f780afac970a72db0375dfa23acd1e001a155f4cebcce199bb122982544",
+        "bytes": 6593
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py",
+      "start": {
+        "sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286",
+        "bytes": 19920
+      },
+      "final": {
+        "sha256": "cfcbacbdcd292f59ba13accaf7432e6441f30b17261da2eb104fbd0b75b0bad4",
+        "bytes": 20069
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "start": {
+        "sha256": "c13c5d4fac76f90d3bc8fa601dd6ef1f7edc84df4fd4408d20200c3a71b85657",
+        "bytes": 53664
+      },
+      "final": {
+        "sha256": "a54ebc3aea828d8ce3e1857983067657af7b1b1830f1c9510ffefaa8bec16f28",
+        "bytes": 59828
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+      "start": {
+        "sha256": "a5cca2e4b8848854f60befc149766f3a8e0e3b171013724553f34c87e2813c8e",
+        "bytes": 42354
+      },
+      "final": {
+        "sha256": "08a30bad8725b95729a40b5250168e38da5a1b257dec3c5058f6a64abdec7dae",
+        "bytes": 44111
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+      "start": {
+        "sha256": "19390212280d0c21358b361cc8ad89cd9d1fe45c27346745454ab37149f3625c",
+        "bytes": 37422
+      },
+      "final": {
+        "sha256": "a9246de6536a8a06bf8ee56d7493a6c261f19468ffcc1f2903f32bcb5dfaff08",
+        "bytes": 41555
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_academic_requirements.py",
+      "start": {
+        "sha256": "64c16bf938fe6b645791c69a177db7f9eb0b669d984e2a5082305f817f660bc5",
+        "bytes": 9736
+      },
+      "final": {
+        "sha256": "80dd6b6d86b1b791a3691d7f8b80373062323ef526f0cf8b7646f1a633b258a7",
+        "bytes": 11797
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+      "start": {
+        "sha256": "442d38f31879f51bd5f07f5d09cbe848913b6d5e701f66e0a954eb0636499f4b",
+        "bytes": 5776
+      },
+      "final": {
+        "sha256": "2ac01286dda148f9ef32bef642538be8a57b18cc0b8d1c1fae3381b7e89fb0cc",
+        "bytes": 5954
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+      "start": {
+        "sha256": "9eeaa3072306454b7ff02729140c9033e2571b33f5bcdc70f659e8b1f66f6a4a",
+        "bytes": 38978
+      },
+      "final": {
+        "sha256": "a0067519c34f6dfcf92f33c336c6bf6bfec859100c08c1c27082a2491138c7ef",
+        "bytes": 43531
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_governance_records.py",
+      "start": {
+        "sha256": "9995cb973686420a883ee38b5dd95d6e53bdf43bbd08ca12c191ece91a1eeb0c",
+        "bytes": 15235
+      },
+      "final": {
+        "sha256": "1ebe3cbd4511efc6799f303354c093efd5e6c99213931ab0f6d044fe228ad00b",
+        "bytes": 16740
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py",
+      "start": {
+        "sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4",
+        "bytes": 38448
+      },
+      "final": {
+        "sha256": "b631f7afd9c0bda268edc162e96fb87932b7d51760b3e749c8202be83f7f3d4b",
+        "bytes": 39453
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      "start": {
+        "sha256": "ecb5ab43c9c832044474952be86a6c7f596cc6098347b448b8e7258595712a1b",
+        "bytes": 61066
+      },
+      "final": {
+        "sha256": "e1d18df9a6221cd69b2ccf02f6ee32701a48d1faa2e1be8f260897ca60b0bd8a",
+        "bytes": 62186
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+      "start": {
+        "sha256": "697bb13d681b503c219141f499111731f6d59d9065abaf36a21e945c295a9ea6",
+        "bytes": 5831
+      },
+      "final": {
+        "sha256": "3fa6f2cd00e29a64f02a312217d4c6ca4696fe6079cd48b3b105d35572456050",
+        "bytes": 6012
+      }
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+      "start": {
+        "sha256": "697a51a145109a50c18b5562ee23ab7496269caf3c1bb5009bf7501633ab85c4",
+        "bytes": 15268
+      },
+      "final": {
+        "sha256": "db4d85bc74c6c31d84783bd90cf8b2765a9c25211ba959f73f01a2d401d38f65",
+        "bytes": 15662
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "start": {
+        "sha256": "d9c7b1e038e820cc3c9b381f6f5af0ff6d9749b1c44583251113cc69cbe016de",
+        "bytes": 31112
+      },
+      "final": {
+        "sha256": "cc66a89f06724c6966b5b062e9abd8c39889c53e290e358068c5e93f9e99f1a6",
+        "bytes": 31075
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      "start": {
+        "sha256": "1e6efc7aeb0bcbe5baa4caba82ca4014344df0abcb6210e86c0b1d1924b5af5d",
+        "bytes": 48293
+      },
+      "final": {
+        "sha256": "75289ad1034161e395846567c763e9f1b6461753ec416f5ed44e31239d169b98",
+        "bytes": 49283
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_academic_consumers.py",
+      "start": {
+        "sha256": "9c4707e8781f632c3137c8dd7216bff5d0b5abc9f3460887478051107f7fbd7c",
+        "bytes": 14556
+      },
+      "final": {
+        "sha256": "092722d9ca4f2b6e950312aad8732d27178f23be9bddef55c4a3a817f1d8421a",
+        "bytes": 15828
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_governance_context.py",
+      "start": {
+        "sha256": "6b5ea1ece1037839dfdf7d2e389243c8a464cd21921649dd3e4eb5eeb15b7121",
+        "bytes": 6563
+      },
+      "final": {
+        "sha256": "b4750db71b2b2a740ffdc19e40193116b0ed29ff869dae1728ea15de8ed543d1",
+        "bytes": 6962
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_governance_interpretation.py",
+      "start": {
+        "sha256": "7554594714d25e98856e5ebe574e52ea877998588b16090c5ddabc9a41db7e7d",
+        "bytes": 5935
+      },
+      "final": {
+        "sha256": "25445f780afac970a72db0375dfa23acd1e001a155f4cebcce199bb122982544",
+        "bytes": 6593
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py",
+      "start": {
+        "sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286",
+        "bytes": 19920
+      },
+      "final": {
+        "sha256": "cfcbacbdcd292f59ba13accaf7432e6441f30b17261da2eb104fbd0b75b0bad4",
+        "bytes": 20069
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "start": {
+        "sha256": "c13c5d4fac76f90d3bc8fa601dd6ef1f7edc84df4fd4408d20200c3a71b85657",
+        "bytes": 53664
+      },
+      "final": {
+        "sha256": "a54ebc3aea828d8ce3e1857983067657af7b1b1830f1c9510ffefaa8bec16f28",
+        "bytes": 59828
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "start": {
+        "sha256": "a5cca2e4b8848854f60befc149766f3a8e0e3b171013724553f34c87e2813c8e",
+        "bytes": 42354
+      },
+      "final": {
+        "sha256": "08a30bad8725b95729a40b5250168e38da5a1b257dec3c5058f6a64abdec7dae",
+        "bytes": 44111
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+      "start": {
+        "sha256": "19390212280d0c21358b361cc8ad89cd9d1fe45c27346745454ab37149f3625c",
+        "bytes": 37422
+      },
+      "final": {
+        "sha256": "a9246de6536a8a06bf8ee56d7493a6c261f19468ffcc1f2903f32bcb5dfaff08",
+        "bytes": 41555
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_academic_requirements.py",
+      "start": {
+        "sha256": "64c16bf938fe6b645791c69a177db7f9eb0b669d984e2a5082305f817f660bc5",
+        "bytes": 9736
+      },
+      "final": {
+        "sha256": "80dd6b6d86b1b791a3691d7f8b80373062323ef526f0cf8b7646f1a633b258a7",
+        "bytes": 11797
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+      "start": {
+        "sha256": "442d38f31879f51bd5f07f5d09cbe848913b6d5e701f66e0a954eb0636499f4b",
+        "bytes": 5776
+      },
+      "final": {
+        "sha256": "2ac01286dda148f9ef32bef642538be8a57b18cc0b8d1c1fae3381b7e89fb0cc",
+        "bytes": 5954
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+      "start": {
+        "sha256": "9eeaa3072306454b7ff02729140c9033e2571b33f5bcdc70f659e8b1f66f6a4a",
+        "bytes": 38978
+      },
+      "final": {
+        "sha256": "a0067519c34f6dfcf92f33c336c6bf6bfec859100c08c1c27082a2491138c7ef",
+        "bytes": 43531
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_governance_records.py",
+      "start": {
+        "sha256": "9995cb973686420a883ee38b5dd95d6e53bdf43bbd08ca12c191ece91a1eeb0c",
+        "bytes": 15235
+      },
+      "final": {
+        "sha256": "1ebe3cbd4511efc6799f303354c093efd5e6c99213931ab0f6d044fe228ad00b",
+        "bytes": 16740
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py",
+      "start": {
+        "sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4",
+        "bytes": 38448
+      },
+      "final": {
+        "sha256": "b631f7afd9c0bda268edc162e96fb87932b7d51760b3e749c8202be83f7f3d4b",
+        "bytes": 39453
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      "start": {
+        "sha256": "ecb5ab43c9c832044474952be86a6c7f596cc6098347b448b8e7258595712a1b",
+        "bytes": 61066
+      },
+      "final": {
+        "sha256": "e1d18df9a6221cd69b2ccf02f6ee32701a48d1faa2e1be8f260897ca60b0bd8a",
+        "bytes": 62186
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+      "start": {
+        "sha256": "697bb13d681b503c219141f499111731f6d59d9065abaf36a21e945c295a9ea6",
+        "bytes": 5831
+      },
+      "final": {
+        "sha256": "3fa6f2cd00e29a64f02a312217d4c6ca4696fe6079cd48b3b105d35572456050",
+        "bytes": 6012
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+      "start": {
+        "sha256": "697a51a145109a50c18b5562ee23ab7496269caf3c1bb5009bf7501633ab85c4",
+        "bytes": 15268
+      },
+      "final": {
+        "sha256": "db4d85bc74c6c31d84783bd90cf8b2765a9c25211ba959f73f01a2d401d38f65",
+        "bytes": 15662
+      }
+    }
+  ],
+  "helper_functions": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "changed_existing_functions": [
+        "field_schemas",
+        "scoped_field_issues"
+      ],
+      "added_functions": [
+        "governance_field_issues"
+      ],
+      "unchanged_existing_functions": [
+        "code_examples",
+        "command_issues",
+        "constant_reference_issues",
+        "consumed_object_schema",
+        "declared_policy_names",
+        "delivery_field_issues",
+        "diagnostic_names",
+        "diagnostic_reference_issues",
+        "documented_policies",
+        "documents",
+        "field_bindings",
+        "function_reference_issues",
+        "item_variants",
+        "operational_field_issues",
+        "parser_options",
+        "policy_issues",
+        "produced_object_schema",
+        "producer_nodes",
+        "property_variants",
+        "result_field_issues",
+        "review_field_issues",
+        "status_field_schema",
+        "tool_field_issues",
+        "tool_options",
+        "unowned_field_references",
+        "written_object_schema"
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+      "changed_existing_functions": [],
+      "added_functions": [
+        "assert_governance_documents"
+      ],
+      "unchanged_existing_functions": [
+        "assert_delivery_documents",
+        "assert_operational_damage_rejected",
+        "assert_operational_documents",
+        "assert_result_damage_rejected",
+        "assert_result_documents",
+        "assert_review_documents",
+        "assert_tool_documents",
+        "central_check_knowledge",
+        "context_engine",
+        "context_state",
+        "damage",
+        "is_map_entry",
+        "issue",
+        "observe_review_documents",
+        "package",
+        "prepare",
+        "publish",
+        "record_contexts",
+        "review_input_value",
+        "tool_input_value"
+      ]
+    }
+  ],
+  "outside_writes": [],
+  "runtime_unchanged": true,
+  "product_documents_unchanged": true
+}

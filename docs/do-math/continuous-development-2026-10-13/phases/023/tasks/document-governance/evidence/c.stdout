@@ -1,0 +1,70 @@
+Open known defects: 0
+[structure] 30 tests
+[unit] 260 tests
+[sim] 132 tests
+[flows] 12 tests
+[boundary] 26 tests
+  isolated: boundary.test_engine_cli.CliExitTests
+  {'passed': 1}
+Over budget: 38 tests
+      2.734s > 2.0s sim.test_academic_public_currentness.AcademicPublicCurrentnessTests.test_public_goal_and_scope_changes_invalidate_judgments_and_preserve_inputs
+      3.594s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review
+      5.265s > 2.0s sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+     36.922s > 2.0s sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status
+      2.235s > 2.0s sim.test_planning_revision_transitions.RevisionTransitionTests.test_closed_target_leaves_other_revision_obligations_in_wait
+      2.032s > 2.0s sim.test_planning_revision_transitions.RevisionTransitionTests.test_extra_child_target_does_not_change_parent_scope
+      2.688s > 2.0s sim.test_role_input_context.PackagedInputTests.test_task_result_paths_survive_packaging_without_entering_validation_hashes
+      3.594s > 2.0s sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage
+     12.922s > 2.0s sim.test_role_input_context.ReviewSeatInputTests.test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys
+     14.313s > 2.0s sim.test_role_input_context.RoleContractInputTests.test_every_role_preserves_its_declared_judgment_inputs_or_exact_sources
+     19.890s > 2.0s sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+      0.688s > 0.2s unit.test_academic_requirements.Tests.test_documented_status_keeps_each_current_query_branch
+      0.266s > 0.2s unit.test_context_catalog.ContextStoreTests.test_new_catalog_is_hashed_from_the_bytes_it_wrote
+      1.015s > 0.2s unit.test_governance_imports.ImportSealTests.test_documented_import_check_is_bound_to_its_exact_bundle
+      0.578s > 0.2s unit.test_governance_imports.ImportSealTests.test_import_unit_target_matches_each_governance_consumer
+      0.406s > 0.2s unit.test_governance_records.DomainGovernanceTests.test_initialized_charter_is_single_authority_and_binds_approved_original
+      0.297s > 0.2s unit.test_knowledge_impact_review.ImpactBundleTests.test_bundle_level_reviewed_effect_is_applied_once
+      0.438s > 0.2s unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt
+      0.343s > 0.2s unit.test_knowledge_impact_review.ImpactReviewTests.test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence
+      0.844s > 0.2s unit.test_preflight.PreflightTests.test_an_empty_installed_document_is_incomplete
+      0.203s > 0.2s unit.test_preflight.PreflightTests.test_an_installed_document_behind_a_junction_out_of_the_skill_is_incomplete
+      0.328s > 0.2s unit.test_preflight.PreflightTests.test_current_installation_has_all_roles_and_schemas
+      0.313s > 0.2s unit.test_preflight.PreflightTests.test_missing_independent_operator_contract_is_incomplete
+      0.297s > 0.2s unit.test_preflight.PreflightTests.test_missing_operating_contract_is_incomplete
+      0.203s > 0.2s unit.test_preflight.PreflightTests.test_missing_scheduler_entrypoint_is_incomplete
+      0.235s > 0.2s unit.test_preflight.PreflightTests.test_read_only_and_observed_document_hashes
+      0.532s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+      0.234s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_prepared_source_uses_its_snapshot_after_head_advances
+      0.297s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+      0.235s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison
+      0.625s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+      0.266s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes
+      0.640s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+      0.250s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context
+      1.094s > 0.2s unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline
+      1.031s > 0.2s unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names
+      0.313s > 0.2s unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding
+      0.421s > 0.2s unit.test_submission_checks.CheckHistoryTests.test_documented_pass_is_bound_to_the_actual_candidate_and_check
+{"complete": true, "successful": false, "counts": {"passed": 456, "skipped": 1, "error": 3}, "group_seconds": {"structure": 2.8, "unit": 19.5, "sim": 246.4, "flows": 297.9, "boundary": 77.5}, "total_seconds": 644.1}
+   55.844s passed             flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_required_external_effect_uses_confirmed_loopback_receipt_before_completion
+   51.282s passed             flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_explicit_requirement_blocks_runtime_completion_until_independent_assessment
+   40.328s passed             flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear
+   39.203s passed             flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_non2xx_or_unknown_external_effect_cannot_complete_academic_requirement
+   36.922s passed             sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status
+   20.531s passed             flows.test_submission_acceptance.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work
+   19.890s passed             sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+   14.313s passed             sim.test_role_input_context.RoleContractInputTests.test_every_role_preserves_its_declared_judgment_inputs_or_exact_sources
+   12.922s passed             sim.test_role_input_context.ReviewSeatInputTests.test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys
+   11.782s passed             flows.test_submission_acceptance.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot
+   11.391s passed             flows.test_submission_acceptance.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer
+   11.031s passed             flows.test_submission_acceptance.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source
+    8.532s passed             boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes
+    5.688s passed             flows.test_submission_acceptance.AcceptanceTests.test_failed_request_does_not_stop_a_running_independent_worker
+    5.265s passed             sim.test_knowledge_currentness.RecoveryMaterialTests.test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources
+    5.125s passed             boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause
+    5.078s passed             flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared
+    4.672s passed             boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning
+    4.594s passed             boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot
+    3.890s passed             boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\023\tasks\document-governance\evidence\c\report.json
+Observed final returns 150 real check returns 45 academic queries 517

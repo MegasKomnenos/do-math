@@ -204,6 +204,7 @@ class RevisionTransitionTests(unittest.TestCase):
         self.assertEqual(action['superseded_revision_bases'], [old])
 
     def test_followup_request_enqueues_captured_targets_without_an_original_declaration(self):
+        before = deepcopy(self.sim.runtime['tasks'][self.identifier])
         _ended_execution(self.engine, 'EX-request', 'research_plan')
         self.sim.runtime['executions']['EX-request']['extensions'] = {'revision_requests': [{
             'record_ids': [self.identifier], 'reason': '계약을 다시 살핀다.'}]}
@@ -211,6 +212,7 @@ class RevisionTransitionTests(unittest.TestCase):
         action, = self.sim.runtime['queue']
         self.assertEqual(action['role'], 'research_preparation')
         self.assertEqual(action['requested_by'], 'EX-request')
+        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
         self.assertEqual(action['revision_targets'], revisions.capture_targets(
             self.sim.instance, self.sim.runtime, [self.identifier], source_ref='EX-request'))
         self.save_and_reload()

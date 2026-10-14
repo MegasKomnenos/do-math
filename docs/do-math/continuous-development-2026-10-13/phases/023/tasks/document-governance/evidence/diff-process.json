@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs\\do-math\\continuous-development-2026-10-13\\phases\\023\\tasks\\document-governance\\evidence\\save_diff.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p023",
+    "TMP": "C:\\t\\p023",
+    "TMPDIR": "C:\\t\\p023",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "start": "2026-10-14T06:53:59.176602+00:00",
+  "exit_code": 0,
+  "pid": 12180,
+  "end": "2026-10-14T06:54:03.131786+00:00",
+  "changes": []
+}

@@ -15,9 +15,34 @@ from do_math.academic import (academic_status, assess, current_requirements, eff
 from do_math.external import prepare_operation
 from do_math.knowledge import capture_basis
 from support.record_builders import domain_governance
+from support.engine_context import assert_governance_documents
 
 
 class Tests(unittest.TestCase):
+    def test_documented_status_keeps_each_current_query_branch(self):
+        # Contract expectations are explicit; the status producer is called once per branch.
+        requirements = current_requirements(self.instance)
+        active = {**deepcopy(self.runtime), 'tasks': {'T': {'academic_requirement_id': 'paper',
+            'solution_basis': self.basis, 'requirements_sha256': requirements['sha256'], 'selected_by': 'PLAN'}}}
+        rejected = {**deepcopy(self.runtime), 'external_rejections': [{'id': 'RJ', 'solution_basis': self.basis}]}
+        empty = deepcopy(self.instance)
+        empty['governance']['CH']['content']['academic_requirements'] = []
+        unsolved = {**self.instance, 'goal_status': 'unsolved'}
+        for instance, runtime, basis, status, reason in (
+                (unsolved, self.runtime, self.basis, 'not_applicable', 'goal not mathematically solved'),
+                (self.instance, self.runtime, None, 'incomplete', 'solution basis unreadable'),
+                (empty, self.runtime, self.basis, 'not_applicable', 'no academic requirements'),
+                (self.instance, self.runtime, self.basis, 'pending', 'requirements remain'),
+                (self.instance, active, self.basis, 'active', 'requirements remain'),
+                (self.instance, rejected, self.basis, 'externally_rejected', 'unresolved external rejection')):
+            with self.subTest(status=status, reason=reason):
+                value = academic_status(instance, runtime, basis)
+                assert_governance_documents(self, value, owner='academic_validation', status=status, reason=reason)
+                for damaged in ({'reason': reason}, {'status': 'completed', 'reason': reason},
+                                {'goal': 'P'}, {'status': status}):
+                    with self.subTest(damaged=damaged), self.assertRaises(AssertionError):
+                        assert_governance_documents(self, damaged, owner='academic_validation', status=status, reason=reason)
+
     def setUp(self):
         self.requirement = {'id': 'paper', 'scope': 'solution', 'criteria': ['draft'], 'assessor': 'research_plan'}
         self.instance = {'goal_status': 'mathematically_solved', 'governance': {'CH': {

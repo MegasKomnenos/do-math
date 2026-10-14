@@ -1,0 +1,93 @@
+commit a60fb70e2336c31e4aaaf0aed0864e02eae677a9
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Mon Oct 5 12:33:21 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Mon Oct 5 12:33:21 2026 +0900
+
+    진행 보고의 실제 파일 반환을 검증하고 조회 출력 교체를 마침
+
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 046d7555..e5f86932 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -56,9 +56,24 @@ class DocumentCodeTests(unittest.TestCase):
+             self.assertEqual(scoped_field_issues(text, schemas, defer_status=True), [])
+             self.assertEqual(unowned_field_references(text, schemas), [])
+         self.assertEqual(unowned_field_references('`statuz.budget`', schemas), ['statuz.budget'])
++        # unit.test_engine_trace_report_corruption owns the independent file
++        # response; deferring either boundary must not defer the other one.
++        for text in ('`operation_progress.telemetry_errors`',
++                     '`result.telemetry_errors` <!-- do-math fields: result=operation_progress -->'):
++            with self.assertRaisesRegex(ValueError, 'operation_progress fields require the actual file report'):
++                scoped_field_issues(text, schemas)
++            with self.assertRaisesRegex(ValueError, 'operation_progress fields require the actual file report'):
++                scoped_field_issues(text, schemas, defer_status=True)
++            self.assertEqual(scoped_field_issues(text, schemas, defer_operation_progress=True), [])
++            self.assertEqual(unowned_field_references(text, schemas), [])
++        with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
++            scoped_field_issues('`status.budget`', schemas, defer_operation_progress=True)
++        self.assertEqual(unowned_field_references('`operation_progres.telemetry_errors`', schemas),
++                         ['operation_progres.telemetry_errors'])
+         issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                   for document in documents(SKILL)
+-                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas, defer_status=True)]
++                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas,
++                                                  defer_status=True, defer_operation_progress=True)]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index caf281cd..219fedfb 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -24,9 +24,10 @@ ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
+ SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
+ FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
+ FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?)+')
+-# Only status is checked at the existing repository-return boundary. This is
+-# an owner, not a schema that could validate fields without the actual report.
++# These owners are checked at their existing repository/file-return boundaries,
++# not schemas that could validate fields without the actual responses.
+ STATUS_REPORT_BOUNDARY = object()
++OPERATION_PROGRESS_BOUNDARY = object()
+ 
+ 
+ def documents(skill):
+@@ -232,7 +233,7 @@ def consumed_object_schema(function, target, *, scope=None):
+ 
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+-    from do_math import academic, context_store, governance, reporting, submission, trace_report
++    from do_math import academic, context_store, governance, reporting, submission
+     from do_math.contracts import PLAN_DISPOSITION
+     from do_math.core_engine import CoreEngineMixin
+     from do_math.record_schemas import config_schema
+@@ -377,7 +378,7 @@ def field_schemas():
+         'additionalProperties': False}
+     schemas['governance'] = produced_object_schema(governance.governance_view)
+     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
+-    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
++    schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
+     schemas['status'] = STATUS_REPORT_BOUNDARY
+     schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
+     schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
+@@ -475,7 +476,7 @@ def unowned_field_references(text, schemas):
+     return sorted(pending)
+ 
+ 
+-def scoped_field_issues(text, schemas, *, defer_status=False):
++def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     issues = []
+     for line in text.splitlines():
+@@ -491,6 +492,10 @@ def scoped_field_issues(text, schemas, *, defer_status=False):
+                 if defer_status:
+                     continue
+                 raise ValueError('status fields require the actual repository report')
++            if local[root] is OPERATION_PROGRESS_BOUNDARY:
++                if defer_operation_progress:
++                    continue
++                raise ValueError('operation_progress fields require the actual file report')
+             candidates = [local[root]]
+             for part in parts:
+                 candidates = [child for schema in candidates for child in

@@ -33,6 +33,24 @@ class ImpactReviewCase(ImpactCase):
 
 
 class ImpactBundleTests(ImpactReviewCase):
+    def test_previous_hashes_cover_the_exact_current_mutation_targets(self):
+        original = deepcopy(self.bundle)
+        before = deepcopy((self.instance, self.runtime))
+        self.assertTrue(self._request()['plans'])
+        for target in original['previous_hashes']:
+            for fault in ('missing', 'changed'):
+                self.bundle = deepcopy(original)
+                if fault == 'missing':
+                    del self.bundle['previous_hashes'][target]
+                    reason = '^bundle previous hashes missing for mutation targets$'
+                else:
+                    self.bundle['previous_hashes'][target] = '0' * 64
+                    reason = '^bundle previous semantic hash changed: ' + target + '$'
+                with self.subTest(target=target, fault=fault), self.assertRaisesRegex(ValueError, reason):
+                    self._request()
+                self.assertEqual((self.instance, self.runtime), before)
+        self.bundle = original
+
     def test_impact_followup_requires_affected_records_and_coalesces_the_same_request(self):
         from do_math import knowledge
         from support.entry import entry

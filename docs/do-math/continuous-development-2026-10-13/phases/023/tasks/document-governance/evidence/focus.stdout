@@ -1,0 +1,30 @@
+Open known defects: 0
+[structure] 30 tests
+[unit] 6 tests
+[sim] 5 tests
+Over budget: 3 tests
+      0.640s > 0.2s unit.test_academic_requirements.Tests.test_documented_status_keeps_each_current_query_branch
+      0.703s > 0.2s unit.test_governance_imports.ImportSealTests.test_documented_import_check_is_bound_to_its_exact_bundle
+      0.391s > 0.2s unit.test_governance_records.DomainGovernanceTests.test_initialized_charter_is_single_authority_and_binds_approved_original
+{"complete": true, "successful": false, "counts": {"passed": 38, "failed": 3}, "group_seconds": {"structure": 2.4, "unit": 2.0, "sim": 17.0}, "total_seconds": 21.4}
+    1.359s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    1.297s passed             sim.test_academic_consumers.AcademicConsumerTests.test_actual_assessment_consumer_uses_item_dispositions_and_current_evidence
+    0.703s passed             unit.test_governance_imports.ImportSealTests.test_documented_import_check_is_bound_to_its_exact_bundle
+    0.640s passed             unit.test_academic_requirements.Tests.test_documented_status_keeps_each_current_query_branch
+    0.422s passed             sim.test_governance_interpretation.IntentConnections.test_check_cannot_apply_unresolved_proposed_changes
+    0.406s failed             sim.test_governance_context.InterpretationContextTests.test_intent_input_exposes_actual_consumers_and_exact_source
+    0.391s passed             unit.test_governance_records.DomainGovernanceTests.test_initialized_charter_is_single_authority_and_binds_approved_original
+    0.391s passed             sim.test_governance_interpretation.IntentConnections.test_clarification_still_receives_independent_check
+    0.359s passed             sim.test_governance_interpretation.IntentConnections.test_failed_check_returns_to_authoring_with_findings
+    0.156s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_result_inputs_have_a_document_check_in_the_assigned_method
+    0.141s failed             unit.test_governance_imports.ImportSealTests.test_import_unit_target_matches_each_governance_consumer
+    0.094s passed             structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method
+    0.063s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_reviews_have_their_actual_document_check
+    0.063s passed             structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input
+    0.062s passed             structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner
+    0.062s passed             structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema
+    0.047s passed             structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners
+    0.047s passed             unit.test_governance_records.DomainGovernanceTests.test_policy_coexists_and_only_explicit_supersession_retires_old_rule
+    0.047s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_delivery_has_the_assigned_actual_document_check
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\023\tasks\document-governance\evidence\focus\report.json

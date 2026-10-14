@@ -18,6 +18,7 @@ from do_math.canonical import exact_content_hash
 from do_math.governance import interpretation_schema
 from support.record_builders import checked_import, domain_governance, governance_import
 from support.state_builders import charter
+from support.engine_context import assert_governance_documents
 
 CHECKED = {"decision": "approved", "scope_complete": True, "unit_ids": ["U"], "question_ids": ["Q"], "findings": []}
 
@@ -27,6 +28,51 @@ def approved_check(bundle, **changes):
 
 
 class ImportSealTests(unittest.TestCase):
+    def test_documented_import_check_is_bound_to_its_exact_bundle(self):
+        from support.entry import entry
+        clock = entry().ports.clock
+        for decision, complete, findings in (('approved', True, []),
+                ('revision_required', True, ['Correct the interpretation']),
+                ('unresolved', True, []), ('approved', False, [])):
+            with self.subTest(decision=decision, complete=complete):
+                i, rt, source, out = governance_import()
+                bundle = gov.prepare_import(i, rt, source, out, execution_id='AUTHOR', input_ref='IN', clock=clock)
+                rt['executions']['CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
+                check_output = approved_check(bundle, decision=decision, scope_complete=complete, findings=findings)
+                checked = gov.check_import(i, rt, bundle['id'], check_output, execution_id='CHECK', clock=clock)
+                arguments = dict(bundle=checked, runtime=rt, output=check_output,
+                                 execution_id='CHECK', source=source)
+                assert_governance_documents(self, checked['check'], owner='import_check', **arguments)
+                self.assertEqual(checked, rt['intent_imports'][bundle['id']])
+                self.assertEqual(checked['status'], decision if complete else 'unresolved')
+                for fault in ('missing_hash', 'changed_hash', 'other_bundle', 'submission_check', 'changed_execution'):
+                    damaged = deepcopy(checked['check'])
+                    if fault == 'missing_hash':
+                        del damaged['sha256']
+                    elif fault == 'changed_hash':
+                        damaged['sha256'] = '0' * 64
+                    elif fault == 'other_bundle':
+                        damaged['bundle_sha256'] = '0' * 64
+                    elif fault == 'submission_check':
+                        damaged = {'passed': True}
+                    else:
+                        damaged['execution_id'] = 'OTHER'
+                    with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
+                        assert_governance_documents(self, damaged, owner='import_check', **arguments)
+                if decision != 'approved' or not complete:
+                    with self.assertRaisesRegex(ValueError, '^independent complete approval required$'):
+                        gov.apply_import(i, rt, bundle['id'], clock=clock)
+                else:
+                    # The whole import bundle is not the check it contains.
+                    with self.assertRaises((AssertionError, KeyError)):
+                        assert_governance_documents(self, checked, owner='import_check', **arguments)
+                    other = gov.prepare_import(i, rt, source, out, execution_id='ANOTHER', input_ref='IN', clock=clock)
+                    rt['executions']['OTHER-CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': other['sha256']}
+                    other_checked = gov.check_import(i, rt, other['id'], approved_check(other),
+                                                    execution_id='OTHER-CHECK', clock=clock)
+                    with self.assertRaises((AssertionError, KeyError)):
+                        assert_governance_documents(self, other_checked['check'], owner='import_check', **arguments)
+
     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):
         from support.entry import entry
         _entry = entry()
@@ -201,11 +247,22 @@ class ImportSealTests(unittest.TestCase):
                         'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
                         'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
+                assert_governance_documents(self, output['import_units'][0]['payload'],
+                                           owner='import_payload', unit=output['import_units'][0])
+                missing = deepcopy(output)
+                del missing['import_units'][0]['payload']['kind']
+                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
+                    gov.validate_import_units({'id': 'RI-test'}, {}, source, missing, clock=_entry.ports.clock)
+                mismatch = deepcopy(output)
+                mismatch['import_units'][0]['payload'] = {'kind': 'revoke', 'grant_id': target} if kind != 'revoke' else {'kind': 'task_scope', 'task_id': target}
+                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
+                    gov.validate_import_units({'id': 'RI-test'}, {}, source, mismatch, clock=_entry.ports.clock)
                 output['import_units'][0]['owner_ref'] = 'different-target'
                 with self.assertRaisesRegex(ValueError, '^payload target differs from owner coordinate$'):
                     gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock)
                 output['import_units'][0]['payload'] = {}
                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
+                assert_governance_documents(self, {}, owner='import_payload', unit=output['import_units'][0])
         # A question answer's owner is any question it resolves, not only the first.
         output['import_units'][0].update(owner_ref='QU-two', payload=deepcopy(cases[-1][2]))
         self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))

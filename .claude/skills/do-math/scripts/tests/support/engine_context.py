@@ -86,6 +86,67 @@ def review_input_value(case, context, key, workspace, *, manifest):
     return value
 
 
+def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
+                                bundle=None, output=None, unit=None, execution_id=None,
+                                source=None, status=None, reason=None):
+    """Bind P06/P10 to their actual input/result and independent contract facts."""
+    from do_math import governance
+    from do_math.canonical import exact_content_hash
+    from support.doc_code import documents, governance_field_issues
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(governance_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
+                         str(document))
+    if owner == 'import_payload':
+        case.assertEqual(value, unit['payload'])
+        if value:
+            case.assertEqual(value['kind'], unit['owner_kind'])
+            if value['kind'] in governance.GOVERNANCE_KINDS:
+                case.assertEqual(value['record']['id'], unit['owner_ref'])
+        return
+    if owner == 'import_check':
+        case.assertEqual(bundle['source'], source)
+        case.assertEqual(bundle['sha256'], governance.import_seal(bundle))
+        case.assertEqual(value, bundle['check'])
+        case.assertEqual(value['sha256'], exact_content_hash({**output, 'execution_id': execution_id}))
+        case.assertEqual({k: v for k, v in value.items() if k != 'sha256'},
+                         {**output, 'execution_id': execution_id})
+        case.assertEqual(value['bundle_sha256'], bundle['sha256'])
+        case.assertEqual(runtime['executions'][execution_id]['intent_import_sha256'], bundle['sha256'])
+        case.assertNotEqual(bundle['execution_id'], execution_id)
+        case.assertEqual(set(value['unit_ids']), {u['unit_id'] for u in bundle['output']['import_units']}
+                         if value['scope_complete'] else set(output['unit_ids']))
+        case.assertEqual(set(value['question_ids']), {q['id'] for q in bundle['output']['question_details']}
+                         if value['scope_complete'] else set(output['question_ids']))
+        case.assertEqual(bundle['status'], value['decision'] if value['scope_complete'] else 'unresolved')
+        return
+    if owner == 'governance':
+        governance.validate_governance_state(instance)
+        active = [r for r in instance['governance'].values() if r['status'] == 'active']
+        charter, = [r for r in active if r['kind'] == 'charter']
+        case.assertEqual(value['charter'], charter)
+        approval = instance['decisions'][charter['approval_ref']]
+        original = instance['governance_sources'][charter['source_ref']]
+        approval_source = instance['governance_sources'][approval['source_ref']]
+        case.assertEqual(approval['source_sha256'], approval_source['sha256'])
+        case.assertEqual(approval.get('input_source_ref', approval['source_ref']), original['id'])
+        case.assertEqual(approval.get('input_source_sha256', approval['source_sha256']), original['sha256'])
+        case.assertEqual(value['goal'], charter['content']['goal'])
+        case.assertEqual(value['goal_revision'], charter['revision'])
+        policies = sorted((r for r in active if r['kind'] == 'policy'), key=lambda r: r['id'])
+        case.assertEqual(value['policy_records'], policies)
+        case.assertEqual(value['policies'], '\n\n'.join(r['content']['text'] for r in policies))
+        case.assertEqual(value['policy_revision'], exact_content_hash(policies))
+        for kind in ('research_context', 'additional_audit'):
+            case.assertEqual(value['additional_audits' if kind == 'additional_audit' else kind],
+                             [r for r in active if r['kind'] == kind])
+        from do_math.academic import requirement_record
+        case.assertEqual(value['academic_requirements'], requirement_record(charter['content']['academic_requirements']))
+        return
+    if owner != 'academic_validation':
+        raise ValueError('Unknown governance owner: ' + owner)
+    case.assertEqual(value, {'status': status, 'reason': reason})
+
+
 def assert_delivery_documents(case, value, *, owner, output, context=None, schema=None,
                               extensions=None, execution_id=None, passed=None, received=None,
                               mode='producer', tool_sha256='same'):

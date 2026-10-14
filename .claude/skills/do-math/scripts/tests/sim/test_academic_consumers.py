@@ -23,7 +23,7 @@ from support.state_builders import charter_change
 from support.role_answers import disposition, review_items
 from support.observation_inputs import prepared_rule_conditions
 from support.academic_scenes import MANUSCRIPT, consumer_sim, ended, user_source, warm_consumer
-from support.engine_context import issue
+from support.engine_context import issue, package, assert_governance_documents
 from support.engine_lifecycle import research_grant
 
 setUpModule = warm_consumer
@@ -91,11 +91,28 @@ class AcademicConsumerTests(unittest.TestCase):
     def test_actual_assessment_consumer_uses_item_dispositions_and_current_evidence(self):
         engine, task, assessment = self.assessed()
         engine._record_academic_assessment(task, assessment, 'EX-plan')
-        self.assertEqual(engine._academic_status()['status'], 'completed')
+        value = engine._academic_status()
+        assert_governance_documents(self, value, owner='academic_validation',
+            status='completed', reason='all current requirements satisfied')
+        for role in ('research_plan', 'goal_audit'):
+            root = self.sim.root / ('document-' + role)
+            fitted, fixed = package(engine, root, role=role)
+            self.assertEqual(fitted['context']['academic_validation'], value)
+            assert_governance_documents(self, fitted['context']['academic_validation'],
+                owner='academic_validation', status='completed', reason='all current requirements satisfied')
+            assert_governance_documents(self, fitted['context']['governance'],
+                owner='governance', instance=engine.instance)
+            self.assertEqual(fixed['governance'], fitted['context']['governance'])
+            damaged = deepcopy(fitted['context']['academic_validation'])
+            damaged['status'] = 'pending'
+            with self.assertRaises(AssertionError):
+                assert_governance_documents(self, damaged, owner='academic_validation',
+                    status='completed', reason='all current requirements satisfied')
         engine._record_academic_assessment(task, assessment, 'EX-plan')
         self.assertEqual(len(engine.runtime['academic_assessments']), 1)
         engine.runtime['executions']['EX-work']['changed_evidence'] = True
-        self.assertNotEqual(engine._academic_status()['status'], 'completed')
+        assert_governance_documents(self, engine._academic_status(), owner='academic_validation',
+                                   status='active', reason='requirements remain')
         with self.assertRaisesRegex(ValueError, REJECTED_TEXT):
             engine._record_academic_assessment(task, assessment, 'EX-plan')
 

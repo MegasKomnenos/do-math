@@ -1,0 +1,1486 @@
+--- start/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ final/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+--- start/.agents/skills/do-math/scripts/tests/sim/test_academic_consumers.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_academic_consumers.py
+@@ -23,7 +23,7 @@
+ from support.role_answers import disposition, review_items
+ from support.observation_inputs import prepared_rule_conditions
+ from support.academic_scenes import MANUSCRIPT, consumer_sim, ended, user_source, warm_consumer
+-from support.engine_context import issue
++from support.engine_context import issue, package, assert_governance_documents
+ from support.engine_lifecycle import research_grant
+ 
+ setUpModule = warm_consumer
+@@ -91,11 +91,28 @@
+     def test_actual_assessment_consumer_uses_item_dispositions_and_current_evidence(self):
+         engine, task, assessment = self.assessed()
+         engine._record_academic_assessment(task, assessment, 'EX-plan')
+-        self.assertEqual(engine._academic_status()['status'], 'completed')
++        value = engine._academic_status()
++        assert_governance_documents(self, value, owner='academic_validation',
++            status='completed', reason='all current requirements satisfied')
++        for role in ('research_plan', 'goal_audit'):
++            root = self.sim.root / ('document-' + role)
++            fitted, fixed = package(engine, root, role=role)
++            self.assertEqual(fitted['context']['academic_validation'], value)
++            assert_governance_documents(self, fitted['context']['academic_validation'],
++                owner='academic_validation', status='completed', reason='all current requirements satisfied')
++            assert_governance_documents(self, fitted['context']['governance'],
++                owner='governance', instance=engine.instance)
++            self.assertEqual(fixed['governance'], fitted['context']['governance'])
++            damaged = deepcopy(fitted['context']['academic_validation'])
++            damaged['status'] = 'pending'
++            with self.assertRaises(AssertionError):
++                assert_governance_documents(self, damaged, owner='academic_validation',
++                    status='completed', reason='all current requirements satisfied')
+         engine._record_academic_assessment(task, assessment, 'EX-plan')
+         self.assertEqual(len(engine.runtime['academic_assessments']), 1)
+         engine.runtime['executions']['EX-work']['changed_evidence'] = True
+-        self.assertNotEqual(engine._academic_status()['status'], 'completed')
++        assert_governance_documents(self, engine._academic_status(), owner='academic_validation',
++                                   status='active', reason='requirements remain')
+         with self.assertRaisesRegex(ValueError, REJECTED_TEXT):
+             engine._record_academic_assessment(task, assessment, 'EX-plan')
+ 
+--- start/.agents/skills/do-math/scripts/tests/sim/test_governance_context.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_governance_context.py
+@@ -14,6 +14,7 @@
+ 
+ from do_math import governance as gov
+ from support.sim import Sim, warm_template
++from support.engine_context import assert_governance_documents, package
+ 
+ setUpModule = warm_template
+ 
+@@ -45,6 +46,9 @@
+         for row in context['import_consumers']:
+             document = SKILL / row['payload_contract']['document']
+             self.assertIn(row['owner_kind'], document.read_text(encoding='utf-8'))
++        fitted, _ = package(engine, sim.root / 'document-intent', role='intent_interpretation', target=identifier)
++        assert_governance_documents(self, fitted['context']['governance'], owner='governance', instance=engine.instance)
++        self.assertEqual(fitted['context']['original_source'], context['original_source'])
+ 
+     def test_intent_input_tasks_carry_the_contract_hash_a_scope_decision_binds(self):
+         # 입력-소비자.md task_scope uses the supplied task edition and hash; the application
+--- start/.agents/skills/do-math/scripts/tests/sim/test_governance_interpretation.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_governance_interpretation.py
+@@ -15,6 +15,7 @@
+ from do_math.execution_lifecycle import transition_execution
+ from support.engine_lifecycle import ObservedCalls, code_of
+ from support.governance_sim import returned
++from support.engine_context import assert_governance_documents
+ from support.sim import Sim, warm_template
+ 
+ setUpModule = warm_template
+@@ -78,7 +79,10 @@
+         engine = sim.engine
+         before = deepcopy(engine.runtime['queue'])
+         questions = deepcopy(engine.runtime['questions'])
+-        engine._apply(action, verdict(bundle, 'revision_required', False), 'EX-check')
++        output = verdict(bundle, 'revision_required', False)
++        engine._apply(action, output, 'EX-check')
++        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
++            runtime=engine.runtime, output=output, execution_id='EX-check', source=bundle['source'])
+         self.assertEqual(engine.runtime['queue'][:len(before)], before)
+         (retry,) = engine.runtime['queue'][len(before):]
+         self.assertEqual(retry['stage'], 'interpret')
+@@ -93,6 +97,10 @@
+         engine = sim.engine
+         queue = deepcopy(engine.runtime['queue'])
+         engine._apply(action, verdict(bundle), 'EX-check')
++        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
++            runtime=engine.runtime, output=verdict(bundle), execution_id='EX-check', source=bundle['source'])
++        assert_governance_documents(self, bundle['output']['import_units'][0]['payload'],
++            owner='import_payload', unit=bundle['output']['import_units'][0])
+         self.assertNotIn('CH-one', engine.instance['governance'])
+         self.assertEqual(engine.runtime['intent_imports'][bundle['id']]['application']['status'], 'awaiting_decision')
+         self.assertEqual(engine.runtime['question_links'][:len(links)], links)
+--- start/.agents/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py
+@@ -204,6 +204,7 @@
+         self.assertEqual(action['superseded_revision_bases'], [old])
+ 
+     def test_followup_request_enqueues_captured_targets_without_an_original_declaration(self):
++        before = deepcopy(self.sim.runtime['tasks'][self.identifier])
+         _ended_execution(self.engine, 'EX-request', 'research_plan')
+         self.sim.runtime['executions']['EX-request']['extensions'] = {'revision_requests': [{
+             'record_ids': [self.identifier], 'reason': '계약을 다시 살핀다.'}]}
+@@ -211,6 +212,7 @@
+         action, = self.sim.runtime['queue']
+         self.assertEqual(action['role'], 'research_preparation')
+         self.assertEqual(action['requested_by'], 'EX-request')
++        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
+         self.assertEqual(action['revision_targets'], revisions.capture_targets(
+             self.sim.instance, self.sim.runtime, [self.identifier], source_ref='EX-request'))
+         self.save_and_reload()
+--- start/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ final/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,69 @@
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_governance_fields_require_their_actual_boundary_owner(self):
++        schemas = field_schemas()
++        from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
++        for owner, text in (
++                ('import_payload', '`payload.kind` <!-- do-math fields: payload=import_payload -->'),
++                ('import_check', '`check.sha256` <!-- do-math fields: check=import_check -->'),
++                ('governance', '`governance.charter`'),
++                ('academic_validation', '`academic_validation.status`')):
++            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual governance value'):
++                scoped_field_issues(text, schemas)
++            with self.assertRaisesRegex(ValueError, 'actual governance value'):
++                scoped_field_issues(text, schemas, defer_governance=set(GOVERNANCE_BOUNDARIES) - {owner})
++            self.assertEqual(scoped_field_issues(text, schemas, defer_governance=(owner,)), [])
++            self.assertEqual(governance_field_issues(text, owner, None),
++                             [('actual field', text.split('`')[1])])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred governance owners'):
++            scoped_field_issues('', schemas, defer_governance=('import_checks',))
++        with self.assertRaisesRegex(ValueError, 'status fields require the actual'):
++            scoped_field_issues('`status.budget`', schemas, defer_governance=GOVERNANCE_BOUNDARIES)
++        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
++            'import_check', {'sha256': 'seal'}), [('actual field', 'check.passed')])
++        self.assertEqual(governance_field_issues('`payload.kind` <!-- do-math fields: payload=import_payload -->',
++            'import_payload', {}), [])
++        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
++            'import_payload', {}), [('actual field', 'payload.deadline_offset_ms')])
++
++    def test_deferred_governance_has_the_assigned_actual_document_check(self):
++        import ast
++        from support.doc_code import GOVERNANCE_BOUNDARIES
++        owners = {
++            'import_payload': ('unit/test_governance_imports.py', 'ImportSealTests',
++                'test_import_unit_target_matches_each_governance_consumer'),
++            'import_check': ('unit/test_governance_imports.py', 'ImportSealTests',
++                'test_documented_import_check_is_bound_to_its_exact_bundle'),
++            'governance': ('unit/test_governance_records.py', 'DomainGovernanceTests',
++                'test_initialized_charter_is_single_authority_and_binds_approved_original'),
++            'academic_validation': ('unit/test_academic_requirements.py', 'Tests',
++                'test_documented_status_keeps_each_current_query_branch')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(GOVERNANCE_BOUNDARIES))
++            for owner, (path, class_name, method) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_governance_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])))
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner':
++                del changed['import_check']
++            elif fault == 'wrong_owner':
++                changed['import_checks'] = changed.pop('import_check')
++            elif fault == 'missing_method':
++                changed['import_check'] = (*changed['import_check'][:2], 'missing')
++            else:
++                changed['import_check'] = (*changed['import_check'][:2], 'test_import_reapplication_is_idempotent')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_delivery_fields_require_their_actual_return_owner(self):
+         schemas = field_schemas()
+         from support.doc_code import DELIVERY_INPUT_BOUNDARIES, delivery_field_issues
+@@ -138,14 +201,14 @@
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair')), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -443,7 +506,7 @@
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -551,9 +614,10 @@
+                          [('function reference', 'governance.missing_function(...)')])
+         self.assertEqual(function_reference_issues('`planning.RECORD_FAMILIES(...)`'),
+                          [('function reference', 'planning.RECORD_FAMILIES(...)')])
+-        self.assertEqual(scoped_field_issues('`governance.charter`', field_schemas()), [])
+-        self.assertEqual(scoped_field_issues('`governance.mathematical_goal_basis`', field_schemas()),
+-                         [('scoped field', 'governance.mathematical_goal_basis')])
++        from support.doc_code import governance_field_issues
++        self.assertEqual(governance_field_issues('`governance.charter`', 'governance', {'charter': {}}), [])
++        self.assertEqual(governance_field_issues('`governance.mathematical_goal_basis`', 'governance', {'charter': {}}),
++                         [('actual field', 'governance.mathematical_goal_basis')])
+ 
+     def test_documented_diagnostic_codes_belong_to_their_actual_owner(self):
+         names = diagnostic_names(SCRIPTS)
+@@ -647,9 +711,13 @@
+         schemas = field_schemas()
+         with self.assertRaisesRegex(ValueError, 'actual delivery input'):
+             scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas)
+-        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
+-        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
+-                         [('scoped field', 'check.passed')])
++        from support.doc_code import governance_field_issues
++        with self.assertRaisesRegex(ValueError, 'actual governance value'):
++            scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas)
++        self.assertEqual(governance_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->',
++                         'import_check', {'sha256': 'actual'}), [])
++        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
++                         'import_check', {'sha256': 'actual'}), [('actual field', 'check.passed')])
+         from support.doc_code import delivery_field_issues
+         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+@@ -657,8 +725,8 @@
+             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+                          [('scoped field', 'change.nonexistent')])
+-        self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+-                         [('scoped field', 'payload.deadline_offset_ms')])
++        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
++                         'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
+ 
+     def test_all_dotted_document_fields_have_an_owner(self):
+         schemas = field_schemas()
+--- start/.agents/skills/do-math/scripts/tests/support/doc_code.py
++++ final/.agents/skills/do-math/scripts/tests/support/doc_code.py
+@@ -46,6 +46,8 @@
+ REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
+                           ('role_review', 'pending_findings', 'review_research', 'review_sources')}
+ DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
++GOVERNANCE_BOUNDARIES = {owner: object() for owner in
++                         ('import_payload', 'import_check', 'governance', 'academic_validation')}
+ 
+ 
+ def documents(skill):
+@@ -251,7 +253,7 @@
+ 
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+-    from do_math import academic, context_store, governance, reporting, submission
++    from do_math import context_store, governance, reporting, submission
+     from do_math.contracts import PLAN_DISPOSITION
+     from do_math.core_engine import CoreEngineMixin
+     from do_math.record_schemas import config_schema
+@@ -299,12 +301,9 @@
+     schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+-    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
++    schemas.update(GOVERNANCE_BOUNDARIES)
+     schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
+     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
+-    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
+-        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
+-    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
+     schemas['query_result'] = QUERY_RESULT_BOUNDARY
+     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
+     schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
+@@ -339,8 +338,6 @@
+     schemas['operating_summary']['properties']['supervision'] = {
+         'type': 'object', 'properties': {name: {} for name in summary['supervision']},
+         'additionalProperties': False}
+-    schemas['governance'] = produced_object_schema(governance.governance_view)
+-    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
+     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
+     schemas['status'] = STATUS_REPORT_BOUNDARY
+     schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
+@@ -441,7 +438,7 @@
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
+-                        defer_delivery_inputs=()):
++                        defer_delivery_inputs=(), defer_governance=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -468,6 +465,9 @@
+     unknown = set(defer_delivery_inputs) - DELIVERY_INPUT_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred delivery input owners: {sorted(unknown)}')
++    unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+         issues.extend(binding_issues)
+@@ -477,6 +477,12 @@
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_governance:
++                    continue
++                raise ValueError(owner + ' fields require the actual governance value')
+             owner = next((name for name, boundary in DELIVERY_INPUT_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if owner is not None:
+@@ -553,6 +559,42 @@
+                 if not candidates:
+                     issues.append(('scoped field', span))
+                     break
++    return sorted(set(issues))
++
++
++def governance_field_issues(text, owner, value):
++    """Read one real import input/check or current query, retaining its owner.
++
++    Only payload.kind is conditional on a nonempty payload, as the document
++    explicitly states. A valid no-change payload does not establish any other
++    field. Query failures do not provide a positive document sample.
++    """
++    if owner not in GOVERNANCE_BOUNDARIES:
++        raise ValueError('Unknown governance owner: ' + owner)
++    def visit(node, parts):
++        if not parts:
++            return True
++        part, *tail = parts
++        if part.startswith('['):
++            if not isinstance(node, list) or not node:
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return bool(items) and all(visit(item, tail) for item in items)
++        return isinstance(node, dict) and part in node and visit(node[part], tail)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, GOVERNANCE_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if not FIELD.fullmatch(token):
++                continue
++            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
++            if local.get(root) is not GOVERNANCE_BOUNDARIES[owner]:
++                continue
++            if owner == 'import_payload' and value == {} and parts == ['kind']:
++                continue
++            if not visit(value, parts):
++                issues.append(('actual field', token))
+     return sorted(set(issues))
+ 
+ 
+--- start/.agents/skills/do-math/scripts/tests/support/engine_context.py
++++ final/.agents/skills/do-math/scripts/tests/support/engine_context.py
+@@ -84,6 +84,67 @@
+         case.assertEqual(raw, canonical_json(value))
+         case.assertEqual(context[key]['total'], len(value))
+     return value
++
++
++def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
++                                bundle=None, output=None, unit=None, execution_id=None,
++                                source=None, status=None, reason=None):
++    """Bind P06/P10 to their actual input/result and independent contract facts."""
++    from do_math import governance
++    from do_math.canonical import exact_content_hash
++    from support.doc_code import documents, governance_field_issues
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(governance_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    if owner == 'import_payload':
++        case.assertEqual(value, unit['payload'])
++        if value:
++            case.assertEqual(value['kind'], unit['owner_kind'])
++            if value['kind'] in governance.GOVERNANCE_KINDS:
++                case.assertEqual(value['record']['id'], unit['owner_ref'])
++        return
++    if owner == 'import_check':
++        case.assertEqual(bundle['source'], source)
++        case.assertEqual(bundle['sha256'], governance.import_seal(bundle))
++        case.assertEqual(value, bundle['check'])
++        case.assertEqual(value['sha256'], exact_content_hash({**output, 'execution_id': execution_id}))
++        case.assertEqual({k: v for k, v in value.items() if k != 'sha256'},
++                         {**output, 'execution_id': execution_id})
++        case.assertEqual(value['bundle_sha256'], bundle['sha256'])
++        case.assertEqual(runtime['executions'][execution_id]['intent_import_sha256'], bundle['sha256'])
++        case.assertNotEqual(bundle['execution_id'], execution_id)
++        case.assertEqual(set(value['unit_ids']), {u['unit_id'] for u in bundle['output']['import_units']}
++                         if value['scope_complete'] else set(output['unit_ids']))
++        case.assertEqual(set(value['question_ids']), {q['id'] for q in bundle['output']['question_details']}
++                         if value['scope_complete'] else set(output['question_ids']))
++        case.assertEqual(bundle['status'], value['decision'] if value['scope_complete'] else 'unresolved')
++        return
++    if owner == 'governance':
++        governance.validate_governance_state(instance)
++        active = [r for r in instance['governance'].values() if r['status'] == 'active']
++        charter, = [r for r in active if r['kind'] == 'charter']
++        case.assertEqual(value['charter'], charter)
++        approval = instance['decisions'][charter['approval_ref']]
++        original = instance['governance_sources'][charter['source_ref']]
++        approval_source = instance['governance_sources'][approval['source_ref']]
++        case.assertEqual(approval['source_sha256'], approval_source['sha256'])
++        case.assertEqual(approval.get('input_source_ref', approval['source_ref']), original['id'])
++        case.assertEqual(approval.get('input_source_sha256', approval['source_sha256']), original['sha256'])
++        case.assertEqual(value['goal'], charter['content']['goal'])
++        case.assertEqual(value['goal_revision'], charter['revision'])
++        policies = sorted((r for r in active if r['kind'] == 'policy'), key=lambda r: r['id'])
++        case.assertEqual(value['policy_records'], policies)
++        case.assertEqual(value['policies'], '\n\n'.join(r['content']['text'] for r in policies))
++        case.assertEqual(value['policy_revision'], exact_content_hash(policies))
++        for kind in ('research_context', 'additional_audit'):
++            case.assertEqual(value['additional_audits' if kind == 'additional_audit' else kind],
++                             [r for r in active if r['kind'] == kind])
++        from do_math.academic import requirement_record
++        case.assertEqual(value['academic_requirements'], requirement_record(charter['content']['academic_requirements']))
++        return
++    if owner != 'academic_validation':
++        raise ValueError('Unknown governance owner: ' + owner)
++    case.assertEqual(value, {'status': status, 'reason': reason})
+ 
+ 
+ def assert_delivery_documents(case, value, *, owner, output, context=None, schema=None,
+--- start/.agents/skills/do-math/scripts/tests/unit/test_academic_requirements.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_academic_requirements.py
+@@ -15,9 +15,34 @@
+ from do_math.external import prepare_operation
+ from do_math.knowledge import capture_basis
+ from support.record_builders import domain_governance
++from support.engine_context import assert_governance_documents
+ 
+ 
+ class Tests(unittest.TestCase):
++    def test_documented_status_keeps_each_current_query_branch(self):
++        # Contract expectations are explicit; the status producer is called once per branch.
++        requirements = current_requirements(self.instance)
++        active = {**deepcopy(self.runtime), 'tasks': {'T': {'academic_requirement_id': 'paper',
++            'solution_basis': self.basis, 'requirements_sha256': requirements['sha256'], 'selected_by': 'PLAN'}}}
++        rejected = {**deepcopy(self.runtime), 'external_rejections': [{'id': 'RJ', 'solution_basis': self.basis}]}
++        empty = deepcopy(self.instance)
++        empty['governance']['CH']['content']['academic_requirements'] = []
++        unsolved = {**self.instance, 'goal_status': 'unsolved'}
++        for instance, runtime, basis, status, reason in (
++                (unsolved, self.runtime, self.basis, 'not_applicable', 'goal not mathematically solved'),
++                (self.instance, self.runtime, None, 'incomplete', 'solution basis unreadable'),
++                (empty, self.runtime, self.basis, 'not_applicable', 'no academic requirements'),
++                (self.instance, self.runtime, self.basis, 'pending', 'requirements remain'),
++                (self.instance, active, self.basis, 'active', 'requirements remain'),
++                (self.instance, rejected, self.basis, 'externally_rejected', 'unresolved external rejection')):
++            with self.subTest(status=status, reason=reason):
++                value = academic_status(instance, runtime, basis)
++                assert_governance_documents(self, value, owner='academic_validation', status=status, reason=reason)
++                for damaged in ({'reason': reason}, {'status': 'completed', 'reason': reason},
++                                {'goal': 'P'}, {'status': status}):
++                    with self.subTest(damaged=damaged), self.assertRaises(AssertionError):
++                        assert_governance_documents(self, damaged, owner='academic_validation', status=status, reason=reason)
++
+     def setUp(self):
+         self.requirement = {'id': 'paper', 'scope': 'solution', 'criteria': ['draft'], 'assessor': 'research_plan'}
+         self.instance = {'goal_status': 'mathematically_solved', 'governance': {'CH': {
+--- start/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+--- start/.agents/skills/do-math/scripts/tests/unit/test_governance_imports.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_governance_imports.py
+@@ -18,6 +18,7 @@
+ from do_math.governance import interpretation_schema
+ from support.record_builders import checked_import, domain_governance, governance_import
+ from support.state_builders import charter
++from support.engine_context import assert_governance_documents
+ 
+ CHECKED = {"decision": "approved", "scope_complete": True, "unit_ids": ["U"], "question_ids": ["Q"], "findings": []}
+ 
+@@ -27,6 +28,51 @@
+ 
+ 
+ class ImportSealTests(unittest.TestCase):
++    def test_documented_import_check_is_bound_to_its_exact_bundle(self):
++        from support.entry import entry
++        clock = entry().ports.clock
++        for decision, complete, findings in (('approved', True, []),
++                ('revision_required', True, ['Correct the interpretation']),
++                ('unresolved', True, []), ('approved', False, [])):
++            with self.subTest(decision=decision, complete=complete):
++                i, rt, source, out = governance_import()
++                bundle = gov.prepare_import(i, rt, source, out, execution_id='AUTHOR', input_ref='IN', clock=clock)
++                rt['executions']['CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
++                check_output = approved_check(bundle, decision=decision, scope_complete=complete, findings=findings)
++                checked = gov.check_import(i, rt, bundle['id'], check_output, execution_id='CHECK', clock=clock)
++                arguments = dict(bundle=checked, runtime=rt, output=check_output,
++                                 execution_id='CHECK', source=source)
++                assert_governance_documents(self, checked['check'], owner='import_check', **arguments)
++                self.assertEqual(checked, rt['intent_imports'][bundle['id']])
++                self.assertEqual(checked['status'], decision if complete else 'unresolved')
++                for fault in ('missing_hash', 'changed_hash', 'other_bundle', 'submission_check', 'changed_execution'):
++                    damaged = deepcopy(checked['check'])
++                    if fault == 'missing_hash':
++                        del damaged['sha256']
++                    elif fault == 'changed_hash':
++                        damaged['sha256'] = '0' * 64
++                    elif fault == 'other_bundle':
++                        damaged['bundle_sha256'] = '0' * 64
++                    elif fault == 'submission_check':
++                        damaged = {'passed': True}
++                    else:
++                        damaged['execution_id'] = 'OTHER'
++                    with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, damaged, owner='import_check', **arguments)
++                if decision != 'approved' or not complete:
++                    with self.assertRaisesRegex(ValueError, '^independent complete approval required$'):
++                        gov.apply_import(i, rt, bundle['id'], clock=clock)
++                else:
++                    # The whole import bundle is not the check it contains.
++                    with self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, checked, owner='import_check', **arguments)
++                    other = gov.prepare_import(i, rt, source, out, execution_id='ANOTHER', input_ref='IN', clock=clock)
++                    rt['executions']['OTHER-CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': other['sha256']}
++                    other_checked = gov.check_import(i, rt, other['id'], approved_check(other),
++                                                    execution_id='OTHER-CHECK', clock=clock)
++                    with self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, other_checked['check'], owner='import_check', **arguments)
++
+     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):
+         from support.entry import entry
+         _entry = entry()
+@@ -201,11 +247,22 @@
+                         'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
+                         'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
+                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
++                assert_governance_documents(self, output['import_units'][0]['payload'],
++                                           owner='import_payload', unit=output['import_units'][0])
++                missing = deepcopy(output)
++                del missing['import_units'][0]['payload']['kind']
++                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
++                    gov.validate_import_units({'id': 'RI-test'}, {}, source, missing, clock=_entry.ports.clock)
++                mismatch = deepcopy(output)
++                mismatch['import_units'][0]['payload'] = {'kind': 'revoke', 'grant_id': target} if kind != 'revoke' else {'kind': 'task_scope', 'task_id': target}
++                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
++                    gov.validate_import_units({'id': 'RI-test'}, {}, source, mismatch, clock=_entry.ports.clock)
+                 output['import_units'][0]['owner_ref'] = 'different-target'
+                 with self.assertRaisesRegex(ValueError, '^payload target differs from owner coordinate$'):
+                     gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock)
+                 output['import_units'][0]['payload'] = {}
+                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
++                assert_governance_documents(self, {}, owner='import_payload', unit=output['import_units'][0])
+         # A question answer's owner is any question it resolves, not only the first.
+         output['import_units'][0].update(owner_ref='QU-two', payload=deepcopy(cases[-1][2]))
+         self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
+--- start/.agents/skills/do-math/scripts/tests/unit/test_governance_records.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_governance_records.py
+@@ -15,6 +15,7 @@
+ from do_math.governance import apply_decision, authorize
+ from support.record_builders import domain_governance
+ from support.state_builders import charter, governance_start
++from support.engine_context import assert_governance_documents
+ 
+ SKILL = Path(__file__).resolve().parents[3]
+ 
+@@ -24,7 +25,23 @@
+         i = domain_governance()
+         self.assertNotIn("goal", i)
+         self.assertNotIn("policies", i)
+-        self.assertEqual(gov.governance_view(i)["goal"], "Prove P")
++        view = gov.governance_view(i)
++        self.assertEqual(view["goal"], "Prove P")
++        assert_governance_documents(self, view, owner='governance', instance=i)
++        for key in view:
++            damaged = deepcopy(view); del damaged[key]
++            with self.subTest(missing=key), self.assertRaises((AssertionError, KeyError)):
++                assert_governance_documents(self, damaged, owner='governance', instance=i)
++        for key, wrong in (('goal_revision', 2), ('policy_revision', '0' * 64),
++                           ('charter', charter('OTHER', 'Unapproved Q')), ('goal', 'Prove Q')):
++            damaged = {**deepcopy(view), key: wrong}
++            with self.subTest(changed=key), self.assertRaises((AssertionError, KeyError)):
++                assert_governance_documents(self, damaged, owner='governance', instance=i)
++        with self.assertRaises((AssertionError, KeyError)):
++            assert_governance_documents(self, {'status': 'completed'}, owner='governance', instance=i)
++        for charters in ({}, {**deepcopy(i['governance']), 'CH2': {**deepcopy(i['governance']['CH1']), 'id': 'CH2'}}):
++            with self.subTest(charters=list(charters)), self.assertRaisesRegex(ValueError, '^no unique approved charter$'):
++                gov.governance_view({**i, 'governance': charters})
+         self.assertEqual(i["governance"]["CH1"]["approval_ref"], "D")
+         changed = deepcopy(i["governance_sources"]["S"]); changed["text"] += "!"
+         with self.assertRaisesRegex(ValueError, "^immutable source bytes or revision changed$"):
+@@ -45,6 +62,7 @@
+             change = {"kind": "policy", "record": record, "decision_id": "D" + identifier}
+             i, runtime, _ = gov.apply_decision(i, runtime, change, source_ref="S", clock=_entry.ports.clock)
+         self.assertEqual({r["id"] for r in gov.governance_view(i)["policy_records"]}, {"P2", "P3"})
++        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
+         self.assertEqual(i["governance"]["P1"]["status"], "superseded")
+         with self.assertRaisesRegex(ValueError, "^governance decision requires a structured governance record$"):
+             gov.apply_decision(i, runtime, {"kind": "policy", "text": "replace all"}, source_ref="S", clock=_entry.ports.clock)
+@@ -62,6 +80,7 @@
+                              "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
+         i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
+         self.assertEqual(gov.governance_view(i)["additional_audits"][0]["id"], "AU")
++        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
+         audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "unsupported_assurance"
+         with self.assertRaisesRegex(ValueError, r"^change/record/content/verdict_mapping/pass: invalid enum"):
+             gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
+--- start/.agents/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py
+@@ -33,6 +33,24 @@
+ 
+ 
+ class ImpactBundleTests(ImpactReviewCase):
++    def test_previous_hashes_cover_the_exact_current_mutation_targets(self):
++        original = deepcopy(self.bundle)
++        before = deepcopy((self.instance, self.runtime))
++        self.assertTrue(self._request()['plans'])
++        for target in original['previous_hashes']:
++            for fault in ('missing', 'changed'):
++                self.bundle = deepcopy(original)
++                if fault == 'missing':
++                    del self.bundle['previous_hashes'][target]
++                    reason = '^bundle previous hashes missing for mutation targets$'
++                else:
++                    self.bundle['previous_hashes'][target] = '0' * 64
++                    reason = '^bundle previous semantic hash changed: ' + target + '$'
++                with self.subTest(target=target, fault=fault), self.assertRaisesRegex(ValueError, reason):
++                    self._request()
++                self.assertEqual((self.instance, self.runtime), before)
++        self.bundle = original
++
+     def test_impact_followup_requires_affected_records_and_coalesces_the_same_request(self):
+         from do_math import knowledge
+         from support.entry import entry
+--- start/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+--- start/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+--- start/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),
+--- start/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ final/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+--- start/.claude/skills/do-math/scripts/tests/sim/test_academic_consumers.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_academic_consumers.py
+@@ -23,7 +23,7 @@
+ from support.role_answers import disposition, review_items
+ from support.observation_inputs import prepared_rule_conditions
+ from support.academic_scenes import MANUSCRIPT, consumer_sim, ended, user_source, warm_consumer
+-from support.engine_context import issue
++from support.engine_context import issue, package, assert_governance_documents
+ from support.engine_lifecycle import research_grant
+ 
+ setUpModule = warm_consumer
+@@ -91,11 +91,28 @@
+     def test_actual_assessment_consumer_uses_item_dispositions_and_current_evidence(self):
+         engine, task, assessment = self.assessed()
+         engine._record_academic_assessment(task, assessment, 'EX-plan')
+-        self.assertEqual(engine._academic_status()['status'], 'completed')
++        value = engine._academic_status()
++        assert_governance_documents(self, value, owner='academic_validation',
++            status='completed', reason='all current requirements satisfied')
++        for role in ('research_plan', 'goal_audit'):
++            root = self.sim.root / ('document-' + role)
++            fitted, fixed = package(engine, root, role=role)
++            self.assertEqual(fitted['context']['academic_validation'], value)
++            assert_governance_documents(self, fitted['context']['academic_validation'],
++                owner='academic_validation', status='completed', reason='all current requirements satisfied')
++            assert_governance_documents(self, fitted['context']['governance'],
++                owner='governance', instance=engine.instance)
++            self.assertEqual(fixed['governance'], fitted['context']['governance'])
++            damaged = deepcopy(fitted['context']['academic_validation'])
++            damaged['status'] = 'pending'
++            with self.assertRaises(AssertionError):
++                assert_governance_documents(self, damaged, owner='academic_validation',
++                    status='completed', reason='all current requirements satisfied')
+         engine._record_academic_assessment(task, assessment, 'EX-plan')
+         self.assertEqual(len(engine.runtime['academic_assessments']), 1)
+         engine.runtime['executions']['EX-work']['changed_evidence'] = True
+-        self.assertNotEqual(engine._academic_status()['status'], 'completed')
++        assert_governance_documents(self, engine._academic_status(), owner='academic_validation',
++                                   status='active', reason='requirements remain')
+         with self.assertRaisesRegex(ValueError, REJECTED_TEXT):
+             engine._record_academic_assessment(task, assessment, 'EX-plan')
+ 
+--- start/.claude/skills/do-math/scripts/tests/sim/test_governance_context.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_governance_context.py
+@@ -14,6 +14,7 @@
+ 
+ from do_math import governance as gov
+ from support.sim import Sim, warm_template
++from support.engine_context import assert_governance_documents, package
+ 
+ setUpModule = warm_template
+ 
+@@ -45,6 +46,9 @@
+         for row in context['import_consumers']:
+             document = SKILL / row['payload_contract']['document']
+             self.assertIn(row['owner_kind'], document.read_text(encoding='utf-8'))
++        fitted, _ = package(engine, sim.root / 'document-intent', role='intent_interpretation', target=identifier)
++        assert_governance_documents(self, fitted['context']['governance'], owner='governance', instance=engine.instance)
++        self.assertEqual(fitted['context']['original_source'], context['original_source'])
+ 
+     def test_intent_input_tasks_carry_the_contract_hash_a_scope_decision_binds(self):
+         # 입력-소비자.md task_scope uses the supplied task edition and hash; the application
+--- start/.claude/skills/do-math/scripts/tests/sim/test_governance_interpretation.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_governance_interpretation.py
+@@ -15,6 +15,7 @@
+ from do_math.execution_lifecycle import transition_execution
+ from support.engine_lifecycle import ObservedCalls, code_of
+ from support.governance_sim import returned
++from support.engine_context import assert_governance_documents
+ from support.sim import Sim, warm_template
+ 
+ setUpModule = warm_template
+@@ -78,7 +79,10 @@
+         engine = sim.engine
+         before = deepcopy(engine.runtime['queue'])
+         questions = deepcopy(engine.runtime['questions'])
+-        engine._apply(action, verdict(bundle, 'revision_required', False), 'EX-check')
++        output = verdict(bundle, 'revision_required', False)
++        engine._apply(action, output, 'EX-check')
++        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
++            runtime=engine.runtime, output=output, execution_id='EX-check', source=bundle['source'])
+         self.assertEqual(engine.runtime['queue'][:len(before)], before)
+         (retry,) = engine.runtime['queue'][len(before):]
+         self.assertEqual(retry['stage'], 'interpret')
+@@ -93,6 +97,10 @@
+         engine = sim.engine
+         queue = deepcopy(engine.runtime['queue'])
+         engine._apply(action, verdict(bundle), 'EX-check')
++        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
++            runtime=engine.runtime, output=verdict(bundle), execution_id='EX-check', source=bundle['source'])
++        assert_governance_documents(self, bundle['output']['import_units'][0]['payload'],
++            owner='import_payload', unit=bundle['output']['import_units'][0])
+         self.assertNotIn('CH-one', engine.instance['governance'])
+         self.assertEqual(engine.runtime['intent_imports'][bundle['id']]['application']['status'], 'awaiting_decision')
+         self.assertEqual(engine.runtime['question_links'][:len(links)], links)
+--- start/.claude/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_planning_revision_transitions.py
+@@ -204,6 +204,7 @@
+         self.assertEqual(action['superseded_revision_bases'], [old])
+ 
+     def test_followup_request_enqueues_captured_targets_without_an_original_declaration(self):
++        before = deepcopy(self.sim.runtime['tasks'][self.identifier])
+         _ended_execution(self.engine, 'EX-request', 'research_plan')
+         self.sim.runtime['executions']['EX-request']['extensions'] = {'revision_requests': [{
+             'record_ids': [self.identifier], 'reason': '계약을 다시 살핀다.'}]}
+@@ -211,6 +212,7 @@
+         action, = self.sim.runtime['queue']
+         self.assertEqual(action['role'], 'research_preparation')
+         self.assertEqual(action['requested_by'], 'EX-request')
++        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
+         self.assertEqual(action['revision_targets'], revisions.capture_targets(
+             self.sim.instance, self.sim.runtime, [self.identifier], source_ref='EX-request'))
+         self.save_and_reload()
+--- start/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ final/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,69 @@
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_governance_fields_require_their_actual_boundary_owner(self):
++        schemas = field_schemas()
++        from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
++        for owner, text in (
++                ('import_payload', '`payload.kind` <!-- do-math fields: payload=import_payload -->'),
++                ('import_check', '`check.sha256` <!-- do-math fields: check=import_check -->'),
++                ('governance', '`governance.charter`'),
++                ('academic_validation', '`academic_validation.status`')):
++            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual governance value'):
++                scoped_field_issues(text, schemas)
++            with self.assertRaisesRegex(ValueError, 'actual governance value'):
++                scoped_field_issues(text, schemas, defer_governance=set(GOVERNANCE_BOUNDARIES) - {owner})
++            self.assertEqual(scoped_field_issues(text, schemas, defer_governance=(owner,)), [])
++            self.assertEqual(governance_field_issues(text, owner, None),
++                             [('actual field', text.split('`')[1])])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred governance owners'):
++            scoped_field_issues('', schemas, defer_governance=('import_checks',))
++        with self.assertRaisesRegex(ValueError, 'status fields require the actual'):
++            scoped_field_issues('`status.budget`', schemas, defer_governance=GOVERNANCE_BOUNDARIES)
++        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
++            'import_check', {'sha256': 'seal'}), [('actual field', 'check.passed')])
++        self.assertEqual(governance_field_issues('`payload.kind` <!-- do-math fields: payload=import_payload -->',
++            'import_payload', {}), [])
++        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
++            'import_payload', {}), [('actual field', 'payload.deadline_offset_ms')])
++
++    def test_deferred_governance_has_the_assigned_actual_document_check(self):
++        import ast
++        from support.doc_code import GOVERNANCE_BOUNDARIES
++        owners = {
++            'import_payload': ('unit/test_governance_imports.py', 'ImportSealTests',
++                'test_import_unit_target_matches_each_governance_consumer'),
++            'import_check': ('unit/test_governance_imports.py', 'ImportSealTests',
++                'test_documented_import_check_is_bound_to_its_exact_bundle'),
++            'governance': ('unit/test_governance_records.py', 'DomainGovernanceTests',
++                'test_initialized_charter_is_single_authority_and_binds_approved_original'),
++            'academic_validation': ('unit/test_academic_requirements.py', 'Tests',
++                'test_documented_status_keeps_each_current_query_branch')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(GOVERNANCE_BOUNDARIES))
++            for owner, (path, class_name, method) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_governance_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])))
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner':
++                del changed['import_check']
++            elif fault == 'wrong_owner':
++                changed['import_checks'] = changed.pop('import_check')
++            elif fault == 'missing_method':
++                changed['import_check'] = (*changed['import_check'][:2], 'missing')
++            else:
++                changed['import_check'] = (*changed['import_check'][:2], 'test_import_reapplication_is_idempotent')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_delivery_fields_require_their_actual_return_owner(self):
+         schemas = field_schemas()
+         from support.doc_code import DELIVERY_INPUT_BOUNDARIES, delivery_field_issues
+@@ -138,14 +201,14 @@
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair')), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -443,7 +506,7 @@
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -551,9 +614,10 @@
+                          [('function reference', 'governance.missing_function(...)')])
+         self.assertEqual(function_reference_issues('`planning.RECORD_FAMILIES(...)`'),
+                          [('function reference', 'planning.RECORD_FAMILIES(...)')])
+-        self.assertEqual(scoped_field_issues('`governance.charter`', field_schemas()), [])
+-        self.assertEqual(scoped_field_issues('`governance.mathematical_goal_basis`', field_schemas()),
+-                         [('scoped field', 'governance.mathematical_goal_basis')])
++        from support.doc_code import governance_field_issues
++        self.assertEqual(governance_field_issues('`governance.charter`', 'governance', {'charter': {}}), [])
++        self.assertEqual(governance_field_issues('`governance.mathematical_goal_basis`', 'governance', {'charter': {}}),
++                         [('actual field', 'governance.mathematical_goal_basis')])
+ 
+     def test_documented_diagnostic_codes_belong_to_their_actual_owner(self):
+         names = diagnostic_names(SCRIPTS)
+@@ -647,9 +711,13 @@
+         schemas = field_schemas()
+         with self.assertRaisesRegex(ValueError, 'actual delivery input'):
+             scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas)
+-        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
+-        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
+-                         [('scoped field', 'check.passed')])
++        from support.doc_code import governance_field_issues
++        with self.assertRaisesRegex(ValueError, 'actual governance value'):
++            scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas)
++        self.assertEqual(governance_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->',
++                         'import_check', {'sha256': 'actual'}), [])
++        self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
++                         'import_check', {'sha256': 'actual'}), [('actual field', 'check.passed')])
+         from support.doc_code import delivery_field_issues
+         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+@@ -657,8 +725,8 @@
+             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+                          [('scoped field', 'change.nonexistent')])
+-        self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+-                         [('scoped field', 'payload.deadline_offset_ms')])
++        self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
++                         'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
+ 
+     def test_all_dotted_document_fields_have_an_owner(self):
+         schemas = field_schemas()
+--- start/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ final/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -46,6 +46,8 @@
+ REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
+                           ('role_review', 'pending_findings', 'review_research', 'review_sources')}
+ DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
++GOVERNANCE_BOUNDARIES = {owner: object() for owner in
++                         ('import_payload', 'import_check', 'governance', 'academic_validation')}
+ 
+ 
+ def documents(skill):
+@@ -251,7 +253,7 @@
+ 
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+-    from do_math import academic, context_store, governance, reporting, submission
++    from do_math import context_store, governance, reporting, submission
+     from do_math.contracts import PLAN_DISPOSITION
+     from do_math.core_engine import CoreEngineMixin
+     from do_math.record_schemas import config_schema
+@@ -299,12 +301,9 @@
+     schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+-    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
++    schemas.update(GOVERNANCE_BOUNDARIES)
+     schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
+     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
+-    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
+-        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
+-    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
+     schemas['query_result'] = QUERY_RESULT_BOUNDARY
+     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
+     schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
+@@ -339,8 +338,6 @@
+     schemas['operating_summary']['properties']['supervision'] = {
+         'type': 'object', 'properties': {name: {} for name in summary['supervision']},
+         'additionalProperties': False}
+-    schemas['governance'] = produced_object_schema(governance.governance_view)
+-    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
+     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
+     schemas['status'] = STATUS_REPORT_BOUNDARY
+     schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
+@@ -441,7 +438,7 @@
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
+-                        defer_delivery_inputs=()):
++                        defer_delivery_inputs=(), defer_governance=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -468,6 +465,9 @@
+     unknown = set(defer_delivery_inputs) - DELIVERY_INPUT_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred delivery input owners: {sorted(unknown)}')
++    unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+         issues.extend(binding_issues)
+@@ -477,6 +477,12 @@
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_governance:
++                    continue
++                raise ValueError(owner + ' fields require the actual governance value')
+             owner = next((name for name, boundary in DELIVERY_INPUT_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if owner is not None:
+@@ -553,6 +559,42 @@
+                 if not candidates:
+                     issues.append(('scoped field', span))
+                     break
++    return sorted(set(issues))
++
++
++def governance_field_issues(text, owner, value):
++    """Read one real import input/check or current query, retaining its owner.
++
++    Only payload.kind is conditional on a nonempty payload, as the document
++    explicitly states. A valid no-change payload does not establish any other
++    field. Query failures do not provide a positive document sample.
++    """
++    if owner not in GOVERNANCE_BOUNDARIES:
++        raise ValueError('Unknown governance owner: ' + owner)
++    def visit(node, parts):
++        if not parts:
++            return True
++        part, *tail = parts
++        if part.startswith('['):
++            if not isinstance(node, list) or not node:
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return bool(items) and all(visit(item, tail) for item in items)
++        return isinstance(node, dict) and part in node and visit(node[part], tail)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, GOVERNANCE_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if not FIELD.fullmatch(token):
++                continue
++            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
++            if local.get(root) is not GOVERNANCE_BOUNDARIES[owner]:
++                continue
++            if owner == 'import_payload' and value == {} and parts == ['kind']:
++                continue
++            if not visit(value, parts):
++                issues.append(('actual field', token))
+     return sorted(set(issues))
+ 
+ 
+--- start/.claude/skills/do-math/scripts/tests/support/engine_context.py
++++ final/.claude/skills/do-math/scripts/tests/support/engine_context.py
+@@ -84,6 +84,67 @@
+         case.assertEqual(raw, canonical_json(value))
+         case.assertEqual(context[key]['total'], len(value))
+     return value
++
++
++def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
++                                bundle=None, output=None, unit=None, execution_id=None,
++                                source=None, status=None, reason=None):
++    """Bind P06/P10 to their actual input/result and independent contract facts."""
++    from do_math import governance
++    from do_math.canonical import exact_content_hash
++    from support.doc_code import documents, governance_field_issues
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(governance_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    if owner == 'import_payload':
++        case.assertEqual(value, unit['payload'])
++        if value:
++            case.assertEqual(value['kind'], unit['owner_kind'])
++            if value['kind'] in governance.GOVERNANCE_KINDS:
++                case.assertEqual(value['record']['id'], unit['owner_ref'])
++        return
++    if owner == 'import_check':
++        case.assertEqual(bundle['source'], source)
++        case.assertEqual(bundle['sha256'], governance.import_seal(bundle))
++        case.assertEqual(value, bundle['check'])
++        case.assertEqual(value['sha256'], exact_content_hash({**output, 'execution_id': execution_id}))
++        case.assertEqual({k: v for k, v in value.items() if k != 'sha256'},
++                         {**output, 'execution_id': execution_id})
++        case.assertEqual(value['bundle_sha256'], bundle['sha256'])
++        case.assertEqual(runtime['executions'][execution_id]['intent_import_sha256'], bundle['sha256'])
++        case.assertNotEqual(bundle['execution_id'], execution_id)
++        case.assertEqual(set(value['unit_ids']), {u['unit_id'] for u in bundle['output']['import_units']}
++                         if value['scope_complete'] else set(output['unit_ids']))
++        case.assertEqual(set(value['question_ids']), {q['id'] for q in bundle['output']['question_details']}
++                         if value['scope_complete'] else set(output['question_ids']))
++        case.assertEqual(bundle['status'], value['decision'] if value['scope_complete'] else 'unresolved')
++        return
++    if owner == 'governance':
++        governance.validate_governance_state(instance)
++        active = [r for r in instance['governance'].values() if r['status'] == 'active']
++        charter, = [r for r in active if r['kind'] == 'charter']
++        case.assertEqual(value['charter'], charter)
++        approval = instance['decisions'][charter['approval_ref']]
++        original = instance['governance_sources'][charter['source_ref']]
++        approval_source = instance['governance_sources'][approval['source_ref']]
++        case.assertEqual(approval['source_sha256'], approval_source['sha256'])
++        case.assertEqual(approval.get('input_source_ref', approval['source_ref']), original['id'])
++        case.assertEqual(approval.get('input_source_sha256', approval['source_sha256']), original['sha256'])
++        case.assertEqual(value['goal'], charter['content']['goal'])
++        case.assertEqual(value['goal_revision'], charter['revision'])
++        policies = sorted((r for r in active if r['kind'] == 'policy'), key=lambda r: r['id'])
++        case.assertEqual(value['policy_records'], policies)
++        case.assertEqual(value['policies'], '\n\n'.join(r['content']['text'] for r in policies))
++        case.assertEqual(value['policy_revision'], exact_content_hash(policies))
++        for kind in ('research_context', 'additional_audit'):
++            case.assertEqual(value['additional_audits' if kind == 'additional_audit' else kind],
++                             [r for r in active if r['kind'] == kind])
++        from do_math.academic import requirement_record
++        case.assertEqual(value['academic_requirements'], requirement_record(charter['content']['academic_requirements']))
++        return
++    if owner != 'academic_validation':
++        raise ValueError('Unknown governance owner: ' + owner)
++    case.assertEqual(value, {'status': status, 'reason': reason})
+ 
+ 
+ def assert_delivery_documents(case, value, *, owner, output, context=None, schema=None,
+--- start/.claude/skills/do-math/scripts/tests/unit/test_academic_requirements.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_academic_requirements.py
+@@ -15,9 +15,34 @@
+ from do_math.external import prepare_operation
+ from do_math.knowledge import capture_basis
+ from support.record_builders import domain_governance
++from support.engine_context import assert_governance_documents
+ 
+ 
+ class Tests(unittest.TestCase):
++    def test_documented_status_keeps_each_current_query_branch(self):
++        # Contract expectations are explicit; the status producer is called once per branch.
++        requirements = current_requirements(self.instance)
++        active = {**deepcopy(self.runtime), 'tasks': {'T': {'academic_requirement_id': 'paper',
++            'solution_basis': self.basis, 'requirements_sha256': requirements['sha256'], 'selected_by': 'PLAN'}}}
++        rejected = {**deepcopy(self.runtime), 'external_rejections': [{'id': 'RJ', 'solution_basis': self.basis}]}
++        empty = deepcopy(self.instance)
++        empty['governance']['CH']['content']['academic_requirements'] = []
++        unsolved = {**self.instance, 'goal_status': 'unsolved'}
++        for instance, runtime, basis, status, reason in (
++                (unsolved, self.runtime, self.basis, 'not_applicable', 'goal not mathematically solved'),
++                (self.instance, self.runtime, None, 'incomplete', 'solution basis unreadable'),
++                (empty, self.runtime, self.basis, 'not_applicable', 'no academic requirements'),
++                (self.instance, self.runtime, self.basis, 'pending', 'requirements remain'),
++                (self.instance, active, self.basis, 'active', 'requirements remain'),
++                (self.instance, rejected, self.basis, 'externally_rejected', 'unresolved external rejection')):
++            with self.subTest(status=status, reason=reason):
++                value = academic_status(instance, runtime, basis)
++                assert_governance_documents(self, value, owner='academic_validation', status=status, reason=reason)
++                for damaged in ({'reason': reason}, {'status': 'completed', 'reason': reason},
++                                {'goal': 'P'}, {'status': status}):
++                    with self.subTest(damaged=damaged), self.assertRaises(AssertionError):
++                        assert_governance_documents(self, damaged, owner='academic_validation', status=status, reason=reason)
++
+     def setUp(self):
+         self.requirement = {'id': 'paper', 'scope': 'solution', 'criteria': ['draft'], 'assessor': 'research_plan'}
+         self.instance = {'goal_status': 'mathematically_solved', 'governance': {'CH': {
+--- start/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+--- start/.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py
+@@ -18,6 +18,7 @@
+ from do_math.governance import interpretation_schema
+ from support.record_builders import checked_import, domain_governance, governance_import
+ from support.state_builders import charter
++from support.engine_context import assert_governance_documents
+ 
+ CHECKED = {"decision": "approved", "scope_complete": True, "unit_ids": ["U"], "question_ids": ["Q"], "findings": []}
+ 
+@@ -27,6 +28,51 @@
+ 
+ 
+ class ImportSealTests(unittest.TestCase):
++    def test_documented_import_check_is_bound_to_its_exact_bundle(self):
++        from support.entry import entry
++        clock = entry().ports.clock
++        for decision, complete, findings in (('approved', True, []),
++                ('revision_required', True, ['Correct the interpretation']),
++                ('unresolved', True, []), ('approved', False, [])):
++            with self.subTest(decision=decision, complete=complete):
++                i, rt, source, out = governance_import()
++                bundle = gov.prepare_import(i, rt, source, out, execution_id='AUTHOR', input_ref='IN', clock=clock)
++                rt['executions']['CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
++                check_output = approved_check(bundle, decision=decision, scope_complete=complete, findings=findings)
++                checked = gov.check_import(i, rt, bundle['id'], check_output, execution_id='CHECK', clock=clock)
++                arguments = dict(bundle=checked, runtime=rt, output=check_output,
++                                 execution_id='CHECK', source=source)
++                assert_governance_documents(self, checked['check'], owner='import_check', **arguments)
++                self.assertEqual(checked, rt['intent_imports'][bundle['id']])
++                self.assertEqual(checked['status'], decision if complete else 'unresolved')
++                for fault in ('missing_hash', 'changed_hash', 'other_bundle', 'submission_check', 'changed_execution'):
++                    damaged = deepcopy(checked['check'])
++                    if fault == 'missing_hash':
++                        del damaged['sha256']
++                    elif fault == 'changed_hash':
++                        damaged['sha256'] = '0' * 64
++                    elif fault == 'other_bundle':
++                        damaged['bundle_sha256'] = '0' * 64
++                    elif fault == 'submission_check':
++                        damaged = {'passed': True}
++                    else:
++                        damaged['execution_id'] = 'OTHER'
++                    with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, damaged, owner='import_check', **arguments)
++                if decision != 'approved' or not complete:
++                    with self.assertRaisesRegex(ValueError, '^independent complete approval required$'):
++                        gov.apply_import(i, rt, bundle['id'], clock=clock)
++                else:
++                    # The whole import bundle is not the check it contains.
++                    with self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, checked, owner='import_check', **arguments)
++                    other = gov.prepare_import(i, rt, source, out, execution_id='ANOTHER', input_ref='IN', clock=clock)
++                    rt['executions']['OTHER-CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': other['sha256']}
++                    other_checked = gov.check_import(i, rt, other['id'], approved_check(other),
++                                                    execution_id='OTHER-CHECK', clock=clock)
++                    with self.assertRaises((AssertionError, KeyError)):
++                        assert_governance_documents(self, other_checked['check'], owner='import_check', **arguments)
++
+     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):
+         from support.entry import entry
+         _entry = entry()
+@@ -201,11 +247,22 @@
+                         'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
+                         'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
+                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
++                assert_governance_documents(self, output['import_units'][0]['payload'],
++                                           owner='import_payload', unit=output['import_units'][0])
++                missing = deepcopy(output)
++                del missing['import_units'][0]['payload']['kind']
++                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
++                    gov.validate_import_units({'id': 'RI-test'}, {}, source, missing, clock=_entry.ports.clock)
++                mismatch = deepcopy(output)
++                mismatch['import_units'][0]['payload'] = {'kind': 'revoke', 'grant_id': target} if kind != 'revoke' else {'kind': 'task_scope', 'task_id': target}
++                with self.assertRaisesRegex(ValueError, '^payload and unit have different owners$'):
++                    gov.validate_import_units({'id': 'RI-test'}, {}, source, mismatch, clock=_entry.ports.clock)
+                 output['import_units'][0]['owner_ref'] = 'different-target'
+                 with self.assertRaisesRegex(ValueError, '^payload target differs from owner coordinate$'):
+                     gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock)
+                 output['import_units'][0]['payload'] = {}
+                 self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
++                assert_governance_documents(self, {}, owner='import_payload', unit=output['import_units'][0])
+         # A question answer's owner is any question it resolves, not only the first.
+         output['import_units'][0].update(owner_ref='QU-two', payload=deepcopy(cases[-1][2]))
+         self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
+--- start/.claude/skills/do-math/scripts/tests/unit/test_governance_records.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_governance_records.py
+@@ -15,6 +15,7 @@
+ from do_math.governance import apply_decision, authorize
+ from support.record_builders import domain_governance
+ from support.state_builders import charter, governance_start
++from support.engine_context import assert_governance_documents
+ 
+ SKILL = Path(__file__).resolve().parents[3]
+ 
+@@ -24,7 +25,23 @@
+         i = domain_governance()
+         self.assertNotIn("goal", i)
+         self.assertNotIn("policies", i)
+-        self.assertEqual(gov.governance_view(i)["goal"], "Prove P")
++        view = gov.governance_view(i)
++        self.assertEqual(view["goal"], "Prove P")
++        assert_governance_documents(self, view, owner='governance', instance=i)
++        for key in view:
++            damaged = deepcopy(view); del damaged[key]
++            with self.subTest(missing=key), self.assertRaises((AssertionError, KeyError)):
++                assert_governance_documents(self, damaged, owner='governance', instance=i)
++        for key, wrong in (('goal_revision', 2), ('policy_revision', '0' * 64),
++                           ('charter', charter('OTHER', 'Unapproved Q')), ('goal', 'Prove Q')):
++            damaged = {**deepcopy(view), key: wrong}
++            with self.subTest(changed=key), self.assertRaises((AssertionError, KeyError)):
++                assert_governance_documents(self, damaged, owner='governance', instance=i)
++        with self.assertRaises((AssertionError, KeyError)):
++            assert_governance_documents(self, {'status': 'completed'}, owner='governance', instance=i)
++        for charters in ({}, {**deepcopy(i['governance']), 'CH2': {**deepcopy(i['governance']['CH1']), 'id': 'CH2'}}):
++            with self.subTest(charters=list(charters)), self.assertRaisesRegex(ValueError, '^no unique approved charter$'):
++                gov.governance_view({**i, 'governance': charters})
+         self.assertEqual(i["governance"]["CH1"]["approval_ref"], "D")
+         changed = deepcopy(i["governance_sources"]["S"]); changed["text"] += "!"
+         with self.assertRaisesRegex(ValueError, "^immutable source bytes or revision changed$"):
+@@ -45,6 +62,7 @@
+             change = {"kind": "policy", "record": record, "decision_id": "D" + identifier}
+             i, runtime, _ = gov.apply_decision(i, runtime, change, source_ref="S", clock=_entry.ports.clock)
+         self.assertEqual({r["id"] for r in gov.governance_view(i)["policy_records"]}, {"P2", "P3"})
++        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
+         self.assertEqual(i["governance"]["P1"]["status"], "superseded")
+         with self.assertRaisesRegex(ValueError, "^governance decision requires a structured governance record$"):
+             gov.apply_decision(i, runtime, {"kind": "policy", "text": "replace all"}, source_ref="S", clock=_entry.ports.clock)
+@@ -62,6 +80,7 @@
+                              "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
+         i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
+         self.assertEqual(gov.governance_view(i)["additional_audits"][0]["id"], "AU")
++        assert_governance_documents(self, gov.governance_view(i), owner='governance', instance=i)
+         audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "unsupported_assurance"
+         with self.assertRaisesRegex(ValueError, r"^change/record/content/verdict_mapping/pass: invalid enum"):
+             gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
+--- start/.claude/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py
+@@ -33,6 +33,24 @@
+ 
+ 
+ class ImpactBundleTests(ImpactReviewCase):
++    def test_previous_hashes_cover_the_exact_current_mutation_targets(self):
++        original = deepcopy(self.bundle)
++        before = deepcopy((self.instance, self.runtime))
++        self.assertTrue(self._request()['plans'])
++        for target in original['previous_hashes']:
++            for fault in ('missing', 'changed'):
++                self.bundle = deepcopy(original)
++                if fault == 'missing':
++                    del self.bundle['previous_hashes'][target]
++                    reason = '^bundle previous hashes missing for mutation targets$'
++                else:
++                    self.bundle['previous_hashes'][target] = '0' * 64
++                    reason = '^bundle previous semantic hash changed: ' + target + '$'
++                with self.subTest(target=target, fault=fault), self.assertRaisesRegex(ValueError, reason):
++                    self._request()
++                self.assertEqual((self.instance, self.runtime), before)
++        self.bundle = original
++
+     def test_impact_followup_requires_affected_records_and_coalesces_the_same_request(self):
+         from do_math import knowledge
+         from support.entry import entry
+--- start/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+--- start/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+--- start/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),

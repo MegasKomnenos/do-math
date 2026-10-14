@@ -15,6 +15,7 @@ from do_math.engine import ResearchEngine
 from do_math.execution_lifecycle import transition_execution
 from support.engine_lifecycle import ObservedCalls, code_of
 from support.governance_sim import returned
+from support.engine_context import assert_governance_documents
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
@@ -78,7 +79,10 @@ class IntentConnections(unittest.TestCase):
         engine = sim.engine
         before = deepcopy(engine.runtime['queue'])
         questions = deepcopy(engine.runtime['questions'])
-        engine._apply(action, verdict(bundle, 'revision_required', False), 'EX-check')
+        output = verdict(bundle, 'revision_required', False)
+        engine._apply(action, output, 'EX-check')
+        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
+            runtime=engine.runtime, output=output, execution_id='EX-check', source=bundle['source'])
         self.assertEqual(engine.runtime['queue'][:len(before)], before)
         (retry,) = engine.runtime['queue'][len(before):]
         self.assertEqual(retry['stage'], 'interpret')
@@ -93,6 +97,10 @@ class IntentConnections(unittest.TestCase):
         engine = sim.engine
         queue = deepcopy(engine.runtime['queue'])
         engine._apply(action, verdict(bundle), 'EX-check')
+        assert_governance_documents(self, bundle['check'], owner='import_check', bundle=bundle,
+            runtime=engine.runtime, output=verdict(bundle), execution_id='EX-check', source=bundle['source'])
+        assert_governance_documents(self, bundle['output']['import_units'][0]['payload'],
+            owner='import_payload', unit=bundle['output']['import_units'][0])
         self.assertNotIn('CH-one', engine.instance['governance'])
         self.assertEqual(engine.runtime['intent_imports'][bundle['id']]['application']['status'], 'awaiting_decision')
         self.assertEqual(engine.runtime['question_links'][:len(links)], links)

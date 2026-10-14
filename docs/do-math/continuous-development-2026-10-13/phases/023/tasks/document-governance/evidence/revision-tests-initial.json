@@ -1,0 +1,709 @@
+[
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_every_declared_task_contract_field_is_a_sensitive_citation_premise",
+    "line": 36,
+    "tokens": [],
+    "code": "    def test_every_declared_task_contract_field_is_a_sensitive_citation_premise(self):\n        \"\"\"5-A: JSON projection sensitivity, before higher-level shape/admission checks.\"\"\"\n        original = deepcopy(self.runtime['tasks']['A'])\n        basis = capture_decision_basis(self.instance, self.runtime, ['A'])\n        for field in planning.CONTRACT_FIELDS:\n            changed = deepcopy(original)\n            value = changed.get(field)\n            if isinstance(value, str): changed[field] = value + ' changed'\n            elif type(value) is int: changed[field] = value + 1\n            elif isinstance(value, list): changed[field] = [*value, 'changed-member']\n            elif isinstance(value, dict): changed[field] = {**value, 'changed_content': True}\n            else: changed[field] = 'new-' + field\n            self.runtime['tasks']['A'] = changed\n            with self.subTest(contract_field=field):\n                differences = decision_basis_changes(basis, self.instance, self.runtime)\n                self.assertIn('contract_sha256', {row['field'] for row in differences})\n        self.runtime['tasks']['A'] = original\n        for field, value in (('status', 'active'), ('reviews', [{'decision': 'approved'}]),\n                             ('selection', {'execution_id': 'EX-new'}), ('history', [{'kind': 'management'}]),\n                             ('review_cycle_id', 'RC-added'), ('receipt', {'state': 'accepted'})):\n            self.runtime['tasks']['A'] = {**deepcopy(original), field: value}\n            with self.subTest(management_field=field):\n                self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])\n        self.runtime['tasks']['A'] = original",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_result_prefix_membership_is_stable_for_append_but_sensitive_to_replacement_and_removal",
+    "line": 61,
+    "tokens": [],
+    "code": "    def test_result_prefix_membership_is_stable_for_append_but_sensitive_to_replacement_and_removal(self):\n        basis = capture_decision_basis(self.instance, self.runtime, ['A'])\n        original = deepcopy(self.runtime['tasks']['A']['results'])\n        self.runtime['tasks']['A']['results'].append({'report': 'later result'})\n        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])\n        for values in ([], [{'report': 'replacement'}], [{'report': 'prefix replaced'}, {'report': 'later result'}]):\n            self.runtime['tasks']['A']['results'] = values\n            with self.subTest(results=values):\n                self.assertEqual([row['field'] for row in decision_basis_changes(basis, self.instance, self.runtime)],\n                                 ['results_sha256'])\n        self.runtime['tasks']['A']['results'] = original",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_task_bookkeeping_and_appended_results_are_not_content_changes",
+    "line": 73,
+    "tokens": [],
+    "code": "    def test_task_bookkeeping_and_appended_results_are_not_content_changes(self):\n        basis = capture_decision_basis(self.instance, self.runtime, [\"A\"])\n        task = self.runtime[\"tasks\"][\"A\"]\n        task.update(status=\"active\", reviews=[{\"decision\": \"approved\"}], deferred_reason=\"later\")\n        task[\"results\"].append({\"report\": \"second\"})\n        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])\n        task[\"status\"] = \"completed\"\n        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])\n        task[\"results\"][0][\"report\"] = \"changed\"\n        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime)[0][\"field\"], \"results_sha256\")",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_task_contract_change_and_result_removal_are_detected",
+    "line": 84,
+    "tokens": [],
+    "code": "    def test_task_contract_change_and_result_removal_are_detected(self):\n        basis = capture_decision_basis(self.instance, self.runtime, [\"A\"])\n        self.runtime[\"tasks\"][\"A\"].update(question=\"different\", results=[])\n        self.assertEqual({row[\"field\"] for row in decision_basis_changes(basis, self.instance, self.runtime)},\n                         {\"contract_sha256\", \"results_sha256\"})",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_split_knowledge_bookkeeping_is_stable_but_authored_reference_change_is_detected",
+    "line": 90,
+    "tokens": [],
+    "code": "    def test_split_knowledge_bookkeeping_is_stable_but_authored_reference_change_is_detected(self):\n        from support.entry import entry\n        _entry = entry()\n        self.instance, kid = create_candidate(self.instance, {\n            \"id\": \"K\", \"kind\": \"observation\", \"title\": \"P\", \"statement\": \"P\", \"explanation\": \"P\",\n            \"summary\": \"P\", \"lean_code\": \"\", \"declaration_names\": [], \"dependencies\": []},\n            source_ref=\"explicit-fixture\", actor_ref=\"fixture-producer\", clock=_entry.ports.clock)\n        record = self.instance['knowledge'][kid]\n        basis = capture_decision_basis(self.instance, self.runtime, [kid])\n        record.update(review_cycle_id=\"RC-new\", history=[{\"reason\": \"administrative review scheduling\"}])\n        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])\n        record['exposition_id'] = 'XP-replaced'\n        self.assertIn('content_sha256', {row['field'] for row in decision_basis_changes(basis, self.instance, self.runtime)})",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.BasisTests.test_a_previous_approval_is_invalid_after_its_external_premise_changes",
+    "line": 104,
+    "tokens": [],
+    "code": "    def test_a_previous_approval_is_invalid_after_its_external_premise_changes(self):\n        task = {**candidate(\"B\"), \"id\": \"B\", \"revision\": 1, \"question\": \"use A\", \"inputs\": [\"A\"], \"results\": []}\n        self.runtime[\"tasks\"][\"B\"] = task\n        review = planning.seal_contract_review(task, contract_review({\"task\": task}),\n            self.instance, self.runtime, execution_id=\"EX-independent-review\")\n        self.assertTrue(planning.contract_review_current(review, task, self.instance, self.runtime)[\"valid\"])\n        self.runtime[\"tasks\"][\"A\"][\"deferred_reason\"] = \"bookkeeping\"\n        self.assertTrue(planning.contract_review_current(review, task, self.instance, self.runtime)[\"valid\"])\n        self.runtime[\"tasks\"][\"A\"][\"question\"] = \"new premise\"\n        self.assertFalse(planning.contract_review_current(review, task, self.instance, self.runtime)[\"valid\"])",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionWaitTests.test_pending_revision_blocks_dependents_but_not_independent_or_delegated_work",
+    "line": 117,
+    "tokens": [],
+    "code": "    def test_pending_revision_blocks_dependents_but_not_independent_or_delegated_work(self):\n        self.runtime[\"tasks\"][\"B\"] = {\"id\": \"B\", \"inputs\": [\"A\"]}\n        self.runtime[\"tasks\"][\"C\"] = {\"id\": \"C\", \"inputs\": []}\n        writer = {\"id\": \"write\", \"role\": \"research_preparation\",\n                  \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"A\"])}\n        self.runtime[\"queue\"] = [writer]\n        self.assertTrue(planning.revision_waits({\"id\": \"B-work\", \"role\": \"research_work\", \"target\": \"B\"},\n                                                self.instance, self.runtime))\n        self.assertFalse(planning.revision_waits({\"id\": \"C-work\", \"role\": \"research_work\", \"target\": \"C\"},\n                                                 self.instance, self.runtime))\n        self.instance[\"knowledge\"][\"K\"] = {\"id\": \"K\", \"statement\": \"P\", \"status\": \"candidate\"}\n        self.runtime[\"tasks\"][\"D\"] = {\"id\": \"D\", \"inputs\": [\"K\"], \"knowledge_revision_targets\": [\"K\"],\n                                      \"revision_request_action_id\": \"write-K\"}\n        self.runtime[\"queue\"].append({\"id\": \"write-K\", \"role\": \"research_preparation\",\n                                      \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"K\"])})\n        self.assertFalse(planning.revision_waits({\"id\": \"D-review\", \"role\": \"task_contract_review\", \"target\": \"D\"},\n                                                 self.instance, self.runtime))",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionWaitTests.test_unstarted_writers_reading_each_others_targets_drain_oldest_first",
+    "line": 135,
+    "tokens": [],
+    "code": "    def test_unstarted_writers_reading_each_others_targets_drain_oldest_first(self):\n        self.runtime[\"tasks\"][\"B\"] = {\"id\": \"B\", \"revision\": 1, \"inputs\": [\"A\"]}\n        self.runtime[\"tasks\"][\"A\"][\"inputs\"] = [\"B\"]\n        first = {\"id\": \"AC-1\", \"role\": \"research_preparation\", \"target\": \"A\",\n                 \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"A\"])}\n        second = {\"id\": \"AC-2\", \"role\": \"research_preparation\", \"target\": \"B\",\n                  \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"B\"])}\n        both = {\"id\": \"AC-3\", \"role\": \"research_preparation\", \"target\": \"A\",\n                \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"A\", \"B\"])}\n        self.runtime[\"queue\"] = [second, both, first]\n        self.assertEqual(planning.revision_waits(first, self.instance, self.runtime), [])\n        self.assertEqual([w[\"action_id\"] for w in planning.revision_waits(second, self.instance, self.runtime)], [\"AC-1\"])\n        self.assertEqual(sorted(w[\"action_id\"] for w in planning.revision_waits(both, self.instance, self.runtime)),\n                         [\"AC-1\", \"AC-2\"])\n        assert_wait_graphs(self.instance, self.runtime)\n        self.assertTrue(planning.revision_waits({\"id\": \"A-work\", \"role\": \"research_work\", \"target\": \"A\"},\n                                                self.instance, self.runtime))\n        self.runtime[\"executions\"][\"E\"] = {\"id\": \"E\", \"status\": \"running\", \"action\": second}\n        waits = planning.revision_waits(first, self.instance, self.runtime)\n        self.assertEqual([w[\"action_id\"] for w in waits if \"action_id\" in w], [\"AC-2\"])\n        self.assertEqual([w[\"execution_id\"] for w in waits if \"execution_id\" in w], [\"E\"])\n        # The running writer waits for nothing: the two writers' mutual reads form no wait cycle.\n        assert_wait_graphs(self.instance, self.runtime)",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionWaitTests.test_writer_drains_a_running_plan_but_failed_writer_does_not_block_diagnosis",
+    "line": 159,
+    "tokens": [],
+    "code": "    def test_writer_drains_a_running_plan_but_failed_writer_does_not_block_diagnosis(self):\n        writer = {\"id\": \"write\", \"role\": \"research_preparation\",\n                  \"revision_targets\": revisions.capture_targets(self.instance, self.runtime, [\"A\"])}\n        self.runtime[\"executions\"][\"E\"] = {\"id\": \"E\", \"status\": \"running\", \"action\": {\"id\": \"plan\", \"role\": \"research_plan\"}}\n        self.assertTrue(planning.revision_waits(writer, self.instance, self.runtime))\n        self.runtime[\"executions\"][\"E\"][\"status\"] = \"ended\"\n        self.runtime[\"waiting_actions\"][\"write\"] = {\"action\": writer, \"kind\": \"execution_failure\"}\n        self.assertFalse(planning.revision_waits({\"id\": \"next-plan\", \"role\": \"research_plan\"}, self.instance, self.runtime))",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionResponseTests.test_declared_revision_requires_an_explicit_resolution",
+    "line": 170,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_declared_revision_requires_an_explicit_resolution(self):\n        context = {\"action\": {\"role\": \"research_preparation\", \"revision_targets\": {\"A\": {\"revision\": 1, \"required\": True}}},\n                   \"tasks\": [self.runtime[\"tasks\"][\"A\"]]}\n        self.assertEqual(revisions.submission_errors({\"candidates\": []}, {}, context), [\n            {'path': 'activity-extensions.json/revision_resolutions',\n             'message': 'resolve each declared target exactly once, using a task withdrawal only for task targets'}])\n        extension = {\"revision_resolutions\": [{\"record_id\": \"A\", \"disposition\": \"unchanged\", \"reason\": \"not needed\"}]}\n        self.assertEqual(revisions.submission_errors({\"candidates\": []}, extension, context), [\n            {'path': 'activity-extensions.json/revision_resolutions',\n             'message': 'a required revision or rejected contract cannot be cancelled as unchanged'}])\n        extension[\"revision_resolutions\"][0][\"disposition\"] = \"deferred\"\n        self.assertEqual(revisions.submission_errors({\"candidates\": []}, extension, context), [])",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionResponseTests.test_dependency_cycles_are_reported_with_the_actual_edges",
+    "line": 183,
+    "tokens": [],
+    "code": "    def test_dependency_cycles_are_reported_with_the_actual_edges(self):\n        self.assertEqual(revisions.dependency_cycles({\"A\": {\"dependencies\": [\"B\"]}, \"B\": {\"dependencies\": [\"A\"]}}),\n                         [[\"A\", \"B\", \"A\"]])",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_governance_decision_basis.RevisionResponseTests.test_revision_response_rejects_distinct_titles_for_the_same_existing_task",
+    "line": 187,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_revision_response_rejects_distinct_titles_for_the_same_existing_task(self):\n        context = {\"action\": {\"role\": \"research_preparation\", \"revision_targets\": {\"A\": {}}},\n                   \"tasks\": [self.runtime[\"tasks\"][\"A\"]]}\n        extension = {\"revision_resolutions\": [\n            {\"record_id\": \"A\", \"disposition\": \"revised\", \"reason\": \"Replace the contract\"}]}\n        output = {\"candidates\": [{\"title\": \"First\", \"revises_task_id\": \"A\"},\n                                 {\"title\": \"Second\", \"revises_task_id\": \"A\"}]}\n        errors = revisions.submission_errors(output, extension, context)\n        self.assertEqual(errors, [{'path': 'activity-extensions.json/revision_targets',\n                                   'message': 'each existing task may have only one replacement candidate per response'}])\n        output[\"candidates\"][1][\"revises_task_id\"] = None\n        self.assertEqual(revisions.submission_errors(output, extension, context), [])",
+    "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_impact_followup_requires_affected_records_and_coalesces_the_same_request",
+    "line": 36,
+    "tokens": [],
+    "code": "    def test_impact_followup_requires_affected_records_and_coalesces_the_same_request(self):\n        from do_math import knowledge\n        from support.entry import entry\n        first, dependent, _ = self.ids\n        for affected in (set(), {dependent}):\n            with self.subTest(affected=sorted(affected)):\n                runtime = deepcopy(self.runtime)\n                runtime['queue'] = []\n                before = deepcopy((self.instance, runtime))\n                instance, changed = knowledge._apply_impact_effects(self.instance, runtime, affected, [first],\n                    reason='Reviewed knowledge impact', impact_digest='checked-impact', clock=entry().ports.clock)\n                self.assertEqual((self.instance, runtime), before)\n                plans = [a for a in changed['queue'] if a['role'] == 'research_plan']\n                self.assertEqual(len(plans), int(bool(affected)))\n                if plans:\n                    self.assertEqual(plans[0]['affected_ids'], [dependent])\n                _, repeated = knowledge._apply_impact_effects(instance, changed, affected, [first],\n                    reason='Reviewed knowledge impact', impact_digest='checked-impact', clock=entry().ports.clock)\n                self.assertEqual(repeated['queue'], changed['queue'])",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_coupled_changes_use_the_single_reviewed_s0_plan",
+    "line": 87,
+    "tokens": [
+      "impact_set",
+      "previous_hashes"
+    ],
+    "code": "    def test_coupled_changes_use_the_single_reviewed_s0_plan(self):\n        \"\"\"About 0.25 s, over the 0.2 s unit budget: the review is sealed by the product's central capture on a real engine and published to a repository.\"\"\"\n        from support.entry import entry\n        _entry = entry()\n        first, dependent, second = self.ids\n        self.instance['knowledge'][dependent]['dependencies'] = [first]\n        self.instance = knowledge_io.ensure_ontology(self.instance)\n        self.runtime['queue'] = []\n        self.extensions['knowledge_changes'] = [\n            {'id': dependent, 'changes': {'summary': 'Revised dependent'},\n             'reason': 'Correct dependent explanation', 'impact_set': []},\n            {'id': first, 'changes': {'summary': 'Revised premise'},\n             'reason': 'Correct premise explanation', 'impact_set': [dependent]}]\n        self.output['integration_bundles'][0]['impact_set'] = [dependent]\n        self.output['integration_bundles'][0]['previous_hashes'] = {\n            identifier: content_hash(self.instance['knowledge'][identifier]) for identifier in (dependent, first)}\n        self.bundle = next(integration.split_bundles(self.output, self.extensions, research_work_context()))\n        before_instance = canonical_json(self.instance)\n        before_runtime = canonical_json(self.runtime)\n        request = self._request()\n        args = self._seal_review(request)\n        changed, running = integration.apply_reviewed_knowledge_changes(\n            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args, clock=_entry.ports.clock)\n        self.assertEqual(before_instance, canonical_json(self.instance))\n        self.assertNotEqual(before_runtime, canonical_json(running))\n        self.assertEqual({dependent, first},\n                         {row['supersedes'] for row in changed['knowledge'].values() if row.get('supersedes')})\n        reassessments = [row for row in running['history'] if row.get('kind') == 'knowledge_reassessment_required']\n        self.assertEqual(1, len(reassessments))\n        followups = [row for row in running['queue'] if row.get('role') == 'research_plan' and row.get('affected_ids')]\n        self.assertEqual(1, len(followups))\n        self.assertIn(dependent, followups[0]['affected_ids'])",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_bundle_level_reviewed_effect_is_applied_once",
+    "line": 120,
+    "tokens": [
+      "impact_set",
+      "previous_hashes"
+    ],
+    "code": "    def test_bundle_level_reviewed_effect_is_applied_once(self):\n        \"\"\"About 0.5 s, over the 0.2 s unit budget: the review is sealed by the product's central capture on a real engine and published to a repository.\"\"\"\n        from support.entry import entry\n        _entry = entry()\n        target = self.ids[0]\n        task_id = 'TK-external-premise'\n        self.runtime['tasks'] = {task_id: {'id': task_id, 'status': 'open', 'assessment': {'current': True, 'basis': []}}}\n        self.runtime['queue'] = []\n        self.extensions = {'knowledge_changes': [{'id': target, 'changes': {'summary': 'Revised once'},\n                                                  'reason': 'Correct explanation', 'impact_set': []}]}\n        self.output['integration_bundles'] = [{'integration_id': 'IN-whole-only',\n            'members': ['output', 'activity-extensions.json/knowledge_changes/0'], 'impact_set': [task_id],\n            'authority_refs': [], 'previous_hashes': {target: content_hash(self.instance['knowledge'][target])}}]\n        self.bundle = next(integration.split_bundles(self.output, self.extensions, research_work_context()))\n        request = self._request()\n        args = self._seal_review(request)\n        changed, running = integration.apply_reviewed_knowledge_changes(\n            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args, clock=_entry.ports.clock)\n        self.assertFalse(running['tasks'][task_id]['assessment']['current'])\n        self.assertEqual(1, len([row for row in running['history'] if row.get('kind') == 'knowledge_reassessment_required']))",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_ordinary_execution_source_dependency_still_propagates",
+    "line": 141,
+    "tokens": [],
+    "code": "    def test_ordinary_execution_source_dependency_still_propagates(self):\n        from do_math import knowledge\n        root = self.ids[0]\n        self.runtime['executions']['EX-consumer'] = {'id': 'EX-consumer', 'role': 'research_work', 'status': 'ended',\n            'output': {'used_sources': [root], 'report': 'Consumed the premise.'}}\n        self.runtime['executions']['EX-other-review'] = {'id': 'EX-other-review', 'role': 'maintenance', 'status': 'ended',\n            'action': {'role': 'maintenance', 'stage': 'impact_review',\n                       'input_basis': {'impact_review': {'integration_id': 'IN-other'}}},\n            'output': {'used_sources': [root], 'report': 'Reviewed a different assignment.'}}\n        plan = knowledge.plan_impact(self.instance, self.runtime, [root], [])\n        self.assertIn('EX-consumer', plan['computed_impact'])\n        self.assertIn('EX-other-review', plan['computed_impact'])",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_only_an_impact_beyond_the_computed_closure_needs_independent_review",
+    "line": 154,
+    "tokens": [],
+    "code": "    def test_only_an_impact_beyond_the_computed_closure_needs_independent_review(self):\n        from do_math import knowledge\n        root, unrelated = self.ids[0], self.ids[1]\n        self.runtime['executions']['EX-consumer'] = {'id': 'EX-consumer', 'role': 'research_work', 'status': 'ended',\n            'output': {'used_sources': [root], 'report': 'Consumed the premise.'}}\n        # The machine applies its computed closure, and an approval must cover it,\n        # so a declaration that misses part of it changes nothing.\n        undeclared = knowledge.plan_impact(self.instance, self.runtime, [root], [])\n        self.assertIn('EX-consumer', undeclared['missing_declarations'])\n        self.assertFalse(undeclared['requires_independent_review'])\n        # Suspending a record the closure does not reach is the producer's own judgment.\n        extra = knowledge.plan_impact(self.instance, self.runtime, [root], [unrelated])\n        self.assertIn(unrelated, extra['extra_declarations'])\n        self.assertTrue(extra['requires_independent_review'])",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_explicit_replacement_ids_support_forward_sibling_dependencies",
+    "line": 169,
+    "tokens": [
+      "impact_set",
+      "previous_hashes"
+    ],
+    "code": "    def test_explicit_replacement_ids_support_forward_sibling_dependencies(self):\n        from support.entry import entry\n        _entry = entry()\n        first, dependent = self.ids[:2]\n        new_first = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAA'\n        new_dependent = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAB'\n        changes = [\n            {'id': dependent, 'replacement_id': new_dependent, 'changes': {'dependencies': [new_first]},\n             'reason': 'Use the replacement premise', 'impact_set': []},\n            {'id': first, 'replacement_id': new_first, 'changes': {'summary': 'Stable replacement premise'},\n             'reason': 'Correct the premise', 'impact_set': []}]\n        self.extensions = {'knowledge_changes': changes}\n        self.output['integration_bundles'] = [{'integration_id': 'IN-explicit-ids',\n            'members': ['output', 'activity-extensions.json/knowledge_changes/0', 'activity-extensions.json/knowledge_changes/1'],\n            'impact_set': [], 'authority_refs': [],\n            'previous_hashes': {identifier: content_hash(self.instance['knowledge'][identifier]) for identifier in (dependent, first)}}]\n        self.bundle = next(integration.split_bundles(self.output, self.extensions, research_work_context()))\n        before_instance = canonical_json(self.instance)\n        before_runtime = canonical_json(self.runtime)\n        changed, running = integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, self.bundle,\n            actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)\n        self.assertEqual([new_first], changed['knowledge'][new_dependent]['dependencies'])\n        self.assertEqual(first, changed['knowledge'][new_first]['supersedes'])\n        self.assertEqual(dependent, changed['knowledge'][new_dependent]['supersedes'])\n        self.assertEqual(before_instance, canonical_json(self.instance))\n        self.assertEqual(before_runtime, canonical_json(self.runtime))\n        self.assertNotEqual(before_runtime, canonical_json(running))",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_replacement_id_schema_and_global_uniqueness_are_enforced",
+    "line": 197,
+    "tokens": [
+      "impact_set",
+      "previous_hashes",
+      "revision_resolutions"
+    ],
+    "code": "    def test_replacement_id_schema_and_global_uniqueness_are_enforced(self):\n        from support.entry import entry\n        _entry = entry()\n        replacement_id = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAC'\n        row = {'id': self.ids[0], 'replacement_id': replacement_id, 'changes': {'summary': 'Revised'},\n               'reason': 'Correct the record', 'impact_set': []}\n        schema = submission.extension_schema({'role': 'research_work'})\n        self.assertEqual([], list(jsonschema.Draft202012Validator(schema).iter_errors({'knowledge_changes': [row]})))\n        sibling = {'id': self.ids[1], 'replacement_id': 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAD',\n                   'changes': {'dependencies': [replacement_id]}, 'reason': 'Use the explicit sibling', 'impact_set': []}\n        producer_output = deepcopy(self.output)\n        producer_output['integration_bundles'] = [{'integration_id': 'IN-producer-explicit-ids',\n            'members': ['output', 'activity-extensions.json/knowledge_changes/0', 'activity-extensions.json/knowledge_changes/1',\n                        'activity-extensions.json/revision_resolutions/0', 'activity-extensions.json/revision_resolutions/1'],\n            'impact_set': [], 'authority_refs': []}]\n        producer_extensions = {'knowledge_changes': [sibling, row], 'revision_resolutions': [\n            {'record_id': identifier, 'disposition': 'revised', 'reason': 'Apply the declared revision'}\n            for identifier in (self.ids[1], self.ids[0])]}\n        producer_action = {**research_work_context()['action'],\n                           'revision_targets': {identifier: {} for identifier in (self.ids[1], self.ids[0])}}\n        producer_context = {**research_work_context(), 'action': producer_action, 'execution_id': 'EX-producer',\n                            'knowledge_catalog': [{'id': identifier} for identifier in self.ids]}\n        with tempfile.TemporaryDirectory() as directory:\n            workspace = Path(directory)\n            response_schema = contracts.schema_for('research_work')\n            submission.install_tools(workspace, producer_context, response_schema, None, clock=_entry.ports.clock)\n            draft = workspace / '.scratch/draft.json'\n            draft.parent.mkdir()\n            draft.write_bytes(canonical_json(producer_output))\n            (workspace / 'activity-extensions.json').write_bytes(canonical_json(producer_extensions))\n            producer_check = submission.producer_check(workspace, draft, clock=_entry.ports.clock)\n            self.assertTrue(producer_check['passed'], producer_check['issues'])\n\n        def bundle_for(rows):\n            extensions = {'knowledge_changes': rows}\n            self.output['integration_bundles'] = [{'integration_id': 'IN-id-rejection',\n                'members': ['output'] + [f'activity-extensions.json/knowledge_changes/{index}' for index in range(len(rows))],\n                'impact_set': [], 'authority_refs': [],\n                'previous_hashes': {entry['id']: content_hash(self.instance['knowledge'][entry['id']]) for entry in rows}}]\n            return next(integration.split_bundles(self.output, extensions, research_work_context()))\n\n        original_instance = canonical_json(self.instance)\n        original_runtime = canonical_json(self.runtime)\n        duplicate = [row, {**row, 'id': self.ids[1], 'changes': {'summary': 'Also revised'}}]\n        # import_candidate rejects the second use of one replacement ID.\n        with self.assertRaisesRegex(ValueError, 'already exists'):\n            integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, bundle_for(duplicate),\n                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)\n        reused = [{**row, 'replacement_id': self.ids[2]}]\n        with self.assertRaisesRegex(ValueError, 'already exists'):\n            integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, bundle_for(reused),\n                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)\n        self.assertEqual(original_instance, canonical_json(self.instance))\n        self.assertEqual(original_runtime, canonical_json(self.runtime))",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_request_cannot_relabel_the_original_producer_snapshot",
+    "line": 254,
+    "tokens": [],
+    "code": "    def test_request_cannot_relabel_the_original_producer_snapshot(self):\n        with self.assertRaisesRegex(ValueError, '^impact request snapshot differs from its original producer input$'):\n            self.api.bundle_impact_request(self.instance, self.runtime, self.bundle,\n                producer_execution_id='EX-producer', input_snapshot='other-input')",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_designated_review_has_producible_closed_schema_and_exact_scope",
+    "line": 259,
+    "tokens": [],
+    "code": "    def test_designated_review_has_producible_closed_schema_and_exact_scope(self):\n        \"\"\"About 0.25 s, over the 0.2 s unit budget: the installed producer check runs twice on a real workspace.\"\"\"\n        from support.entry import entry\n        _entry = entry()\n        request = self.request()\n        action = {'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': request}}\n        output = self.review_output(request)\n        schema = contracts.action_schema(action)\n        self.assertEqual([], list(jsonschema.Draft202012Validator(schema).iter_errors(output)))\n        self.api.validate_impact_review_response(request, output)\n        self.assertEqual(3, len(request['plans']))\n        self.assertNotEqual(request['plans']['bundle']['digest'],\n                            request['plans']['activity-extensions.json/knowledge_changes/0']['digest'])\n        altered = deepcopy(output)\n        altered['impact_review']['plan_decisions'].pop()\n        with self.assertRaisesRegex(ValueError, r'^impact review response differs from its assignment: .* is too short$'):\n            self.api.validate_impact_review_response(request, altered)\n        altered = deepcopy(output)\n        altered['impact_review']['plan_decisions'][1]['plan_digest'] = request['plans']['bundle']['digest']\n        with self.assertRaisesRegex(ValueError, r'^impact review response differs from its assignment: .* is not valid under any of the given schemas$'):\n            self.api.validate_impact_review_response(request, altered)\n        with tempfile.TemporaryDirectory() as directory:\n            workspace = Path(directory)\n            ctx = {'action': action, 'execution_id': 'EX-review', 'snapshot': 'review-input', 'kind_definitions': {}}\n            submission.install_tools(workspace, ctx, schema, None, clock=_entry.ports.clock)\n            draft = workspace / '.scratch/draft.json'\n            draft.parent.mkdir()\n            draft.write_text(json.dumps(output), encoding='utf-8')\n            self.assertTrue(submission.producer_check(workspace, draft, clock=_entry.ports.clock)['passed'])\n            bad = deepcopy(output)\n            bad['impact_review']['plan_decisions'] = [bad['impact_review']['plan_decisions'][0]] * 3\n            draft.write_text(json.dumps(bad), encoding='utf-8')\n            self.assertFalse(submission.producer_check(workspace, draft, clock=_entry.ports.clock)['passed'],\n                             'Installed producer must reject duplicate scope judgments')",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_required_is_a_waiting_disposition_not_a_producer_retry",
+    "line": 294,
+    "tokens": [],
+    "code": "    def test_review_required_is_a_waiting_disposition_not_a_producer_retry(self):\n        result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, research_work_context(),\n            execution_id='EX-producer', apply_bundle=lambda *args: self.fail('unreviewed mutation'),\n            validate_current=lambda i, r, b: self.api.require_bundle_impact_review(i, r, b,\n                producer_execution_id='EX-producer', input_snapshot='fixed-input'),\n            validate_candidate=lambda *args: self.fail('unreviewed candidate'), publish=lambda *args: self.fail('unreviewed publication'))\n        self.assertEqual('impact_review', result['bundles'][0]['next_owner'])\n        self.assertEqual(self.request(), result['bundles'][0]['impact_review_request'])",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_evidence_does_not_change_the_mathematical_impact_plan",
+    "line": 303,
+    "tokens": [],
+    "code": "    def test_review_evidence_does_not_change_the_mathematical_impact_plan(self):\n        before = self.request()\n        output = self.review_output(before)\n        output['used_sources'] = [self.ids[0]]\n        self.runtime['executions']['EX-review'] = {'id': 'EX-review', 'role': 'maintenance', 'status': 'ended',\n            'action': {'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': before}}, 'output': output}\n        self.assertEqual(before, self.request(), 'Recording the review must not invalidate its own assigned impact plan')",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt",
+    "line": 311,
+    "tokens": [],
+    "code": "    def test_review_resolver_uses_actual_git_bytes_and_scoped_receipt(self):\n        \"\"\"About 0.7 s, over the 0.2 s unit budget: three reviews are sealed by the central capture and published.\"\"\"\n        request = self.request()\n        action = {'id': 'AC-review', 'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': request}}\n        output = self.review_output(request)\n        fixed = {'action': action, 'execution_id': 'EX-review'}\n        review_bundle = next(self.api.split_bundles(output, {}, fixed))\n        self.runtime['executions']['EX-review'] = {'id': 'EX-review', 'role': 'maintenance', 'actor_kind': 'ai', 'status': 'running',\n            'action': action, 'output': output, 'input_bundle': 'BA-review-input'}\n        self.runtime['integrations'] = {'IN-review': {'id': 'IN-review', 'execution_id': 'EX-review',\n            'payload_sha256': review_bundle['payload_sha256'],\n            'response_sha256': exact_content_hash(self.api.member_values(output, {}, fixed)['output'])}}\n        with tempfile.TemporaryDirectory() as directory:\n            root = Path(directory)\n            store = fixture_store(root)\n            workspace = root / 'review-workspace'\n            workspace.mkdir()\n            artifacts = self.seal(self.runtime['executions']['EX-review'], output, fixed, workspace)\n            head = store.publish(None, {'research/fixture.json': b'{}',\n                'runtime/artifacts/BA-review-input/input/submission/context.json': canonical_json(fixed),\n                **artifacts}).head\n            args = {'producer_execution_id': 'EX-producer', 'input_snapshot': 'fixed-input',\n                'review_execution_id': 'EX-review', 'snapshot': head,\n                'read_artifact': lambda path, snapshot: store.read_bytes(snapshot, path)}\n            confirmations = self.api.require_bundle_impact_review(self.instance, self.runtime, self.bundle, **args)\n            self.assertEqual(set(request['plans']), set(confirmations))\n            changed, running = self.api.apply_reviewed_knowledge_changes(self.instance, self.runtime, self.bundle,\n                actor_ref='EX-producer', **args, clock=self.clock)\n            self.assertEqual({self.ids[0], self.ids[2]},\n                {row['supersedes'] for row in changed['knowledge'].values() if row.get('supersedes')})\n            saved = store.publish(head, {'research/domain-result.json': canonical_json(changed),\n                                        'runtime/domain-result.json': canonical_json(running)}).head\n            self.assertEqual(changed, json.loads(store.read_bytes(saved, 'research/domain-result.json')))\n            retry_runtime = deepcopy(self.runtime)\n            retry_runtime['executions']['EX-retry'] = {'id': 'EX-retry', 'continuation_of': 'EX-producer'}\n            self.assertEqual(confirmations, self.api.require_bundle_impact_review(self.instance, retry_runtime,\n                self.bundle, receiving_execution_id='EX-retry', **args))\n            retry_runtime['executions']['EX-retry'].pop('continuation_of')\n            with self.assertRaisesRegex(ValueError, '^impact approval cannot transfer to an unrelated receiving execution$'):\n                self.api.require_bundle_impact_review(self.instance, retry_runtime, self.bundle,\n                    receiving_execution_id='EX-retry', **args)\n            cached = deepcopy(self.runtime)\n            cached['executions']['EX-review']['output']['summary'] = 'Untrusted cached projection'\n            self.assertEqual(confirmations, self.api.require_bundle_impact_review(self.instance, cached, self.bundle, **args))\n            reasons = {'same_producer': '^independent checker execution required$', 'other_bundle': '^impact review is not the accepted designated current assignment$', 'stale': 'current assignment',\n                       'unsealed': '^impact review has no matching published response receipt$', 'tampered_output': 'sealed output_ref hash differs',\n                       'shared_conversation': '^checker shares author conversation$', 'machine': '^impact review is not the accepted designated current assignment$'}\n            for case, reason in reasons.items():\n                with self.subTest(case=case):\n                    i, r, b, a = deepcopy(self.instance), deepcopy(self.runtime), deepcopy(self.bundle), dict(args)\n                    if case == 'same_producer': a['review_execution_id'] = 'EX-producer'\n                    if case == 'other_bundle': b['integration_id'] = 'IN-other'\n                    if case == 'stale': i['knowledge'][self.ids[1]]['summary'] = 'Changed premise'\n                    if case == 'unsealed': r['integrations'].clear()\n                    if case == 'tampered_output':\n                        output_ref = r['executions']['EX-review']['submission_intent']['output_ref']\n                        a['read_artifact'] = lambda path, selected, output_ref=output_ref: (\n                            canonical_json({**output, 'summary': 'Altered'}) if path == output_ref else store.read_bytes(selected, path))\n                    if case == 'machine': r['executions']['EX-review']['actor_kind'] = 'machine'\n                    if case == 'shared_conversation':\n                        for identifier in ('EX-producer', 'EX-review'):\n                            r['executions'][identifier]['conversation_id'] = 'same-conversation'\n                    before = canonical_json(r)\n                    with self.assertRaisesRegex(ValueError, reason):\n                        self.api.require_bundle_impact_review(i, r, b, **a)\n                    # A rejected review leaves the runtime it was checked against unchanged.\n                    self.assertEqual(before, canonical_json(r))\n\n            # A legally submitted negative judgment is evidence, never mutation permission.\n            for decision in ('reject', 'unresolved'):\n                negative = deepcopy(output)\n                negative['impact_review']['plan_decisions'][0]['decision'] = decision\n                self.api.validate_impact_review_response(request, negative)\n                rejected_runtime = deepcopy(self.runtime)\n                negative_id = 'EX-review-' + decision\n                negative_input = 'BA-review-input-' + decision\n                negative_fixed = {**deepcopy(fixed), 'execution_id': negative_id}\n                negative_execution = {'id': negative_id, 'role': 'maintenance', 'actor_kind': 'ai',\n                    'status': 'running', 'action': deepcopy(action), 'output': negative, 'input_bundle': negative_input}\n                rejected_runtime['executions'][negative_id] = negative_execution\n                negative_workspace = root / decision\n                negative_workspace.mkdir()\n                negative_artifacts = self.seal(negative_execution, negative, negative_fixed, negative_workspace)\n                rejected_bundle = next(self.api.split_bundles(negative, {}, negative_fixed))\n                rejected_runtime['integrations']['IN-review'].update(\n                    execution_id=negative_id, payload_sha256=rejected_bundle['payload_sha256'],\n                    response_sha256=exact_content_hash(self.api.member_values(negative, {}, negative_fixed)['output']))\n                negative_head = store.publish(saved, {**negative_artifacts,\n                    'runtime/artifacts/' + negative_input + '/input/submission/context.json': canonical_json(negative_fixed)}).head\n                with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, 'did not approve'):\n                    self.api.require_bundle_impact_review(self.instance, rejected_runtime, self.bundle,\n                        **{**args, 'snapshot': negative_head, 'review_execution_id': negative_id})\n                saved = negative_head",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence",
+    "line": 405,
+    "tokens": [],
+    "code": "    def test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence(self):\n        \"\"\"About 0.7 s, over the 0.2 s unit budget: the review and the producer bundle are published through the storage contract.\"\"\"\n        from support.entry import entry\n        _entry = entry()\n        from do_math import activities, execution_profiles, model_policy\n        from support.state_builders import current_state\n        with tempfile.TemporaryDirectory() as directory:\n            root = Path(directory)\n            profiles = execution_profiles.build_profiles({'session_limits': model_policy.LIMITS,\n                'tier_models': model_policy.MODELS, 'observation_mode': 'event_driven', 'max_input_bytes': 500000,\n                'effort': 'medium', 'operator_effort': 'high', 'operator_timeout_seconds': 600,\n                'scholarly_enabled': True, 'scholarly_server': None, 'claude_only_assigned_model': False}, host=_entry.ports.host)\n            self.instance.update({k: v for k, v in profiles.items() if k != 'role_profile_refs'})\n            self.runtime['queue'] = []\n\n            def execution(identifier, role, action):\n                aid = 'AT-' + identifier.removeprefix('EX-')\n                at = activities.open_activity(self.runtime, activity_id=aid, activity_kind=role,\n                    owner_ref='task', input_refs=[], opened_at='2026-09-20T00:00:00Z')\n                row = {'id': identifier, 'role': role, 'action': action, 'actor_kind': 'ai', 'owner_activity_id': aid,\n                    'created_at': '2026-09-20T00:00:00Z', 'status': 'running', 'input_manifest': [], 'context_origin': []}\n                profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == role)\n                execution_profiles.bind_execution(row, profile)\n                self.runtime['executions'][identifier] = row\n                at['assigned_execution_ids'] = [identifier]\n                return row\n            execution('EX-producer', 'research_work', {'id': 'AC-producer', 'role': 'research_work', 'target': None})\n            # Every stored state passes the current lifecycle gate.\n            self.instance, self.runtime = current_state(self.instance, self.runtime)\n            repo = record_store(root, clock=self.clock)\n            head = repo.initialize(self.instance, self.runtime)\n            self.runtime['executions']['EX-producer']['input_snapshot'] = head\n            request = self.request()\n            action = {'id': 'AC-review', 'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': request}}\n            reviewer = execution('EX-review', 'maintenance', action)\n            fixed = {'action': action, 'execution_id': 'EX-review', 'snapshot': head,\n                     'knowledge_catalog': [self.instance['knowledge'][kid] for kid in self.ids], 'kind_definitions': {}}\n            output = self.review_output(request)\n            output['used_sources'] = [self.ids[0], self.ids[2]]\n            workspace = root / 'review-workspace'\n            workspace.mkdir()\n            schema = contracts.schema_for('maintenance')\n            schema['properties']['impact_review'] = self.api.impact_review_response_schema(request)\n            schema['required'].append('impact_review')\n            submission.install_tools(workspace, fixed, schema, None, clock=_entry.ports.clock)\n            (workspace / 'draft.json').write_bytes(canonical_json(output))\n            sealed = submission.seal_submission(workspace, 'draft.json', execution_id='EX-review',\n                context=fixed, schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)\n            self.assertTrue(sealed['passed'], sealed['check']['issues'])\n            reviewer.update(input_bundle='BA-review-input', submitted_output_ref='runtime/artifacts/BA-review-output/output.json',\n                            output=output, input_snapshot=head)\n            artifacts = {'runtime/artifacts/BA-review-input/input/submission/context.json': canonical_json(fixed),\n                         **{'runtime/artifacts/BA-review-output/' + path: raw for path, raw in sealed['artifacts'].items()}}\n            head = repo.save_with_state(head, self.instance, self.runtime, artifacts=artifacts)[0]\n\n            def publish(i, r, bundle, validated):\n                nonlocal head\n                head = repo.save_validated(head, validated)[0]\n\n            def validate(i, r, bundle):\n                return repo.validate_candidate(i, r, head)\n\n            def accept_review(i, r, bundle):\n                from do_math.execution_lifecycle import record_submission_intent, transition_execution\n                self.api.validate_impact_review_response(request, bundle['output'])\n                record_submission_intent(r['executions']['EX-review'],\n                    {**sealed['intent'], 'output_ref': reviewer['submitted_output_ref'],\n                     'extensions_ref': 'runtime/artifacts/BA-review-output/extensions.json',\n                     'check_ref': 'runtime/artifacts/BA-review-output/check.json'},\n                    {'id': 'CT-review', 'kind': 'submit_intent', 'state': 'accepted', 'execution_id': 'EX-review',\n                     'payload': {'submission_check': {'artifacts': [\n                         {'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}\n                         for path, raw in artifacts.items()]}}},\n                    at='2026-09-20T00:00:01Z')\n                transition_execution(r['executions']['EX-review'], 'ended', at='2026-09-20T00:00:02Z',\n                    outcome='output_accepted', disposition={'kind': 'submission_integrated'})\n            review_result = self.api.apply_bundles(self.instance, self.runtime, output, {}, fixed,\n                execution_id='EX-review', apply_bundle=accept_review,\n                validate_current=lambda i, r, b: self.api.validate_impact_review_response(request, b['output']),\n                validate_candidate=validate, publish=publish)\n            self.assertEqual('accepted', review_result['status'], review_result['bundles'])\n            _, self.instance, self.runtime = repo.load(head)\n            args = {'producer_execution_id': 'EX-producer', 'input_snapshot': request['input_snapshot'],\n                    'review_execution_id': 'EX-review', 'snapshot': head, 'read_artifact': repo.read}\n            confirmations = self.api.require_bundle_impact_review(self.instance, self.runtime, self.bundle, **args)\n            self.assertEqual(set(request['plans']), set(confirmations))\n            reasons = {'same_producer': '^independent checker execution required$', 'other_bundle': '^impact review is not the accepted designated current assignment$', 'stale': 'current assignment',\n                       'unsealed': '^impact review has no matching published response receipt$'}\n            for case, reason in reasons.items():\n                with self.subTest(case=case), self.assertRaisesRegex(ValueError, reason):\n                    i, r, b, a = deepcopy(self.instance), deepcopy(self.runtime), deepcopy(self.bundle), dict(args)\n                    if case == 'same_producer': a['review_execution_id'] = 'EX-producer'\n                    if case == 'other_bundle': b['integration_id'] = 'IN-other'\n                    if case == 'stale': i['knowledge'][self.ids[1]]['summary'] = 'Changed premise'\n                    if case == 'unsealed': r['integrations'].clear()\n                    self.api.require_bundle_impact_review(i, r, b, **a)\n\n            def apply_changes(i, r, b):\n                updated, running = self.api.apply_reviewed_knowledge_changes(i, r, b, actor_ref='EX-producer', **args, clock=self.clock)\n                i.clear(); i.update(updated)\n                r.clear(); r.update(running)\n            result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, research_work_context(),\n                execution_id='EX-producer', apply_bundle=apply_changes,\n                validate_current=lambda i, r, b: self.api.require_bundle_impact_review(i, r, b, **args),\n                validate_candidate=validate, publish=publish)\n            self.assertEqual('accepted', result['status'], result)\n            saved, i, r = repo.load(head)\n            self.assertEqual({self.ids[0], self.ids[2]}, {v['supersedes'] for v in i['knowledge'].values() if v.get('supersedes')})\n            replay = self.api.apply_bundles(i, r, self.output, self.extensions, research_work_context(), execution_id='EX-producer',\n                apply_bundle=lambda *a: self.fail('accepted bundle applied twice'),\n                validate_current=lambda *a: self.fail('accepted bundle revalidated'),\n                validate_candidate=validate, publish=lambda *a: self.fail('accepted bundle republished'))\n            self.assertEqual('already_accepted', replay['bundles'][0]['status'])\n            self.assertEqual(saved, head)",
+    "source_sha256": "fe8a9c485f9e5d1049208409c2b245e5bb0325ba3dddfd1cd598d2a9c1ce0fb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_proposed_kind_is_actually_registered_before_checking_its_consumer",
+    "line": 49,
+    "tokens": [],
+    "code": "    def test_proposed_kind_is_actually_registered_before_checking_its_consumer(self):\n        definition = {'family': 'knowledge', 'token': 'bounded_note',\n                      'meaning': '범위가 명시된 관찰 기록', 'constraints': {}}\n        output = two_observation_output()\n        output['knowledge'][0]['kind'] = definition['token']\n        self.assertEqual(self.check({'kind_definitions': [definition]}, output=output), [])\n        self.assert_rejection({'kind_definitions': [{**definition, 'token': 'invalid token'}]},\n            'activity-extensions.json/kind_definitions/0', 'kind definition has an invalid family or token')",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_relation_metadata_requires_registered_kind_and_existing_endpoints",
+    "line": 58,
+    "tokens": [],
+    "code": "    def test_relation_metadata_requires_registered_kind_and_existing_endpoints(self):\n        context = deepcopy(self.context)\n        first, second = self.clock.new_id('KN'), self.clock.new_id('KN')\n        context['knowledge_catalog'] = [{'id': first}, {'id': second}]\n        claim = {'kind': context['kind_definitions']['relations'][0]['token'],\n                 'source': first, 'target': second, 'confirmed_scope': '기존 두 결과 사이의 관계'}\n        metadata = {'title': 'A', 'relation_claim': claim}\n        self.assertEqual(self.check({'knowledge_metadata': [metadata]}, context=context), [])\n        for field, value in (('kind', 'unregistered'), ('source', 'KN-outside'), ('target', 'KN-outside')):\n            with self.subTest(field=field):\n                self.assert_rejection({'knowledge_metadata': [{**metadata, 'relation_claim': {**claim, field: value}}]},\n                    'activity-extensions.json/knowledge_metadata/0/relation_claim',\n                    'relation claim requires a registered relation kind and existing knowledge endpoints', context=context)",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_persisted_observation_rules_require_the_assigned_task",
+    "line": 72,
+    "tokens": [],
+    "code": "    def test_persisted_observation_rules_require_the_assigned_task(self):\n        extension = {'observation_rules': [observation_rule()]}\n        self.assertEqual(self.check(extension), [])\n        context = {**self.context, 'action': {'role': 'research_work', 'target': 'TK-outside'}}\n        self.assert_rejection(extension, 'activity-extensions.json/observation_rules',\n                              'persisted rules require the assigned task', context=context)",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_question_resolution_checks_each_supplied_evidence_reference",
+    "line": 79,
+    "tokens": [],
+    "code": "    def test_question_resolution_checks_each_supplied_evidence_reference(self):\n        question = questions.link({}, execution_id='EX-question', field='output/questions/0',\n            owner='research', targets=['TK-1'], clock=self.clock)\n        context = {**self.context, 'question_links': [question]}\n        resolution = {'question_id': question['id'], 'disposition': 'resolved',\n                      'evidence_refs': ['TK-1'], 'reason': '제공된 과제의 근거를 확인했다.'}\n        self.assertEqual(self.check({'question_resolutions': [resolution]}, context=context), [])\n        self.assert_rejection({'question_resolutions': [{**resolution, 'evidence_refs': ['TK-outside']}]},\n            'activity-extensions.json/question_resolutions/0/evidence_refs',\n            'reference must identify supplied input, a record of the input snapshot or a preserved workspace file: TK-outside; '\n            'use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>', context=context)",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_time_bounded_http_preview_uses_the_fixed_input_time",
+    "line": 91,
+    "tokens": [],
+    "code": "    def test_time_bounded_http_preview_uses_the_fixed_input_time(self):\n        grant = governance.normalized_grant({'kind': 'http', 'reuse': 'reusable',\n            'allowed_origins': ['https://example.test'], 'allowed_methods': ['GET'], 'allowed_path_prefixes': ['/'],\n            'expires_at': '2099-01-01T00:00:00+00:00'}, gid='GR-preview', created_at=self.clock.now(),\n            source_ref='SO-grant', decision_id='DC-grant')\n        operation = external.prepare_operation({'method': 'GET', 'url': 'https://example.test/read'},\n                                               grant['id'], 'submission-preview')\n        extension = {'external_requests': [{'request': operation['request'], 'grant_id': grant['id'],\n                                           'purpose': '제공된 HTTP 권한의 고정 시각을 검사한다.'}]}\n        context = {**self.context, 'grants': [grant], 'submission_contract': {'basis_time': self.clock.now()}}\n        self.assertEqual(self.check(extension, context=context), [])\n        context['submission_contract'] = {}\n        self.assert_rejection(extension, 'activity-extensions.json/external_requests/0',\n                              'time-bounded grant preview requires a fixed input basis_time', context=context)",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_queued_request_is_checked_against_the_advertised_queue",
+    "line": 106,
+    "tokens": [],
+    "code": "    def test_queued_request_is_checked_against_the_advertised_queue(self):\n        context = {**self.context, 'action': {'role': 'research_plan'}, 'ready_task_ids': [],\n                   'queued_work': [{'id': 'AC-visible', 'role': 'maintenance'}]}\n        extension = {'queued_requests': [{'request_id': 'AC-visible', 'decision': 'keep', 'reason': '주어진 대기 작업을 유지한다.'}]}\n        self.assertEqual(self.check(extension, context=context, output=common('research_plan')), [])\n        context['queued_work'] = []\n        issues = self.check(extension, context=context, output=common('research_plan'))\n        # 가족 전체를 가리키는 오류는 원소 소유권이 아닌 전역 반려다.\n        self.assertEqual([(row['path'], row['message'], row['integration_id']) for row in issues],\n            [('activity-extensions.json/queued_requests', 'request was not available for planning', None)])",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_submission_extension_semantics.ExtensionMeaningTests.test_knowledge_revision_kind_must_come_from_the_fixed_catalog",
+    "line": 117,
+    "tokens": [
+      "impact_set",
+      "previous_hashes",
+      "revision_resolutions"
+    ],
+    "code": "    def test_knowledge_revision_kind_must_come_from_the_fixed_catalog(self):\n        state, runtime, identifier = knowledge_io.import_candidate({}, {}, observation_knowledge('기존 관찰'),\n            source_ref='SO-original', actor_ref='user', plan_nonformal=False, clock=self.clock)\n        record = state['knowledge'][identifier]\n        digest = knowledge.content_hash(record)\n        context = {**self.context, 'knowledge_catalog': [{**record, 'content_sha256': digest}],\n                   'action': {**self.context['action'], 'revision_targets': revisions.capture_targets(state, runtime, [identifier])}}\n        output = two_observation_output()\n        output['integration_bundles'] = [{'integration_id': 'IN-A', 'members': ['output'],\n            'impact_set': [], 'authority_refs': [], 'previous_hashes': {identifier: digest}}]\n        change = {'id': identifier, 'changes': {'kind': 'observation'}, 'reason': '관찰 종류를 명시한다.', 'impact_set': []}\n        resolutions = [{'record_id': identifier, 'disposition': 'revised', 'reason': '선언한 대상을 개정한다.'}]\n        self.assertEqual(self.check({'knowledge_changes': [change], 'revision_resolutions': resolutions}, context=context, output=output), [])\n        self.assert_rejection({'knowledge_changes': [{**change, 'changes': {'kind': 'unregistered'}}],\n                               'revision_resolutions': resolutions},\n            'activity-extensions.json/knowledge_changes/0/changes/kind', 'revision kind must be registered',\n            context=context, output=output)",
+    "source_sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_duplicate_request_has_exact_issue_and_no_mutation",
+    "line": 22,
+    "tokens": [
+      "revision_requests"
+    ],
+    "code": "    def test_duplicate_request_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_requests'] = [{'record_ids': [self.task['id'], self.task['id']], 'reason': '반복 요청'}]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_requests', 'message': 'revision requests must name distinct provided tasks or knowledge'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_unknown_request_has_exact_issue_and_no_mutation",
+    "line": 29,
+    "tokens": [
+      "revision_requests"
+    ],
+    "code": "    def test_unknown_request_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_requests'] = [{'record_ids': ['TK-absent'], 'reason': '없는 대상'}]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_requests', 'message': 'revision requests must name distinct provided tasks or knowledge'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_undeclared_write_has_exact_issue_and_no_mutation",
+    "line": 36,
+    "tokens": [
+      "revision_requests"
+    ],
+    "code": "    def test_undeclared_write_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.output['candidates'] = [candidate('새 개정', revises='TK-absent')]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_targets', 'message': 'existing records must be declared before this execution; submit revision_requests for new targets'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_revised_without_write_has_exact_issue_and_no_mutation",
+    "line": 43,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_revised_without_write_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_resolutions'][0]['disposition'] = 'revised'\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'revised requires the corresponding authored change: TK-planning'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_write_without_revised_has_exact_issue_and_no_mutation",
+    "line": 50,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_write_without_revised_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.output['candidates'] = [candidate('개정', revises=self.task['id'])]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'an authored revision must have disposition revised: TK-planning'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_required_unchanged_has_exact_issue_and_no_mutation",
+    "line": 57,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_required_unchanged_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.context['action']['revision_targets'][self.task['id']]['required'] = True\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'a required revision or rejected contract cannot be cancelled as unchanged'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_invalid_delegation_has_exact_issue_and_no_mutation",
+    "line": 64,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_invalid_delegation_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_resolutions'][0]['disposition'] = 'delegated'\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'delegated requires a prepared work task declaring this knowledge target'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_extraneous_task_title_has_exact_issue_and_no_mutation",
+    "line": 71,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_extraneous_task_title_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_resolutions'][0]['task_title'] = '다른 과제'\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'task_title belongs only to a delegated knowledge revision'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_unknown_knowledge_scope_has_exact_issue_and_no_mutation",
+    "line": 78,
+    "tokens": [],
+    "code": "    def test_unknown_knowledge_scope_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['task_conditions'] = [{'task_title': '계약', 'knowledge_revision_targets': ['KN-absent']}]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/task_conditions', 'message': 'knowledge revision work must name declared knowledge targets'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_missing_resolution_has_exact_issue_and_no_mutation",
+    "line": 85,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_missing_resolution_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_resolutions'] = []\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'resolve each declared target exactly once, using a task withdrawal only for task targets'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_unknown_resolution_has_exact_issue_and_no_mutation",
+    "line": 92,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_unknown_resolution_has_exact_issue_and_no_mutation(self):\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.extensions['revision_resolutions'][0]['record_id'] = 'TK-absent'\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'resolve each declared target exactly once, using a task withdrawal only for task targets'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_duplicate_replacement_reports_one_target_issue",
+    "line": 99,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_duplicate_replacement_reports_one_target_issue(self):\n        self.output['candidates'] = [candidate('개정', revises=self.task['id'])]\n        self.extensions['revision_resolutions'][0]['disposition'] = 'revised'\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.output['candidates'] *= 2\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{\n            'path': 'activity-extensions.json/revision_targets',\n            'message': 'each existing task may have only one replacement candidate per response'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_same_task_cannot_be_selected_and_requested_for_revision",
+    "line": 110,
+    "tokens": [
+      "revision_requests"
+    ],
+    "code": "    def test_same_task_cannot_be_selected_and_requested_for_revision(self):\n        from support.role_answers import disposition\n        self.output['dispositions'] = [disposition(self.task['id'])]\n        self.extensions['revision_requests'] = [{'record_ids': [self.task['id']], 'reason': '개정 요청'}]\n        before = deepcopy((self.output, self.extensions, self.context))\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{\n            'path': 'activity-extensions.json/revision_requests',\n            'message': 'the same output cannot revise and select a task'}])\n        self.assertEqual((self.output, self.extensions, self.context), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_task_projection_is_available_without_the_tasks_catalog",
+    "line": 120,
+    "tokens": [],
+    "code": "    def test_task_projection_is_available_without_the_tasks_catalog(self):\n        self.context['task'] = self.context['tasks'].pop()\n        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])\n        self.assertEqual(self.context['task'], self.task)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_capture_missing_target_and_changed_revision_are_explicit",
+    "line": 125,
+    "tokens": [],
+    "code": "    def test_capture_missing_target_and_changed_revision_are_explicit(self):\n        runtime = {'tasks': {self.task['id']: self.task}}\n        captured = revisions.capture_targets({}, runtime, [self.task['id']], required=True, source_ref='EX-source')\n        self.assertEqual(captured, {self.task['id']: {'revision': 1, 'contract_sha256': planning.contract_hash(self.task),\n                                                   'required': True, 'source_refs': ['EX-source']}})\n        self.assertEqual(revisions.target_changes(captured, {}, runtime), [])\n        self.assertEqual(revisions.target_changes(captured, {}, {'tasks': {}}), [{\n            'id': self.task['id'], 'field': 'revision_target', 'reason': 'missing'}])\n        before = deepcopy(runtime)\n        with self.assertRaisesRegex(ValueError, '^revision target must name an existing task or knowledge: TK-absent$'):\n            revisions.capture_targets({}, runtime, ['TK-absent'])\n        self.assertEqual(runtime, before)\n        changed = deepcopy(runtime)\n        changed['tasks'][self.task['id']]['revision'] = 2\n        self.assertEqual(revisions.target_changes(captured, {}, changed), [\n            {'id': self.task['id'], 'field': 'revision', 'before': 1, 'after': 2},\n            {'id': self.task['id'], 'field': 'contract_sha256', 'before': planning.contract_hash(self.task),\n             'after': planning.contract_hash(changed['tasks'][self.task['id']])}])",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RevisionSubmissionTests.test_cycles_include_self_cycle_and_ignore_missing_dependencies",
+    "line": 144,
+    "tokens": [],
+    "code": "    def test_cycles_include_self_cycle_and_ignore_missing_dependencies(self):\n        task = contract()\n        other = {**deepcopy(task), 'id': 'TK-other'}\n        task['dependencies'] = ['TK-other', 'TK-missing']\n        other['dependencies'] = [task['id']]\n        tasks = {task['id']: task, other['id']: other}\n        before = deepcopy(tasks)\n        self.assertEqual(revisions.dependency_cycles(tasks), [['TK-planning', 'TK-other', 'TK-planning']])\n        self.assertEqual(tasks, before)\n        task['dependencies'] = [task['id']]\n        self.assertEqual(revisions.dependency_cycles({task['id']: task}), [['TK-planning', 'TK-planning']])",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_lineage_without_history_or_queue_changes",
+    "line": 168,
+    "tokens": [],
+    "code": "    def test_rejects_lineage_without_history_or_queue_changes(self):\n        self.fields['lineage'] = 'unknown'\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('unknown repetition lineage or owner') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_owner_without_history_or_queue_changes",
+    "line": 175,
+    "tokens": [],
+    "code": "    def test_rejects_owner_without_history_or_queue_changes(self):\n        self.fields['owner'] = 'system'\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('unknown repetition lineage or owner') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_event_without_history_or_queue_changes",
+    "line": 182,
+    "tokens": [],
+    "code": "    def test_rejects_event_without_history_or_queue_changes(self):\n        self.fields['event_ref'] = ''\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('repetition needs its lineage, actual event, outcome and reason') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_reason_without_history_or_queue_changes",
+    "line": 189,
+    "tokens": [],
+    "code": "    def test_rejects_reason_without_history_or_queue_changes(self):\n        self.fields['reason'] = ' '\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('repetition needs its lineage, actual event, outcome and reason') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_version_zero_without_history_or_queue_changes",
+    "line": 196,
+    "tokens": [],
+    "code": "    def test_rejects_version_zero_without_history_or_queue_changes(self):\n        self.fields['version'] = 0\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('version receipt requires a positive semantic version') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_version_boolean_without_history_or_queue_changes",
+    "line": 203,
+    "tokens": [],
+    "code": "    def test_rejects_version_boolean_without_history_or_queue_changes(self):\n        self.fields['version'] = True\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('version receipt requires a positive semantic version') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_limit_without_history_or_queue_changes",
+    "line": 210,
+    "tokens": [],
+    "code": "    def test_rejects_limit_without_history_or_queue_changes(self):\n        self.instance['config']['contract_revision_limit'] = 0\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('repetition limit must be an adopted positive integer') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_rejects_regeneration_without_observation_without_history_or_queue_changes",
+    "line": 217,
+    "tokens": [],
+    "code": "    def test_rejects_regeneration_without_observation_without_history_or_queue_changes(self):\n        self.fields['regenerate_after'] = '2090-01-02T00:00:00Z'\n        before = deepcopy((self.instance, self.runtime))\n        with self.assertRaisesRegex(ValueError, '^' + re.escape('regeneration time must follow the machine observation') + '$'):\n            self.record()\n        self.assertEqual((self.instance, self.runtime), before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_receipt_is_idempotent_detached_and_conflicting_replay_is_rejected",
+    "line": 224,
+    "tokens": [],
+    "code": "    def test_receipt_is_idempotent_detached_and_conflicting_replay_is_rejected(self):\n        expected = {'kind': 'task_repetition', **self.fields}\n        self.assertEqual(self.record(), expected)\n        before = deepcopy(self.runtime)\n        again = self.record()\n        self.assertEqual(again, expected)\n        self.assertEqual(self.runtime, before)\n        again['reason'] = '호출자가 바꾼 사본'\n        self.assertEqual(self.runtime, before)\n        self.fields['reason'] = '같은 사건의 다른 내용'\n        with self.assertRaisesRegex(ValueError, '^same repetition receipt has different content$'):\n            self.record()\n        self.assertEqual(self.runtime, before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_continuation_without_current_decision_cannot_reset_history",
+    "line": 238,
+    "tokens": [],
+    "code": "    def test_continuation_without_current_decision_cannot_reset_history(self):\n        self.record()\n        self.fields.update(outcome='continued', event_ref='DC-missing', owner='user', decision_ref='DC-missing')\n        before = deepcopy(self.runtime)\n        with self.assertRaisesRegex(ValueError, '^continuation reset requires its explicit current decision$'):\n            self.record()\n        self.assertEqual(self.runtime, before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_lineage_projection_filters_other_tasks_but_keeps_version_counts",
+    "line": 246,
+    "tokens": [],
+    "code": "    def test_lineage_projection_filters_other_tasks_but_keeps_version_counts(self):\n        first = self.record()\n        self.fields.update(lineage_id='TK-other', event_ref='EX-other', version=3)\n        self.record()\n        before = deepcopy(self.runtime)\n        counts = task_contracts.repetition_lineages(self.runtime, 'TK-planning', include_events=False)\n        self.assertEqual(counts['contract_revision'], {'count': 2, 'owner': 'ai', 'events': [], 'by_lineage': {'TK-planning': 2}})\n        self.assertEqual(task_contracts.repetition_lineages(self.runtime, 'TK-planning')['contract_revision']['events'], [first])\n        self.assertEqual(self.runtime, before)",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_regeneration_time_is_strictly_after_observation",
+    "line": 256,
+    "tokens": [],
+    "code": "    def test_regeneration_time_is_strictly_after_observation(self):\n        self.assertTrue(revisions.regeneration_time_valid('2090-01-01T00:00:01Z', '2090-01-01T00:00:00Z'))\n        self.assertFalse(revisions.regeneration_time_valid('2090-01-01T00:00:00Z', '2090-01-01T00:00:00Z'))\n        self.assertFalse(revisions.regeneration_time_valid('2089-12-31T23:59:59Z', '2090-01-01T00:00:00Z'))",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "unit.test_planning_revision_validation.RepetitionInputTests.test_scope_omits_prose_and_detaches_nested_revision_targets",
+    "line": 261,
+    "tokens": [],
+    "code": "    def test_scope_omits_prose_and_detaches_nested_revision_targets(self):\n        task = contract()\n        action = {'id': 'AC-revise', 'role': 'research_preparation', 'reason': '설명',\n                  'revision_targets': revisions.capture_targets({}, {'tasks': {task['id']: task}}, [task['id']])}\n        expected = {key: deepcopy(action[key]) for key in ('id', 'role', 'revision_targets')}\n        result = revisions.action_scope(action)\n        self.assertEqual(result, expected)\n        result['revision_targets'].clear()\n        self.assertEqual(action['revision_targets'], expected['revision_targets'])",
+    "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_closed_pure_revision_wait_is_retired_with_exact_history",
+    "line": 27,
+    "tokens": [],
+    "code": "    def test_closed_pure_revision_wait_is_retired_with_exact_history(self):\n        parent = defer_revision(self.sim, [self.identifier])\n        withdraw(self.sim, self.identifier)\n        previous = deepcopy(self.sim.runtime['waiting_actions'][parent]['action']['revision_targets'])\n        history = deepcopy(self.sim.runtime['history'])\n        self.engine._retire_closed_revision_targets()\n        self.assertEqual(self.sim.runtime['waiting_actions'], {})\n        self.assertEqual(self.sim.runtime['history'], [*history, {\n            'kind': 'revision_targets_retired_after_disposition', 'action_id': parent,\n            'targets': [self.identifier], 'previous_targets': previous}])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_closed_target_leaves_other_revision_obligations_in_wait",
+    "line": 39,
+    "tokens": [],
+    "code": "    def test_closed_target_leaves_other_revision_obligations_in_wait(self):\n        other = produce_task(self.sim, '다른 과제')\n        clear_work(self.sim)\n        parent = defer_revision(self.sim, [self.identifier, other])\n        withdraw(self.sim, self.identifier)\n        before = deepcopy(self.sim.runtime['waiting_actions'][parent])\n        self.engine._retire_closed_revision_targets()\n        expected = deepcopy(before)\n        del expected['action']['revision_targets'][self.identifier]\n        self.assertEqual(self.sim.runtime['waiting_actions'], {parent: expected})\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_rebinding_parent_obligation_is_idempotent_and_preserves_required",
+    "line": 51,
+    "tokens": [],
+    "code": "    def test_rebinding_parent_obligation_is_idempotent_and_preserves_required(self):\n        parent = defer_revision(self.sim, [self.identifier], required=True)\n        action = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier]))\n        expected = deepcopy(action)\n        self.assertEqual(action['revision_parent_ids'], [parent])\n        self.assertIs(action['revision_targets'][self.identifier]['required'], True)\n        self.assertEqual(action['revision_targets'][self.identifier]['obligation_refs'], [{\n            'action_id': parent, 'reason': '추가 근거를 기다린다.'}])\n        self.engine._bind_revision_action(action)\n        self.assertEqual(action, expected)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_optional_unchanged_child_resolves_parent_exactly_once",
+    "line": 65,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_optional_unchanged_child_resolves_parent_exactly_once(self):\n        parent = defer_revision(self.sim, [self.identifier])\n        child = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier]))\n        _ended_execution(self.engine, 'EX-child', 'research_preparation')\n        self.sim.runtime['executions']['EX-child']['extensions'] = {'revision_resolutions': [{\n            'record_id': self.identifier, 'disposition': 'unchanged', 'reason': '계약 유지'}]}\n        previous = deepcopy(self.sim.runtime['waiting_actions'][parent])\n        history = deepcopy(self.sim.runtime['history'])\n        self.engine._apply_revision_followup(child, {'summary': '유지'}, 'EX-child')\n        self.assertEqual(self.sim.runtime['waiting_actions'], {})\n        self.assertEqual(self.sim.runtime['history'], [*history, {\n            'kind': 'revision_obligation_resolved', 'action_id': parent, 'execution_id': 'EX-child',\n            'to_action_id': None, 'previous': previous}])\n        after = deepcopy(self.sim.runtime['history'])\n        self.engine._apply_revision_followup(child, {'summary': '유지'}, 'EX-child')\n        self.assertEqual(self.sim.runtime['history'], after)\n        self.engine._remove_action(child)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_partial_resolution_preserves_remaining_target_and_detached_basis",
+    "line": 85,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_partial_resolution_preserves_remaining_target_and_detached_basis(self):\n        other = produce_task(self.sim, '다른 과제')\n        clear_work(self.sim)\n        parent = defer_revision(self.sim, [self.identifier, other])\n        child = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier]))\n        _ended_execution(self.engine, 'EX-child', 'research_preparation')\n        self.sim.runtime['executions']['EX-child']['extensions'] = {'revision_resolutions': [{\n            'record_id': self.identifier, 'disposition': 'unchanged', 'reason': '계약 유지'}]}\n        previous = deepcopy(self.sim.runtime['waiting_actions'][parent])\n        self.engine._apply_revision_followup(child, {}, 'EX-child')\n        expected = deepcopy(previous)\n        del expected['action']['revision_targets'][self.identifier]\n        self.assertEqual(self.sim.runtime['waiting_actions'], {parent: expected})\n        child['revision_targets'].clear()\n        self.assertEqual(self.sim.runtime['waiting_actions'], {parent: expected})\n        self.engine._remove_action(child)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_same_action_resolution_removes_its_previous_revision_wait",
+    "line": 104,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_same_action_resolution_removes_its_previous_revision_wait(self):\n        parent = defer_revision(self.sim, [self.identifier])\n        previous = deepcopy(self.sim.runtime['waiting_actions'][parent])\n        action = deepcopy(previous['action'])\n        _ended_execution(self.engine, 'EX-resolve', 'research_preparation')\n        self.sim.runtime['executions']['EX-resolve']['extensions'] = {'revision_resolutions': [{\n            'record_id': self.identifier, 'disposition': 'unchanged', 'reason': '후속 확인 완료'}]}\n        history = deepcopy(self.sim.runtime['history'])\n        self.engine._apply_revision_followup(action, {}, 'EX-resolve')\n        self.assertEqual(self.sim.runtime['waiting_actions'], {})\n        self.assertEqual(self.sim.runtime['history'], [*history, {\n            'kind': 'revision_obligation_resolved', 'action_id': parent,\n            'execution_id': 'EX-resolve', 'previous': previous}])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_missing_selected_target_defers_to_structural_owner_without_mutation",
+    "line": 119,
+    "tokens": [],
+    "code": "    def test_missing_selected_target_defers_to_structural_owner_without_mutation(self):\n        action = select(self.sim)\n        del self.sim.runtime['tasks'][self.identifier]\n        before = deepcopy(self.sim.runtime)\n        self.assertTrue(self.engine._selected_action_current(action, evaluation_context=self.engine._evaluation_context()))\n        self.assertEqual(self.sim.runtime, before)",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_nonresearch_action_is_current_without_changing_state",
+    "line": 126,
+    "tokens": [],
+    "code": "    def test_nonresearch_action_is_current_without_changing_state(self):\n        action = enqueue(self.engine, 'research_plan')\n        before = deepcopy(self.sim.runtime)\n        self.assertTrue(self.engine._selected_action_current(action, evaluation_context=self.engine._evaluation_context()))\n        self.assertEqual(self.sim.runtime, before)",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_selected_external_wait_preserves_selection_for_its_owner",
+    "line": 132,
+    "tokens": [],
+    "code": "    def test_selected_external_wait_preserves_selection_for_its_owner(self):\n        action = select(self.sim)\n        task = self.sim.runtime['tasks'][self.identifier]\n        task['waiting'] = {'kind': 'external_event', 'target_refs': ['source:later'], 'next_owner': 'user'}\n        self.engine._save()\n        action = next(a for a in self.sim.runtime['queue'] if a['id'] == action['id'])\n        before = deepcopy(self.sim.runtime)\n        self.assertFalse(self.engine._selected_action_current(action, evaluation_context=self.engine._evaluation_context()))\n        self.assertEqual(self.sim.runtime, before)",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_contract_revision_cancels_unstarted_selection_and_records_owner",
+    "line": 142,
+    "tokens": [],
+    "code": "    def test_contract_revision_cancels_unstarted_selection_and_records_owner(self):\n        selected = select(self.sim)\n        previous = deepcopy(selected)\n        history = deepcopy(self.sim.runtime['history'])\n        revision = enqueue(self.engine, 'research_preparation', self.identifier)\n        task = self.sim.runtime['tasks'][self.identifier]\n        self.assertEqual(self.sim.runtime['queue'], [revision])\n        self.assertEqual(task['status'], 'waiting')\n        self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],\n            'next_owner': 'research_preparation', 'basis_ref': revision['id']})\n        self.assertEqual(task['revision_requested'], {'revision': task['revision'], 'source': revision['id'],\n                                                    'reason': 'contract revision requested'})\n        self.assertNotIn('selected_by', task)\n        self.assertEqual(self.sim.runtime['history'], [*history, {'kind': 'selection_cancelled_for_revision',\n            'action': previous, 'revision_action_id': revision['id']}])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_preparation_only_cancels_selection_without_requesting_contract_revision",
+    "line": 159,
+    "tokens": [],
+    "code": "    def test_preparation_only_cancels_selection_without_requesting_contract_revision(self):\n        from do_math.model_policy import assessment_basis\n        selected = select(self.sim)\n        previous = deepcopy(selected)\n        task = self.sim.runtime['tasks'][self.identifier]\n        history = deepcopy(self.sim.runtime['history'])\n        action = enqueue(self.engine, 'research_preparation', assessment_targets={self.identifier: assessment_basis(task)})\n        self.assertEqual(self.sim.runtime['queue'], [action])\n        self.assertEqual(task['status'], 'planned')\n        self.assertNotIn('revision_requested', task)\n        self.assertNotIn('selected_by', task)\n        self.assertEqual(self.sim.runtime['history'], [*history, {'kind': 'selection_cancelled_for_revision',\n            'action': previous, 'revision_action_id': action['id']}])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revision_cannot_cancel_a_live_selected_execution",
+    "line": 174,
+    "tokens": [],
+    "code": "    def test_revision_cannot_cancel_a_live_selected_execution(self):\n        selected = select(self.sim)\n        self.engine._register_execution(selected, {'id': 'EX-live', 'role': 'research_work', 'status': 'running'})\n        revision = enqueue(self.engine, 'research_preparation', self.identifier)\n        self.engine._save()\n        before = deepcopy(self.sim.runtime)\n        self.engine._cancel_selected_revision_targets(revision)\n        self.assertEqual(self.sim.runtime, before)",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revised_task_refreshes_declared_basis_and_preserves_required",
+    "line": 183,
+    "tokens": [],
+    "code": "    def test_revised_task_refreshes_declared_basis_and_preserves_required(self):\n        parent = defer_revision(self.sim, [self.identifier], required=True)\n        old = deepcopy(self.sim.runtime['waiting_actions'][parent]['action']['revision_targets'])\n        produce_task(self.sim, revises=self.identifier)\n        clear_work(self.sim)\n        action = self.sim.runtime['waiting_actions'][parent]['action']\n        waits = self.engine._revision_dispatch_waits(action)\n        expected = revisions.capture_targets(self.sim.instance, self.sim.runtime, [self.identifier], required=True)\n        self.assertEqual(action['revision_targets'], expected)\n        self.assertEqual(action['superseded_revision_bases'], [old])\n        self.assertEqual(waits, [])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_missing_revision_target_retains_its_original_basis",
+    "line": 196,
+    "tokens": [],
+    "code": "    def test_missing_revision_target_retains_its_original_basis(self):\n        parent = defer_revision(self.sim, [self.identifier])\n        action = self.sim.runtime['waiting_actions'][parent]['action']\n        old = deepcopy(action['revision_targets'])\n        del self.sim.runtime['tasks'][self.identifier]\n        with self.assertRaisesRegex(ValueError, '^missing proposal revision ancestor$'):\n            self.engine._revision_dispatch_waits(action)\n        self.assertEqual(action['revision_targets'], old)\n        self.assertEqual(action['superseded_revision_bases'], [old])",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_followup_request_enqueues_captured_targets_without_an_original_declaration",
+    "line": 206,
+    "tokens": [
+      "revision_requests"
+    ],
+    "code": "    def test_followup_request_enqueues_captured_targets_without_an_original_declaration(self):\n        _ended_execution(self.engine, 'EX-request', 'research_plan')\n        self.sim.runtime['executions']['EX-request']['extensions'] = {'revision_requests': [{\n            'record_ids': [self.identifier], 'reason': '계약을 다시 살핀다.'}]}\n        self.engine._apply_revision_followup({'id': 'AC-request', 'role': 'research_plan'}, {}, 'EX-request')\n        action, = self.sim.runtime['queue']\n        self.assertEqual(action['role'], 'research_preparation')\n        self.assertEqual(action['requested_by'], 'EX-request')\n        self.assertEqual(action['revision_targets'], revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier], source_ref='EX-request'))\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_record_task_receipt_forwards_value_and_records_actual_execution",
+    "line": 218,
+    "tokens": [],
+    "code": "    def test_record_task_receipt_forwards_value_and_records_actual_execution(self):\n        _ended_execution(self.engine, 'EX-receipt', 'research_plan')\n        action = enqueue(self.engine, 'research_plan')\n        instance, runtime = deepcopy((self.sim.instance, self.sim.runtime))\n        expected = revisions.record_execution_outcome(instance, runtime, deepcopy(action), {'summary': '계획 수락'},\n            'EX-receipt', accepted=True, clock=self.sim.ports.clock)\n        result = self.engine._record_task_receipt(action, {'summary': '계획 수락'}, 'EX-receipt', accepted=True)\n        self.assertEqual(result, expected)\n        self.assertEqual((self.sim.instance, self.sim.runtime), (instance, runtime))\n        receipt = self.sim.runtime['history'][-1]\n        self.assertEqual((receipt['kind'], receipt['outcome'], receipt['event_ref']),\n                         ('task_repetition', 'accepted', 'EX-receipt'))\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_terminal_selected_action_does_not_reopen_its_task",
+    "line": 232,
+    "tokens": [],
+    "code": "    def test_terminal_selected_action_does_not_reopen_its_task(self):\n        selected = deepcopy(select(self.sim))\n        withdraw(self.sim, self.identifier)\n        task = deepcopy(self.sim.runtime['tasks'][self.identifier])\n        self.assertFalse(self.engine._selected_action_current(selected, evaluation_context=self.engine._evaluation_context()))\n        self.assertEqual(self.sim.runtime['tasks'][self.identifier], task)\n        self.assertEqual([a['role'] for a in self.sim.runtime['queue']], ['research_plan'])\n        self.assertEqual(self.sim.runtime['history'][-1]['kind'], 'obsolete_selection')\n        self.assertEqual(self.sim.runtime['history'][-1]['action'], selected)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_closed_task_does_not_gain_an_implicit_revision_target",
+    "line": 243,
+    "tokens": [],
+    "code": "    def test_closed_task_does_not_gain_an_implicit_revision_target(self):\n        withdraw(self.sim, self.identifier)\n        action = {'id': 'AC-closed', 'role': 'research_preparation', 'target': self.identifier}\n        self.engine._bind_revision_action(action)\n        self.assertEqual(action['revision_targets'], {})\n        self.assertEqual(self.sim.runtime['tasks'][self.identifier]['status'], 'closed')",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revision_of_active_task_without_queued_selection_still_sets_wait_owner",
+    "line": 250,
+    "tokens": [],
+    "code": "    def test_revision_of_active_task_without_queued_selection_still_sets_wait_owner(self):\n        selected = select(self.sim)\n        self.engine._remove_action(selected)\n        history = deepcopy(self.sim.runtime['history'])\n        action = enqueue(self.engine, 'research_preparation', self.identifier)\n        task = self.sim.runtime['tasks'][self.identifier]\n        self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],\n            'next_owner': 'research_preparation', 'basis_ref': action['id']})\n        self.assertEqual(task['status'], 'waiting')\n        self.assertEqual(self.sim.runtime['history'], history)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_withdrawal_extension_resolves_parent_without_a_revision_resolution_row",
+    "line": 262,
+    "tokens": [],
+    "code": "    def test_withdrawal_extension_resolves_parent_without_a_revision_resolution_row(self):\n        parent = defer_revision(self.sim, [self.identifier])\n        child = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier]))\n        _ended_execution(self.engine, 'EX-withdraw-child', 'research_preparation')\n        self.sim.runtime['executions']['EX-withdraw-child']['extensions'] = {'task_dispositions': [{\n            'task_id': self.identifier, 'disposition': 'withdraw', 'reason': '미수행 의무 철회'}]}\n        withdraw(self.sim, self.identifier)\n        previous = deepcopy(self.sim.runtime['waiting_actions'][parent])\n        history = deepcopy(self.sim.runtime['history'])\n        self.engine._apply_revision_followup(child, {}, 'EX-withdraw-child')\n        self.assertEqual(self.sim.runtime['waiting_actions'], {})\n        self.assertEqual(self.sim.runtime['history'], [*history, {\n            'kind': 'revision_obligation_resolved', 'action_id': parent, 'execution_id': 'EX-withdraw-child',\n            'to_action_id': None, 'previous': previous}])\n        self.engine._remove_action(child)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_extra_child_target_does_not_change_parent_scope",
+    "line": 280,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_extra_child_target_does_not_change_parent_scope(self):\n        other = produce_task(self.sim, '추가 개정 과제')\n        clear_work(self.sim)\n        parent = defer_revision(self.sim, [self.identifier])\n        child = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            self.sim.instance, self.sim.runtime, [self.identifier, other]))\n        _ended_execution(self.engine, 'EX-extra-child', 'research_preparation')\n        self.sim.runtime['executions']['EX-extra-child']['extensions'] = {'revision_resolutions': [\n            {'record_id': identifier, 'disposition': 'unchanged', 'reason': '각 계약 유지'}\n            for identifier in (self.identifier, other)]}\n        self.engine._apply_revision_followup(child, {}, 'EX-extra-child')\n        self.assertEqual(self.sim.runtime['waiting_actions'], {})\n        self.assertEqual(self.sim.runtime['history'][-1]['action_id'], parent)\n        self.assertEqual(self.sim.runtime['history'][-1]['kind'], 'revision_obligation_resolved')\n        history = deepcopy(self.sim.runtime['history'])\n        self.engine._apply_revision_followup(child, {}, 'EX-extra-child')\n        self.assertEqual(self.sim.runtime['history'], history)\n        self.engine._remove_action(child)\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_completion_retires_queued_review_and_targeted_revision",
+    "line": 300,
+    "tokens": [],
+    "code": "    def test_completion_retires_queued_review_and_targeted_revision(self):\n        from do_math.task_scope import apply_task_assessments\n        from support.planning_contract_inputs import returned\n        assessment = returned(self.sim)\n        review = enqueue(self.engine, 'task_contract_review', self.identifier)\n        revision = enqueue(self.engine, 'research_preparation', self.identifier)\n        self.engine.instance, self.engine.runtime = apply_task_assessments(\n            self.sim.instance, self.sim.runtime, [assessment], execution_id='EX-planning-plan',\n            input_tasks=deepcopy(self.sim.runtime['tasks']), clock=self.sim.ports.clock)\n        current_revision = next(a for a in self.sim.runtime['queue'] if a['id'] == revision['id'])\n        previous_targets = deepcopy(current_revision['revision_targets'])\n        history = deepcopy(self.sim.runtime['history'])\n        expected_queue = [deepcopy(a) for a in self.sim.runtime['queue'] if a['id'] not in {review['id'], revision['id']}]\n        self.engine._retire_closed_revision_targets()\n        self.assertEqual(self.sim.runtime['queue'], expected_queue)\n        self.assertNotIn('target', current_revision)\n        self.assertEqual(self.sim.runtime['history'], [*history,\n            {'kind': 'action_retired_after_target_disposition', 'action': review, 'previous': None},\n            {'kind': 'revision_targets_retired_after_disposition', 'action_id': revision['id'],\n             'targets': [self.identifier], 'previous_targets': previous_targets}])\n        self.save_and_reload()",
+    "source_sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_deferred_child_records_parent_deferral_without_new_child_wait",
+    "line": 33,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_deferred_child_records_parent_deferral_without_new_child_wait(self):\n        sim, engine, identifier = self.sim, self.engine, 'TK-1'\n        parent = enqueue(engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            sim.instance, sim.runtime, [identifier], required=True))\n        eid = sim.clock.new_id('EX')\n        _ended_execution(engine, eid, 'research_preparation')\n        engine.runtime['executions'][eid]['extensions'] = {'revision_resolutions': [\n            {'record_id': identifier, 'disposition': 'deferred', 'reason': '추가 근거를 기다린다.'}]}\n        issues = revisions.submission_errors({'candidates': []}, engine.runtime['executions'][eid]['extensions'], {\n            'action': parent, 'tasks': list(engine.runtime['tasks'].values()),\n            'knowledge_catalog': list(engine.instance['knowledge'].values())})\n        self.assertEqual(issues, [])\n        engine._apply_revision_followup(parent, {'summary': '개정 보류'}, eid)\n        engine._remove_action(parent)\n        engine._save()\n        parent_id = parent['id']\n        child = enqueue(engine, 'research_preparation', revision_targets=revisions.capture_targets(\n            sim.instance, sim.runtime, [identifier]))\n        _ended_execution(engine, 'EX-child', 'research_preparation')\n        sim.runtime['executions']['EX-child']['extensions'] = {'revision_resolutions': [\n            {'record_id': identifier, 'disposition': 'deferred', 'reason': '새 원천 필요'}]}\n        previous = deepcopy(sim.runtime['waiting_actions'][parent_id])\n        engine._apply_revision_followup(child, {'summary': '보류'}, 'EX-child')\n        expected = {**previous, 'deferrals': {identifier: {'execution_id': 'EX-child', 'reason': '새 원천 필요'}}}\n        self.assertEqual(sim.runtime['waiting_actions'], {parent_id: expected})\n        engine._remove_action(child)\n        engine._save()\n        published = deepcopy(engine.store.load())\n        sim.restart()\n        self.assertEqual(sim.engine.store.load(), published)\n        head, instance, runtime = published\n        damaged = deepcopy(runtime)\n        damaged['waiting_actions'][parent_id]['deferrals'][identifier]['execution_id'] = 'EX-missing'\n        before = deepcopy(damaged)\n        with self.assertRaisesRegex(ValueError, '^waiting action deferral execution does not resolve: EX-missing$'):\n            sim.engine.store.save_with_state(head, instance, damaged)\n        self.assertEqual(damaged, before)\n        self.assertEqual(sim.engine.store.load(), published)\n        damaged = deepcopy(runtime)\n        deferred = damaged['waiting_actions'][parent_id]['deferrals'].pop(identifier)\n        damaged['waiting_actions'][parent_id]['deferrals']['TK-missing'] = deferred\n        before = deepcopy(damaged)\n        with self.assertRaisesRegex(ValueError, '^waiting action deferral target does not resolve: TK-missing$'):\n            sim.engine.store.save_with_state(head, instance, damaged)\n        self.assertEqual(damaged, before)\n        self.assertEqual(sim.engine.store.load(), published)",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_closed_target_does_not_erase_other_targets_or_merged_new_request",
+    "line": 80,
+    "tokens": [],
+    "code": "    def test_closed_target_does_not_erase_other_targets_or_merged_new_request(self):\n        h = self.engine\n        other = deepcopy(h.runtime['tasks']['TK-1'])\n        other['id'] = 'TK-2'\n        h.runtime['tasks']['TK-2'] = other\n        a = enqueue(h, 'research_preparation', revision_targets=revisions.capture_targets(h.instance, h.runtime, ['TK-1', 'TK-2']))\n        h.runtime['tasks']['TK-1']['status'] = 'closed'\n        h._retire_closed_revision_targets()\n        self.assertEqual(set(a['revision_targets']), {'TK-2'})\n        a['unbound_request'] = True\n        h.runtime['tasks']['TK-2']['status'] = 'closed'\n        h._retire_closed_revision_targets()\n        self.assertEqual(h.runtime['queue'], [a])\n        self.assertEqual(a['revision_targets'], {})\n        a['revision_targets'] = {'TK-2': {}}\n        a['unbound_request'] = False\n        h._retire_closed_revision_targets()\n        self.assertEqual(h.runtime['queue'], [])",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_revision_blocks_consumer_but_independent_work_can_overlap",
+    "line": 99,
+    "tokens": [],
+    "code": "    def test_revision_blocks_consumer_but_independent_work_can_overlap(self):\n        h = self.engine\n        a = h.runtime['tasks']['TK-1']\n        b = deepcopy(a)\n        b.update(id='TK-B', inputs=['TK-1'], reviews=[])\n        h.runtime['tasks']['TK-B'] = b\n        c = deepcopy(a)\n        c.update(id='TK-C', reviews=[])\n        h.runtime['tasks']['TK-C'] = c\n        writer = enqueue(h, 'research_preparation', 'TK-1')\n        read = {'id': 'AC-B', 'role': 'research_work', 'target': 'TK-B'}\n        independent = {'id': 'AC-C', 'role': 'research_work', 'target': 'TK-C'}\n        self.assertTrue(planning.revision_waits(read, h.instance, h.runtime))\n        self.assertEqual(planning.revision_waits(independent, h.instance, h.runtime), [])\n        h.runtime['executions']['EX-reader'] = {'id': 'EX-reader', 'status': 'running', 'action': read}\n        self.assertTrue(planning.revision_waits(writer, h.instance, h.runtime))\n        h.runtime['executions']['EX-reader']['status'] = 'ended'\n        self.assertEqual(planning.revision_waits(writer, h.instance, h.runtime), [])",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_delegated_work_and_review_do_not_block_on_own_obligation",
+    "line": 133,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_delegated_work_and_review_do_not_block_on_own_obligation(self):\n        h, parent, kid = self.delegated()\n        entry = h.runtime['waiting_actions'][parent['id']]\n        self.assertEqual(entry['delegated_targets'], {kid: 'TK-1'})\n        review = {'id': 'AC-review', 'role': 'task_contract_review', 'target': 'TK-1'}\n        self.assertEqual(planning.revision_waits(review, h.instance, h.runtime), [])\n        work = enqueue(h, 'research_work', 'TK-1')\n        self.assertIn(kid, work['revision_targets'])\n        self.assertEqual(planning.revision_waits(work, h.instance, h.runtime), [])\n        _ended_execution(h, 'EX-work', 'research_work')\n        h.runtime['executions']['EX-work']['extensions'] = {\n            'knowledge_changes': [{'id': kid}],\n            'revision_resolutions': [{'record_id': kid, 'disposition': 'revised', 'reason': 'authored correction'}]}\n        # Synthetic, as in the legacy test: the product revises knowledge by a replacement record under a new ID\n        # (knowledge.replace_knowledge), never in place; _apply_revision_followup does not read this value.\n        h.instance['knowledge'][kid]['revision'] = 2\n        h._apply_revision_followup(work, {'summary': 'correction', 'outcome': 'submitted'}, 'EX-work')\n        self.assertNotIn(parent['id'], h.runtime['waiting_actions'])\n        self.assertEqual(h.runtime['tasks']['TK-1']['status'], 'waiting')\n        self.assertEqual(h.runtime['tasks']['TK-1']['waiting']['next_owner'], 'research_plan')",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_maintenance_can_read_pending_revisions_and_cycles",
+    "line": 154,
+    "tokens": [],
+    "code": "    def test_maintenance_can_read_pending_revisions_and_cycles(self):\n        h, parent, kid = self.delegated()\n        maintenance = {'role': 'maintenance', 'id': 'AC-check', 'target': kid}\n        self.assertEqual(planning.revision_waits(maintenance, h.instance, h.runtime), [])\n        self.assertEqual([(row['state'], set(row['action']['revision_targets'])) for row in planning.pending_revisions(h.runtime)],\n                         [('waiting', {kid})])\n        assert_wait_graphs(h.instance, h.runtime)",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_closed_delegate_keeps_obligation_for_new_preparer",
+    "line": 162,
+    "tokens": [],
+    "code": "    def test_closed_delegate_keeps_obligation_for_new_preparer(self):\n        h, parent, kid = self.delegated()\n        h.runtime['tasks']['TK-1']['status'] = 'closed'\n        h.runtime['queue'] = []\n        h.runtime['waiting_actions']['failed-child'] = {'kind': 'execution_failure', 'action': {\n            'id': 'failed-child', 'role': 'research_work', 'target': 'TK-1',\n            'revision_targets': revisions.capture_targets(h.instance, h.runtime, [kid])}}\n        h._retire_closed_revision_targets()\n        h._reconcile_revision_delegations()\n        self.assertNotIn('failed-child', h.runtime['waiting_actions'])\n        entry = h.runtime['waiting_actions'][parent['id']]\n        self.assertEqual(set(entry['action']['revision_targets']), {kid})\n        self.assertFalse(entry['delegated_targets'])\n        new = enqueue(h, 'research_preparation', revision_targets=revisions.capture_targets(h.instance, h.runtime, [kid]))\n        self.assertIn(parent['id'], new['revision_parent_ids'])\n        self.assertEqual(planning.revision_waits(new, h.instance, h.runtime), [])\n        assert_wait_graphs(h.instance, h.runtime)",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_plan_selection_and_predispatch_use_actual_current_input",
+    "line": 180,
+    "tokens": [],
+    "code": "    def test_plan_selection_and_predispatch_use_actual_current_input(self):\n        from support.record_builders import task_disposition\n        from support.role_answers import contract_review\n        h = self.engine\n        _ended_execution(h, 'EX-plan', 'research_plan')\n        plan = {'dispositions': [task_disposition('TK-1')], 'task_assessments': [], 'preparation_requests': []}\n        h._apply_task_plan(plan, 'EX-plan', deepcopy(h.runtime['tasks']), ['TK-1'], evaluation_context=h._evaluation_context())\n        action = next(a for a in h.runtime['queue'] if a['role'] == 'research_work')\n        self.assertTrue(h._selected_action_current(action, evaluation_context=h._evaluation_context()))\n        h.instance['sources'][0]['sha256'] = 'b' * 64\n        self.assertFalse(h._selected_action_current(action, evaluation_context=h._evaluation_context()))\n        self.assertFalse(any(a['role'] == 'research_work' for a in h.runtime['queue']))\n        self.assertTrue(any(a['role'] == 'research_plan' for a in h.runtime['queue']))\n        task = h.runtime['tasks']['TK-1']\n        review_action = {'role': 'task_contract_review', 'target': task['id']}\n        h._apply(review_action, contract_review({'task': task}), 'EX-fresh-review', owns_response=False)\n        self.assertNotIn('waiting', task)\n        self.assertEqual(planning.task_ready(task, h.instance, h.runtime, evaluation_context=h._evaluation_context())['state'], 'ready')\n        task['waiting'] = {'kind': 'external_event', 'next_owner': 'user'}\n        h._apply(review_action, contract_review({'task': task}), 'EX-other-review', owns_response=False)\n        self.assertEqual(task['waiting'], {'kind': 'external_event', 'next_owner': 'user'})\n        self.assertEqual(planning.task_ready(task, h.instance, h.runtime, evaluation_context=h._evaluation_context())['state'], 'not_ready')",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged",
+    "line": 203,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged(self):\n        h = self.engine\n        task = h.runtime['tasks']['TK-1']\n        action = {'role': 'research_preparation',\n                  'revision_targets': revisions.capture_targets(h.instance, h.runtime, ['TK-1'], required=True)}\n        context = {'action': action, 'tasks': [task]}\n        # The legacy test asserted only that errors exist; the product's reason is pinned here.\n        self.assertEqual(revisions.submission_errors({}, {}, context), [\n            {'path': 'activity-extensions.json/revision_resolutions',\n             'message': 'resolve each declared target exactly once, using a task withdrawal only for task targets'}])\n        extension = {'revision_resolutions': [{'record_id': 'TK-1', 'disposition': 'unchanged', 'reason': 'skip'}]}\n        self.assertEqual(revisions.submission_errors({}, extension, context), [\n            {'path': 'activity-extensions.json/revision_resolutions',\n             'message': 'a required revision or rejected contract cannot be cancelled as unchanged'}])\n        extension['revision_resolutions'][0]['disposition'] = 'revised'\n        self.assertEqual(revisions.submission_errors({'candidates': [{'title': 'revision', 'revises_task_id': 'TK-1'}]},\n                                                     extension, context), [])",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  },
+  {
+    "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+    "line": 225,
+    "tokens": [
+      "revision_resolutions"
+    ],
+    "code": "    def test_waiting_work_result_does_not_force_assessment_status(self):\n        \"\"\"실제 별도 지식 생산·개정과 두 판정의 관계 상태를 유지하는 긴 수신 경로다.\"\"\"\n        from support.planning_contract_inputs import relation_sim, delegated_revision\n        self.sim = relation_sim()\n        self.engine = self.sim.engine\n        self.parent, self.tid, self.kid = delegated_revision(self.sim)\n        from do_math import knowledge\n        from support.engine_lifecycle import _ended_execution, theorems\n        from support.planning_owner import enqueue\n        other, = theorems(self.sim, 'planning_parallel_revision')\n        action = enqueue(self.engine, 'research_work', self.tid,\n            revision_targets=revisions.capture_targets(self.sim.instance, self.sim.runtime, [self.kid, other]))\n        _ended_execution(self.engine, 'EX-waiting-work', 'research_work')\n        changes = {'summary': '독립 기록 설명을 명료하게 개정한다.'}\n        extension = {'knowledge_changes': [{'id': other, 'changes': changes, 'reason': '설명 개정'}],\n            'revision_resolutions': [\n                {'record_id': self.kid, 'disposition': 'deferred', 'reason': '추가 입력 대기'},\n                {'record_id': other, 'disposition': 'revised', 'reason': '설명 개정'}]}\n        self.assertEqual(revisions.submission_errors({'outcome': 'waiting'}, extension, {'action': action,\n            'tasks': list(self.sim.runtime['tasks'].values()),\n            'knowledge_catalog': list(self.sim.instance['knowledge'].values())}), [])\n        self.sim.runtime['executions']['EX-waiting-work']['extensions'] = extension\n        self.engine.instance, self.engine.runtime = knowledge.replace_knowledge(self.sim.instance, self.sim.runtime,\n            other, changes, reason='설명 개정', actor_ref='EX-waiting-work', clock=self.sim.ports.clock)\n        task = deepcopy(self.sim.runtime['tasks'][self.tid])\n        self.engine._apply_revision_followup(action, {'outcome': 'waiting'}, 'EX-waiting-work')\n        self.assertEqual(self.sim.runtime['tasks'][self.tid], task)\n        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent]['deferrals'], {\n            self.kid: {'execution_id': 'EX-waiting-work', 'reason': '추가 입력 대기'}})\n        self.engine._remove_action(action)\n        self.engine._save()\n        published = deepcopy(self.engine.store.load())\n        self.sim.restart()\n        self.assertEqual(self.sim.engine.store.load(), published)",
+    "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e"
+  }
+]

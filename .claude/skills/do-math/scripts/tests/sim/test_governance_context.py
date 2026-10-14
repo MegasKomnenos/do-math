@@ -14,6 +14,7 @@ import unittest
 
 from do_math import governance as gov
 from support.sim import Sim, warm_template
+from support.engine_context import assert_governance_documents, package
 
 setUpModule = warm_template
 
@@ -45,6 +46,9 @@ class InterpretationContextTests(unittest.TestCase):
         for row in context['import_consumers']:
             document = SKILL / row['payload_contract']['document']
             self.assertIn(row['owner_kind'], document.read_text(encoding='utf-8'))
+        fitted, _ = package(engine, sim.root / 'document-intent', role='intent_interpretation', target=identifier)
+        assert_governance_documents(self, fitted['context']['governance'], owner='governance', instance=engine.instance)
+        self.assertEqual(fitted['context']['original_source'], context['original_source'])
 
     def test_intent_input_tasks_carry_the_contract_hash_a_scope_decision_binds(self):
         # 입력-소비자.md task_scope uses the supplied task edition and hash; the application

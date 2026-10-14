@@ -1,0 +1,41 @@
+B110 P06/P10 excerpts 0 existing reports 2
+B111 P06/P10 excerpts 2 existing reports 1
+     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
++    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
++    schemas['operating_summary'] = produced_object_schema(reporting.operating_summary)
++    schemas['governance'] = produced_object_schema(governance.governance_view)
++    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
++    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
++    schemas['status'] = produced_object_schema(reporting.status_report, bindings={
++    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
++    schemas['operating_summary'] = produced_object_schema(reporting.operating_summary)
++    schemas['governance'] = produced_object_schema(governance.governance_view)
++    schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
++    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
++    schemas['status'] = produced_object_schema(reporting.status_report, bindings={
++        'supervision_facts(instance, runtime)': produced_object_schema(supervision.supervision_facts),
+B112 P06/P10 excerpts 0 existing reports 1
+B113 P06/P10 excerpts 3 existing reports 1
++            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
++    schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
++    schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
++    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
++    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
++    schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
++    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
++    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
++    schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
++    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
++    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
++        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
++    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
++    schemas['query_result'] = produced_object_schema(core_engine.query_records)
++    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
++    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
++        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
++    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
++    schemas['query_result'] = produced_object_schema(core_engine.query_records)
++    schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
++    schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
+B114 P06/P10 excerpts 0 existing reports 2
+PURE exact originals 4
