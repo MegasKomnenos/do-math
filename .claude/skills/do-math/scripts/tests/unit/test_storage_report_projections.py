@@ -151,7 +151,7 @@ class ReportProjections(unittest.TestCase):
                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))], [])
+                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))], [])
             self.assertEqual([(name, token) for name, text in texts
                               for token in unowned_field_references(text, schemas)], [])
             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
@@ -184,7 +184,7 @@ class ReportProjections(unittest.TestCase):
                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))])
+                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))])
                     if name == 'config_sha256':
                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
             for path in (('operating_summary', 'supervision'),

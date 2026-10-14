@@ -278,7 +278,7 @@ class RoleInputTests(unittest.TestCase):
                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
+                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
 
         instance, runtime = surface_state()
         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
@@ -354,7 +354,7 @@ class RoleInputTests(unittest.TestCase):
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
+                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
 
         with tempfile.TemporaryDirectory() as directory:
             archive = {}
@@ -523,7 +523,7 @@ class RoleInputTests(unittest.TestCase):
                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
+                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
 
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')

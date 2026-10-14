@@ -42,6 +42,34 @@ def setUpModule():
 
 
 class CheckHistoryTests(unittest.TestCase):
+    def test_documented_pass_is_bound_to_the_actual_candidate_and_check(self):
+        from support.engine_context import assert_delivery_documents
+        from do_math.canonical import exact_content_hash
+        for output, passed in ((self.good, True), ({k: v for k, v in self.good.items() if k != 'report'}, False)):
+            check = submission.check_submission(output, self.schema, self.context, {}, self.workspace,
+                mode='producer', execution_id='EX-1', tool_sha256='same', clock=FakeClock())
+            assert_delivery_documents(self, check, owner='submission_check', output=output,
+                schema=self.schema, context=self.context, extensions={}, execution_id='EX-1', passed=passed)
+            self.assertIn('mathematical_meaning', check['not_checked'])
+            self.assertNotIn('delivery', check)
+            for fault in ('missing_passed', 'wrong_passed', 'other_execution', 'other_candidate', 'other_mode', 'other_check'):
+                changed = deepcopy(check)
+                if fault == 'missing_passed':
+                    del changed['passed']
+                elif fault == 'wrong_passed':
+                    changed['passed'] = not passed
+                elif fault == 'other_execution':
+                    changed['execution_id'] = 'EX-other'
+                elif fault == 'other_candidate':
+                    changed['input_hashes']['output'] = exact_content_hash({'report': 'borrowed'})
+                elif fault == 'other_mode':
+                    changed['mode'] = 'receiver'
+                else:
+                    changed = {'sha256': 'import-check', 'execution_id': 'EX-1'}
+                with self.subTest(passed=passed, fault=fault), self.assertRaises((AssertionError, KeyError)):
+                    assert_delivery_documents(self, changed, owner='submission_check', output=output,
+                        schema=self.schema, context=self.context, extensions={}, execution_id='EX-1', passed=passed)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

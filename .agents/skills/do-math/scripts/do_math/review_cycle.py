@@ -1312,8 +1312,9 @@ def context_for(cycle, action):
     slot = action['slot']
     turns, manifests = validate_transcript(cycle, slot)
     for message, entry in zip(turns, manifests):
-        old_proposal = message.get("kind") == "proposal" and entry["proposal_digest"] != cycle["proposal_digest"]
-        if message["role"] == "tool" or old_proposal or message.get('kind') == 'delivered_prompt':
+        # The complete current proposal is already supplied once below. Keep
+        # every original proposal message sealed, and restore it by exact ref.
+        if message["role"] == "tool" or message.get('kind') in {'proposal', 'delivered_prompt'}:
             ref = {**copy.deepcopy(entry), "slot": slot, "role": message["role"], "kind": message.get("kind", "tool_result"),
                    "call": copy.deepcopy(message.get("call")), "arguments": copy.deepcopy(message.get("arguments"))}
             messages.append({"role": message["role"], "content": {"source_ref": ref}})

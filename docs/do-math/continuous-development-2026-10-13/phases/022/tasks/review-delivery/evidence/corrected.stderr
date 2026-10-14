@@ -1,0 +1,7 @@
+test_new_revision_restarts_all_slots_and_retains_own_conversation (unit.test_review_engine_stages.InitialStageTests.test_new_revision_restarts_all_slots_and_retains_own_conversation) ... ok
+test_documented_pass_is_bound_to_the_actual_candidate_and_check (unit.test_submission_checks.CheckHistoryTests.test_documented_pass_is_bound_to_the_actual_candidate_and_check) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.967s
+
+OK

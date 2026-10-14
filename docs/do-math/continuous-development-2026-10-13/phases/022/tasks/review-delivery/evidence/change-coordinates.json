@@ -1,0 +1,338 @@
+[
+  {
+    "path": ".agents/skills/do-math/scripts/do_math/review_cycle.py",
+    "original_source": "git HEAD:.agents/skills/do-math/scripts/do_math/review_cycle.py; CRLF newline realization verified against start SHA256",
+    "before": {
+      "sha256": "2e3303f0a3ee8d858720c16031d02226f57c34191508e30e5e4960928a463b56",
+      "bytes": 87149
+    },
+    "after": {
+      "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96",
+      "bytes": 87190
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "before": {
+      "sha256": "3c448bd6caf06f8ab40e9100589d85a8bde5932bad91103b2c6f3a3f84915d53",
+      "bytes": 48131
+    },
+    "after": {
+      "sha256": "1e6efc7aeb0bcbe5baa4caba82ca4014344df0abcb6210e86c0b1d1924b5af5d",
+      "bytes": 48293
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    "original_source": "git HEAD:.agents/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    "before": {
+      "sha256": "b420ffcbcd4cc33c75330af21d599928fe63843b8387a2b59cf1a34a51165f43",
+      "bytes": 11163
+    },
+    "after": {
+      "sha256": "807c94f0aade8fb8065ee31589acccad4857b7692e43d3a104c05092789ac7d6",
+      "bytes": 14760
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    "before": {
+      "sha256": "8a2c1469d95b00541bbddda40b5640aea4808cef2c15ae76b238df83934447f8",
+      "bytes": 6768
+    },
+    "after": {
+      "sha256": "c07ade8bcd1ca4f1d0466276cca8adc5dfade3cb0d00ff44fac7b848aab6da3f",
+      "bytes": 8158
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "before": {
+      "sha256": "c7039210eb56a56c75b15fb7d568a5ce39c7e988d4b788ca36c141c518428824",
+      "bytes": 49642
+    },
+    "after": {
+      "sha256": "c13c5d4fac76f90d3bc8fa601dd6ef1f7edc84df4fd4408d20200c3a71b85657",
+      "bytes": 53664
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/support/doc_code.py",
+    "before": {
+      "sha256": "f4b8526794963f611f23bb8f26a512a439d083b55ff0ec29f9335c21b4f07ec2",
+      "bytes": 41037
+    },
+    "after": {
+      "sha256": "a5cca2e4b8848854f60befc149766f3a8e0e3b171013724553f34c87e2813c8e",
+      "bytes": 42354
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/support/engine_context.py",
+    "before": {
+      "sha256": "d1f57625493cbf20fa8621e40b24f14a5d6eac13159ea3b775241dc005d16eeb",
+      "bytes": 35639
+    },
+    "after": {
+      "sha256": "19390212280d0c21358b361cc8ad89cd9d1fe45c27346745454ab37149f3625c",
+      "bytes": 37422
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "before": {
+      "sha256": "2d44cc8d5af3edf7bd410d062ddf9459dd0cd084521695aedf120267a286b144",
+      "bytes": 5722
+    },
+    "after": {
+      "sha256": "442d38f31879f51bd5f07f5d09cbe848913b6d5e701f66e0a954eb0636499f4b",
+      "bytes": 5776
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    "original_source": "git HEAD:.agents/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    "before": {
+      "sha256": "e8d63d0258638c4363710849d7f6c3fd6cd303f5936b81cf921b1b68668edc45",
+      "bytes": 14149
+    },
+    "after": {
+      "sha256": "628bbcdd656398ee7960ddbeb4344b4c161e585ddd5c6907832283f8deb67b9c",
+      "bytes": 15119
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    "original_source": "git HEAD:.agents/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    "before": {
+      "sha256": "283a834148026a8a0e684b87f8d727b17ceae84c33af3b742fa5a12158a1aac9",
+      "bytes": 14233
+    },
+    "after": {
+      "sha256": "b71a177bf7a5d7b2aa19effb95e0da911b6f5d4d963cf4178f7f272ec185ca71",
+      "bytes": 16626
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "before": {
+      "sha256": "03d93954ca2574e29675a751c2398dde57a2e0ab225b0952d57bd3b0b26c04c3",
+      "bytes": 60904
+    },
+    "after": {
+      "sha256": "ecb5ab43c9c832044474952be86a6c7f596cc6098347b448b8e7258595712a1b",
+      "bytes": 61066
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "before": {
+      "sha256": "4845555cac6562c03dc20809b2e4fe3a10679247815f6000aa823fd75e51f795",
+      "bytes": 5777
+    },
+    "after": {
+      "sha256": "697bb13d681b503c219141f499111731f6d59d9065abaf36a21e945c295a9ea6",
+      "bytes": 5831
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "original_source": "021 manager archive member .agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "before": {
+      "sha256": "b4d90c8c287c9106dbe3f03b2fe359101461c0b686e7c94ceffeb9daf4441073",
+      "bytes": 15160
+    },
+    "after": {
+      "sha256": "697a51a145109a50c18b5562ee23ab7496269caf3c1bb5009bf7501633ab85c4",
+      "bytes": 15268
+    }
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+    "original_source": "git HEAD:.agents/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+    "before": {
+      "sha256": "a46f4e1baa2cf2d9570b332bf6a69a205090dd34d6b5e0cb367822dbfa89e6b9",
+      "bytes": 38652
+    },
+    "after": {
+      "sha256": "d4dd3febb89913ea217d023cb219a6f8495ba3181b998071cb773a5d92c087a5",
+      "bytes": 40624
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+    "original_source": "git HEAD:.claude/skills/do-math/scripts/do_math/review_cycle.py; CRLF newline realization verified against start SHA256",
+    "before": {
+      "sha256": "2e3303f0a3ee8d858720c16031d02226f57c34191508e30e5e4960928a463b56",
+      "bytes": 87149
+    },
+    "after": {
+      "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96",
+      "bytes": 87190
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "before": {
+      "sha256": "3c448bd6caf06f8ab40e9100589d85a8bde5932bad91103b2c6f3a3f84915d53",
+      "bytes": 48131
+    },
+    "after": {
+      "sha256": "1e6efc7aeb0bcbe5baa4caba82ca4014344df0abcb6210e86c0b1d1924b5af5d",
+      "bytes": 48293
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    "original_source": "git HEAD:.claude/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    "before": {
+      "sha256": "b420ffcbcd4cc33c75330af21d599928fe63843b8387a2b59cf1a34a51165f43",
+      "bytes": 11163
+    },
+    "after": {
+      "sha256": "807c94f0aade8fb8065ee31589acccad4857b7692e43d3a104c05092789ac7d6",
+      "bytes": 14760
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    "before": {
+      "sha256": "8a2c1469d95b00541bbddda40b5640aea4808cef2c15ae76b238df83934447f8",
+      "bytes": 6768
+    },
+    "after": {
+      "sha256": "c07ade8bcd1ca4f1d0466276cca8adc5dfade3cb0d00ff44fac7b848aab6da3f",
+      "bytes": 8158
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "before": {
+      "sha256": "c7039210eb56a56c75b15fb7d568a5ce39c7e988d4b788ca36c141c518428824",
+      "bytes": 49642
+    },
+    "after": {
+      "sha256": "c13c5d4fac76f90d3bc8fa601dd6ef1f7edc84df4fd4408d20200c3a71b85657",
+      "bytes": 53664
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "before": {
+      "sha256": "f4b8526794963f611f23bb8f26a512a439d083b55ff0ec29f9335c21b4f07ec2",
+      "bytes": 41037
+    },
+    "after": {
+      "sha256": "a5cca2e4b8848854f60befc149766f3a8e0e3b171013724553f34c87e2813c8e",
+      "bytes": 42354
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "before": {
+      "sha256": "d1f57625493cbf20fa8621e40b24f14a5d6eac13159ea3b775241dc005d16eeb",
+      "bytes": 35639
+    },
+    "after": {
+      "sha256": "19390212280d0c21358b361cc8ad89cd9d1fe45c27346745454ab37149f3625c",
+      "bytes": 37422
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "before": {
+      "sha256": "2d44cc8d5af3edf7bd410d062ddf9459dd0cd084521695aedf120267a286b144",
+      "bytes": 5722
+    },
+    "after": {
+      "sha256": "442d38f31879f51bd5f07f5d09cbe848913b6d5e701f66e0a954eb0636499f4b",
+      "bytes": 5776
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    "original_source": "git HEAD:.claude/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    "before": {
+      "sha256": "e8d63d0258638c4363710849d7f6c3fd6cd303f5936b81cf921b1b68668edc45",
+      "bytes": 14149
+    },
+    "after": {
+      "sha256": "628bbcdd656398ee7960ddbeb4344b4c161e585ddd5c6907832283f8deb67b9c",
+      "bytes": 15119
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    "original_source": "git HEAD:.claude/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    "before": {
+      "sha256": "283a834148026a8a0e684b87f8d727b17ceae84c33af3b742fa5a12158a1aac9",
+      "bytes": 14233
+    },
+    "after": {
+      "sha256": "b71a177bf7a5d7b2aa19effb95e0da911b6f5d4d963cf4178f7f272ec185ca71",
+      "bytes": 16626
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "before": {
+      "sha256": "03d93954ca2574e29675a751c2398dde57a2e0ab225b0952d57bd3b0b26c04c3",
+      "bytes": 60904
+    },
+    "after": {
+      "sha256": "ecb5ab43c9c832044474952be86a6c7f596cc6098347b448b8e7258595712a1b",
+      "bytes": 61066
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "before": {
+      "sha256": "4845555cac6562c03dc20809b2e4fe3a10679247815f6000aa823fd75e51f795",
+      "bytes": 5777
+    },
+    "after": {
+      "sha256": "697bb13d681b503c219141f499111731f6d59d9065abaf36a21e945c295a9ea6",
+      "bytes": 5831
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "original_source": "021 manager archive member .claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "before": {
+      "sha256": "b4d90c8c287c9106dbe3f03b2fe359101461c0b686e7c94ceffeb9daf4441073",
+      "bytes": 15160
+    },
+    "after": {
+      "sha256": "697a51a145109a50c18b5562ee23ab7496269caf3c1bb5009bf7501633ab85c4",
+      "bytes": 15268
+    }
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+    "original_source": "git HEAD:.claude/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+    "before": {
+      "sha256": "a46f4e1baa2cf2d9570b332bf6a69a205090dd34d6b5e0cb367822dbfa89e6b9",
+      "bytes": 38652
+    },
+    "after": {
+      "sha256": "d4dd3febb89913ea217d023cb219a6f8495ba3181b998071cb773a5d92c087a5",
+      "bytes": 40624
+    }
+  }
+]

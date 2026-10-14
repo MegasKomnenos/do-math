@@ -1,0 +1,96 @@
+commit 7823c9a02fddb832fde3330da27b95f4911af517
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Mon Oct 5 06:28:49 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Mon Oct 5 06:28:49 2026 +0900
+
+    문서의 단순 점 표기 전건을 실제 소유자에 결속
+
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 2944916d..d26597f9 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -187,6 +187,25 @@ def written_object_schema(function, target, *, branch=None):
+     return {'type': 'object', 'properties': properties}
+ 
+ 
++
++def consumed_object_schema(function, target, *, scope=None):
++    """Fixed keys explicitly read from an open object; this is not a closed schema."""
++    expected = ast.unparse(ast.parse(target, mode='eval').body)
++    properties = {}
++    for node in producer_nodes(function, scope=scope):
++        key = None
++        if isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) and ast.unparse(node.value) == expected:
++            key = node.slice
++        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
++                and node.func.attr == 'get' and ast.unparse(node.func.value) == expected and node.args:
++            key = node.args[0]
++        if isinstance(key, ast.Constant) and isinstance(key.value, str):
++            properties[key.value] = {}
++    if not properties:
++        raise ValueError(f'No fixed read fields in {function.__qualname__}: {target}')
++    return {'type': 'object', 'properties': properties}
++
++
+ def field_schemas():
+     """Bind stored records separately from the role-input objects built from them."""
+     from do_math import academic, context_store, governance, reporting, submission, supervision, trace_report
+@@ -245,6 +264,33 @@ def field_schemas():
+     schemas['init_result']['properties'].update(schemas['scheduling_result']['properties'])
+     schemas['selection_result'] = produced_object_schema(cli.execute, branch="command == 'select-profile'", return_item=0,
+         bindings={'selected': RECORDS['executions']['properties']['model_selection']})
++    from do_math import formal, observations, planning, review_cycle, trust_validation
++    from do_math.dispatch_engine import DispatchEngineMixin
++    from do_math.review_engine import ReviewEngineMixin
++    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
++    schemas['source_ref'] = produced_object_schema(context_store.write_source_catalog, 'ref')
++    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
++    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
++        "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
++            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
++    schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
++    schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
++    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
++    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
++    schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
++    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
++    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
++        bindings={'deepcopy(output)': governance.interpretation_schema('check')})
++    schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
++    schemas['query_result'] = produced_object_schema(core_engine.query_records)
++    schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
++    schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
++    schemas['toolchain'] = produced_object_schema(formal.inspect_toolchain, 'result', bindings={
++        '_project_identity(command, should_stop, workspace=workspace, jobs=jobs, clock=clock, environment=environment, git_backend=git_backend)': schemas['project']})
++    environment_base = produced_object_schema(trust_validation.check_environment, 'result')
++    environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
++    schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
++        bindings={'result': environment_base})
+     for name in ('execution_window', 'scholarly', 'formal_verifier'):
+         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
+@@ -303,6 +349,23 @@ def field_bindings(line, schemas):
+     return local, issues
+ 
+ 
++
++def unowned_field_references(text, schemas):
++    """Unbound simple dotted names cannot silently escape the document population."""
++    pending = set()
++    for line in text.splitlines():
++        local, _ = field_bindings(line, schemas)
++        for token in SPAN.findall(line):
++            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', token):
++                continue
++            if token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
++                continue  # Filename classification does not prove file existence.
++            root = token.split('.')[0]
++            if root not in local and root not in {'contract_check', 'integration'}:
++                pending.add(token)
++    return sorted(pending)
++
++
+ def scoped_field_issues(text, schemas):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     issues = []

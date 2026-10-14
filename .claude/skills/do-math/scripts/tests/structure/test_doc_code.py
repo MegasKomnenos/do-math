@@ -14,6 +14,117 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_delivery_fields_require_their_actual_return_owner(self):
+        schemas = field_schemas()
+        from support.doc_code import DELIVERY_INPUT_BOUNDARIES, delivery_field_issues
+        for field in ('submission_check.passed', 'repair.previous_output'):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual delivery input'):
+                scoped_field_issues('`' + field + '`', schemas)
+            owner = field.split('.')[0]
+            with self.assertRaisesRegex(ValueError, 'actual delivery input'):
+                scoped_field_issues('`' + field + '`', schemas,
+                    defer_delivery_inputs=set(DELIVERY_INPUT_BOUNDARIES) - {owner})
+            self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+                defer_delivery_inputs=(owner,)), [])
+            self.assertEqual(delivery_field_issues('`' + field + '`', owner, {}), [('actual field', field)])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred delivery input owners'):
+            scoped_field_issues('', schemas, defer_delivery_inputs=('repairs',))
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual'):
+            scoped_field_issues('`status.budget`', schemas, defer_delivery_inputs=DELIVERY_INPUT_BOUNDARIES)
+        self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+            'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+
+    def test_deferred_delivery_has_the_assigned_actual_document_check(self):
+        import ast
+        from support.doc_code import DELIVERY_INPUT_BOUNDARIES
+        owners = {
+            'submission_check': ('unit/test_submission_checks.py', 'CheckHistoryTests',
+                'test_documented_pass_is_bound_to_the_actual_candidate_and_check'),
+            'repair': ('sim/test_repair_routing.py', 'SubmissionReturnTests',
+                'test_repeated_submission_return_stops_producer_and_opens_one_diagnosis')}
+        def verify(mapping):
+            self.assertEqual(set(mapping), set(DELIVERY_INPUT_BOUNDARIES))
+            for owner, (path, class_name, name) in mapping.items():
+                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
+                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
+                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
+                self.assertEqual(len(methods), 1)
+                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id == 'assert_delivery_documents' and any(k.arg == 'owner'
+                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
+                    for n in ast.walk(methods[0])))
+        verify(owners)
+        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
+            changed = dict(owners)
+            if fault == 'missing_owner':
+                del changed['repair']
+            elif fault == 'wrong_owner':
+                changed['repairs'] = changed.pop('repair')
+            elif fault == 'missing_method':
+                changed['repair'] = (*changed['repair'][:2], 'missing')
+            else:
+                changed['repair'] = (*changed['repair'][:2], 'test_a_rejected_submission_travels_with_the_repair')
+            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                verify(changed)
+
+    def test_review_fields_require_their_actual_input_owner(self):
+        schemas = field_schemas()
+        from support.doc_code import REVIEW_INPUT_BOUNDARIES, review_field_issues
+        for field in ('role_review.proposal', 'pending_findings[].ref',
+                      'review_research.question', 'review_sources[].ref'):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
+                scoped_field_issues('`' + field + '`', schemas)
+            owner = field.split('.')[0]
+            if '[' in owner:
+                owner = owner.split('[')[0]
+            with self.assertRaisesRegex(ValueError, 'actual review input'):
+                scoped_field_issues('`' + field + '`', schemas,
+                                    defer_review_inputs=set(REVIEW_INPUT_BOUNDARIES) - {owner})
+            self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+                                                defer_review_inputs=(owner,)), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred review input owners'):
+            scoped_field_issues('', schemas, defer_review_inputs=('review_source',))
+        for text in ('`status.budget`', '`research_sources[].local_path`', '`preview.command`'):
+            with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+                scoped_field_issues(text, schemas, defer_review_inputs=REVIEW_INPUT_BOUNDARIES)
+        self.assertEqual(review_field_issues('`pending_findings[].ref`', 'pending_findings', []),
+                         [('actual field', 'pending_findings[].ref')])
+        self.assertEqual(review_field_issues('`sources[].ref` <!-- do-math fields: sources=review_sources -->',
+                         'review_sources', [{'ref': 'exact'}]), [])
+        self.assertEqual(review_field_issues('`sources[].ref`', 'review_sources', [{'ref': 'exact'}]), [])
+
+    def test_deferred_reviews_have_their_actual_document_check(self):
+        import ast
+        from support.doc_code import REVIEW_INPUT_BOUNDARIES
+        owners = {'role_review': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
+                  'pending_findings': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
+                  'review_research': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication'),
+                  'review_sources': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication')}
+        def verify(mapping):
+            self.assertEqual(set(mapping), set(REVIEW_INPUT_BOUNDARIES))
+            for owner, (path, class_name, name) in mapping.items():
+                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
+                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
+                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
+                self.assertEqual(len(methods), 1)
+                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id == 'assert_review_documents' and any(k.arg == 'owner'
+                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
+                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
+        verify(owners)
+        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
+            changed = dict(owners)
+            if fault == 'missing_owner':
+                del changed['review_sources']
+            elif fault == 'wrong_owner':
+                changed['review_source'] = changed.pop('review_sources')
+            elif fault == 'missing_method':
+                changed['review_sources'] = (*changed['review_sources'][:2], 'missing')
+            else:
+                changed['review_sources'] = (*changed['review_sources'][:2], 'test_research_schema_pins_question_and_digest')
+            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                verify(changed)
+
     def test_tool_fields_require_their_actual_installed_input(self):
         schemas = field_schemas()
         fields = ('execution_window.self_check_directory', 'scholarly.configured',
@@ -27,14 +138,14 @@ class DocumentCodeTests(unittest.TestCase):
             with self.subTest(owner=owner):
                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
                     scoped_field_issues('`' + field + '`', schemas,
-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner})
+                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
-                                 defer_tool_inputs=(owner,)), [])
+                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair')), [])
         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',))
+            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES)
+                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))
 
     def test_deferred_tools_have_their_actual_document_check(self):
         import ast
@@ -332,7 +443,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
-                                                                     'record_map.read_tool', 'submission_contract'))]
+                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -476,7 +587,7 @@ class DocumentCodeTests(unittest.TestCase):
                          [('unused field binding', 'record')])
         self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
             '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
-            '`action.role`', schemas), [])
+            '`action.role`', schemas, defer_delivery_inputs=('repair',)), [])
 
     def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
         def producer(command):
@@ -534,14 +645,16 @@ class DocumentCodeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'No fixed read fields'):
             consumed_object_schema(consumer, 'missing')
         schemas = field_schemas()
-        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas), [])
+        with self.assertRaisesRegex(ValueError, 'actual delivery input'):
+            scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas)
         self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
         self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
                          [('scoped field', 'check.passed')])
-        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->', schemas),
-                         [('scoped field', 'check.sha256')])
-        self.assertEqual(scoped_field_issues('`change.value` `review_research.question` '
-            '`toolchain.project.search_paths` `environment_check.changed_files` `role_review.proposal`', schemas), [])
+        from support.doc_code import delivery_field_issues
+        self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+                         'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+        self.assertEqual(scoped_field_issues('`change.value` '
+            '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
                          [('scoped field', 'change.nonexistent')])
         self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),

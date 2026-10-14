@@ -43,6 +43,9 @@ RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
 TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
                         ('execution_window', 'scholarly', 'formal_verifier', 'preview',
                          'record_map.read_tool', 'submission_contract')}
+REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
+                          ('role_review', 'pending_findings', 'review_research', 'review_sources')}
+DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
 
 
 def documents(skill):
@@ -275,7 +278,7 @@ def field_schemas():
             ('session_limits', 'config', 'session_limits')):
         schemas[name] = schemas[parent]['properties'][key]
     schemas['revisit'] = PLAN_DISPOSITION['properties']['revisit']
-    from do_math import contracts, knowledge_io, model_policy, repair_execution
+    from do_math import contracts, knowledge_io, model_policy
     schemas['activation'] = RESEARCH_FIELDS['lifecycle']['properties']['activation']
     schemas['disposition'] = contracts.disposition_schema()
     schemas['observation'] = RECORDS['execution_profiles']['properties']['observation']
@@ -284,27 +287,21 @@ def field_schemas():
     schemas['governance_record'] = RECORDS['governance']
     schemas['governance_content'] = RECORDS['governance']['properties']['content']
     schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
-    schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
-        bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
+    schemas.update(DELIVERY_INPUT_BOUNDARIES)
     schemas.update(CONTINUATION_BOUNDARIES)
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas.update(ROLE_INPUT_BOUNDARIES)
     schemas.update(CLI_RESULT_BOUNDARIES)
-    from do_math import formal, observations, planning, review_cycle, trust_validation
+    from do_math import formal, observations, planning, trust_validation
     from do_math.dispatch_engine import DispatchEngineMixin
-    from do_math.review_engine import ReviewEngineMixin
     schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
     schemas.update(RESULT_INPUT_BOUNDARIES)
-    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
-    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
-        "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
-            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
+    schemas.update(REVIEW_INPUT_BOUNDARIES)
     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
     schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
     schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
-    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')
     schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
         bindings={'deepcopy(output)': governance.interpretation_schema('check')})
     schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
@@ -327,9 +324,6 @@ def field_schemas():
         schemas[name] = extensions[name]
     schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
     schemas['external_rejections'] = array(RECORDS['external_rejections'])
-    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
-        "cycle['findings'][key]", variants=True))
-    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
     schemas.update({name: boundary for name, boundary in TOOL_INPUT_BOUNDARIES.items()
                     if name != 'record_map.read_tool'})
     schemas['record_map'] = {'type': 'object', 'properties': {
@@ -446,7 +440,8 @@ def unowned_field_references(text, schemas):
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
-                        defer_result_inputs=(), defer_tool_inputs=()):
+                        defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
+                        defer_delivery_inputs=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -466,7 +461,13 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_tool_inputs) - TOOL_INPUT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred tool input owners: {sorted(unknown)}')
+    unknown = set(defer_review_inputs) - REVIEW_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred review input owners: {sorted(unknown)}')
     issues = []
+    unknown = set(defer_delivery_inputs) - DELIVERY_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred delivery input owners: {sorted(unknown)}')
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
         issues.extend(binding_issues)
@@ -476,6 +477,18 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            owner = next((name for name, boundary in DELIVERY_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_delivery_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual delivery input')
+            owner = next((name for name, boundary in REVIEW_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_review_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual review input')
             owner = next((name for name, boundary in TOOL_INPUT_BOUNDARIES.items()
                           if local[root] is boundary), None)
             if (owner is None and parts and parts[0] == 'read_tool'
@@ -540,6 +553,58 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def delivery_field_issues(text, owner, value):
+    """Check one actual check or routed repair, including its line-local alias."""
+    if owner not in DELIVERY_INPUT_BOUNDARIES:
+        raise ValueError('Unknown delivery input owner: ' + owner)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, DELIVERY_INPUT_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = token.split('.')
+            if local.get(root) is not DELIVERY_INPUT_BOUNDARIES[owner]:
+                continue
+            node = value
+            for part in parts:
+                if not isinstance(node, dict) or part not in node:
+                    issues.append(('actual field', token))
+                    break
+                node = node[part]
+    return sorted(set(issues))
+
+
+def review_field_issues(text, owner, value):
+    """Traverse a real seat or fixed investigation value, with line-local aliases.
+
+    An empty list cannot establish an item field. Stage-specific empty cases
+    are tested separately; the document owner must have a populated sample.
+    """
+    if owner not in REVIEW_INPUT_BOUNDARIES:
+        raise ValueError('Unknown review input owner: ' + owner)
+    def visit(node, parts):
+        if not parts:
+            return True
+        part, *tail = parts
+        if part.startswith('['):
+            if not isinstance(node, list) or not node:
+                return False
+            index = part[1:-1]
+            items = node if not index else node[int(index):int(index) + 1]
+            return bool(items) and all(visit(item, tail) for item in items)
+        return isinstance(node, dict) and part in node and visit(node[part], tail)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, REVIEW_INPUT_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if FIELD.fullmatch(token):
+                root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
+                if local.get(root) is REVIEW_INPUT_BOUNDARIES[owner] and not visit(value, parts):
+                    issues.append(('actual field', token))
     return sorted(set(issues))
 
 

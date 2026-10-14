@@ -88,8 +88,11 @@ class ResearchFlowTests(unittest.TestCase):
 
     def test_all_fixed_questions_return_before_resuming_the_deferred_slot(self):
         sim, responder = research(batch=True)
-        drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
-              and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
+        from support.engine_context import observe_review_documents
+        with observe_review_documents(self, sim.engine) as prepared:
+            drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
+                  and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
+        self.assertEqual(len([request for request in prepared if request is not None]), 2)
         self.assertEqual(len(responder.research_answers), 2)
         self.assertEqual(len(responder.resumed_contexts), 1)
         self.assertEqual(len(responder.resumed_contexts[0]['supplemental_results']), 2)

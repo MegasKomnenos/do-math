@@ -1,0 +1,15 @@
+test_review_stage_documents_reach_the_final_seat_input (sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\022\tasks\review-delivery\evidence\red\sim\failures\45396ecb4dd95958388c8e34215dd5d1d54877fc7ab9076fa8a8f6171d90dd1e.json
+
+======================================================================
+FAIL: test_review_stage_documents_reach_the_final_seat_input (sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\sim\test_submission_review_inputs.py", line 58, in test_review_stage_documents_reach_the_final_seat_input
+    self.assertEqual(proposal_copies(prepared['context'], cycle['proposal']), 1,
+AssertionError: 2 != 1 : the input-size contract supplies the complete current proposal exactly once
+
+----------------------------------------------------------------------
+Ran 1 test in 19.498s
+
+FAILED (failures=1)

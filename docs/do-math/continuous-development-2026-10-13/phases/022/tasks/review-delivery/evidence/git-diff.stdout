@@ -1,0 +1,1446 @@
+diff --git a/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py b/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+index 96d442cb..c9b2546c 100644
+--- a/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ b/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@ def cli_field_issues(text, schemas, owner, result):
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@ class CliTests(CliInstanceTest):
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@ class CliTests(CliInstanceTest):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+diff --git a/.agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py b/.agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
+index 3d640c72..85cfa6da 100644
+--- a/.agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
++++ b/.agents/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
+@@ -44,6 +44,9 @@ class FixedSourceRestorationTests(unittest.TestCase):
+         self.assertEqual(self.engine.store.read(self.row['artifact_ref'], self.row['snapshot']), raw)
+         visible = self.engine._materialize_research_sources([self.row], self.root / 'normal-source', slot=action['slot'])
+         self.assertEqual((self.root / 'normal-source' / visible[0]['local_path']).read_bytes(), raw)
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, visible, owner='review_sources', sources=[self.row],
++                                engine=self.engine, workspace=self.root / 'normal-source')
+ 
+     def test_missing_fixed_artifact_returns_a_coordinate_restoration_fault(self):
+         row, action = deepcopy(self.row), self.action
+@@ -65,3 +68,20 @@ class FixedSourceRestorationTests(unittest.TestCase):
+         self.assertEqual(list((self.root / 'missing-source' / 'input' / 'review-research').iterdir()), [])
+         self.assertEqual((self.engine.instance, self.engine.runtime), before)
+         self.assertEqual(self.engine.head, head)
++
++    def test_damaged_materialization_preserves_the_fixed_source_coordinate(self):
++        workspace = self.root / 'normal-source'
++        path = workspace / 'input' / 'review-research' / ('0000-' + self.row['sha256'] + '.txt')
++        path.write_bytes(b'changed local source')
++        before = deepcopy((self.engine.instance, self.engine.runtime))
++        with self.assertRaises(rc.ReviewRestorationError) as caught:
++            self.engine._materialize_research_sources([self.row], workspace, slot=self.action['slot'])
++        diagnostic = caught.exception.diagnostics
++        self.assertEqual(diagnostic['cause_kind'], 'materialized_content_mismatch')
++        self.assertEqual(diagnostic['coordinate']['slot'], self.action['slot'])
++        self.assertEqual(diagnostic['coordinate']['source_ref'], self.row['ref'])
++        self.assertEqual(diagnostic['coordinate']['snapshot'], self.row['snapshot'])
++        self.assertEqual(diagnostic['coordinate']['path'], str(path.resolve()))
++        self.assertEqual(diagnostic['expected_sha256'], self.row['sha256'])
++        self.assertEqual(diagnostic['observed_sha256'], hashlib.sha256(b'changed local source').hexdigest())
++        self.assertEqual((self.engine.instance, self.engine.runtime), before)
+diff --git a/.agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py b/.agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py
+index f1f698cb..deefdb02 100644
+--- a/.agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py
++++ b/.agents/skills/do-math/scripts/tests/flows/test_review_research_flows.py
+@@ -88,8 +88,11 @@ class ResearchFlowTests(unittest.TestCase):
+ 
+     def test_all_fixed_questions_return_before_resuming_the_deferred_slot(self):
+         sim, responder = research(batch=True)
+-        drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
+-              and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
++        from support.engine_context import observe_review_documents
++        with observe_review_documents(self, sim.engine) as prepared:
++            drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
++                  and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
++        self.assertEqual(len([request for request in prepared if request is not None]), 2)
+         self.assertEqual(len(responder.research_answers), 2)
+         self.assertEqual(len(responder.resumed_contexts), 1)
+         self.assertEqual(len(responder.resumed_contexts[0]['supplemental_results']), 2)
+diff --git a/.agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py b/.agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
+index 30d007a6..d1beb304 100644
+--- a/.agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
++++ b/.agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
+@@ -21,6 +21,57 @@ def setUpModule():
+ 
+ 
+ class ReviewInputTests(unittest.TestCase):
++    def test_review_stage_documents_reach_the_final_seat_input(self):
++        from do_math.context_store import prepare_role_input
++        from support.engine_context import assert_review_documents, review_input_value
++        from support.review_sim import dispute
++        sim = opened_sim()
++        engine = sim.engine
++        cid = next(iter(engine.runtime['review_cycles']))
++        dispute(sim, {'id': 'f1', 'statement': 'Exact quantifier objection', 'evidence': ['proposal']})
++        directory = tempfile.TemporaryDirectory()
++        self.addCleanup(directory.cleanup)
++        root = Path(directory.name)
++        seen = []
++        for _ in range(12):
++            action = deepcopy(next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review'))
++            stage = action['stage']
++            workspace = root / ('seat-' + str(len(seen)))
++            context = engine._context(action, workspace)
++            cycle = engine.runtime['review_cycles'][cid]
++            value = context['role_review']
++            assert_review_documents(self, value, owner='role_review', cycle=cycle, action=action)
++            prepared = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
++                role='identity_review', profile=engine._execution_profile(action), snapshot=engine.head,
++                workspace=workspace, activity_id=action['id'], clock=engine.ports.clock)
++            final = review_input_value(self, prepared['context'], 'role_review', workspace,
++                                       manifest=prepared['manifest'])
++            assert_review_documents(self, final, owner='role_review', cycle=cycle, action=action)
++            self.assertNotIn('proposal', prepared['context'], 'the complete proposal belongs to role_review once')
++            self.assertEqual(final['proposal'], cycle['proposal'])
++            if stage == 'organize':
++                assert_review_documents(self, final['pending_findings'], owner='pending_findings',
++                                        cycle=cycle, action=action)
++                for field in ('ref', 'stage', 'slot', 'id'):
++                    changed = deepcopy(final['pending_findings'])
++                    if field == 'ref':
++                        del changed[0]['ref']
++                    else:
++                        changed[0]['ref'][field] = 'another-owner'
++                    with self.subTest(fault=field), self.assertRaises(AssertionError):
++                        assert_review_documents(self, changed, owner='pending_findings', cycle=cycle, action=action)
++            for field in ('proposal', 'identity_basis', 'policy_ref'):
++                changed = deepcopy(final)
++                del changed[field]
++                with self.subTest(stage=stage, missing=field), self.assertRaises(AssertionError):
++                    assert_review_documents(self, changed, owner='role_review', cycle=cycle, action=action)
++            seen.append(stage)
++            if stage == 'answer':
++                break
++            sim.step()
++        self.assertEqual(set(seen), {'scope', 'initial', 'organize', 'judge', 'answer'})
++
++
+     def test_large_own_review_history_does_not_request_mathematical_reconstruction(self):
+         """The name says no reconstruction is requested; like the legacy test, this checks no model call and no resource disposition."""
+         sim = opened_sim()
+diff --git a/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py b/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 5ce43237..f50ff909 100644
+--- a/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,64 @@ SCRIPTS = SKILL / 'scripts'
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_review_fields_require_their_actual_input_owner(self):
++        schemas = field_schemas()
++        from support.doc_code import REVIEW_INPUT_BOUNDARIES, review_field_issues
++        for field in ('role_review.proposal', 'pending_findings[].ref',
++                      'review_research.question', 'review_sources[].ref'):
++            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
++                scoped_field_issues('`' + field + '`', schemas)
++            owner = field.split('.')[0]
++            if '[' in owner:
++                owner = owner.split('[')[0]
++            with self.assertRaisesRegex(ValueError, 'actual review input'):
++                scoped_field_issues('`' + field + '`', schemas,
++                                    defer_review_inputs=set(REVIEW_INPUT_BOUNDARIES) - {owner})
++            self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
++                                                defer_review_inputs=(owner,)), [])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred review input owners'):
++            scoped_field_issues('', schemas, defer_review_inputs=('review_source',))
++        for text in ('`status.budget`', '`research_sources[].local_path`', '`preview.command`'):
++            with self.assertRaisesRegex(ValueError, 'fields require the actual'):
++                scoped_field_issues(text, schemas, defer_review_inputs=REVIEW_INPUT_BOUNDARIES)
++        self.assertEqual(review_field_issues('`pending_findings[].ref`', 'pending_findings', []),
++                         [('actual field', 'pending_findings[].ref')])
++        self.assertEqual(review_field_issues('`sources[].ref` <!-- do-math fields: sources=review_sources -->',
++                         'review_sources', [{'ref': 'exact'}]), [])
++        self.assertEqual(review_field_issues('`sources[].ref`', 'review_sources', [{'ref': 'exact'}]), [])
++
++    def test_deferred_reviews_have_their_actual_document_check(self):
++        import ast
++        from support.doc_code import REVIEW_INPUT_BOUNDARIES
++        owners = {'role_review': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
++                  'pending_findings': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
++                  'review_research': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication'),
++                  'review_sources': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(REVIEW_INPUT_BOUNDARIES))
++            for owner, (path, class_name, name) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_review_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner':
++                del changed['review_sources']
++            elif fault == 'wrong_owner':
++                changed['review_source'] = changed.pop('review_sources')
++            elif fault == 'missing_method':
++                changed['review_sources'] = (*changed['review_sources'][:2], 'missing')
++            else:
++                changed['review_sources'] = (*changed['review_sources'][:2], 'test_research_schema_pins_question_and_digest')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_tool_fields_require_their_actual_installed_input(self):
+         schemas = field_schemas()
+         fields = ('execution_window.self_check_directory', 'scholarly.configured',
+@@ -27,14 +85,14 @@ class DocumentCodeTests(unittest.TestCase):
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner})
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,)), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES)
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -332,7 +390,7 @@ class DocumentCodeTests(unittest.TestCase):
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -540,8 +598,8 @@ class DocumentCodeTests(unittest.TestCase):
+                          [('scoped field', 'check.passed')])
+         self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->', schemas),
+                          [('scoped field', 'check.sha256')])
+-        self.assertEqual(scoped_field_issues('`change.value` `review_research.question` '
+-            '`toolchain.project.search_paths` `environment_check.changed_files` `role_review.proposal`', schemas), [])
++        self.assertEqual(scoped_field_issues('`change.value` '
++            '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+                          [('scoped field', 'change.nonexistent')])
+         self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+diff --git a/.agents/skills/do-math/scripts/tests/support/doc_code.py b/.agents/skills/do-math/scripts/tests/support/doc_code.py
+index 80f5066b..87684d1c 100644
+--- a/.agents/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.agents/skills/do-math/scripts/tests/support/doc_code.py
+@@ -43,6 +43,8 @@ RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
+ TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
+                         ('execution_window', 'scholarly', 'formal_verifier', 'preview',
+                          'record_map.read_tool', 'submission_contract')}
++REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
++                          ('role_review', 'pending_findings', 'review_research', 'review_sources')}
+ 
+ 
+ def documents(skill):
+@@ -290,15 +292,11 @@ def field_schemas():
+     schemas['query_record'] = QUERY_RECORD_BOUNDARY
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+-    from do_math import formal, observations, planning, review_cycle, trust_validation
++    from do_math import formal, observations, planning, trust_validation
+     from do_math.dispatch_engine import DispatchEngineMixin
+-    from do_math.review_engine import ReviewEngineMixin
+     schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
+     schemas.update(RESULT_INPUT_BOUNDARIES)
+-    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
+-    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
+-        "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
+-            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
++    schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+     schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
+@@ -327,9 +325,6 @@ def field_schemas():
+         schemas[name] = extensions[name]
+     schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
+     schemas['external_rejections'] = array(RECORDS['external_rejections'])
+-    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
+-        "cycle['findings'][key]", variants=True))
+-    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
+     schemas.update({name: boundary for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                     if name != 'record_map.read_tool'})
+     schemas['record_map'] = {'type': 'object', 'properties': {
+@@ -446,7 +441,7 @@ def unowned_field_references(text, schemas):
+ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+-                        defer_result_inputs=(), defer_tool_inputs=()):
++                        defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -466,6 +461,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     unknown = set(defer_tool_inputs) - TOOL_INPUT_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred tool input owners: {sorted(unknown)}')
++    unknown = set(defer_review_inputs) - REVIEW_INPUT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred review input owners: {sorted(unknown)}')
+     issues = []
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+@@ -476,6 +474,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in REVIEW_INPUT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_review_inputs:
++                    continue
++                raise ValueError(owner + ' fields require the actual review input')
+             owner = next((name for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if (owner is None and parts and parts[0] == 'read_tool'
+@@ -543,6 +547,36 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     return sorted(set(issues))
+ 
+ 
++def review_field_issues(text, owner, value):
++    """Traverse a real seat or fixed investigation value, with line-local aliases.
++
++    An empty list cannot establish an item field. Stage-specific empty cases
++    are tested separately; the document owner must have a populated sample.
++    """
++    if owner not in REVIEW_INPUT_BOUNDARIES:
++        raise ValueError('Unknown review input owner: ' + owner)
++    def visit(node, parts):
++        if not parts:
++            return True
++        part, *tail = parts
++        if part.startswith('['):
++            if not isinstance(node, list) or not node:
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return bool(items) and all(visit(item, tail) for item in items)
++        return isinstance(node, dict) and part in node and visit(node[part], tail)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, REVIEW_INPUT_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if FIELD.fullmatch(token):
++                root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
++                if local.get(root) is REVIEW_INPUT_BOUNDARIES[owner] and not visit(value, parts):
++                    issues.append(('actual field', token))
++    return sorted(set(issues))
++
++
+ def tool_field_issues(text, owner, value):
+     """Traverse one installed input value; preview is the verifier's child.
+ 
+diff --git a/.agents/skills/do-math/scripts/tests/support/engine_context.py b/.agents/skills/do-math/scripts/tests/support/engine_context.py
+index 411b4a2b..8bebab25 100644
+--- a/.agents/skills/do-math/scripts/tests/support/engine_context.py
++++ b/.agents/skills/do-math/scripts/tests/support/engine_context.py
+@@ -65,6 +65,116 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
+                       'admissible_basis_refs': []}
+ 
+ 
++def review_input_value(case, context, key, workspace, *, manifest):
++    """Read the exact packaged reference when a direct value became a file."""
++    import hashlib
++    import json
++    value = context[key]
++    if isinstance(value, dict) and set(value) == {'source_ref', 'total'}:
++        ref = value['source_ref']
++        catalog = {row['key']: {k: v for k, v in row.items() if k != 'key'}
++                   for row in manifest['catalog']}
++        case.assertEqual(ref, catalog[key])
++        path = (Path(workspace) / ref['path']).resolve()
++        case.assertTrue(path.is_relative_to(Path(workspace).resolve() / 'input'))
++        raw = path.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), ref['sha256'])
++        case.assertEqual(len(raw), ref['bytes'])
++        value = json.loads(raw)
++        case.assertEqual(raw, canonical_json(value))
++        case.assertEqual(context[key]['total'], len(value))
++    return value
++
++
++def assert_review_documents(case, value, *, owner, cycle=None, action=None,
++                            engine=None, workspace=None, request=None, sources=None):
++    """Bind documents to actual review returns and their exact owning records.
++
++    Pure cycles establish stage visibility; stored scenes and real Git tests
++    establish materialization. No production or packaging function is replaced.
++    """
++    import hashlib
++    from do_math import review_cycle as rc
++    from support.doc_code import documents, review_field_issues
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(review_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    if owner == 'role_review':
++        expected = rc.context_for(cycle, rc.review_action(action))
++        for key in ('proposal', 'proposal_digest', 'action', 'completed_results',
++                    'pending_findings', 'answer_requests'):
++            case.assertEqual(value.get(key), expected[key], key)
++        for key in ('identity_basis', 'policy_ref'):
++            case.assertEqual(key in value, key in expected)
++            if key in expected:
++                case.assertEqual(value[key], expected[key])
++        return
++    if owner == 'pending_findings':
++        case.assertTrue(value, 'a populated open finding must establish ref fields')
++        expected = rc.context_for(cycle, rc.review_action(action))['pending_findings']
++        case.assertEqual(value, expected)
++        case.assertEqual(value, [cycle['findings'][key] for key in cycle['pending_findings']])
++        return
++    if owner == 'review_research':
++        for key in ('id', 'request_digest', 'question'):
++            case.assertEqual(value.get(key), request[key], key)
++        case.assertEqual(value.get('proposal_digest'), cycle['proposal_digest'])
++        case.assertEqual(value.get('requesting_slot'), request['action']['slot'])
++        sources = request['source_records']
++        value = value.get('sources')
++    elif owner != 'review_sources':
++        raise ValueError('Unknown review input owner: ' + owner)
++    case.assertIsInstance(value, list)
++    case.assertTrue(value, 'a populated fixed source must establish ref fields')
++    case.assertEqual(len(value), len(sources))
++    root = Path(workspace).resolve()
++    for index, (actual, fixed) in enumerate(zip(value, sources, strict=True)):
++        case.assertEqual({k: v for k, v in actual.items() if k != 'local_path'},
++                         {k: v for k, v in fixed.items() if k != 'inline'})
++        suffix = '.json' if 'inline' in fixed else Path(fixed['artifact_ref']).suffix
++        expected_path = f"input/review-research/{index:04d}-{fixed['sha256']}{suffix}"
++        case.assertEqual(actual.get('local_path'), expected_path)
++        local = (root / actual['local_path']).resolve()
++        case.assertTrue(local.is_relative_to(root / 'input' / 'review-research'))
++        raw = local.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), fixed['sha256'])
++        case.assertEqual(len(raw), fixed['bytes'])
++        original = (rc.inline_source_bytes(fixed) if 'inline' in fixed else
++                    engine.store.read(fixed['artifact_ref'], fixed['snapshot']))
++        case.assertEqual(raw, original)
++
++
++def observe_review_documents(case, engine):
++    """Observe real final investigation inputs during an already existing flow."""
++    from contextlib import contextmanager
++    from support.provider_probes import ObservedCalls
++    from support.storage_probes import Returns
++    @contextmanager
++    def observe():
++        def capture(arguments):
++            return arguments['role'], arguments['context'], arguments['workspace']
++        with ObservedCalls(prepared=prepare_role_input, capture={'prepared': capture}) as starts:
++            def check(prepared):
++                role, source, workspace = starts.captured('prepared')[-1]
++                action = source['action']
++                if role == 'supplemental_research' and action.get('research_request_id'):
++                    cycle = engine.runtime['review_cycles'][action['review_cycle_id']]
++                    request = cycle['research'][action['research_request_id']]
++                    value = review_input_value(case, prepared['context'], 'review_research', workspace,
++                                               manifest=prepared['manifest'])
++                    case.assertEqual(value, source['review_research'])
++                    assert_review_documents(case, value, owner='review_research', cycle=cycle,
++                                            request=request, engine=engine, workspace=workspace)
++                    assert_review_documents(case, value['sources'], owner='review_sources',
++                                            sources=request['source_records'], engine=engine, workspace=workspace)
++                    return request['id']
++                return None
++            with Returns(prepare_role_input, snapshot=check) as returns:
++                yield returns.snapshots
++            case.assertEqual(len(starts.calls['prepared']), len(returns.snapshots))
++    return observe()
++
++
+ def assert_result_documents(case, value, workspace, engine=None, *, owner, task_id=None,
+                             expected=None, total=None, snapshot=None):
+     """Check actual P02 values against documents, their origin and workspace bytes.
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py b/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+index ebecf8de..e6f8283b 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@ class TraceCorruptionTests(unittest.TestCase):
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py b/.agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
+index 9e972405..049be8b3 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
+@@ -62,6 +62,8 @@ class ReviewCycleTests(unittest.TestCase):
+     def test_initial_barrier_and_blindness(self):
+         cycle = self.submit(self.start(), decision='mismatch', findings=[dict(id='f1', statement='secret finding', evidence=['proposal:1'])])
+         context = context_for(cycle, next_actions(cycle)[0])
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, context, owner='role_review', cycle=cycle, action=next_actions(cycle)[0])
+         self.assertEqual(context['completed_results'], {})
+         self.assertEqual(context['issues'], {})
+         self.assertEqual(context['pending_findings'], [])
+@@ -80,6 +82,14 @@ class ReviewCycleTests(unittest.TestCase):
+         cycle = self.start()
+         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding one', evidence=['proposal:1'])])
+         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding two same local ID', evidence=['proposal:2'])])
++        from support.engine_context import assert_review_documents
++        action = next_actions(cycle)[0]
++        actual = context_for(cycle, action)['pending_findings']
++        assert_review_documents(self, actual, owner='pending_findings', cycle=cycle, action=action)
++        other = copy.deepcopy(actual)
++        other[0]['ref'] = copy.deepcopy(actual[1]['ref'])
++        with self.assertRaises(AssertionError):
++            assert_review_documents(self, other, owner='pending_findings', cycle=cycle, action=action)
+         valid = review_stage_output(cycle, 'organize')
+         reasons = {'omit': 'organizer omitted original findings',
+                    'forge': 'organizer forged or reused an original finding',
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py b/.agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
+index 4b571994..a83378c5 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
+@@ -151,6 +151,51 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
+         self.engine._save({'runtime/artifacts/unrelated/note.txt': b'unrelated publication'})
+         head = self.engine.head
+         context = self.engine._review_research_context(action, self.root / 'frozen')
++        from support.engine_context import assert_review_documents
++        cycle = self.engine.runtime['review_cycles'][cid]
++        assert_review_documents(self, context['review_research'], owner='review_research', cycle=cycle,
++                                request=request, engine=self.engine, workspace=self.root / 'frozen')
++        assert_review_documents(self, context['review_research']['sources'], owner='review_sources',
++                                sources=request['source_records'], engine=self.engine, workspace=self.root / 'frozen')
++        workspace = self.root / 'frozen'
++        final = context['review_research']
++        for field in ('question', 'id', 'request_digest', 'proposal_digest', 'sources'):
++            changed = deepcopy(final)
++            del changed[field]
++            with self.subTest(missing=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_research', cycle=cycle, request=request,
++                                        engine=self.engine, workspace=workspace)
++        borrowed = workspace / 'input' / 'borrowed.json'
++        borrowed.write_bytes((workspace / final['sources'][0]['local_path']).read_bytes())
++        for field in ('ref', 'local_path', 'sha256', 'bytes'):
++            changed = deepcopy(final['sources'])
++            del changed[0][field]
++            with self.subTest(source_missing=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
++                                        engine=self.engine, workspace=workspace)
++        for fault in ('borrowed_path', 'general_sources', 'other_ref'):
++            changed = deepcopy(final['sources'])
++            if fault == 'borrowed_path':
++                changed[0]['local_path'] = 'input/borrowed.json'
++            elif fault == 'general_sources':
++                changed[0] = {'id': changed[0]['ref'], 'path': changed[0]['local_path'],
++                              'sha256': changed[0]['sha256'], 'bytes': changed[0]['bytes']}
++            else:
++                changed[0]['ref'] = changed[1]['ref']
++            with self.subTest(source_fault=fault), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
++                                        engine=self.engine, workspace=workspace)
++        local = workspace / final['sources'][0]['local_path']
++        original = local.read_bytes()
++        local.write_bytes(b'damaged delivered source')
++        with self.assertRaises(AssertionError):
++            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
++                                    engine=self.engine, workspace=workspace)
++        local.unlink()
++        with self.assertRaises(FileNotFoundError):
++            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
++                                    engine=self.engine, workspace=workspace)
++        local.write_bytes(original)
+         self.assertEqual(context['review_research']['question'], request['question'])
+         self.assertEqual(context['review_research']['request_digest'], request['request_digest'])
+         self.assertEqual(context['proposal'], self.engine.runtime['review_cycles'][cid]['proposal'])
+@@ -216,3 +261,12 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
+                               'sha256': source['sha256'], 'bytes': len(raw)})
+         visible = self.engine._materialize_research_sources([row], self.root / 'restored-frozen', slot=action['slot'])
+         self.assertEqual((self.root / 'restored-frozen' / visible[0]['local_path']).read_bytes(), raw)
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, visible, owner='review_sources', sources=[row], engine=self.engine,
++                                workspace=self.root / 'restored-frozen')
++        for field in ('snapshot', 'artifact_ref', 'ref'):
++            changed = deepcopy(visible)
++            changed[0][field] = 'another-source-coordinate'
++            with self.subTest(artifact_coordinate=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=[row], engine=self.engine,
++                                        workspace=self.root / 'restored-frozen')
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py b/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+index b9c5fbae..c347733c 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py b/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+index 893fbb6f..343d3b51 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@ class QueryFamilyNameTests(unittest.TestCase):
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+diff --git a/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py b/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+index b02d4af9..0cf6a623 100644
+--- a/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ b/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@ class ReportProjections(unittest.TestCase):
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@ class ReportProjections(unittest.TestCase):
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),
+diff --git "a/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md" "b/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+index 16cc14d2..a7f345dd 100644
+--- "a/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
++++ "b/.agents/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+@@ -29,7 +29,7 @@ python .agents/skills/write-for-reader/scripts/writing_flow.py status
+ 
+ 긴 문서의 중심 절을 먼저 검사할 때에는 `read --scope sample`을 사용한다. 같은 원고 파일을 전체 원고로 발전시킨 뒤 `read --scope whole`로 전체를 검사한다. 짧은 독립 문서는 처음부터 전체를 작성해 검사한다.
+ 
+-독해 모델의 기본값은 `gpt-5.6-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
++독해 모델의 기본값은 `gpt-6.1-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
+ 
+ ## 독해 실행
+ 
+diff --git a/.agents/skills/write-for-reader/scripts/writing_flow.py b/.agents/skills/write-for-reader/scripts/writing_flow.py
+index a6fddc57..420b5647 100644
+--- a/.agents/skills/write-for-reader/scripts/writing_flow.py
++++ b/.agents/skills/write-for-reader/scripts/writing_flow.py
+@@ -250,7 +250,7 @@ class WritingFlow:
+             return "합의 대조 결과가 다른 독해 실행에 관한 것임"
+         return None
+ 
+-    def read(self, *, scope="whole", model="gpt-5.6-sol", effort="high", timeout=600, codex=None):
++    def read(self, *, scope="whole", model="gpt-6.1-sol", effort="high", timeout=600, codex=None):
+         if scope not in {"sample", "whole"} or not math.isfinite(timeout) or timeout <= 0:
+             raise WorkflowError("독해 범위와 제한 시간이 잘못됨")
+         executable = shutil.which(str(codex or "codex"))
+@@ -452,7 +452,7 @@ def main(argv=None):
+         begin.add_argument("--" + name, type=Path, required=True)
+     read = sub.add_parser("read", help="작성 대화가 없는 별도 Codex로 원고 독해")
+     read.add_argument("--scope", choices=("sample", "whole"), default="whole")
+-    read.add_argument("--model", default="gpt-5.6-sol")
++    read.add_argument("--model", default="gpt-6.1-sol")
+     read.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default="high")
+     read.add_argument("--timeout", type=float, default=600)
+     read.add_argument("--codex")
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+index 96d442cb..c9b2546c 100644
+--- a/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@ def cli_field_issues(text, schemas, owner, result):
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@ class CliTests(CliInstanceTest):
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@ class CliTests(CliInstanceTest):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py b/.claude/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
+index 3d640c72..85cfa6da 100644
+--- a/.claude/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_review_source_restoration.py
+@@ -44,6 +44,9 @@ class FixedSourceRestorationTests(unittest.TestCase):
+         self.assertEqual(self.engine.store.read(self.row['artifact_ref'], self.row['snapshot']), raw)
+         visible = self.engine._materialize_research_sources([self.row], self.root / 'normal-source', slot=action['slot'])
+         self.assertEqual((self.root / 'normal-source' / visible[0]['local_path']).read_bytes(), raw)
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, visible, owner='review_sources', sources=[self.row],
++                                engine=self.engine, workspace=self.root / 'normal-source')
+ 
+     def test_missing_fixed_artifact_returns_a_coordinate_restoration_fault(self):
+         row, action = deepcopy(self.row), self.action
+@@ -65,3 +68,20 @@ class FixedSourceRestorationTests(unittest.TestCase):
+         self.assertEqual(list((self.root / 'missing-source' / 'input' / 'review-research').iterdir()), [])
+         self.assertEqual((self.engine.instance, self.engine.runtime), before)
+         self.assertEqual(self.engine.head, head)
++
++    def test_damaged_materialization_preserves_the_fixed_source_coordinate(self):
++        workspace = self.root / 'normal-source'
++        path = workspace / 'input' / 'review-research' / ('0000-' + self.row['sha256'] + '.txt')
++        path.write_bytes(b'changed local source')
++        before = deepcopy((self.engine.instance, self.engine.runtime))
++        with self.assertRaises(rc.ReviewRestorationError) as caught:
++            self.engine._materialize_research_sources([self.row], workspace, slot=self.action['slot'])
++        diagnostic = caught.exception.diagnostics
++        self.assertEqual(diagnostic['cause_kind'], 'materialized_content_mismatch')
++        self.assertEqual(diagnostic['coordinate']['slot'], self.action['slot'])
++        self.assertEqual(diagnostic['coordinate']['source_ref'], self.row['ref'])
++        self.assertEqual(diagnostic['coordinate']['snapshot'], self.row['snapshot'])
++        self.assertEqual(diagnostic['coordinate']['path'], str(path.resolve()))
++        self.assertEqual(diagnostic['expected_sha256'], self.row['sha256'])
++        self.assertEqual(diagnostic['observed_sha256'], hashlib.sha256(b'changed local source').hexdigest())
++        self.assertEqual((self.engine.instance, self.engine.runtime), before)
+diff --git a/.claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py b/.claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py
+index f1f698cb..deefdb02 100644
+--- a/.claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py
+@@ -88,8 +88,11 @@ class ResearchFlowTests(unittest.TestCase):
+ 
+     def test_all_fixed_questions_return_before_resuming_the_deferred_slot(self):
+         sim, responder = research(batch=True)
+-        drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
+-              and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
++        from support.engine_context import observe_review_documents
++        with observe_review_documents(self, sim.engine) as prepared:
++            drive(self, sim, predicate=lambda s: bool(responder.resumed_contexts)
++                  and any(c['decision'] == 'match' for c in s.runtime['review_cycles'].values()))
++        self.assertEqual(len([request for request in prepared if request is not None]), 2)
+         self.assertEqual(len(responder.research_answers), 2)
+         self.assertEqual(len(responder.resumed_contexts), 1)
+         self.assertEqual(len(responder.resumed_contexts[0]['supplemental_results']), 2)
+diff --git a/.claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py b/.claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
+index 30d007a6..d1beb304 100644
+--- a/.claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
++++ b/.claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py
+@@ -21,6 +21,57 @@ def setUpModule():
+ 
+ 
+ class ReviewInputTests(unittest.TestCase):
++    def test_review_stage_documents_reach_the_final_seat_input(self):
++        from do_math.context_store import prepare_role_input
++        from support.engine_context import assert_review_documents, review_input_value
++        from support.review_sim import dispute
++        sim = opened_sim()
++        engine = sim.engine
++        cid = next(iter(engine.runtime['review_cycles']))
++        dispute(sim, {'id': 'f1', 'statement': 'Exact quantifier objection', 'evidence': ['proposal']})
++        directory = tempfile.TemporaryDirectory()
++        self.addCleanup(directory.cleanup)
++        root = Path(directory.name)
++        seen = []
++        for _ in range(12):
++            action = deepcopy(next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review'))
++            stage = action['stage']
++            workspace = root / ('seat-' + str(len(seen)))
++            context = engine._context(action, workspace)
++            cycle = engine.runtime['review_cycles'][cid]
++            value = context['role_review']
++            assert_review_documents(self, value, owner='role_review', cycle=cycle, action=action)
++            prepared = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
++                role='identity_review', profile=engine._execution_profile(action), snapshot=engine.head,
++                workspace=workspace, activity_id=action['id'], clock=engine.ports.clock)
++            final = review_input_value(self, prepared['context'], 'role_review', workspace,
++                                       manifest=prepared['manifest'])
++            assert_review_documents(self, final, owner='role_review', cycle=cycle, action=action)
++            self.assertNotIn('proposal', prepared['context'], 'the complete proposal belongs to role_review once')
++            self.assertEqual(final['proposal'], cycle['proposal'])
++            if stage == 'organize':
++                assert_review_documents(self, final['pending_findings'], owner='pending_findings',
++                                        cycle=cycle, action=action)
++                for field in ('ref', 'stage', 'slot', 'id'):
++                    changed = deepcopy(final['pending_findings'])
++                    if field == 'ref':
++                        del changed[0]['ref']
++                    else:
++                        changed[0]['ref'][field] = 'another-owner'
++                    with self.subTest(fault=field), self.assertRaises(AssertionError):
++                        assert_review_documents(self, changed, owner='pending_findings', cycle=cycle, action=action)
++            for field in ('proposal', 'identity_basis', 'policy_ref'):
++                changed = deepcopy(final)
++                del changed[field]
++                with self.subTest(stage=stage, missing=field), self.assertRaises(AssertionError):
++                    assert_review_documents(self, changed, owner='role_review', cycle=cycle, action=action)
++            seen.append(stage)
++            if stage == 'answer':
++                break
++            sim.step()
++        self.assertEqual(set(seen), {'scope', 'initial', 'organize', 'judge', 'answer'})
++
++
+     def test_large_own_review_history_does_not_request_mathematical_reconstruction(self):
+         """The name says no reconstruction is requested; like the legacy test, this checks no model call and no resource disposition."""
+         sim = opened_sim()
+diff --git a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+index 5ce43237..f50ff909 100644
+--- a/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,64 @@ SCRIPTS = SKILL / 'scripts'
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_review_fields_require_their_actual_input_owner(self):
++        schemas = field_schemas()
++        from support.doc_code import REVIEW_INPUT_BOUNDARIES, review_field_issues
++        for field in ('role_review.proposal', 'pending_findings[].ref',
++                      'review_research.question', 'review_sources[].ref'):
++            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual review input'):
++                scoped_field_issues('`' + field + '`', schemas)
++            owner = field.split('.')[0]
++            if '[' in owner:
++                owner = owner.split('[')[0]
++            with self.assertRaisesRegex(ValueError, 'actual review input'):
++                scoped_field_issues('`' + field + '`', schemas,
++                                    defer_review_inputs=set(REVIEW_INPUT_BOUNDARIES) - {owner})
++            self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
++                                                defer_review_inputs=(owner,)), [])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred review input owners'):
++            scoped_field_issues('', schemas, defer_review_inputs=('review_source',))
++        for text in ('`status.budget`', '`research_sources[].local_path`', '`preview.command`'):
++            with self.assertRaisesRegex(ValueError, 'fields require the actual'):
++                scoped_field_issues(text, schemas, defer_review_inputs=REVIEW_INPUT_BOUNDARIES)
++        self.assertEqual(review_field_issues('`pending_findings[].ref`', 'pending_findings', []),
++                         [('actual field', 'pending_findings[].ref')])
++        self.assertEqual(review_field_issues('`sources[].ref` <!-- do-math fields: sources=review_sources -->',
++                         'review_sources', [{'ref': 'exact'}]), [])
++        self.assertEqual(review_field_issues('`sources[].ref`', 'review_sources', [{'ref': 'exact'}]), [])
++
++    def test_deferred_reviews_have_their_actual_document_check(self):
++        import ast
++        from support.doc_code import REVIEW_INPUT_BOUNDARIES
++        owners = {'role_review': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
++                  'pending_findings': ('sim/test_submission_review_inputs.py', 'ReviewInputTests', 'test_review_stage_documents_reach_the_final_seat_input'),
++                  'review_research': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication'),
++                  'review_sources': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(REVIEW_INPUT_BOUNDARIES))
++            for owner, (path, class_name, name) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_review_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner':
++                del changed['review_sources']
++            elif fault == 'wrong_owner':
++                changed['review_source'] = changed.pop('review_sources')
++            elif fault == 'missing_method':
++                changed['review_sources'] = (*changed['review_sources'][:2], 'missing')
++            else:
++                changed['review_sources'] = (*changed['review_sources'][:2], 'test_research_schema_pins_question_and_digest')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_tool_fields_require_their_actual_installed_input(self):
+         schemas = field_schemas()
+         fields = ('execution_window.self_check_directory', 'scholarly.configured',
+@@ -27,14 +85,14 @@ class DocumentCodeTests(unittest.TestCase):
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner})
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,)), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES)
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -332,7 +390,7 @@ class DocumentCodeTests(unittest.TestCase):
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -540,8 +598,8 @@ class DocumentCodeTests(unittest.TestCase):
+                          [('scoped field', 'check.passed')])
+         self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->', schemas),
+                          [('scoped field', 'check.sha256')])
+-        self.assertEqual(scoped_field_issues('`change.value` `review_research.question` '
+-            '`toolchain.project.search_paths` `environment_check.changed_files` `role_review.proposal`', schemas), [])
++        self.assertEqual(scoped_field_issues('`change.value` '
++            '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+         self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+                          [('scoped field', 'change.nonexistent')])
+         self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+diff --git a/.claude/skills/do-math/scripts/tests/support/doc_code.py b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+index 80f5066b..87684d1c 100644
+--- a/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ b/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -43,6 +43,8 @@ RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
+ TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
+                         ('execution_window', 'scholarly', 'formal_verifier', 'preview',
+                          'record_map.read_tool', 'submission_contract')}
++REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
++                          ('role_review', 'pending_findings', 'review_research', 'review_sources')}
+ 
+ 
+ def documents(skill):
+@@ -290,15 +292,11 @@ def field_schemas():
+     schemas['query_record'] = QUERY_RECORD_BOUNDARY
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+-    from do_math import formal, observations, planning, review_cycle, trust_validation
++    from do_math import formal, observations, planning, trust_validation
+     from do_math.dispatch_engine import DispatchEngineMixin
+-    from do_math.review_engine import ReviewEngineMixin
+     schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
+     schemas.update(RESULT_INPUT_BOUNDARIES)
+-    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']
+-    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={
+-        "{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle}":
+-            {'properties': {key: RECORDS['review_cycles']['properties'][key] for key in ('identity_basis', 'policy_ref')}}})
++    schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+     schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')
+@@ -327,9 +325,6 @@ def field_schemas():
+         schemas[name] = extensions[name]
+     schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
+     schemas['external_rejections'] = array(RECORDS['external_rejections'])
+-    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
+-        "cycle['findings'][key]", variants=True))
+-    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
+     schemas.update({name: boundary for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                     if name != 'record_map.read_tool'})
+     schemas['record_map'] = {'type': 'object', 'properties': {
+@@ -446,7 +441,7 @@ def unowned_field_references(text, schemas):
+ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+-                        defer_result_inputs=(), defer_tool_inputs=()):
++                        defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -466,6 +461,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     unknown = set(defer_tool_inputs) - TOOL_INPUT_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred tool input owners: {sorted(unknown)}')
++    unknown = set(defer_review_inputs) - REVIEW_INPUT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred review input owners: {sorted(unknown)}')
+     issues = []
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+@@ -476,6 +474,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in REVIEW_INPUT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_review_inputs:
++                    continue
++                raise ValueError(owner + ' fields require the actual review input')
+             owner = next((name for name, boundary in TOOL_INPUT_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if (owner is None and parts and parts[0] == 'read_tool'
+@@ -543,6 +547,36 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
+     return sorted(set(issues))
+ 
+ 
++def review_field_issues(text, owner, value):
++    """Traverse a real seat or fixed investigation value, with line-local aliases.
++
++    An empty list cannot establish an item field. Stage-specific empty cases
++    are tested separately; the document owner must have a populated sample.
++    """
++    if owner not in REVIEW_INPUT_BOUNDARIES:
++        raise ValueError('Unknown review input owner: ' + owner)
++    def visit(node, parts):
++        if not parts:
++            return True
++        part, *tail = parts
++        if part.startswith('['):
++            if not isinstance(node, list) or not node:
++                return False
++            index = part[1:-1]
++            items = node if not index else node[int(index):int(index) + 1]
++            return bool(items) and all(visit(item, tail) for item in items)
++        return isinstance(node, dict) and part in node and visit(node[part], tail)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, REVIEW_INPUT_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if FIELD.fullmatch(token):
++                root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)
++                if local.get(root) is REVIEW_INPUT_BOUNDARIES[owner] and not visit(value, parts):
++                    issues.append(('actual field', token))
++    return sorted(set(issues))
++
++
+ def tool_field_issues(text, owner, value):
+     """Traverse one installed input value; preview is the verifier's child.
+ 
+diff --git a/.claude/skills/do-math/scripts/tests/support/engine_context.py b/.claude/skills/do-math/scripts/tests/support/engine_context.py
+index 411b4a2b..8bebab25 100644
+--- a/.claude/skills/do-math/scripts/tests/support/engine_context.py
++++ b/.claude/skills/do-math/scripts/tests/support/engine_context.py
+@@ -65,6 +65,116 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
+                       'admissible_basis_refs': []}
+ 
+ 
++def review_input_value(case, context, key, workspace, *, manifest):
++    """Read the exact packaged reference when a direct value became a file."""
++    import hashlib
++    import json
++    value = context[key]
++    if isinstance(value, dict) and set(value) == {'source_ref', 'total'}:
++        ref = value['source_ref']
++        catalog = {row['key']: {k: v for k, v in row.items() if k != 'key'}
++                   for row in manifest['catalog']}
++        case.assertEqual(ref, catalog[key])
++        path = (Path(workspace) / ref['path']).resolve()
++        case.assertTrue(path.is_relative_to(Path(workspace).resolve() / 'input'))
++        raw = path.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), ref['sha256'])
++        case.assertEqual(len(raw), ref['bytes'])
++        value = json.loads(raw)
++        case.assertEqual(raw, canonical_json(value))
++        case.assertEqual(context[key]['total'], len(value))
++    return value
++
++
++def assert_review_documents(case, value, *, owner, cycle=None, action=None,
++                            engine=None, workspace=None, request=None, sources=None):
++    """Bind documents to actual review returns and their exact owning records.
++
++    Pure cycles establish stage visibility; stored scenes and real Git tests
++    establish materialization. No production or packaging function is replaced.
++    """
++    import hashlib
++    from do_math import review_cycle as rc
++    from support.doc_code import documents, review_field_issues
++    for document in documents(Path(__file__).resolve().parents[3]):
++        case.assertEqual(review_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
++                         str(document))
++    if owner == 'role_review':
++        expected = rc.context_for(cycle, rc.review_action(action))
++        for key in ('proposal', 'proposal_digest', 'action', 'completed_results',
++                    'pending_findings', 'answer_requests'):
++            case.assertEqual(value.get(key), expected[key], key)
++        for key in ('identity_basis', 'policy_ref'):
++            case.assertEqual(key in value, key in expected)
++            if key in expected:
++                case.assertEqual(value[key], expected[key])
++        return
++    if owner == 'pending_findings':
++        case.assertTrue(value, 'a populated open finding must establish ref fields')
++        expected = rc.context_for(cycle, rc.review_action(action))['pending_findings']
++        case.assertEqual(value, expected)
++        case.assertEqual(value, [cycle['findings'][key] for key in cycle['pending_findings']])
++        return
++    if owner == 'review_research':
++        for key in ('id', 'request_digest', 'question'):
++            case.assertEqual(value.get(key), request[key], key)
++        case.assertEqual(value.get('proposal_digest'), cycle['proposal_digest'])
++        case.assertEqual(value.get('requesting_slot'), request['action']['slot'])
++        sources = request['source_records']
++        value = value.get('sources')
++    elif owner != 'review_sources':
++        raise ValueError('Unknown review input owner: ' + owner)
++    case.assertIsInstance(value, list)
++    case.assertTrue(value, 'a populated fixed source must establish ref fields')
++    case.assertEqual(len(value), len(sources))
++    root = Path(workspace).resolve()
++    for index, (actual, fixed) in enumerate(zip(value, sources, strict=True)):
++        case.assertEqual({k: v for k, v in actual.items() if k != 'local_path'},
++                         {k: v for k, v in fixed.items() if k != 'inline'})
++        suffix = '.json' if 'inline' in fixed else Path(fixed['artifact_ref']).suffix
++        expected_path = f"input/review-research/{index:04d}-{fixed['sha256']}{suffix}"
++        case.assertEqual(actual.get('local_path'), expected_path)
++        local = (root / actual['local_path']).resolve()
++        case.assertTrue(local.is_relative_to(root / 'input' / 'review-research'))
++        raw = local.read_bytes()
++        case.assertEqual(hashlib.sha256(raw).hexdigest(), fixed['sha256'])
++        case.assertEqual(len(raw), fixed['bytes'])
++        original = (rc.inline_source_bytes(fixed) if 'inline' in fixed else
++                    engine.store.read(fixed['artifact_ref'], fixed['snapshot']))
++        case.assertEqual(raw, original)
++
++
++def observe_review_documents(case, engine):
++    """Observe real final investigation inputs during an already existing flow."""
++    from contextlib import contextmanager
++    from support.provider_probes import ObservedCalls
++    from support.storage_probes import Returns
++    @contextmanager
++    def observe():
++        def capture(arguments):
++            return arguments['role'], arguments['context'], arguments['workspace']
++        with ObservedCalls(prepared=prepare_role_input, capture={'prepared': capture}) as starts:
++            def check(prepared):
++                role, source, workspace = starts.captured('prepared')[-1]
++                action = source['action']
++                if role == 'supplemental_research' and action.get('research_request_id'):
++                    cycle = engine.runtime['review_cycles'][action['review_cycle_id']]
++                    request = cycle['research'][action['research_request_id']]
++                    value = review_input_value(case, prepared['context'], 'review_research', workspace,
++                                               manifest=prepared['manifest'])
++                    case.assertEqual(value, source['review_research'])
++                    assert_review_documents(case, value, owner='review_research', cycle=cycle,
++                                            request=request, engine=engine, workspace=workspace)
++                    assert_review_documents(case, value['sources'], owner='review_sources',
++                                            sources=request['source_records'], engine=engine, workspace=workspace)
++                    return request['id']
++                return None
++            with Returns(prepare_role_input, snapshot=check) as returns:
++                yield returns.snapshots
++            case.assertEqual(len(starts.calls['prepared']), len(returns.snapshots))
++    return observe()
++
++
+ def assert_result_documents(case, value, workspace, engine=None, *, owner, task_id=None,
+                             expected=None, total=None, snapshot=None):
+     """Check actual P02 values against documents, their origin and workspace bytes.
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+index ebecf8de..e6f8283b 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@ class TraceCorruptionTests(unittest.TestCase):
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py b/.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
+index 9e972405..049be8b3 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py
+@@ -62,6 +62,8 @@ class ReviewCycleTests(unittest.TestCase):
+     def test_initial_barrier_and_blindness(self):
+         cycle = self.submit(self.start(), decision='mismatch', findings=[dict(id='f1', statement='secret finding', evidence=['proposal:1'])])
+         context = context_for(cycle, next_actions(cycle)[0])
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, context, owner='role_review', cycle=cycle, action=next_actions(cycle)[0])
+         self.assertEqual(context['completed_results'], {})
+         self.assertEqual(context['issues'], {})
+         self.assertEqual(context['pending_findings'], [])
+@@ -80,6 +82,14 @@ class ReviewCycleTests(unittest.TestCase):
+         cycle = self.start()
+         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding one', evidence=['proposal:1'])])
+         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding two same local ID', evidence=['proposal:2'])])
++        from support.engine_context import assert_review_documents
++        action = next_actions(cycle)[0]
++        actual = context_for(cycle, action)['pending_findings']
++        assert_review_documents(self, actual, owner='pending_findings', cycle=cycle, action=action)
++        other = copy.deepcopy(actual)
++        other[0]['ref'] = copy.deepcopy(actual[1]['ref'])
++        with self.assertRaises(AssertionError):
++            assert_review_documents(self, other, owner='pending_findings', cycle=cycle, action=action)
+         valid = review_stage_output(cycle, 'organize')
+         reasons = {'omit': 'organizer omitted original findings',
+                    'forge': 'organizer forged or reused an original finding',
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py b/.claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
+index 4b571994..a83378c5 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py
+@@ -151,6 +151,51 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
+         self.engine._save({'runtime/artifacts/unrelated/note.txt': b'unrelated publication'})
+         head = self.engine.head
+         context = self.engine._review_research_context(action, self.root / 'frozen')
++        from support.engine_context import assert_review_documents
++        cycle = self.engine.runtime['review_cycles'][cid]
++        assert_review_documents(self, context['review_research'], owner='review_research', cycle=cycle,
++                                request=request, engine=self.engine, workspace=self.root / 'frozen')
++        assert_review_documents(self, context['review_research']['sources'], owner='review_sources',
++                                sources=request['source_records'], engine=self.engine, workspace=self.root / 'frozen')
++        workspace = self.root / 'frozen'
++        final = context['review_research']
++        for field in ('question', 'id', 'request_digest', 'proposal_digest', 'sources'):
++            changed = deepcopy(final)
++            del changed[field]
++            with self.subTest(missing=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_research', cycle=cycle, request=request,
++                                        engine=self.engine, workspace=workspace)
++        borrowed = workspace / 'input' / 'borrowed.json'
++        borrowed.write_bytes((workspace / final['sources'][0]['local_path']).read_bytes())
++        for field in ('ref', 'local_path', 'sha256', 'bytes'):
++            changed = deepcopy(final['sources'])
++            del changed[0][field]
++            with self.subTest(source_missing=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
++                                        engine=self.engine, workspace=workspace)
++        for fault in ('borrowed_path', 'general_sources', 'other_ref'):
++            changed = deepcopy(final['sources'])
++            if fault == 'borrowed_path':
++                changed[0]['local_path'] = 'input/borrowed.json'
++            elif fault == 'general_sources':
++                changed[0] = {'id': changed[0]['ref'], 'path': changed[0]['local_path'],
++                              'sha256': changed[0]['sha256'], 'bytes': changed[0]['bytes']}
++            else:
++                changed[0]['ref'] = changed[1]['ref']
++            with self.subTest(source_fault=fault), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
++                                        engine=self.engine, workspace=workspace)
++        local = workspace / final['sources'][0]['local_path']
++        original = local.read_bytes()
++        local.write_bytes(b'damaged delivered source')
++        with self.assertRaises(AssertionError):
++            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
++                                    engine=self.engine, workspace=workspace)
++        local.unlink()
++        with self.assertRaises(FileNotFoundError):
++            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
++                                    engine=self.engine, workspace=workspace)
++        local.write_bytes(original)
+         self.assertEqual(context['review_research']['question'], request['question'])
+         self.assertEqual(context['review_research']['request_digest'], request['request_digest'])
+         self.assertEqual(context['proposal'], self.engine.runtime['review_cycles'][cid]['proposal'])
+@@ -216,3 +261,12 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
+                               'sha256': source['sha256'], 'bytes': len(raw)})
+         visible = self.engine._materialize_research_sources([row], self.root / 'restored-frozen', slot=action['slot'])
+         self.assertEqual((self.root / 'restored-frozen' / visible[0]['local_path']).read_bytes(), raw)
++        from support.engine_context import assert_review_documents
++        assert_review_documents(self, visible, owner='review_sources', sources=[row], engine=self.engine,
++                                workspace=self.root / 'restored-frozen')
++        for field in ('snapshot', 'artifact_ref', 'ref'):
++            changed = deepcopy(visible)
++            changed[0][field] = 'another-source-coordinate'
++            with self.subTest(artifact_coordinate=field), self.assertRaises(AssertionError):
++                assert_review_documents(self, changed, owner='review_sources', sources=[row], engine=self.engine,
++                                        workspace=self.root / 'restored-frozen')
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+index b9c5fbae..c347733c 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@ class RoleInputTests(unittest.TestCase):
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+index 893fbb6f..343d3b51 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@ class QueryFamilyNameTests(unittest.TestCase):
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+diff --git a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+index b02d4af9..0cf6a623 100644
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@ class ReportProjections(unittest.TestCase):
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@ class ReportProjections(unittest.TestCase):
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),
+diff --git "a/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md" "b/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+index 81ecff93..0cc5e349 100644
+--- "a/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
++++ "b/.claude/skills/write-for-reader/references/\353\217\205\355\225\264_\352\262\200\355\206\240.md"
+@@ -29,7 +29,7 @@ python .claude/skills/write-for-reader/scripts/writing_flow.py status
+ 
+ 긴 문서의 중심 절을 먼저 검사할 때에는 `read --scope sample`을 사용한다. 같은 원고 파일을 전체 원고로 발전시킨 뒤 `read --scope whole`로 전체를 검사한다. 짧은 독립 문서는 처음부터 전체를 작성해 검사한다.
+ 
+-독해 모델의 기본값은 `gpt-5.6-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
++독해 모델의 기본값은 `gpt-6.1-sol`, 추론 수준은 `high`다. `--model`, `--effort`로 변경할 수 있다. 이 기본값은 모든 분야의 독해 품질을 보장하지 않는다. 해당 과제에서 더 적합한 모델은 실제 독해 결과로 선택한다. `--timeout`은 한 독해 호출의 제한 시간이며 기본 600초다. 시간 초과는 검토 미완료로 기록한다.
+ 
+ ## 독해 실행
+ 
+diff --git a/.claude/skills/write-for-reader/scripts/writing_flow.py b/.claude/skills/write-for-reader/scripts/writing_flow.py
+index a6fddc57..420b5647 100644
+--- a/.claude/skills/write-for-reader/scripts/writing_flow.py
++++ b/.claude/skills/write-for-reader/scripts/writing_flow.py
+@@ -250,7 +250,7 @@ class WritingFlow:
+             return "합의 대조 결과가 다른 독해 실행에 관한 것임"
+         return None
+ 
+-    def read(self, *, scope="whole", model="gpt-5.6-sol", effort="high", timeout=600, codex=None):
++    def read(self, *, scope="whole", model="gpt-6.1-sol", effort="high", timeout=600, codex=None):
+         if scope not in {"sample", "whole"} or not math.isfinite(timeout) or timeout <= 0:
+             raise WorkflowError("독해 범위와 제한 시간이 잘못됨")
+         executable = shutil.which(str(codex or "codex"))
+@@ -452,7 +452,7 @@ def main(argv=None):
+         begin.add_argument("--" + name, type=Path, required=True)
+     read = sub.add_parser("read", help="작성 대화가 없는 별도 Codex로 원고 독해")
+     read.add_argument("--scope", choices=("sample", "whole"), default="whole")
+-    read.add_argument("--model", default="gpt-5.6-sol")
++    read.add_argument("--model", default="gpt-6.1-sol")
+     read.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default="high")
+     read.add_argument("--timeout", type=float, default=600)
+     read.add_argument("--codex")
+diff --git a/docs/do-math/continuous-development-2026-10-13/README.md b/docs/do-math/continuous-development-2026-10-13/README.md
+index 0ec89b5a..a6a7a7d5 100644
+--- a/docs/do-math/continuous-development-2026-10-13/README.md
++++ b/docs/do-math/continuous-development-2026-10-13/README.md
+@@ -16,7 +16,7 @@ python docs/do-math/continuous-development-2026-10-13/start.py --check-only
+ & ./docs/do-math/continuous-development-2026-10-13/start.ps1
+ ```
+ 
+-터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 모델·effort는 로컬 Codex 프로젝트 기본값을 따른다.
++터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 작업자는 `gpt-6.1-sol/high`, manager는 settings.json의 `gpt-6-astra/xhigh`를 사용한다. 2026-10-14의 기존 실행기 교체 이후 상태는 `runtime/model-change.json`을 확인한다. 원 `launch-001.json`의 종료는 전체 목표 완료를 뜻하지 않는다. 자세한 전환 기록은 [모델 정책](sources/model-policy-2026-10-14.md)에 있다.
+ 
+ 처음에는 3개 읽기 전용 task가 병렬로 요구별 상태, 문서 검사기 마감 범위, 최종 관문 준비도를 판단한다. 첫 phase부터 전체 일반/T3/변이를 돌리거나 기존 구현을 다시 쓰지 않는다. 모든 task가 끝나면 새로운 manager 세션이 보고를 검사하고 실제 다음 phase를 작성한다.
+ 
+diff --git a/docs/do-math/continuous-development-2026-10-13/settings.json b/docs/do-math/continuous-development-2026-10-13/settings.json
+index aefa462d..d536d5f9 100644
+--- a/docs/do-math/continuous-development-2026-10-13/settings.json
++++ b/docs/do-math/continuous-development-2026-10-13/settings.json
+@@ -1,3 +1,6 @@
+ {
+-  "manager": {}
++  "manager": {
++    "model": "gpt-6-astra",
++    "effort": "xhigh"
++  }
+ }
+diff --git a/docs/do-math/continuous-development-2026-10-13/start.py b/docs/do-math/continuous-development-2026-10-13/start.py
+index c09a4f57..884ad4da 100644
+--- a/docs/do-math/continuous-development-2026-10-13/start.py
++++ b/docs/do-math/continuous-development-2026-10-13/start.py
+@@ -35,7 +35,8 @@ def main():
+     if checked.returncode:
+         return checked.returncode
+     command = [sys.executable, str(engine / 'run.py'), str(repo), str(records), args.phase,
+-               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"']
++               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"',
++               '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"']
+     if args.check_only:
+         print(json.dumps({'state': 'ready_not_started', 'repo': str(repo), 'records': str(records),
+                           'codex': codex, 'command': command}, ensure_ascii=False))
+diff --git "a/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md" "b/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
+index 395fe468..89758044 100644
+--- "a/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
++++ "b/docs/do-math/\354\213\234\355\227\230-\354\236\254\355\216\270-2026-09-29/\354\247\204\355\226\211.md"
+@@ -2,6 +2,10 @@
+ 
+ 설계는 같은 폴더의 `설계.md`가 정본이다. 이 문서는 하위 단계(설계 9.1절 표의 한 행)마다 상태, 실행한 검증과 보고서 경로, 확정한 결정, 남은 작업과 재개 지점을 적는다. 재개하는 AI는 `설계.md`를 읽은 뒤 이 문서의 마지막 "재개 지점"에서 시작한다.
+ 
++2026-10-03 재개 위치 정정: 최신 통합 작업은 main보다 앞선 `codex-close-integration` 작업 트리에 있다. 이 main 문서의 아래 재개 절보다 [재개-검토-2026-10-03.md](재개-검토-2026-10-03.md)와 거기서 연결한 통합 진행 원장을 우선한다. 이후 전체 T3 완주, A31·A32, 부분 교정과 이번 7-A 검증은 그 기록에 있다. 1e·1f 완료 판정은 아직 남아 있다.
++
++사용자의 끝까지 수행 지시로 활성화한 목표의 현재 작업·정확한 보고와 진행 중인 실행은 [목표-진행-2026-10-03.md](목표-진행-2026-10-03.md)를 따른다. 초기 상태 복원과 변이 도구의 결과 누락 처리, 활동·스키마 후속은 해당 기록이 최신이다.
++
+ ## 상태 요약
+ 
+ | 하위 단계 | 상태 | 기준점 커밋(단계를 연 커밋) | 닫은 커밋 |

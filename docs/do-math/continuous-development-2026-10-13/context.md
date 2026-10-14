@@ -92,6 +92,9 @@ phase 020 document-tools는 A1~A4 complete로 검수했다. 시작2675파일은0
 
 phase 021 document-review는 A1/A3/A4 pass·A2 fail의 partial로 검수했다. report 검사 뒤 시작2675파일과020 검수본 동일, 종료/현재 전건 SHA 일치, 허용28변경(정본13·미러13·비용캐시2)을 확인했다. 최종 양쪽 같은270선택/고유row의 각269passed·Windows1314 symlink1skip·exit0와 각875Python/전후판본을 대조했다. red4반례와 초기fixture/defer 오류는 역사 실패로 유지하며 자리 입력 검사 한ID의 unit→sim 이동을 구별했다. 실제최종포장15반환 중 answer/initial-0에 제안 전문2개(기대1)가 있어 공식green과 별개로 A2가 미충족이다. 원task242파일 불변과 보존 경계는 run:phases/021/manager-evidence/verification.json·proposal-check.json·failure-mapping.json·review.md에 있다. 제품 전체 합격이 아니다.
 
+phase 022 review-delivery는 A1~A5 complete로 검수했다. report 검사 뒤 시작2675파일과021 검수본 동일, 종료/현재 전건 SHA 일치와 허용30변경(비캐시28·비용캐시2)을 확인했다. 정본/미러 같은364선택·고유row의 각363passed·Windows1314 symlink1skip·실제exit0와 각875Python/전후판본을 대조했다. 기존270선택은 모두 유지됐고 red 전문2!=1·red-doc 두owner 무입력 통과 반례가 새 양쪽passed에 대응한다. 실제 최종반환 각80개를 원JSON에서 재귀 검산해 현재 전문1개를 확인했다. task355파일·021원task242파일은 검산 전후 불변이다. A4는247개 절별 이름/소유 판단과 남은 의미 질문의 반환이며 네 절 전체 의미 합격이 아니다. 근거는 run:phases/022/manager-evidence/verification.json·proposal-check.json·review.md다. 전체G 완료가 아니다.
+
+
 ## C3 현재 정본과 이력의 역할
 
 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
@@ -110,7 +113,7 @@ task의 complete는 A 완료다. 검토 task는 결함을 발견해도 배정된
 
 2026-10-14 사용자 추가 지시: 다음 manager는 run:sources/document-batching-2026-10-14.md를 읽고 남은 문서 작업 배정에 적용한다. 현재021은 그대로 마치며, 이후 P06~P11과 관련 N 항목은 문서 번호별 phase를 관성적으로 반복하지 않고 공유 수정 지점별로 한정된 구현 묶음을 만든다. 고정 입력의 독립 조사·실제 비중첩 쓰기만 병렬 후보로 삼고 공유 helper/미러/검사는 한 담당자가 통합한다. 같은 회귀와 관리 마감의 반복 비용을 줄이되 한 문맥에서 끝내는 크기·소스 고정·기존 검증 의미는 유지한다. 구체적 묶음과 병렬화 판단은 다음 plan/manager decision에 기록한다.
 
-phase 001~021의 task 세션은 종료됐다.022 review-delivery 단일 work가021 F1의 제안 전문 단일 지급 수리와 P07의 submission_check/repair, 관련 N01-237/N01-260/N02-002/N02-014 절을 함께 맡는다. doc_code/engine_context·실제 제출/최종 입력·공통 문서 순회와 미러를 공유해 한 담당자가 통합한다. 기존 packet 외에 새 독립 조사 질문이 없어 병렬 조사 task는 두지 않는다. runtime 쓰기는 F1의 review_cycle/review_engine 두 파일에 한정하며 다른 runtime/runner/adapter/Job fixture·corpus·기존 연구·실호출은 고정한다. jobs1·전체worker3 이하·한 묶음씩·검사 중 소스 고정을 유지한다. 남은 P06/P10, P09/P11, P08/TRUST는 소비자별 후속 후보이며 문서 번호마다 phase를 고정하지 않는다.
+phase 001~022의 task 세션은 종료됐다.023 document-governance 단일 work가 P06 import_payload/import_check와 P10 governance/academic_validation, 관련 수입승인·현재조회 문장과022 F5의 개정 네 이름을 함께 맡는다. 같은 doc_code/engine_context·공통 문서 순회·직접 소비·미러/캐시를 한 담당자가 통합한다. 기존packet이 생산자/종료질문을 제공하고 새 고정판 독립 조사 산출물이 필요하지 않아 병렬task는 두지 않는다. 제품runtime/runner/adapter/Job fixture·corpus·설치신뢰·기존 연구·실호출은 고정한다. jobs1·전체worker3 이하·한 묶음씩·검사 중 소스 고정을 유지한다. P09/P11·P08/TRUST와022 F5의 나머지는 구체적인 후속 질문으로 보존한다.
 
 do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
 
@@ -158,6 +161,9 @@ manager는 next phase와 공용 문서·기억 등을 먼저 확정하고 pendin
 
 021의 gpt-6.1-sol/high 수행을 검수했다.022 review-delivery도 같은 사용자 지정 model/effort로 배정하며 manager 설정과 제품 공급자 호출 설정은 구별한다.
 
+022의 gpt-6.1-sol/high 수행을 검수했다.023 document-governance도 같은 사용자 지정 model/effort로 배정한다. manager 설정과 제품 공급자 실호출 설정은 구별한다.
+
+
 ## C9 요구별 상태와 과거 검토의 재사용 범위
 
 phase 001의 requirement-state.json은 원래 19/11/61/12 항목을 각각 한 번씩 연결했고 tracking-state.json은 기존 109개 작업을 연결했다. 이들은 역사 근거와 종료 질문의 진입점이며 새로 수행한 전수 의미 감사가 아니다. 현재 판정은 이 context와 후속 report/manager의 처분을 따른다. 1-D/11-A/11-B의 검토된 성질, R17과 R07의 완료 부분, DOC-RETURN-PURE/CLI 및 B132~B134의 지정 경계는 유지하고 최종 판본 근거를 연결한다. 9-A의 R18 현재 외부 호출 전건, 1-E의 최종 반환 소유권 처분은 별도로 남는다. K-27/38/72/75와 P2 A-31/B-32는 후속 수리 이전의 낡은 remaining만으로 재수리하지 않는다.
@@ -196,6 +202,9 @@ phase 006은 B49/065a323a의 전달·반려·수치·종료 slice를 실제 도�
 
 021 F2의 B113 role_review/review_research와 B114 pending_findings/review_sources 반환 추정 교체를 승인한다. 실제 hunk·현재 소비와 존재7원보고 SHA를 대조했고 명시 owner/별칭/callable·다른 packet의 단언은 유지한다. helper의 생산값 비교는 전달 일치의 근거이며 전문 단일 지급의 독립 계약을 대신하지 않는다. F1 수리는 별도이며 PR24 전체·나머지 hunk는 미종결이다. 근거는 run:phases/021/manager-evidence/history-check.json·review.md와 원task binding-review.md다.
 
+022 F2의 B112 repair/B113 submission_check AST 추정 교체를 승인한다. 현재 실제 check/route·최종포장, 관련hunk와 존재7원보고 SHA를 대조했다. 필드/실행/후보/check/수리범위 손상 반례·명시owner/별칭/callable 및 다른packet 단언은 유지한다. P07의 한정slice만 닫으며 PR24 전체나 역사counts의 새 성공은 아니다. 근거는 run:phases/022/manager-evidence/history-check.json·review.md와 원task binding-review.md다.
+
+
 ## C10 문서 결속에서 남은 고정 범위
 
 document-closeout의 원목록은 실제24문서(계약11 포함), inline 필드189회·lexical owner79개·노출 owner84개와 당시 AST34지점이다. 이 수는 역사 목록의 크기이며 현 의미 검증 완료율이 아니다.008에서 P01의 운영/복구6 AST지점을 실제 _context/포장 객체와 저장·물질화 파일 검사로 교체했다. operational_evidence와 recovery_materials의 동명 source를 구별하고 정상·restoration_error·checkpoint_source=null·live 부재·activity_continuations와 반환 사본/제품 입력 반례를 확인했다. 일반 재개의 result_source와 B130~B134 기존 성질을 유지하며, 마지막 소비가 없어진 checkpoint_source/recovery_source/checkpoint_files/recovered_output_files 단독 입력은 제거했다. defer 두 입력의 실제 문서 검사 담당과 오기/누락 반례도 확인했다. 근거는 run:phases/008/tasks/document-recovery/evidence/binding-review.md 및 run:phases/008/manager-evidence/review.md다.
@@ -219,6 +228,11 @@ L01/13-C의 읽기 한도 절은010 조사 뒤에도 미인증이다. 실제 개
 020에서 P03 여섯 owner의 지정 남김을 닫았다. 실제 _context·build_profiles·prepare_role_input·install_tools 결과와 goal_audit 참조파일, 설치 wrapper/archive 전체member·schema/context·명령/해시/권한/limits를 대조했다. 미설치 preview·다른 명령/파일 차용·일치 hash의 잘못된 archive·참조 손상과 소유자별 defer 반례를 확인했다. 기본 record_map 및 P01/P02·B130~B134는 유지한다. scholarly.configured와 preview 지급을 실호출/검증 성공으로 읽지 않는다. 근거는020 manager verification.json·review.md와 원task binding-review.md다.021은 P04/P05의 role_review·pending_findings·review_research·review_sources만 맡는다. 이 네 owner는 같은 검토 입력 경계와 공통 문서 순회를 공유하므로 한 task에서 닫는다. L01 Q1/Q2와 원문byte 요구·미충족, P06~P11/TRUST·N의 다른 절·최종 관문은 그대로 남는다.
 
 021에서 P04/P05 네 owner의 실제 필드·최종 전달·고정 원자료 결속을 검수했다. P05 지정 바이트/소유 성과는 유지하지만 P04 제안 단일 지급은 미충족이다. 실제 answer/initial-0 입력의 role_review.proposal과 self_messages[0].content가 같은 전문이며 기대1/실제2다. context_for는 현재proposal 메시지를 전문으로 남기고 _record_review_input은 원메시지를 봉인한다.022가 원봉인·가시성·이전판본 복원·정확참조를 유지하며 이 중복을 수리하고 독립 단언을 제품회귀에 넣는다. 같은 제출/역할입력 경계의 P07 submission_check/repair와 N01-237/N01-260/N02-002/N02-014도 묶어 실제check·수리 원문·최종입력을 확인한다. 일반green으로 A2를 닫지 않는다. 후속 후보는 P06/P10 거버넌스 입출력, P09/P11 조건/대기, P08 trust/formal이며 각각 관련 N 절을 결합한다. 기존 충분한 P01~P03·P05를 새 반례 없이 다시 열지 않는다. L01 Q1/Q2·원문byte 요구와 나머지 의미/최종관문은 유지한다. 근거는 run:phases/021/manager-evidence/proposal-check.json·review.md 및 run:phases/022/tasks/review-delivery/objective.md다.
+
+022 F1의 최소 review_cycle.context_for 수리로021 F1/A2의 현재 제안 전문중복을 종결한다. 현재/이전proposal 원메시지를 기존정확source_ref로 지급하고 role_review.proposal의현재전문은1회로 유지한다. 원turns/manifest·봉인·가시성·정확복원은 보존하며 review_engine/context_store는 불변이다. P07 실제 check_submission/route_submission_return의 필드·원담당·후보/수리범위·최종입력 결속도 검수해 닫는다. import_check와 submission_check, pass/capture/접수/편입은 구별한다. 근거는 run:phases/022/manager-evidence/proposal-check.json·review.md와 원task binding-review.md다.
+
+022 F5는 미결로 유지한다. 네 N 절의247개 이름/소유 판정은 전체 의미 인증이 아니다.023의 P06/P10 묶음이 N02-014의 impact_set/previous_hashes/revision_requests/revision_resolutions를 현재소비·기존검사와 대조한다. N01-237의 input_overflow_retry_resolved/failed·question_links와 N02-002의 input_overflow_requests/input_overflow_resolutions는 P09/P11 후보의 현재성/사용자retry 질문으로 남기며, N01-260 scope/replay_safety/repair_target은 운영처분·종료/재개권한 질문으로 함께 보존한다. P08/TRUST·그 밖의 N·L01 Q1/Q2와 원문byte 미충족·다른 의미/최종관문은 그대로다. 정확문장은 run:phases/022/tasks/review-delivery/evidence/section-name-decisions.json이며 다음책임은 run:phases/023/tasks/document-governance/objective.md와 plan이다.
+
 
 ## C11 최종 관문을 막는 도구·실경계 공백
 
@@ -272,6 +286,9 @@ WinError6은 일반 child에서는 재현되지 않았고 실제 Job의 control�
 
 021의 최종 양쪽270선택에서도 ContextStoreTests.test_outside_symlink_is_reported_when_supported가 Windows1314로 각1skip됐다. 실제탈출 반려는 미검사이며 G4에서 원문상 조건의 정당성을 판정한다. 일반green과 별개인 제안 전문중복은022 work에 넘겼다. 근거는021 manager verification.json·proposal-check.json이다.
 
+022 F4의 최종 양쪽364선택에서도 ContextStoreTests.test_outside_symlink_is_reported_when_supported는 Windows1314로 각1skip이다. 실제탈출 반려는 미검사이며 G4 최종기본전체에서 원문상 환경조건 정당성을 별도 판정한다. 새363passed에 포함하지 않는다. review_cycle runtime 변경 이후018 전체T4를 현재 전체판본 동등성으로 주장하지 않으며 영향받는 검토/포장/복원은022 새관련근거를 사용한다. G4~G6/G7 최종판연결/G8은 남는다.
+
+
 ## C12 공급자 부분 성공과 원바이트 인도
 
 phase 003이 추가한 T5 선택은 Codex/Claude maintenance 각 한 건이다. 003 당시 실 ModelRunner·real_ports·worker·adapter·parser를 사용했고 세 worker schema가 당시 action_schema 전체와 같았다. 새 호출은 Codex 1회·Claude 2회다. live-01은 2선택/2실패이며 Claude는 읽기 도구 출력에 checkpoint가 섞여 정확 비교가 실패했다. prompt를 명확히 한 live-02의 Claude 1선택은 모든 9개 판정과 공식 row가 통과했다. 003의 마지막 live와 종료 사이에는 호출 경로가 불변이고 오프라인 corpus 검사 세 파일만 바뀌었다. 003 검수 시 최종 정본 23개 및 미러 4개의 Python 864개 해시는 당시 종료 판본과 일치했다. 006 이후 판본은 아래의 새 근거를 따른다. 근거는 run:phases/003/manager-evidence/verification.json 및 task의 live-01/live-02/offline-01/mirror-replay 원보고다.
@@ -323,3 +340,7 @@ phase 006은 provider_final.output_contract/semantic_output에 Codex 문자열 �
 020 F2의 보존과 한정 재사용을 검수했다. runtime/실호출139입력·corpus144경로/150명시SHA/Gitraw-clean·host8자료/도구5·baseline910/Gitblob·고정runtime/T4 258경로는 불변이다. preview 문서 두 문장은 미래 일반 역할 prompt에 반영되므로 과거 고정 smoke는 승인된 성질만 재사용한다. 검수한24비캐시 제품경로를 이번 관리 커밋으로 마감한다. 원task171파일과 제품원바이트는 manager-evidence/raw-evidence.zip에 보존하며 전건SHA·선별 추적범위는 run:phases/020/manager-evidence/preservation.json에 둔다. 압축만 추적하는 원경로와 stage/commit 행정 수신은 로컬 보관으로 정리 때 사라질 수 있다. 압축은 복원 지시가 아니다.021 배정·관리·기억 추가는 제품 검증 판본을 바꾸지 않는다.
 
 021 F3의 보존 사실과 승인 성질의 한정 재사용을 검수했다. runtime/실호출139입력·corpus144경로/150명시SHA/Git raw-clean·host8자료/도구5·baseline910/Gitblob·고정runtime/T4 258경로 및 제품문서는 불변이다.022의 review runtime 변경은 이 목록의 불변을 일괄 요구하지 않고 실제 영향과 필요한 대체 증거를 구별한다.021의26비캐시 제품경로 커밋은 F1 수리/검수 뒤로 보류한다. 원task242파일과26제품 원바이트를 raw-evidence.zip에 보존하고 전건SHA·선별추적범위는 run:phases/021/manager-evidence/preservation.json에 둔다. 이번 마감은 관리인계·원근거·022배정·기억만 포함한다. 압축만 추적하는 원경로와 stage/commit 행정수신은 로컬 보관으로 정리 때 사라질 수 있으며 압축은 복원 지시가 아니다.
+
+022 F3의 재사용은 변경 영향을 반영해 한정 승인한다.139실호출입력 중 정본review_cycle1변경·138불변, 고정runtime/T4 258경로 중 양쪽review_cycle2변경·256불변이다. corpus144경로/150명시SHA/Git raw-clean·host8자료/도구5·baseline910원바이트/Gitblob은 현재와 같다. 새설치support.zip/tool_sha256와 향후검토prompt는 바뀌므로 과거전체설치/동결사본 동등성이나 모델독해를 주장하지 않는다. 공급자전송/worker·host/Lean/held예약/학술 최소호출의 불변 하위경계 성질만 재사용하고 영향받는 검토slice는022의 실제반환/복원/포장 회귀로 교체한다.
+
+021의 보류26경로와022의28비캐시 경로의 합집합36제품경로를 이번 관리마감에서 커밋한다. 원task355파일과36제품원바이트는 raw-evidence.zip으로 보존하며 전건SHA/선별추적범위는 run:phases/022/manager-evidence/preservation.json에 둔다.021의 과거바이트는 기존021 압축을 유지한다. 압축만 추적하는 중복snapshot/scratch 원경로와 stage/commit 행정수신은 로컬 보관으로 정리 때 사라질 수 있으며 압축은 복원 지시가 아니다.023배정/관리·기억 추가는 검수한 제품판본을 바꾸지 않는다.

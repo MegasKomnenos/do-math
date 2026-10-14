@@ -117,7 +117,45 @@ class SubmissionReturnTests(unittest.TestCase):
         self.assertTrue(received['issues'])
         return scene, received, output
 
+    def test_exact_rejected_candidate_reaches_the_final_repair_role_input(self):
+        import hashlib
+        import json
+        from do_math.canonical import canonical_json
+        from do_math.context_store import prepare_role_input
+        from support.engine_context import assert_delivery_documents, publish, review_input_value
+        scene, received, output = self.returned()
+        engine = scene.engine
+        raw = canonical_json(output) + b' \r\n'
+        ref = 'runtime/artifacts/BA-rejected/submission/raw-output.txt'
+        publish(engine, {ref: raw})
+        previous = engine.runtime['executions'][scene.execution_id]
+        previous.update(status='ended', outcome='output_returned', output=deepcopy(output))
+        engine.route_submission_return(scene.action, received, scene.execution_id, output,
+            rejected_submission={'raw_output_ref': ref, 'raw_output_sha256': hashlib.sha256(raw).hexdigest()})
+        retry = next(a for a in engine.runtime['queue'] if a.get('id') == scene.action['id'])
+        self.assertEqual(retry['role'], scene.action['role'])
+        self.assertEqual(retry['owner_activity_id'], previous['owner_activity_id'])
+        workspace = scene.workspace / 'repair-input'
+        context = engine._context(retry, workspace)
+        prepared = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+            role=retry['role'], profile=engine._execution_profile(retry), snapshot=engine.head,
+            workspace=workspace, activity_id=retry['id'], clock=engine.ports.clock)
+        final = review_input_value(self, prepared['context'], 'action', workspace, manifest=prepared['manifest'])
+        assert_delivery_documents(self, final['repair'], owner='repair', output=output,
+            received=received, execution_id=scene.execution_id)
+        self.assertEqual(final['continuation_of'], scene.execution_id)
+        history = prepared['context']['continuation_history']
+        self.assertEqual(history[-1]['execution_id'], scene.execution_id)
+        response = history[-1]['rejected_response']
+        self.assertEqual(response['artifact_ref'], ref)
+        restored = (workspace / response['local_path']).read_bytes()
+        self.assertEqual(restored, raw)
+        self.assertEqual(json.loads(restored), output)
+        self.assertEqual(response['sha256'], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(response['bytes'], len(raw))
+
     def test_repeated_submission_return_stops_producer_and_opens_one_diagnosis(self):
+        from support.engine_context import assert_delivery_documents
         scene, received, output = self.returned()
         engine = scene.engine
         self.assertEqual(engine.instance['config']['max_output_repairs'], 1)
@@ -129,6 +167,21 @@ class SubmissionReturnTests(unittest.TestCase):
             'execution_id': 'EX-first', 'previous_output': output, 'retry_bundle_ids': received['retry_bundle_ids'],
             'bundle_results': received['bundles'], 'issues': received['issues']}}
         self.assertEqual(runtime['queue'], base + [retry])
+        assert_delivery_documents(self, runtime['queue'][-1]['repair'], owner='repair',
+            output=output, received=received, execution_id='EX-first')
+        for fault in ('missing_output', 'other_output', 'other_execution', 'wrong_scope'):
+            changed = deepcopy(runtime['queue'][-1]['repair'])
+            if fault == 'missing_output':
+                del changed['previous_output']
+            elif fault == 'other_output':
+                changed['previous_output'] = {'summary': 'another candidate'}
+            elif fault == 'other_execution':
+                changed['execution_id'] = 'EX-other'
+            else:
+                changed['retry_bundle_ids'] = ['IN-other']
+            with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
+                assert_delivery_documents(self, changed, owner='repair', output=output,
+                    received=received, execution_id='EX-first')
         runtime['queue'].pop()
         engine.route_submission_return(retry, received, 'EX-second', output)
         review = runtime['queue'][-1]
@@ -139,6 +192,8 @@ class SubmissionReturnTests(unittest.TestCase):
         self.assertEqual((wait['kind'], wait['next_owner'], wait['execution_id']),
                          ('output_validation', 'operational_review', 'EX-second'))
         self.assertEqual(wait['action']['repair']['execution_id'], 'EX-second')
+        assert_delivery_documents(self, wait['action']['repair'], owner='repair',
+            output=output, received=received, execution_id='EX-second')
         self.assertEqual(wait['detail']['issues'], received['issues'])
         # Failed diagnostic output itself cannot open recursive diagnostics forever.
         engine.route_submission_return({**retry, 'role': 'operational_review'}, received, 'EX-op', {})

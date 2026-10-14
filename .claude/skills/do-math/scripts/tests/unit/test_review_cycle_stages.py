@@ -62,6 +62,8 @@ class ReviewCycleTests(unittest.TestCase):
     def test_initial_barrier_and_blindness(self):
         cycle = self.submit(self.start(), decision='mismatch', findings=[dict(id='f1', statement='secret finding', evidence=['proposal:1'])])
         context = context_for(cycle, next_actions(cycle)[0])
+        from support.engine_context import assert_review_documents
+        assert_review_documents(self, context, owner='role_review', cycle=cycle, action=next_actions(cycle)[0])
         self.assertEqual(context['completed_results'], {})
         self.assertEqual(context['issues'], {})
         self.assertEqual(context['pending_findings'], [])
@@ -80,6 +82,14 @@ class ReviewCycleTests(unittest.TestCase):
         cycle = self.start()
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding one', evidence=['proposal:1'])])
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding two same local ID', evidence=['proposal:2'])])
+        from support.engine_context import assert_review_documents
+        action = next_actions(cycle)[0]
+        actual = context_for(cycle, action)['pending_findings']
+        assert_review_documents(self, actual, owner='pending_findings', cycle=cycle, action=action)
+        other = copy.deepcopy(actual)
+        other[0]['ref'] = copy.deepcopy(actual[1]['ref'])
+        with self.assertRaises(AssertionError):
+            assert_review_documents(self, other, owner='pending_findings', cycle=cycle, action=action)
         valid = review_stage_output(cycle, 'organize')
         reasons = {'omit': 'organizer omitted original findings',
                    'forge': 'organizer forged or reused an original finding',

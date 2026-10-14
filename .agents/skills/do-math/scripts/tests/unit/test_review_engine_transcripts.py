@@ -30,6 +30,41 @@ class ReviewSceneCase(unittest.TestCase):
 
 
 class ObservedTranscriptTests(ReviewSceneCase):
+    def test_current_proposal_message_restores_by_exact_ref_without_repeating_the_body(self):
+        from do_math.values import compact_json_bytes
+        engine, scene = self.engine, self.scene
+        cid = scene.start('K1')
+        action = scene.pending()
+        cycle = engine.runtime['review_cycles'][cid]
+        original = {'role': 'user', 'kind': 'proposal', 'content': deepcopy(cycle['proposal']),
+                    'message_id': 'current-proposal'}
+        cycle = record_turn(cycle, action['slot'], [original])
+        engine.runtime['review_cycles'][cid] = cycle
+        sealed = deepcopy((cycle['turns'], cycle['transcript_manifest']))
+        workspace = scene.root / 'current-proposal'
+        context = engine._prepare_review_context(action, workspace)['context']
+        reference = context['source_refs'][0]
+        self.assertEqual(context['proposal'], original['content'])
+        self.assertEqual(context['self_messages'], [{'role': 'user', 'content': {'source_ref': reference}}])
+        self.assertEqual(reference['proposal_digest'], cycle['proposal_digest'])
+        raw = (workspace / reference['local_path']).read_bytes()
+        self.assertEqual(raw, compact_json_bytes(original))
+        self.assertEqual(len(raw), reference['bytes'])
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), reference['sha256'])
+        self.assertEqual(sealed, (cycle['turns'], cycle['transcript_manifest']))
+        # Missing materialized copies can be rebuilt from the verified original.
+        (workspace / reference['local_path']).unlink()
+        rebuilt = engine._prepare_review_context(action, workspace)
+        self.assertEqual(rebuilt['disposition'], 'ready')
+        self.assertEqual((workspace / reference['local_path']).read_bytes(), raw)
+        (workspace / reference['local_path']).write_bytes(b'changed proposal source')
+        event = engine._prepare_review_context(action, workspace)['recovery']['recovery_event']
+        self.assertEqual(event['cause_kind'], 'materialized_content_mismatch')
+        self.assertEqual(event['coordinate'], {'slot': action['slot'], 'index': 0,
+                                              'path': str(workspace / reference['local_path'])})
+        self.assertEqual(event['expected_sha256'], reference['sha256'])
+        self.assertEqual(event['observed_sha256'], hashlib.sha256(b'changed proposal source').hexdigest())
+
     def test_actual_prompt_and_public_provider_events_restore_only_to_their_slot(self):
         engine, scene = self.engine, self.scene
         cid = scene.start('K1')

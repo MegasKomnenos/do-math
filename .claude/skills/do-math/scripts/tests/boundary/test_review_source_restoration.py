@@ -44,6 +44,9 @@ class FixedSourceRestorationTests(unittest.TestCase):
         self.assertEqual(self.engine.store.read(self.row['artifact_ref'], self.row['snapshot']), raw)
         visible = self.engine._materialize_research_sources([self.row], self.root / 'normal-source', slot=action['slot'])
         self.assertEqual((self.root / 'normal-source' / visible[0]['local_path']).read_bytes(), raw)
+        from support.engine_context import assert_review_documents
+        assert_review_documents(self, visible, owner='review_sources', sources=[self.row],
+                                engine=self.engine, workspace=self.root / 'normal-source')
 
     def test_missing_fixed_artifact_returns_a_coordinate_restoration_fault(self):
         row, action = deepcopy(self.row), self.action
@@ -65,3 +68,20 @@ class FixedSourceRestorationTests(unittest.TestCase):
         self.assertEqual(list((self.root / 'missing-source' / 'input' / 'review-research').iterdir()), [])
         self.assertEqual((self.engine.instance, self.engine.runtime), before)
         self.assertEqual(self.engine.head, head)
+
+    def test_damaged_materialization_preserves_the_fixed_source_coordinate(self):
+        workspace = self.root / 'normal-source'
+        path = workspace / 'input' / 'review-research' / ('0000-' + self.row['sha256'] + '.txt')
+        path.write_bytes(b'changed local source')
+        before = deepcopy((self.engine.instance, self.engine.runtime))
+        with self.assertRaises(rc.ReviewRestorationError) as caught:
+            self.engine._materialize_research_sources([self.row], workspace, slot=self.action['slot'])
+        diagnostic = caught.exception.diagnostics
+        self.assertEqual(diagnostic['cause_kind'], 'materialized_content_mismatch')
+        self.assertEqual(diagnostic['coordinate']['slot'], self.action['slot'])
+        self.assertEqual(diagnostic['coordinate']['source_ref'], self.row['ref'])
+        self.assertEqual(diagnostic['coordinate']['snapshot'], self.row['snapshot'])
+        self.assertEqual(diagnostic['coordinate']['path'], str(path.resolve()))
+        self.assertEqual(diagnostic['expected_sha256'], self.row['sha256'])
+        self.assertEqual(diagnostic['observed_sha256'], hashlib.sha256(b'changed local source').hexdigest())
+        self.assertEqual((self.engine.instance, self.engine.runtime), before)

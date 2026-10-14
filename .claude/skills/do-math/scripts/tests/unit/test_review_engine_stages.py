@@ -130,6 +130,22 @@ class InitialStageTests(ReviewSceneCase):
         context, _, _ = scene.execute()
         self.assertTrue(context['self_messages'])
         self.assertTrue(context['source_refs'])
+        import hashlib
+        from pathlib import Path
+        from do_math.values import compact_json_bytes
+        restored_proposals = []
+        for reference in context['source_refs']:
+            original = first['turns'][reference['slot']][reference['index']]
+            raw = (scene.root / 'ex-3' / 'workspace' / reference['local_path']).read_bytes()
+            self.assertEqual(raw, compact_json_bytes(original))
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), reference['sha256'])
+            self.assertEqual(len(raw), reference['bytes'])
+            self.assertEqual(reference['proposal_digest'], first['proposal_digest'])
+            if reference['kind'] == 'proposal':
+                restored_proposals.append(json.loads(raw)['content'])
+        self.assertEqual(restored_proposals, [first['proposal']])
+        self.assertEqual(context['proposal'], second['proposal'])
+        self.assertNotEqual(context['proposal'], first['proposal'])
         scene.execute()
         self.assertEqual(scene.assessment(kid)['review_cycle_id'], second_id)
         self.assertTrue(scene.usable(kid))

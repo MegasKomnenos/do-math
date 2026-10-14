@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs\\do-math\\continuous-development-2026-10-13\\phases\\022\\tasks\\review-delivery\\evidence\\diff_check.py"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p022",
+    "TMP": "C:\\t\\p022",
+    "TMPDIR": "C:\\t\\p022",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "start": "2026-10-14T05:39:08.356147+00:00",
+  "exit_code": 0,
+  "pid": 27384,
+  "end": "2026-10-14T05:39:10.144670+00:00",
+  "changes": []
+}

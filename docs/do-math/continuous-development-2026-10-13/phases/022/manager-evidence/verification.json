@@ -1,0 +1,254 @@
+{
+  "head": "6f0969f0e55b7a628d4e5a1d68055523c9bd22b1",
+  "sources": 2675,
+  "start_equal_previous": true,
+  "current_equal_final": true,
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/review_cycle.py",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+    ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_submission_review_inputs.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_engine_transcripts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_checks.py"
+  ],
+  "outside_writes": [],
+  "receipts": [
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/temp-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/red-process.json",
+      "exit_code": 1,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/red-doc-process.json",
+      "exit_code": 1,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/focus-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/corrected-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/mirror-build-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/c-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/m-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/history-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/sections-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/preservation-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/diff-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/diff-corrected-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/diff-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/cache-sync-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/mirror-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/skill-only-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/022/tasks/review-delivery/evidence/audit-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    }
+  ],
+  "suites": {
+    "red": {
+      "selected": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1,
+      "nonpassed": [
+        {
+          "id": "sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input",
+          "outcome": "failed",
+          "seconds": 15.077999999979511,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_submission_review_inputs.py\", line 58, in test_review_stage_documents_reach_the_final_seat_input\n    self.assertEqual(proposal_copies(prepared['context'], cycle['proposal']), 1,\nAssertionError: 2 != 1 : the input-size contract supplies the complete current proposal exactly once\n"
+          ]
+        }
+      ]
+    },
+    "red-doc": {
+      "selected": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1,
+      "nonpassed": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner",
+          "outcome": "failed",
+          "seconds": 0.031000000017229468,
+          "details": [
+            "test_delivery_fields_require_their_actual_return_owner (structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner) (field='submission_check.passed')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_delivery_fields_require_their_actual_return_owner\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual delivery input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n",
+            "test_delivery_fields_require_their_actual_return_owner (structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner) (field='repair.previous_output')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 20, in test_delivery_fields_require_their_actual_return_owner\n    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual delivery input'):\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+          ]
+        }
+      ]
+    },
+    "focus": {
+      "selected": 34,
+      "counts": {
+        "passed": 34
+      },
+      "exit_code": 0,
+      "nonpassed": []
+    },
+    "corrected": {
+      "selected": 2,
+      "counts": {
+        "passed": 2
+      },
+      "exit_code": 0,
+      "nonpassed": []
+    },
+    "c": {
+      "selected": 364,
+      "counts": {
+        "passed": 363,
+        "skipped": 1
+      },
+      "exit_code": 0,
+      "nonpassed": [
+        {
+          "id": "unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\t\\\\p022\\\\tmp9cuuz23q\\\\secret' -> 'C:\\\\t\\\\p022\\\\tmp04d1jh8f\\\\link'"
+          ]
+        }
+      ],
+      "python_files": 875,
+      "source_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ]
+    },
+    "m": {
+      "selected": 364,
+      "counts": {
+        "passed": 363,
+        "skipped": 1
+      },
+      "exit_code": 0,
+      "nonpassed": [
+        {
+          "id": "unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported",
+          "outcome": "skipped",
+          "seconds": 0.0,
+          "details": [
+            "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\t\\\\p022\\\\tmppgy2fmn_\\\\secret' -> 'C:\\\\t\\\\p022\\\\tmpb8k50bzt\\\\link'"
+          ]
+        }
+      ],
+      "python_files": 875,
+      "source_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ]
+    }
+  },
+  "original_failures_resolved": {
+    "sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input": "sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input",
+    "structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner": "structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner"
+  },
+  "proposal_requirement_satisfied": true,
+  "old_selected_preserved": 270,
+  "product_documents_unchanged": true,
+  "products_to_commit": 36,
+  "preservation": {
+    "runtime_inputs": 139,
+    "runtime_changes": [
+      ".claude/skills/do-math/scripts/do_math/review_cycle.py"
+    ],
+    "fixed_boundary_paths": 258,
+    "boundary_changes": [
+      ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+      ".agents/skills/do-math/scripts/do_math/review_cycle.py"
+    ],
+    "host_recordings": 8,
+    "tools": 5,
+    "corpus_paths": 144,
+    "explicit_sha": 150,
+    "baseline_files": 910
+  },
+  "task_files_unchanged": 355,
+  "previous_task_files_unchanged": 242
+}

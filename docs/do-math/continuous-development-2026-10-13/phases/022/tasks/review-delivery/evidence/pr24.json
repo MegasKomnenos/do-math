@@ -1,0 +1,92 @@
+[
+  {
+    "id": "PR24",
+    "title": "문서·운전 계약·사본",
+    "historical_status": "not_reviewed_here",
+    "history_ids": [
+      "B57",
+      "B64"
+    ],
+    "actual_reviewed_history_ids": [],
+    "disposition": "아직 재검토하지 않은 영역. 원래 end_question을 같은 파일을 다루는 요구 작업의 입력에 합친다.",
+    "finite_question": "현행 코드 의미와 문서의 옵션/정책/운전 설명이 일치하고 문서검사 범위를 의미 검증 전체로 과장하지 않는가?",
+    "coassign_with_tracking_tasks": [
+      "R25",
+      "R26",
+      "R27",
+      "R28",
+      "DOC-RETURN-ROLE",
+      "DOC-RETURN-REVIEW",
+      "DOC-RETURN-TRUST"
+    ],
+    "source_seeds": [
+      {
+        "search_directory_or_unresolved_locator": ".claude/skills/do-math/scripts/tests/support/document_inventory.py",
+        "exists": false,
+        "is_directory": false
+      },
+      {
+        "search_directory_or_unresolved_locator": ".claude/skills/do-math/scripts/tests/structure/test_documents.py",
+        "exists": false,
+        "is_directory": false
+      },
+      {
+        "reference": "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "exists": true,
+        "sha256": "c19490133b0be8ddf78a0bba11e993bbd07015a118fc96f9508fb662376d6cc4"
+      }
+    ],
+    "review_slices": [
+      {
+        "history_id": "B57",
+        "board_selector": "/current_work/document_contract_integration",
+        "commit": "cd2f7fe4",
+        "current_files": [
+          {
+            "reference": "repo:README.md",
+            "exists": true,
+            "sha256": "9ab8c1578e8f6f5216f8c2352763f44b5b4e2a479fa111e0cfe324b48bbe61ef"
+          }
+        ],
+        "unresolved_historical_file_locators": [
+          "references/CLI-실행-계약.md",
+          "scripts/tests/support/doc_code.py",
+          "scripts/tests/structure/test_doc_code.py"
+        ],
+        "original_report_selectors": [
+          "/current_work/document_contract_integration/changed_area/path",
+          "/current_work/document_contract_integration/structure/path",
+          "/current_work/document_contract_integration/initial_document_failures/path"
+        ],
+        "diff_to_read": "git show cd2f7fe4 -- .claude/skills/do-math",
+        "required_comparison": "위 실제 hunk의 변경 함수 → 현재 직접 caller/수신자 → 원보고의 그 testID/판본을 함께 읽는다. 매핑만으로 유지 판정하지 않는다."
+      },
+      {
+        "history_id": "B64",
+        "board_selector": "/current_work/operation_document_integration",
+        "commit": "d8e25c55",
+        "current_files": [],
+        "unresolved_historical_file_locators": [
+          "references/CLI-실행-계약.md"
+        ],
+        "original_report_selectors": [
+          "/current_work/operation_document_integration/changed_area/path",
+          "/current_work/operation_document_integration/structure/path"
+        ],
+        "diff_to_read": "git show d8e25c55 -- .claude/skills/do-math",
+        "required_comparison": "위 실제 hunk의 변경 함수 → 현재 직접 caller/수신자 → 원보고의 그 testID/판본을 함께 읽는다. 매핑만으로 유지 판정하지 않는다."
+      }
+    ],
+    "foundation_or_migration_sources": {
+      "board": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+      "selectors": [
+        "current_work.independent_execution.prior_review.foundation_to_unit",
+        "current_work.independent_execution.prior_review.non_b_history_to_unit",
+        "current_work.independent_execution.prior_review.migration_artifact_to_unit",
+        "current_work.independent_execution.prior_review.legacy_population_mapping",
+        "current_work.independent_execution.prior_review.preservation_mapping"
+      ]
+    },
+    "stop": "한 slice의 성질 유지/교정/제거/추가 판정과 근거가 있으면 종료. 다른 영역의 완료를 선행 장벽으로 삼지 않는다."
+  }
+]

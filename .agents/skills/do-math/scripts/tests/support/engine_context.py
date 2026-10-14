@@ -65,6 +65,143 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
                       'admissible_basis_refs': []}
 
 
+def review_input_value(case, context, key, workspace, *, manifest):
+    """Read the exact packaged reference when a direct value became a file."""
+    import hashlib
+    import json
+    value = context[key]
+    if isinstance(value, dict) and set(value) == {'source_ref', 'total'}:
+        ref = value['source_ref']
+        catalog = {row['key']: {k: v for k, v in row.items() if k != 'key'}
+                   for row in manifest['catalog']}
+        case.assertEqual(ref, catalog[key])
+        path = (Path(workspace) / ref['path']).resolve()
+        case.assertTrue(path.is_relative_to(Path(workspace).resolve() / 'input'))
+        raw = path.read_bytes()
+        case.assertEqual(hashlib.sha256(raw).hexdigest(), ref['sha256'])
+        case.assertEqual(len(raw), ref['bytes'])
+        value = json.loads(raw)
+        case.assertEqual(raw, canonical_json(value))
+        case.assertEqual(context[key]['total'], len(value))
+    return value
+
+
+def assert_delivery_documents(case, value, *, owner, output, context=None, schema=None,
+                              extensions=None, execution_id=None, passed=None, received=None,
+                              mode='producer', tool_sha256='same'):
+    """Bind P07 to real returns, their original candidate and repair scope."""
+    from do_math.canonical import exact_content_hash
+    from support.doc_code import documents, delivery_field_issues
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(delivery_field_issues(document.read_text(encoding='utf-8'), owner, value), [], str(document))
+    case.assertEqual(value['execution_id'], execution_id)
+    if owner == 'submission_check':
+        case.assertEqual(value['mode'], mode)
+        case.assertEqual(value['tool_sha256'], tool_sha256)
+        case.assertEqual(value['id'], 'MC-' + exact_content_hash({k: v for k, v in value.items() if k != 'id'})[:24])
+        case.assertIs(value['passed'], passed)
+        case.assertIs(value['passed'], not value['issues'])
+        case.assertEqual(value['input_hashes'], {key: exact_content_hash(item) for key, item in
+            (('output', output), ('context', context), ('schema', schema), ('extensions', extensions))})
+        case.assertEqual(value['input_snapshot'], context['snapshot'])
+        case.assertEqual(value['check_subject']['role'], context['action']['role'])
+        return
+    if owner != 'repair':
+        raise ValueError('Unknown delivery input owner: ' + owner)
+    case.assertEqual(value['previous_output'], output)
+    for key, source in (('retry_bundle_ids', 'retry_bundle_ids'), ('bundle_results', 'bundles'), ('issues', 'issues')):
+        case.assertEqual(value[key], received[source])
+
+
+def assert_review_documents(case, value, *, owner, cycle=None, action=None,
+                            engine=None, workspace=None, request=None, sources=None):
+    """Bind documents to actual review returns and their exact owning records.
+
+    Pure cycles establish stage visibility; stored scenes and real Git tests
+    establish materialization. No production or packaging function is replaced.
+    """
+    import hashlib
+    from do_math import review_cycle as rc
+    from support.doc_code import documents, review_field_issues
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(review_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
+                         str(document))
+    if owner == 'role_review':
+        expected = rc.context_for(cycle, rc.review_action(action))
+        for key in ('proposal', 'proposal_digest', 'action', 'completed_results',
+                    'pending_findings', 'answer_requests'):
+            case.assertEqual(value.get(key), expected[key], key)
+        for key in ('identity_basis', 'policy_ref'):
+            case.assertEqual(key in value, key in expected)
+            if key in expected:
+                case.assertEqual(value[key], expected[key])
+        return
+    if owner == 'pending_findings':
+        case.assertTrue(value, 'a populated open finding must establish ref fields')
+        expected = rc.context_for(cycle, rc.review_action(action))['pending_findings']
+        case.assertEqual(value, expected)
+        case.assertEqual(value, [cycle['findings'][key] for key in cycle['pending_findings']])
+        return
+    if owner == 'review_research':
+        for key in ('id', 'request_digest', 'question'):
+            case.assertEqual(value.get(key), request[key], key)
+        case.assertEqual(value.get('proposal_digest'), cycle['proposal_digest'])
+        case.assertEqual(value.get('requesting_slot'), request['action']['slot'])
+        sources = request['source_records']
+        value = value.get('sources')
+    elif owner != 'review_sources':
+        raise ValueError('Unknown review input owner: ' + owner)
+    case.assertIsInstance(value, list)
+    case.assertTrue(value, 'a populated fixed source must establish ref fields')
+    case.assertEqual(len(value), len(sources))
+    root = Path(workspace).resolve()
+    for index, (actual, fixed) in enumerate(zip(value, sources, strict=True)):
+        case.assertEqual({k: v for k, v in actual.items() if k != 'local_path'},
+                         {k: v for k, v in fixed.items() if k != 'inline'})
+        suffix = '.json' if 'inline' in fixed else Path(fixed['artifact_ref']).suffix
+        expected_path = f"input/review-research/{index:04d}-{fixed['sha256']}{suffix}"
+        case.assertEqual(actual.get('local_path'), expected_path)
+        local = (root / actual['local_path']).resolve()
+        case.assertTrue(local.is_relative_to(root / 'input' / 'review-research'))
+        raw = local.read_bytes()
+        case.assertEqual(hashlib.sha256(raw).hexdigest(), fixed['sha256'])
+        case.assertEqual(len(raw), fixed['bytes'])
+        original = (rc.inline_source_bytes(fixed) if 'inline' in fixed else
+                    engine.store.read(fixed['artifact_ref'], fixed['snapshot']))
+        case.assertEqual(raw, original)
+
+
+def observe_review_documents(case, engine):
+    """Observe real final investigation inputs during an already existing flow."""
+    from contextlib import contextmanager
+    from support.provider_probes import ObservedCalls
+    from support.storage_probes import Returns
+    @contextmanager
+    def observe():
+        def capture(arguments):
+            return arguments['role'], arguments['context'], arguments['workspace']
+        with ObservedCalls(prepared=prepare_role_input, capture={'prepared': capture}) as starts:
+            def check(prepared):
+                role, source, workspace = starts.captured('prepared')[-1]
+                action = source['action']
+                if role == 'supplemental_research' and action.get('research_request_id'):
+                    cycle = engine.runtime['review_cycles'][action['review_cycle_id']]
+                    request = cycle['research'][action['research_request_id']]
+                    value = review_input_value(case, prepared['context'], 'review_research', workspace,
+                                               manifest=prepared['manifest'])
+                    case.assertEqual(value, source['review_research'])
+                    assert_review_documents(case, value, owner='review_research', cycle=cycle,
+                                            request=request, engine=engine, workspace=workspace)
+                    assert_review_documents(case, value['sources'], owner='review_sources',
+                                            sources=request['source_records'], engine=engine, workspace=workspace)
+                    return request['id']
+                return None
+            with Returns(prepare_role_input, snapshot=check) as returns:
+                yield returns.snapshots
+            case.assertEqual(len(starts.calls['prepared']), len(returns.snapshots))
+    return observe()
+
+
 def assert_result_documents(case, value, workspace, engine=None, *, owner, task_id=None,
                             expected=None, total=None, snapshot=None):
     """Check actual P02 values against documents, their origin and workspace bytes.

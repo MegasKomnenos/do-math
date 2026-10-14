@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "structure.test_doc_code",
+    "unit.test_submission_checks.CheckHistoryTests.test_documented_pass_is_bound_to_the_actual_candidate_and_check",
+    "sim.test_repair_routing.SubmissionReturnTests",
+    "sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input",
+    "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_current_proposal_message_restores_by_exact_ref_without_repeating_the_body",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\022\\tasks\\review-delivery\\evidence\\focus"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p022",
+    "TMP": "C:\\t\\p022",
+    "TMPDIR": "C:\\t\\p022",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "start": "2026-10-14T05:10:05.207678+00:00",
+  "exit_code": 0,
+  "pid": 37584,
+  "end": "2026-10-14T05:10:38.678468+00:00",
+  "changes": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

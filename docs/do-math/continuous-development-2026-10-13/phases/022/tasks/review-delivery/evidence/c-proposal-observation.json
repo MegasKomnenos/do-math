@@ -1,0 +1,886 @@
+{
+  "official_exit_code": 0,
+  "returns": [
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "5ae26ef8c3949094c0b950cd04c98368f806d99ef31221961feeefab71d2eb7d",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-000.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "964f9ead0ab1e77a1a7a167d8f1c919e9af7402e76893676a81b383dd097aa79",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-001.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "90eb48c687bd622def3358a2cad92314ffa0377d23d39b7cd51ad785f5e19b3f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-002.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "90eb48c687bd622def3358a2cad92314ffa0377d23d39b7cd51ad785f5e19b3f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-003.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "90eb48c687bd622def3358a2cad92314ffa0377d23d39b7cd51ad785f5e19b3f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-004.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "f414a2e01861bd8be01743760900154606b528fdba43d460cbd6c45461ab279f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-005.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f414a2e01861bd8be01743760900154606b528fdba43d460cbd6c45461ab279f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-006.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "f414a2e01861bd8be01743760900154606b528fdba43d460cbd6c45461ab279f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-007.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f414a2e01861bd8be01743760900154606b528fdba43d460cbd6c45461ab279f",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-008.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "92824ff221ac17d7f4113af6dc51e1bbe5cf6c52331097c68ff279f60c090ac4",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-009.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "92824ff221ac17d7f4113af6dc51e1bbe5cf6c52331097c68ff279f60c090ac4",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-010.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "92824ff221ac17d7f4113af6dc51e1bbe5cf6c52331097c68ff279f60c090ac4",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-011.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "92824ff221ac17d7f4113af6dc51e1bbe5cf6c52331097c68ff279f60c090ac4",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-012.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "75ff32629f5865c9edf2058414d3cc06b43152edd42c9cfc8c15c8363df3ea6e",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-013.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "75ff32629f5865c9edf2058414d3cc06b43152edd42c9cfc8c15c8363df3ea6e",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-014.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "75ff32629f5865c9edf2058414d3cc06b43152edd42c9cfc8c15c8363df3ea6e",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-015.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "75ff32629f5865c9edf2058414d3cc06b43152edd42c9cfc8c15c8363df3ea6e",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-016.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "c4953bbd70819cafd55ea09486ea3daf8efc94f2a2e73bd77fbc291633c5fc42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-017.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "c4953bbd70819cafd55ea09486ea3daf8efc94f2a2e73bd77fbc291633c5fc42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-018.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-019.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-020.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-021.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-022.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-023.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-024.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-025.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-026.json"
+    },
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-027.json"
+    },
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-028.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-029.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-030.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-031.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-032.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-033.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-034.json"
+    },
+    {
+      "stage": "answer",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-035.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-036.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-037.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-038.json"
+    },
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-039.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-040.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-041.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-042.json"
+    },
+    {
+      "stage": "answer",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-043.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-044.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-045.json"
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-046.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-047.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "44620220111544fce24eff65026f28c87f49a8b0af7189f707e8568eab2fd20b",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-048.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-049.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "fdd8e31267ff28cb9f08cf026ecff097477fe3e5f63ff78bfc8239a1b3734db6",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-050.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-051.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-052.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-053.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-054.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-055.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-056.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-057.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-058.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "f7c3843a16571ffa719542f8882263ff7029c48175facc946969ae8df2363b62",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-059.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f7c3843a16571ffa719542f8882263ff7029c48175facc946969ae8df2363b62",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-060.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "f7c3843a16571ffa719542f8882263ff7029c48175facc946969ae8df2363b62",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-061.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f7c3843a16571ffa719542f8882263ff7029c48175facc946969ae8df2363b62",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-062.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-063.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-064.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-065.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-066.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "1a40b98d08b3339bc133961085277e544bc448351faf64ada29b40e2f0578a40",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-067.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "1a40b98d08b3339bc133961085277e544bc448351faf64ada29b40e2f0578a40",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-068.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "1a40b98d08b3339bc133961085277e544bc448351faf64ada29b40e2f0578a40",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-069.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-070.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "9e4d4bf2907127edf0d30ded09659b82de4e3884293a0118c513c4c15b897f42",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-071.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "f76533526fc5463a5f92347b8f80d682571a18e3073b13b028c7878c48065f24",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-072.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f76533526fc5463a5f92347b8f80d682571a18e3073b13b028c7878c48065f24",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-073.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-1",
+      "proposal_digest": "f76533526fc5463a5f92347b8f80d682571a18e3073b13b028c7878c48065f24",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-074.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "f76533526fc5463a5f92347b8f80d682571a18e3073b13b028c7878c48065f24",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-075.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "42c00ab455a979d3935f5b79122ba76d2caf202e5883b78e5544e62db4db9989",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-076.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "42c00ab455a979d3935f5b79122ba76d2caf202e5883b78e5544e62db4db9989",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-077.json"
+    },
+    {
+      "stage": "scope",
+      "slot": "scope",
+      "proposal_digest": "80f1be73ef9d4cc982083bda766439dedaa9f76cfecb3343390b6e70905c78cb",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-078.json"
+    },
+    {
+      "stage": "initial",
+      "slot": "initial-0",
+      "proposal_digest": "80f1be73ef9d4cc982083bda766439dedaa9f76cfecb3343390b6e70905c78cb",
+      "paths": [
+        "context.role_review.proposal"
+      ],
+      "count": 1,
+      "expected_count": 1,
+      "actual_return_file": "c-return-079.json"
+    }
+  ],
+  "satisfied": true
+}

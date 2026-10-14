@@ -151,6 +151,51 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         self.engine._save({'runtime/artifacts/unrelated/note.txt': b'unrelated publication'})
         head = self.engine.head
         context = self.engine._review_research_context(action, self.root / 'frozen')
+        from support.engine_context import assert_review_documents
+        cycle = self.engine.runtime['review_cycles'][cid]
+        assert_review_documents(self, context['review_research'], owner='review_research', cycle=cycle,
+                                request=request, engine=self.engine, workspace=self.root / 'frozen')
+        assert_review_documents(self, context['review_research']['sources'], owner='review_sources',
+                                sources=request['source_records'], engine=self.engine, workspace=self.root / 'frozen')
+        workspace = self.root / 'frozen'
+        final = context['review_research']
+        for field in ('question', 'id', 'request_digest', 'proposal_digest', 'sources'):
+            changed = deepcopy(final)
+            del changed[field]
+            with self.subTest(missing=field), self.assertRaises(AssertionError):
+                assert_review_documents(self, changed, owner='review_research', cycle=cycle, request=request,
+                                        engine=self.engine, workspace=workspace)
+        borrowed = workspace / 'input' / 'borrowed.json'
+        borrowed.write_bytes((workspace / final['sources'][0]['local_path']).read_bytes())
+        for field in ('ref', 'local_path', 'sha256', 'bytes'):
+            changed = deepcopy(final['sources'])
+            del changed[0][field]
+            with self.subTest(source_missing=field), self.assertRaises(AssertionError):
+                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
+                                        engine=self.engine, workspace=workspace)
+        for fault in ('borrowed_path', 'general_sources', 'other_ref'):
+            changed = deepcopy(final['sources'])
+            if fault == 'borrowed_path':
+                changed[0]['local_path'] = 'input/borrowed.json'
+            elif fault == 'general_sources':
+                changed[0] = {'id': changed[0]['ref'], 'path': changed[0]['local_path'],
+                              'sha256': changed[0]['sha256'], 'bytes': changed[0]['bytes']}
+            else:
+                changed[0]['ref'] = changed[1]['ref']
+            with self.subTest(source_fault=fault), self.assertRaises(AssertionError):
+                assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
+                                        engine=self.engine, workspace=workspace)
+        local = workspace / final['sources'][0]['local_path']
+        original = local.read_bytes()
+        local.write_bytes(b'damaged delivered source')
+        with self.assertRaises(AssertionError):
+            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
+                                    engine=self.engine, workspace=workspace)
+        local.unlink()
+        with self.assertRaises(FileNotFoundError):
+            assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
+                                    engine=self.engine, workspace=workspace)
+        local.write_bytes(original)
         self.assertEqual(context['review_research']['question'], request['question'])
         self.assertEqual(context['review_research']['request_digest'], request['request_digest'])
         self.assertEqual(context['proposal'], self.engine.runtime['review_cycles'][cid]['proposal'])
@@ -216,3 +261,12 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
                               'sha256': source['sha256'], 'bytes': len(raw)})
         visible = self.engine._materialize_research_sources([row], self.root / 'restored-frozen', slot=action['slot'])
         self.assertEqual((self.root / 'restored-frozen' / visible[0]['local_path']).read_bytes(), raw)
+        from support.engine_context import assert_review_documents
+        assert_review_documents(self, visible, owner='review_sources', sources=[row], engine=self.engine,
+                                workspace=self.root / 'restored-frozen')
+        for field in ('snapshot', 'artifact_ref', 'ref'):
+            changed = deepcopy(visible)
+            changed[0][field] = 'another-source-coordinate'
+            with self.subTest(artifact_coordinate=field), self.assertRaises(AssertionError):
+                assert_review_documents(self, changed, owner='review_sources', sources=[row], engine=self.engine,
+                                        workspace=self.root / 'restored-frozen')

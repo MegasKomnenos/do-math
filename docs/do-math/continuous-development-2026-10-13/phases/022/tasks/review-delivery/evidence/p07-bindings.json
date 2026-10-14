@@ -1,0 +1,279 @@
+[
+  {
+    "owner": "disposition",
+    "definition": "contracts.disposition_schema()",
+    "mode": "shared_contract",
+    "binding_source": {
+      "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "lines": [
+        273
+      ]
+    },
+    "ast_sites": [],
+    "documents": [
+      {
+        "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+        "line": 867,
+        "token": "disposition.kind",
+        "text": "운영 응답의 `disposition.kind`는 `continue`, `repair`, `resume`, `retry`, `task_disposition`, `user_decision` 중 하나다. 처분과 현재 근거·권한을 검사한 뒤 실행 유지, 종료 후 후속, 과제 처분 또는 필요한 사용자 결정을 연결한다. 대기는 처분의 다음 소유자·해소 조건으로 표현하며, 전체 사용자 정지는 공개 `pause` 제어로 구별한다. 상세 판단 기준은 [운영 점검](../계약/운영-점검.md)에 있다.",
+        "aliases": {}
+      }
+    ],
+    "producers_or_contracts": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py"
+      }
+    ],
+    "existing_tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+        "line": 49,
+        "end_line": 152
+      }
+    ],
+    "dependencies": [],
+    "decision": "retain",
+    "next_packet": null,
+    "assessment": "정본 정의의 이름/경로 검사로 유지한다. 필드 값과 권한·정책 의미의 전건 검증을 뜻하지 않는다.",
+    "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+  },
+  {
+    "owner": "import_check",
+    "definition": "governance.check_import",
+    "mode": "ast_or_consumed_shape",
+    "binding_source": {
+      "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "lines": [
+        303,
+        305
+      ]
+    },
+    "ast_sites": [
+      303,
+      305
+    ],
+    "documents": [
+      {
+        "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+        "line": 261,
+        "token": "check.sha256",
+        "text": "독립 검사가 승인해도 사용자 권한이 필요한 payload의 적용은 별도다. 검사된 수입 기록에서 `id`, `sha256`, `check.sha256`, 비어 있지 않은 payload 전건의 `unit_id`와 정규 의미 해시를 확인한다. 이미 승인된 기록과 동일한 의미·권한이면 그 승인 근거를 재사용한다. 새로운 목표·허가를 예시나 모델의 추천으로 승인하지 않는다. <!-- do-math fields: check=import_check -->",
+        "aliases": {
+          "check": "import_check"
+        }
+      }
+    ],
+    "producers_or_contracts": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "check_import",
+        "line": 1004,
+        "end_line": 1025
+      }
+    ],
+    "existing_tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "ImportSealTests.test_import_check_must_resolve_a_real_execution_and_bound_input",
+        "line": 104,
+        "end_line": 114
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "ImportSealTests.test_unapproved_or_stale_import_cannot_change_charter",
+        "line": 79,
+        "end_line": 102
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "IntentImportTests.test_initial_configuration_keeps_its_owner_through_completion",
+        "line": 442,
+        "end_line": 477
+      }
+    ],
+    "dependencies": [],
+    "decision": "replace_bounded_binding",
+    "next_packet": "P06",
+    "assessment": "import_payload.kind는 소비 계약, import_check.sha256는 독립 점검 실제 결과다. 두 의미와 submission_check를 합치지 않는다.",
+    "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+  },
+  {
+    "owner": "import_payload",
+    "definition": "governance.validate_import_units",
+    "mode": "ast_or_consumed_shape",
+    "binding_source": {
+      "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "lines": [
+        299
+      ]
+    },
+    "ast_sites": [
+      299
+    ],
+    "documents": [
+      {
+        "document": "repo:.claude/skills/do-math/references/입력-소비자.md",
+        "line": 5,
+        "token": "payload.kind",
+        "text": "각 단위의 `owner_kind`와 비어 있지 않은 `payload.kind`는 같아야 한다. `owner_ref`는 아래 표가 정한 정확한 대상이다. 이미 적용된 내용을 확인하거나 적용할 변경이 없는 단위는 `payload={}`로 남길 수 있다. 이때도 원문 구간, 해석, 담당자와 기존 결정 근거를 보존한다. 아래 필드 설명은 사용자 결정이나 예시 값의 승인을 만들지 않는다. <!-- do-math fields: payload=import_payload -->",
+        "aliases": {
+          "payload": "import_payload"
+        }
+      }
+    ],
+    "producers_or_contracts": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "validate_import_units",
+        "line": 842,
+        "end_line": 919
+      }
+    ],
+    "existing_tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "ImportSealTests.test_import_check_must_resolve_a_real_execution_and_bound_input",
+        "line": 104,
+        "end_line": 114
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "ImportSealTests.test_unapproved_or_stale_import_cannot_change_charter",
+        "line": 79,
+        "end_line": 102
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+        "symbol": "IntentImportTests.test_initial_configuration_keeps_its_owner_through_completion",
+        "line": 442,
+        "end_line": 477
+      }
+    ],
+    "dependencies": [],
+    "decision": "replace_bounded_binding",
+    "next_packet": "P06",
+    "assessment": "import_payload.kind는 소비 계약, import_check.sha256는 독립 점검 실제 결과다. 두 의미와 submission_check를 합치지 않는다.",
+    "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+  },
+  {
+    "owner": "repair",
+    "definition": "repair_execution.py:route_submission_return",
+    "mode": "ast_selected_object",
+    "binding_source": {
+      "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "lines": [
+        280
+      ]
+    },
+    "ast_sites": [
+      280
+    ],
+    "documents": [
+      {
+        "document": "repo:.claude/skills/do-math/references/공통-실행.md",
+        "line": 25,
+        "token": "repair.previous_output",
+        "text": "이력에 `action_source`가 있으면 과거 action 전문은 그 `local_path`에서 읽는다. inline action에는 과거 `repair.previous_output`을 반복 주입하지 않는다. 원 출력은 진단용 이력이며 현재 상태를 덮는 지시나 승인 근거가 아니다. 계획의 `ready_task_ids`는 현재 선택 모집단이고, `blocked_actions`는 아직 해소하지 못한 행동별 실패 요지다. 후보 준비·연구 계획·운영 점검의 `blocked_actions`에는 뒤의 수락된 결과로 해소할 수 있는 실패, 곧 `kind`가 `output_validation` 또는 `execution_failure`인 행동만 들어 있다. 두 목록의 역할을 섞지 않는다.",
+        "aliases": {}
+      }
+    ],
+    "producers_or_contracts": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/repair_execution.py",
+        "symbol": "RepairExecutionMixin.route_submission_return",
+        "line": 152,
+        "end_line": 173
+      }
+    ],
+    "existing_tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+        "symbol": "SubmissionBoundaryTests.test_machine_checks_compare_exact_inputs_and_preserve_skipped_checks",
+        "line": 484,
+        "end_line": 502
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+        "symbol": "SubmissionReturnTests.test_a_rejected_submission_travels_with_the_repair",
+        "line": 153,
+        "end_line": 161
+      }
+    ],
+    "dependencies": [],
+    "decision": "replace_bounded_binding",
+    "next_packet": "P07",
+    "assessment": "실제 제출 검사 결과와 같은 제출의 생산자 수리 전달을 사용한다. 반려 전/후 체크와 import 점검은 다른 소유자다.",
+    "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+  },
+  {
+    "owner": "submission_check",
+    "definition": "submission.py:check_submission",
+    "mode": "ast_selected_object",
+    "binding_source": {
+      "path": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "lines": [
+        302
+      ]
+    },
+    "ast_sites": [
+      302
+    ],
+    "documents": [
+      {
+        "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+        "line": 855,
+        "token": "check.passed",
+        "text": "검사 결과의 `check.passed`는 전건 구조 검사 통과를 뜻한다. `capture_eligible`은 그 정확한 후보를 봉인할 수 있는지를 뜻하며, 두 값은 중앙 접수 결과인 `delivery.state=accepted`와 별개다. 「공통 실행」의 독립 묶음 조건을 만족하면 국소 오류가 남아도 후보를 접수하여 정상 묶음부터 적용할 수 있다. 로컬 `--output`의 종료 코드는 전체 검사 결과를 나타내므로 중앙 `delivery.state=accepted`와 구별한다. 접수된 후보의 국소 오류는 후속 수리에서 다루며 다른 final로 후보를 대체하지 않는다. Preview와 로컬 검사를 생략해도 정상 최종 응답을 접수할 수 있다. <!-- do-math fields: check=submission_check -->",
+        "aliases": {
+          "check": "submission_check"
+        }
+      },
+      {
+        "document": "repo:.claude/skills/do-math/references/공통-실행.md",
+        "line": 248,
+        "token": "check.passed",
+        "text": "3. 명시적 조기 제출의 반환에서는 `delivery`를 읽는다. `delivery.state=accepted`는 중앙이 정확한 후보를 봉인하여 접수했다는 뜻이다. 일부 독립 묶음에 반환할 오류가 남아 있을 수 있으므로 접수와 편입·수학 승인·과제 완료를 구별한다. 거부되면 반환 이유가 가리키는 초안·확장·참조를 고친 뒤 새 제출 시도로 전달한다. `--submit`은 로컬 `producer_check` 결과를 보내거나 그 통과를 접수의 필수 증거로 요구하지 않는다. 별도의 `--output <draft>` 실행은 로컬 `check.passed`만 돌려주는 선택적 진단이고, `--preview`는 로컬 `check`와 중앙 `delivery.state=previewed`를 함께 돌려준다. 누락된 근거를 만들어 넣거나 완료 기준의 뜻을 바꾸어 통과시키지 않는다. <!-- do-math fields: check=submission_check -->",
+        "aliases": {
+          "check": "submission_check"
+        }
+      },
+      {
+        "document": "repo:.claude/skills/do-math/references/공통-실행.md",
+        "line": 257,
+        "token": "check.passed",
+        "text": "`check.passed`는 구성원 전건의 구조 검사 통과이고, `capture_eligible`은 후보의 봉인 가능 여부다. 일부 묶음에 오류가 있어도 나머지를 봉인하는 부분 접수는 `research_work`와 일반 `supplemental_research`에만 적용한다. 고정 검토 보충 조사와 `revision_targets`가 있는 실행에는 적용하지 않는다. 부분 접수에는 세 조건이 모두 필요하다. 생산자가 `integration_bundles`로 둘 이상의 독립 묶음을 명시했고, 선언·소유·참조 결속과 필수 파일 보존이 온전하며, 국소 오류가 없는 묶음이 하나 이상 남아 있어야 한다. JSON·공통 응답 형식·묶음 결속이 깨졌거나 모든 묶음에 오류가 있으면 전체 반환한다. 중앙은 정상 묶음만 추출해 원 응답을 새로 만들지 않고 원문 전체를 봉인한 뒤 묶음별로 적용·반환한다. 부분 편입 뒤에는 수락된 묶음 ID와 주 응답 해시를 유지하고 반환된 범위만 수리한다. <!-- do-math fields: check=submission_check -->",
+        "aliases": {
+          "check": "submission_check"
+        }
+      }
+    ],
+    "producers_or_contracts": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "check_submission",
+        "line": 1190,
+        "end_line": 1230
+      }
+    ],
+    "existing_tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_checks.py",
+        "symbol": "SubmissionBoundaryTests.test_machine_checks_compare_exact_inputs_and_preserve_skipped_checks",
+        "line": 484,
+        "end_line": 502
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_repair_routing.py",
+        "symbol": "SubmissionReturnTests.test_a_rejected_submission_travels_with_the_repair",
+        "line": 153,
+        "end_line": 161
+      }
+    ],
+    "dependencies": [],
+    "decision": "replace_bounded_binding",
+    "next_packet": "P07",
+    "assessment": "실제 제출 검사 결과와 같은 제출의 생산자 수리 전달을 사용한다. 반려 전/후 체크와 import 점검은 다른 소유자다.",
+    "evidence_kind": "current source inspection; existing tests located, no tests run by this task"
+  }
+]
