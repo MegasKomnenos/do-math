@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/027/tasks/doc-policy/evidence/verify.py"
+  ],
+  "pid": 23960,
+  "state": "finished",
+  "exit_code": 0,
+  "source_changes": []
+}

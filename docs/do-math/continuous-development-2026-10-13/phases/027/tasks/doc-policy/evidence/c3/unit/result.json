@@ -1,0 +1,288 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 46,
+  "rows": [
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_allocation_duplicates_and_judge_count",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_answer_batch_hides_peer_results_and_covers_assignments",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_answer_new_findings_and_split_reach_fresh_judgment",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_approved_objection_closes_mismatch",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_incomplete_transcript_manifest_is_a_local_restoration_error",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_initial_barrier_and_blindness",
+      "outcome": "passed",
+      "seconds": 0.030999999959021807,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_initial_unanimity_and_purity",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_judge_new_findings_get_organizer_assignment_and_answer",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_manifest_peer_and_judge_origin_checks",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_new_finding_at_cap_cannot_be_approved",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_organizer_omission_forgery_and_owner_checks",
+      "outcome": "passed",
+      "seconds": 0.062000000034458935,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_partial_judges_never_aggregate_or_leak",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_proposal_mutation_and_execution_identity",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_rejection_returns_to_original_slot_and_same_judges",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_revision_full_restart_and_old_output_blocked",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_round_limit_split_votes_unresolved_and_last_rejection",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_round_three_reuses_slots_without_execution_keys_colliding",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_scope_false_match_rejected_and_incomplete_not_reviewed",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_stage_schema_is_specific",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_review_cycle_stages.ReviewCycleTests.test_transcript_restore_reference_and_integrity",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_a_boundary_may_not_silently_depend_on_a_sibling_under_revision",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_a_cited_record_must_exist",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_a_cited_sibling_contract_is_declared_at_its_current_revision",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_a_pending_revision_of_the_sibling_counts_as_under_revision",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_a_revision_request_on_the_sibling_counts_as_under_revision",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_every_candidate_needs_exactly_one_self_check",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_primary_and_extension_dependencies_both_wait_for_a_sibling_under_revision",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_revision_condition_is_matched_by_existing_id",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_self_check_declares_only_sibling_boundaries",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_sibling_boundary_is_read_from_the_checker_task_not_its_detail_copy",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contract_checks.ContractCheckTests.test_title_and_revision_id_cannot_supply_two_conditions_for_one_candidate",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_academic_resolution_carries_real_evidence_references",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_declared_role_documents_are_complete",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_every_role_has_closed_schema",
+      "outcome": "passed",
+      "seconds": 0.1720000000204891,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_exact_schema_identity_distinguishes_variants_and_is_idempotent",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_invalid_decisions_fail",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_knowledge_change_requires_a_declared_impact_set",
+      "outcome": "passed",
+      "seconds": 0.0779999999795109,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_manifest_is_optional_but_explicit_declarations_remain_typed",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_operational_response_uses_six_dispositions",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_plan_assessment_fields_are_required",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_profile_references_use_the_sealed_provider_identity",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_prompt_contains_actual_documents_context_and_schema",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_role_document_missing_fails",
+      "outcome": "passed",
+      "seconds": 0.0470000000204891,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_scope_planning_schema_reaches_domain_scope_validator",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_specialized_role_schema_uses_same_envelope",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_submission_contracts.ContractTests.test_structured_task_candidate_has_one_completion_authority",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "unit.test_review_cycle_stages": 0.2029999999795109,
+    "unit.test_submission_contract_checks": 0.125,
+    "unit.test_submission_contracts": 0.3440000000409782
+  }
+}

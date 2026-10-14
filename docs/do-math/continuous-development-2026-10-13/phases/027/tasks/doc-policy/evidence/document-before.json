@@ -1,0 +1,62 @@
+[
+  {
+    "name": "identity-normal",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "initial-findings-typo",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "organize-decision-borrow",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "sibling-normal",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "sibling-field-typo",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "supplement-task-title-borrow",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "operator-normal",
+    "owner": "operator",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "operator-invent-bare",
+    "owner": "operator",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "operator-invent-do_math.py",
+    "owner": "operator",
+    "original_checks": [],
+    "new_issues": null
+  },
+  {
+    "name": "operator-invent-$dmCli",
+    "owner": "operator",
+    "original_checks": [],
+    "new_issues": null
+  }
+]

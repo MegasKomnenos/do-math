@@ -1,0 +1,27 @@
+Open known defects: 0
+[structure] 38 tests
+[sim] 5 tests
+Over budget: 1 tests
+      2.359s > 2.0s sim.test_lifecycle_engine_public.PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation
+{"complete": true, "successful": false, "counts": {"passed": 40, "failed": 3}, "group_seconds": {"structure": 2.3, "sim": 8.8}, "total_seconds": 11.1}
+    2.359s passed             sim.test_lifecycle_engine_public.PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation
+    1.375s failed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
+    0.891s passed             sim.test_operator_finish_cli.OperatorCommandTests.test_normal_probe_observes_without_calling_a_model_or_starting_research
+    0.687s failed             sim.test_initialization_controls.InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved
+    0.375s passed             sim.test_initialization_controls.InitialAdoptionTests.test_explicit_review_policy_takes_precedence_over_default_adoption
+    0.375s passed             sim.test_operator_finish_cli.OperatorCommandTests.test_probe_status_failure_returns_its_error_without_a_required_model_marker
+    0.187s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_result_inputs_have_a_document_check_in_the_assigned_method
+    0.094s passed             structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner
+    0.094s passed             structure.test_doc_code.DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_governance_has_the_assigned_actual_document_check
+    0.078s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method
+    0.047s passed             structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners
+    0.047s passed             structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema
+    0.047s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_delivery_has_the_assigned_actual_document_check
+    0.046s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_waits_have_the_assigned_actual_document_check
+    0.032s passed             structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner
+    0.032s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_reviews_have_their_actual_document_check
+    0.031s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_tools_have_their_actual_document_check
+    0.016s passed             structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command
+    0.016s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_trust_has_the_assigned_actual_document_check
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\027\tasks\doc-policy\evidence\f\report.json

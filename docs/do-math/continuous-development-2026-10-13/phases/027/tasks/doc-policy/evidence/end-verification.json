@@ -1,0 +1,24 @@
+{
+  "files": 2675,
+  "changes": [
+    ".agents/skills/do-math/references/초기화-운전.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/계약/독립-운영.md",
+    ".claude/skills/do-math/references/초기화-운전.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/계약/독립-운영.md"
+  ],
+  "outside_writes": []
+}

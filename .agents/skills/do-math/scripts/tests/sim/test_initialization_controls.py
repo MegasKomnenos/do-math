@@ -258,6 +258,51 @@ class InitialAdoptionTests(unittest.TestCase):
     def adopt(self, **change):
         self.engine._initialization_control(change, 'UI-adopt')
 
+    def assert_public_policy_saved(self, expected, *, text, **change):
+        request = self.sim.control('decision', text=text, config={'change': {
+            'kind': 'initialization', 'operation': 'adopt',
+            'config_sha256': self.sim.engine.status()['config_sha256'], **change}})
+        self.sim.engine.process_controls()
+        self.assertEqual(self.sim.engine.control_result(request['request_id'])['effect'], 'applied')
+        digest = exact_content_hash(expected)
+        self.assertEqual(self.sim.instance['review_policy'], expected)
+        self.assertEqual(self.sim.instance['lifecycle']['adoption']['review_policy_sha256'], digest)
+        _, stored, _ = self.sim.engine.store.load()
+        self.assertEqual(stored['review_policy'], expected)
+        self.assertEqual(stored['lifecycle']['adoption']['review_policy_sha256'], digest)
+        self.sim.restart()
+        self.engine = self.sim.engine
+        self.assertEqual(self.sim.instance['review_policy'], expected)
+        self.assertEqual(self.sim.instance['lifecycle']['adoption']['review_policy_sha256'], digest)
+        self.assertEqual(self.sim.engine.control_result(request['request_id'])['effect'], 'applied')
+
+    def test_default_review_policy_is_generated_from_current_config_and_saved(self):
+        """Public configure/adoption, storage and restart for absent and different existing policies."""
+        self.assertNotIn('review_policy', self.sim.instance)
+        request = self.sim.control('configure', config={'reviewers': 3, 'review_rounds': 2})
+        self.sim.engine.process_controls()
+        self.assertEqual(self.sim.engine.control_result(request['request_id'])['effect'], 'applied')
+        expected = {'id': 'review-policy-v5-default', 'minimum_initial_slots': 3,
+                    'round_limit': 2, 'activity_execution_limit': 17,
+                    'judge_slots': ['judge-0', 'judge-1', 'judge-2'],
+                    'required_perspectives': [], 'overflow_disposition': 'unresolved'}
+        self.assert_public_policy_saved(expected, text='adopt configured default without prior policy',
+                                        adopt_default_review_policy=True)
+        other = {**expected, 'id': 'other-policy', 'minimum_initial_slots': 1,
+                 'round_limit': 1, 'activity_execution_limit': 5,
+                 'required_perspectives': ['domain'], 'overflow_disposition': 'defer'}
+        self.assert_public_policy_saved(other, text='adopt another valid policy', review_policy=other)
+        self.assert_public_policy_saved(expected, text='replace prior policy with configured default',
+                                        adopt_default_review_policy=True)
+
+    def test_explicit_review_policy_takes_precedence_over_default_adoption(self):
+        expected = {'id': 'explicit-policy', 'minimum_initial_slots': 1,
+                    'round_limit': 1, 'activity_execution_limit': 9,
+                    'judge_slots': ['judge-a', 'judge-b', 'judge-c'],
+                    'required_perspectives': ['domain'], 'overflow_disposition': 'defer'}
+        self.assert_public_policy_saved(expected, text='explicit policy with default flag',
+                                        review_policy=expected, adopt_default_review_policy=True)
+
     def test_each_adoption_field_refuses_what_it_does_not_name(self):
         research = next(profile_ref(p) for p in self.engine.instance['execution_profiles'].values()
                         if p['role'] == 'research_work')

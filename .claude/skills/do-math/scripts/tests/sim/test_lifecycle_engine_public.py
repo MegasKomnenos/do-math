@@ -272,9 +272,26 @@ class PublicControlBoundaryTests(unittest.TestCase):
                                          'paused' if policy == 'pause' else status_before)
 
     def test_resume_requires_a_live_generation_newer_than_the_lost_generation(self):
+        """About 2.3 s: four public attachments with storage/restart checks, loss and explicit resume."""
         sim = Sim.activated()
-        applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+        self.assertEqual(sim.instance['conversation_loss_policy'], 'continue_authorized')
+
+        def assert_saved_policy(policy, generation, request):
+            def check(instance, runtime):
+                self.assertEqual(instance['conversation_loss_policy'], policy)
+                row = runtime['conversations']['lease']
+                self.assertEqual(row['disconnect_policy'], policy)
+                self.assertEqual(row['generation'], generation)
+                self.assertEqual(row['source_ref'], request['request_id'])
+            check(sim.instance, sim.runtime)
+            _, stored, runtime = sim.engine.store.load()
+            check(stored, runtime)
+            sim.restart()
+            check(sim.instance, sim.runtime)
+
+        request = applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
             'generation': 1, 'lease_seconds': 10, 'disconnect_policy': 'pause'})
+        assert_saved_policy('pause', 1, request)
         applied(sim, 'conversation', config={'operation': 'detach', 'id': 'lease',
             'generation': 1})
         self.assertFalse(sim.engine._conversation_live())
@@ -287,11 +304,18 @@ class PublicControlBoundaryTests(unittest.TestCase):
                             'generation': generation, 'lease_seconds': 10}, 'same-generation')
                     self.assertFalse(sim.engine._conversation_live())
                 else:
-                    applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+                    request = applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
                         'generation': generation, 'lease_seconds': 10})
+                    assert_saved_policy('pause', generation, request)
                     self.assertTrue(sim.engine._conversation_live())
                     applied(sim, 'resume')
                     self.assertEqual(sim.instance['lifecycle']['state'], 'active')
+        request = applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+            'generation': 3, 'lease_seconds': 10, 'disconnect_policy': 'continue_authorized'})
+        assert_saved_policy('continue_authorized', 3, request)
+        request = applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+            'generation': 4, 'lease_seconds': 10})
+        assert_saved_policy('continue_authorized', 4, request)
 
     def test_semantically_invalid_conversations_preserve_the_live_connection(self):
         sim = Sim.activated()

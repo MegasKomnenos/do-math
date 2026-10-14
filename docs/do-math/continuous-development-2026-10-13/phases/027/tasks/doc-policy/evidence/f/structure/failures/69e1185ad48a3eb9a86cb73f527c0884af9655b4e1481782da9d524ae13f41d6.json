@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_doc_code.py\", line 571, in test_documented_commands_and_options_exist\n    self.assertEqual(sorted(set(missing)), [])\nAssertionError: Lists differ: [('references/CLI-실행-계약.md', 'command mode[96 chars]se')] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('references/CLI-실행-계약.md', 'command mode', 'operator', 'install|uninstall|status|start|start-operator|check|probe|engine|wake|hold|release')\n\n+ []\n- [('references/CLI-실행-계약.md',\n-   'command mode',\n-   'operator',\n-   'install|uninstall|status|start|start-operator|check|probe|engine|wake|hold|release')]\n"
+    ]
+  }
+}

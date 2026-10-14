@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_initialization_controls.InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_initialization_controls.py\", line 294, in test_default_review_policy_is_generated_from_current_config_and_saved\n    self.assert_public_policy_saved(expected, adopt_default_review_policy=True)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_initialization_controls.py\", line 268, in assert_public_policy_saved\n    self.assertEqual(self.sim.instance['review_policy'], expected)\nAssertionError: {'activity_execution_limit': 5, 'id': 'othe[171 chars]': 1} != {'id': 'review-policy-v5-default', 'minimum[181 chars]ved'}\nDiff is 723 characters long. Set self.maxDiff to None to see it.\n"
+    ]
+  }
+}

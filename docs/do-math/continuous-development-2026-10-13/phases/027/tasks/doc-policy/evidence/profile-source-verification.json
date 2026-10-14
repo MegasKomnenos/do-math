@@ -1,0 +1,950 @@
+{
+  "input": {
+    "meaning": "배정 역할의 입력 키와 중첩 원소. 저장 RECORDS와 _context/prepare_role_input의 최종 입력은 별도 소유자다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+        "symbol": "judgment_input_keys",
+        "line": 76,
+        "end_line": 104,
+        "sha256": "0312f31523828b63c6a45a39bac57cbab6cc669fbf8b77766d6ae1e1e0457077"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+        "symbol": "judgment_input_paths",
+        "line": 107,
+        "end_line": 143,
+        "sha256": "0312f31523828b63c6a45a39bac57cbab6cc669fbf8b77766d6ae1e1e0457077"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "symbol": "RECORDS",
+        "line": 164,
+        "end_line": 164,
+        "sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._context",
+        "line": 1555,
+        "end_line": 1935,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "symbol": "prepare_role_input",
+        "line": 590,
+        "end_line": 934,
+        "sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+        "line": 638,
+        "end_line": 655,
+        "sha256": "efb2f99163cbc490c3d098440828c4e38e9619a52bfb464de0788144d5766e09"
+      }
+    ]
+  },
+  "task": {
+    "meaning": "task 저장 계약과 후보 wire의 질문·scope·expected·의무·판정자. task.id/revision/producer_execution은 수신자가 붙이며 후보 output에는 저작하지 않는다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "TASK_CANDIDATE",
+        "line": 158,
+        "end_line": 166,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "PROGRESS",
+        "line": 154,
+        "end_line": 154,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "OBLIGATION",
+        "line": 153,
+        "end_line": 153,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "task_candidate_record",
+        "line": 47,
+        "end_line": 84,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "symbol": "validate_task_contract",
+        "line": 123,
+        "end_line": 134,
+        "sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+        "symbol": "ContractCheckTests.test_a_cited_sibling_contract_is_declared_at_its_current_revision",
+        "line": 80,
+        "end_line": 91,
+        "sha256": "e93ce5ccc9db4e4caac1f9b849b9bd56805a5b17ffc6f3669936ab7d2f8d7cde"
+      }
+    ]
+  },
+  "plan": {
+    "meaning": "research_plan 주 응답의 dispositions/task_assessments와 ready/returned 고정 모집단. 전문 판정 ID·scope 권위는 완료 의미의 별도 검사다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "SCHEMAS",
+        "line": 201,
+        "end_line": 220,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "PLAN_DISPOSITION",
+        "line": 177,
+        "end_line": 180,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "ITEM_DISPOSITION",
+        "line": 169,
+        "end_line": 172,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "symbol": "validate_plan_dispositions",
+        "line": 262,
+        "end_line": 303,
+        "sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "symbol": "validate_item_dispositions",
+        "line": 187,
+        "end_line": 235,
+        "sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_plan",
+        "line": 3585,
+        "end_line": 3605,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_planning_assessments.py",
+        "symbol": "AssessmentApplicationTests.test_plan_covers_every_ready_and_returned_task_and_rejects_double_disposition",
+        "line": 177,
+        "end_line": 191,
+        "sha256": "0b080eddd8718c81eb6e0d62650766927ca0d86355b1b97f63dc6d1a5902fc5e"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_planning_assessments.py",
+        "symbol": "AssessmentApplicationTests.test_foreign_stale_or_cycle_only_receipt_does_not_authorize_completion",
+        "line": 220,
+        "end_line": 237,
+        "sha256": "0b080eddd8718c81eb6e0d62650766927ca0d86355b1b97f63dc6d1a5902fc5e"
+      }
+    ]
+  },
+  "work": {
+    "meaning": "research_work 및 일반 supplemental_research 주 응답. outcome은 수행 보고이며 과제 완료·수학 인증이 아니다. knowledge.kind는 action_schema의 동적 등록 종류로 검사한다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "SCHEMAS",
+        "line": 201,
+        "end_line": 220,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "KNOWLEDGE",
+        "line": 126,
+        "end_line": 130,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "RELATION",
+        "line": 131,
+        "end_line": 131,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "action_schema",
+        "line": 233,
+        "end_line": 259,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "_payload_issues",
+        "line": 642,
+        "end_line": 1005,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply",
+        "line": 3122,
+        "end_line": 3308,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contracts.py",
+        "symbol": "ContractTests.test_every_role_has_closed_schema",
+        "line": 78,
+        "end_line": 98,
+        "sha256": "55dc0e93b8cbbf4d958682aa1c56dd92d9ef125f44b2f0903b1a90a768adfc38"
+      }
+    ]
+  },
+  "review": {
+    "meaning": "identity_review의 실제 stage_schema: scope/initial/organize/answer/judge는 서로 다른 응답. organize는 issues와 finding_refs/answer_role_slot_id이며 전체 decision이 없다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "stage_schema",
+        "line": 48,
+        "end_line": 82,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "validate_visible_output",
+        "line": 953,
+        "end_line": 967,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "accept_result",
+        "line": 1012,
+        "end_line": 1138,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "context_for",
+        "line": 1307,
+        "end_line": 1354,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py",
+        "symbol": "ReviewCycleTests.test_stage_schema_is_specific",
+        "line": 301,
+        "end_line": 306,
+        "sha256": "ea64dbfe47628b420ff865d94f3aaf05b6167cb528ea7afbebc204c296504af4"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_cycle_stages.py",
+        "symbol": "ReviewCycleTests.test_organizer_omission_forgery_and_owner_checks",
+        "line": 81,
+        "end_line": 108,
+        "sha256": "ea64dbfe47628b420ff865d94f3aaf05b6167cb528ea7afbebc204c296504af4"
+      }
+    ]
+  },
+  "review-scope": {
+    "meaning": "scope_assessment 출력의 자리/프로필/상한과 role_review의 scope_executions_used/minimum_scope_execution_limit/retained_reviewer_slots 입력을 구별. U+N+4와 U+2N+7은 minimum_scope_executions의 두 분기다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_policy.py",
+        "symbol": "SCOPE_ASSESSMENT",
+        "line": 17,
+        "end_line": 23,
+        "sha256": "e12022bc117c079624842e17049efac9d73afafa33c6069e2b346b40a9cf160a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_policy.py",
+        "symbol": "minimum_scope_executions",
+        "line": 70,
+        "end_line": 72,
+        "sha256": "e12022bc117c079624842e17049efac9d73afafa33c6069e2b346b40a9cf160a"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_policy.py",
+        "symbol": "validate_scope_assessment",
+        "line": 75,
+        "end_line": 105,
+        "sha256": "e12022bc117c079624842e17049efac9d73afafa33c6069e2b346b40a9cf160a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "validate_visible_output",
+        "line": 953,
+        "end_line": 967,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_scope_wire.py",
+        "symbol": "ScopeWireTests.test_one_real_response_contract_reaches_the_consumer",
+        "line": 75,
+        "end_line": 80,
+        "sha256": "309fffb1601e68b8ac33cf605aff6260480059aeb680faa2590abcd7045f8213"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_scope_wire.py",
+        "symbol": "ScopeWireTests.test_submission_checks_scope_with_the_conditions_the_review_accepts",
+        "line": 82,
+        "end_line": 112,
+        "sha256": "309fffb1601e68b8ac33cf605aff6260480059aeb680faa2590abcd7045f8213"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_policy_rejections.py",
+        "symbol": "PolicyRejectionTests.test_minimum_budget_includes_used_attempts_and_both_round_shapes",
+        "line": 95,
+        "end_line": 102,
+        "sha256": "98c48143535121631c5ab0b724cb60fa7157a86941c8a07a840c8b81d4c590b1"
+      }
+    ]
+  },
+  "research": {
+    "meaning": "검토 자리의 고정 질문 응답은 research_schema(research_request_id/request_digest/answer/outcome/scope_complete/evidence_refs). 일반 과제 조사 wire와 교환할 수 없다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "research_schema",
+        "line": 687,
+        "end_line": 692,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "research_request_schema",
+        "line": 695,
+        "end_line": 697,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "validate_research_answer",
+        "line": 715,
+        "end_line": 718,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "symbol": "validate_provisional",
+        "line": 706,
+        "end_line": 712,
+        "sha256": "c7487b12f6edd53e55f34340b5508bc9c093ff4e3eabef85ac97fc60dabd1d96"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "extension_schema",
+        "line": 160,
+        "end_line": 231,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_review_research_owner_contract.py",
+        "symbol": "ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication",
+        "line": 148,
+        "end_line": 205,
+        "sha256": "8f0af75f1426ee54e14d93741868d20521646b3c97e26106e97caa9ab943279c"
+      }
+    ]
+  },
+  "goal": {
+    "meaning": "goal_audit 주 응답 decision/reason/scope_complete와 추가 감사 additional_audits는 별도 계약. audit_ref/assessor/verdict/input_hashes는 audit 입력과 정확히 일치해야 한다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "SCHEMAS",
+        "line": 201,
+        "end_line": 220,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "additional_audit_schema",
+        "line": 255,
+        "end_line": 268,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "additional_audit_input",
+        "line": 234,
+        "end_line": 252,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "evaluate_goal_audits",
+        "line": 271,
+        "end_line": 287,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "validate_goal_additional_audits",
+        "line": 290,
+        "end_line": 303,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._context",
+        "line": 1555,
+        "end_line": 1935,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+        "line": 703,
+        "end_line": 724,
+        "sha256": "efb2f99163cbc490c3d098440828c4e38e9619a52bfb464de0788144d5766e09"
+      }
+    ]
+  },
+  "operational": {
+    "meaning": "operational_review 주 응답은 disposition(kind별 여섯 구조)이며 decision은 해당 응답의 주 필드가 아니다. basis_refs와 used_sources, 기술 후속과 task_assessments는 별도 검사.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "disposition_schema",
+        "line": 183,
+        "end_line": 199,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "symbol": "admissible_basis_refs",
+        "line": 32,
+        "end_line": 48,
+        "sha256": "c8e05d7c56601959f5bf7420de30f47b6f56d737909909600adb0221645cd653"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "symbol": "validate_disposition",
+        "line": 13,
+        "end_line": 29,
+        "sha256": "c8e05d7c56601959f5bf7420de30f47b6f56d737909909600adb0221645cd653"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "symbol": "require_basis_refs",
+        "line": 51,
+        "end_line": 56,
+        "sha256": "c8e05d7c56601959f5bf7420de30f47b6f56d737909909600adb0221645cd653"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_operational_disposition",
+        "line": 3422,
+        "end_line": 3462,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._response_schema",
+        "line": 1971,
+        "end_line": 2010,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners",
+        "line": 476,
+        "end_line": 482,
+        "sha256": "efb2f99163cbc490c3d098440828c4e38e9619a52bfb464de0788144d5766e09"
+      }
+    ]
+  },
+  "maintenance": {
+    "meaning": "일반 maintenance report/remaining_work와 initial_submission_diagnosis, kind_definition_check, impact_review 동적 응답을 구별. action.stage=impact_review의 확장은 금지된다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "action_schema",
+        "line": 233,
+        "end_line": 259,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._response_schema",
+        "line": 1971,
+        "end_line": 2010,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_kind_definition_check",
+        "line": 3393,
+        "end_line": 3420,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "_payload_issues",
+        "line": 642,
+        "end_line": 1005,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "symbol": "SchemaBuilderTests.test_schema_samples_reach_context_dependent_shapes",
+        "line": 242,
+        "end_line": 282,
+        "sha256": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+      }
+    ]
+  },
+  "intent": {
+    "meaning": "intent_interpretation의 interpret/check 분기. import_unit와 question_detail은 import_units/question_details 배열 원소의 산문 단수형이며 wire에 새 필드를 추가하지 않는다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "interpretation_schema",
+        "line": 1163,
+        "end_line": 1195,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "validate_import_units",
+        "line": 842,
+        "end_line": 919,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "prepare_import",
+        "line": 940,
+        "end_line": 978,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "check_import",
+        "line": 1004,
+        "end_line": 1025,
+        "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_governance_interpretation.py",
+        "symbol": "IntentConnections.test_failed_check_returns_to_authoring_with_findings",
+        "line": 77,
+        "end_line": 92,
+        "sha256": "25445f780afac970a72db0375dfa23acd1e001a155f4cebcce199bb122982544"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_governance_interpretation.py",
+        "symbol": "IntentConnections.test_check_cannot_apply_unresolved_proposed_changes",
+        "line": 94,
+        "end_line": 109,
+        "sha256": "25445f780afac970a72db0375dfa23acd1e001a155f4cebcce199bb122982544"
+      }
+    ]
+  },
+  "delegation": {
+    "meaning": "동적 delegation_judgment는 input_sha256/decision/reason이며 import_units 응답이 아니다. 위임 등록 금지 종류는 proposal_adoption/contract_limit_continuation.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._response_schema",
+        "line": 1971,
+        "end_line": 2010,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/delegations.py",
+        "symbol": "judgment_input",
+        "line": 100,
+        "end_line": 103,
+        "sha256": "aa58e67a9951de333ecf536d6c4cf2a7a539016c06a9c834164654c8a0ccd4a2"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_delegation_judgment",
+        "line": 1365,
+        "end_line": 1386,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "symbol": "SchemaBuilderTests.test_schema_samples_reach_context_dependent_shapes",
+        "line": 242,
+        "end_line": 282,
+        "sha256": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+      }
+    ]
+  },
+  "contract-review": {
+    "meaning": "task_contract_review의 item_reviews는 다섯 item_id 전건. 각 item.decision과 전체 계약 집계는 별도며 주 응답 전체 decision은 만들지 않는다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "CONTRACT_REVIEW_ITEMS",
+        "line": 173,
+        "end_line": 173,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "REVIEW_ITEM",
+        "line": 174,
+        "end_line": 176,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "contract_review_decision",
+        "line": 262,
+        "end_line": 273,
+        "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "symbol": "seal_contract_review",
+        "line": 274,
+        "end_line": 285,
+        "sha256": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contracts.py",
+        "symbol": "ContractTests.test_every_role_has_closed_schema",
+        "line": 78,
+        "end_line": 98,
+        "sha256": "55dc0e93b8cbbf4d958682aa1c56dd92d9ef125f44b2f0903b1a90a768adfc38"
+      }
+    ]
+  },
+  "extensions": {
+    "meaning": "activity-extensions.json의 역할별 가족·배열 원소. 주 응답 필드와 확장 이름을 혼용하지 않는다. 고정 질문 조사와 영향 검토의 확장 금지를 유지한다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "EXTENSION_ROLES",
+        "line": 141,
+        "end_line": 155,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "extension_schema",
+        "line": 160,
+        "end_line": 231,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "_payload_issues",
+        "line": 642,
+        "end_line": 1005,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_extensions",
+        "line": 2981,
+        "end_line": 3079,
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contracts.py",
+        "symbol": "ContractTests.test_academic_resolution_carries_real_evidence_references",
+        "line": 69,
+        "end_line": 76,
+        "sha256": "55dc0e93b8cbbf4d958682aa1c56dd92d9ef125f44b2f0903b1a90a768adfc38"
+      }
+    ]
+  },
+  "checks": {
+    "meaning": "contract_checks[].sibling_boundaries의 다섯 필드와 contract_check 다섯 진단은 submission 소유. TK-W는 예시 식별자이며 실제 연구 ID 존재를 주장하지 않는다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "extension_schema",
+        "line": 160,
+        "end_line": 231,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "contract_check_errors",
+        "line": 366,
+        "end_line": 401,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "_payload_issues",
+        "line": 642,
+        "end_line": 1005,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+        "symbol": "ContractCheckTests.test_every_candidate_needs_exactly_one_self_check",
+        "line": 48,
+        "end_line": 60,
+        "sha256": "e93ce5ccc9db4e4caac1f9b849b9bd56805a5b17ffc6f3669936ab7d2f8d7cde"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+        "symbol": "ContractCheckTests.test_a_boundary_may_not_silently_depend_on_a_sibling_under_revision",
+        "line": 152,
+        "end_line": 161,
+        "sha256": "e93ce5ccc9db4e4caac1f9b849b9bd56805a5b17ffc6f3669936ab7d2f8d7cde"
+      }
+    ]
+  },
+  "assessment": {
+    "meaning": "일반 준비 model_assessments는 task_title, 보충 전용/계획은 task_id. 보충 모델·관찰 전건은 별도 coverage이고 후보/계약 개정을 허가하지 않는다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "ASSESSMENT_SCHEMA",
+        "line": 17,
+        "end_line": 21,
+        "sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "assessment_key",
+        "line": 36,
+        "end_line": 37,
+        "sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "extension_schema",
+        "line": 160,
+        "end_line": 231,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "validate_assessments",
+        "line": 40,
+        "end_line": 84,
+        "sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "edition_current",
+        "line": 92,
+        "end_line": 100,
+        "sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "symbol": "SchemaBuilderTests.test_schema_samples_reach_context_dependent_shapes",
+        "line": 242,
+        "end_line": 282,
+        "sha256": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+      }
+    ]
+  },
+  "operator": {
+    "meaning": "operator install/probe의 mode는 cli_contract.build_parser 소유. 정기 check/probe는 모델 없이 동작하며 결과 shape는 분기별로 다르다. 복구 AI는 내부 maintenance wire가 아닌 repair_report_schema를 사용한다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "build_parser",
+        "line": 42,
+        "end_line": 178,
+        "sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/supervision.py",
+        "symbol": "repair_report_schema",
+        "line": 67,
+        "end_line": 78,
+        "sha256": "bb0e0561242c9d57e38dd72769c7e2531210834eaa75c6ffdbeb40ead5aef275"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/supervision.py",
+        "symbol": "OPERATOR_SCHEMA",
+        "line": 19,
+        "end_line": 29,
+        "sha256": "bb0e0561242c9d57e38dd72769c7e2531210834eaa75c6ffdbeb40ead5aef275"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "check",
+        "line": 230,
+        "end_line": 276,
+        "sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "recovery",
+        "line": 279,
+        "end_line": 472,
+        "sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/supervision.py",
+        "symbol": "collect_repair_verification",
+        "line": 81,
+        "end_line": 96,
+        "sha256": "bb0e0561242c9d57e38dd72769c7e2531210834eaa75c6ffdbeb40ead5aef275"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "OperatorCommandTests.test_hold_stops_wake_engine_and_supervisor_at_the_public_boundary",
+        "line": 172,
+        "end_line": 186,
+        "sha256": "330af3c413bb18acf80796fc78bbbef33014e1e4d69a44f6400133cbb0a735e5"
+      }
+    ]
+  },
+  "condition": {
+    "meaning": "task_conditions의 occurrence_condition은 planning 조건 문법이며 space/family와 /usable_as_k는 후보 wire의 직접 필드가 아니다. observation_rules/iteration_gte/$execution은 관찰 규칙의 대상 결박이다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "symbol": "validate_condition",
+        "line": 319,
+        "end_line": 379,
+        "sha256": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "symbol": "validate_task_rules",
+        "line": 146,
+        "end_line": 152,
+        "sha256": "c7e8a6e22880a5b13e7da9290526bb78c834704dd14c1f2167f47c22aeb8a71b"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "symbol": "evaluate_condition",
+        "line": 496,
+        "end_line": 597,
+        "sha256": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/submission.py",
+        "symbol": "_payload_issues",
+        "line": 642,
+        "end_line": 1005,
+        "sha256": "400cbc52fd18e91b33a88cf97217bf96cb4ad4f7e312d4a9321debec5a10f6a1"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+        "symbol": "ReadinessConditionTests.test_readiness_document_tables_match_the_condition_grammar",
+        "line": 432,
+        "end_line": 462,
+        "sha256": "b86d2d7036a6430da64450a6d0d5c820471462c5f215b9d681b9b2a6b55f9421"
+      }
+    ]
+  },
+  "declaration": {
+    "meaning": "prime 선언명은 lean_evidence의 제한된 지원 문법 예시. 허용 이름과 실제 Lean 선언/서명·공리 검증은 별도다.",
+    "definitions": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "symbol": "is_lean_identifier",
+        "line": 186,
+        "end_line": 191,
+        "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43"
+      }
+    ],
+    "consumers": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "symbol": "declaration_rejection",
+        "line": 298,
+        "end_line": 304,
+        "sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43"
+      }
+    ],
+    "tests": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_verifier.py",
+        "symbol": "InstalledLeanTests.test_actual_prime_declarations_have_signatures_and_axioms",
+        "line": 69,
+        "end_line": 84,
+        "sha256": "b058463b9f94cece773e3a512b97e7a1756d1d14e38d33b493cd9a51640520bd"
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "files": 2675,
+  "previous_files": 2675,
+  "differences": [],
+  "git_temp_exit": 128,
+  "git_temp_stdout": "",
+  "git_temp_stderr": "fatal: not a git repository (or any of the parent directories): .git\n",
+  "previous_sample": [
+    ".claude/skills/adapt-skill/references/대조표_양식.md",
+    "d04f75b24ad13f12081049832084c4ceccb551247b5d3c27a5bce012dfd9b1ca"
+  ]
+}

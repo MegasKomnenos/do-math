@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+      "outcome": "passed",
+      "seconds": 1.375,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_preparation_partial_examples_use_their_exact_extension_branch",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "structure.test_doc_code": 1.3910000000032596
+  }
+}

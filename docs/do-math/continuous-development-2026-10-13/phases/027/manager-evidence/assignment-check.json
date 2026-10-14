@@ -1,0 +1,67 @@
+{
+  "total_slices": 288,
+  "unique_slices": 288,
+  "historical_occurrences": 1636,
+  "partitions": [
+    {
+      "task": "operator-names",
+      "title": "운전·초기화 문서의 이름",
+      "ranges": [
+        [
+          1,
+          46
+        ],
+        [
+          269,
+          288
+        ]
+      ],
+      "slice_count": 66,
+      "historical_inline_occurrences": 424,
+      "documents": [
+        "repo:.claude/skills/do-math/README.md",
+        "repo:.claude/skills/do-math/SKILL.md",
+        "repo:.claude/skills/do-math/references/초기화-운전.md",
+        "repo:.claude/skills/do-math/references/초기화-효율과-정비.md"
+      ]
+    },
+    {
+      "task": "cli-control-names",
+      "title": "CLI 제어·조회 이름",
+      "ranges": [
+        [
+          209,
+          235
+        ]
+      ],
+      "slice_count": 27,
+      "historical_inline_occurrences": 692,
+      "documents": [
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ]
+    },
+    {
+      "task": "role-glossary-names",
+      "title": "역할 입력·산출과 용어 이름",
+      "ranges": [
+        [
+          47,
+          208
+        ],
+        [
+          236,
+          268
+        ]
+      ],
+      "slice_count": 195,
+      "historical_inline_occurrences": 520,
+      "documents": [
+        "repo:.claude/skills/do-math/GLOSSARY.md",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ]
+    }
+  ],
+  "no_product_writes": true,
+  "no_same_phase_result_dependencies": true,
+  "no_shared_test_processes": true
+}

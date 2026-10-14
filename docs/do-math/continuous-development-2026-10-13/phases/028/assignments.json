@@ -1,0 +1,2084 @@
+{
+  "note": "Historical N01 coordinates for bounded allocation, not a product schema or current semantic approval. Current source/heading verification belongs to each task.",
+  "tasks": [
+    {
+      "task": "operator-names",
+      "title": "운전·초기화 문서의 이름",
+      "ranges": [
+        [
+          1,
+          46
+        ],
+        [
+          269,
+          288
+        ]
+      ],
+      "slice_count": 66,
+      "historical_inline_occurrences": 424,
+      "documents": [
+        "repo:.claude/skills/do-math/README.md",
+        "repo:.claude/skills/do-math/SKILL.md",
+        "repo:.claude/skills/do-math/references/초기화-운전.md",
+        "repo:.claude/skills/do-math/references/초기화-효율과-정비.md"
+      ],
+      "slices": [
+        {
+          "id": "N01-001",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 1,
+          "end_line": 9,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-002",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 10,
+          "end_line": 24,
+          "heading": "## 이 문서를 읽는 실행의 역할"
+        },
+        {
+          "id": "N01-003",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 25,
+          "end_line": 30,
+          "heading": "## 연구의 목적과 공통 정의"
+        },
+        {
+          "id": "N01-004",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 31,
+          "end_line": 50,
+          "heading": "## 스킬의 구성과 입력"
+        },
+        {
+          "id": "N01-005",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 51,
+          "end_line": 52,
+          "heading": "## 연구를 이어 가는 방식"
+        },
+        {
+          "id": "N01-006",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 53,
+          "end_line": 60,
+          "heading": "### 축적한 지식에서 질문을 만든다"
+        },
+        {
+          "id": "N01-007",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 61,
+          "end_line": 76,
+          "heading": "### 질문을 수행할 수 있는 과제로 정련한다"
+        },
+        {
+          "id": "N01-008",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 77,
+          "end_line": 88,
+          "heading": "### 준비된 과제 중 다음 연구를 선택한다"
+        },
+        {
+          "id": "N01-009",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 89,
+          "end_line": 102,
+          "heading": "### 변경될 전제와 이미 유효한 판단을 구별한다"
+        },
+        {
+          "id": "N01-010",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 103,
+          "end_line": 112,
+          "heading": "### 실제 수행 범위와 근거를 남긴다"
+        },
+        {
+          "id": "N01-011",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 113,
+          "end_line": 122,
+          "heading": "### 수학적 주장과 목표 충족을 각각 검토한다"
+        },
+        {
+          "id": "N01-012",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 123,
+          "end_line": 128,
+          "heading": "### 결과를 다음 연구 판단에 반영한다"
+        },
+        {
+          "id": "N01-013",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 129,
+          "end_line": 136,
+          "heading": "## 같은 연구에서 구별해야 하는 결과"
+        },
+        {
+          "id": "N01-014",
+          "document": "repo:.claude/skills/do-math/SKILL.md",
+          "start_line": 137,
+          "end_line": 163,
+          "heading": "## 역할 읽기 대응표"
+        },
+        {
+          "id": "N01-015",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 1,
+          "end_line": 20,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-016",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 21,
+          "end_line": 32,
+          "heading": "## 운전 책임과 실행 구조"
+        },
+        {
+          "id": "N01-017",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 33,
+          "end_line": 36,
+          "heading": "## 새 연구를 시작하고 인계하기"
+        },
+        {
+          "id": "N01-018",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 37,
+          "end_line": 119,
+          "heading": "### 1. 요청과 설정 확정"
+        },
+        {
+          "id": "N01-019",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 120,
+          "end_line": 145,
+          "heading": "### 2. 인스턴스 생성"
+        },
+        {
+          "id": "N01-020",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 146,
+          "end_line": 157,
+          "heading": "### 3. 초기화 완료"
+        },
+        {
+          "id": "N01-021",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 158,
+          "end_line": 191,
+          "heading": "### 4. 독립 실행 시작과 관측"
+        },
+        {
+          "id": "N01-022",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 192,
+          "end_line": 211,
+          "heading": "### 5. 인계 결과 보고"
+        },
+        {
+          "id": "N01-023",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 212,
+          "end_line": 215,
+          "heading": "## 기존 연구 조회·제어"
+        },
+        {
+          "id": "N01-024",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 216,
+          "end_line": 260,
+          "heading": "### 현재 상태를 읽는다"
+        },
+        {
+          "id": "N01-025",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 261,
+          "end_line": 268,
+          "heading": "## 직접 전진·수동 운전"
+        },
+        {
+          "id": "N01-026",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 269,
+          "end_line": 288,
+          "heading": "### 정해진 수만큼 전진시킨다"
+        },
+        {
+          "id": "N01-027",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 289,
+          "end_line": 299,
+          "heading": "### 반환 상태를 다시 확인한다"
+        },
+        {
+          "id": "N01-028",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 300,
+          "end_line": 311,
+          "heading": "## 역할 산출과 실패 처리"
+        },
+        {
+          "id": "N01-029",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 312,
+          "end_line": 313,
+          "heading": "## 입력과 결정을 제공하는 법"
+        },
+        {
+          "id": "N01-030",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 314,
+          "end_line": 326,
+          "heading": "### 자유 형식 사용자 입력"
+        },
+        {
+          "id": "N01-031",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 327,
+          "end_line": 339,
+          "heading": "### 구조화된 사용자 결정"
+        },
+        {
+          "id": "N01-032",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 340,
+          "end_line": 353,
+          "heading": "### 원자료 수입"
+        },
+        {
+          "id": "N01-033",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 354,
+          "end_line": 355,
+          "heading": "## 조회와 결과 회수"
+        },
+        {
+          "id": "N01-034",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 356,
+          "end_line": 370,
+          "heading": "### 기록 조회"
+        },
+        {
+          "id": "N01-035",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 371,
+          "end_line": 382,
+          "heading": "### 정확한 기록 읽기"
+        },
+        {
+          "id": "N01-036",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 383,
+          "end_line": 407,
+          "heading": "### 파일 목록과 snapshot 내보내기"
+        },
+        {
+          "id": "N01-037",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 408,
+          "end_line": 439,
+          "heading": "## 정지, 재개와 종결"
+        },
+        {
+          "id": "N01-038",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 440,
+          "end_line": 453,
+          "heading": "### 독립 운영의 설정과 정지"
+        },
+        {
+          "id": "N01-039",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 454,
+          "end_line": 468,
+          "heading": "## 운영 제어 명령의 용도"
+        },
+        {
+          "id": "N01-040",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 469,
+          "end_line": 472,
+          "heading": "## 오류와 반환 코드"
+        },
+        {
+          "id": "N01-041",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 473,
+          "end_line": 478,
+          "heading": "## 현재 지원 범위"
+        },
+        {
+          "id": "N01-042",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 479,
+          "end_line": 492,
+          "heading": "## 저장 계약과 결과의 시각을 확인한다"
+        },
+        {
+          "id": "N01-043",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 493,
+          "end_line": 506,
+          "heading": "## 설치본 검사"
+        },
+        {
+          "id": "N01-044",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 507,
+          "end_line": 516,
+          "heading": "### Claude 전용 검사와 실행 제한"
+        },
+        {
+          "id": "N01-045",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 517,
+          "end_line": 520,
+          "heading": "### 공급자 한도와 재관찰"
+        },
+        {
+          "id": "N01-046",
+          "document": "repo:.claude/skills/do-math/README.md",
+          "start_line": 521,
+          "end_line": 523,
+          "heading": "### 사용자 질문에 답하기"
+        },
+        {
+          "id": "N01-269",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 1,
+          "end_line": 17,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-270",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 18,
+          "end_line": 46,
+          "heading": "## 1. 보존된 입력과 설정을 확인한다"
+        },
+        {
+          "id": "N01-271",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 47,
+          "end_line": 115,
+          "heading": "## 2. 승인된 초기 헌장을 등록한다"
+        },
+        {
+          "id": "N01-272",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 116,
+          "end_line": 161,
+          "heading": "## 3. 초기화 권한과 연구 권한을 나눈다"
+        },
+        {
+          "id": "N01-273",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 162,
+          "end_line": 198,
+          "heading": "## 4. 현행 프로필의 능력을 관측하고 채택한다"
+        },
+        {
+          "id": "N01-274",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 199,
+          "end_line": 241,
+          "heading": "## 5. 툴체인 기록을 등록한다"
+        },
+        {
+          "id": "N01-275",
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "start_line": 242,
+          "end_line": 305,
+          "heading": "## 6. 최초 해석·독립 검사·실제 적용을 확인한다"
+        },
+        {
+          "id": "N01-276",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 1,
+          "end_line": 4,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-277",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 5,
+          "end_line": 16,
+          "heading": "## 신뢰 환경 확인의 개요"
+        },
+        {
+          "id": "N01-278",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 17,
+          "end_line": 31,
+          "heading": "## 언제 무엇을 확인하는가"
+        },
+        {
+          "id": "N01-279",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 32,
+          "end_line": 49,
+          "heading": "## 지문 불일치와 재기록"
+        },
+        {
+          "id": "N01-280",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 50,
+          "end_line": 55,
+          "heading": "## 선택적 전수 점검"
+        },
+        {
+          "id": "N01-281",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 56,
+          "end_line": 70,
+          "heading": "## 판정 파일, 판본 식별과 지문"
+        },
+        {
+          "id": "N01-282",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 71,
+          "end_line": 84,
+          "heading": "## 툴체인 기록과 인스턴스 결박"
+        },
+        {
+          "id": "N01-283",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 85,
+          "end_line": 98,
+          "heading": "## `setup_lean.py`의 모드"
+        },
+        {
+          "id": "N01-284",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 99,
+          "end_line": 106,
+          "heading": "## 남는 위험"
+        },
+        {
+          "id": "N01-285",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 107,
+          "end_line": 118,
+          "heading": "## 불변 payload와 조회"
+        },
+        {
+          "id": "N01-286",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 119,
+          "end_line": 126,
+          "heading": "## 시작과 종료"
+        },
+        {
+          "id": "N01-287",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 127,
+          "end_line": 146,
+          "heading": "## 정상 정비"
+        },
+        {
+          "id": "N01-288",
+          "document": "repo:.claude/skills/do-math/references/초기화-효율과-정비.md",
+          "start_line": 147,
+          "end_line": 159,
+          "heading": "## 운영 계측"
+        }
+      ]
+    },
+    {
+      "task": "cli-control-names",
+      "title": "CLI 제어·조회 이름",
+      "ranges": [
+        [
+          209,
+          235
+        ]
+      ],
+      "slice_count": 27,
+      "historical_inline_occurrences": 692,
+      "documents": [
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ],
+      "slices": [
+        {
+          "id": "N01-209",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 1,
+          "end_line": 10,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-210",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 11,
+          "end_line": 24,
+          "heading": "## 호출과 공통 반환"
+        },
+        {
+          "id": "N01-211",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 25,
+          "end_line": 55,
+          "heading": "### 종료 코드"
+        },
+        {
+          "id": "N01-212",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 56,
+          "end_line": 94,
+          "heading": "## 현재 저장과 작업 경로"
+        },
+        {
+          "id": "N01-213",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 95,
+          "end_line": 100,
+          "heading": "## CLI 상태와 보편 개념의 대응"
+        },
+        {
+          "id": "N01-214",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 101,
+          "end_line": 113,
+          "heading": "### 인스턴스 실행 루프 `runtime.status`"
+        },
+        {
+          "id": "N01-215",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 114,
+          "end_line": 131,
+          "heading": "### 과제 `task.status`"
+        },
+        {
+          "id": "N01-216",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 132,
+          "end_line": 137,
+          "heading": "### 목표와 학술 후속 상태"
+        },
+        {
+          "id": "N01-217",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 138,
+          "end_line": 149,
+          "heading": "### 활동·실행·외부 operation"
+        },
+        {
+          "id": "N01-218",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 150,
+          "end_line": 266,
+          "heading": "## 설정 계약"
+        },
+        {
+          "id": "N01-219",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 267,
+          "end_line": 268,
+          "heading": "## 명령 표면"
+        },
+        {
+          "id": "N01-220",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 269,
+          "end_line": 285,
+          "heading": "### `init`"
+        },
+        {
+          "id": "N01-221",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 286,
+          "end_line": 298,
+          "heading": "### `run`, `status`, `check`, `profile`"
+        },
+        {
+          "id": "N01-222",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 299,
+          "end_line": 314,
+          "heading": "### `pause`, `resume`, `close`, `input`, `configure`, `request`"
+        },
+        {
+          "id": "N01-223",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 315,
+          "end_line": 329,
+          "heading": "### `operator`"
+        },
+        {
+          "id": "N01-224",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 330,
+          "end_line": 335,
+          "heading": "## 구조화 제어 JSON"
+        },
+        {
+          "id": "N01-225",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 336,
+          "end_line": 474,
+          "heading": "### `decision`"
+        },
+        {
+          "id": "N01-226",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 475,
+          "end_line": 484,
+          "heading": "### `source`"
+        },
+        {
+          "id": "N01-227",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 485,
+          "end_line": 574,
+          "heading": "### `knowledge`"
+        },
+        {
+          "id": "N01-228",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 575,
+          "end_line": 594,
+          "heading": "### `trust`"
+        },
+        {
+          "id": "N01-229",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 595,
+          "end_line": 621,
+          "heading": "### `external`"
+        },
+        {
+          "id": "N01-230",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 622,
+          "end_line": 639,
+          "heading": "### `conversation`"
+        },
+        {
+          "id": "N01-231",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 640,
+          "end_line": 641,
+          "heading": "## 조회 명령"
+        },
+        {
+          "id": "N01-232",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 642,
+          "end_line": 653,
+          "heading": "### record `query`"
+        },
+        {
+          "id": "N01-233",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 654,
+          "end_line": 662,
+          "heading": "### raw file `query --files`"
+        },
+        {
+          "id": "N01-234",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 663,
+          "end_line": 671,
+          "heading": "### `read`"
+        },
+        {
+          "id": "N01-235",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 672,
+          "end_line": 679,
+          "heading": "### `export`"
+        }
+      ]
+    },
+    {
+      "task": "role-glossary-names",
+      "title": "역할 입력·산출과 용어 이름",
+      "ranges": [
+        [
+          47,
+          208
+        ],
+        [
+          236,
+          268
+        ]
+      ],
+      "slice_count": 195,
+      "historical_inline_occurrences": 520,
+      "documents": [
+        "repo:.claude/skills/do-math/GLOSSARY.md",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ],
+      "slices": [
+        {
+          "id": "N01-047",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 1,
+          "end_line": 8,
+          "heading": "도입"
+        },
+        {
+          "id": "N01-048",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 9,
+          "end_line": 10,
+          "heading": "## 주체와 통치"
+        },
+        {
+          "id": "N01-049",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 11,
+          "end_line": 14,
+          "heading": "### AI 연구 체계"
+        },
+        {
+          "id": "N01-050",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 15,
+          "end_line": 18,
+          "heading": "### 연구 책임자"
+        },
+        {
+          "id": "N01-051",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 19,
+          "end_line": 22,
+          "heading": "### 연구 운영자"
+        },
+        {
+          "id": "N01-052",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 23,
+          "end_line": 26,
+          "heading": "### 기계 실행기"
+        },
+        {
+          "id": "N01-053",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 27,
+          "end_line": 32,
+          "heading": "### AI 활동"
+        },
+        {
+          "id": "N01-054",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 33,
+          "end_line": 36,
+          "heading": "### 사용자 대화"
+        },
+        {
+          "id": "N01-055",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 37,
+          "end_line": 42,
+          "heading": "### 예약 감독과 설치 복구 담당"
+        },
+        {
+          "id": "N01-056",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 43,
+          "end_line": 46,
+          "heading": "### 연구 대상"
+        },
+        {
+          "id": "N01-057",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 47,
+          "end_line": 50,
+          "heading": "### 중요 문제"
+        },
+        {
+          "id": "N01-058",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 51,
+          "end_line": 54,
+          "heading": "### 현상금"
+        },
+        {
+          "id": "N01-059",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 55,
+          "end_line": 58,
+          "heading": "### 연구 인스턴스"
+        },
+        {
+          "id": "N01-060",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 59,
+          "end_line": 62,
+          "heading": "### 연구 헌장"
+        },
+        {
+          "id": "N01-061",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 63,
+          "end_line": 66,
+          "heading": "### 연구 정책"
+        },
+        {
+          "id": "N01-062",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 67,
+          "end_line": 70,
+          "heading": "### 연구 맥락"
+        },
+        {
+          "id": "N01-063",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 71,
+          "end_line": 74,
+          "heading": "### 연구 설정"
+        },
+        {
+          "id": "N01-064",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 75,
+          "end_line": 78,
+          "heading": "### 초기 제안값"
+        },
+        {
+          "id": "N01-065",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 79,
+          "end_line": 82,
+          "heading": "### 생산자와 수신자"
+        },
+        {
+          "id": "N01-066",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 83,
+          "end_line": 86,
+          "heading": "### 다음 소유자"
+        },
+        {
+          "id": "N01-067",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 87,
+          "end_line": 88,
+          "heading": "## 수학 상태와 연구 방향"
+        },
+        {
+          "id": "N01-068",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 89,
+          "end_line": 94,
+          "heading": "### 형식 정본 (`K`)"
+        },
+        {
+          "id": "N01-069",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 95,
+          "end_line": 98,
+          "heading": "### Lean 정본"
+        },
+        {
+          "id": "N01-070",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 99,
+          "end_line": 102,
+          "heading": "### 형식 결과"
+        },
+        {
+          "id": "N01-071",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 103,
+          "end_line": 106,
+          "heading": "### 형식 사용 효력"
+        },
+        {
+          "id": "N01-072",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 107,
+          "end_line": 110,
+          "heading": "### 형식 타당성"
+        },
+        {
+          "id": "N01-073",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 111,
+          "end_line": 114,
+          "heading": "### 신뢰 환경"
+        },
+        {
+          "id": "N01-074",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 115,
+          "end_line": 118,
+          "heading": "### 기초 프로필"
+        },
+        {
+          "id": "N01-075",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 119,
+          "end_line": 122,
+          "heading": "### 가시 연구 프런티어 (`F`)"
+        },
+        {
+          "id": "N01-076",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 123,
+          "end_line": 126,
+          "heading": "### 미지 지평 (`U`)"
+        },
+        {
+          "id": "N01-077",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 127,
+          "end_line": 130,
+          "heading": "### 탐색"
+        },
+        {
+          "id": "N01-078",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 131,
+          "end_line": 134,
+          "heading": "### 집중 활용"
+        },
+        {
+          "id": "N01-079",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 135,
+          "end_line": 138,
+          "heading": "### 연구 진전"
+        },
+        {
+          "id": "N01-080",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 139,
+          "end_line": 142,
+          "heading": "### 진전 신호"
+        },
+        {
+          "id": "N01-081",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 143,
+          "end_line": 146,
+          "heading": "### 수학적 해결"
+        },
+        {
+          "id": "N01-082",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 147,
+          "end_line": 152,
+          "heading": "### K 편입"
+        },
+        {
+          "id": "N01-083",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 153,
+          "end_line": 154,
+          "heading": "## 기록, 온톨로지와 지식 재사용"
+        },
+        {
+          "id": "N01-084",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 155,
+          "end_line": 158,
+          "heading": "### 연구 정본"
+        },
+        {
+          "id": "N01-085",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 159,
+          "end_line": 162,
+          "heading": "### 실행 원장"
+        },
+        {
+          "id": "N01-086",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 163,
+          "end_line": 166,
+          "heading": "### 정본"
+        },
+        {
+          "id": "N01-087",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 167,
+          "end_line": 170,
+          "heading": "### 상태 공개"
+        },
+        {
+          "id": "N01-088",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 171,
+          "end_line": 174,
+          "heading": "### 기록 ID"
+        },
+        {
+          "id": "N01-089",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 175,
+          "end_line": 178,
+          "heading": "### 정확한 참조"
+        },
+        {
+          "id": "N01-090",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 179,
+          "end_line": 182,
+          "heading": "### 읽기 스냅샷"
+        },
+        {
+          "id": "N01-091",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 183,
+          "end_line": 186,
+          "heading": "### 현재성"
+        },
+        {
+          "id": "N01-092",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 187,
+          "end_line": 190,
+          "heading": "### 봉인"
+        },
+        {
+          "id": "N01-093",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 191,
+          "end_line": 196,
+          "heading": "### 최종 응답, 제출 초안과 제출 접수"
+        },
+        {
+          "id": "N01-094",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 197,
+          "end_line": 200,
+          "heading": "### 제출 preview"
+        },
+        {
+          "id": "N01-095",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 201,
+          "end_line": 204,
+          "heading": "### 관리 디렉터리"
+        },
+        {
+          "id": "N01-096",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 205,
+          "end_line": 208,
+          "heading": "### 전건"
+        },
+        {
+          "id": "N01-097",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 209,
+          "end_line": 212,
+          "heading": "### 원자료"
+        },
+        {
+          "id": "N01-098",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 213,
+          "end_line": 216,
+          "heading": "### 지식 문서"
+        },
+        {
+          "id": "N01-099",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 217,
+          "end_line": 220,
+          "heading": "### F 객체"
+        },
+        {
+          "id": "N01-100",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 221,
+          "end_line": 224,
+          "heading": "### 자료·근거"
+        },
+        {
+          "id": "N01-101",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 225,
+          "end_line": 230,
+          "heading": "### 관계"
+        },
+        {
+          "id": "N01-102",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 231,
+          "end_line": 234,
+          "heading": "### 연구 기억"
+        },
+        {
+          "id": "N01-103",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 235,
+          "end_line": 238,
+          "heading": "### 인식 상태"
+        },
+        {
+          "id": "N01-104",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 239,
+          "end_line": 244,
+          "heading": "### 정보 상태"
+        },
+        {
+          "id": "N01-105",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 245,
+          "end_line": 248,
+          "heading": "### 확인 범위"
+        },
+        {
+          "id": "N01-106",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 249,
+          "end_line": 252,
+          "heading": "### 기록 효력"
+        },
+        {
+          "id": "N01-107",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 253,
+          "end_line": 258,
+          "heading": "### 종류 정의"
+        },
+        {
+          "id": "N01-108",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 259,
+          "end_line": 262,
+          "heading": "### 온톨로지"
+        },
+        {
+          "id": "N01-109",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 263,
+          "end_line": 266,
+          "heading": "### 시맨틱 레이어"
+        },
+        {
+          "id": "N01-110",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 267,
+          "end_line": 270,
+          "heading": "### 항해 색인"
+        },
+        {
+          "id": "N01-111",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 271,
+          "end_line": 276,
+          "heading": "### 지식 재사용"
+        },
+        {
+          "id": "N01-112",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 277,
+          "end_line": 278,
+          "heading": "## 후보, 과제와 계획"
+        },
+        {
+          "id": "N01-113",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 279,
+          "end_line": 282,
+          "heading": "### 연구 후보"
+        },
+        {
+          "id": "N01-114",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 283,
+          "end_line": 286,
+          "heading": "### 정련"
+        },
+        {
+          "id": "N01-115",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 287,
+          "end_line": 292,
+          "heading": "### 과제"
+        },
+        {
+          "id": "N01-116",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 293,
+          "end_line": 296,
+          "heading": "### 작업 계약"
+        },
+        {
+          "id": "N01-117",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 297,
+          "end_line": 300,
+          "heading": "### 진전 기준"
+        },
+        {
+          "id": "N01-118",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 301,
+          "end_line": 304,
+          "heading": "### 발생 조건"
+        },
+        {
+          "id": "N01-119",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 305,
+          "end_line": 312,
+          "heading": "### 작업 계약 검토"
+        },
+        {
+          "id": "N01-120",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 313,
+          "end_line": 316,
+          "heading": "### 배정 후보"
+        },
+        {
+          "id": "N01-121",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 317,
+          "end_line": 320,
+          "heading": "### 과제 대기"
+        },
+        {
+          "id": "N01-122",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 321,
+          "end_line": 326,
+          "heading": "### 범위 처분"
+        },
+        {
+          "id": "N01-123",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 327,
+          "end_line": 332,
+          "heading": "### 후보 준비"
+        },
+        {
+          "id": "N01-124",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 333,
+          "end_line": 336,
+          "heading": "### 고갈"
+        },
+        {
+          "id": "N01-125",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 337,
+          "end_line": 344,
+          "heading": "### 연구 계획"
+        },
+        {
+          "id": "N01-126",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 345,
+          "end_line": 348,
+          "heading": "### 계획 입력"
+        },
+        {
+          "id": "N01-127",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 349,
+          "end_line": 352,
+          "heading": "### 목차"
+        },
+        {
+          "id": "N01-128",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 353,
+          "end_line": 356,
+          "heading": "### 후보 목차"
+        },
+        {
+          "id": "N01-129",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 357,
+          "end_line": 360,
+          "heading": "### K 목차"
+        },
+        {
+          "id": "N01-130",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 361,
+          "end_line": 364,
+          "heading": "### 정기 탐색"
+        },
+        {
+          "id": "N01-131",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 365,
+          "end_line": 381,
+          "heading": "### 반복 교정 문턱"
+        },
+        {
+          "id": "N01-132",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 382,
+          "end_line": 383,
+          "heading": "## 실행, 입력과 인계"
+        },
+        {
+          "id": "N01-133",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 384,
+          "end_line": 387,
+          "heading": "### 실행"
+        },
+        {
+          "id": "N01-134",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 388,
+          "end_line": 391,
+          "heading": "### 활동"
+        },
+        {
+          "id": "N01-135",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 392,
+          "end_line": 395,
+          "heading": "### 루트와 래퍼"
+        },
+        {
+          "id": "N01-136",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 396,
+          "end_line": 401,
+          "heading": "### 연구 수행"
+        },
+        {
+          "id": "N01-137",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 402,
+          "end_line": 405,
+          "heading": "### 유지보수"
+        },
+        {
+          "id": "N01-138",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 406,
+          "end_line": 409,
+          "heading": "### 기계 작업"
+        },
+        {
+          "id": "N01-139",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 410,
+          "end_line": 413,
+          "heading": "### 실행 프로필"
+        },
+        {
+          "id": "N01-140",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 414,
+          "end_line": 417,
+          "heading": "### 실행 어댑터"
+        },
+        {
+          "id": "N01-141",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 418,
+          "end_line": 421,
+          "heading": "### 작업 예산"
+        },
+        {
+          "id": "N01-142",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 422,
+          "end_line": 425,
+          "heading": "### 운영 역할"
+        },
+        {
+          "id": "N01-143",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 426,
+          "end_line": 429,
+          "heading": "### 자원 예약"
+        },
+        {
+          "id": "N01-144",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 430,
+          "end_line": 433,
+          "heading": "### 모델 등급과 동시 세션 슬롯"
+        },
+        {
+          "id": "N01-145",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 434,
+          "end_line": 437,
+          "heading": "### 공급자 호출"
+        },
+        {
+          "id": "N01-146",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 438,
+          "end_line": 441,
+          "heading": "### 실질 행동"
+        },
+        {
+          "id": "N01-147",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 442,
+          "end_line": 445,
+          "heading": "### 종료 장벽"
+        },
+        {
+          "id": "N01-148",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 446,
+          "end_line": 449,
+          "heading": "### 산출 묶음"
+        },
+        {
+          "id": "N01-149",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 450,
+          "end_line": 455,
+          "heading": "### 편입 묶음"
+        },
+        {
+          "id": "N01-150",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 456,
+          "end_line": 459,
+          "heading": "### 작업 공간"
+        },
+        {
+          "id": "N01-151",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 460,
+          "end_line": 463,
+          "heading": "### 입력 manifest"
+        },
+        {
+          "id": "N01-152",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 464,
+          "end_line": 467,
+          "heading": "### 입력 생성기"
+        },
+        {
+          "id": "N01-153",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 468,
+          "end_line": 471,
+          "heading": "### 기록 지도"
+        },
+        {
+          "id": "N01-154",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 472,
+          "end_line": 475,
+          "heading": "### 체크포인트"
+        },
+        {
+          "id": "N01-155",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 476,
+          "end_line": 479,
+          "heading": "### 정지 직전 기록"
+        },
+        {
+          "id": "N01-156",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 480,
+          "end_line": 483,
+          "heading": "### 자기 메시지"
+        },
+        {
+          "id": "N01-157",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 484,
+          "end_line": 487,
+          "heading": "### 참조 대체"
+        },
+        {
+          "id": "N01-158",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 488,
+          "end_line": 493,
+          "heading": "### 기록 기반 대체 실행"
+        },
+        {
+          "id": "N01-159",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 494,
+          "end_line": 495,
+          "heading": "## 관찰과 운영 판단"
+        },
+        {
+          "id": "N01-160",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 496,
+          "end_line": 499,
+          "heading": "### 관찰 규칙"
+        },
+        {
+          "id": "N01-161",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 500,
+          "end_line": 503,
+          "heading": "### 자기 점검 의무"
+        },
+        {
+          "id": "N01-162",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 504,
+          "end_line": 507,
+          "heading": "### 안전 제어 경계"
+        },
+        {
+          "id": "N01-163",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 508,
+          "end_line": 511,
+          "heading": "### 자기 점검"
+        },
+        {
+          "id": "N01-164",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 512,
+          "end_line": 515,
+          "heading": "### 운영 점검"
+        },
+        {
+          "id": "N01-165",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 516,
+          "end_line": 519,
+          "heading": "### 점검 발동 조건"
+        },
+        {
+          "id": "N01-166",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 520,
+          "end_line": 523,
+          "heading": "### 운영 처분"
+        },
+        {
+          "id": "N01-167",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 524,
+          "end_line": 525,
+          "heading": "## 수입, 허가와 외부 행동"
+        },
+        {
+          "id": "N01-168",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 526,
+          "end_line": 529,
+          "heading": "### 프로젝트 입력"
+        },
+        {
+          "id": "N01-169",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 530,
+          "end_line": 533,
+          "heading": "### 수입"
+        },
+        {
+          "id": "N01-170",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 534,
+          "end_line": 537,
+          "heading": "### 의도 해석"
+        },
+        {
+          "id": "N01-171",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 538,
+          "end_line": 541,
+          "heading": "### 결정 질문"
+        },
+        {
+          "id": "N01-172",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 542,
+          "end_line": 545,
+          "heading": "### 상신"
+        },
+        {
+          "id": "N01-173",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 546,
+          "end_line": 549,
+          "heading": "### 사용자 결정"
+        },
+        {
+          "id": "N01-174",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 550,
+          "end_line": 553,
+          "heading": "### 허가"
+        },
+        {
+          "id": "N01-175",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 554,
+          "end_line": 557,
+          "heading": "### 사례 기반 위임"
+        },
+        {
+          "id": "N01-176",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 558,
+          "end_line": 563,
+          "heading": "### 외부 행동"
+        },
+        {
+          "id": "N01-177",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 564,
+          "end_line": 567,
+          "heading": "### 크리덴셜"
+        },
+        {
+          "id": "N01-178",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 568,
+          "end_line": 569,
+          "heading": "## 수학 제안과 검증"
+        },
+        {
+          "id": "N01-179",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 570,
+          "end_line": 573,
+          "heading": "### 수학 해설"
+        },
+        {
+          "id": "N01-180",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 574,
+          "end_line": 577,
+          "heading": "### 수학 제안"
+        },
+        {
+          "id": "N01-181",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 578,
+          "end_line": 581,
+          "heading": "### 해설 요약"
+        },
+        {
+          "id": "N01-182",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 582,
+          "end_line": 585,
+          "heading": "### 검토 방침"
+        },
+        {
+          "id": "N01-183",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 586,
+          "end_line": 589,
+          "heading": "### 검토 계획"
+        },
+        {
+          "id": "N01-184",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 590,
+          "end_line": 595,
+          "heading": "### 동일성 검토"
+        },
+        {
+          "id": "N01-185",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 596,
+          "end_line": 599,
+          "heading": "### 검토 계보"
+        },
+        {
+          "id": "N01-186",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 600,
+          "end_line": 605,
+          "heading": "### 검토 자리"
+        },
+        {
+          "id": "N01-187",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 606,
+          "end_line": 609,
+          "heading": "### 이의"
+        },
+        {
+          "id": "N01-188",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 610,
+          "end_line": 613,
+          "heading": "### 쟁점"
+        },
+        {
+          "id": "N01-189",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 614,
+          "end_line": 621,
+          "heading": "### 동일성 판정"
+        },
+        {
+          "id": "N01-190",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 622,
+          "end_line": 629,
+          "heading": "### 판정 사용 효력"
+        },
+        {
+          "id": "N01-191",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 630,
+          "end_line": 633,
+          "heading": "### 보충 조사"
+        },
+        {
+          "id": "N01-192",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 634,
+          "end_line": 637,
+          "heading": "### 목표 감사"
+        },
+        {
+          "id": "N01-193",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 638,
+          "end_line": 641,
+          "heading": "### 추가 감사"
+        },
+        {
+          "id": "N01-194",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 642,
+          "end_line": 645,
+          "heading": "### 연구 생산"
+        },
+        {
+          "id": "N01-195",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 646,
+          "end_line": 649,
+          "heading": "### 학술 검증"
+        },
+        {
+          "id": "N01-196",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 650,
+          "end_line": 653,
+          "heading": "### 외부 거부"
+        },
+        {
+          "id": "N01-197",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 654,
+          "end_line": 657,
+          "heading": "### 공용 편입"
+        },
+        {
+          "id": "N01-198",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 658,
+          "end_line": 659,
+          "heading": "## 운전, 복구와 보증 범위"
+        },
+        {
+          "id": "N01-199",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 660,
+          "end_line": 663,
+          "heading": "### 일시 정지"
+        },
+        {
+          "id": "N01-200",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 664,
+          "end_line": 667,
+          "heading": "### 실행기 복구"
+        },
+        {
+          "id": "N01-201",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 668,
+          "end_line": 671,
+          "heading": "### 실행 능력 검증"
+        },
+        {
+          "id": "N01-202",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 672,
+          "end_line": 675,
+          "heading": "### 연구 효능 평가"
+        },
+        {
+          "id": "N01-203",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 676,
+          "end_line": 679,
+          "heading": "### 상태 검사"
+        },
+        {
+          "id": "N01-204",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 680,
+          "end_line": 681,
+          "heading": "## 공통 판정 원칙"
+        },
+        {
+          "id": "N01-205",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 682,
+          "end_line": 691,
+          "heading": "### 서로 대신할 수 없는 다섯 판단"
+        },
+        {
+          "id": "N01-206",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 692,
+          "end_line": 697,
+          "heading": "### 부재, 오류와 불확실성"
+        },
+        {
+          "id": "N01-207",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 698,
+          "end_line": 701,
+          "heading": "### 문면과 기계 정보의 소유"
+        },
+        {
+          "id": "N01-208",
+          "document": "repo:.claude/skills/do-math/GLOSSARY.md",
+          "start_line": 702,
+          "end_line": 704,
+          "heading": "### 대기와 종료"
+        },
+        {
+          "id": "N01-236",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 680,
+          "end_line": 689,
+          "heading": "## AI 실행 입력"
+        },
+        {
+          "id": "N01-237",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 690,
+          "end_line": 701,
+          "heading": "### 입력 크기 조정"
+        },
+        {
+          "id": "N01-238",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 702,
+          "end_line": 713,
+          "heading": "### 입력 고정과 현재성"
+        },
+        {
+          "id": "N01-239",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 714,
+          "end_line": 719,
+          "heading": "## 역할별 주 JSON"
+        },
+        {
+          "id": "N01-240",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 720,
+          "end_line": 725,
+          "heading": "### 후보 준비 `research_preparation`"
+        },
+        {
+          "id": "N01-241",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 726,
+          "end_line": 729,
+          "heading": "### 작업 계약 검토 `task_contract_review`"
+        },
+        {
+          "id": "N01-242",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 730,
+          "end_line": 741,
+          "heading": "### 연구 계획 `research_plan`"
+        },
+        {
+          "id": "N01-243",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 742,
+          "end_line": 749,
+          "heading": "### 연구 수행 `research_work`와 과제 기반 `supplemental_research`"
+        },
+        {
+          "id": "N01-244",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 750,
+          "end_line": 755,
+          "heading": "### 기본 동일성 검토 `identity_review`"
+        },
+        {
+          "id": "N01-245",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 756,
+          "end_line": 759,
+          "heading": "### 목표 감사 `goal_audit`"
+        },
+        {
+          "id": "N01-246",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 760,
+          "end_line": 763,
+          "heading": "### 운영 점검 `operational_review`"
+        },
+        {
+          "id": "N01-247",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 764,
+          "end_line": 769,
+          "heading": "### 의도 해석 `intent_interpretation`"
+        },
+        {
+          "id": "N01-248",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 770,
+          "end_line": 777,
+          "heading": "### 유지보수 `maintenance`"
+        },
+        {
+          "id": "N01-249",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 778,
+          "end_line": 781,
+          "heading": "## 동일성 검토 계보의 동적 JSON"
+        },
+        {
+          "id": "N01-250",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 782,
+          "end_line": 785,
+          "heading": "### `initial`"
+        },
+        {
+          "id": "N01-251",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 786,
+          "end_line": 789,
+          "heading": "### `organize`"
+        },
+        {
+          "id": "N01-252",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 790,
+          "end_line": 793,
+          "heading": "### `answer`"
+        },
+        {
+          "id": "N01-253",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 794,
+          "end_line": 797,
+          "heading": "### `judge`"
+        },
+        {
+          "id": "N01-254",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 798,
+          "end_line": 801,
+          "heading": "### 검토 자리의 고정 질문 보충 조사"
+        },
+        {
+          "id": "N01-255",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 802,
+          "end_line": 803,
+          "heading": "## 작업 공간의 보조 파일"
+        },
+        {
+          "id": "N01-256",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 804,
+          "end_line": 822,
+          "heading": "### `checkpoint.json`"
+        },
+        {
+          "id": "N01-257",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 823,
+          "end_line": 830,
+          "heading": "### 자기 점검 규칙의 실행 중 교체"
+        },
+        {
+          "id": "N01-258",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 831,
+          "end_line": 842,
+          "heading": "### `activity-extensions.json`"
+        },
+        {
+          "id": "N01-259",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 843,
+          "end_line": 846,
+          "heading": "### 정지·운영 피드백 파일"
+        },
+        {
+          "id": "N01-260",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 847,
+          "end_line": 874,
+          "heading": "## 제출, 보존과 편입"
+        },
+        {
+          "id": "N01-261",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 875,
+          "end_line": 882,
+          "heading": "## 실행 수명과 복구"
+        },
+        {
+          "id": "N01-262",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 883,
+          "end_line": 894,
+          "heading": "### 실행기 소실 뒤 처분"
+        },
+        {
+          "id": "N01-263",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 895,
+          "end_line": 900,
+          "heading": "### 정지와 현재성"
+        },
+        {
+          "id": "N01-264",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 901,
+          "end_line": 922,
+          "heading": "## 형식 검사, 동일성 검토와 목표"
+        },
+        {
+          "id": "N01-265",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 923,
+          "end_line": 938,
+          "heading": "## 계획 이력과 현재 입력 범위"
+        },
+        {
+          "id": "N01-266",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 939,
+          "end_line": 965,
+          "heading": "## 표현 방식과 보증 범위의 차이"
+        },
+        {
+          "id": "N01-267",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 966,
+          "end_line": 974,
+          "heading": "## 검증 근거의 해석"
+        },
+        {
+          "id": "N01-268",
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "start_line": 975,
+          "end_line": 1016,
+          "heading": "## 전제·대기·조회 계약"
+        }
+      ]
+    }
+  ]
+}

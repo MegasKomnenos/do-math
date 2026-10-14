@@ -1,0 +1,145 @@
+[
+  {
+    "name": "identity-normal",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": []
+  },
+  {
+    "name": "initial-findings-typo",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": [
+      [
+        "review output missing field",
+        "initial",
+        "findings"
+      ],
+      [
+        "review output field",
+        "initial",
+        "findingz"
+      ]
+    ]
+  },
+  {
+    "name": "organize-decision-borrow",
+    "owner": "identity",
+    "original_checks": [],
+    "new_issues": [
+      [
+        "review output field",
+        "organize",
+        "decision"
+      ]
+    ]
+  },
+  {
+    "name": "sibling-normal",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": []
+  },
+  {
+    "name": "sibling-field-typo",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": [
+      [
+        "preparation example schema",
+        "sibling_boundaries[]",
+        "",
+        "required",
+        "'independent_of_next_revision' is a required property"
+      ],
+      [
+        "preparation example schema",
+        "sibling_boundaries[]",
+        "",
+        "additionalProperties",
+        "Additional properties are not allowed ('independent_of_revision' was unexpected)"
+      ]
+    ]
+  },
+  {
+    "name": "supplement-task-title-borrow",
+    "owner": "preparation",
+    "original_checks": [],
+    "new_issues": [
+      [
+        "preparation example schema",
+        "assessment_targets",
+        "model_assessments/0",
+        "required",
+        "'task_id' is a required property"
+      ],
+      [
+        "preparation example schema",
+        "assessment_targets",
+        "model_assessments/0",
+        "additionalProperties",
+        "Additional properties are not allowed ('task_title' was unexpected)"
+      ]
+    ]
+  },
+  {
+    "name": "operator-normal",
+    "owner": "operator",
+    "original_checks": [],
+    "new_issues": []
+  },
+  {
+    "name": "operator-invent-bare",
+    "owner": "operator",
+    "original_checks": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ],
+    "new_issues": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ]
+  },
+  {
+    "name": "operator-invent-do_math.py",
+    "owner": "operator",
+    "original_checks": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ],
+    "new_issues": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ]
+  },
+  {
+    "name": "operator-invent-$dmCli",
+    "owner": "operator",
+    "original_checks": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ],
+    "new_issues": [
+      [
+        "command mode",
+        "operator",
+        "invent"
+      ]
+    ]
+  }
+]

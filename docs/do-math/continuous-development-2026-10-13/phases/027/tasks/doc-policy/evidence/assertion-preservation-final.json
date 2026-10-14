@@ -1,0 +1,67 @@
+{
+  "baseline": "aa1c3c67fe7abd019fd64551af2ac148bf9be6f0",
+  "baseline_sources": {
+    ".claude/skills/do-math/references/초기화-운전.md": "Git HEAD bytes with start-SHA-verified newline reconstruction",
+    ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py": "Git HEAD bytes",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py": "Git HEAD bytes",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py": "Git HEAD bytes",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py": "Git HEAD bytes",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py": "025 manager raw-evidence.zip member verified against complete start SHA",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md": "Git HEAD bytes with start-SHA-verified newline reconstruction",
+    ".claude/skills/do-math/계약/독립-운영.md": "Git HEAD bytes"
+  },
+  "files": {
+    ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py": {
+      "old_definitions": 32,
+      "removed": [],
+      "altered": [],
+      "added": [
+        "InitialAdoptionTests.assert_public_policy_saved",
+        "InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved",
+        "InitialAdoptionTests.test_explicit_review_policy_takes_precedence_over_default_adoption"
+      ]
+    },
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py": {
+      "old_definitions": 18,
+      "removed": [],
+      "altered": [
+        "PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation"
+      ],
+      "added": []
+    },
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py": {
+      "old_definitions": 9,
+      "removed": [],
+      "altered": [],
+      "added": [
+        "OperatorCommandTests.test_normal_probe_observes_without_calling_a_model_or_starting_research",
+        "OperatorCommandTests.test_probe_status_failure_returns_its_error_without_a_required_model_marker"
+      ]
+    },
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py": {
+      "old_definitions": 33,
+      "removed": [],
+      "altered": [],
+      "added": [
+        "DocumentCodeTests.test_identity_output_declarations_use_their_exact_stage_and_item",
+        "DocumentCodeTests.test_missing_preparation_document_section_or_json_example_is_rejected",
+        "DocumentCodeTests.test_missing_review_output_section_or_declaration_is_rejected",
+        "DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands",
+        "DocumentCodeTests.test_preparation_partial_examples_use_their_exact_extension_branch"
+      ]
+    },
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py": {
+      "old_definitions": 27,
+      "removed": [],
+      "altered": [
+        "command_issues"
+      ],
+      "added": [
+        "_document_section",
+        "_schema_path",
+        "preparation_example_issues",
+        "review_output_issues"
+      ]
+    }
+  }
+}

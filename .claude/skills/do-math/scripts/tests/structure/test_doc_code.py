@@ -1,7 +1,7 @@
 """13-C commands, policies, dotted fields, functions and constants in role documents.
 
-Unqualified prose field names and reading-boundary obligations still require
-separate closure; dotted references are checked against their actual owners.
+Selected review output declarations and partial JSON examples have explicit
+stage/extension owners. Other prose and reading obligations require separate closure.
 """
 from pathlib import Path
 import re
@@ -14,6 +14,86 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_identity_output_declarations_use_their_exact_stage_and_item(self):
+        from support.doc_code import review_output_issues
+        text = (SKILL / '계약/동일성-검토.md').read_text(encoding='utf-8')
+        self.assertEqual(review_output_issues(text), [])
+        changed = text.replace('와 `findings`를 반환한다', '와 `findingz`를 반환한다')
+        self.assertEqual(review_output_issues(changed), [
+            ('review output missing field', 'initial', 'findings'),
+            ('review output field', 'initial', 'findingz')])
+        changed = text.replace('쟁점 정리는 동일성을 승인하는 단계가 아니다.',
+            '쟁점 정리는 동일성을 승인하는 단계가 아니다. 주 산출에는 `decision`을 반환한다.')
+        self.assertEqual(review_output_issues(changed), [('review output field', 'organize', 'decision')])
+        changed = text.replace('반환의 `finding_refs`', '반환의 `finding_refz`')
+        self.assertEqual(review_output_issues(changed), [
+            ('review output missing field', 'organize', 'issues[].finding_refs'),
+            ('review output field', 'organize', 'finding_refz')])
+        # decision belongs to judge/initial elsewhere; prose outside these
+        # explicitly assigned output paragraphs must not acquire their owner.
+        self.assertEqual(review_output_issues(text + '\n`invented_prose_name`\n'), [])
+
+    def test_missing_review_output_section_or_declaration_is_rejected(self):
+        from support.doc_code import review_output_issues, _document_section
+        text = (SKILL / '계약/동일성-검토.md').read_text(encoding='utf-8')
+        for heading in ('초기 검토에서는 전체 판단과 발견을 반환한다',
+                        '쟁점 정리에서는 발견과 답변 담당을 연결한다'):
+            with self.subTest(heading=heading):
+                self.assertTrue(review_output_issues(text.replace('## ' + heading, '## removed')))
+                self.assertTrue(review_output_issues(text.replace(_document_section(text, heading), '')))
+        self.assertEqual(len(review_output_issues('')), 2)
+
+    def test_preparation_partial_examples_use_their_exact_extension_branch(self):
+        from support.doc_code import preparation_example_issues
+        text = (SKILL / '계약/후보-준비.md').read_text(encoding='utf-8')
+        self.assertEqual(preparation_example_issues(text), [])
+        changed = text.replace('"independent_of_next_revision":false', '"independent_of_revision":false')
+        issues = preparation_example_issues(changed)
+        self.assertEqual([(issue[1], issue[2], issue[3]) for issue in issues], [
+            ('sibling_boundaries[]', '', 'additionalProperties'),
+            ('sibling_boundaries[]', '', 'required')])
+        self.assertIn('independent_of_revision', issues[0][4])
+        self.assertIn('independent_of_next_revision', issues[1][4])
+        for identifier, family in (('TK-one', 'model_assessments'), ('TK-two', 'model_assessment_deferrals')):
+            with self.subTest(family=family):
+                changed = text.replace('"task_id": "' + identifier + '"', '"task_title": "' + identifier + '"')
+                issues = preparation_example_issues(changed)
+                self.assertEqual([(issue[1], issue[2], issue[3]) for issue in issues], [
+                    ('assessment_targets', family + '/0', 'additionalProperties'),
+                    ('assessment_targets', family + '/0', 'required')])
+                self.assertIn('task_title', issues[0][4])
+                self.assertIn('task_id', issues[1][4])
+
+    def test_missing_preparation_document_section_or_json_example_is_rejected(self):
+        from support.doc_code import preparation_example_issues
+        text = (SKILL / '계약/후보-준비.md').read_text(encoding='utf-8')
+        for heading in ('5. 제출 전에 계약을 스스로 점검한다',
+                        '기존 과제의 평가와 관찰 규칙을 보충하는 실행'):
+            with self.subTest(heading=heading):
+                self.assertTrue(preparation_example_issues(text.replace(heading, 'removed')))
+        for fence in re.findall(r'^```json\n.*?\n```', text, flags=re.M | re.S):
+            with self.subTest(fence=fence):
+                issues = preparation_example_issues(text.replace(fence, ''))
+                self.assertEqual(len(issues), 1)
+                self.assertEqual(issues[0][0], 'preparation example count')
+        self.assertEqual(len(preparation_example_issues('')), 2)
+
+    def test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands(self):
+        from do_math.cli_contract import build_parser
+        options = parser_options(build_parser())
+        flags = set().union(*options.values())
+        for prefix in ('', 'do_math.py ', '$dmCli '):
+            with self.subTest(prefix=prefix):
+                for mode in ('install', 'probe'):
+                    self.assertEqual(command_issues('`' + prefix + 'operator ' + mode + '`', options, flags), [])
+                self.assertEqual(command_issues('`' + prefix + 'operator invent`', options, flags),
+                                 [('command mode', 'operator', 'invent')])
+        self.assertEqual(command_issues('```powershell\npython $dmCli operator invent `\n --workspace here\n```',
+                                       options, flags), [('command mode', 'operator', 'invent')])
+        self.assertEqual(command_issues('`operator install|probe`', options, flags), [])
+        self.assertEqual(command_issues('`operator install|invent`', options, flags),
+                         [('command mode', 'operator', 'invent')])
+
     def test_trust_fields_require_actual_inspection_and_environment_return(self):
         schemas = field_schemas()
         from support.doc_code import TRUST_BOUNDARIES, trust_field_issues

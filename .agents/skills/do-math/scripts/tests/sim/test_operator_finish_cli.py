@@ -184,3 +184,33 @@ class OperatorCommandTests(unittest.TestCase):
                 self.assertEqual(self.scene.ports.scheduler.calls, calls)
                 self.assertEqual(self.scene.jobs.launched, [])
                 self.assertEqual(self.scene.cli.calls, [])
+
+    def test_normal_probe_observes_without_calling_a_model_or_starting_research(self):
+        before = self.scene.load()
+        code, envelope = self.invoke('probe')
+        self.assertEqual(code, 0)
+        result = envelope['result']
+        self.assertEqual(result['outcome'], 'observed')
+        self.assertIs(result['model_called'], False)
+        self.assertEqual(result['status']['snapshot'], before[0])
+        self.assertEqual(result['engine_start']['outcome'], 'startable')
+        self.assertEqual(self.scene.load(), before)
+        self.assertFalse(any(action.startswith('start') for action, _ in self.scene.ports.scheduler.calls))
+        self.assertEqual(self.scene.jobs.launched, [])
+        self.assertEqual(self.scene.cli.calls, [])
+
+    def test_probe_status_failure_returns_its_error_without_a_required_model_marker(self):
+        from support.operator_finish_ports import UnreadableOnce
+        sim = self.scene.sim
+        before = self.scene.load()
+        ports = replace(self.scene.ports, git_backend=UnreadableOnce(sim.ports.git_backend.objects))
+        result = operator.check(*self.scene.args, ports=ports, probe=True,
+                                codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
+        self.assertEqual(result, {'outcome': 'recovery_required', 'kind': 'engine_unavailable',
+            'error_type': 'SyntaxError', 'error': 'engine broken', 'observed_at': sim.clock.now()})
+        failure = json.loads((self.scene.workspace / 'operator/engine-failure.json').read_bytes())
+        self.assertEqual(failure, result)
+        self.assertEqual(self.scene.load(), before)
+        self.assertEqual(self.scene.ports.scheduler.calls, [])
+        self.assertEqual(self.scene.jobs.launched, [])
+        self.assertEqual(self.scene.cli.calls, [])

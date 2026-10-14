@@ -1,0 +1,59 @@
+{
+  ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py": {
+    "source": "Git HEAD, full start SHA checked",
+    "old_definitions": 32,
+    "changed": [],
+    "added": [
+      "InitialAdoptionTests.assert_public_policy_saved",
+      "InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved",
+      "InitialAdoptionTests.test_explicit_review_policy_takes_precedence_over_default_adoption"
+    ],
+    "removed": []
+  },
+  ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py": {
+    "source": "Git HEAD, full start SHA checked",
+    "old_definitions": 18,
+    "changed": [
+      "PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation"
+    ],
+    "added": [],
+    "removed": []
+  },
+  ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py": {
+    "source": "Git HEAD, full start SHA checked",
+    "old_definitions": 9,
+    "changed": [],
+    "added": [
+      "OperatorCommandTests.test_normal_probe_observes_without_calling_a_model_or_starting_research",
+      "OperatorCommandTests.test_probe_status_failure_returns_its_error_without_a_required_model_marker"
+    ],
+    "removed": []
+  },
+  ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py": {
+    "source": "Git HEAD, full start SHA checked",
+    "old_definitions": 33,
+    "changed": [],
+    "added": [
+      "DocumentCodeTests.test_identity_output_declarations_use_their_exact_stage_and_item",
+      "DocumentCodeTests.test_missing_preparation_document_section_or_json_example_is_rejected",
+      "DocumentCodeTests.test_missing_review_output_section_or_declaration_is_rejected",
+      "DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands",
+      "DocumentCodeTests.test_preparation_partial_examples_use_their_exact_extension_branch"
+    ],
+    "removed": []
+  },
+  ".claude/skills/do-math/scripts/tests/support/doc_code.py": {
+    "source": "025 raw-evidence archive, full start SHA checked",
+    "old_definitions": 27,
+    "changed": [
+      "command_issues"
+    ],
+    "added": [
+      "_document_section",
+      "_schema_path",
+      "preparation_example_issues",
+      "review_output_issues"
+    ],
+    "removed": []
+  }
+}

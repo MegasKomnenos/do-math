@@ -15,6 +15,7 @@ shapes; an index proves field ownership, not that a runtime array has that index
 import ast
 import inspect
 import importlib
+import json
 import textwrap
 from pathlib import Path
 import re
@@ -93,7 +94,8 @@ def command_issues(text, options, flags):
                 tokens = shlex.split(example, posix=False)
             except ValueError:
                 continue  # Partial prose notation is not a command example.
-            if len(tokens) > 1 and tokens[0] in options and any(token.strip('[]').startswith('--') for token in tokens[1:]):
+            if len(tokens) > 1 and tokens[0] in options and (tokens[0] == 'operator' or
+                    any(token.strip('[]').startswith('--') for token in tokens[1:])):
                 matches = [re.match(r'\s*' + re.escape(tokens[0]), example)]
                 short_name = tokens[0]
             else:
@@ -110,6 +112,15 @@ def command_issues(text, options, flags):
             except ValueError:
                 issues.add(('unparseable command example', name))
                 continue
+            if name == 'operator' and arguments:
+                from do_math.cli_contract import build_parser, _command_parsers
+                parser = _command_parsers(build_parser())['operator']
+                choices = next(action.choices for action in parser._actions if action.dest == 'mode')
+                mode = arguments[0].strip('[]')
+                if not mode.startswith('--'):
+                    for alternative in mode.split('|'):
+                        if alternative not in choices:
+                            issues.add(('command mode', name, alternative))
             for argument in arguments:
                 argument = argument.strip('[]')  # Optional arguments in command synopses.
                 if FLAG.fullmatch(argument):
@@ -117,6 +128,107 @@ def command_issues(text, options, flags):
                     if flag not in options[name]:
                         issues.add(('command option', name, flag))
     return sorted(issues)
+
+
+def _document_section(text, heading):
+    """An explicit document coordinate, not inferred ownership of arbitrary prose."""
+    headings = list(re.finditer(r'^(#{2,3}) (.+)$', text, flags=re.M))
+    selected = [i for i, match in enumerate(headings) if match.group(2) == heading]
+    if len(selected) != 1:
+        raise ValueError('expected one document section: ' + heading)
+    index = selected[0]
+    start = headings[index]
+    end = next((match.start() for match in headings[index + 1:]
+                if len(match.group(1)) <= len(start.group(1))), len(text))
+    return text[start.end():end].strip()
+
+
+def _schema_path(schema, path):
+    variants = [schema]
+    for part in path.split('.'):
+        name = part.removesuffix('[]')
+        variants = [child for value in variants for child in property_variants(value, name)]
+        if part.endswith('[]'):
+            variants = [child for value in variants for child in item_variants(value)]
+    return variants
+
+
+def review_output_issues(text):
+    """Only the initial declaration and organize output paragraphs have these owners.
+
+    initial.id is the explicitly described finding's ID; organize's two bare
+    names are issues item fields. pending_findings is supplied input. Other
+    paragraphs, enum examples and unrelated backticks are not output claims.
+    """
+    from do_math.review_cycle import stage_schema
+    issues = []
+    coordinates = (
+        ('initial', '초기 검토에서는 전체 판단과 발견을 반환한다',
+         ('decision', 'findings', 'scope_complete'), {'id': 'findings[].id'}),
+        ('organize', '쟁점 정리에서는 발견과 답변 담당을 연결한다',
+         ('finding_refs', 'answer_role_slot_id'),
+         {'finding_refs': 'issues[].finding_refs', 'answer_role_slot_id': 'issues[].answer_role_slot_id'}))
+    for stage, heading, declarations, aliases in coordinates:
+        try:
+            section = _document_section(text, heading)
+        except ValueError as error:
+            issues.append(('review output section', stage, str(error)))
+            continue
+        paragraphs = section.split('\n\n')
+        chosen = paragraphs[:1] if stage == 'initial' else paragraphs[:2]
+        if not chosen[0].startswith('`' + stage + '`에서는') or (stage == 'organize' and
+                (len(chosen) != 2 or not chosen[1].startswith('반환의 '))):
+            issues.append(('review output declaration', stage))
+            continue
+        names = set(SPAN.findall('\n\n'.join(chosen))) - {stage}
+        if stage == 'organize':
+            names -= {'pending_findings', 'pending_findings[].ref'}
+        for name in declarations:
+            if name not in names:
+                issues.append(('review output missing field', stage, aliases.get(name, name)))
+        schema = stage_schema(stage)
+        for name in sorted(names):
+            path = aliases.get(name, name)
+            if not _schema_path(schema, path):
+                issues.append(('review output field', stage, path))
+    return issues
+
+
+def preparation_example_issues(text):
+    """Two required partial JSON examples, each bound to its actual extension owner."""
+    import jsonschema
+    from do_math.submission import extension_schema
+    ordinary = extension_schema({'role': 'research_preparation'})
+    sibling = _schema_path(ordinary, 'contract_checks[].sibling_boundaries[]')[0]
+    supplemental = extension_schema({'role': 'research_preparation', 'assessment_targets': []})
+    coordinates = (
+        ('sibling_boundaries[]', '5. 제출 전에 계약을 스스로 점검한다', sibling),
+        ('assessment_targets', '기존 과제의 평가와 관찰 규칙을 보충하는 실행', supplemental))
+    issues = []
+    for owner, heading, schema in coordinates:
+        try:
+            section = _document_section(text, heading)
+        except ValueError as error:
+            issues.append(('preparation example section', owner, str(error)))
+            continue
+        fences = re.findall(r'^```json\n(.*?)\n```', section, flags=re.M | re.S)
+        if len(fences) != 1:
+            issues.append(('preparation example count', owner, len(fences)))
+            continue
+        try:
+            value = json.loads(fences[0])
+        except ValueError as error:
+            issues.append(('preparation example JSON', owner, str(error)))
+            continue
+        if owner == 'assessment_targets' and isinstance(value, dict):
+            for field in ('model_assessments', 'model_assessment_deferrals'):
+                if not value.get(field):
+                    issues.append(('preparation example missing family', owner, field))
+        for error in sorted(jsonschema.Draft202012Validator(schema).iter_errors(value),
+                            key=lambda error: (str(list(error.absolute_path)), error.validator, error.message)):
+            path = '/'.join(map(str, error.absolute_path))
+            issues.append(('preparation example schema', owner, path, error.validator, error.message))
+    return issues
 
 
 def field_schemas():

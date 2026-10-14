@@ -1,0 +1,8 @@
+{
+  "files": 1336,
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py"
+  ],
+  "outside_writes": [],
+  "stale": []
+}

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\027\tasks\doc-policy\evidence\verify.py", line 23, in <module>
+    assert hashlib.sha256(old).hexdigest() == start[path], path
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: .claude/skills/do-math/references/초기화-운전.md
