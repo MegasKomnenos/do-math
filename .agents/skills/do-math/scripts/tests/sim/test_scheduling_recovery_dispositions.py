@@ -160,6 +160,16 @@ class FreshInputRetryTests(unittest.TestCase):
             queue = deepcopy(engine.runtime['queue'])
             damaged = root / 'input/submission/context.json'
             damaged.write_bytes(b'damaged')
+            target['status'] = 'running'
+            with self.assertRaisesRegex(ValueError, '^recovery cannot overlap a live predecessor$'):
+                engine._complete_operational_disposition(record)
+            self.assertEqual(engine.runtime['queue'], queue)
+            target['status'] = 'ended'
+            target['input_manifest'] = {**fitted['manifest'], 'documents': []}
+            with self.assertRaisesRegex(ValueError, '^retry requires intact sealed input evidence$'):
+                engine._complete_operational_disposition(record)
+            self.assertEqual(engine.runtime['queue'], queue)
+            target['input_manifest'] = fitted['manifest']
             engine._complete_operational_disposition(record)
             engine._complete_operational_disposition(record)
             self.assertEqual(damaged.read_bytes(), b'damaged')

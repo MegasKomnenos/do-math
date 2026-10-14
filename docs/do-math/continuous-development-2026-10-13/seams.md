@@ -41,3 +41,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 022의 기존단일지급 약속 수리와 실제 제출/반려 경계 결속을 검수했다. 원봉인/참조/복원·권한 의미는 개정하지 않았다.023은 기존 governance.validate_import_units/prepare_import/check_import/governance_view 및 academic.academic_status와 현재 적용/포장 소비를 사용한다. P06은 소비입력과 반환bundle.check를 구별하고 P10은 조건별실제조회와 지급을 구별한다. 정본은 기존함수/공유schema이며 문서검사에 중복제품정의를 만들지 않는다. 같은task가 helper·직접소비·미러를 소유하고 제품계약을 개정하지 않아 S항목·provides/uses는 추가하지 않는다. runtime·권한의 변화가 필요하면 정확반례를 후속으로 반환한다.
 
 023의실제수입/헌장/학술소비를검수했다.024는기존planning.evaluate_condition/task_scope.decision_is_current와DispatchEngineMixin._plan_settle_waits/_dispatchable, input_overflow/운영처분의기존생산/소비경계를문서검사에연결한다. 입력/반환/권한/해소의정본은현재함수와공유schema이며문서용제품계약을복제하지않는다. 같은task가helper·직접소비·미러를소유하므로S항목·provides/uses는추가하지않는다. runtime계약변화가필요하면정확반례를후속으로반환한다.
+
+024의 실제 조건/대기 문서 결속을 검수했다.025는 기존 formal._project_identity/inspect_toolchain 및 trust_validation.check_environment와 trust_inventory의 실제 생산/소비를 사용한다. project의 null, 환경 검사 분기별 부재·오류·재결박 및 등록/활성화/컴파일 권한은 현 함수·공유 schema가 정본이다. 같은 task가 helper·소비 시험·미러를 소유하고 제품 인터페이스를 개정하지 않으므로 S항목·provides/uses는 추가하지 않는다. runtime 수리가 필요하면 정확 반례를 반환한다.

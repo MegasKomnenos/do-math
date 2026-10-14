@@ -1,0 +1,217 @@
+test_deferred_waits_have_the_assigned_actual_document_check (structure.test_doc_code.DocumentCodeTests.test_deferred_waits_have_the_assigned_actual_document_check) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+OK
+test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) ... 
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': True}, expected=True) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': True}, expected=1) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=True) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=1.0) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=1) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': None}, expected=None) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': None}, expected={}) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={}, expected={}) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={}, expected=None) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'kind': 'task_scope', 'task_id': 'TK-one'}, expected={'kind': 'task_scope', 'task_id': 'TK-one'}) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+  test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'kind': 'task_scope', 'task_id': 'TK-one'}, expected=None) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\unit\failures\e0dcb0a9dc3540fbeb5ae6139986e90dd4b58d7bb3d492ecbf6d631f5fe1fb99.json
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': True}, expected=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[90 chars]c471fa68cbf861dc046806abd78ad', 'status': None}], 'errors': []} != {'sta[90 chars]c471fa68cbf861dc046806abd78ad'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '57a87b43e55da96858cec2a7ac8bb7330ebc471fa68cbf861dc046806abd78ad',
++             'sha256': '57a87b43e55da96858cec2a7ac8bb7330ebc471fa68cbf861dc046806abd78ad'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': True}, expected=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]c471fa68cbf861dc046806abd78ad', 'status': None}], 'errors': []} != {'sta[94 chars]c471fa68cbf861dc046806abd78ad'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '57a87b43e55da96858cec2a7ac8bb7330ebc471fa68cbf861dc046806abd78ad',
++             'sha256': '57a87b43e55da96858cec2a7ac8bb7330ebc471fa68cbf861dc046806abd78ad'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]8563138b3ced219b7ec83dc59b3da', 'status': None}], 'errors': []} != {'sta[94 chars]8563138b3ced219b7ec83dc59b3da'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da',
++             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=1.0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]8563138b3ced219b7ec83dc59b3da', 'status': None}], 'errors': []} != {'sta[94 chars]8563138b3ced219b7ec83dc59b3da'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da',
++             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': 1}, expected=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[90 chars]8563138b3ced219b7ec83dc59b3da', 'status': None}], 'errors': []} != {'sta[90 chars]8563138b3ced219b7ec83dc59b3da'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da',
++             'sha256': '04797e9c8ef9f915585ee1704c133a79bc88563138b3ced219b7ec83dc59b3da'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': None}, expected=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[90 chars]a27938c03b33b895a172ac1cd9fd5', 'status': None}], 'errors': []} != {'sta[90 chars]a27938c03b33b895a172ac1cd9fd5'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': 'a15af6d2be3b12d2b1be5e5c0a50852562fa27938c03b33b895a172ac1cd9fd5',
++             'sha256': 'a15af6d2be3b12d2b1be5e5c0a50852562fa27938c03b33b895a172ac1cd9fd5'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'value': None}, expected={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]a27938c03b33b895a172ac1cd9fd5', 'status': None}], 'errors': []} != {'sta[94 chars]a27938c03b33b895a172ac1cd9fd5'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': 'a15af6d2be3b12d2b1be5e5c0a50852562fa27938c03b33b895a172ac1cd9fd5',
++             'sha256': 'a15af6d2be3b12d2b1be5e5c0a50852562fa27938c03b33b895a172ac1cd9fd5'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={}, expected={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[90 chars]867cb48a16b36139adabd155cbe91', 'status': None}], 'errors': []} != {'sta[90 chars]867cb48a16b36139adabd155cbe91'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': 'ded7dcc41ff6ff84d44b27f0c4f71ce3efa867cb48a16b36139adabd155cbe91',
++             'sha256': 'ded7dcc41ff6ff84d44b27f0c4f71ce3efa867cb48a16b36139adabd155cbe91'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={}, expected=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]867cb48a16b36139adabd155cbe91', 'status': None}], 'errors': []} != {'sta[94 chars]867cb48a16b36139adabd155cbe91'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': 'ded7dcc41ff6ff84d44b27f0c4f71ce3efa867cb48a16b36139adabd155cbe91',
++             'sha256': 'ded7dcc41ff6ff84d44b27f0c4f71ce3efa867cb48a16b36139adabd155cbe91'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'kind': 'task_scope', 'task_id': 'TK-one'}, expected={'kind': 'task_scope', 'task_id': 'TK-one'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[90 chars]4dfb055246f7626f5776ee5f21045', 'status': None}], 'errors': []} != {'sta[90 chars]4dfb055246f7626f5776ee5f21045'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '16c23fd1301f3557db9e971065a424825fd4dfb055246f7626f5776ee5f21045',
++             'sha256': '16c23fd1301f3557db9e971065a424825fd4dfb055246f7626f5776ee5f21045'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'ready'}
+
+======================================================================
+FAIL: test_documented_decision_value_uses_real_input_and_exact_types (unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types) (change={'kind': 'task_scope', 'task_id': 'TK-one'}, expected=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\unit\test_planning_conditions.py", line 359, in test_documented_decision_value_uses_real_input_and_exact_types
+    self.assertEqual(result, {'state': state, 'basis': [
+AssertionError: {'sta[94 chars]4dfb055246f7626f5776ee5f21045', 'status': None}], 'errors': []} != {'sta[94 chars]4dfb055246f7626f5776ee5f21045'}], 'errors': []}
+  {'basis': [{'id': 'DC-choice',
+-             'sha256': '16c23fd1301f3557db9e971065a424825fd4dfb055246f7626f5776ee5f21045',
++             'sha256': '16c23fd1301f3557db9e971065a424825fd4dfb055246f7626f5776ee5f21045'}],
+?                                                                                         ++
+
+-             'status': None}],
+   'errors': [],
+   'state': 'not_ready'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.208s
+
+FAILED (failures=11)
+test_documented_wait_is_the_actual_queue_value_until_the_exact_limit (sim.test_scheduling_session_slots.PlanSettleTests.test_documented_wait_is_the_actual_queue_value_until_the_exact_limit) ... ok
+test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning (sim.test_scheduling_session_slots.PlanSettleTests.test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 4.137s
+
+OK

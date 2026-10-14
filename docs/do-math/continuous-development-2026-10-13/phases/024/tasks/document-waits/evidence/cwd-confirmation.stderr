@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\cwd_followup.py", line 12, in <module>
+    assert p.returncode==0 and len(resource)==2,(p.returncode,resource)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (0, [])

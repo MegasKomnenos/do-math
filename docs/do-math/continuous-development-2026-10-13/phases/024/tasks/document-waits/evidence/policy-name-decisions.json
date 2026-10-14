@@ -1,0 +1,386 @@
+[
+  {
+    "name": "conversation_loss_policy",
+    "occurrences": [
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/README.md",
+          "line": 152,
+          "token": "conversation_loss_policy=continue_authorized",
+          "text": "독립 인계에는 `conversation_loss_policy=continue_authorized`가 승인·적용되어 있는지도 확인한다. 이 정책에서는 대화의 attach·heartbeat 없이 허가된 연구를 계속할 수 있다. 초기화 관문은 `pause` 정책도 허용하므로, 활성화만으로 대화 종료 후의 지속 실행을 보장하지 않는다. 기존 승인 근거를 재사용하고, 다른 정책이 승인되어 있으면 그 결정을 임의로 바꾸지 않는다. 새 사용자 결정이 필요한 경우에는 그 조건의 영향과 대기 범위를 명시한다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다.",
+          "policy": "conversation_loss_policy"
+        },
+        "current_line": 152,
+        "current_text": "독립 인계에는 `conversation_loss_policy=continue_authorized`가 승인·적용되어 있는지도 확인한다. 이 정책에서는 대화의 attach·heartbeat 없이 허가된 연구를 계속할 수 있다. 초기화 관문은 `pause` 정책도 허용하므로, 활성화만으로 대화 종료 후의 지속 실행을 보장하지 않는다. 기존 승인 근거를 재사용하고, 다른 정책이 승인되어 있으면 그 결정을 임의로 바꾸지 않는다. 새 사용자 결정이 필요한 경우에는 그 조건의 영향과 대기 범위를 명시한다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다.",
+        "sha256": "d908cb747ff6bdd68c7c78823ff7336040ad5b1e393656e6d6166966f11c64f9",
+        "bytes": 65953
+      },
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 628,
+          "token": "conversation_loss_policy",
+          "text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+          "policy": "conversation_loss_policy"
+        },
+        "current_line": 628,
+        "current_text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+        "sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+        "bytes": 151635
+      },
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "conversation_loss_policy='continue_authorized'",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "conversation_loss_policy"
+        },
+        "current_line": 182,
+        "current_text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+        "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34",
+        "bytes": 34182
+      }
+    ],
+    "definitions": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "sha256": "3c78ca0aa73ed60baebbdc65a16d2b2fd15238f567da019ac0d58c466b4f7c27",
+        "bytes": 11165,
+        "excerpts": [
+          {
+            "line": 91,
+            "text": "            adoption['config_sha256'] = change['config_sha256']\n        if change.get('adopt_current_governance') is True:\n            adoption['governance_sha256'] = governance_basis(self.instance)\n        if 'conversation_loss_policy' in change:\n            if change['conversation_loss_policy'] not in {'pause', 'continue_authorized'}:\n                raise ValueError('explicit conversation loss policy required')\n            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']\n        if 'external_policy' in change:"
+          },
+          {
+            "line": 92,
+            "text": "        if change.get('adopt_current_governance') is True:\n            adoption['governance_sha256'] = governance_basis(self.instance)\n        if 'conversation_loss_policy' in change:\n            if change['conversation_loss_policy'] not in {'pause', 'continue_authorized'}:\n                raise ValueError('explicit conversation loss policy required')\n            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']\n        if 'external_policy' in change:\n            if change['external_policy'] not in {'disabled', 'explicit_grants'}:"
+          },
+          {
+            "line": 94,
+            "text": "        if 'conversation_loss_policy' in change:\n            if change['conversation_loss_policy'] not in {'pause', 'continue_authorized'}:\n                raise ValueError('explicit conversation loss policy required')\n            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']\n        if 'external_policy' in change:\n            if change['external_policy'] not in {'disabled', 'explicit_grants'}:\n                raise ValueError('external policy must be disabled or explicit_grants')\n            adoption['external_policy'] = change['external_policy']"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "sha256": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
+        "bytes": 51510,
+        "excerpts": [
+          {
+            "line": 145,
+            "text": "        self._request_stop_all(reason)\n\n    def _conversation_live(self):\n        if self.instance.get('conversation_loss_policy') != 'pause':\n            return True\n        now = self._lifecycle_now()\n        lost = self.runtime.get('lost_conversation_generations', {})\n        return any(conversation_lease_live(row, at=now)"
+          },
+          {
+            "line": 482,
+            "text": "            except OverflowError as error:\n                raise ValueError('conversation lease exceeds the supported timestamp range') from error\n        if operation == 'attach':\n            policy = config.get('disconnect_policy', self.instance.get('conversation_loss_policy'))\n            if policy not in {'pause', 'continue_authorized'}:\n                raise ValueError('conversation loss policy requires an explicit user decision')\n            if current and generation <= current['generation']:\n                raise ValueError('reattachment requires a new connection generation')"
+          },
+          {
+            "line": 495,
+            "text": "                'last_heartbeat_at': now.isoformat(), 'lease_expires_at': lease_expiry(lease),\n                'source_ref': source_ref}\n            self.runtime['conversations'][conversation_id] = current\n            self.instance['conversation_loss_policy'] = policy\n        elif operation in {'heartbeat', 'detach'}:\n            if not current or current['generation'] != generation or current['status'] != 'connected':\n                raise ValueError('signal does not identify the current connected conversation generation')\n            if operation == 'heartbeat':"
+          },
+          {
+            "line": 514,
+            "text": "        conversation.update(status='lost', lost_at=self._lifecycle_now().isoformat(), loss_reason=reason)\n        self._lifecycle_event('conversation_lost', target=conversation['id'], source_ref=source_ref,\n                              generation=conversation['generation'], reason=reason, schedule=False)\n        if self.instance.get('conversation_loss_policy', conversation['disconnect_policy']) == 'pause':\n            self.runtime.setdefault('lost_conversation_generations', {})[conversation['id']] = conversation['generation']\n            if self.runtime.get('status') != 'closed': self._pause_lifecycle('conversation_lost')\n            self._request_stop_all('conversation_lost')\n"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/supervision.py",
+        "sha256": "bb0e0561242c9d57e38dd72769c7e2531210834eaa75c6ffdbeb40ead5aef275",
+        "bytes": 10940,
+        "excerpts": [
+          {
+            "line": 44,
+            "text": "            'maintenance_fence': deepcopy(runtime.get('maintenance_fence')),\n            'model_policy_violation': deepcopy(runtime.get('model_policy_violation')),\n            'conversation_lost': (runtime.get('stop_requested') == 'conversation_lost'\n                                  and instance.get('conversation_loss_policy') == 'pause'),\n            'installation_repair': deepcopy(pending_installation_repair(runtime)),\n            'operator_enabled': instance.get('config', {}).get('operator_enabled') is True}\n\n"
+          }
+        ]
+      }
+    ],
+    "judgment": "Maintain the current sentences and lexical owner check. Definition/owner identification is not complete policy-semantic certification; the listed owner retains its broader runtime/role review responsibility. No new generic policy evaluator."
+  },
+  {
+    "name": "disconnect_policy",
+    "occurrences": [
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 628,
+          "token": "disconnect_policy",
+          "text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+          "policy": "disconnect_policy"
+        },
+        "current_line": 628,
+        "current_text": "`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.",
+        "sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+        "bytes": 151635
+      }
+    ],
+    "definitions": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "bytes": 12479,
+        "excerpts": [
+          {
+            "line": 184,
+            "text": "    'external': obj({**fields(text='operation id grant_id source_ref target_id purpose subject actor_kind result'),\n        'request': obj(fields(text='method url body')), 'evidence': EVIDENCE,\n        'idempotency_evidence': {'type': ['string', 'null']}}),\n    'conversation': obj({**fields(text='operation id disconnect_policy reason'), 'generation': INTEGER,\n        'lease_seconds': {'type': 'integer', 'minimum': 1}}),\n    'source': obj({**fields(text='path name body_base64 sha256'), 'bytes': {'type': 'integer', 'minimum': 0}}),\n}\n_VALIDATORS = {key: Draft202012Validator(schema) for key, schema in PAYLOADS.items()}"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "sha256": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
+        "bytes": 51510,
+        "excerpts": [
+          {
+            "line": 482,
+            "text": "            except OverflowError as error:\n                raise ValueError('conversation lease exceeds the supported timestamp range') from error\n        if operation == 'attach':\n            policy = config.get('disconnect_policy', self.instance.get('conversation_loss_policy'))\n            if policy not in {'pause', 'continue_authorized'}:\n                raise ValueError('conversation loss policy requires an explicit user decision')\n            if current and generation <= current['generation']:\n                raise ValueError('reattachment requires a new connection generation')"
+          },
+          {
+            "line": 491,
+            "text": "            if isinstance(lease, bool) or not isinstance(lease, (int, float)) or not 0 < lease < float('inf'):\n                raise ValueError('conversation lease_seconds must be finite and positive')\n            current = {'id': conversation_id, 'generation': generation, 'status': 'connected',\n                'lease_seconds': lease, 'disconnect_policy': policy, 'attached_at': now.isoformat(),\n                'last_heartbeat_at': now.isoformat(), 'lease_expires_at': lease_expiry(lease),\n                'source_ref': source_ref}\n            self.runtime['conversations'][conversation_id] = current\n            self.instance['conversation_loss_policy'] = policy"
+          },
+          {
+            "line": 514,
+            "text": "        conversation.update(status='lost', lost_at=self._lifecycle_now().isoformat(), loss_reason=reason)\n        self._lifecycle_event('conversation_lost', target=conversation['id'], source_ref=source_ref,\n                              generation=conversation['generation'], reason=reason, schedule=False)\n        if self.instance.get('conversation_loss_policy', conversation['disconnect_policy']) == 'pause':\n            self.runtime.setdefault('lost_conversation_generations', {})[conversation['id']] = conversation['generation']\n            if self.runtime.get('status') != 'closed': self._pause_lifecycle('conversation_lost')\n            self._request_stop_all('conversation_lost')\n"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+        "bytes": 59678,
+        "excerpts": [
+          {
+            "line": 565,
+            "text": "    (\"execution_id\", \"decision\", \"basis\"))\nRECORDS[\"conversations\"] = record({\"generation\": {\"type\": \"integer\", \"minimum\": 1},\n    \"status\": enum(\"connected\", \"lost\"), \"lease_seconds\": {\"type\": \"integer\", \"minimum\": 1},\n    \"disconnect_policy\": enum(\"pause\", \"continue_authorized\"), \"attached_at\": TEXT, \"last_heartbeat_at\": TEXT,\n    \"lease_expires_at\": TEXT, \"source_ref\": TEXT, \"lost_at\": TEXT, \"loss_reason\": TEXT},\n    (\"generation\", \"status\", \"lease_seconds\", \"disconnect_policy\", \"attached_at\", \"last_heartbeat_at\", \"lease_expires_at\", \"source_ref\"))\nRECORDS[\"trust_transitions\"] = record({\"from_environment\": nullable(ID), \"to_environment\": ID,\n    \"targets\": array(obj({\"id\": ID, \"formal_result_id\": ID, \"exposition_id\": ID, \"source_sha256\": HASH, \"basis\": EVIDENCE,"
+          },
+          {
+            "line": 567,
+            "text": "    \"status\": enum(\"connected\", \"lost\"), \"lease_seconds\": {\"type\": \"integer\", \"minimum\": 1},\n    \"disconnect_policy\": enum(\"pause\", \"continue_authorized\"), \"attached_at\": TEXT, \"last_heartbeat_at\": TEXT,\n    \"lease_expires_at\": TEXT, \"source_ref\": TEXT, \"lost_at\": TEXT, \"loss_reason\": TEXT},\n    (\"generation\", \"status\", \"lease_seconds\", \"disconnect_policy\", \"attached_at\", \"last_heartbeat_at\", \"lease_expires_at\", \"source_ref\"))\nRECORDS[\"trust_transitions\"] = record({\"from_environment\": nullable(ID), \"to_environment\": ID,\n    \"targets\": array(obj({\"id\": ID, \"formal_result_id\": ID, \"exposition_id\": ID, \"source_sha256\": HASH, \"basis\": EVIDENCE,\n        \"formal_basis\": HASH, \"exposition_basis\": HASH, \"declaration_evidence\": nullable(EVIDENCE),\n        \"dependency_closure\": nullable(mapping(array(TEXT))), \"dependency_evidence\": nullable(mapping(HASH)),"
+          }
+        ]
+      }
+    ],
+    "judgment": "Maintain the current sentences and lexical owner check. Definition/owner identification is not complete policy-semantic certification; the listed owner retains its broader runtime/role review responsibility. No new generic policy evaluator."
+  },
+  {
+    "name": "model_policy",
+    "occurrences": [
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 152,
+          "token": "model_policy",
+          "text": "허용 설정 키와 각 키의 자료형·범위의 기계 정본은 저장 스키마의 설정 절 `record_schemas.config_schema()`이고, 기본값의 기계 정본은 `scripts/do_math/configuration.py`의 `DEFAULT_CONFIG`다. 모델 대응·역할 등급·세션 용량의 기본값은 `model_policy`가 정한다. 인스턴스에 실제 적용된 값은 해당 snapshot에서 재구성한 `config` 기록이 소유한다.",
+          "policy": "model_policy"
+        },
+        "current_line": 152,
+        "current_text": "허용 설정 키와 각 키의 자료형·범위의 기계 정본은 저장 스키마의 설정 절 `record_schemas.config_schema()`이고, 기본값의 기계 정본은 `scripts/do_math/configuration.py`의 `DEFAULT_CONFIG`다. 모델 대응·역할 등급·세션 용량의 기본값은 `model_policy`가 정한다. 인스턴스에 실제 적용된 값은 해당 snapshot에서 재구성한 `config` 기록이 소유한다.",
+        "sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+        "bytes": 151635
+      },
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+          "line": 991,
+          "token": "model_policy",
+          "text": "| `model_policy` | 잠금과 다른 실제 모델이 보고되어 후속을 정지한다 |",
+          "policy": "model_policy"
+        },
+        "current_line": 993,
+        "current_text": "| `model_policy` | 잠금과 다른 실제 모델이 보고되어 후속을 정지한다 |",
+        "sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+        "bytes": 151635
+      }
+    ],
+    "definitions": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+        "sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9",
+        "bytes": 9469,
+        "excerpts": [
+          {
+            "line": 7,
+            "text": "from copy import deepcopy\n\nTIERS = (\"low\", \"medium\", \"high\")\nMODELS = {\"high\": \"gpt-6-astra\", \"medium\": \"gpt-5.6-sol\", \"low\": \"gpt-5.6-terra\"}\n# Work roles reserve these per-model slots. Operational roles reserve none.\nLIMITS = {\"work\": {model: 3 for model in MODELS.values()}}\n# Bootstrap judgments must be possible before a research planner has run.\nROLE_TIERS = {\"research_preparation\": \"high\", \"research_plan\": \"high\","
+          },
+          {
+            "line": 11,
+            "text": "# Work roles reserve these per-model slots. Operational roles reserve none.\nLIMITS = {\"work\": {model: 3 for model in MODELS.values()}}\n# Bootstrap judgments must be possible before a research planner has run.\nROLE_TIERS = {\"research_preparation\": \"high\", \"research_plan\": \"high\",\n              \"research_work\": \"low\", \"supplemental_research\": \"low\",\n              \"task_contract_review\": \"medium\", \"identity_review\": \"high\",\n              \"goal_audit\": \"high\", \"operational_review\": \"medium\",\n              \"intent_interpretation\": \"high\", \"maintenance\": \"medium\","
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_call.py",
+        "sha256": "93fd304f141d1cb59d06554f09e7c45c81276b243ea452d49ecaaa7c4d85371c",
+        "bytes": 10772,
+        "excerpts": [
+          {
+            "line": 159,
+            "text": "        if key in parsed:\n            result[key] = parsed[key]\n    if claude_only_assigned_model and any(name != cli_model for name in parsed.get(\"reported_models\", [])):\n        result.update(error=\"reported model differs from the locked assignment\", error_kind=\"model_policy\")\n        return result\n    if stopped:\n        result[\"error\"] = \"stop requested or timeout\"\n        return result"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+        "sha256": "417c730909bccdc7ed5ac5bd81eded90fd1d1f6050a318cbd5f03a25bfe182d7",
+        "bytes": 4763,
+        "excerpts": [
+          {
+            "line": 8,
+            "text": "from .session_slots import SessionSlots\n\n\ndef record_model_policy_violation(instance, runtime, execution_id, model, result):\n    \"\"\"Pause on a reported model other than the assigned one; the user decides the next step.\"\"\"\n    runtime[\"model_policy_violation\"] = {\"execution_id\": execution_id, \"assigned_model\": model,\n                                         \"reported_models\": deepcopy(result.get(\"reported_models\"))}\n    if not instance_ended(instance, runtime):"
+          },
+          {
+            "line": 10,
+            "text": "\ndef record_model_policy_violation(instance, runtime, execution_id, model, result):\n    \"\"\"Pause on a reported model other than the assigned one; the user decides the next step.\"\"\"\n    runtime[\"model_policy_violation\"] = {\"execution_id\": execution_id, \"assigned_model\": model,\n                                         \"reported_models\": deepcopy(result.get(\"reported_models\"))}\n    if not instance_ended(instance, runtime):\n        runtime[\"status\"] = \"paused\"\n"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/call_engine.py",
+        "sha256": "32e3933fe006a8cd04ecff52a936ee4e7d315aeed591bb11fdadcdf7951e8898",
+        "bytes": 39593,
+        "excerpts": [
+          {
+            "line": 21,
+            "text": "from . import questions\nfrom . import submission, execution_window\nfrom . import activities, execution_lifecycle, execution_profiles, launch\nfrom .provider_engine import record_model_policy_violation\nfrom .payloads import json_safe\nfrom .wait_rules import review_preparation_wait, observation_preparation_wait, action_authority_wait\n\n"
+          },
+          {
+            "line": 471,
+            "text": "        if result.get('status') == 'failed':\n            result.setdefault('error_kind', 'execution_failure')\n        stopped_execution = self.runtime[\"executions\"][execution_id]\n        if result.get(\"error_kind\") == \"model_policy\":\n            record_model_policy_violation(self.instance, self.runtime, execution_id, execution[\"model\"], result)\n        if result[\"status\"] == \"completed\" and (\n                stopped_execution.get(\"after_stop\")\n                or self._execution_stop_requested(action, stopped_execution)):"
+          },
+          {
+            "line": 472,
+            "text": "            result.setdefault('error_kind', 'execution_failure')\n        stopped_execution = self.runtime[\"executions\"][execution_id]\n        if result.get(\"error_kind\") == \"model_policy\":\n            record_model_policy_violation(self.instance, self.runtime, execution_id, execution[\"model\"], result)\n        if result[\"status\"] == \"completed\" and (\n                stopped_execution.get(\"after_stop\")\n                or self._execution_stop_requested(action, stopped_execution)):\n            # The stop request already revoked general authority; keep the late output only as preserved evidence."
+          },
+          {
+            "line": 525,
+            "text": "            self._refresh_changed_decision(action, execution_id, execution[\"currentness_changes\"])\n        elif result.get(\"error_kind\") == \"provider_limit\":\n            self._requeue_provider_action(action, execution_id, provider_state)\n        elif result.get(\"error_kind\") == \"model_policy\":\n            self._remove_action(action)\n            self.runtime[\"status\"] = \"paused\"\n            self.runtime[\"questions\"].append(\"A reported model differed from the locked assignment; inspect \" + execution_id)\n        elif result[\"status\"] == \"completed\" or result.get(\"error_kind\") == \"output_validation\":"
+          }
+        ]
+      }
+    ],
+    "judgment": "Maintain the current sentences and lexical owner check. Definition/owner identification is not complete policy-semantic certification; the listed owner retains its broader runtime/role review responsibility. No new generic policy evaluator."
+  },
+  {
+    "name": "external_policy",
+    "occurrences": [
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "external_policy",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "external_policy"
+        },
+        "current_line": 182,
+        "current_text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+        "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34",
+        "bytes": 34182
+      }
+    ],
+    "definitions": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "sha256": "3c78ca0aa73ed60baebbdc65a16d2b2fd15238f567da019ac0d58c466b4f7c27",
+        "bytes": 11165,
+        "excerpts": [
+          {
+            "line": 95,
+            "text": "            if change['conversation_loss_policy'] not in {'pause', 'continue_authorized'}:\n                raise ValueError('explicit conversation loss policy required')\n            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']\n        if 'external_policy' in change:\n            if change['external_policy'] not in {'disabled', 'explicit_grants'}:\n                raise ValueError('external policy must be disabled or explicit_grants')\n            adoption['external_policy'] = change['external_policy']\n        if 'review_policy' in change or change.get('adopt_default_review_policy'):"
+          },
+          {
+            "line": 96,
+            "text": "                raise ValueError('explicit conversation loss policy required')\n            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']\n        if 'external_policy' in change:\n            if change['external_policy'] not in {'disabled', 'explicit_grants'}:\n                raise ValueError('external policy must be disabled or explicit_grants')\n            adoption['external_policy'] = change['external_policy']\n        if 'review_policy' in change or change.get('adopt_default_review_policy'):\n            policy = build_review_policy(change.get('review_policy'),"
+          },
+          {
+            "line": 98,
+            "text": "        if 'external_policy' in change:\n            if change['external_policy'] not in {'disabled', 'explicit_grants'}:\n                raise ValueError('external policy must be disabled or explicit_grants')\n            adoption['external_policy'] = change['external_policy']\n        if 'review_policy' in change or change.get('adopt_default_review_policy'):\n            policy = build_review_policy(change.get('review_policy'),\n                reviewer_count=self.instance['config'].get('reviewers'),\n                max_rounds=self.instance['config'].get('review_rounds'))"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "sha256": "243267caeb572b7d2927c9a9d8ef62bbbe6a4b41fb3038b72a56aeaf2c7a1b63",
+        "bytes": 16680,
+        "excerpts": [
+          {
+            "line": 209,
+            "text": "        missing.append(\"configuration\")\n    if instance.get(\"conversation_loss_policy\") not in {\"pause\", \"continue_authorized\"}:\n        missing.append(\"conversation_policy\")\n    if \"external_policy\" not in adoption:\n        missing.append(\"external_policy\")\n    try:\n        if lifecycle.get('intent_check') != initial_intent_evidence(instance, runtime, owner_handlers=owner_handlers, clock=clock):\n            raise ValueError('initial intent receipt differs from applied import')"
+          },
+          {
+            "line": 210,
+            "text": "    if instance.get(\"conversation_loss_policy\") not in {\"pause\", \"continue_authorized\"}:\n        missing.append(\"conversation_policy\")\n    if \"external_policy\" not in adoption:\n        missing.append(\"external_policy\")\n    try:\n        if lifecycle.get('intent_check') != initial_intent_evidence(instance, runtime, owner_handlers=owner_handlers, clock=clock):\n            raise ValueError('initial intent receipt differs from applied import')\n    except (ValueError, KeyError, TypeError):"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/external_engine.py",
+        "sha256": "3c182a9e07cdad33a6877de465b34ce90152004a12d5507cb4adf24fa52785e6",
+        "bytes": 16006,
+        "excerpts": [
+          {
+            "line": 18,
+            "text": "        \"\"\"\n        operation = config.get('operation')\n        if operation == 'prepare':\n            if self.instance['lifecycle'].get('adoption', {}).get('external_policy') != 'explicit_grants':\n                raise ValueError('external effects are disabled by the adopted policy')\n            grant = self.instance.get('grants', {}).get(config.get('grant_id'))\n            if not grant or grant.get('kind') != 'http': raise ValueError('HTTP operation requires an explicit HTTP grant')\n            stable_source_ref = config.get('source_ref') or ('external:' + str(config['id']) if config.get('id') else source_ref)"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "sha256": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
+        "bytes": 51510,
+        "excerpts": [
+          {
+            "line": 253,
+            "text": "                if action['profile_ref'] != adoption.get('initial_profile_ref'):\n                    raise ValueError('initial interpretation must use its adopted exact profile')\n        elif lifecycle == 'active':\n            if action['role'] == 'external_action' and self.instance['lifecycle'].get('adoption', {}).get('external_policy') != 'explicit_grants':\n                raise ValueError('the adopted policy does not permit external effects')\n            initial_ids = self.instance['lifecycle'].get('adoption', {}).get('initial_grant_ids', [])\n            if action.get('grant_id') and (action['grant_id'] in initial_ids or\n                    self.instance['grants'].get(action['grant_id'], {}).get('initialization_only')):"
+          }
+        ]
+      }
+    ],
+    "judgment": "Maintain the current sentences and lexical owner check. Definition/owner identification is not complete policy-semantic certification; the listed owner retains its broader runtime/role review responsibility. No new generic policy evaluator."
+  },
+  {
+    "name": "adopt_default_review_policy",
+    "occurrences": [
+      {
+        "historical": {
+          "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+          "line": 182,
+          "token": "adopt_default_review_policy",
+          "text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+          "policy": "adopt_default_review_policy"
+        },
+        "current_line": 182,
+        "current_text": "다음은 채택 요청의 예시다. 이 예시는 초기화 뒤 실행기가 대화와 독립적으로 승인된 연구를 계속하고, 외부 효과는 허용하지 않는 운전이다. `conversation_loss_policy='continue_authorized'`에서는 대화의 attach·heartbeat가 연구의 선행조건이 아니다. 사용자 정지·HOLD·허가 만료와 철회는 계속 적용된다. `external_policy`는 실제 허가에 맞추며, `adopt_default_review_policy`는 이미 채택한 기본 검토 방침을 정확한 현재 판본으로 결박한다. `config_sha256`에는 probe에 쓴 값을 그대로 쓴다. 그 사이에 설정이 바뀌었으면 채택은 거부되므로, 새 해시로 probe부터 다시 진행한다.",
+        "sha256": "93b400f107fe5c8534710efcdc4a1d0d7ea23ffd6d760908ee05f0657433ff34",
+        "bytes": 34182
+      }
+    ],
+    "definitions": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "bytes": 12479,
+        "excerpts": [
+          {
+            "line": 129,
+            "text": "    'revision': INTEGER, 'expires_at': TIME, 'profile_ref': PROFILE_REF, 'initial_profile_ref': PROFILE_REF,\n    'profile_refs': {'type': 'array', 'items': PROFILE_REF},\n    'unit_hashes': {'type': 'object', 'additionalProperties': TEXT},\n    **{key: BOOL for key in ('adopt_current_governance', 'adopt_default_review_policy')},\n    **fields(text='conversation_loss_policy external_policy')})\nRELATION = obj(fields(text='id kind source target evidence confirmed_scope',\n    lists='evidence_refs formal_result_refs assessment_refs'))\nCANDIDATE = obj({**fields(text='id kind title statement explanation summary lean_code confirmed_scope epistemic_status selection_relevance',"
+          }
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "sha256": "3c78ca0aa73ed60baebbdc65a16d2b2fd15238f567da019ac0d58c466b4f7c27",
+        "bytes": 11165,
+        "excerpts": [
+          {
+            "line": 99,
+            "text": "            if change['external_policy'] not in {'disabled', 'explicit_grants'}:\n                raise ValueError('external policy must be disabled or explicit_grants')\n            adoption['external_policy'] = change['external_policy']\n        if 'review_policy' in change or change.get('adopt_default_review_policy'):\n            policy = build_review_policy(change.get('review_policy'),\n                reviewer_count=self.instance['config'].get('reviewers'),\n                max_rounds=self.instance['config'].get('review_rounds'))\n            self.instance['review_policy'] = policy"
+          }
+        ]
+      }
+    ],
+    "judgment": "Maintain the current sentences and lexical owner check. Definition/owner identification is not complete policy-semantic certification; the listed owner retains its broader runtime/role review responsibility. No new generic policy evaluator."
+  }
+]

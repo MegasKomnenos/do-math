@@ -14,6 +14,55 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_wait_fields_require_actual_condition_input_and_dispatch_wait(self):
+        schemas = field_schemas()
+        from support.doc_code import WAIT_BOUNDARIES, wait_field_issues
+        for owner, token in (('change', 'change.value'), ('plan_settle_wait', 'plan_settle_wait.kind')):
+            for text in ('`' + token + '`', '`result.' + token.split('.')[1] +
+                         '` <!-- do-math fields: result=' + owner + ' -->'):
+                with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual wait boundary'):
+                    scoped_field_issues(text, schemas)
+                with self.assertRaisesRegex(ValueError, 'actual wait boundary'):
+                    scoped_field_issues(text, schemas, defer_waits=set(WAIT_BOUNDARIES) - {owner})
+                self.assertEqual(scoped_field_issues(text, schemas, defer_waits=(owner,)), [])
+                self.assertEqual(unowned_field_references(text, schemas), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred wait owners'):
+            scoped_field_issues('', schemas, defer_waits=('changes',))
+        with self.assertRaisesRegex(ValueError, 'actual repository report'):
+            scoped_field_issues('`status.budget`', schemas, defer_waits=WAIT_BOUNDARIES)
+        self.assertEqual(wait_field_issues('`change.value`', 'change', {}), [('actual field', 'change.value')])
+        self.assertEqual(wait_field_issues('`dispatch_wait.kind` <!-- do-math fields: dispatch_wait=plan_settle_wait -->',
+            'plan_settle_wait', {}), [('actual field', 'dispatch_wait.kind')])
+
+    def test_deferred_waits_have_the_assigned_actual_document_check(self):
+        import ast
+        from support.doc_code import WAIT_BOUNDARIES
+        owners = {
+            'change': ('unit/test_planning_conditions.py', 'ReadinessConditionTests',
+                       'test_documented_decision_value_uses_real_input_and_exact_types'),
+            'plan_settle_wait': ('sim/test_scheduling_session_slots.py', 'PlanSettleTests',
+                                'test_documented_wait_is_the_actual_queue_value_until_the_exact_limit')}
+        def verify(mapping):
+            self.assertEqual(set(mapping), set(WAIT_BOUNDARIES))
+            for owner, (path, cls_name, method) in mapping.items():
+                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
+                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
+                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
+                self.assertEqual(len(methods), 1)
+                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id == 'assert_wait_documents' and any(k.arg == 'owner'
+                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
+                    for n in ast.walk(methods[0])))
+        verify(owners)
+        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
+            changed = dict(owners)
+            if fault == 'missing_owner': del changed['change']
+            elif fault == 'wrong_owner': changed['changes'] = changed.pop('change')
+            elif fault == 'missing_method': changed['change'] = (*changed['change'][:2], 'missing')
+            else: changed['change'] = (*changed['change'][:2], 'test_readiness_document_tables_match_the_condition_grammar')
+            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                verify(changed)
+
     def test_governance_fields_require_their_actual_boundary_owner(self):
         schemas = field_schemas()
         from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
@@ -201,14 +250,14 @@ class DocumentCodeTests(unittest.TestCase):
             with self.subTest(owner=owner):
                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
                     scoped_field_issues('`' + field + '`', schemas,
-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
+                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait')), [])
         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
+                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
 
     def test_deferred_tools_have_their_actual_document_check(self):
         import ast
@@ -506,7 +555,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
+                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -721,10 +770,12 @@ class DocumentCodeTests(unittest.TestCase):
         from support.doc_code import delivery_field_issues
         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
-        self.assertEqual(scoped_field_issues('`change.value` '
+        self.assertEqual(scoped_field_issues(
             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
-        self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
-                         [('scoped field', 'change.nonexistent')])
+        from support.doc_code import wait_field_issues
+        self.assertEqual(wait_field_issues('`change.value`', 'change', {'value': True}), [])
+        self.assertEqual(wait_field_issues('`change.nonexistent`', 'change', {'value': True}),
+                         [('actual field', 'change.nonexistent')])
         self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
                          'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
 

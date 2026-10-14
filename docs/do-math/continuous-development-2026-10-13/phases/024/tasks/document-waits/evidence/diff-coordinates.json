@@ -1,0 +1,170 @@
+[
+  {
+    "path": ".agents/skills/do-math/references/CLI-실행-계약.md",
+    "baseline_source": "Unchanged historical packet sentence + final surrounding bytes, verified exactly against actual start SHA",
+    "before_sha256": "8a117c782ebb6146d9622c207693758b670ba3e25bfa2bc142759f9e9a3327d1",
+    "after_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e"
+  },
+  {
+    "path": ".agents/skills/do-math/references/과제-착수조건.md",
+    "baseline_source": "HEAD:.agents/skills/do-math/references/과제-착수조건.md (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5",
+    "after_sha256": "450a7fe4e125bdcc4ae9444c0562e742aa7a66ad070bee20aaa8d44249805232"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "before_sha256": "75289ad1034161e395846567c763e9f1b6461753ec416f5ed44e31239d169b98",
+    "after_sha256": "531697d1648968e4e25a4e5306f788ea09071a68a3c44718c6837a029e202a82"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py",
+    "baseline_source": "HEAD:.agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "9af6380fc5af8b49b9ab79a01c254c502169c6da0160988e0b3cef5ba6ad2c56",
+    "after_sha256": "a2a34e66fa0daee311775203a694af66d532b9a3c69ef70d2dcfed04d10cdf1c"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    "baseline_source": "HEAD:.agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    "before_sha256": "cab70338de5f6f2514be70613ae5c8f43febaf0cf61ff46c0c22e797a5315b94",
+    "after_sha256": "0c0d60853da9b36e71bb946e166c9265b10f8d499fb48b95c099168304f0d129"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+    "baseline_source": "HEAD:.agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "3e71047a5c5c932b5c1ae75160bc49a3ca3e3761079d979e76cfaa30c256deba",
+    "after_sha256": "bf7ccb0001d8de5b0ac254b0213f748acb8f4192d4a6e34f0d6bd06b2dee40b2"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "before_sha256": "a54ebc3aea828d8ce3e1857983067657af7b1b1830f1c9510ffefaa8bec16f28",
+    "after_sha256": "574c1a5079b7d596ae9a692c41728e7c9fd4364871c466d710c2fdca2155e8b8"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/support/doc_code.py",
+    "before_sha256": "08a30bad8725b95729a40b5250168e38da5a1b257dec3c5058f6a64abdec7dae",
+    "after_sha256": "8dea7e3cf964731b1ce1e12450b6b2923ae03feed0bf716b3cc70a55867fd9b1"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/support/engine_context.py",
+    "before_sha256": "a9246de6536a8a06bf8ee56d7493a6c261f19468ffcc1f2903f32bcb5dfaff08",
+    "after_sha256": "fd9757c8d883a7032fdccf9383cb20e54bdae68a3a3b19d671fb0459e0828678"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "before_sha256": "2ac01286dda148f9ef32bef642538be8a57b18cc0b8d1c1fae3381b7e89fb0cc",
+    "after_sha256": "cadd4e71a36f9dc4bffc022799bd9bcbee95375e091d17629eddbae3dfca0a36"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    "baseline_source": "HEAD:.agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    "before_sha256": "debdeabccdb22c44336773df2c7cd7f5f2643b18a5c09307ac6448c5302d50f8",
+    "after_sha256": "b86d2d7036a6430da64450a6d0d5c820471462c5f215b9d681b9b2a6b55f9421"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "before_sha256": "e1d18df9a6221cd69b2ccf02f6ee32701a48d1faa2e1be8f260897ca60b0bd8a",
+    "after_sha256": "a13ff8426e1ef63d87f44289f89363e767995dfdc86def49d890c738072c4e7b"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "before_sha256": "3fa6f2cd00e29a64f02a312217d4c6ca4696fe6079cd48b3b105d35572456050",
+    "after_sha256": "9092951836238dea8e48ad83b630a01409a28755423073078c77841f729ea6cf"
+  },
+  {
+    "path": ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "before_sha256": "db4d85bc74c6c31d84783bd90cf8b2765a9c25211ba959f73f01a2d401d38f65",
+    "after_sha256": "5fafc84e2604983ad8f5ace7e9eb6087dff3c8786460ddcab4ade0a0b63d9383"
+  },
+  {
+    "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+    "baseline_source": "Unchanged historical packet sentence + final surrounding bytes, verified exactly against actual start SHA",
+    "before_sha256": "8a117c782ebb6146d9622c207693758b670ba3e25bfa2bc142759f9e9a3327d1",
+    "after_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e"
+  },
+  {
+    "path": ".claude/skills/do-math/references/과제-착수조건.md",
+    "baseline_source": "HEAD:.claude/skills/do-math/references/과제-착수조건.md (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "5f396c152508c45f2648e8cc39be2beb6bff6fe14af4e12c009c7c454dc7a4d5",
+    "after_sha256": "450a7fe4e125bdcc4ae9444c0562e742aa7a66ad070bee20aaa8d44249805232"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    "before_sha256": "75289ad1034161e395846567c763e9f1b6461753ec416f5ed44e31239d169b98",
+    "after_sha256": "531697d1648968e4e25a4e5306f788ea09071a68a3c44718c6837a029e202a82"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py",
+    "baseline_source": "HEAD:.claude/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "9af6380fc5af8b49b9ab79a01c254c502169c6da0160988e0b3cef5ba6ad2c56",
+    "after_sha256": "a2a34e66fa0daee311775203a694af66d532b9a3c69ef70d2dcfed04d10cdf1c"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    "baseline_source": "HEAD:.claude/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    "before_sha256": "cab70338de5f6f2514be70613ae5c8f43febaf0cf61ff46c0c22e797a5315b94",
+    "after_sha256": "0c0d60853da9b36e71bb946e166c9265b10f8d499fb48b95c099168304f0d129"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+    "baseline_source": "HEAD:.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py (CRLF worktree bytes verified against start SHA)",
+    "before_sha256": "3e71047a5c5c932b5c1ae75160bc49a3ca3e3761079d979e76cfaa30c256deba",
+    "after_sha256": "bf7ccb0001d8de5b0ac254b0213f748acb8f4192d4a6e34f0d6bd06b2dee40b2"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "before_sha256": "a54ebc3aea828d8ce3e1857983067657af7b1b1830f1c9510ffefaa8bec16f28",
+    "after_sha256": "574c1a5079b7d596ae9a692c41728e7c9fd4364871c466d710c2fdca2155e8b8"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "before_sha256": "08a30bad8725b95729a40b5250168e38da5a1b257dec3c5058f6a64abdec7dae",
+    "after_sha256": "8dea7e3cf964731b1ce1e12450b6b2923ae03feed0bf716b3cc70a55867fd9b1"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/support/engine_context.py",
+    "before_sha256": "a9246de6536a8a06bf8ee56d7493a6c261f19468ffcc1f2903f32bcb5dfaff08",
+    "after_sha256": "fd9757c8d883a7032fdccf9383cb20e54bdae68a3a3b19d671fb0459e0828678"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    "before_sha256": "2ac01286dda148f9ef32bef642538be8a57b18cc0b8d1c1fae3381b7e89fb0cc",
+    "after_sha256": "cadd4e71a36f9dc4bffc022799bd9bcbee95375e091d17629eddbae3dfca0a36"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    "baseline_source": "HEAD:.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    "before_sha256": "debdeabccdb22c44336773df2c7cd7f5f2643b18a5c09307ac6448c5302d50f8",
+    "after_sha256": "b86d2d7036a6430da64450a6d0d5c820471462c5f215b9d681b9b2a6b55f9421"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    "before_sha256": "e1d18df9a6221cd69b2ccf02f6ee32701a48d1faa2e1be8f260897ca60b0bd8a",
+    "after_sha256": "a13ff8426e1ef63d87f44289f89363e767995dfdc86def49d890c738072c4e7b"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    "before_sha256": "3fa6f2cd00e29a64f02a312217d4c6ca4696fe6079cd48b3b105d35572456050",
+    "after_sha256": "9092951836238dea8e48ad83b630a01409a28755423073078c77841f729ea6cf"
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "baseline_source": "docs/do-math/continuous-development-2026-10-13/phases/023/manager-evidence/raw-evidence.zip:.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    "before_sha256": "db4d85bc74c6c31d84783bd90cf8b2765a9c25211ba959f73f01a2d401d38f65",
+    "after_sha256": "5fafc84e2604983ad8f5ace7e9eb6087dff3c8786460ddcab4ade0a0b63d9383"
+  }
+]

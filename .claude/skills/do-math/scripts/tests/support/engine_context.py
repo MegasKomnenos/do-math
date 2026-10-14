@@ -86,6 +86,31 @@ def review_input_value(case, context, key, workspace, *, manifest):
     return value
 
 
+def assert_wait_documents(case, value, *, owner, expected, texts=None):
+    """P09 input spelling and P11's actual wait, with independent scene facts."""
+    from support.doc_code import WAIT_BOUNDARIES, documents, field_bindings, SPAN, wait_field_issues
+    if owner not in WAIT_BOUNDARIES:
+        raise ValueError('Unknown wait owner: ' + owner)
+    if texts is None:
+        texts = [p.read_text(encoding='utf-8') for p in documents(Path(__file__).resolve().parents[3])]
+    mentioned = set()
+    for text in texts:
+        case.assertEqual(wait_field_issues(text, owner, value), [])
+        for line in text.splitlines():
+            local, _ = field_bindings(line, WAIT_BOUNDARIES)
+            for token in SPAN.findall(line):
+                root, dot, suffix = token.partition('.')
+                if dot and local.get(root) is WAIT_BOUNDARIES[owner]:
+                    mentioned.add(suffix)
+    case.assertIn('value' if owner == 'change' else 'kind', mentioned,
+                  'The boundary must have an actual document consumer')
+    # Compare exact types as well as values (True and 1 are not interchangeable).
+    case.assertIs(type(value), type(expected))
+    case.assertEqual(value, expected)
+    for key in expected:
+        case.assertIs(type(value[key]), type(expected[key]))
+
+
 def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
                                 bundle=None, output=None, unit=None, execution_id=None,
                                 source=None, status=None, reason=None):

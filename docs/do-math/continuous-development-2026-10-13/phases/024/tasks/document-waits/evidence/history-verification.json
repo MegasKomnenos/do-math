@@ -1,0 +1,343 @@
+{
+  "ast_history": [
+    {
+      "id": "B110",
+      "commit": "0c5ebdb7",
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "0c5ebdb7",
+        "--",
+        ".claude/skills/do-math/scripts/tests/support/doc_code.py"
+      ],
+      "exit_code": 0,
+      "relevant_excerpts": [],
+      "reports": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/producer-scope-red.json",
+          "exists": true,
+          "expected_sha256": "aff932545ab4be6ffa6ec2a860101fd77f293d1001867e498feca5ace2cbed7b",
+          "sha256": "aff932545ab4be6ffa6ec2a860101fd77f293d1001867e498feca5ace2cbed7b",
+          "bytes": 100376,
+          "actual_complete": true,
+          "actual_successful": false
+        },
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-필드공간/report.json",
+          "exists": true,
+          "expected_sha256": "0472912099fe3ec486e4a68d7fff58e96ae84d21ba59dababd34f88be4927ae2",
+          "sha256": "0472912099fe3ec486e4a68d7fff58e96ae84d21ba59dababd34f88be4927ae2",
+          "bytes": 124185,
+          "actual_complete": true,
+          "actual_successful": true
+        }
+      ],
+      "decision": "Replace only the P09/P11 consumed/produced AST approximations with real input/wait document boundaries. Retain owner aliasing, shared-schema fields, callable checks, other packet helpers and their direct tests. Missing history counts are not new evidence."
+    },
+    {
+      "id": "B111",
+      "commit": "2b78e597",
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "2b78e597",
+        "--",
+        ".claude/skills/do-math/scripts/tests/support/doc_code.py"
+      ],
+      "exit_code": 0,
+      "relevant_excerpts": [],
+      "reports": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-함수-진단/report.json",
+          "exists": true,
+          "expected_sha256": "1e53bae06f882685a3aea885ee2eed607c6e4fed1cb50c5a621e89334bbd16ad",
+          "sha256": "1e53bae06f882685a3aea885ee2eed607c6e4fed1cb50c5a621e89334bbd16ad",
+          "bytes": 125119,
+          "actual_complete": true,
+          "actual_successful": true
+        }
+      ],
+      "decision": "Replace only the P09/P11 consumed/produced AST approximations with real input/wait document boundaries. Retain owner aliasing, shared-schema fields, callable checks, other packet helpers and their direct tests. Missing history counts are not new evidence."
+    },
+    {
+      "id": "B112",
+      "commit": "8af6e011",
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "8af6e011",
+        "--",
+        ".claude/skills/do-math/scripts/tests/support/doc_code.py"
+      ],
+      "exit_code": 0,
+      "relevant_excerpts": [],
+      "reports": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-문맥-소유자/report.json",
+          "exists": true,
+          "expected_sha256": "bda9af16977f3a4dcbb2c98a87da25311d4fec06b960e466faef2d4deb9ef9dc",
+          "sha256": "bda9af16977f3a4dcbb2c98a87da25311d4fec06b960e466faef2d4deb9ef9dc",
+          "bytes": 125932,
+          "actual_complete": true,
+          "actual_successful": true
+        }
+      ],
+      "decision": "Replace only the P09/P11 consumed/produced AST approximations with real input/wait document boundaries. Retain owner aliasing, shared-schema fields, callable checks, other packet helpers and their direct tests. Missing history counts are not new evidence."
+    },
+    {
+      "id": "B113",
+      "commit": "7823c9a0",
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "7823c9a0",
+        "--",
+        ".claude/skills/do-math/scripts/tests/support/doc_code.py"
+      ],
+      "exit_code": 0,
+      "relevant_excerpts": [
+        "+    from do_math import formal, observations, planning, review_cycle, trust_validation\n+    from do_math.dispatch_engine import DispatchEngineMixin\n+    from do_math.review_engine import ReviewEngineMixin\n+    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, \"action['dispatch_wait']\")\n+    schemas['source_ref'] = produced_object_schema(context_store.write_source_catalog, 'ref')\n+    schemas['review_research'] = produced_object_schema(ReviewEngineMixin._review_research_context)['properties']['review_research']\n+    schemas['role_review'] = produced_object_schema(review_cycle.context_for, bindings={",
+        "+    schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']\n+    schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']\n+    schemas['import_payload'] = consumed_object_schema(governance.validate_import_units, 'payload')\n+    schemas['change'] = consumed_object_schema(planning.evaluate_condition, \"decision.get('change', {})\", scope='visit')\n+    schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}\n+    schemas['submission_check'] = produced_object_schema(submission.check_submission, 'result')\n+    schemas['import_check'] = produced_object_schema(governance.check_import, 'check',"
+      ],
+      "reports": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-점표기-전건/report.json",
+          "exists": true,
+          "expected_sha256": "372effb98582be9b5d7639c5ccaab40925953055fd4cea0908161189e99be7db",
+          "sha256": "372effb98582be9b5d7639c5ccaab40925953055fd4cea0908161189e99be7db",
+          "bytes": 126658,
+          "actual_complete": true,
+          "actual_successful": true
+        }
+      ],
+      "decision": "Replace only the P09/P11 consumed/produced AST approximations with real input/wait document boundaries. Retain owner aliasing, shared-schema fields, callable checks, other packet helpers and their direct tests. Missing history counts are not new evidence."
+    },
+    {
+      "id": "B114",
+      "commit": "136dc3d5",
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "136dc3d5",
+        "--",
+        ".claude/skills/do-math/scripts/tests/support/doc_code.py"
+      ],
+      "exit_code": 0,
+      "relevant_excerpts": [],
+      "reports": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/before.json",
+          "exists": true,
+          "expected_sha256": "b79bc453f5cf3043ee588ff36a98b4903e6ed38e55a112f79b8cfe920617e169",
+          "sha256": "b79bc453f5cf3043ee588ff36a98b4903e6ed38e55a112f79b8cfe920617e169",
+          "bytes": 120188,
+          "actual_complete": true,
+          "actual_successful": false
+        },
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/report.json",
+          "exists": true,
+          "expected_sha256": "2d77ce2d52f8b98b0c792d80022107231aa4126318eec06716c5c65f8a559af2",
+          "sha256": "2d77ce2d52f8b98b0c792d80022107231aa4126318eec06716c5c65f8a559af2",
+          "bytes": 127371,
+          "actual_complete": true,
+          "actual_successful": true
+        }
+      ],
+      "decision": "Replace only the P09/P11 consumed/produced AST approximations with real input/wait document boundaries. Retain owner aliasing, shared-schema fields, callable checks, other packet helpers and their direct tests. Missing history counts are not new evidence."
+    }
+  ],
+  "D-06": {
+    "argv": [
+      "git",
+      "show",
+      "--format=fuller",
+      "8694693",
+      "--",
+      ".claude/skills/do-math/SKILL.md",
+      ".claude/skills/do-math/references/CLI-실행-계약.md",
+      ".claude/skills/do-math/scripts"
+    ],
+    "exit_code": 0,
+    "decision": "Keep removal of the obsolete initial-preparation barrier. Plan settling concerns queued contract reviews, not all candidates or unreturned preparation output. Initial events remain assigned until an accepted response consumes them. No legacy fields or timeout restored."
+  },
+  "scope": "P09/P11 and D-06 hunks only; PR24/TRUST and unrelated N/L01 remain open.",
+  "pure_history_retained": [
+    {
+      "id": "B119",
+      "commit": "08d5d217",
+      "original_board": {
+        "id": "B119",
+        "scope": "record_map 기본 필드의 AST 생산자 결속 하나를 실제 순수 반환으로 교체",
+        "state": "한정 단순화·문서17개 검증 완료",
+        "memory_node": "M-0536",
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-record-map-실제반환/report.json",
+          "sha256": "4dd80f9b146131bfe0e493a7d2094499826da39eab6fb409e223d8430eb2ed3b",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 17
+          },
+          "total_seconds": 7.8,
+          "changed_during_run": []
+        },
+        "producer": "context_store.record_map({}, research_work, fixed)",
+        "removed_ast_bindings": 1,
+        "new_generic_helpers": 0,
+        "new_schema_copies": 0,
+        "product_changes": false,
+        "preserved": [
+          "정상반환snapshot/ledger/families/blocked_keys/instruction",
+          "없는필드및families내임의키거부",
+          "별도설치read_tool.command의기존양성/음성검사"
+        ],
+        "limits": "최상위필드의실제반환증거다. read_tool설치및다른생산자의AST결속,값의의미/권한/모든미래분기전건을인증하지않는다."
+      },
+      "report_sha256": "4dd80f9b146131bfe0e493a7d2094499826da39eab6fb409e223d8430eb2ed3b",
+      "actual_complete": true,
+      "actual_successful": true,
+      "decision": "Maintain the closed actual-return/repository/file population and its existing negative owner assertions. This phase changes only the four governance/import owners and explicit document-walk delegation. The PURE/CLI helper functions and product producers remain byte-equivalent to the start snapshot; no historical counts are added to the new suite."
+    },
+    {
+      "id": "B120",
+      "commit": "369d23bb",
+      "original_board": {
+        "id": "B120",
+        "scope": "operating_summary·supervision_facts의 소스 구문 결속을 실제 순수 반환 키로 교체",
+        "state": "한정 교체·문서17개 검증 완료",
+        "memory_node": "M-0537",
+        "base_head": "08d5d2171257a1f664f7a55f2d7e988206688241",
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-운영요약-실제반환/report.json",
+          "sha256": "f309c34edf5d77eb13858a1286804a833e389244506ba4d4ef851f820a6b3943",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 17
+          },
+          "total_seconds": 8.2,
+          "changed_during_run": []
+        },
+        "input": "support.state_builders.current_state()의 정상 initializing instance/runtime",
+        "removed_ast_producer_calls": 2,
+        "new_generic_helpers": 0,
+        "new_product_schema_copies": 0,
+        "product_changes": false,
+        "actual_shapes": [
+          "reporting.operating_summary의 최상위 키",
+          "summary.supervision의 고정 중첩 키",
+          "supervision.supervision_facts의 최상위 키"
+        ],
+        "preserved_limits": [
+          "primary_blocker의 다른 변형과 grants 내부를 빈 초기화 입력으로 추론하지 않음",
+          "status_report AST와 함수 호출 표현식 binding은 그대로여서 최종 spread 전달 증거는 아직 별도",
+          "None인 facts 내부 구조나 모든 값의 의미는 이번 이름 검사 범위 밖"
+        ],
+        "validation": "기존 소유자 시험에서 summary/facts 필드 존재, 공간 혼동 및 근거 없는 내부 경로 거부 확인. 정확성·기존검사범위를 줄이거나 새로운 AST 해석을 추가하지 않음."
+      },
+      "report_sha256": "f309c34edf5d77eb13858a1286804a833e389244506ba4d4ef851f820a6b3943",
+      "actual_complete": true,
+      "actual_successful": true,
+      "decision": "Maintain the closed actual-return/repository/file population and its existing negative owner assertions. This phase changes only the four governance/import owners and explicit document-walk delegation. The PURE/CLI helper functions and product producers remain byte-equivalent to the start snapshot; no historical counts are added to the new suite."
+    },
+    {
+      "id": "B121",
+      "commit": "61e080b2",
+      "original_board": {
+        "id": "B121",
+        "scope": "status 문서 필드를 기존 실제 저장소의 최종 응답에서 검증하고 AST/수동 spread 결속 제거",
+        "state": "한정 교체·문서 및 저장소22개 검증 완료",
+        "memory_node": "M-0538",
+        "base_head": "369d23bb",
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-status-실제반환/report.json",
+          "sha256": "5197abfcb67fabb137174c65e032beb8cfb60d6427cf96490ce1c3ac3609504e",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 22
+          },
+          "total_seconds": 10.0,
+          "changed_during_run": []
+        },
+        "removed": [
+          "produced_object_schema(reporting.status_report)",
+          "supervision_facts(instance,runtime) 수동 binding",
+          "operating_summary(instance,runtime) 수동 binding",
+          "OBSERVED_FIELDS 수동 shape 합성"
+        ],
+        "boundary": {
+          "owner": "unit.test_storage_report_projections의 기존 실제 record_store initialize/load/status_report 결과",
+          "structure": "status 한 공간은 명시 defer_status에서만 경계로 위임; 기본 호출은 실제 report 부재를 오류로 거부",
+          "unknown_owner": "statuz 등 미등록 공간과 result=status 별칭은 기존 문서 모집단/결속 검사 유지",
+          "actual_shape": "최종 report의 top-level 및 기존에 검사하던 고정 중첩 객체 키만 읽음. 생산자 함수들의 키 합집합으로 report를 재구성하지 않음"
+        },
+        "negative_evidence": [
+          "실제 report 사본에서 summary/facts/OBSERVED_FIELDS/config_sha256 각각 제거 시 해당 field 거부",
+          "문서의 실제 status/alias 참조에서 최상위 누락 거부",
+          "summary.supervision/configured_enabled 중첩 누락 거부",
+          "기존 status 소유자 혼동·부당 중첩 경로 거부를 structure에서 실제 반환 unit으로 이동"
+        ],
+        "preserved": [
+          "정상 initializing 결과",
+          "관측 없음/있음의 OBSERVED_FIELDS 값",
+          "unknown observation 거부",
+          "기존 inspection/human report/저장소 불변 단언",
+          "기존 read 제한 모듈은 변경하지 않음"
+        ],
+        "product_changes": false,
+        "budget_note": "human-report0.891초는개별0.2초보다길다.기존실제저장소결과와문서모집단/누락검사를재사용하며정확성을줄이지않음.전체관련22개10.0초.",
+        "limits": "현재 명시 문서 경로와 최종 반환 전달 검사다. 모든상태값의의미·모든선택적블록·다른반환생산자전체완료를뜻하지않음."
+      },
+      "report_sha256": "5197abfcb67fabb137174c65e032beb8cfb60d6427cf96490ce1c3ac3609504e",
+      "actual_complete": true,
+      "actual_successful": true,
+      "decision": "Maintain the closed actual-return/repository/file population and its existing negative owner assertions. This phase changes only the four governance/import owners and explicit document-walk delegation. The PURE/CLI helper functions and product producers remain byte-equivalent to the start snapshot; no historical counts are added to the new suite."
+    },
+    {
+      "id": "B122",
+      "commit": "a60fb70e",
+      "original_board": {
+        "id": "B122",
+        "scope": "operation_progress의 AST 결속을 기존 실제 파일 결과 검사로 교체하여 지정 조회 출력 묶음 종료",
+        "state": "한정 교체·직접 영향24개 검증 완료",
+        "memory_node": "M-0539",
+        "base_head": "61e080b2a7eb498c1dcd3492553005ef13373bd7",
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-progress-실제반환/report.json",
+          "sha256": "e3cd4ca757ca38cf560cae8128c1cff76f29806667e78f523c8c863bb75ddf9e",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 24
+          },
+          "total_seconds": 9.5,
+          "changed_during_run": []
+        },
+        "boundary": "기존 unit.test_engine_trace_report_corruption의 임시파일과 실제 progress 최종 반환을 문서 필드에 연결",
+        "removed_ast_producer_calls": 1,
+        "product_changes": false,
+        "new_generic_framework": false,
+        "proof": [
+          "현재 문서모집단 operation_progress.telemetry_errors",
+          "최종키별삭제/별칭누락거부",
+          "다른소유자및증명하지않은배열내부경로거부",
+          "실제반환부재시기본거부·두경계의명시위임만허용"
+        ],
+        "preserved": "기존corruption/status단언과sim의정상live/파일부재검사유지.다른파일경계를구조검사안에서기동하지않음.",
+        "budget_note": "progress0.734/status0.766초는개별0.2초기준초과.실제경계와문서모집단검사를유지.전체관련24개9.5초",
+        "limits": "DOC-RETURN-PURE의지정5생산자묶음종료이며다른문서생산자·13-C전체·재편전체완료가아님."
+      },
+      "report_sha256": "e3cd4ca757ca38cf560cae8128c1cff76f29806667e78f523c8c863bb75ddf9e",
+      "actual_complete": true,
+      "actual_successful": true,
+      "decision": "Maintain the closed actual-return/repository/file population and its existing negative owner assertions. This phase changes only the four governance/import owners and explicit document-walk delegation. The PURE/CLI helper functions and product producers remain byte-equivalent to the start snapshot; no historical counts are added to the new suite."
+    }
+  ]
+}

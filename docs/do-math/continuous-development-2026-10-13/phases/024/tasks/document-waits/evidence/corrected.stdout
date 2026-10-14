@@ -1,0 +1,12 @@
+Open known defects: 0
+[structure] 1 tests
+[unit] 1 tests
+[sim] 2 tests
+Over budget: 1 tests
+      0.203s > 0.2s unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types
+{"complete": true, "successful": false, "counts": {"passed": 3, "failed": 1}, "group_seconds": {"structure": 0.0, "unit": 0.2, "sim": 4.1}, "total_seconds": 4.3}
+    0.218s passed             sim.test_scheduling_session_slots.PlanSettleTests.test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning
+    0.203s failed             unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types
+    0.063s passed             sim.test_scheduling_session_slots.PlanSettleTests.test_documented_wait_is_the_actual_queue_value_until_the_exact_limit
+    0.031s passed             structure.test_doc_code.DocumentCodeTests.test_deferred_waits_have_the_assigned_actual_document_check
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\corrected\report.json

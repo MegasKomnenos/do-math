@@ -325,6 +325,89 @@ class ReadinessCopyTests(unittest.TestCase):
 
 
 class ReadinessConditionTests(unittest.TestCase):
+    def test_documented_decision_value_uses_real_input_and_exact_types(self):
+        from do_math import governance
+        from do_math.canonical import exact_content_hash
+        from support.engine_context import assert_wait_documents
+        source = governance.preserve_source('GS-choice', 'Use the supplied decision.', origin='user')
+        instance = {'governance_sources': {source['id']: source}, 'decisions': {}}
+        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
+                    'source_sha256': source['sha256'], 'change': {'value': True}}
+        instance['decisions'][decision['id']] = decision
+        assert_wait_documents(self, decision['change'], owner='change', expected={'value': True})
+        for bad in ({}, {'kind': 'plan_settle'}, {'value': 1}, {'value': None}):
+            with self.subTest(bad=bad), self.assertRaises(AssertionError):
+                assert_wait_documents(self, bad, owner='change', expected={'value': True})
+        for text in ('', '`change.nonexistent`'):
+            with self.subTest(text=text), self.assertRaises(AssertionError):
+                assert_wait_documents(self, decision['change'], owner='change', expected={'value': True}, texts=[text])
+        # This is an input field, not a mandatory evaluator output.
+        samples = [({'value': True}, True, 'ready'), ({'value': True}, 1, 'not_ready'),
+                   ({'value': 1}, True, 'not_ready'), ({'value': 1}, 1.0, 'not_ready'),
+                   ({'value': 1}, 1, 'ready'), ({'value': None}, None, 'ready'),
+                   ({'value': None}, {}, 'not_ready'), ({}, {}, 'ready'),
+                   ({}, None, 'not_ready'), ({'kind': 'task_scope', 'task_id': 'TK-one'},
+                    {'kind': 'task_scope', 'task_id': 'TK-one'}, 'ready'),
+                   ({'kind': 'task_scope', 'task_id': 'TK-one'}, None, 'not_ready')]
+        for change, expected, state in samples:
+            with self.subTest(change=change, expected=expected):
+                decision['change'] = deepcopy(change)
+                before = deepcopy(instance)
+                condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': expected}
+                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
+                result = planning.evaluate_condition(condition, instance, {}, evaluation_context={'task_id': 'TK-one'})
+                self.assertEqual(result, {'state': state, 'basis': [
+                    {'id': decision['id'], 'sha256': exact_content_hash(decision), 'status': None}], 'errors': []})
+                self.assertEqual(instance, before)
+
+    def test_decision_condition_checks_source_currentness_and_task_scope(self):
+        from do_math import governance
+        source = governance.preserve_source('GS-choice', 'A current task choice.', origin='user')
+        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
+                    'source_sha256': source['sha256'], 'change': {'value': True, 'task_id': 'TK-one'}}
+        instance = {'governance_sources': {source['id']: source}, 'decisions': {decision['id']: decision}}
+        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': True}
+        for target, state in (('TK-one', 'ready'), ('TK-other', 'not_ready'), (None, 'not_ready')):
+            with self.subTest(target=target):
+                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
+                self.assertEqual(planning.evaluate_condition(condition, instance, {},
+                    evaluation_context={'task_id': target})['state'], state)
+        for mutate in ('actor', 'missing_source', 'source_hash', 'source_bytes', 'change'):
+            with self.subTest(mutate=mutate):
+                changed = deepcopy(instance)
+                row = changed['decisions'][decision['id']]
+                if mutate == 'actor': row['actor'] = 'research_plan'
+                elif mutate == 'missing_source': row['source_ref'] = 'GS-missing'
+                elif mutate == 'source_hash': row['source_sha256'] = '0' * 64
+                elif mutate == 'source_bytes': changed['governance_sources'][source['id']]['text'] = 'changed'
+                else: row.pop('change')
+                self.assertFalse(task_scope.decision_is_current(row, changed, {}))
+                self.assertEqual(planning.evaluate_condition(condition, changed, {},
+                    evaluation_context={'task_id': 'TK-one'})['state'], 'not_ready')
+        # kind/target/field are change data. This operator compares value and
+        # task_id; it does not infer an additional effect predicate from prose.
+        for extra in ({'kind': 'configuration', 'field': 'external_policy', 'target': 'IN-other'},
+                      {'kind': 'task_scope', 'field': 'other', 'target': 'TK-other'}):
+            row = deepcopy(decision)
+            row['change'].update(extra)
+            other = {**instance, 'decisions': {row['id']: row}}
+            self.assertEqual(planning.evaluate_condition(condition, other, {},
+                evaluation_context={'task_id': 'TK-one'})['state'], 'ready')
+
+    def test_current_decision_matches_live_source_and_rejects_other_record_family(self):
+        decision = {'id': 'DC-source', 'actor': 'user', 'source_ref': 'SO-one',
+                    'source_sha256': 'a' * 64, 'change': {'value': 'yes'}}
+        instance = {'sources': [{'id': 'SO-one', 'name': 'one', 'sha256': 'a' * 64}],
+                    'decisions': {decision['id']: decision}}
+        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': 'yes'}
+        self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
+        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'ready')
+        instance['sources'][0]['sha256'] = 'b' * 64
+        self.assertFalse(task_scope.decision_is_current(decision, instance, {}))
+        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'not_ready')
+        self.assertEqual(planning.evaluate_condition(condition, {}, {'tasks': {decision['id']: {'id': decision['id']}}}),
+            {'state': 'evaluation_error', 'basis': [], 'errors': ['existing record belongs to another family: DC-source']})
+
     def test_required_certification_condition_tracks_current_identity_effect(self):
         from support.knowledge_builders import verified_knowledge
         instance, runtime, kid, _ = verified_knowledge()

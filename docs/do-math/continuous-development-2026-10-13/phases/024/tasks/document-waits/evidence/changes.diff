@@ -1,0 +1,1178 @@
+--- start/.agents/skills/do-math/references/CLI-실행-계약.md
++++ final/.agents/skills/do-math/references/CLI-실행-계약.md
+@@ -231,7 +231,7 @@
+ - 관찰: 설정은 새 프로필을 저작하는 입력이다. 실행은 선택한 프로필의 모드·고정 window와 `{source,operator,subject_kind,unit}` 항목으로 이루어진 `rule_bindings`를 사용한다. 실제 실행 ID와 카운터 이름은 실행 문맥에서 결박한다. 연구 수행의 자기 점검, 다른 작업 예산 AI의 주기 관찰, 운영 AI·기계의 `deadline_only` 책임을 구별한다. `tool_review_window_seconds`, `self_check_response_window_seconds` 같은 필요한 값이 없으면 임의 기본값이나 작업자의 timeout으로 대신하지 않는다. 아래 관찰 계약과 「공통 실행」·「자기 점검」 문서를 따른다.
+ 
+ 프로필 채택·활성화와 실행 직전은 같은 관찰 설정 검사를 사용한다. 주기·사건 관찰에는 `tool_review_window_seconds`·`observation_interval_seconds`, 연구 수행에는 `self_check_response_window_seconds`가 필요하다. 누락이나 잘못된 값은 `observation_configuration`과 역할·프로필 ID·필드별 오류로 표시한다. 초기화의 `activation.observation_errors`는 활성화 검사에서 확인한 세부 오류다. 초기화에서는 아직 없는 과제의 규칙을 요구하지 않는다. 이미 활성화된 인스턴스에서 설정 문제를 만나면 해당 실행을 기다리게 하고 다른 허용된 역할은 계속 처리한다. 새 설정 프로필은 원래 프로필과 함께 보존하며, 과제에 고정된 참조의 변경은 재준비와 새 독립 계약 검토를 거친다.
+-- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->
++- 계획과 착수: `plan_settle_seconds`는 연구 계획이 queue에 남은 작업 계약 검토 요청의 종료를 기다리는 상한이다. 실행 중인 검토도 종료 전에는 그 요청이 queue에 남는다. 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`, `dispatch_wait.since`는 처음 대기를 판정한 시각, `dispatch_wait.limit_seconds`는 그 상한이다. 반복 판정은 시작 시각을 갱신하지 않으며, 상한과 같은 시각부터 이 대기를 해제한다. 검토 요청이 queue에서 없어져도 해제하며, 다음 배정 판정은 오래된 dispatch_wait를 제거한다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. 이 규칙은 모든 후보의 준비 완료를 기다리게 하는 규칙이 아니다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->
+ - 독립 운영: `operator_enabled`는 예약 감독의 활성 여부이고, `operator_interval_seconds`는 정상 감독의 주기다. `operator_timeout_seconds`는 설치 복구 AI 호출 하나의 기한이며, 운영 예약 작업의 시간 상한은 이 값에 종료 여유 300초를 더한 값이다. `operator_effort`는 설치 복구 AI의 추론 노력이다. 정상 감독은 모델 없이 상태·예약·HOLD를 검사하고 엔진 작업을 요청한다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 복구 AI를 열며, 이 AI는 `role_tiers.recovery` 등급에 대응한 `tier_models`의 모델로 작업 슬롯을 예약하지 않고 실행된다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
+ - 학술자료: `scholarly_enabled`는 학술자료 도구를 실행에 연결할지 정한다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
+ 
+--- start/.agents/skills/do-math/references/과제-착수조건.md
++++ final/.agents/skills/do-math/references/과제-착수조건.md
+@@ -14,7 +14,7 @@
+ | `record_field_equals` | `space`, `family`, `record_id`, 아래에서 허용한 `pointer`, 스칼라 `value`를 둔다. 실제 필드값과 자료형까지 같아야 한다. |
+ | `relation_exists` | 관계 종류 `subkind`, 출발 ID `from_id`, 도착 ID `to_id`를 둔다. 관계 출력의 `source`·`target`을 여기의 필드명으로 쓰지 않는다. |
+ | `task_disposition_is` | `task_id`, 요구하는 종결 처분 `value`를 둔다. `value`는 착수 의도에 맞는 `completed` 또는 `closed`다. |
+-| `decision_value_is` | 입력에 제공된 사용자 결정의 `decision_id`와 비교할 `value`를 둔다. 결정이 현재 유효하고 결정의 `change.value`(없으면 `change`)가 `value`와 자료형까지 같을 때 참이다. 특정 과제로 범위를 정한 결정은 그 과제의 조건에서만 참이 된다. |
++| `decision_value_is` | 입력에 제공된 사용자 결정의 `decision_id`와 비교할 `value`를 둔다. 결정이 현재 유효하고 결정의 `change.value`(없으면 `change` 전체)가 `value`와 자료형까지 같을 때 참이다. 값이 null인 경우와 필드가 없는 경우를 구별하며, 불리언 true와 정수 1도 같은 값으로 보지 않는다. 특정 과제로 범위를 정한 결정은 그 과제의 조건에서만 참이 된다. |
+ | `artifact_valid` | 보존 산출을 가리키는 `artifact_ref`에 `snapshot`, `path`, `sha256`을 둔다. `path`는 `runtime/artifacts/` 아래의 상대 경로이며, 이 규칙이나 경로 성분의 저장 규칙을 어긴 조건은 제출 단계에서 거부된다. 실행기가 그 스냅샷에서 읽은 바이트의 해시와 형식을 확인하면 참이다. 해시가 다르거나 형식 검사를 통과하지 못하면 평가 오류다. 형식 검사는 JSON과 UTF-8 텍스트(`.txt`, `.md`, `.tsv`, `.csv`)만 지원한다. |
+ 
+ 조건의 평가 오류는 `task_condition_evaluation_error` 사건과 해당 과제의 오류를 연구 계획에 제공한다. 현재 조건은 매번 다시 평가한다. 같은 계약·근거의 오류를 owner 재시작 후 다시 보았다는 이유만으로 새 사건을 만들지는 않는다. 계약이나 근거가 달라지면 오류 문구가 같아도 새 사건으로 전달한다. 아직 시작하지 않은 과제의 조건 오류만으로 대상 실행이 없는 운영 점검을 만들지 않는다. 자료 대기의 `next_owner`는 다음 담당을 나타내며, 그 값만으로 새 호출을 시작하지 않는다. 필요한 자료 도착이나 별도의 유효한 재고 사건을 기다린다.
+--- start/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ final/.agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+--- start/.agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py
++++ final/.agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py
+@@ -54,11 +54,18 @@
+         public_question = next(q for q in status['question_links'] if q['id'] == first_question_id)
+         self.assertEqual(public_question['text'], waiting['detail']['resolution_question']['question'])
+         self.assertNotIn('source_status', public_question)
++        original_ref = first_question['source_ref']
++        original_bytes = sim.engine.store.read(original_ref)
++        applied(sim, 'pause', text='Keep the unresolved input question while paused')
++        applied(sim, 'resume', text='Resume other eligible work')
++        self.assertEqual(question(sim, first_question_id)['status'], 'open')
+ 
+         first_retry = retry(sim, action_id, 'UC-retry-same-limit')
+         replay = retry(sim, action_id, 'UC-retry-same-limit')
+         self.assertTrue(first_retry['accepted'])
+         self.assertTrue(replay['replayed'])
++        self.assertEqual(question(sim, first_question_id)['status'], 'open',
++                         'Accepting a retry is not evidence that repackaging fits')
+         sim.step()
+         runtime = sim.runtime
+         self.assertEqual(len(runtime['input_overflows']), 2)
+@@ -83,6 +90,7 @@
+         self.assertLessEqual(resolved['prompt_bytes'], resolved['limit_bytes'])
+         self.assertEqual(len(runtime['input_overflows']), 2, 'successful admission must preserve both historical failures')
+         self.assertEqual([call['action']['id'] for call in maintenance_calls(model)], [action_id])
++        self.assertEqual(sim.engine.store.read(original_ref), original_bytes)
+ 
+         applied(sim, 'close', text='Boundary test complete')
+         with self.assertRaisesRegex(ValueError, '^' + re.escape(CLOSED) + '$'):
+--- start/.agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py
+@@ -160,6 +160,16 @@
+             queue = deepcopy(engine.runtime['queue'])
+             damaged = root / 'input/submission/context.json'
+             damaged.write_bytes(b'damaged')
++            target['status'] = 'running'
++            with self.assertRaisesRegex(ValueError, '^recovery cannot overlap a live predecessor$'):
++                engine._complete_operational_disposition(record)
++            self.assertEqual(engine.runtime['queue'], queue)
++            target['status'] = 'ended'
++            target['input_manifest'] = {**fitted['manifest'], 'documents': []}
++            with self.assertRaisesRegex(ValueError, '^retry requires intact sealed input evidence$'):
++                engine._complete_operational_disposition(record)
++            self.assertEqual(engine.runtime['queue'], queue)
++            target['input_manifest'] = fitted['manifest']
+             engine._complete_operational_disposition(record)
+             engine._complete_operational_disposition(record)
+             self.assertEqual(damaged.read_bytes(), b'damaged')
+--- start/.agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py
++++ final/.agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py
+@@ -164,6 +164,74 @@
+     def test_an_explicitly_requested_plan_does_not_settle(self):
+         plan = self.queue({'id': 'AC-plan', 'role': 'research_plan', 'requested_by': 'UC-user'})
+         self.assertTrue(self.engine._dispatchable(plan))
++
++    def test_documented_wait_is_the_actual_queue_value_until_the_exact_limit(self):
++        from support.engine_context import assert_wait_documents
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        since = self.sim.clock.now()
++        limit = self.engine.instance['config']['plan_settle_seconds']
++        self.assertEqual(limit, 300)
++        self.assertFalse(self.engine._dispatchable(plan))
++        expected = {'kind': 'plan_settle', 'since': since, 'limit_seconds': 300}
++        assert_wait_documents(self, plan['dispatch_wait'], owner='plan_settle_wait', expected=expected)
++        self.sim.advance(299)
++        self.assertFalse(self.engine._dispatchable(plan))
++        self.assertEqual(plan['settle_started_at'], since)
++        self.assertEqual(plan['dispatch_wait'], expected)
++        self.sim.advance(1)
++        self.assertTrue(self.engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++        self.assertEqual(plan['settle_started_at'], since)
++        self.sim.advance(1)
++        self.assertTrue(self.engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++
++    def test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning(self):
++        engine = self.engine
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        review = engine.runtime['queue'][1]
++        # Real registration leaves a running review's request in the queue.
++        row = task(engine, 'TK-x', approved=False)
++        execution = engine._register_execution(review, {'id': 'EX-review', 'role': 'task_contract_review',
++                                                         'status': 'starting'})
++        self.assertIn(review, engine.runtime['queue'])
++        transition_execution(execution, 'running', at=self.sim.clock.now())
++        self.assertFalse(engine._dispatchable(plan))
++        self.assertEqual(plan['dispatch_wait']['kind'], 'plan_settle')
++        # Moving a request to waiting_actions is not the pending queue predicate.
++        engine.runtime['queue'] = [plan]
++        engine.runtime.setdefault('waiting_actions', {})['AC-review'] = {'action': review, 'kind': 'input_overflow'}
++        self.assertFalse(engine._plan_settle_waits(plan))
++        self.assertTrue(engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++        engine.runtime['executions'] = {}
++        for key, value in (('requested_by', 'UC-user'), ('recovery', {'execution_id': 'EX-old'})):
++            with self.subTest(key=key):
++                bypass = self.queue({'id': 'AC-bypass', 'role': 'research_plan', key: value,
++                                     'dispatch_wait': {'kind': 'plan_settle', 'since': 'old', 'limit_seconds': 300}})
++                self.assertFalse(engine._plan_settle_waits(bypass))
++                self.assertTrue(engine._dispatchable(bypass))
++                self.assertNotIn('dispatch_wait', bypass)
++                self.assertNotIn('settle_started_at', bypass)
++        self.queue({'id': 'AC-plan', 'role': 'research_plan'}, review=False)
++        other = {'id': 'AC-preparation', 'role': 'research_preparation'}
++        self.assertTrue(engine._dispatchable(other))
++        self.assertNotIn('settle_started_at', other)
++
++    def test_wait_document_check_rejects_missing_borrowed_or_changed_values(self):
++        from support.engine_context import assert_wait_documents
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        self.assertFalse(self.engine._dispatchable(plan))
++        expected = {'kind': 'plan_settle', 'since': self.sim.clock.now(), 'limit_seconds': 300}
++        actual = plan['dispatch_wait']
++        for bad in ({}, {'kind': 'capacity'}, {**actual, 'kind': 'capacity'},
++                    {**actual, 'since': 'old'}, {**actual, 'limit_seconds': 301},
++                    {k: v for k, v in actual.items() if k != 'since'}):
++            with self.subTest(bad=bad), self.assertRaises(AssertionError):
++                assert_wait_documents(self, bad, owner='plan_settle_wait', expected=expected)
++        for text in ('', '`dispatch_wait.nonexistent` <!-- do-math fields: dispatch_wait=plan_settle_wait -->'):
++            with self.subTest(text=text), self.assertRaises(AssertionError):
++                assert_wait_documents(self, actual, owner='plan_settle_wait', expected=expected, texts=[text])
+ 
+ 
+ class ReadinessResponsibilityTests(unittest.TestCase):
+@@ -198,12 +266,21 @@
+         self.assertTrue(any(events[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
+ 
+     def test_initial_preparation_owns_initial_events_until_accepted(self):
+-        engine = Sim.activated().engine
++        sim = Sim.activated()
++        engine = sim.engine
+         first = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
+         self.assertEqual(set(first.get('event_refs', [])), set(engine.runtime['pending_events']))
+         engine._refresh_readiness()
+         self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+         self.assertTrue(engine.runtime['pending_events'], 'Assignment is not consumption')
++        from support.default_responder import DefaultResponder
++        events = set(first['event_refs'])
++        sim.model.responder = DefaultResponder(preparation_candidates=[])
++        sim.step()
++        execution, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_preparation']
++        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
++        self.assertEqual(set(execution['action']['event_refs']), events)
++        self.assertFalse(events & set(sim.runtime['pending_events']))
+ 
+     def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
+         sim = Sim.activated()
+--- start/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ final/.agents/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,55 @@
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_wait_fields_require_actual_condition_input_and_dispatch_wait(self):
++        schemas = field_schemas()
++        from support.doc_code import WAIT_BOUNDARIES, wait_field_issues
++        for owner, token in (('change', 'change.value'), ('plan_settle_wait', 'plan_settle_wait.kind')):
++            for text in ('`' + token + '`', '`result.' + token.split('.')[1] +
++                         '` <!-- do-math fields: result=' + owner + ' -->'):
++                with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual wait boundary'):
++                    scoped_field_issues(text, schemas)
++                with self.assertRaisesRegex(ValueError, 'actual wait boundary'):
++                    scoped_field_issues(text, schemas, defer_waits=set(WAIT_BOUNDARIES) - {owner})
++                self.assertEqual(scoped_field_issues(text, schemas, defer_waits=(owner,)), [])
++                self.assertEqual(unowned_field_references(text, schemas), [])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred wait owners'):
++            scoped_field_issues('', schemas, defer_waits=('changes',))
++        with self.assertRaisesRegex(ValueError, 'actual repository report'):
++            scoped_field_issues('`status.budget`', schemas, defer_waits=WAIT_BOUNDARIES)
++        self.assertEqual(wait_field_issues('`change.value`', 'change', {}), [('actual field', 'change.value')])
++        self.assertEqual(wait_field_issues('`dispatch_wait.kind` <!-- do-math fields: dispatch_wait=plan_settle_wait -->',
++            'plan_settle_wait', {}), [('actual field', 'dispatch_wait.kind')])
++
++    def test_deferred_waits_have_the_assigned_actual_document_check(self):
++        import ast
++        from support.doc_code import WAIT_BOUNDARIES
++        owners = {
++            'change': ('unit/test_planning_conditions.py', 'ReadinessConditionTests',
++                       'test_documented_decision_value_uses_real_input_and_exact_types'),
++            'plan_settle_wait': ('sim/test_scheduling_session_slots.py', 'PlanSettleTests',
++                                'test_documented_wait_is_the_actual_queue_value_until_the_exact_limit')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(WAIT_BOUNDARIES))
++            for owner, (path, cls_name, method) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_wait_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])))
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner': del changed['change']
++            elif fault == 'wrong_owner': changed['changes'] = changed.pop('change')
++            elif fault == 'missing_method': changed['change'] = (*changed['change'][:2], 'missing')
++            else: changed['change'] = (*changed['change'][:2], 'test_readiness_document_tables_match_the_condition_grammar')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_governance_fields_require_their_actual_boundary_owner(self):
+         schemas = field_schemas()
+         from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
+@@ -201,14 +250,14 @@
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -506,7 +555,7 @@
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -721,10 +770,12 @@
+         from support.doc_code import delivery_field_issues
+         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+-        self.assertEqual(scoped_field_issues('`change.value` '
++        self.assertEqual(scoped_field_issues(
+             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+-        self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+-                         [('scoped field', 'change.nonexistent')])
++        from support.doc_code import wait_field_issues
++        self.assertEqual(wait_field_issues('`change.value`', 'change', {'value': True}), [])
++        self.assertEqual(wait_field_issues('`change.nonexistent`', 'change', {'value': True}),
++                         [('actual field', 'change.nonexistent')])
+         self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
+                          'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
+ 
+--- start/.agents/skills/do-math/scripts/tests/support/doc_code.py
++++ final/.agents/skills/do-math/scripts/tests/support/doc_code.py
+@@ -48,6 +48,7 @@
+ DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
+ GOVERNANCE_BOUNDARIES = {owner: object() for owner in
+                          ('import_payload', 'import_check', 'governance', 'academic_validation')}
++WAIT_BOUNDARIES = {owner: object() for owner in ('change', 'plan_settle_wait')}
+ 
+ 
+ def documents(skill):
+@@ -295,14 +296,12 @@
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+     from do_math import formal, observations, planning, trust_validation
+-    from do_math.dispatch_engine import DispatchEngineMixin
+-    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
++    schemas.update(WAIT_BOUNDARIES)
+     schemas.update(RESULT_INPUT_BOUNDARIES)
+     schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+     schemas.update(GOVERNANCE_BOUNDARIES)
+-    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
+     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
+     schemas['query_result'] = QUERY_RESULT_BOUNDARY
+     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
+@@ -438,7 +437,7 @@
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
+-                        defer_delivery_inputs=(), defer_governance=()):
++                        defer_delivery_inputs=(), defer_governance=(), defer_waits=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -468,6 +467,9 @@
+     unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
++    unknown = set(defer_waits) - WAIT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred wait owners: {sorted(unknown)}')
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+         issues.extend(binding_issues)
+@@ -477,6 +479,12 @@
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in WAIT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_waits:
++                    continue
++                raise ValueError(owner + ' fields require the actual wait boundary')
+             owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if owner is not None:
+@@ -562,6 +570,32 @@
+     return sorted(set(issues))
+ 
+ 
++def wait_field_issues(text, owner, value):
++    """Check fields against a real positive input/wait sample, not required outputs.
++
++    Missing change.value is independently tested as a whole-change comparison;
++    the positive sample here validates its documented spelling only.
++    """
++    if owner not in WAIT_BOUNDARIES:
++        raise ValueError('Unknown wait owner: ' + owner)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, WAIT_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if not FIELD.fullmatch(token):
++                continue
++            root, *parts = token.split('.')
++            if local.get(root) is not WAIT_BOUNDARIES[owner]:
++                continue
++            node = value
++            for part in parts:
++                if not isinstance(node, dict) or part not in node:
++                    issues.append(('actual field', token))
++                    break
++                node = node[part]
++    return sorted(set(issues))
++
++
+ def governance_field_issues(text, owner, value):
+     """Read one real import input/check or current query, retaining its owner.
+ 
+--- start/.agents/skills/do-math/scripts/tests/support/engine_context.py
++++ final/.agents/skills/do-math/scripts/tests/support/engine_context.py
+@@ -84,6 +84,31 @@
+         case.assertEqual(raw, canonical_json(value))
+         case.assertEqual(context[key]['total'], len(value))
+     return value
++
++
++def assert_wait_documents(case, value, *, owner, expected, texts=None):
++    """P09 input spelling and P11's actual wait, with independent scene facts."""
++    from support.doc_code import WAIT_BOUNDARIES, documents, field_bindings, SPAN, wait_field_issues
++    if owner not in WAIT_BOUNDARIES:
++        raise ValueError('Unknown wait owner: ' + owner)
++    if texts is None:
++        texts = [p.read_text(encoding='utf-8') for p in documents(Path(__file__).resolve().parents[3])]
++    mentioned = set()
++    for text in texts:
++        case.assertEqual(wait_field_issues(text, owner, value), [])
++        for line in text.splitlines():
++            local, _ = field_bindings(line, WAIT_BOUNDARIES)
++            for token in SPAN.findall(line):
++                root, dot, suffix = token.partition('.')
++                if dot and local.get(root) is WAIT_BOUNDARIES[owner]:
++                    mentioned.add(suffix)
++    case.assertIn('value' if owner == 'change' else 'kind', mentioned,
++                  'The boundary must have an actual document consumer')
++    # Compare exact types as well as values (True and 1 are not interchangeable).
++    case.assertIs(type(value), type(expected))
++    case.assertEqual(value, expected)
++    for key in expected:
++        case.assertIs(type(value[key]), type(expected[key]))
+ 
+ 
+ def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
+--- start/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+--- start/.agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py
+@@ -325,6 +325,89 @@
+ 
+ 
+ class ReadinessConditionTests(unittest.TestCase):
++    def test_documented_decision_value_uses_real_input_and_exact_types(self):
++        from do_math import governance
++        from do_math.canonical import exact_content_hash
++        from support.engine_context import assert_wait_documents
++        source = governance.preserve_source('GS-choice', 'Use the supplied decision.', origin='user')
++        instance = {'governance_sources': {source['id']: source}, 'decisions': {}}
++        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
++                    'source_sha256': source['sha256'], 'change': {'value': True}}
++        instance['decisions'][decision['id']] = decision
++        assert_wait_documents(self, decision['change'], owner='change', expected={'value': True})
++        for bad in ({}, {'kind': 'plan_settle'}, {'value': 1}, {'value': None}):
++            with self.subTest(bad=bad), self.assertRaises(AssertionError):
++                assert_wait_documents(self, bad, owner='change', expected={'value': True})
++        for text in ('', '`change.nonexistent`'):
++            with self.subTest(text=text), self.assertRaises(AssertionError):
++                assert_wait_documents(self, decision['change'], owner='change', expected={'value': True}, texts=[text])
++        # This is an input field, not a mandatory evaluator output.
++        samples = [({'value': True}, True, 'ready'), ({'value': True}, 1, 'not_ready'),
++                   ({'value': 1}, True, 'not_ready'), ({'value': 1}, 1.0, 'not_ready'),
++                   ({'value': 1}, 1, 'ready'), ({'value': None}, None, 'ready'),
++                   ({'value': None}, {}, 'not_ready'), ({}, {}, 'ready'),
++                   ({}, None, 'not_ready'), ({'kind': 'task_scope', 'task_id': 'TK-one'},
++                    {'kind': 'task_scope', 'task_id': 'TK-one'}, 'ready'),
++                   ({'kind': 'task_scope', 'task_id': 'TK-one'}, None, 'not_ready')]
++        for change, expected, state in samples:
++            with self.subTest(change=change, expected=expected):
++                decision['change'] = deepcopy(change)
++                before = deepcopy(instance)
++                condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': expected}
++                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++                result = planning.evaluate_condition(condition, instance, {}, evaluation_context={'task_id': 'TK-one'})
++                self.assertEqual(result, {'state': state, 'basis': [
++                    {'id': decision['id'], 'sha256': exact_content_hash(decision), 'status': None}], 'errors': []})
++                self.assertEqual(instance, before)
++
++    def test_decision_condition_checks_source_currentness_and_task_scope(self):
++        from do_math import governance
++        source = governance.preserve_source('GS-choice', 'A current task choice.', origin='user')
++        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
++                    'source_sha256': source['sha256'], 'change': {'value': True, 'task_id': 'TK-one'}}
++        instance = {'governance_sources': {source['id']: source}, 'decisions': {decision['id']: decision}}
++        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': True}
++        for target, state in (('TK-one', 'ready'), ('TK-other', 'not_ready'), (None, 'not_ready')):
++            with self.subTest(target=target):
++                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++                self.assertEqual(planning.evaluate_condition(condition, instance, {},
++                    evaluation_context={'task_id': target})['state'], state)
++        for mutate in ('actor', 'missing_source', 'source_hash', 'source_bytes', 'change'):
++            with self.subTest(mutate=mutate):
++                changed = deepcopy(instance)
++                row = changed['decisions'][decision['id']]
++                if mutate == 'actor': row['actor'] = 'research_plan'
++                elif mutate == 'missing_source': row['source_ref'] = 'GS-missing'
++                elif mutate == 'source_hash': row['source_sha256'] = '0' * 64
++                elif mutate == 'source_bytes': changed['governance_sources'][source['id']]['text'] = 'changed'
++                else: row.pop('change')
++                self.assertFalse(task_scope.decision_is_current(row, changed, {}))
++                self.assertEqual(planning.evaluate_condition(condition, changed, {},
++                    evaluation_context={'task_id': 'TK-one'})['state'], 'not_ready')
++        # kind/target/field are change data. This operator compares value and
++        # task_id; it does not infer an additional effect predicate from prose.
++        for extra in ({'kind': 'configuration', 'field': 'external_policy', 'target': 'IN-other'},
++                      {'kind': 'task_scope', 'field': 'other', 'target': 'TK-other'}):
++            row = deepcopy(decision)
++            row['change'].update(extra)
++            other = {**instance, 'decisions': {row['id']: row}}
++            self.assertEqual(planning.evaluate_condition(condition, other, {},
++                evaluation_context={'task_id': 'TK-one'})['state'], 'ready')
++
++    def test_current_decision_matches_live_source_and_rejects_other_record_family(self):
++        decision = {'id': 'DC-source', 'actor': 'user', 'source_ref': 'SO-one',
++                    'source_sha256': 'a' * 64, 'change': {'value': 'yes'}}
++        instance = {'sources': [{'id': 'SO-one', 'name': 'one', 'sha256': 'a' * 64}],
++                    'decisions': {decision['id']: decision}}
++        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': 'yes'}
++        self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'ready')
++        instance['sources'][0]['sha256'] = 'b' * 64
++        self.assertFalse(task_scope.decision_is_current(decision, instance, {}))
++        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'not_ready')
++        self.assertEqual(planning.evaluate_condition(condition, {}, {'tasks': {decision['id']: {'id': decision['id']}}}),
++            {'state': 'evaluation_error', 'basis': [], 'errors': ['existing record belongs to another family: DC-source']})
++
+     def test_required_certification_condition_tracks_current_identity_effect(self):
+         from support.knowledge_builders import verified_knowledge
+         instance, runtime, kid, _ = verified_knowledge()
+--- start/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+--- start/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+--- start/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ final/.agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),
+--- start/.claude/skills/do-math/references/CLI-실행-계약.md
++++ final/.claude/skills/do-math/references/CLI-실행-계약.md
+@@ -231,7 +231,7 @@
+ - 관찰: 설정은 새 프로필을 저작하는 입력이다. 실행은 선택한 프로필의 모드·고정 window와 `{source,operator,subject_kind,unit}` 항목으로 이루어진 `rule_bindings`를 사용한다. 실제 실행 ID와 카운터 이름은 실행 문맥에서 결박한다. 연구 수행의 자기 점검, 다른 작업 예산 AI의 주기 관찰, 운영 AI·기계의 `deadline_only` 책임을 구별한다. `tool_review_window_seconds`, `self_check_response_window_seconds` 같은 필요한 값이 없으면 임의 기본값이나 작업자의 timeout으로 대신하지 않는다. 아래 관찰 계약과 「공통 실행」·「자기 점검」 문서를 따른다.
+ 
+ 프로필 채택·활성화와 실행 직전은 같은 관찰 설정 검사를 사용한다. 주기·사건 관찰에는 `tool_review_window_seconds`·`observation_interval_seconds`, 연구 수행에는 `self_check_response_window_seconds`가 필요하다. 누락이나 잘못된 값은 `observation_configuration`과 역할·프로필 ID·필드별 오류로 표시한다. 초기화의 `activation.observation_errors`는 활성화 검사에서 확인한 세부 오류다. 초기화에서는 아직 없는 과제의 규칙을 요구하지 않는다. 이미 활성화된 인스턴스에서 설정 문제를 만나면 해당 실행을 기다리게 하고 다른 허용된 역할은 계속 처리한다. 새 설정 프로필은 원래 프로필과 함께 보존하며, 과제에 고정된 참조의 변경은 재준비와 새 독립 계약 검토를 거친다.
+-- 계획과 착수: `plan_settle_seconds`는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->
++- 계획과 착수: `plan_settle_seconds`는 연구 계획이 queue에 남은 작업 계약 검토 요청의 종료를 기다리는 상한이다. 실행 중인 검토도 종료 전에는 그 요청이 queue에 남는다. 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`, `dispatch_wait.since`는 처음 대기를 판정한 시각, `dispatch_wait.limit_seconds`는 그 상한이다. 반복 판정은 시작 시각을 갱신하지 않으며, 상한과 같은 시각부터 이 대기를 해제한다. 검토 요청이 queue에서 없어져도 해제하며, 다음 배정 판정은 오래된 dispatch_wait를 제거한다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. 이 규칙은 모든 후보의 준비 완료를 기다리게 하는 규칙이 아니다. <!-- do-math fields: dispatch_wait=plan_settle_wait -->
+ - 독립 운영: `operator_enabled`는 예약 감독의 활성 여부이고, `operator_interval_seconds`는 정상 감독의 주기다. `operator_timeout_seconds`는 설치 복구 AI 호출 하나의 기한이며, 운영 예약 작업의 시간 상한은 이 값에 종료 여유 300초를 더한 값이다. `operator_effort`는 설치 복구 AI의 추론 노력이다. 정상 감독은 모델 없이 상태·예약·HOLD를 검사하고 엔진 작업을 요청한다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 복구 AI를 열며, 이 AI는 `role_tiers.recovery` 등급에 대응한 `tier_models`의 모델로 작업 슬롯을 예약하지 않고 실행된다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
+ - 학술자료: `scholarly_enabled`는 학술자료 도구를 실행에 연결할지 정한다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
+ 
+--- start/.claude/skills/do-math/references/과제-착수조건.md
++++ final/.claude/skills/do-math/references/과제-착수조건.md
+@@ -14,7 +14,7 @@
+ | `record_field_equals` | `space`, `family`, `record_id`, 아래에서 허용한 `pointer`, 스칼라 `value`를 둔다. 실제 필드값과 자료형까지 같아야 한다. |
+ | `relation_exists` | 관계 종류 `subkind`, 출발 ID `from_id`, 도착 ID `to_id`를 둔다. 관계 출력의 `source`·`target`을 여기의 필드명으로 쓰지 않는다. |
+ | `task_disposition_is` | `task_id`, 요구하는 종결 처분 `value`를 둔다. `value`는 착수 의도에 맞는 `completed` 또는 `closed`다. |
+-| `decision_value_is` | 입력에 제공된 사용자 결정의 `decision_id`와 비교할 `value`를 둔다. 결정이 현재 유효하고 결정의 `change.value`(없으면 `change`)가 `value`와 자료형까지 같을 때 참이다. 특정 과제로 범위를 정한 결정은 그 과제의 조건에서만 참이 된다. |
++| `decision_value_is` | 입력에 제공된 사용자 결정의 `decision_id`와 비교할 `value`를 둔다. 결정이 현재 유효하고 결정의 `change.value`(없으면 `change` 전체)가 `value`와 자료형까지 같을 때 참이다. 값이 null인 경우와 필드가 없는 경우를 구별하며, 불리언 true와 정수 1도 같은 값으로 보지 않는다. 특정 과제로 범위를 정한 결정은 그 과제의 조건에서만 참이 된다. |
+ | `artifact_valid` | 보존 산출을 가리키는 `artifact_ref`에 `snapshot`, `path`, `sha256`을 둔다. `path`는 `runtime/artifacts/` 아래의 상대 경로이며, 이 규칙이나 경로 성분의 저장 규칙을 어긴 조건은 제출 단계에서 거부된다. 실행기가 그 스냅샷에서 읽은 바이트의 해시와 형식을 확인하면 참이다. 해시가 다르거나 형식 검사를 통과하지 못하면 평가 오류다. 형식 검사는 JSON과 UTF-8 텍스트(`.txt`, `.md`, `.tsv`, `.csv`)만 지원한다. |
+ 
+ 조건의 평가 오류는 `task_condition_evaluation_error` 사건과 해당 과제의 오류를 연구 계획에 제공한다. 현재 조건은 매번 다시 평가한다. 같은 계약·근거의 오류를 owner 재시작 후 다시 보았다는 이유만으로 새 사건을 만들지는 않는다. 계약이나 근거가 달라지면 오류 문구가 같아도 새 사건으로 전달한다. 아직 시작하지 않은 과제의 조건 오류만으로 대상 실행이 없는 운영 점검을 만들지 않는다. 자료 대기의 `next_owner`는 다음 담당을 나타내며, 그 값만으로 새 호출을 시작하지 않는다. 필요한 자료 도착이나 별도의 유효한 재고 사건을 기다린다.
+--- start/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
++++ final/.claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py
+@@ -64,7 +64,7 @@
+         defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+         defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+         defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner}, defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+ 
+ class ControlCliTests(CliInstanceTest):
+@@ -355,7 +355,7 @@
+                     defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                     defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                     defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
++                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))], [])
+             omitted = dict(result)
+             del omitted['config_sha256']
+             schemas['status'] = status_field_schema(omitted)
+@@ -450,7 +450,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         self.assertEqual([(name, *issue) for name, text in texts
+                           for issue in field_issues(text, file_page)], [])
+--- start/.claude/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py
++++ final/.claude/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py
+@@ -54,11 +54,18 @@
+         public_question = next(q for q in status['question_links'] if q['id'] == first_question_id)
+         self.assertEqual(public_question['text'], waiting['detail']['resolution_question']['question'])
+         self.assertNotIn('source_status', public_question)
++        original_ref = first_question['source_ref']
++        original_bytes = sim.engine.store.read(original_ref)
++        applied(sim, 'pause', text='Keep the unresolved input question while paused')
++        applied(sim, 'resume', text='Resume other eligible work')
++        self.assertEqual(question(sim, first_question_id)['status'], 'open')
+ 
+         first_retry = retry(sim, action_id, 'UC-retry-same-limit')
+         replay = retry(sim, action_id, 'UC-retry-same-limit')
+         self.assertTrue(first_retry['accepted'])
+         self.assertTrue(replay['replayed'])
++        self.assertEqual(question(sim, first_question_id)['status'], 'open',
++                         'Accepting a retry is not evidence that repackaging fits')
+         sim.step()
+         runtime = sim.runtime
+         self.assertEqual(len(runtime['input_overflows']), 2)
+@@ -83,6 +90,7 @@
+         self.assertLessEqual(resolved['prompt_bytes'], resolved['limit_bytes'])
+         self.assertEqual(len(runtime['input_overflows']), 2, 'successful admission must preserve both historical failures')
+         self.assertEqual([call['action']['id'] for call in maintenance_calls(model)], [action_id])
++        self.assertEqual(sim.engine.store.read(original_ref), original_bytes)
+ 
+         applied(sim, 'close', text='Boundary test complete')
+         with self.assertRaisesRegex(ValueError, '^' + re.escape(CLOSED) + '$'):
+--- start/.claude/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py
+@@ -160,6 +160,16 @@
+             queue = deepcopy(engine.runtime['queue'])
+             damaged = root / 'input/submission/context.json'
+             damaged.write_bytes(b'damaged')
++            target['status'] = 'running'
++            with self.assertRaisesRegex(ValueError, '^recovery cannot overlap a live predecessor$'):
++                engine._complete_operational_disposition(record)
++            self.assertEqual(engine.runtime['queue'], queue)
++            target['status'] = 'ended'
++            target['input_manifest'] = {**fitted['manifest'], 'documents': []}
++            with self.assertRaisesRegex(ValueError, '^retry requires intact sealed input evidence$'):
++                engine._complete_operational_disposition(record)
++            self.assertEqual(engine.runtime['queue'], queue)
++            target['input_manifest'] = fitted['manifest']
+             engine._complete_operational_disposition(record)
+             engine._complete_operational_disposition(record)
+             self.assertEqual(damaged.read_bytes(), b'damaged')
+--- start/.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py
++++ final/.claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py
+@@ -164,6 +164,74 @@
+     def test_an_explicitly_requested_plan_does_not_settle(self):
+         plan = self.queue({'id': 'AC-plan', 'role': 'research_plan', 'requested_by': 'UC-user'})
+         self.assertTrue(self.engine._dispatchable(plan))
++
++    def test_documented_wait_is_the_actual_queue_value_until_the_exact_limit(self):
++        from support.engine_context import assert_wait_documents
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        since = self.sim.clock.now()
++        limit = self.engine.instance['config']['plan_settle_seconds']
++        self.assertEqual(limit, 300)
++        self.assertFalse(self.engine._dispatchable(plan))
++        expected = {'kind': 'plan_settle', 'since': since, 'limit_seconds': 300}
++        assert_wait_documents(self, plan['dispatch_wait'], owner='plan_settle_wait', expected=expected)
++        self.sim.advance(299)
++        self.assertFalse(self.engine._dispatchable(plan))
++        self.assertEqual(plan['settle_started_at'], since)
++        self.assertEqual(plan['dispatch_wait'], expected)
++        self.sim.advance(1)
++        self.assertTrue(self.engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++        self.assertEqual(plan['settle_started_at'], since)
++        self.sim.advance(1)
++        self.assertTrue(self.engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++
++    def test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning(self):
++        engine = self.engine
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        review = engine.runtime['queue'][1]
++        # Real registration leaves a running review's request in the queue.
++        row = task(engine, 'TK-x', approved=False)
++        execution = engine._register_execution(review, {'id': 'EX-review', 'role': 'task_contract_review',
++                                                         'status': 'starting'})
++        self.assertIn(review, engine.runtime['queue'])
++        transition_execution(execution, 'running', at=self.sim.clock.now())
++        self.assertFalse(engine._dispatchable(plan))
++        self.assertEqual(plan['dispatch_wait']['kind'], 'plan_settle')
++        # Moving a request to waiting_actions is not the pending queue predicate.
++        engine.runtime['queue'] = [plan]
++        engine.runtime.setdefault('waiting_actions', {})['AC-review'] = {'action': review, 'kind': 'input_overflow'}
++        self.assertFalse(engine._plan_settle_waits(plan))
++        self.assertTrue(engine._dispatchable(plan))
++        self.assertNotIn('dispatch_wait', plan)
++        engine.runtime['executions'] = {}
++        for key, value in (('requested_by', 'UC-user'), ('recovery', {'execution_id': 'EX-old'})):
++            with self.subTest(key=key):
++                bypass = self.queue({'id': 'AC-bypass', 'role': 'research_plan', key: value,
++                                     'dispatch_wait': {'kind': 'plan_settle', 'since': 'old', 'limit_seconds': 300}})
++                self.assertFalse(engine._plan_settle_waits(bypass))
++                self.assertTrue(engine._dispatchable(bypass))
++                self.assertNotIn('dispatch_wait', bypass)
++                self.assertNotIn('settle_started_at', bypass)
++        self.queue({'id': 'AC-plan', 'role': 'research_plan'}, review=False)
++        other = {'id': 'AC-preparation', 'role': 'research_preparation'}
++        self.assertTrue(engine._dispatchable(other))
++        self.assertNotIn('settle_started_at', other)
++
++    def test_wait_document_check_rejects_missing_borrowed_or_changed_values(self):
++        from support.engine_context import assert_wait_documents
++        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
++        self.assertFalse(self.engine._dispatchable(plan))
++        expected = {'kind': 'plan_settle', 'since': self.sim.clock.now(), 'limit_seconds': 300}
++        actual = plan['dispatch_wait']
++        for bad in ({}, {'kind': 'capacity'}, {**actual, 'kind': 'capacity'},
++                    {**actual, 'since': 'old'}, {**actual, 'limit_seconds': 301},
++                    {k: v for k, v in actual.items() if k != 'since'}):
++            with self.subTest(bad=bad), self.assertRaises(AssertionError):
++                assert_wait_documents(self, bad, owner='plan_settle_wait', expected=expected)
++        for text in ('', '`dispatch_wait.nonexistent` <!-- do-math fields: dispatch_wait=plan_settle_wait -->'):
++            with self.subTest(text=text), self.assertRaises(AssertionError):
++                assert_wait_documents(self, actual, owner='plan_settle_wait', expected=expected, texts=[text])
+ 
+ 
+ class ReadinessResponsibilityTests(unittest.TestCase):
+@@ -198,12 +266,21 @@
+         self.assertTrue(any(events[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
+ 
+     def test_initial_preparation_owns_initial_events_until_accepted(self):
+-        engine = Sim.activated().engine
++        sim = Sim.activated()
++        engine = sim.engine
+         first = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
+         self.assertEqual(set(first.get('event_refs', [])), set(engine.runtime['pending_events']))
+         engine._refresh_readiness()
+         self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+         self.assertTrue(engine.runtime['pending_events'], 'Assignment is not consumption')
++        from support.default_responder import DefaultResponder
++        events = set(first['event_refs'])
++        sim.model.responder = DefaultResponder(preparation_candidates=[])
++        sim.step()
++        execution, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_preparation']
++        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
++        self.assertEqual(set(execution['action']['event_refs']), events)
++        self.assertFalse(events & set(sim.runtime['pending_events']))
+ 
+     def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
+         sim = Sim.activated()
+--- start/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
++++ final/.claude/skills/do-math/scripts/tests/structure/test_doc_code.py
+@@ -14,6 +14,55 @@
+ 
+ 
+ class DocumentCodeTests(unittest.TestCase):
++    def test_wait_fields_require_actual_condition_input_and_dispatch_wait(self):
++        schemas = field_schemas()
++        from support.doc_code import WAIT_BOUNDARIES, wait_field_issues
++        for owner, token in (('change', 'change.value'), ('plan_settle_wait', 'plan_settle_wait.kind')):
++            for text in ('`' + token + '`', '`result.' + token.split('.')[1] +
++                         '` <!-- do-math fields: result=' + owner + ' -->'):
++                with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'actual wait boundary'):
++                    scoped_field_issues(text, schemas)
++                with self.assertRaisesRegex(ValueError, 'actual wait boundary'):
++                    scoped_field_issues(text, schemas, defer_waits=set(WAIT_BOUNDARIES) - {owner})
++                self.assertEqual(scoped_field_issues(text, schemas, defer_waits=(owner,)), [])
++                self.assertEqual(unowned_field_references(text, schemas), [])
++        with self.assertRaisesRegex(ValueError, 'Unknown deferred wait owners'):
++            scoped_field_issues('', schemas, defer_waits=('changes',))
++        with self.assertRaisesRegex(ValueError, 'actual repository report'):
++            scoped_field_issues('`status.budget`', schemas, defer_waits=WAIT_BOUNDARIES)
++        self.assertEqual(wait_field_issues('`change.value`', 'change', {}), [('actual field', 'change.value')])
++        self.assertEqual(wait_field_issues('`dispatch_wait.kind` <!-- do-math fields: dispatch_wait=plan_settle_wait -->',
++            'plan_settle_wait', {}), [('actual field', 'dispatch_wait.kind')])
++
++    def test_deferred_waits_have_the_assigned_actual_document_check(self):
++        import ast
++        from support.doc_code import WAIT_BOUNDARIES
++        owners = {
++            'change': ('unit/test_planning_conditions.py', 'ReadinessConditionTests',
++                       'test_documented_decision_value_uses_real_input_and_exact_types'),
++            'plan_settle_wait': ('sim/test_scheduling_session_slots.py', 'PlanSettleTests',
++                                'test_documented_wait_is_the_actual_queue_value_until_the_exact_limit')}
++        def verify(mapping):
++            self.assertEqual(set(mapping), set(WAIT_BOUNDARIES))
++            for owner, (path, cls_name, method) in mapping.items():
++                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
++                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
++                methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
++                self.assertEqual(len(methods), 1)
++                self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++                    and n.func.id == 'assert_wait_documents' and any(k.arg == 'owner'
++                    and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
++                    for n in ast.walk(methods[0])))
++        verify(owners)
++        for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
++            changed = dict(owners)
++            if fault == 'missing_owner': del changed['change']
++            elif fault == 'wrong_owner': changed['changes'] = changed.pop('change')
++            elif fault == 'missing_method': changed['change'] = (*changed['change'][:2], 'missing')
++            else: changed['change'] = (*changed['change'][:2], 'test_readiness_document_tables_match_the_condition_grammar')
++            with self.subTest(fault=fault), self.assertRaises(AssertionError):
++                verify(changed)
++
+     def test_governance_fields_require_their_actual_boundary_owner(self):
+         schemas = field_schemas()
+         from support.doc_code import GOVERNANCE_BOUNDARIES, governance_field_issues
+@@ -201,14 +250,14 @@
+             with self.subTest(owner=owner):
+                 with self.assertRaisesRegex(ValueError, 'actual tool input'):
+                     scoped_field_issues('`' + field + '`', schemas,
+-                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                        defer_tool_inputs=set(TOOL_INPUT_BOUNDARIES) - {owner}, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+                 self.assertEqual(scoped_field_issues('`' + field + '`', schemas,
+-                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation')), [])
++                                 defer_tool_inputs=(owner,), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait')), [])
+         with self.assertRaisesRegex(ValueError, 'Unknown deferred tool input owners'):
+-            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++            scoped_field_issues('', schemas, defer_tool_inputs=('preveiw',), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+         for text in ('`status.budget`', '`results[].report`', '`operational_evidence.checkpoint_source`'):
+             with self.assertRaisesRegex(ValueError, 'fields require the actual'):
+-                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                scoped_field_issues(text, schemas, defer_tool_inputs=TOOL_INPUT_BOUNDARIES, defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+     def test_deferred_tools_have_their_actual_document_check(self):
+         import ast
+@@ -506,7 +555,7 @@
+                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+                                                   defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview',
+-                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))]
++                                                                     'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))]
+         self.assertEqual(issues, [])
+ 
+     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+@@ -721,10 +770,12 @@
+         from support.doc_code import delivery_field_issues
+         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
+                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])
+-        self.assertEqual(scoped_field_issues('`change.value` '
++        self.assertEqual(scoped_field_issues(
+             '`toolchain.project.search_paths` `environment_check.changed_files`', schemas), [])
+-        self.assertEqual(scoped_field_issues('`change.nonexistent`', schemas),
+-                         [('scoped field', 'change.nonexistent')])
++        from support.doc_code import wait_field_issues
++        self.assertEqual(wait_field_issues('`change.value`', 'change', {'value': True}), [])
++        self.assertEqual(wait_field_issues('`change.nonexistent`', 'change', {'value': True}),
++                         [('actual field', 'change.nonexistent')])
+         self.assertEqual(governance_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->',
+                          'import_payload', {'kind': 'charter'}), [('actual field', 'payload.deadline_offset_ms')])
+ 
+--- start/.claude/skills/do-math/scripts/tests/support/doc_code.py
++++ final/.claude/skills/do-math/scripts/tests/support/doc_code.py
+@@ -48,6 +48,7 @@
+ DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
+ GOVERNANCE_BOUNDARIES = {owner: object() for owner in
+                          ('import_payload', 'import_check', 'governance', 'academic_validation')}
++WAIT_BOUNDARIES = {owner: object() for owner in ('change', 'plan_settle_wait')}
+ 
+ 
+ def documents(skill):
+@@ -295,14 +296,12 @@
+     schemas.update(ROLE_INPUT_BOUNDARIES)
+     schemas.update(CLI_RESULT_BOUNDARIES)
+     from do_math import formal, observations, planning, trust_validation
+-    from do_math.dispatch_engine import DispatchEngineMixin
+-    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
++    schemas.update(WAIT_BOUNDARIES)
+     schemas.update(RESULT_INPUT_BOUNDARIES)
+     schemas.update(REVIEW_INPUT_BOUNDARIES)
+     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
+     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
+     schemas.update(GOVERNANCE_BOUNDARIES)
+-    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
+     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
+     schemas['query_result'] = QUERY_RESULT_BOUNDARY
+     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
+@@ -438,7 +437,7 @@
+                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
+                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
+-                        defer_delivery_inputs=(), defer_governance=()):
++                        defer_delivery_inputs=(), defer_governance=(), defer_waits=()):
+     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+     if unknown:
+@@ -468,6 +467,9 @@
+     unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
+     if unknown:
+         raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
++    unknown = set(defer_waits) - WAIT_BOUNDARIES.keys()
++    if unknown:
++        raise ValueError(f'Unknown deferred wait owners: {sorted(unknown)}')
+     for line in text.splitlines():
+         local, binding_issues = field_bindings(line, schemas)
+         issues.extend(binding_issues)
+@@ -477,6 +479,12 @@
+             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
+             if root not in local:
+                 continue
++            owner = next((name for name, boundary in WAIT_BOUNDARIES.items()
++                          if local[root] is boundary), None)
++            if owner is not None:
++                if owner in defer_waits:
++                    continue
++                raise ValueError(owner + ' fields require the actual wait boundary')
+             owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
+                           if local[root] is boundary), None)
+             if owner is not None:
+@@ -562,6 +570,32 @@
+     return sorted(set(issues))
+ 
+ 
++def wait_field_issues(text, owner, value):
++    """Check fields against a real positive input/wait sample, not required outputs.
++
++    Missing change.value is independently tested as a whole-change comparison;
++    the positive sample here validates its documented spelling only.
++    """
++    if owner not in WAIT_BOUNDARIES:
++        raise ValueError('Unknown wait owner: ' + owner)
++    issues = []
++    for line in text.splitlines():
++        local, _ = field_bindings(line, WAIT_BOUNDARIES)
++        for token in SPAN.findall(line):
++            if not FIELD.fullmatch(token):
++                continue
++            root, *parts = token.split('.')
++            if local.get(root) is not WAIT_BOUNDARIES[owner]:
++                continue
++            node = value
++            for part in parts:
++                if not isinstance(node, dict) or part not in node:
++                    issues.append(('actual field', token))
++                    break
++                node = node[part]
++    return sorted(set(issues))
++
++
+ def governance_field_issues(text, owner, value):
+     """Read one real import input/check or current query, retaining its owner.
+ 
+--- start/.claude/skills/do-math/scripts/tests/support/engine_context.py
++++ final/.claude/skills/do-math/scripts/tests/support/engine_context.py
+@@ -84,6 +84,31 @@
+         case.assertEqual(raw, canonical_json(value))
+         case.assertEqual(context[key]['total'], len(value))
+     return value
++
++
++def assert_wait_documents(case, value, *, owner, expected, texts=None):
++    """P09 input spelling and P11's actual wait, with independent scene facts."""
++    from support.doc_code import WAIT_BOUNDARIES, documents, field_bindings, SPAN, wait_field_issues
++    if owner not in WAIT_BOUNDARIES:
++        raise ValueError('Unknown wait owner: ' + owner)
++    if texts is None:
++        texts = [p.read_text(encoding='utf-8') for p in documents(Path(__file__).resolve().parents[3])]
++    mentioned = set()
++    for text in texts:
++        case.assertEqual(wait_field_issues(text, owner, value), [])
++        for line in text.splitlines():
++            local, _ = field_bindings(line, WAIT_BOUNDARIES)
++            for token in SPAN.findall(line):
++                root, dot, suffix = token.partition('.')
++                if dot and local.get(root) is WAIT_BOUNDARIES[owner]:
++                    mentioned.add(suffix)
++    case.assertIn('value' if owner == 'change' else 'kind', mentioned,
++                  'The boundary must have an actual document consumer')
++    # Compare exact types as well as values (True and 1 are not interchangeable).
++    case.assertIs(type(value), type(expected))
++    case.assertEqual(value, expected)
++    for key in expected:
++        case.assertIs(type(value[key]), type(expected[key]))
+ 
+ 
+ def assert_governance_documents(case, value, *, owner, instance=None, runtime=None,
+--- start/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py
+@@ -64,7 +64,7 @@
+                                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                            defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+             self.assertEqual([(name, *issue) for name, text in texts
+                               for issue in field_issues(text, result)], [])
+--- start/.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py
+@@ -325,6 +325,89 @@
+ 
+ 
+ class ReadinessConditionTests(unittest.TestCase):
++    def test_documented_decision_value_uses_real_input_and_exact_types(self):
++        from do_math import governance
++        from do_math.canonical import exact_content_hash
++        from support.engine_context import assert_wait_documents
++        source = governance.preserve_source('GS-choice', 'Use the supplied decision.', origin='user')
++        instance = {'governance_sources': {source['id']: source}, 'decisions': {}}
++        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
++                    'source_sha256': source['sha256'], 'change': {'value': True}}
++        instance['decisions'][decision['id']] = decision
++        assert_wait_documents(self, decision['change'], owner='change', expected={'value': True})
++        for bad in ({}, {'kind': 'plan_settle'}, {'value': 1}, {'value': None}):
++            with self.subTest(bad=bad), self.assertRaises(AssertionError):
++                assert_wait_documents(self, bad, owner='change', expected={'value': True})
++        for text in ('', '`change.nonexistent`'):
++            with self.subTest(text=text), self.assertRaises(AssertionError):
++                assert_wait_documents(self, decision['change'], owner='change', expected={'value': True}, texts=[text])
++        # This is an input field, not a mandatory evaluator output.
++        samples = [({'value': True}, True, 'ready'), ({'value': True}, 1, 'not_ready'),
++                   ({'value': 1}, True, 'not_ready'), ({'value': 1}, 1.0, 'not_ready'),
++                   ({'value': 1}, 1, 'ready'), ({'value': None}, None, 'ready'),
++                   ({'value': None}, {}, 'not_ready'), ({}, {}, 'ready'),
++                   ({}, None, 'not_ready'), ({'kind': 'task_scope', 'task_id': 'TK-one'},
++                    {'kind': 'task_scope', 'task_id': 'TK-one'}, 'ready'),
++                   ({'kind': 'task_scope', 'task_id': 'TK-one'}, None, 'not_ready')]
++        for change, expected, state in samples:
++            with self.subTest(change=change, expected=expected):
++                decision['change'] = deepcopy(change)
++                before = deepcopy(instance)
++                condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': expected}
++                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++                result = planning.evaluate_condition(condition, instance, {}, evaluation_context={'task_id': 'TK-one'})
++                self.assertEqual(result, {'state': state, 'basis': [
++                    {'id': decision['id'], 'sha256': exact_content_hash(decision), 'status': None}], 'errors': []})
++                self.assertEqual(instance, before)
++
++    def test_decision_condition_checks_source_currentness_and_task_scope(self):
++        from do_math import governance
++        source = governance.preserve_source('GS-choice', 'A current task choice.', origin='user')
++        decision = {'id': 'DC-choice', 'actor': 'user', 'source_ref': source['id'],
++                    'source_sha256': source['sha256'], 'change': {'value': True, 'task_id': 'TK-one'}}
++        instance = {'governance_sources': {source['id']: source}, 'decisions': {decision['id']: decision}}
++        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': True}
++        for target, state in (('TK-one', 'ready'), ('TK-other', 'not_ready'), (None, 'not_ready')):
++            with self.subTest(target=target):
++                self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++                self.assertEqual(planning.evaluate_condition(condition, instance, {},
++                    evaluation_context={'task_id': target})['state'], state)
++        for mutate in ('actor', 'missing_source', 'source_hash', 'source_bytes', 'change'):
++            with self.subTest(mutate=mutate):
++                changed = deepcopy(instance)
++                row = changed['decisions'][decision['id']]
++                if mutate == 'actor': row['actor'] = 'research_plan'
++                elif mutate == 'missing_source': row['source_ref'] = 'GS-missing'
++                elif mutate == 'source_hash': row['source_sha256'] = '0' * 64
++                elif mutate == 'source_bytes': changed['governance_sources'][source['id']]['text'] = 'changed'
++                else: row.pop('change')
++                self.assertFalse(task_scope.decision_is_current(row, changed, {}))
++                self.assertEqual(planning.evaluate_condition(condition, changed, {},
++                    evaluation_context={'task_id': 'TK-one'})['state'], 'not_ready')
++        # kind/target/field are change data. This operator compares value and
++        # task_id; it does not infer an additional effect predicate from prose.
++        for extra in ({'kind': 'configuration', 'field': 'external_policy', 'target': 'IN-other'},
++                      {'kind': 'task_scope', 'field': 'other', 'target': 'TK-other'}):
++            row = deepcopy(decision)
++            row['change'].update(extra)
++            other = {**instance, 'decisions': {row['id']: row}}
++            self.assertEqual(planning.evaluate_condition(condition, other, {},
++                evaluation_context={'task_id': 'TK-one'})['state'], 'ready')
++
++    def test_current_decision_matches_live_source_and_rejects_other_record_family(self):
++        decision = {'id': 'DC-source', 'actor': 'user', 'source_ref': 'SO-one',
++                    'source_sha256': 'a' * 64, 'change': {'value': 'yes'}}
++        instance = {'sources': [{'id': 'SO-one', 'name': 'one', 'sha256': 'a' * 64}],
++                    'decisions': {decision['id']: decision}}
++        condition = {'op': 'decision_value_is', 'decision_id': decision['id'], 'value': 'yes'}
++        self.assertTrue(task_scope.decision_is_current(decision, instance, {}))
++        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'ready')
++        instance['sources'][0]['sha256'] = 'b' * 64
++        self.assertFalse(task_scope.decision_is_current(decision, instance, {}))
++        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'not_ready')
++        self.assertEqual(planning.evaluate_condition(condition, {}, {'tasks': {decision['id']: {'id': decision['id']}}}),
++            {'state': 'evaluation_error', 'basis': [], 'errors': ['existing record belongs to another family: DC-source']})
++
+     def test_required_certification_condition_tracks_current_identity_effect(self):
+         from support.knowledge_builders import verified_knowledge
+         instance, runtime, kid, _ = verified_knowledge()
+--- start/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py
+@@ -278,7 +278,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         instance, runtime = surface_state()
+         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
+@@ -354,7 +354,7 @@
+                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+-                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         with tempfile.TemporaryDirectory() as directory:
+             archive = {}
+@@ -523,7 +523,7 @@
+                 defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+-                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         instance, runtime = surface_state()
+         profile = role_profile(instance, 'research_work')
+--- start/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py
+@@ -36,7 +36,7 @@
+                                        defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))
++                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))
+ 
+         alias = '`record.family` <!-- do-math fields: record=query_record -->'
+         for name, (_, stored) in RECORD_FAMILIES.items():
+--- start/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
++++ final/.claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py
+@@ -151,7 +151,7 @@
+                                                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                               defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                               defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))], [])
++                                                              defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))], [])
+             self.assertEqual([(name, token) for name, text in texts
+                               for token in unowned_field_references(text, schemas)], [])
+             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+@@ -184,7 +184,7 @@
+                                                                          defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                                          defer_operational_inputs=('operational_evidence', 'recovery_materials'),
+                                                                          defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
+-                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'))])
++                                                                         defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'))])
+                     if name == 'config_sha256':
+                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+             for path in (('operating_summary', 'supervision'),

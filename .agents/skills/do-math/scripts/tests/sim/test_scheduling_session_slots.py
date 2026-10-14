@@ -165,6 +165,74 @@ class PlanSettleTests(unittest.TestCase):
         plan = self.queue({'id': 'AC-plan', 'role': 'research_plan', 'requested_by': 'UC-user'})
         self.assertTrue(self.engine._dispatchable(plan))
 
+    def test_documented_wait_is_the_actual_queue_value_until_the_exact_limit(self):
+        from support.engine_context import assert_wait_documents
+        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
+        since = self.sim.clock.now()
+        limit = self.engine.instance['config']['plan_settle_seconds']
+        self.assertEqual(limit, 300)
+        self.assertFalse(self.engine._dispatchable(plan))
+        expected = {'kind': 'plan_settle', 'since': since, 'limit_seconds': 300}
+        assert_wait_documents(self, plan['dispatch_wait'], owner='plan_settle_wait', expected=expected)
+        self.sim.advance(299)
+        self.assertFalse(self.engine._dispatchable(plan))
+        self.assertEqual(plan['settle_started_at'], since)
+        self.assertEqual(plan['dispatch_wait'], expected)
+        self.sim.advance(1)
+        self.assertTrue(self.engine._dispatchable(plan))
+        self.assertNotIn('dispatch_wait', plan)
+        self.assertEqual(plan['settle_started_at'], since)
+        self.sim.advance(1)
+        self.assertTrue(self.engine._dispatchable(plan))
+        self.assertNotIn('dispatch_wait', plan)
+
+    def test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning(self):
+        engine = self.engine
+        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
+        review = engine.runtime['queue'][1]
+        # Real registration leaves a running review's request in the queue.
+        row = task(engine, 'TK-x', approved=False)
+        execution = engine._register_execution(review, {'id': 'EX-review', 'role': 'task_contract_review',
+                                                         'status': 'starting'})
+        self.assertIn(review, engine.runtime['queue'])
+        transition_execution(execution, 'running', at=self.sim.clock.now())
+        self.assertFalse(engine._dispatchable(plan))
+        self.assertEqual(plan['dispatch_wait']['kind'], 'plan_settle')
+        # Moving a request to waiting_actions is not the pending queue predicate.
+        engine.runtime['queue'] = [plan]
+        engine.runtime.setdefault('waiting_actions', {})['AC-review'] = {'action': review, 'kind': 'input_overflow'}
+        self.assertFalse(engine._plan_settle_waits(plan))
+        self.assertTrue(engine._dispatchable(plan))
+        self.assertNotIn('dispatch_wait', plan)
+        engine.runtime['executions'] = {}
+        for key, value in (('requested_by', 'UC-user'), ('recovery', {'execution_id': 'EX-old'})):
+            with self.subTest(key=key):
+                bypass = self.queue({'id': 'AC-bypass', 'role': 'research_plan', key: value,
+                                     'dispatch_wait': {'kind': 'plan_settle', 'since': 'old', 'limit_seconds': 300}})
+                self.assertFalse(engine._plan_settle_waits(bypass))
+                self.assertTrue(engine._dispatchable(bypass))
+                self.assertNotIn('dispatch_wait', bypass)
+                self.assertNotIn('settle_started_at', bypass)
+        self.queue({'id': 'AC-plan', 'role': 'research_plan'}, review=False)
+        other = {'id': 'AC-preparation', 'role': 'research_preparation'}
+        self.assertTrue(engine._dispatchable(other))
+        self.assertNotIn('settle_started_at', other)
+
+    def test_wait_document_check_rejects_missing_borrowed_or_changed_values(self):
+        from support.engine_context import assert_wait_documents
+        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
+        self.assertFalse(self.engine._dispatchable(plan))
+        expected = {'kind': 'plan_settle', 'since': self.sim.clock.now(), 'limit_seconds': 300}
+        actual = plan['dispatch_wait']
+        for bad in ({}, {'kind': 'capacity'}, {**actual, 'kind': 'capacity'},
+                    {**actual, 'since': 'old'}, {**actual, 'limit_seconds': 301},
+                    {k: v for k, v in actual.items() if k != 'since'}):
+            with self.subTest(bad=bad), self.assertRaises(AssertionError):
+                assert_wait_documents(self, bad, owner='plan_settle_wait', expected=expected)
+        for text in ('', '`dispatch_wait.nonexistent` <!-- do-math fields: dispatch_wait=plan_settle_wait -->'):
+            with self.subTest(text=text), self.assertRaises(AssertionError):
+                assert_wait_documents(self, actual, owner='plan_settle_wait', expected=expected, texts=[text])
+
 
 class ReadinessResponsibilityTests(unittest.TestCase):
     def test_terminal_stale_assessment_gets_one_followup_without_reopening(self):
@@ -198,12 +266,21 @@ class ReadinessResponsibilityTests(unittest.TestCase):
         self.assertTrue(any(events[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
 
     def test_initial_preparation_owns_initial_events_until_accepted(self):
-        engine = Sim.activated().engine
+        sim = Sim.activated()
+        engine = sim.engine
         first = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
         self.assertEqual(set(first.get('event_refs', [])), set(engine.runtime['pending_events']))
         engine._refresh_readiness()
         self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
         self.assertTrue(engine.runtime['pending_events'], 'Assignment is not consumption')
+        from support.default_responder import DefaultResponder
+        events = set(first['event_refs'])
+        sim.model.responder = DefaultResponder(preparation_candidates=[])
+        sim.step()
+        execution, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_preparation']
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(set(execution['action']['event_refs']), events)
+        self.assertFalse(events & set(sim.runtime['pending_events']))
 
     def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
         sim = Sim.activated()

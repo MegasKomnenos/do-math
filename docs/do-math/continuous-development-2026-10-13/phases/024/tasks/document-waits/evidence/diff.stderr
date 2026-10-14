@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\save_diff.py", line 17, in <module>
+    assert hashlib.sha256(before).hexdigest()==start[path]['sha256'],path
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: .agents/skills/do-math/references/CLI-실행-계약.md

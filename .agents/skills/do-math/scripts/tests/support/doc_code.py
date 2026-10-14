@@ -48,6 +48,7 @@ REVIEW_INPUT_BOUNDARIES = {owner: object() for owner in
 DELIVERY_INPUT_BOUNDARIES = {owner: object() for owner in ('submission_check', 'repair')}
 GOVERNANCE_BOUNDARIES = {owner: object() for owner in
                          ('import_payload', 'import_check', 'governance', 'academic_validation')}
+WAIT_BOUNDARIES = {owner: object() for owner in ('change', 'plan_settle_wait')}
 
 
 def documents(skill):
@@ -295,14 +296,12 @@ def field_schemas():
     schemas.update(ROLE_INPUT_BOUNDARIES)
     schemas.update(CLI_RESULT_BOUNDARIES)
     from do_math import formal, observations, planning, trust_validation
-    from do_math.dispatch_engine import DispatchEngineMixin
-    schemas['plan_settle_wait'] = produced_object_schema(DispatchEngineMixin._plan_settle_waits, "action['dispatch_wait']")
+    schemas.update(WAIT_BOUNDARIES)
     schemas.update(RESULT_INPUT_BOUNDARIES)
     schemas.update(REVIEW_INPUT_BOUNDARIES)
     schemas['subject'] = RECORDS['executions']['properties']['observation_rules']['items']['properties']['subject']
     schemas['source_range'] = governance.interpretation_schema('interpret')['properties']['import_units']['items']['properties']['source_range']
     schemas.update(GOVERNANCE_BOUNDARIES)
-    schemas['change'] = consumed_object_schema(planning.evaluate_condition, "decision.get('change', {})", scope='visit')
     schemas['worker_feedback'] = {'properties': {key: {} for key in observations.WORKER_FEEDBACK_FIELDS}}
     schemas['query_result'] = QUERY_RESULT_BOUNDARY
     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
@@ -438,7 +437,7 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
                         defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=(),
                         defer_result_inputs=(), defer_tool_inputs=(), defer_review_inputs=(),
-                        defer_delivery_inputs=(), defer_governance=()):
+                        defer_delivery_inputs=(), defer_governance=(), defer_waits=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -468,6 +467,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_governance) - GOVERNANCE_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred governance owners: {sorted(unknown)}')
+    unknown = set(defer_waits) - WAIT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred wait owners: {sorted(unknown)}')
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
         issues.extend(binding_issues)
@@ -477,6 +479,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            owner = next((name for name, boundary in WAIT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_waits:
+                    continue
+                raise ValueError(owner + ' fields require the actual wait boundary')
             owner = next((name for name, boundary in GOVERNANCE_BOUNDARIES.items()
                           if local[root] is boundary), None)
             if owner is not None:
@@ -559,6 +567,32 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def wait_field_issues(text, owner, value):
+    """Check fields against a real positive input/wait sample, not required outputs.
+
+    Missing change.value is independently tested as a whole-change comparison;
+    the positive sample here validates its documented spelling only.
+    """
+    if owner not in WAIT_BOUNDARIES:
+        raise ValueError('Unknown wait owner: ' + owner)
+    issues = []
+    for line in text.splitlines():
+        local, _ = field_bindings(line, WAIT_BOUNDARIES)
+        for token in SPAN.findall(line):
+            if not FIELD.fullmatch(token):
+                continue
+            root, *parts = token.split('.')
+            if local.get(root) is not WAIT_BOUNDARIES[owner]:
+                continue
+            node = value
+            for part in parts:
+                if not isinstance(node, dict) or part not in node:
+                    issues.append(('actual field', token))
+                    break
+                node = node[part]
     return sorted(set(issues))
 
 

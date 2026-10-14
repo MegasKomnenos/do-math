@@ -1,0 +1,213 @@
+{
+  "exact_sentences": [
+    {
+      "section": "N01-237",
+      "token": "input_overflow_retry_failed",
+      "sentences": [
+        "재시도 요청을 적용하면 상태는 “재시도 중”이며 요청 자체로 질문을 해소하지 않는다. 현재 포장이 한도 안에 들어온 사실을 확인하면 아직 열린 질문을 해소하고 `input_overflow_retry_resolved`를 기록한다. 다른 적법한 결정이 이미 질문을 해소했다면 그 근거와 이력을 보존한다. 다시 넘치면 아직 열린 이전 질문을 새 실패 질문으로 대체했다는 해소 이력과 `input_overflow_retry_failed`를 기록하고, 새 질문과 같은 action을 다시 보류한다. 과거 overflow detail·source manifest·질문 원문은 삭제하거나 현재 성공으로 덮지 않는다. 원문이나 필수 직접 입력을 몰래 줄이지 않으며, 승인되지 않은 프로필·범위·자원·권한 변경을 재시도 명령으로 대신하지 않는다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/context_store.py",
+      "symbols": [
+        "prepare_role_input"
+      ],
+      "judgment": "The actual byte budget and fixed ready population are consumed by prepare_role_input. Overflow requests/resolutions belong to input_recovery.overflow_requests/validate_resolutions and CoreEngineMixin._resume_input_overflow_action/_apply_input_overflow_resolutions; review proposal overflow belongs to the identity-review path.",
+      "evidence_scope": "Selected flows.test_review_owner_flows verifies review proposal overflow. General planning choice/currentness and user retry transitions are outside P07; map exact current owners without claiming the other packet complete.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        700
+      ]
+    },
+    {
+      "section": "N01-237",
+      "token": "input_overflow_retry_resolved",
+      "sentences": [
+        "재시도 요청을 적용하면 상태는 “재시도 중”이며 요청 자체로 질문을 해소하지 않는다. 현재 포장이 한도 안에 들어온 사실을 확인하면 아직 열린 질문을 해소하고 `input_overflow_retry_resolved`를 기록한다. 다른 적법한 결정이 이미 질문을 해소했다면 그 근거와 이력을 보존한다. 다시 넘치면 아직 열린 이전 질문을 새 실패 질문으로 대체했다는 해소 이력과 `input_overflow_retry_failed`를 기록하고, 새 질문과 같은 action을 다시 보류한다. 과거 overflow detail·source manifest·질문 원문은 삭제하거나 현재 성공으로 덮지 않는다. 원문이나 필수 직접 입력을 몰래 줄이지 않으며, 승인되지 않은 프로필·범위·자원·권한 변경을 재시도 명령으로 대신하지 않는다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/context_store.py",
+      "symbols": [
+        "prepare_role_input"
+      ],
+      "judgment": "The actual byte budget and fixed ready population are consumed by prepare_role_input. Overflow requests/resolutions belong to input_recovery.overflow_requests/validate_resolutions and CoreEngineMixin._resume_input_overflow_action/_apply_input_overflow_resolutions; review proposal overflow belongs to the identity-review path.",
+      "evidence_scope": "Selected flows.test_review_owner_flows verifies review proposal overflow. General planning choice/currentness and user retry transitions are outside P07; map exact current owners without claiming the other packet complete.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        700
+      ]
+    },
+    {
+      "section": "N01-237",
+      "token": "question_links",
+      "sentences": [
+        "`input_overflow`는 원 action, owner activity, 취소된 입력 준비 실행, 입력 크기·원인·현재 한도, 공개 질문과 그 source artifact를 보존한다. 문맥은 한도 전체가 아니라 한도에서 지급 문서·출력 스키마·틀의 고정 부분을 뺀 문맥 예산과 비교되므로, 기록은 한도(`limit_bytes`)와 함께 그 예산(`context_budget_bytes`)을 남긴다. `status --json`의 `question_links`는 이 artifact의 `resolution_question/question`을 원문으로 읽는다. 설치·필수 입력·승인 설정이 실제로 달라진 뒤 `request --retry-action AC-ID`로 같은 action을 다시 포장할 수 있다. 일반 `resume`은 이 대기를 해제하지 않는다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/context_store.py",
+      "symbols": [
+        "prepare_role_input"
+      ],
+      "judgment": "The actual byte budget and fixed ready population are consumed by prepare_role_input. Overflow requests/resolutions belong to input_recovery.overflow_requests/validate_resolutions and CoreEngineMixin._resume_input_overflow_action/_apply_input_overflow_resolutions; review proposal overflow belongs to the identity-review path.",
+      "evidence_scope": "Selected flows.test_review_owner_flows verifies review proposal overflow. General planning choice/currentness and user retry transitions are outside P07; map exact current owners without claiming the other packet complete.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        698,
+        997
+      ]
+    },
+    {
+      "section": "N01-260",
+      "token": "repair_target",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/contracts.py",
+      "symbols": [
+        "disposition_schema"
+      ],
+      "judgment": "The operational disposition enum is distinct from public control pause/resume. Retry consumes an ended input-bound execution and scoped replay judgment; installation repair_target is constrained to an installed file and a meaning-preserving independent diagnosis.",
+      "evidence_scope": "Selected sim.test_repair_routing preserves installed target/authority behavior. Complete operational retry/scope/replay semantics remain assigned to their existing operational work; no new owner inference or authorization introduced.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        871
+      ]
+    },
+    {
+      "section": "N01-260",
+      "token": "replay_safety",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/contracts.py",
+      "symbols": [
+        "disposition_schema"
+      ],
+      "judgment": "The operational disposition enum is distinct from public control pause/resume. Retry consumes an ended input-bound execution and scoped replay judgment; installation repair_target is constrained to an installed file and a meaning-preserving independent diagnosis.",
+      "evidence_scope": "Selected sim.test_repair_routing preserves installed target/authority behavior. Complete operational retry/scope/replay semantics remain assigned to their existing operational work; no new owner inference or authorization introduced.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        871
+      ]
+    },
+    {
+      "section": "N01-260",
+      "token": "scope",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/contracts.py",
+      "symbols": [
+        "disposition_schema"
+      ],
+      "judgment": "The operational disposition enum is distinct from public control pause/resume. Retry consumes an ended input-bound execution and scoped replay judgment; installation repair_target is constrained to an installed file and a meaning-preserving independent diagnosis.",
+      "evidence_scope": "Selected sim.test_repair_routing preserves installed target/authority behavior. Complete operational retry/scope/replay semantics remain assigned to their existing operational work; no new owner inference or authorization introduced.",
+      "current_file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "current_sha256": "93eb0e9a81097cad2b7f2c778282c08f0a9d6838736748ff7b33ddc08136d56e",
+      "current_lines": [
+        467,
+        871
+      ]
+    },
+    {
+      "section": "N02-002",
+      "token": "input_overflow_requests",
+      "sentences": [
+        "연구 계획의 `input_overflow_requests`는 입력 초과로 보류된 연구 수행 요청과 각 요청의 허용 프로필을 제공한다. 계획 역할만 `input_overflow_resolutions` 확장으로 프로필을 선택할 수 있다. 반환 형식과 보류·재포장 조건은 「연구 계획」의 입력 초과 절차를 따른다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/context_store.py",
+      "symbols": [
+        "prepare_role_input"
+      ],
+      "judgment": "The actual byte budget and fixed ready population are consumed by prepare_role_input. Overflow requests/resolutions belong to input_recovery.overflow_requests/validate_resolutions and CoreEngineMixin._resume_input_overflow_action/_apply_input_overflow_resolutions; review proposal overflow belongs to the identity-review path.",
+      "evidence_scope": "Selected flows.test_review_owner_flows verifies review proposal overflow. General planning choice/currentness and user retry transitions are outside P07; map exact current owners without claiming the other packet complete.",
+      "current_file": ".claude/skills/do-math/references/공통-실행.md",
+      "current_sha256": "9e7b2f46e20a3508de8c40054557de025d5bb4e892fb84d2aedc8aabc489cb88",
+      "current_lines": [
+        21,
+        328
+      ]
+    },
+    {
+      "section": "N02-002",
+      "token": "input_overflow_resolutions",
+      "sentences": [
+        "연구 계획의 `input_overflow_requests`는 입력 초과로 보류된 연구 수행 요청과 각 요청의 허용 프로필을 제공한다. 계획 역할만 `input_overflow_resolutions` 확장으로 프로필을 선택할 수 있다. 반환 형식과 보류·재포장 조건은 「연구 계획」의 입력 초과 절차를 따른다."
+      ],
+      "classification": "explicit containing owner",
+      "owner": "do_math/context_store.py",
+      "symbols": [
+        "prepare_role_input"
+      ],
+      "judgment": "The actual byte budget and fixed ready population are consumed by prepare_role_input. Overflow requests/resolutions belong to input_recovery.overflow_requests/validate_resolutions and CoreEngineMixin._resume_input_overflow_action/_apply_input_overflow_resolutions; review proposal overflow belongs to the identity-review path.",
+      "evidence_scope": "Selected flows.test_review_owner_flows verifies review proposal overflow. General planning choice/currentness and user retry transitions are outside P07; map exact current owners without claiming the other packet complete.",
+      "current_file": ".claude/skills/do-math/references/공통-실행.md",
+      "current_sha256": "9e7b2f46e20a3508de8c40054557de025d5bb4e892fb84d2aedc8aabc489cb88",
+      "current_lines": [
+        21,
+        328
+      ]
+    }
+  ],
+  "mapping": {
+    "N01-237": {
+      "consumers": [
+        "call_engine._prepare_call",
+        "core_engine._retry_input_overflow_action",
+        "core_engine._resume_input_overflow_action",
+        "core_engine._resolve_input_overflow_question",
+        "question_engine._question_view",
+        "questions.close"
+      ],
+      "tests": [
+        "flows.test_engine_input_recovery.InputRecoveryPublicTests.test_public_retry_replays_refails_resolves_and_rejects_after_close",
+        "flows.test_engine_input_recovery.InputRecoveryPublicTests.test_resolved_retry_marker_survives_provider_deferral_and_repreparation",
+        "sim.test_engine_input_overflow.InputRecoveryMarkerTests.test_preexisting_user_resolution_is_preserved_when_retry_input_fits",
+        "sim.test_governance_questions.QuestionTextTests.test_overflow_question_text_follows_its_artifact_pointer",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_pending_overflow_retry_exempts_only_its_question"
+      ],
+      "judgment": "Retry acceptance only queues a pending retry. Actual packing success resolves it, failure replaces it with another open question while preserving both failures and original source artifact. Pause/resume does not resolve the input question. Existing user-resolution history survives later packing success; unrelated questions and operation-owner restrictions remain."
+    },
+    "N02-002": {
+      "consumers": [
+        "input_recovery.overflow_requests",
+        "input_recovery.validate_resolutions",
+        "core_engine._apply_input_overflow_resolutions",
+        "core_engine._resume_input_overflow_action",
+        "submission.payload_issues"
+      ],
+      "tests": [
+        "sim.test_engine_input_overflow.OverflowConnections",
+        "flows.test_engine_input_recovery.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner",
+        "unit.test_submission_extension_semantics"
+      ],
+      "judgment": "Actual _context/prepare_role_input provides held request and exact allowed profile refs without adding them to ready IDs. Both fixed and current request, contract hash, question and offered profile are checked before requeue; planner-only extension admission and later role/grant/profile/packing gates are retained."
+    },
+    "N01-260": {
+      "consumers": [
+        "core_engine._apply_operational_disposition",
+        "core_engine._complete_operational_disposition",
+        "core_engine._run_pending_operational_repairs",
+        "activities.continue_activity",
+        "core_engine._prepare_call",
+        "dispatch_engine._dispatchable",
+        "repair_execution.request_installation_repair"
+      ],
+      "tests": [
+        "sim.test_scheduling_recovery_dispositions",
+        "unit.test_repair_execution",
+        "sim.test_scheduling_close_preparation.PreparationBranchTests"
+      ],
+      "judgment": "Operational retry requires ended predecessor/confirmed local termination, reconciled unknown effects and intact sealed manifest/support. It reuses the activity with an explicit continuation and fresh input/workspace, preserving rejected bundles and current profile/authority/capacity checks. Installation repair has its own accepted diagnosis, installation-relative target, recovery authority, lock, evidence and HOLD conditions; retry does not authorize modifying installation."
+    }
+  },
+  "scope": "Only the named sentences, not full N sections or L01/other policy meaning."
+}

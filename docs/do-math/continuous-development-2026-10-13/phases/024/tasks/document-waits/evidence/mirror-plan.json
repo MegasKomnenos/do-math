@@ -1,0 +1,22 @@
+{
+  "expected_changes": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py"
+  ],
+  "all_within_writes": true,
+  "overlays_current": true,
+  "output_count": 1336
+}

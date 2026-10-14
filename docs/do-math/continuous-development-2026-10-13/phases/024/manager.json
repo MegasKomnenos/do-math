@@ -1,0 +1,173 @@
+{
+  "next": "025",
+  "decision": "024 document-waits의 A1~A5를 report 형식과 실제 코드/원출력/판본 대조로 승인한다. 양쪽254개 전부passed와 실제 반환·전문1을 확인했으며 초기 관찰자/fixture 실패는 역사 기록으로 유지한다. 022 F5의 나머지는 이름별8항목/고유4문단의 한정 소비 검증으로 종결하고 N 전체 의미와 구별한다.28비캐시 제품 변경을 관리 마감한다.\n\n다음025는 P08 세owner와 같은 신뢰/판본 문장을 단일 work로 통합한다. 공유 helper·직접소비·실 Lean/Lake·미러/캐시를 한 담당자가 소유하며 기존 packet이 종료 질문을 제공하므로 별도 병렬 조사 없이 반복 관리/회귀를 줄인다.024 F2 정책전체·다른N/L01·권한1314 미검사와 G4~G8 최종관문은 유지한다. 직전 phase는 work이고 전체 완료 근거가 없으므로 종료하지 않는다.",
+  "reports": [
+    {
+      "task": "document-waits",
+      "state": "read",
+      "detail": "전문을 읽고 report 검사를 통과했다. A1~A5 complete를 원근거로 검수했으며 task352파일과 이전891파일을 보존했다. 30변경/28비캐시, 양쪽254passed와 각875Python, actual107/제안18을 확인했다. 정확 범위와 원실패/문장 계수 정정은 review에 기록했다.",
+      "evidence": [
+        "run:phases/024/tasks/document-waits/report.json",
+        "run:phases/024/manager-evidence/report-check.json",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "024/document-waits/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:context.md#C10"
+      ],
+      "reason": "P09/P11의 실제 입력·대기와022 F5 지정 문장 소비를 검수했다. 기존 helper/역사 slice를 보존하고28비캐시 변경을 마감한다. 전체PR/G완료가 아니다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/return-check.json",
+        "run:phases/024/manager-evidence/history-check.json",
+        "run:phases/024/manager-evidence/section-check.json",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "024/document-waits/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C10",
+        "run:plan.md"
+      ],
+      "reason": "정책 다섯 이름의 정의/소유 유지 판단은 승인하되 전체 의미는 미검토다. 기존 남은 의미 질문에서 해당 소유자 범위를 유지하며025 신뢰검사로 이를 닫지 않는다.",
+      "evidence": [
+        "run:phases/024/tasks/document-waits/evidence/policy-name-decisions.json",
+        "run:phases/024/manager-evidence/section-check.json",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "024/document-waits/F3",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:context.md#C12",
+        "run:plan.md",
+        "run:phases/025/tasks/document-trust/objective.md"
+      ],
+      "reason": "불변 경계와 녹화는 검산해 한정 재사용한다. 두 문서의 미래prompt/설치 영향, 기존symlink 미검사와 미실행 최종관문은 후속에 유지한다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "024/document-waits/F4",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "초기 실패/미실행을 원자료로 보존했고 같은ID 최종passed 및 c/c2 동일제품판본을 대조했다. resource 후처리의 argv 가정 오류는 같은 raw로 해소했다. runtime 결함으로 재배정하지 않는다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/failure-mapping.json",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "024 검수 결과·초기 실패와 관리자 경로 가정 교정을 추가했다. 기존 역사 결과는 보존한다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "종료된024 대신025의 한정 통합 소유와 순차 검사 책임을 현행화했다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "사용자 지정 모델을025에 그대로 적용했다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "B113/P09·P11 및 D-06의 한정 처분을 추가하며PR24 전체 미완료를 유지한다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "P09/P11과022 F5의 지정 남김을 닫고8이름/4문단으로 계수를 명확히 했다. 정책 다섯 이름·다른N/L01을 남기며025 책임을 명시했다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "024에는symlink가선택되지않아기존미검사/최종관문이남음을명시했다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "불변경계 재사용·두문서 미래영향과28제품/352원task의 인도 보존 범위를 추가했다.",
+      "evidence": [
+        "run:phases/024/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/verification.json",
+        "run:phases/024/manager-evidence/common-docs.diff"
+      ]
+    }
+  ],
+  "plan_update": "024 P09/P11·지정N 소비를 완료 상태로 반영하고025 P08/신뢰 문장 묶음을 배정했다. 기존 다음024 문단과023 묶음 판단만 현행화했고 과거 유효 근거·G1~G8·L01/정책/권한skip/최종관문은 보존했다. common-docs.diff로 전후를 대조했다.",
+  "seam_updates": [],
+  "completion": null
+}

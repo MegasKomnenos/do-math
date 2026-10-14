@@ -1,0 +1,69 @@
+[
+  "boundary.test_engine_cli",
+  "structure.test_doc_code",
+  "unit.test_engine_trace_report_corruption",
+  "unit.test_role_input_packaging",
+  "unit.test_storage_record_queries",
+  "unit.test_storage_report_projections",
+  "unit.test_planning_conditions",
+  "unit.test_planning_condition_validation",
+  "sim.test_scheduling_session_slots.PlanSettleTests",
+  "sim.test_scheduling_session_slots.ReadinessResponsibilityTests",
+  "sim.test_engine_input_overflow",
+  "flows.test_engine_input_recovery",
+  "sim.test_scheduling_recovery_dispositions",
+  "unit.test_repair_execution",
+  "unit.test_submission_extension_semantics",
+  "unit.test_governance_question_contracts",
+  "unit.test_governance_questions",
+  "sim.test_governance_questions",
+  "flows.test_governance_question_flow",
+  "sim.test_scheduling_close_preparation.PreparationBranchTests",
+  "unit.test_review_research_owner_contract",
+  "sim.test_submission_review_inputs",
+  "boundary.test_review_source_restoration"
+]
+Open known defects: 0
+[structure] 32 tests
+[unit] 149 tests
+[sim] 42 tests
+[flows] 5 tests
+[boundary] 26 tests
+  isolated: boundary.test_engine_cli.CliExitTests
+  {'passed': 1}
+Over budget: 12 tests
+      2.250s > 2.0s sim.test_scheduling_session_slots.ReadinessResponsibilityTests.test_initial_preparation_owns_initial_events_until_accepted
+     19.937s > 2.0s sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+      0.485s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
+      0.203s > 0.2s unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_prepared_source_uses_its_snapshot_after_head_advances
+      0.235s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history
+      0.281s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible
+      0.219s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison
+      0.468s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries
+      0.250s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes
+      0.609s > 0.2s unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal
+      1.000s > 0.2s unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names
+      0.219s > 0.2s unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding
+{"complete": true, "successful": true, "counts": {"passed": 254}, "group_seconds": {"structure": 2.0, "unit": 6.7, "sim": 64.3, "flows": 43.6, "boundary": 64.2}, "total_seconds": 180.8}
+   19.937s passed             sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
+   13.922s passed             flows.test_engine_input_recovery.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner
+    9.250s passed             flows.test_governance_question_flow.QuestionFlowTests.test_answer_closes_only_its_question_and_reaches_the_next_worker
+    5.875s passed             flows.test_engine_input_recovery.InputRecoveryPublicTests.test_public_retry_replays_refails_resolves_and_rejects_after_close
+    5.234s passed             boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes
+    4.984s passed             flows.test_engine_input_recovery.InputRecoveryPublicTests.test_resolved_retry_marker_survives_provider_deferral_and_repreparation
+    4.219s passed             boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning
+    4.000s passed             boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model
+    3.906s passed             flows.test_engine_input_recovery.PublicCliOverflowEvidenceTests.test_public_retry_preserves_failure_and_dispatches_one_original_action
+    3.625s passed             boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause
+    3.547s passed             boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces
+    3.375s passed             boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot
+    3.032s passed             boundary.test_engine_cli.CliConsumerTests.test_check_exit_follows_the_engine_inspection_status
+    2.968s passed             boundary.test_engine_cli.CliConsumerTests.test_normalized_control_identity_at_public_boundary
+    2.766s passed             boundary.test_engine_cli.CliFailureTests.test_runtime_failure_is_a_structured_internal_error
+    2.750s passed             boundary.test_engine_cli.CliFailureTests.test_accepted_control_processing_failure_is_not_a_user_input_error
+    2.547s passed             boundary.test_engine_cli.CliTests.test_source_identity_and_effect_use_one_read
+    2.469s passed             boundary.test_engine_cli.ControlCliTests.test_resume_of_a_publicly_closed_instance_reports_its_rejection
+    2.250s passed             sim.test_scheduling_session_slots.ReadinessResponsibilityTests.test_initial_preparation_owns_initial_events_until_accepted
+    2.000s passed             boundary.test_engine_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\c2\report.json
+Observed actual wait/condition returns 107 single-proposal final inputs 18

@@ -1,0 +1,668 @@
+[
+  {
+    "suite": "red",
+    "id": "structure.test_doc_code.DocumentCodeTests.test_wait_fields_require_actual_condition_input_and_dispatch_wait",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_documented_wait_is_the_actual_queue_value_until_the_exact_limit",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "focus",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "corrected",
+    "id": "unit.test_planning_conditions.ReadinessConditionTests.test_documented_decision_value_uses_real_input_and_exact_types",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_compaction_preserves_producer_validation_inputs",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_engine_context_restores_multihop_git_artifact",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_engine_review_context_reaches_role_input_with_bound_identity_and_policy",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_plan_receives_returned_work_separately_from_ready_selection_population",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_keeps_original_sizes_and_waits_on_activity",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_records_the_context_budget_it_compared",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_submission_context_is_installed_before_single_input_seal",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_storage_record_queries.QueryRecordTests.test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_storage_report_projections.ReportProjections.test_operation_timeline_preserves_producer_trace_bytes_and_null_snapshot",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_storage_report_projections.ReportProjections.test_status_refuses_unknown_observation_before_rendering",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_storage_report_projections.ReportProjections.test_timeline_uses_stored_execution_times_and_exact_snapshot",
+    "original": "error",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_acceptance_requires_matching_execution_before_consumption",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_completed_investigation_is_private_until_requesting_slot_is_sealed",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_failed_investigation_returns_once_with_original_wait_and_question",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_rejects_changed_proposal_before_materializing",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_sources_used_twice_are_not_duplicated_in_receipt",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_followup_reservation_evidence_cannot_omit_mandatory_slots",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_prepared_source_uses_its_snapshot_after_head_advances",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_provisional_acceptance_rechecks_frozen_scope_before_deferral",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_research_deferral_rejects_wrong_execution_assignment",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_research_schema_pins_question_and_digest",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_research_source_spec_preserves_actual_repository_bytes_and_snapshot",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_research_source_spec_reads_own_transcript_and_knowledge_projection",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_workspace_evidence_requires_preserved_artifact",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_wrong_requesting_slot_is_rejected_without_mutation",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.InputRecoveryMarkerTests.test_preexisting_user_resolution_is_preserved_when_retry_input_fits",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.OverflowConnections.test_overflow_choices_are_supplied_without_changing_ready_population",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.OverflowConnections.test_planner_extension_accepts_exact_choice_and_requeues_same_obligation",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.OverflowConnections.test_same_integration_receipt_prevents_duplicate_retry",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.OverflowConnections.test_shared_submission_check_rejects_duplicate_and_unoffered_choices",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_engine_input_overflow.OverflowConnections.test_stale_contract_or_unoffered_profile_cannot_release_wait",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.QuestionSourceTests.test_accepted_maintenance_question_reads_its_single_sealed_source",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.QuestionSourceTests.test_running_maintenance_question_preview_uses_captured_candidate_only",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.QuestionTextTests.test_operational_question_uses_exact_execution_or_sealed_source_coordinate",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.QuestionTextTests.test_overflow_question_text_follows_its_artifact_pointer",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.RecordedQuestionTests.test_question_mixin_publishes_advice_without_global_wait_and_resolves_atomically",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.RecordedQuestionTests.test_review_questions_include_pending_research_without_a_result",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_governance_questions.RecordedQuestionTests.test_submission_route_controls_only_its_affected_user_wait",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_a_new_grant_does_not_replace_a_revoked_pinned_authority",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_ambiguous_grants_wait_until_one_public_revocation_leaves_one_authority",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_control_after_input_packing_discards_only_the_unpublished_attempt",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_ended_live_review_is_removed_with_exact_obsolete_reason",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_public_request_during_input_discards_the_old_prepared_snapshot",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_revoked_maintenance_authority_is_parked_before_execution_creation",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_revoked_targeted_maintenance_parks_the_real_task_without_a_call",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_rule_bound_to_previous_execution_waits_for_research_preparation",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_close_preparation.PreparationBranchTests.test_sealed_profile_missing_one_required_duration_waits_for_profile_owner",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.ContinuationRegistrationTests.test_missing_explicit_continuation_does_not_infer_from_same_target",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.ContinuationRegistrationTests.test_retry_retains_activity_with_explicit_parent_and_profile",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.FreshInputRetryTests.test_retry_keeps_pending_bundles_and_never_restores_old_input",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.PendingDispositionTests.test_operational_repair_candidate_never_mutates_files_or_publishes",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.PendingDispositionTests.test_restart_finishes_an_accepted_retry_after_target_termination_once",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.PendingDispositionTests.test_retry_queue_and_disposition_publish_together_and_replay_is_noop",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.RetryStorageTests.test_operational_retry_producer_survives_actual_git_storage",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_recovery_dispositions.RetryStorageTests.test_retry_waits_for_unknown_effect_from_an_ancestor",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_an_explicitly_requested_plan_does_not_settle",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_documented_wait_is_the_actual_queue_value_until_the_exact_limit",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_the_settle_wait_ends_at_its_configured_limit",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.PlanSettleTests.test_wait_document_check_rejects_missing_borrowed_or_changed_values",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.ReadinessResponsibilityTests.test_initial_preparation_owns_initial_events_until_accepted",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.ReadinessResponsibilityTests.test_normal_dispatch_occupancy_does_not_request_a_new_plan",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_scheduling_session_slots.ReadinessResponsibilityTests.test_terminal_stale_assessment_gets_one_followup_without_reopening",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_submission_review_inputs.ReviewInputTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_submission_review_inputs.ReviewInputTests.test_large_own_review_history_does_not_request_mathematical_reconstruction",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "flows.test_engine_input_recovery.InputRecoveryPublicTests.test_public_retry_replays_refails_resolves_and_rejects_after_close",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "flows.test_engine_input_recovery.InputRecoveryPublicTests.test_resolved_retry_marker_survives_provider_deferral_and_repreparation",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "flows.test_engine_input_recovery.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "flows.test_engine_input_recovery.PublicCliOverflowEvidenceTests.test_public_retry_preserves_failure_and_dispatches_one_original_action",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "flows.test_governance_question_flow.QuestionFlowTests.test_answer_closes_only_its_question_and_reaches_the_next_worker",
+    "original": "not_run",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_check_exit_follows_the_engine_inspection_status",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_normalized_control_identity_at_public_boundary",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_operator_effort_alone_leaves_the_schedule_untouched",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_rejected_configure_receipt_does_not_reapply_scheduler",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliConsumerTests.test_replayed_configure_receipt_does_not_reapply_scheduler",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliFailureTests.test_accepted_control_processing_failure_is_not_a_user_input_error",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliFailureTests.test_runtime_failure_is_a_structured_internal_error",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTemplateTests.test_restored_template_is_an_independent_copy_of_the_published_state",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_create_repository_is_explicit_and_only_accepts_empty_directory",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_pending_and_rejected_receipts_keep_their_meaning",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_request_applies_a_maintenance_queue_entry_without_model_execution",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_resend_replays_its_receipt_until_an_opposite_control_intervenes",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_retry_action_reaches_the_public_control_inbox_idempotently",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_source_identity_and_effect_use_one_read",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.ControlCliTests.test_maintenance_fence_commands_reach_the_owner_and_keep_the_user_pause",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_engine_cli.ControlCliTests.test_resume_of_a_publicly_closed_instance_reports_its_rejection",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_review_source_restoration.FixedSourceRestorationTests.test_damaged_materialization_preserves_the_fixed_source_coordinate",
+    "original": "failed",
+    "final": "passed"
+  },
+  {
+    "suite": "c",
+    "id": "boundary.test_review_source_restoration.FixedSourceRestorationTests.test_missing_fixed_artifact_returns_a_coordinate_restoration_fault",
+    "original": "failed",
+    "final": "passed"
+  }
+]

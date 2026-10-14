@@ -54,11 +54,18 @@ class InputRecoveryPublicTests(unittest.TestCase):
         public_question = next(q for q in status['question_links'] if q['id'] == first_question_id)
         self.assertEqual(public_question['text'], waiting['detail']['resolution_question']['question'])
         self.assertNotIn('source_status', public_question)
+        original_ref = first_question['source_ref']
+        original_bytes = sim.engine.store.read(original_ref)
+        applied(sim, 'pause', text='Keep the unresolved input question while paused')
+        applied(sim, 'resume', text='Resume other eligible work')
+        self.assertEqual(question(sim, first_question_id)['status'], 'open')
 
         first_retry = retry(sim, action_id, 'UC-retry-same-limit')
         replay = retry(sim, action_id, 'UC-retry-same-limit')
         self.assertTrue(first_retry['accepted'])
         self.assertTrue(replay['replayed'])
+        self.assertEqual(question(sim, first_question_id)['status'], 'open',
+                         'Accepting a retry is not evidence that repackaging fits')
         sim.step()
         runtime = sim.runtime
         self.assertEqual(len(runtime['input_overflows']), 2)
@@ -83,6 +90,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.assertLessEqual(resolved['prompt_bytes'], resolved['limit_bytes'])
         self.assertEqual(len(runtime['input_overflows']), 2, 'successful admission must preserve both historical failures')
         self.assertEqual([call['action']['id'] for call in maintenance_calls(model)], [action_id])
+        self.assertEqual(sim.engine.store.read(original_ref), original_bytes)
 
         applied(sim, 'close', text='Boundary test complete')
         with self.assertRaisesRegex(ValueError, '^' + re.escape(CLOSED) + '$'):

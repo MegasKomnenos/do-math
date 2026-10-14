@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude\\skills\\writing-skills\\scripts\\build_skill_mirrors.py",
+    "--check"
+  ],
+  "cwd": "C:\\math",
+  "environment": {
+    "TEMP": "C:\\t\\p024",
+    "TMP": "C:\\t\\p024",
+    "TMPDIR": "C:\\t\\p024",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUTF8": "1"
+  },
+  "start": "2026-10-14T13:13:48.215882+00:00",
+  "exit_code": 0,
+  "pid": 35748,
+  "end": "2026-10-14T13:13:51.146440+00:00",
+  "changes": []
+}

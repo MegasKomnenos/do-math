@@ -1,0 +1,459 @@
+{
+  "head": "9c58c122c971309d26992eb7dcdf3c1e77ed24c0",
+  "sources": 2675,
+  "start_equal_previous": true,
+  "current_equal_final": true,
+  "changes": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_input_recovery.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_session_slots.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_planning_conditions.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py"
+  ],
+  "outside_writes": [],
+  "receipts": [
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/audit-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/c-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/c2-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/cache-before-m-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/cache-sync-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/coordinates-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/corrected-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/cwd-confirmation-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/cwd-verified-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/diff-final-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/diff-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/diff-raw-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/diff-verified-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/final-cache-sync-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/final-mirror-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/focus-process.json",
+      "exit_code": 1,
+      "result": "fail"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/history-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/m-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/mirror-build-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/mirror-check-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/mirror-plan-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/preservation-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/red-process.json",
+      "exit_code": 1,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/semantics-final-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/semantics-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "reference": "run:phases/024/tasks/document-waits/evidence/skill-only-process.json",
+      "exit_code": 0,
+      "result": "pass"
+    }
+  ],
+  "suites": {
+    "red": {
+      "selected": 1,
+      "counts": {
+        "failed": 1
+      },
+      "exit_code": 1
+    },
+    "focus": {
+      "selected": 45,
+      "counts": {
+        "passed": 42,
+        "failed": 2,
+        "error": 1
+      },
+      "exit_code": 1
+    },
+    "corrected": {
+      "selected": 4,
+      "counts": {
+        "passed": 3,
+        "failed": 1
+      },
+      "exit_code": 1
+    },
+    "c": {
+      "selected": 254,
+      "counts": {
+        "passed": 148,
+        "error": 19,
+        "not_run": 62,
+        "failed": 25
+      },
+      "exit_code": 1
+    },
+    "c2": {
+      "selected": 254,
+      "counts": {
+        "passed": 254
+      },
+      "exit_code": 0,
+      "python_files": 875,
+      "source_changes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json"
+      ]
+    },
+    "m": {
+      "selected": 254,
+      "counts": {
+        "passed": 254
+      },
+      "exit_code": 0,
+      "python_files": 875,
+      "source_changes": [
+        ".agents/skills/do-math/scripts/tests/.timings.json"
+      ]
+    },
+    "cwd": {
+      "selected": 1,
+      "counts": {
+        "passed": 1
+      },
+      "exit_code": 0
+    }
+  },
+  "products_to_commit": 28,
+  "runtime_unchanged": true,
+  "original_task_files_unchanged": 352,
+  "previous_task_files_unchanged": 891,
+  "actual_returns": {
+    "c2": {
+      "returns": 107,
+      "kinds": {
+        "current": 45,
+        "condition": 25,
+        "settle": 20,
+        "dispatch": 17
+      },
+      "proposals": [
+        {
+          "file": "c2-proposal-000.json",
+          "sha256": "20a3bc44f22777c3c355b6bd6bd36f85069c11b48634f637e28418e17edc0b4a",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-001.json",
+          "sha256": "d1b4b9aec1a65af16c42e288902c8d3ea816c496b640ff6881b1b5a22e5faca8",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-002.json",
+          "sha256": "ac966235e219af56564d1928f4e505072bcb9f9141cb9af84e759d2fe340d73e",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-003.json",
+          "sha256": "4bd6014bc22094ccc058b30cb768681cdef8d9ab12dd42fa5e64c328a26228af",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-004.json",
+          "sha256": "9f14d3f3108a68463506a9cc495f603be4356c44a1a5c897c9bcac0ce575a9ed",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-005.json",
+          "sha256": "0ea7406fa62ec8299b6ba425e138e3a2732e3f5fbe00f47592e9076eaf39976a",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-006.json",
+          "sha256": "41355c885f7b0ab49435d8b6a8bea2302203dca2d69373aa647feaaab1eb64a7",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-007.json",
+          "sha256": "944a74e191de99bdebf731bde442bd00da064a7541fb0eaf8abb758774168143",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-008.json",
+          "sha256": "41e359e38e0a7480a1c4dbac21bf885bc12f0970051ed76ee979c5a763ae8ff4",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-009.json",
+          "sha256": "fa8e7bbfb609b0c196bf39c3fd45a7f0b0eef9819117313bc3238995b64e43a8",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-010.json",
+          "sha256": "98911be7b46a7ae50d06b6a05cb8d521b09022afeddcd00b1327d8fe4cf13fd7",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-011.json",
+          "sha256": "e40eae239576d0c418eaa6bd76bbf9d44a57cb188907efa053775cd17e46a14d",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-012.json",
+          "sha256": "505b2526b9b25bec3ad1d6529301bb6d1eb77b6f4f478fbe710621ee8351addb",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-013.json",
+          "sha256": "1aa32eaf589d15716673d1a0134df7d401fdbeb7239b3d294faeb411a29eef51",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-014.json",
+          "sha256": "d9c88c9d4474c533aa605f87d52fdf855d6658069fb8f88663c097c87acbf9e9",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-015.json",
+          "sha256": "cf355a2072b1ea6c789a57b18273fea1b9a33c0c39e008101cbdd5abd5cdb952",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-016.json",
+          "sha256": "0506d4747e09b2423e165232904d886264bcede9e3acd389d7c4999a6db55073",
+          "count": 1
+        },
+        {
+          "file": "c2-proposal-017.json",
+          "sha256": "1d22364e2bc7dd3085be3f71a12a59eb2874dc3d6b3085b9acb51f23dd413553",
+          "count": 1
+        }
+      ],
+      "raw_sha256": "b8dcc1ec440526a29043d3efaa5d23bed269fea4f310e31157421a013540331d"
+    },
+    "m": {
+      "returns": 107,
+      "kinds": {
+        "current": 45,
+        "condition": 25,
+        "settle": 20,
+        "dispatch": 17
+      },
+      "proposals": [
+        {
+          "file": "m-proposal-000.json",
+          "sha256": "c90ac24ee03a67d0ae0dc0ce5c9d74918d8a1a41bdba830c80480fc958053cdd",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-001.json",
+          "sha256": "d1b4b9aec1a65af16c42e288902c8d3ea816c496b640ff6881b1b5a22e5faca8",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-002.json",
+          "sha256": "4e61af6b949b47da2c55c90f46ee0dbc99376569f3a00ca5f73442ed2fae5927",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-003.json",
+          "sha256": "ad4d0ea32c5a2e7836352aa2c0d292b1b1dfb59485cd343fe5e15552684a04b7",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-004.json",
+          "sha256": "eacd72d5209302b73707e1899d32ae2ce341fa39a769c571cda9cc38cfb16d27",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-005.json",
+          "sha256": "fe652ee7e2e9a783c48bd6c886a61e8a772085db4b68f31ed94b6534d11161be",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-006.json",
+          "sha256": "e29c13c048e9a5f598c1244205db92381529bcbfa8523c0e3bd2536d7ee99c24",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-007.json",
+          "sha256": "9148daf2155b61474715a163f4d9d06a2659ad7025e35d9402016bd67fdb30ce",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-008.json",
+          "sha256": "51d51185774508ddb58e3e9ab7ac8f89d49b4b6e74c1c3aa602b4922279199a6",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-009.json",
+          "sha256": "ed622549f1aff0fcd7399a30eb01012ad5c8433a9341ed0fa05cfbf032867c97",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-010.json",
+          "sha256": "6cd0d962d257f8ad9ed521f509299c92c05e5db78557f5f9c455b7c0ac8db846",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-011.json",
+          "sha256": "0053db6443dafce9c066eacbb9436df52755ede1418c5ce4d4c9c17c1e67eb8e",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-012.json",
+          "sha256": "6e7e750dadac78d6ce0718f9de9958f0b575fa23c27005ef6f95dc2c2b5e96d2",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-013.json",
+          "sha256": "cc73d0c26fa4ac98cf52a144f1ecbc739d3b673324e03294a0715b942e07ccae",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-014.json",
+          "sha256": "36c33c4a6b6bcc506efcb499ffd45da67b8fcdc23591d73f3fa032d27987499a",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-015.json",
+          "sha256": "925eec27de5a0003df2457e91403366bbb63985b55440965340482b39510466a",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-016.json",
+          "sha256": "2a6495b480c9724b70a6679e72f7cd75fafd6d9b0bdc82b3423e2e0ac7a5c4a4",
+          "count": 1
+        },
+        {
+          "file": "m-proposal-017.json",
+          "sha256": "fb25be239793c03e68e4163a9d171ad98613a5e5bc43752b5c869615254599bd",
+          "count": 1
+        }
+      ],
+      "raw_sha256": "667ce47c4d94f2599fe7b1c8dff9125daf49a85350c78bf6acbaeb5cb2a2fdc3"
+    }
+  },
+  "preservation": {
+    "runtime_inputs": 139,
+    "fixed_boundary_paths": 258,
+    "corpus_paths": 144,
+    "explicit_sha": 150,
+    "host_recordings": 8,
+    "tools": 5,
+    "baseline_files": 910
+  },
+  "actual_cwd_lengths": [
+    141,
+    141
+  ]
+}

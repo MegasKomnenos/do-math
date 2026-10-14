@@ -1,0 +1,6 @@
+Open known defects: 0
+[structure] 1 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"structure": 0.0}, "total_seconds": 0.0}
+    0.032s failed             structure.test_doc_code.DocumentCodeTests.test_wait_fields_require_actual_condition_input_and_dispatch_wait
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\024\tasks\document-waits\evidence\red\report.json

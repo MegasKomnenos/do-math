@@ -1,0 +1,224 @@
+{
+  "consumers": [
+    {
+      "id": "boundary.test_engine_cli",
+      "sha256": "531697d1648968e4e25a4e5306f788ea09071a68a3c44718c6837a029e202a82",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    },
+    {
+      "id": "structure.test_doc_code",
+      "sha256": "574c1a5079b7d596ae9a692c41728e7c9fd4364871c466d710c2fdca2155e8b8",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    },
+    {
+      "id": "unit.test_engine_trace_report_corruption",
+      "sha256": "cadd4e71a36f9dc4bffc022799bd9bcbee95375e091d17629eddbae3dfca0a36",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    },
+    {
+      "id": "unit.test_role_input_packaging",
+      "sha256": "a13ff8426e1ef63d87f44289f89363e767995dfdc86def49d890c738072c4e7b",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    },
+    {
+      "id": "unit.test_storage_record_queries",
+      "sha256": "9092951836238dea8e48ad83b630a01409a28755423073078c77841f729ea6cf",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    },
+    {
+      "id": "unit.test_storage_report_projections",
+      "sha256": "5fafc84e2604983ad8f5ace7e9eb6087dff3c8786460ddcab4ade0a0b63d9383",
+      "reason": "Actual field_schemas/scoped_field_issues document walker; both new deferred owners must retain their exact assigned document checks."
+    }
+  ],
+  "selected": [
+    "boundary.test_engine_cli",
+    "structure.test_doc_code",
+    "unit.test_engine_trace_report_corruption",
+    "unit.test_role_input_packaging",
+    "unit.test_storage_record_queries",
+    "unit.test_storage_report_projections",
+    "unit.test_planning_conditions",
+    "unit.test_planning_condition_validation",
+    "sim.test_scheduling_session_slots.PlanSettleTests",
+    "sim.test_scheduling_session_slots.ReadinessResponsibilityTests",
+    "sim.test_engine_input_overflow",
+    "flows.test_engine_input_recovery",
+    "sim.test_scheduling_recovery_dispositions",
+    "unit.test_repair_execution",
+    "unit.test_submission_extension_semantics",
+    "unit.test_governance_question_contracts",
+    "unit.test_governance_questions",
+    "sim.test_governance_questions",
+    "flows.test_governance_question_flow",
+    "sim.test_scheduling_close_preparation.PreparationBranchTests",
+    "unit.test_review_research_owner_contract",
+    "sim.test_submission_review_inputs",
+    "boundary.test_review_source_restoration"
+  ],
+  "excluded_023": [
+    {
+      "id": "sim.test_role_input_context",
+      "source_sha256": "fb54b839b8e07dc5b29847e6895811fde234f6bb62aab943b91f813983db2ad2",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_submission_preview_commands",
+      "source_sha256": "fffc9dfa97d174fca2359c383686bc162643703790fe3f20dc4798c800df66f7",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_knowledge_project_identity",
+      "source_sha256": "526907938955a95f5a9bebbce5f3d4940a88706aa8a311999bc72581587b87dd",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_role_input_scoped_packaging",
+      "source_sha256": "c6c3dc3c6c2deddef73a692936927c71bb1f4fa8a4ef3165427af7aa3d183ec2",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_preflight",
+      "source_sha256": "3c1f242d400d82cc69a9a3b6020e19d41a665ef0e8f2fdafc98576c378009e03",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_context_catalog",
+      "source_sha256": "d5d8a8ddad17e317a45453af3fff126f3073c677b6afed2dd8b7771c2e0ce677",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_submission_receiver",
+      "source_sha256": "cb1f320a76fb3f90876ba6aef6633a55374c8742d3b40a4c8fd452a13e929da8",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "flows.test_submission_acceptance",
+      "source_sha256": "8682301d5461d026bebfcd6f7bb10c857da6d3a7314ae420aeece7b57be0e7da",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_knowledge_currentness.RecoveryMaterialTests",
+      "source_sha256": "8e1208c7e0e779113295998cb6dc32e3f0bf89019696eda29ca81c8dfb54eae3",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests",
+      "source_sha256": "f41e350340cd57894c94cd93e9efb2aba17a41139ecc071990d1a885ea537c14",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_submission_checks",
+      "source_sha256": "d4dd3febb89913ea217d023cb219a6f8495ba3181b998071cb773a5d92c087a5",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_submission_check_invariants",
+      "source_sha256": "cc748c1c4874d5862bae317d8382dc0457c45da08cdad2a38f8d70b209bf68cc",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_repair_routing",
+      "source_sha256": "807c94f0aade8fb8065ee31589acccad4857b7692e43d3a104c05092789ac7d6",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_governance_imports",
+      "source_sha256": "a0067519c34f6dfcf92f33c336c6bf6bfec859100c08c1c27082a2491138c7ef",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_governance_records",
+      "source_sha256": "1ebe3cbd4511efc6799f303354c093efd5e6c99213931ab0f6d044fe228ad00b",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_academic_requirements",
+      "source_sha256": "80dd6b6d86b1b791a3691d7f8b80373062323ef526f0cf8b7646f1a633b258a7",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_governance_interpretation",
+      "source_sha256": "25445f780afac970a72db0375dfa23acd1e001a155f4cebcce199bb122982544",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_governance_context",
+      "source_sha256": "b4750db71b2b2a740ffdc19e40193116b0ed29ff869dae1728ea15de8ed543d1",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_academic_consumers",
+      "source_sha256": "092722d9ca4f2b6e950312aad8732d27178f23be9bddef55c4a3a817f1d8421a",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_academic_assessment_flow",
+      "source_sha256": "b0b3e8f409fb88d282ffbd0817cb6b80201dc910986ce4c34b161d33dd47071c",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_academic_public_currentness",
+      "source_sha256": "e190c76fb910f1418f977aba22210a03cbc9171ca5447814a0a515b40e8de825",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "flows.test_academic_requirement_flows",
+      "source_sha256": "3ef9af5ea3de0101efadef9b4e1c2818a7d96a56f54ee75f8e2a64277ad0cb39",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_governance_decision_basis",
+      "source_sha256": "b87de88d210e7864dabf968bc064a73feb9fd7ed2457d1655960b07526845ecd",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_knowledge_impact_review",
+      "source_sha256": "b631f7afd9c0bda268edc162e96fb87932b7d51760b3e749c8202be83f7f3d4b",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "unit.test_planning_revision_validation",
+      "source_sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_planning_revision_transitions",
+      "source_sha256": "cfcbacbdcd292f59ba13accaf7432e6441f30b17261da2eb104fbd0b75b0bad4",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    },
+    {
+      "id": "sim.test_planning_revision_obligations",
+      "source_sha256": "027e763d1bc089119a58ebb391cf7061d6820165aa6ba5c0326fa4526770b56e",
+      "direct_document_walk_consumer": false,
+      "reason": "No changed field_schemas/scoped_field_issues consumer. Existing helper/producers for P01-P07/P10 remain unchanged except added wait helper; 023 exact property evidence remains valid. Final whole gates remain separate."
+    }
+  ],
+  "reason": "Select current document walkers, both assigned wait owners, direct condition/settling/retry/question scenes and unchanged single-proposal restoration guards. This is not the previous fixed 460-test union."
+}

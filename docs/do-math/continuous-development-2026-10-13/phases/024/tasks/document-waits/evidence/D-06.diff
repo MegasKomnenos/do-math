@@ -1,0 +1,1934 @@
+commit 869469303c7c1739206616eb2cd647be8b4f0ffd
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Thu Sep 24 00:34:10 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Thu Sep 24 00:34:10 2026 +0900
+
+    Repair do-math task contracts, goal audit recovery, and resource waits
+
+diff --git a/.claude/skills/do-math/SKILL.md b/.claude/skills/do-math/SKILL.md
+index fb82524a..78483ddf 100644
+--- a/.claude/skills/do-math/SKILL.md
++++ b/.claude/skills/do-math/SKILL.md
+@@ -61,11 +61,7 @@ CLI를 운전하는 사용자 대화와 사람 운영자는 README.md 경로로
+ 
+ 선택할 때는 목표와의 관계, 얻을 수 있는 정보, 불확실성, 기존 결과와의 중복·보완·의존, 사용할 수 있는 자원을 함께 고려한다. 보류한 과제에는 이유를 남기고, 새로운 정련이 필요하면 후보 준비에 무엇이 필요한지 설명한다. 기계 실행기는 선택을 적용하기 직전에도 그 판단이 기댄 전제의 현재성을 확인한다.
+ 
+-모델별 세션 운전에서 아직 연구 실행·과제·지식이 없고 최초 준비 요청만 있는 시점에 학술 요구를 등록하면, 그 요구를 판단할 계획 요청을 보존한다. 이 요청에만 `initial_preparation_wait`가 붙는다. 일반 계획 요청이나 이미 과제·지식·연구 실행이 있는 인스턴스의 요청에는 이 대기를 붙이지 않는다.
+-
+-`initial_preparation_wait`가 붙은 요청은 최초 후보 준비가 낸 계약 후보를 독립 검토한 뒤 계획으로 이어진다. 아직 검토 중인 계약밖에 없고 완료 판정을 기다리는 결과도 없으면 계획을 열지 않는다. 계약 검토가 승인되어 첫 `ready` 과제가 생기면 계획에서 그 과제를 비교·선택할 수 있다. 계약 검토가 반려되면 후보 준비가 계약을 고칠 이유가 된다.
+-
+-최초 준비의 후보 계약 검토가 더 이상 남아 있지 않은데 배정 가능한 과제도 없으면 계획은 그 원인을 판단한다. 준비 실패·빈 후보, 계약 반려, 별도 사용자 판단이 필요한 질문, 사용자 입력·결정과 목표·정책·학술 요구 판본 변경은 최초 대기를 끝낸다. 이때 해소되는 것은 `initial_preparation_wait`이며, 계획의 일반 착수 조건과 아래의 검토 정산 대기는 계속 적용된다. 기존 과제 계약이나 지식 본문을 개정하지 않는 후보 준비와 일반 계획은 병렬로 진행할 수 있다. 반대로 선언된 기존 기록의 개정이 실제 실행 중이면, 그 기록을 읽는 새 계획은 그 개정의 종료를 기다린다.
++초기화 관문을 모두 통과하면, 현재 지식 기록이 있는 경우 최초 연구 계획을, 없는 경우 최초 후보 준비를 연다. 활성 인스턴스에서 학술 요구를 포함한 헌장 변경이 적용되면 그 결정의 사건과 현재 기록을 다음 계획·준비에 전달한다. 일반 계획은 배정 후보가 없어도 변경된 요구와 부족한 입력을 판단할 수 있다. 기존 기록을 개정하지 않는 준비와 계획은 병렬로 진행할 수 있으며, 실제 개정 중인 기록의 독자는 해당 개정의 종료를 기다린다. 과거 입력에 남은 `initial_preparation_wait`는 현행 배정 조건으로 사용하지 않는다.
+ 
+ 계획이 열린 뒤의 정산은 별도다. 대기 중이거나 실행 중인 계약 검토가 있으면 실행기는 그 종료를 설정의 `plan_settle_seconds`(기본 300초)까지 기다린다. 몇 분 간격으로 승인되는 과제를 한 계획에서 함께 비교하기 위해서다. 이 상한이 지나면 남은 검토와 무관하게 시작하며, 사용자 또는 명시적인 `operator` 출처 제어가 직접 요청한 계획은 기다리지 않는다.
+ 
+diff --git "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md" "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+index 285db962..6640002b 100644
+--- "a/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
++++ "b/.claude/skills/do-math/references/CLI-\354\213\244\355\226\211-\352\263\204\354\225\275.md"
+@@ -91,24 +91,24 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
+ | `ready` | 다음 action을 처리할 수 있거나 다음 `run`을 기다린다 | 보편 인스턴스 `active` 안의 실행 가능 국면으로 볼 수 있다. 활동 `ready`와 같은 값이 아니다 |
+ | `running` | `run`이 한 action을 실제 처리 중이다 | 인스턴스가 active이고 현재 실행이 있을 수 있다는 CLI 국면이다 |
+ | `paused` | 일반 배정을 닫고 명시적 재개를 기다린다 | 보편 일시 정지에 대응한다. 모든 프로세스·원격 호출·정산 완료를 뜻하지 않는다 |
+-| `waiting` | queue를 진행하려면 질문·입력·권한·사건 또는 명시적 재개가 필요하다 | 보편 인스턴스 상태를 새로 만든 값이 아니라 과제·활동 대기와 실행 루프 정지를 합쳐 보여 주는 CLI 상태다 |
+-| `capacity_waiting` | 선택된 모델의 로컬 동시 세션 슬롯을 기다림 | 점유 반환·허용된 설정 변경 뒤 재검사하며 모델을 자동 대체하지 않음 |
+-| `budget_exhausted` | 작업 또는 운영 AI 실행 시도 한도에 닿았다 | 자원 조건이다. 연구 완료나 보편 일시 정지의 동의어가 아니다 |
++| `capacity_waiting` | 모든 미처리 요청이 동시 슬롯 또는 호스트 용량을 기다림 | 점유 반환·허용된 설정 변경 뒤 재검사하며 모델을 자동 대체하지 않음 |
++| `waiting` | 지금 배정 가능한 action이 없고 용량 이외의 대기 사유가 있다 | 각 요청의 `dispatch_waits`에서 누적 예산 `budget_exhausted`, 공급자·입력·권한 등의 원인과 다음 소유자를 확인한다 |
+ | `completed` | 현재 CLI가 목표 상태와 적용 학술 요구의 완료를 계산해 queue를 닫았다 | 보편 과제·활동 completed가 아니다. 정확한 목표 감사와 학술 상태를 함께 읽는다 |
+ | `closed` | 사용자 close가 queue를 비우고 새 일반 연구를 막았다 | 사용자 종결의 CLI terminal 상태다. 수학적 해결을 뜻하지 않는다 |
+ 
+ ### 과제 `task.status`
+ 
+-| CLI 값 | 대응 |
++| 저장·공개 값 | 뜻 |
+ |---|---|
+-| `planned` | 작업 계약을 저작했지만 현재 독립 검토·착수 검사를 마치지 않은 보편 planned 과제 |
+-| `ready` | 계약 검토와 현재 착수 검사를 통과해 배정 후보가 된 planned 과제의 CLI 표시 |
+-| `needs_revision` | 계약·목표·정책·범위 변화 때문에 새 정련 또는 계약 검토가 필요한 planned 과제 |
+-| `performing` | 연구 수행이 선택·배정된 보편 active 과제 |
+-| `assessing` | 결과를 반환했고 지정 판정자가 완료 기준을 확인하는 보편 active 과제 |
+-| `waiting` | 필수 입력·결정·권한·복구를 기다리는 보편 waiting 과제 |
+-| `completed` | 완료 기준 전건과 근거 있는 독립 완료 판정을 기록하고 다시 열지 않는 종결 상태 |
+-| `closed` | 철회·이전·대체의 근거와 범위 처분으로 닫고 다시 열지 않는 종결 상태 |
++| `planned` | 계약을 준비하거나 독립 검토·착수 조건을 확인할 과제 |
++| `active` | 선택됐거나 실행 중인 과제. 실제 실행 여부는 `active_execution_ids`로 확인한다 |
++| `waiting` | 입력·후속 계획·판정을 기다리는 미완료 과제 |
++| `completed` | 독립 완료 판정을 기록한 종결 과제 |
++| `closed` | 범위 처분 근거로 닫은 종결 과제 |
++
++`readiness`는 배정 대기를 제외한 계약·근거 평가다. 이것만으로 현재 선택 모집단이라고 판단하지 않는다. 결과 판정이 필요하면 `assessment_pending=true`이며 계획 입력의 `returned_task_ids`가 전건을 지정한다. `ready`, `performing`, `assessing`, `needs_revision`은 이 API가 반환하는 과제 상태값이 아니다.
++
++`dispatch_waits`는 미시작 queue 요청의 보존된 대기 사유다. `capacity`는 동시 슬롯, `host_capacity`는 호스트 자원, `budget_exhausted`는 누적 예산, `budget_window`는 고정 구간 예산이다. `resource_unclassified`는 제약 좌표가 없는 예약 실패다. 각 행의 `next_owner`, `profile_ref`, `constraint_id` 또는 `provider`로 후속을 확인한다. `status.budget`은 현행 설정의 요약이며 요청의 사유는 그 요청에 고정된 프로필·제약 판본을 따른다. 한도 변경은 재평가를 열지만 고정 프로필을 자동 교체하지 않는다. 과거 snapshot 조회는 새 예약 검사를 실행하지 않는다.
+ 
+ 같은 이름의 source가 갱신되거나, 과제가 참조한 지식이 개정·무효화되거나, 그 지식의 신뢰 환경이 무효화돼도 `completed`·`closed` 과제의 상태와 종결 이력은 유지한다. 현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다. 단순 `task_disposition_is(completed)` 이력 질의는 완료 사실을 유지하지만, 실제 task dependency의 착수 검사는 낡은 완료 판정을 사용할 수 없다. 새 검증 의무는 후속 과제로 연결한다. 아직 끝나지 않은 과제가 지식 변경의 영향을 받으면 `waiting`으로 돌아가 현재 착수 검사를 다시 받는다.
+ 
+@@ -304,7 +304,7 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
+ {"kind":"goal","goal":"새 목표 원문","goal_kind":"mathematical","expected_revision":1}
+ ```
+ 
+-`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 목표 변경은 미완료 과제를 `needs_revision`으로 보내고 목표 상태를 다시 판단하게 한다.
++`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 판본 5의 목표 변경은 구조화된 charter 결정으로 적용하며, 영향받은 미완료 과제는 `governance_revision_required`와 후속 준비·계획을 통해 현행 근거를 다시 확인한다.
+ 
+ ```json
+ {"kind":"policy","text":"정책 원문","expected_revision":1}
+@@ -843,7 +843,7 @@ initial 결과는 서로 숨긴 채 봉인한다. 열린 finding이 있으면 or
+ 
+ 두 역할의 `task_catalog`는 현재 과제 전건의 요약과 각 과제의 고정 `source_ref`를 제공한다. `tasks`는 후보 준비나 계획의 현재 처분 모집단으로 제한된다. 종료 과제의 `results[].report`와 미종결 과제의 현행 계약이 필요하면 `task_catalog`에서 원문을 연다. `ongoing_work`는 미종결 실행과 대기 행동의 대상·단계·이유·공개 참조를 직접 제공한다. 이 두 조회 경로는 `ready_task_ids`의 선택 권한을 늘리지 않는다.
+ 
+-세션 모드의 `initial_preparation_wait`는 연구 실행·과제·지식이 없고 준비 요청이 있는 시점에 등록한 학술 요구의 계획 요청에만 붙는다. 그 요청은 최초 준비와 계약 검토를 기다리되 첫 `ready` 과제, 반환 결과, 준비 실패·빈 결과, 계약 반려·질문, 별도의 사용자 입력·결정, 목표·정책·학술 요구 판본 변경이 있으면 기다리지 않는다. 모든 계약 검토가 끝나도 사용 가능한 과제가 없으면 계획이 원인을 판단한다. 대기 동안 사건을 소비하지 않고, 수락한 계획이 실제로 받은 `event_refs`만 소비한다. 일반 계획의 빈 선택은 계속 허용한다.
++초기화 관문을 모두 통과하면, 현재 지식 기록이 있는 경우 최초 연구 계획을, 없는 경우 최초 후보 준비를 연다. 활성 인스턴스에서 학술 요구를 포함한 헌장 변경이 적용되면 그 결정의 사건과 현재 기록을 다음 계획·준비에 전달한다. 일반 계획은 배정 후보가 없어도 변경된 요구와 부족한 입력을 판단할 수 있다. 기존 기록을 개정하지 않는 준비와 계획은 병렬로 진행할 수 있으며, 실제 개정 중인 기록의 독자는 해당 개정의 종료를 기다린다. 과거 입력에 남은 `initial_preparation_wait`는 현행 배정 조건으로 사용하지 않는다.
+ 
+ 이력과 다른 큰 입력은 `input/catalog/` 원문으로 바뀔 수 있으며 source reference에서 다시 읽는다. 최근 이력의 inline window가 작다는 사실은 과거 결과가 없다는 뜻이 아니다.
+ 
+@@ -924,4 +924,4 @@ timeline --repository PATH --instance RI-ID [--snapshot OID]
+ 
+ 타임라인은 고정 snapshot의 내부 실행별 배정·보고 모델, 시작·종료·기한, 결과·실패, 계보·입력 snapshot·보존 자료·후속을 제공한다. UTC 원문과 날짜·offset을 가진 현지 시각을 함께 제공하며 과거에 기록하지 않은 시각은 null이다. 별도 운영 로그를 포함하면 파일 해시·관측 시각을 가진 다른 집계 단위로 추가한다. 연구 상태·예산 예약·공급자 대기는 같은 Git snapshot에 속한다. 별도 운영 로그와 현장 프로세스 관측은 그 snapshot 바깥의 자료이므로 각각의 해시·관측 시각·확인 범위를 구별한다.
+ 
+-`input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 이력은 source_ref와 JSON Pointer로 회수하고 ready·assessing 전건과 제출 검사기의 원 집합을 유지한다. `probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다. 실호출은 명시한 provider·모델의 대표 프로토콜·파일·도구·정지 경계를 확인하며 연구 성능을 인증하지 않는다.
++`input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 이력은 source_ref와 JSON Pointer로 회수하고 ready·returned 전건과 제출 검사기의 원 집합을 유지한다. `probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다. 실호출은 명시한 provider·모델의 대표 프로토콜·파일·도구·정지 경계를 확인하며 연구 성능을 인증하지 않는다.
+diff --git a/.claude/skills/do-math/scripts/do_math/academic.py b/.claude/skills/do-math/scripts/do_math/academic.py
+index f76e10c4..1302d7c2 100644
+--- a/.claude/skills/do-math/scripts/do_math/academic.py
++++ b/.claude/skills/do-math/scripts/do_math/academic.py
+@@ -267,5 +267,6 @@ def apply_goal_assurance(instance, *, decision, basis, judgments, runtime=None):
+         for ref in {ref for judgment in judgments for ref in judgment["formal_result_refs"]}:
+             formal = instance.get("formal_results",{}).get(ref)
+             if not formal or not formal_usable(instance,formal): raise ValueError("final goal cites unavailable formal evidence")
+-    result = deepcopy(instance); result.update(goal_status=decision, goal_assessment_basis=deepcopy(basis), goal_judgments=deepcopy(judgments))
++    result = deepcopy(instance)
++    result.update(goal_status=decision, goal_assessment_basis=deepcopy(basis))
+     return result
+diff --git a/.claude/skills/do-math/scripts/do_math/budget.py b/.claude/skills/do-math/scripts/do_math/budget.py
+index 5ed5c3ae..486c4f1d 100644
+--- a/.claude/skills/do-math/scripts/do_math/budget.py
++++ b/.claude/skills/do-math/scripts/do_math/budget.py
+@@ -23,6 +23,11 @@ class BudgetInputError(ValueError):
+ class BudgetConflict(RuntimeError):
+     """At least one required capacity cannot admit the complete request."""
+ 
++    def __init__(self, message, *, constraint_id=None, constraint_kind=None):
++        super().__init__(message)
++        self.constraint_id = constraint_id
++        self.constraint_kind = constraint_kind
++
+ 
+ class BudgetReplayConflict(BudgetInputError):
+     """An existing reservation ID was requested again with different bytes."""
+@@ -313,7 +318,8 @@ def _check_concurrency(
+         raise BudgetInputError("concurrency slots violate work + operations <= total")
+     slice_name = "work_slots" if budget_kind == "work" else "operations_slots"
+     if own + demand["amount"] > constraint[slice_name] or total + demand["amount"] > constraint["total_slots"]:
+-        raise BudgetConflict(f"concurrency capacity unavailable: {constraint['id']}")
++        raise BudgetConflict(f"concurrency capacity unavailable: {constraint['id']}",
++                             constraint_id=constraint['id'], constraint_kind='concurrency')
+ 
+ 
+ def _check_host(
+@@ -335,7 +341,8 @@ def _check_host(
+                 raise BudgetInputError("control reserve exceeds the approved host limit")
+         used = _outstanding_sum(reservations, constraint["id"], demand["unit"])
+         if used + demand["amount"] > constraint[limit_key] - headroom:
+-            raise BudgetConflict(f"host capacity unavailable: {constraint['id']}/{demand['unit']}")
++            raise BudgetConflict(f"host capacity unavailable: {constraint['id']}/{demand['unit']}",
++                                 constraint_id=constraint['id'], constraint_kind='host')
+ 
+ 
+ def _check_usage(
+@@ -354,7 +361,8 @@ def _check_usage(
+     else:
+         used = sum(_outstanding(reservations[reservation_id]) for reservation_id in population)
+     if used + demand["amount"] > limit["value"]:
+-        raise BudgetConflict(f"usage capacity unavailable: {constraint['id']}")
++        raise BudgetConflict(f"usage capacity unavailable: {constraint['id']}",
++                             constraint_id=constraint['id'], constraint_kind=constraint['kind'])
+ 
+ 
+ def _validate_window_population(
+diff --git a/.claude/skills/do-math/scripts/do_math/cli.py b/.claude/skills/do-math/scripts/do_math/cli.py
+index 367ff86c..df0b04c6 100644
+--- a/.claude/skills/do-math/scripts/do_math/cli.py
++++ b/.claude/skills/do-math/scripts/do_math/cli.py
+@@ -470,6 +470,7 @@ def _human_status(status: dict[str, Any]) -> str:
+     for task in tasks:
+         waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
+         lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "
++                     f"assessment_pending={str(task.get('assessment_pending', False)).lower()} "
+                      f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
+                      f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
+                      f"waits={waits} next={task.get('next_owner') or 'none'}")
+@@ -480,6 +481,8 @@ def _human_status(status: dict[str, Any]) -> str:
+         lines.append(render_human_report(status))
+     else:
+         lines.append('inspection: not supplied; research effectiveness: not evaluated')
++        from .reporting import render_dispatch_waits
++        lines.extend(render_dispatch_waits(status))
+     return '\n'.join(lines)
+ 
+ 
+diff --git a/.claude/skills/do-math/scripts/do_math/context_store.py b/.claude/skills/do-math/scripts/do_math/context_store.py
+index 5f97fbd3..e1ecf7a2 100644
+--- a/.claude/skills/do-math/scripts/do_math/context_store.py
++++ b/.claude/skills/do-math/scripts/do_math/context_store.py
+@@ -561,7 +561,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
+     schema = output_schema if output_schema is not None else contracts.schema_for(role)
+     validation_context = deepcopy(value)
+     if role in {'research_preparation', 'research_plan'}:
+-        validation_context['tasks'] = [deepcopy(runtime['tasks'][row['id']]) for row in value['tasks']]
++        # Resolve catalog references independently of the comparison population.
++        validation_context['tasks'] = [deepcopy(runtime['tasks'][identifier])
++                                       for identifier in sorted(runtime['tasks'])]
+     if role in {'research_work', 'supplemental_research'}:
+         # A fixed public domain view for the shared relation checker, not a
+         # second store or a worker-authored validity assertion.
+diff --git a/.claude/skills/do-math/scripts/do_math/engine.py b/.claude/skills/do-math/scripts/do_math/engine.py
+index e9ac6fb4..6905362b 100644
+--- a/.claude/skills/do-math/scripts/do_math/engine.py
++++ b/.claude/skills/do-math/scripts/do_math/engine.py
+@@ -660,9 +660,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             slots = self._provider_slots()
+             if not slots.acquire(execution["id"], profile["budget_kind"], None,
+                                  profile=profile, execution=execution):
+-                action["dispatch_wait"] = {"kind": "host_capacity"}
++                action["dispatch_wait"] = deepcopy(slots.admission_wait)
+                 activities.wait_for(self.runtime, activity["id"], reason="machine capacity unavailable",
+-                    condition=deepcopy(action["dispatch_wait"]), next_owner="scheduler", at=now())
++                    condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
+                 return None
+             action.pop("dispatch_wait", None)
+             execution["action"] = deepcopy(action)
+@@ -1051,6 +1051,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                     schema = submission.load_json(self.store.read(prefix + "/schema.json", self.head))
+                     self._receive_submission(action, {}, execution["id"], context, schema,
+                         Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
++                    if (execution.get('role') == 'goal_audit'
++                            and self.runtime['executions'][execution['id']].get('outcome') == 'output_accepted'):
++                        self._settle_activity(execution['id'])
+                     self._save()
+                 except submission.SealedSubmissionError as error:
+                     live = self.runtime.setdefault("waiting_actions", {})[action["id"]]
+@@ -1471,6 +1474,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             if slots is not None and hasattr(slots, "runtime"):
+                 slots.runtime, slots.instance = self.runtime, self.instance
+         executions = list(self.runtime["executions"].values())
++        dispatch_waits = reporting.dispatch_waits(self.runtime)
+         evaluation_context = self._evaluation_context()
+         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
+                 "research_wake_reasons": planning.research_wake_reasons(self.instance, self.runtime,
+@@ -1481,6 +1485,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                 "pending_actions": len(self.runtime["queue"]), "cycles": self.runtime["cycles"],
+                 "installation_repair": deepcopy(repair_execution.pending_installation_repair(self.runtime)),
+                 "tasks": reporting.task_status(self.instance, self.runtime),
++                "dispatch_waits": dispatch_waits,
+                 "research_observed_at": now(), "budget_observed_at": now(),
+                 "knowledge": {"K": sum(row["usable"] for row in knowledge_records.knowledge_view(self.instance)),
+                               "formal_results": len(self.instance.get("formal_results", {})),
+@@ -1494,7 +1499,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                 "budget_unit": "concurrent_sessions" if self._session_mode() else "execution_attempts",
+                 "active_executions": [e["id"] for e in executions if e["status"] != "ended"],
+                 "execution_attempts": {pool: sum(e.get("budget_kind") == pool for e in executions) for pool in ("work", "operations")},
+-                "capacity_waiting": [{"role": a["role"], "target": a.get("target"), "model_selection": a.get("model_selection")} for a in self.runtime["queue"] if a.get("model_selection") and a.get("id") not in {e.get("action", {}).get("id") for e in executions if e["status"] != "ended"}],
++                "capacity_waiting": [{k: a[k] for k in ('role', 'target', 'model_selection')}
++                                     for a in dispatch_waits if a['wait']['kind'] in {'capacity', 'host_capacity'}],
+                 "usage": [e.get("usage", {}) for e in executions if e.get("usage")],
+                 "latest_results": list(self.runtime["activities"].values())[-5:],
+                 "provider_waits": self._provider_status(),
+@@ -1568,7 +1574,42 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             self._run_parallel(max_steps=max_steps, watch=watch)
+         return self.status()
+ 
++    def _restore_goal_audit_publication(self, execution):
++        """Reconnect a committed producer to its sealed submission, never rerun it."""
++        action = execution['action']
++        waits = self.runtime.setdefault('waiting_actions', {})
++        previous = waits.get(action['id'])
++        if previous and previous.get('execution_id') == execution['id'] and previous.get('kind') in {
++                'submission_publication', 'submission_failure'}:
++            return False
++        if previous:
++            self.runtime.setdefault('history', []).append({'kind': 'goal_audit_publication_recovered',
++                'execution_id': execution['id'], 'previous_wait': deepcopy(previous)})
++        waiting = {'action': deepcopy(action), 'execution_id': execution['id'],
++                   'kind': 'submission_publication', 'next_owner': 'engine',
++                   'reason': 'Finish the original committed goal audit submission'}
++        waits[action['id']] = waiting
++        try:
++            submission.read_sealed_submission(execution, self.head,
++                lambda snapshot, path: self.store.read(path, snapshot))
++        except submission.SealedSubmissionError as error:
++            waiting.update(kind='submission_failure', reason=str(error))
++            repair_execution.route_failed_action(self, action, execution['id'],
++                reason='Diagnose unreadable sealed goal audit submission')
++        return True
++
+     def _recover_disappeared(self) -> None:
++        restored = False
++        for execution in list(self.runtime['executions'].values()):
++            if (execution.get('role') == 'goal_audit' and execution.get('status') == 'ended'
++                    and execution.get('outcome') != 'output_accepted'
++                    and execution.get('capacity', {}).get('local_termination') == 'confirmed'
++                    and not any(r.get('owner_id') == execution['id'] and r.get('state') == 'held'
++                                for r in self.runtime.get('reservations', {}).values())
++                    and self._committed_goal_audit(execution['id'])):
++                restored = self._restore_goal_audit_publication(execution) or restored
++        if restored:
++            self._save()
+         publication_pending = {row["execution_id"] for row in self.runtime.get("waiting_actions", {}).values()
+             if row.get("kind") == "submission_publication" and
+             self.runtime["executions"].get(row.get("execution_id"), {}).get("capacity", {}).get("local_termination") == "confirmed"}
+@@ -1619,6 +1660,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             if not local_ended:
+                 self.runtime["recoveries"][recovery_id]["dispositions"].append(disposition)
+                 continue
++            if execution.get('role') == 'goal_audit' and self._committed_goal_audit(eid):
++                if self._settle_recovered_execution(eid, at=now(),
++                        disposition={'kind': 'committed_submission_pending'}):
++                    self._restore_goal_audit_publication(execution)
++                    disposition['next_owner'] = 'engine'
++                self.runtime['recoveries'][recovery_id]['dispositions'].append(disposition)
++                self._save()
++                continue
+             bundle = new_id("BA")
+             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
+             if execution["role"] in {"formal_check", "trust_check"}:
+@@ -3025,7 +3074,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             return result.value
+         raise RuntimeError("model call did not finish")
+ 
+-    def _obsolete_action_reason(self, action: dict) -> str | None:
++    def _obsolete_action_reason(self, action: dict, *, execution_id=None) -> str | None:
++        judgment = self._goal_audit_seal(action)
++        if judgment and judgment['execution_id'] != execution_id:
++            return 'The goal audit slot is already sealed by ' + judgment['execution_id']
+         if action.get("role") == "operational_review" and action.get("live"):
+             parent = self.runtime["executions"].get(action.get("target"))
+             if not parent or parent.get("status") == "ended":
+@@ -3119,13 +3171,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                 self._enqueue("research_preparation", action.get("target"), reason="Supply valid observation rules before research starts")
+             self._save()
+             return True
+-        used = sum(e.get("budget_kind") == pool for e in self.runtime["executions"].values())
+-        if not self._budget_available(pool, used):
+-            self.runtime["status"] = "capacity_waiting"
+-            self.runtime["availability"] = {"state": "blocked", "reason": "budget_exhausted",
+-                "next_owner": "user", "budget_kind": pool}
+-            self._save()
+-            return False
+         authority = governance.authorize(self.instance, action, runtime=self.runtime)
+         if not authority["allowed"]:
+             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action, "reason": authority["reason"]}
+@@ -3341,8 +3386,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+             execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="start_failed",
+                 reason="provider admission deferred", disposition=deepcopy(action.get("dispatch_wait")))
+             self._continue_prepared_action(execution)
++            for queued in self.runtime['queue']:
++                if queued.get('id') == action['id']:
++                    queued['dispatch_wait'] = deepcopy(action['dispatch_wait'])
+             activities.wait_for(self.runtime, activity_id, reason="provider admission deferred",
+-                condition=deepcopy(action.get("dispatch_wait", {"kind": "capacity"})), next_owner="scheduler", at=now())
++                condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
+             self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
+             return False
+         if execution["status"] == "queued":
+@@ -3516,7 +3564,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+         execution = self.runtime["executions"][execution_id]
+         if execution["status"] != "stopping":
+             execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating")
+-        obsolete = self._obsolete_action_reason(action)
++        obsolete = self._obsolete_action_reason(action, execution_id=execution_id)
+         accepting = ((result["status"] == "completed" or result.get("error_kind") == "output_validation")
+             and self.runtime["status"] not in {"closed", "completed"} and not obsolete
+             and not execution.get("currentness_changes"))
+@@ -3537,7 +3585,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+         # Raw evidence is durable before any domain bundle is attempted.
+         self._save(artifacts)
+         artifacts = {}
+-        obsolete = self._obsolete_action_reason(action)
++        obsolete = self._obsolete_action_reason(action, execution_id=execution_id)
+         if self.runtime["status"] == "closed":
+             self.runtime["executions"][execution_id]["result_disposition"] = {"kind": "preserved_after_close"}
+             self.runtime["queue"] = []
+@@ -3632,7 +3680,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                     reasons = queued.setdefault("reasons", [queued["reason"]] if queued.get("reason") else [])
+                     if action["reason"] not in reasons:
+                         reasons.append(action["reason"])
+-                        queued.pop("initial_preparation_wait", None)
+                     queued["reason"] = "\n".join(reasons)
+                 if action.get("requested_by"):
+                     queued["requested_by_refs"] = list(dict.fromkeys([
+@@ -4358,9 +4405,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
+                 raise ValueError("nonformal work cannot authorize a final goal guarantee")
+             if self.instance["goal_status"] != "mathematically_solved":
+                 basis = self._goal_basis_key()
+-                for slot in range(self.instance["config"]["goal_auditors"]):
+-                    self._enqueue("goal_audit", basis=basis, slot=slot,
+-                                  required=self.instance["config"]["goal_auditors"])
++                self._ensure_goal_audit_requests(basis, execution_id)
+         self._ensure_academic_followup()
+ 
+     def _formal(self, action: dict) -> None:
+diff --git a/.claude/skills/do-math/scripts/do_math/governance.py b/.claude/skills/do-math/scripts/do_math/governance.py
+index cc14bd2a..ae21fcb2 100644
+--- a/.claude/skills/do-math/scripts/do_math/governance.py
++++ b/.claude/skills/do-math/scripts/do_math/governance.py
+@@ -619,22 +619,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
+             if task.get("academic_requirement_id") and task["status"] not in {"completed", "closed"}:
+                 task["status"] = "planned"
+                 event["affected"].append(task["id"])
+-        initial = (not runtime.get("executions") and not runtime["tasks"]
+-                   and not instance.get("knowledge") and any(
+-                       a["role"] == "research_preparation" for a in runtime["queue"]))
+-        event["initial_registration"] = initial
+-        fields = {}
+-        if initial:
+-            fields["initial_preparation_wait"] = {
+-                "goal_revision": instance["goal_revision"],
+-                "policy_revision": instance["policy_revision"],
+-                "requirements_sha256": instance["academic_requirements"]["sha256"]}
+-        pending = next((a for a in runtime["queue"] if initial and
+-                        a.get("initial_preparation_wait") and a["role"] == "research_plan"), None)
+-        if pending is not None:
+-            pending.update(fields)
+-        else:
+-            _queue(runtime, "research_plan", "academic requirements changed", **fields)
++        _queue(runtime, "research_plan", "academic requirements changed")
+     elif kind == "grant":
+         spec = deepcopy(change.get("grant"))
+         if not isinstance(spec, dict) or spec.get("kind") not in {"local", "http"}:
+diff --git a/.claude/skills/do-math/scripts/do_math/governance_engine.py b/.claude/skills/do-math/scripts/do_math/governance_engine.py
+index b6511cde..a920b781 100644
+--- a/.claude/skills/do-math/scripts/do_math/governance_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/governance_engine.py
+@@ -121,7 +121,15 @@ class GovernanceEngineMixin:
+                 state['queue'].insert(0, {'id': new_id('AC'), 'role': 'research_preparation',
+                     'reason': 'Reprepare task profile contracts for the newly adopted host resources',
+                     'revision_targets': revisions.capture_targets(result, state, affected)})
+-        if state.get('status') in {'budget_exhausted', 'capacity_waiting'}: state['status'] = 'ready'
++        resources_changed = any(candidate.get(key) != current.get(key) for key in protected)
++        if state.get('status') in {'waiting', 'capacity_waiting'} and resources_changed:
++            live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
++            for action in state['queue']:
++                if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in {
++                        'budget_exhausted', 'capacity', 'host_capacity', 'budget_window', 'resource_unclassified'}):
++                    action.pop('dispatch_wait', None)
++            if state['queue']:
++                state['status'] = 'ready'
+         return result, state
+ 
+     def _governance_owner_handlers(self):
+@@ -289,7 +297,134 @@ class GovernanceEngineMixin:
+         self._after_governance_import(bundle['id'])
+         return receipt
+ 
++    def _goal_audit_seal(self, action):
++        if action.get('role') != 'goal_audit':
++            return None
++        rows = [j for j in self.instance.get('goal_judgments', [])
++                if j.get('basis') == action.get('basis') and j.get('slot') == action.get('slot')]
++        if not rows:
++            return None
++        if len(rows) != 1 or rows[0].get('required') != action.get('required'):
++            raise ValueError('conflicting goal audit slot seals')
++        judgment = rows[0]
++        producer = self.runtime.get('executions', {}).get(judgment.get('execution_id'), {})
++        if producer.get('role') != 'goal_audit' or any(
++                producer.get('action', {}).get(key) != judgment.get(key) for key in ('basis', 'slot', 'required')):
++            raise ValueError('goal audit seal differs from its producer')
++        return judgment
++
++    def _committed_goal_audit(self, execution_id):
++        rows = [j for j in self.instance.get('goal_judgments', []) if j.get('execution_id') == execution_id]
++        if not rows:
++            return None
++        execution = self.runtime.get('executions', {}).get(execution_id, {})
++        judgment = self._goal_audit_seal(execution.get('action', {}))
++        if (len(rows) != 1 or judgment != rows[0] or not any(
++                r.get('execution_id') == execution_id and 'output' in r.get('members', [])
++                for r in self.runtime.get('integrations', {}).values())):
++            raise ValueError('goal audit seal lacks its original integration receipt')
++        return judgment
++
++    def _ensure_goal_audit_requests(self, basis, request_execution_id):
++        if self._goal_basis_key() != basis:
++            raise ValueError('goal audit request basis changed')
++        required = self.instance['config']['goal_auditors']
++        summary = {'basis': basis, 'required': required, 'slots': []}
++        for slot in range(required):
++            scope = {'role': 'goal_audit', 'basis': basis, 'slot': slot, 'required': required}
++            def matches(action):
++                return all(action.get(key) == value for key, value in scope.items())
++            judgment = self._goal_audit_seal(scope)
++            live = next((e for e in self.runtime.get('executions', {}).values()
++                         if e.get('status') != 'ended' and matches(e.get('action', {}))), None)
++            queued = next((a for a in self.runtime.get('queue', []) if matches(a)), None)
++            waiting = next((w for w in self.runtime.get('waiting_actions', {}).values()
++                            if matches(w.get('action', {}))), None)
++            row = {'slot': slot}
++            if judgment:
++                row.update(state='sealed', judgment_id=judgment['id'])
++                if judgment.get('current') is False:
++                    row.update(state='sealed_unusable', next_owner='research_plan',
++                               reason=deepcopy(judgment.get('currentness_changes', 'sealed judgment is no longer current')))
++            elif live:
++                row.update(state='running', execution_id=live['id'])
++            elif queued:
++                row.update(state='queued', action_id=queued['id'])
++            elif waiting:
++                row.update(state='waiting', action_id=waiting['action']['id'],
++                           kind=waiting.get('kind'), next_owner=waiting.get('next_owner'))
++            else:
++                identifier = new_id('AC')
++                self._enqueue(**scope, id=identifier, requested_by=request_execution_id,
++                              reason='Complete the unsealed slot of the requested goal audit')
++                row.update(state='queued_new', action_id=identifier)
++            summary['slots'].append(row)
++        self.runtime.setdefault('history', []).append({'kind': 'goal_audit_request',
++            'execution_id': request_execution_id, **deepcopy(summary)})
++        return summary
++
++    def _retire_sealed_goal_audit_requests(self):
++        from .activities import finish_activity
++        if not self.instance.get('goal_judgments'):
++            return False
++        executions = self.runtime.get('executions', {})
++        waits = self.runtime.setdefault('waiting_actions', {})
++        actions = {a['id']: a for a in self.runtime.get('queue', []) if a.get('role') == 'goal_audit'}
++        actions.update({w['action']['id']: w['action'] for w in waits.values() if w.get('action', {}).get('id')})
++        changed = False
++        for identifier, action in actions.items():
++            judgment = self._goal_audit_seal(action)
++            if not judgment:
++                continue
++            owners = {eid: e for eid, e in executions.items() if e.get('action', {}).get('id') == identifier}
++            if (any(e.get('status') != 'ended' for e in owners.values())
++                    or any(r.get('owner_id') in owners and r.get('state') == 'held'
++                           for r in self.runtime.get('reservations', {}).values())
++                    or (judgment['execution_id'] in owners
++                        and owners[judgment['execution_id']].get('outcome') != 'output_accepted')):
++                continue
++            previous = waits.pop(identifier, None)
++            self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a.get('id') != identifier]
++            self.runtime.setdefault('history', []).append({'kind': 'goal_audit_request_superseded',
++                'action': deepcopy(action), 'waiting': deepcopy(previous), 'judgment_id': judgment['id']})
++            changed = True
++            activity = self.runtime.get('activities', {}).get(action.get('owner_activity_id'))
++            if not activity or activity.get('status') == 'finished':
++                continue
++            assigned = [executions.get(eid, {}) for eid in activity.get('assigned_execution_ids', [])]
++            remaining = [*self.runtime['queue'], *(w.get('action', {}) for w in waits.values())]
++            if (any(a.get('owner_activity_id') == activity['id'] for a in remaining)
++                    or any(e.get('status') != 'ended' or e.get('action', {}).get('role') != 'goal_audit'
++                           or any(e.get('action', {}).get(k) != action.get(k) for k in ('basis', 'slot', 'required'))
++                           or (e.get('id') == judgment['execution_id'] and e.get('outcome') != 'output_accepted')
++                           for e in assigned)
++                    or any(r.get('owner_id') in activity.get('assigned_execution_ids', []) and r.get('state') == 'held'
++                           for r in self.runtime.get('reservations', {}).values())
++                    or any(not isinstance(row, dict) or row.get('action_id') != identifier
++                           for row in [*activity.get('unresolved', []), *activity.get('followups', [])])):
++                continue
++            unresolved = deepcopy(activity.get('unresolved', []))
++            if judgment.get('current') is False:
++                unresolved.append({'judgment_id': judgment['id'], 'reason': 'sealed judgment is no longer current'})
++            finish_activity(self.runtime, activity['id'], result_refs=activity.get('result_refs', []),
++                unresolved=unresolved, followups=[*activity.get('followups', []),
++                    {'action_id': identifier, 'judgment_id': judgment['id'], 'reason': 'goal audit request superseded'}],
++                at=self._lifecycle_now().isoformat())
++        return changed
++
++    def _record_goal_audit_followup(self, basis, judgments):
++        judgment_ids = sorted(row['id'] for row in judgments)
++        for event in self.runtime.get('events', []):
++            if (event['kind'] == 'goal_audit_completed' and event.get('basis_sha256') == basis
++                    and event.get('judgment_ids') == judgment_ids):
++                return event['id']
++        return self._lifecycle_event('goal_audit_completed', target=self.instance['id'],
++            basis_sha256=basis, judgment_ids=judgment_ids, outcome='not_established', next_owner='research_plan')['id']
++
+     def _apply_governance_goal_audit(self, action, output, execution_id):
++        required, slot = action.get('required'), action.get('slot')
++        if type(required) is not int or required < 1 or type(slot) is not int or not 0 <= slot < required:
++            raise ValueError('goal audit requires a positive count and an in-range integer slot')
+         if any(j['basis'] == action['basis'] and j['slot'] == action['slot'] for j in self.instance['goal_judgments']):
+             raise ValueError('goal audit slot already sealed')
+         if action['basis'] != self._goal_basis_key(): raise ValueError('goal audit inputs changed before acceptance')
+@@ -309,8 +444,12 @@ class GovernanceEngineMixin:
+             'record_basis': knowledge.capture_basis(self.instance, self.runtime, dependencies), 'basis_is_conservative': not bool(cited),
+             'goal_revision': view.get('goal_revision', 1), 'policy_revision': view.get('policy_revision', 1), 'current': True,
+             'source_basis': deepcopy(self.runtime['executions'][execution_id].get('source_basis', [])), 'additional_audits': mapped}
++        judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']] + [judgment]
++        if (any(type(j.get('required')) is not int or j['required'] != required
++                or type(j.get('slot')) is not int or not 0 <= j['slot'] < required for j in judgments)
++                or len({j['slot'] for j in judgments}) != len(judgments)):
++            raise ValueError('goal audit group has inconsistent slots or counts')
+         self.instance['goal_judgments'].append(judgment)
+-        judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']]
+         if len(judgments) != action['required']: return judgment
+         satisfied = bool(usable) and all(j['decision'] == 'satisfied' and j['scope_complete'] and j.get('current', True)
+             and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
+@@ -323,4 +462,6 @@ class GovernanceEngineMixin:
+             self._ensure_academic_followup()
+             if self.runtime['questions']:
+                 self.runtime['history'].append({'kind': 'questions_preserved_at_goal_completion', 'questions': self.runtime['questions']})
++        else:
++            self._record_goal_audit_followup(action['basis'], judgments)
+         return judgment
+diff --git a/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py b/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+index a01d999d..ba220164 100644
+--- a/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+@@ -945,6 +945,7 @@ class LifecycleEngineMixin:
+             if self.instance['lifecycle']['state'] == 'initializing':
+                 return
+         self._retire_closed_revision_targets()
++        self._retire_sealed_goal_audit_requests()
+         self._reconcile_revision_delegations()
+         live_actions = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
+                         if execution.get('status') != 'ended'}
+@@ -1021,9 +1022,9 @@ class LifecycleEngineMixin:
+                                   reason='Current contract and policy require independent approval')
+             # The source API supports legacy tasks; this integration deliberately
+             # requires the stronger current-contract basis for migrated tasks.
+-            evaluation = task_ready(deepcopy(task), deepcopy(query_instance), deepcopy(self.runtime),
++            evaluation = deepcopy(task_ready(task, query_instance, self.runtime,
+                                     action={'role': 'research_work', 'target': task_id, 'budget_kind': 'work', 'actor_kind': 'ai'},
+-                                    evaluation_context=evaluation_context)
++                                    evaluation_context=evaluation_context))
+             if not approved:
+                 evaluation = {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']}
+             previous = self._task_readiness.get(task_id)
+diff --git a/.claude/skills/do-math/scripts/do_math/planning.py b/.claude/skills/do-math/scripts/do_math/planning.py
+index ba72cd3c..b0726a80 100644
+--- a/.claude/skills/do-math/scripts/do_math/planning.py
++++ b/.claude/skills/do-math/scripts/do_math/planning.py
+@@ -253,8 +253,11 @@ def ready_task_ids(runtime: dict, instance: dict, *, evaluation_context=None) ->
+ 
+ def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) -> None:
+     """Validate the supplied planning population, before applying any decision."""
+-    from .task_contracts import validate_plan_dispositions
+-    validate_plan_dispositions(output, tasks, ready_ids)
++    from .task_contracts import returned_task_ids, validate_plan_dispositions
++    comparison_ids = set(ready_ids) | set(returned_task_ids(tasks))
++    comparison_tasks = {identifier: task for identifier, task in tasks.items()
++                        if identifier in comparison_ids}
++    validate_plan_dispositions(output, comparison_tasks, ready_ids)
+ 
+ 
+ CONDITION_FIELDS = {"always": set(), "all": {"args"}, "any": {"args"}, "not": {"arg"},
+diff --git a/.claude/skills/do-math/scripts/do_math/provider_engine.py b/.claude/skills/do-math/scripts/do_math/provider_engine.py
+index 96b35ced..ea3a903d 100644
+--- a/.claude/skills/do-math/scripts/do_math/provider_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/provider_engine.py
+@@ -96,9 +96,11 @@ class ProviderEngineMixin:
+         admitted = slots.acquire(execution_id, pool, model, profile=profile, execution=execution,
+                                  provider=provider_for(model), enforce_capacity=True)
+         if not admitted:
+-            action["dispatch_wait"] = {"kind": slots.admission_reason, "provider": provider_for(model),
+-                                        "activity_wait": provider_wait_disposition(
+-                                            model=model, attempts=1, current=time.time())}
++            action['dispatch_wait'] = deepcopy(slots.admission_wait)
++            if slots.admission_reason == 'provider_limit':
++                action['dispatch_wait']['activity_wait'] = provider_wait_disposition(
++                    model=model, attempts=1, current=time.time(),
++                    failure={'retry_at': action['dispatch_wait'].get('retry_at')})
+         else:
+             action.pop("dispatch_wait", None)
+         return admitted
+diff --git a/.claude/skills/do-math/scripts/do_math/question_engine.py b/.claude/skills/do-math/scripts/do_math/question_engine.py
+index 8b86ad98..6adaa466 100644
+--- a/.claude/skills/do-math/scripts/do_math/question_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/question_engine.py
+@@ -111,7 +111,3 @@ class QuestionEngineMixin:
+ 
+     def _user_questions(self):
+         return [row["text"] for row in self._question_view() if row["owner"] == "user" and row["status"] == "open" and row.get("text")]
+-
+-    def _has_global_user_question(self):
+-        return any(row.get("blocks", False) and self.instance["id"] in row.get("unresolved_target_ids", row["target_ids"])
+-                   for row in questions.open_links(self.runtime, "user"))
+diff --git a/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py b/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py
+index 859b2740..bc571a40 100644
+--- a/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py
++++ b/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py
+@@ -419,6 +419,7 @@ def extend():
+         "revision_followup": array(obj({"record_id": ID, "task_id": ID}, ("record_id", "task_id"))),
+         "intent_repair": obj({"import_id": ID, "previous_sha256": HASH, "check_execution_id": ID,
+             "findings": array(TEXT)}, ("import_id", "previous_sha256", "check_execution_id", "findings")),
++        # Historical input only; no longer a dispatch condition.
+         "initial_preparation_wait": obj({"goal_revision": NAT, "policy_revision": {"type": ["integer", "string"]},
+             "requirements_sha256": HASH}, ("goal_revision", "policy_revision", "requirements_sha256"))})
+     RUNTIME_FIELDS["revision_cycles"] = array(array(ID))
+diff --git a/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py b/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py
+index 6e6bc9e0..385a3595 100644
+--- a/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py
++++ b/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py
+@@ -162,6 +162,7 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum("activ
+     "credential_env": {"type": "object", "additionalProperties": TEXT}, "allow_idempotent_retry": BOOL,
+     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT}, ("kind", "status", "source_ref"))
+ RECORDS["decisions"] = record({"kind": TEXT, "change": EVIDENCE, "source_ref": TEXT, "actor": {"const": "user"},
++    # Historical marker remains readable; v5 producers no longer create it.
+     "created_at": TEXT, "affected": REFS, "requirements_revision": NAT, "initial_registration": BOOL,
+     "grant_id": ID, "delegation_id": ID}, ("kind", "change", "source_ref", "actor", "affected"))
+ RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"), "decision_kind": TEXT,
+diff --git a/.claude/skills/do-math/scripts/do_math/reporting.py b/.claude/skills/do-math/scripts/do_math/reporting.py
+index 61499c67..c58553ef 100644
+--- a/.claude/skills/do-math/scripts/do_math/reporting.py
++++ b/.claude/skills/do-math/scripts/do_math/reporting.py
+@@ -1,5 +1,6 @@
+ """Projections of research snapshots and separately observed local evidence."""
+ import csv
++from copy import deepcopy
+ from datetime import datetime, timezone, timedelta
+ import hashlib
+ import io
+@@ -37,9 +38,19 @@ def display_time(value, timezone_name='Asia/Seoul'):
+     return _display(value, _zone(timezone_name))
+ 
+ 
++def dispatch_waits(runtime):
++    """Project preserved queue reasons without performing a new admission check."""
++    live = {e.get('action', {}).get('id') for e in runtime.get('executions', {}).values()
++            if e.get('status') != 'ended'}
++    return [deepcopy({'action_id': a.get('id'), 'role': a['role'], 'target': a.get('target'),
++                      'model_selection': a.get('model_selection'), 'wait': a['dispatch_wait']})
++            for a in runtime.get('queue', []) if a.get('dispatch_wait') and a.get('id') not in live]
++
++
+ def task_status(instance, runtime):
+     from . import planning, questions, task_contracts
+     rows = []
++    pending_assessments = set(task_contracts.returned_task_ids(runtime.get('tasks', {})))
+     live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"]
+     for identifier, task in runtime.get("tasks", {}).items():
+         queued = [action for action in runtime.get("queue", []) if action.get("target") == identifier]
+@@ -54,7 +65,8 @@ def task_status(instance, runtime):
+                 continue
+             waiting.extend(questions.user_waits(action, instance, runtime))
+             waiting.extend(planning.revision_waits(action, instance, runtime))
+-            if action.get('dispatch_wait', {}).get('kind') in {'capacity', 'provider_limit'}:
++            if action.get('dispatch_wait', {}).get('kind') in {
++                    'capacity', 'provider_limit', 'budget_exhausted', 'host_capacity', 'budget_window', 'resource_unclassified'}:
+                 waiting.append(action['dispatch_wait'])
+         readiness = None
+         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
+@@ -63,12 +75,14 @@ def task_status(instance, runtime):
+                 waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
+                                 'errors': readiness['errors']})
+         waiting = list({json.dumps(row, sort_keys=True): row for row in waiting}.values())
+-        next_owner = ('user' if any(row.get('kind') == 'user_decision' for row in waiting) else
++        next_owner = ('user' if any(row.get('kind') == 'user_decision' or row.get('next_owner') == 'user' for row in waiting) else
+                       'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting) else
+-                      queued[0]['role'] if queued else None)
++                      next((row['next_owner'] for row in waiting if row.get('next_owner')),
++                           queued[0]['role'] if queued else None))
+         rows.append({"id": identifier, "title": task.get("title", task.get('question')), "status": task["status"], "revision": task.get("revision"),
+                      "selected_actions": [a.get("id") for a in queued if a.get("id") not in running_ids],
+                      "active_execution_ids": [e["id"] for e in executions],
++                     "assessment_pending": identifier in pending_assessments,
+                      "last_accepted_result": task.get("results", [])[-1].get("execution_id") if task.get("results") else None,
+                      "unresolved_action_ids": obligations, "waits": waiting,
+                      "readiness": readiness, "next_owner": next_owner,
+@@ -96,7 +110,7 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None
+     return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
+             "pending_actions": len(runtime.get('queue', [])),
+             "installation_repair": pending_installation_repair(runtime),
+-            "tasks": task_status(instance, runtime), "inspection": inspection,
++            "tasks": task_status(instance, runtime), "dispatch_waits": dispatch_waits(runtime), "inspection": inspection,
+             "cleanup_failures": pending_cleanup_failures(runtime),
+             "assurance": runtime.get("assurance", {}), "host_observation": observation,
+             "research_effectiveness": {"status": "not_evaluated",
+@@ -122,13 +136,24 @@ def render_human_report(report: dict) -> str:
+     for finding in inspection["findings"]:
+         lines.append(f"  {finding['area']}: {finding['status']} — {finding['message']} (next: {finding['next_owner']})")
+     for task in report["tasks"]:
+-        lines.append(f"task {task['id']}: {task['status']} next={task.get('next_owner') or 'none'}")
++        waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
++        lines.append(f"task {task['id']}: {task['status']} assessment_pending={str(task.get('assessment_pending', False)).lower()} "
++                     f"waits={waits} next={task.get('next_owner') or 'none'}")
++    lines.extend(render_dispatch_waits(report))
+     if report.get("host_observation") is not None:
+         lines.append("host observation: " + str(report["host_observation"].get("observed_at") or "time not supplied"))
+     lines.append("research effectiveness: not evaluated")
+     return "\n".join(lines)
+ 
+ 
++def render_dispatch_waits(report):
++    task_ids = {task['id'] for task in report.get('tasks', [])}
++    return [f"action {row['action_id']}: {row['role']} wait={row['wait']['kind']} "
++            f"constraint={row['wait'].get('constraint_id') or row['wait'].get('provider') or 'none'} "
++            f"next={row['wait'].get('next_owner') or 'none'}"
++            for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
++
++
+ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False):
+     store = _repository(repository, instance_id)
+     head, instance, runtime = store.load(snapshot)
+diff --git a/.claude/skills/do-math/scripts/do_math/scheduled_operator.py b/.claude/skills/do-math/scripts/do_math/scheduled_operator.py
+index 03196c99..ef2865cd 100644
+--- a/.claude/skills/do-math/scripts/do_math/scheduled_operator.py
++++ b/.claude/skills/do-math/scripts/do_math/scheduled_operator.py
+@@ -493,7 +493,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
+                 execution_lifecycle.transition_execution(execution, "starting", at=at)
+                 slots = GitSessionSlots(runtime, state)
+                 if not slots.acquire(eid, "operations", chosen["model"], profile=profile, execution=execution):
+-                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason}
++                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
++                            "wait": deepcopy(slots.admission_wait)}
+                 activities.assign_execution(runtime, aid, execution)
+                 head = repo.save(head, state, runtime)
+                 def on_started(identity):
+diff --git a/.claude/skills/do-math/scripts/do_math/scheduler.py b/.claude/skills/do-math/scripts/do_math/scheduler.py
+index 72e6c735..5561e3ba 100644
+--- a/.claude/skills/do-math/scripts/do_math/scheduler.py
++++ b/.claude/skills/do-math/scripts/do_math/scheduler.py
+@@ -8,7 +8,6 @@ import time
+ from .model_policy import assessment_basis, selection, validate_assessments, preparation_only
+ from .parallel import ModelCalls
+ from .session_slots import SessionSlots
+-from .provider_wait import provider_for
+ 
+ MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
+ WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
+@@ -417,44 +416,6 @@ class SchedulerMixin:
+         for position, request in zip(positions, ordered):
+             self.runtime["queue"][position] = request
+ 
+-    def _initial_plan_waits(self, action):
+-        """Delay only pre-research registration, never general planning."""
+-        basis = action.get("initial_preparation_wait")
+-        if not basis or action.get("requested_by") or action.get("recovery"):
+-            return False
+-        from .initialization import governance_working_view
+-        view = governance_working_view(self.instance)
+-        current = {"goal_revision": view['goal_revision'],
+-                   "policy_revision": view['policy_revision'],
+-                   "requirements_sha256": view.get('academic_requirements', {}).get('sha256')}
+-        if basis != current or self._has_global_user_question() or self.runtime["inputs"]:
+-            return False
+-        for event in self.runtime.get("events", []):
+-            if event["id"] not in action.get("event_refs", []):
+-                continue
+-            decision = self.instance.get("decisions", {}).get(event.get("decision_id"), {})
+-            if event["kind"] != "user_decision_applied" or not decision.get("initial_registration"):
+-                return False
+-        tasks = self.runtime["tasks"].values()
+-        from .planning import task_ready
+-        if any(t.get('revision_requested') or t.get('results') or
+-               task_ready(t, view, self.runtime, action={'role': 'research_work', 'target': t['id'],
+-                    'budget_kind': 'work', 'actor_kind': 'ai'}, evaluation_context={**self._evaluation_context(), 'now': self._lifecycle_now().isoformat()})['state'] == 'ready'
+-               for t in tasks):
+-            return False
+-        preparations = [e for e in self.runtime["executions"].values()
+-                        if e["role"] == "research_preparation" and not preparation_only(e.get('action', {}))]
+-        if not preparations:
+-            return any(a["role"] == "research_preparation" for a in self.runtime["queue"])
+-        initial = preparations[0]
+-        if initial["status"] != "ended":
+-            return True
+-        if initial.get("outcome") != "output_accepted" or not self.runtime["tasks"]:
+-            return False
+-        # Wait for the first usable contract, not for the whole review group.
+-        # If all reviews end without a usable task, planning must diagnose it.
+-        return any(a["role"] == "task_contract_review" for a in self.runtime["queue"])
+-
+     def _plan_settle_waits(self, action):
+         """Approvals arriving minutes apart are decided by one plan; a slow review delays it only up to the limit."""
+         from .governance import timestamp
+@@ -469,7 +430,8 @@ class SchedulerMixin:
+         action["dispatch_wait"] = {"kind": "plan_settle", "since": action["settle_started_at"], "limit_seconds": limit}
+         return True
+ 
+-    def _dispatchable(self, action, resources):
++    def _dispatchable(self, action):
++        action.pop("dispatch_wait", None)
+         try:
+             self._action_lifecycle_gate(action)
+         except ValueError as error:
+@@ -496,7 +458,7 @@ class SchedulerMixin:
+             return False
+         if not self._selected_action_current(action, evaluation_context=self._evaluation_context()):
+             return False
+-        if role == "research_plan" and (self._initial_plan_waits(action) or self._plan_settle_waits(action)):
++        if role == "research_plan" and self._plan_settle_waits(action):
+             return False
+         identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "review_basis_key", "live")
+         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
+@@ -513,12 +475,10 @@ class SchedulerMixin:
+                 return False
+             from .session_slots import GitSessionSlots
+             profile = self._execution_profile(action)
+-            if profile.get("host_capacity_refs") and not GitSessionSlots(
+-                    self.runtime, self.instance, observer=True).admission_available(profile):
+-                action["dispatch_wait"] = {"kind": "host_capacity"}
+-                return False
+-            action.pop("dispatch_wait", None)
+-            return True
++            admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
++            if not admission['allowed']:
++                action['dispatch_wait'] = admission['wait']
++            return admission['allowed']
+         if action.get("live") and self.runtime["executions"].get(target, {}).get("status") == "ended":
+             self._remove_action(action)
+             return False
+@@ -532,19 +492,12 @@ class SchedulerMixin:
+         if not capability["satisfied"]:
+             action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
+             return False
+-        provider = provider_for(chosen["model"])
+-        gate = self._provider_status()["providers"].get(provider)
+-        if gate and (gate["state"] == "checking" or (gate["state"] == "waiting" and not gate["due"])):
+-            action["dispatch_wait"] = {"kind": "provider_limit", "provider": provider, "retry_at": gate.get("retry_at")}
+-            return False
+-        action.pop("dispatch_wait", None)
+-        pool = self._execution_profile(action)['budget_kind']
+-        if not self._session_mode():
+-            from .session_slots import GitSessionSlots
+-            capacity = GitSessionSlots(self.runtime, self.instance, observer=True).usage_snapshot().get(pool)
+-            return bool(capacity) and (capacity['available'] is None or capacity['available'] > 0)
+-        cell = resources[pool].get(chosen["model"], {"available": 0})
+-        return cell["available"] > 0
++        from .session_slots import GitSessionSlots
++        profile = self._execution_profile(action)
++        admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
++        if not admission['allowed']:
++            action['dispatch_wait'] = admission['wait']
++        return admission['allowed']
+ 
+     def _run_parallel(self, *, max_steps=None, watch=False):
+         from .repository import new_id
+@@ -589,9 +542,8 @@ class SchedulerMixin:
+                     # exhaustion and repetition lineage. An empty queue or an
+                     # old cycle counter is not authority to generate new work.
+                     self.runtime["status"] = "waiting"
+-                resources = self._slots.snapshot()
+                 action = next((a for a in list(self.runtime["queue"])
+-                               if (not draining or a.get("live")) and self._dispatchable(a, resources)), None)
++                               if (not draining or a.get("live")) and self._dispatchable(a)), None)
+                 if action is not None:
+                     if action["role"] == "formal_check":
+                         self._formal(action)
+@@ -611,9 +563,11 @@ class SchedulerMixin:
+                 if self._calls.futures:
+                     time.sleep(.02)
+                     continue
+-                noncapacity = any(a.get("dispatch_wait", {}).get("kind") not in {None, "capacity"} for a in self.runtime["queue"])
++                only_capacity = bool(self.runtime["queue"]) and all(
++                    a.get("dispatch_wait", {}).get("kind") in {"capacity", "host_capacity"}
++                    for a in self.runtime["queue"])
+                 if self.runtime['status'] != 'paused':
+-                    self.runtime["status"] = "waiting" if not self.runtime["queue"] or noncapacity else "capacity_waiting"
++                    self.runtime["status"] = "capacity_waiting" if only_capacity else "waiting"
+                 self._save()
+                 if not watch:
+                     break
+diff --git a/.claude/skills/do-math/scripts/do_math/session_slots.py b/.claude/skills/do-math/scripts/do_math/session_slots.py
+index b877f9a9..ab5d734b 100644
+--- a/.claude/skills/do-math/scripts/do_math/session_slots.py
++++ b/.claude/skills/do-math/scripts/do_math/session_slots.py
+@@ -53,13 +53,17 @@ class GitSessionSlots:
+ 
+     def __init__(self, runtime: dict, instance: dict, *, observer=False):
+         self.runtime, self.instance, self.observer = runtime, instance, observer
+-        self.admission_reason = None
++        self.admission_wait = None
++
++    @property
++    def admission_reason(self):
++        return (self.admission_wait or {}).get('kind')
+ 
+     def _writable(self):
+         if self.observer:
+             raise ValueError("a read-only slot observer cannot mutate reservations")
+ 
+-    def admission_available(self, profile):
++    def admission_check(self, profile, *, current_time=None):
+         """Evaluate the actual admission calculation on detached ledger data.
+ 
+         A ready result is not a reservation. The real acquire repeats the check
+@@ -71,9 +75,14 @@ class GitSessionSlots:
+                    "reservations": deepcopy(self.runtime.get("reservations", {})),
+                    "provider_waits": deepcopy(self.runtime.get("provider_waits", {}))}
+         candidate = {"id": new_id("EX"), "role": profile["role"], "status": "queued"}
+-        return GitSessionSlots(runtime, self.instance).acquire(
++        slots = GitSessionSlots(runtime, self.instance)
++        allowed = slots.acquire(
+             candidate["id"], profile["budget_kind"], profile.get("ai", {}).get("model"),
+-            profile=profile, execution=candidate)
++            profile=profile, execution=candidate, current_time=current_time)
++        return {'allowed': allowed, 'wait': deepcopy(slots.admission_wait)}
++
++    def admission_available(self, profile):
++        return self.admission_check(profile)['allowed']
+ 
+     def configure(self, limits):
+         self._writable()
+@@ -93,6 +102,7 @@ class GitSessionSlots:
+     def acquire(self, execution_id, pool, model, *, profile=None, execution=None, provider=None,
+                 enforce_capacity=True, current_time=None):
+         self._writable()
++        self.admission_wait = None
+         from copy import deepcopy
+         from .execution_profiles import (bind_execution, resolve_profile, profile_ref,
+                                          job_resource_limits, validate_host_constraint)
+@@ -123,7 +133,10 @@ class GitSessionSlots:
+         provider = expected_provider
+         gate = self.runtime.get("provider_waits", {}).get("PW-" + provider) if provider else None
+         if gate and (gate["state"] == "checking" or gate["state"] == "waiting" and gate["retry_at"] > current):
+-            self.admission_reason = "provider_limit"
++            from .provider_wait import utc
++            self.admission_wait = {'kind': 'provider_limit', 'budget_kind': pool, 'model': model,
++                'profile_ref': profile_ref(profile), 'provider': provider, 'retry_at': utc(gate['retry_at']),
++                'reason': 'provider admission is waiting for reobservation', 'next_owner': 'scheduler'}
+             return False
+         # A new capacity edition must still count executions reserved under older
+         # editions of the same model. Limits are not independent resource pools.
+@@ -163,8 +176,18 @@ class GitSessionSlots:
+             plan = (plan_reservations({"reservations": reservations},
+                                      {"constraints": list(constraints.values())}, profile, request)
+                     if demands else ReservationPlan((), False, ()))
+-        except BudgetConflict:
+-            self.admission_reason = "capacity"
++        except BudgetConflict as error:
++            kind, owner = {'cumulative': ('budget_exhausted', 'user'),
++                           'concurrency': ('capacity', 'scheduler'), 'host': ('host_capacity', 'operations'),
++                           'window': ('budget_window', 'operations')}.get(
++                               error.constraint_kind, ('resource_unclassified', 'operations'))
++            constraint = constraints.get(error.constraint_id, {})
++            if error.constraint_kind == 'concurrency' and (
++                    constraint.get(pool + '_slots') == 0 or constraint.get('total_slots') == 0):
++                owner = 'user'
++            self.admission_wait = {'kind': kind, 'budget_kind': pool, 'model': model,
++                'profile_ref': profile_ref(profile), 'constraint_id': error.constraint_id,
++                'constraint_kind': error.constraint_kind, 'reason': str(error), 'next_owner': owner}
+             return False
+         candidate = deepcopy(execution)
+         bind_execution(candidate, profile)
+@@ -185,7 +208,7 @@ class GitSessionSlots:
+         execution.clear()
+         execution.update(candidate)
+         self.runtime["executions"][execution_id] = execution
+-        self.admission_reason = None
++        self.admission_wait = None
+         return True
+ 
+     def started(self, execution_id, identity):
+diff --git a/.claude/skills/do-math/scripts/do_math/submission.py b/.claude/skills/do-math/scripts/do_math/submission.py
+index 26caef38..62b094a2 100644
+--- a/.claude/skills/do-math/scripts/do_math/submission.py
++++ b/.claude/skills/do-math/scripts/do_math/submission.py
+@@ -806,17 +806,17 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
+         from .input_recovery import validate_resolutions
+         check('activity-extensions.json/input_overflow_resolutions', lambda: validate_resolutions(
+             extensions['input_overflow_resolutions'], context.get('input_overflow_requests', [])))
+-    assessed = {row["task_id"]: row["decision"] for row in output.get("task_assessments", [])}
+     for entry in extensions.get("task_dispositions", []):
+         def disposition(entry=entry):
+             task = tasks.get(entry["task_id"], {})
+             from .task_scope import validate_withdrawal_scope
+             proposed = next((a for a in output.get('task_assessments', []) if a['task_id'] == entry['task_id']), None)
+             validate_withdrawal_scope(task, task, proposed_assessment=proposed)
+-            # The receiver withdraws after this output's task assessments; returned work is withdrawn only after an incomplete assessment.
+-            status = {"completed": "completed", "closed": "closed", "incomplete": "needs_revision"}.get(
+-                assessed.get(entry["task_id"]), task.get("status"))
+-            require(status in {"planned", "ready", "waiting", "needs_revision"}, "task is not withdrawable after this output's task assessments")
++            live = [row for row in context.get('ongoing_work', [])
++                    if row.get('target') == entry['task_id']
++                    and row.get('status') in {'queued', 'starting', 'running', 'stopping'}
++                    and row.get('execution_id') != context.get('execution_id')]
++            require(not live, 'task has another live execution')
+             require(not task.get("academic_requirement_id"), "academic requirements cannot be withdrawn autonomously")
+             require(entry["task_id"] not in {row["task_id"] for row in output.get("dispositions", []) if row["kind"] == "selected"} and entry["task_id"] not in {c["revises_task_id"] for c in output.get("candidates", [])}, "cannot withdraw and select or revise the same task")
+         check("activity-extensions.json/task_dispositions", disposition)
+diff --git a/.claude/skills/do-math/scripts/do_math/task_scope.py b/.claude/skills/do-math/scripts/do_math/task_scope.py
+index 8ae4efa9..19da32e0 100644
+--- a/.claude/skills/do-math/scripts/do_math/task_scope.py
++++ b/.claude/skills/do-math/scripts/do_math/task_scope.py
+@@ -25,11 +25,9 @@ def _task_execution(execution: dict, task_id: str) -> bool:
+     return isinstance(execution, dict) and execution.get("action", {}).get("target") == task_id
+ 
+ 
+-def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance=None) -> None:
++def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance=None, *, actor_execution_id) -> None:
+     if not isinstance(snapshot_task, dict) or contract_hash(task) != contract_hash(snapshot_task):
+         raise ValueError("task contract changed since the execution input snapshot: " + task_id)
+-    if task.get("status") not in _WITHDRAWABLE_STATES:
+-        raise ValueError("task is not an unfinished, unperformed task: " + task_id)
+     validate_withdrawal_scope(task, snapshot_task)
+     if task.get('results'):
+         if not assessment_current(task, instance or {}, runtime):
+@@ -40,7 +38,9 @@ def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, inst
+     producer = runtime.get("executions", {}).get(producer_id)
+     if not isinstance(producer_id, str) or not isinstance(producer, dict) or producer.get("role") != "research_preparation":
+         raise ValueError("task is not attributable to a research preparation execution: " + task_id)
+-    for execution in runtime.get("executions", {}).values():
++    for identifier, execution in runtime.get("executions", {}).items():
++        if identifier == actor_execution_id and execution.get('role') in {'research_preparation', 'research_plan'}:
++            continue
+         if not _task_execution(execution, task_id):
+             continue
+         if execution.get("status") != "ended":
+@@ -51,6 +51,10 @@ def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
+     """Shared producer/receiver scope check, before live provenance checks."""
+     from .planning import _hash
+     from .task_contracts import validate_item_dispositions
++    if task.get('status') not in _WITHDRAWABLE_STATES:
++        raise ValueError('withdrawal requires an unfinished task')
++    if proposed_assessment is not None and proposed_assessment.get('decision') != 'incomplete':
++        raise ValueError('withdrawal cannot follow a terminal task assessment')
+     if task.get('transferred_obligations') or task.get('user_required') or task.get('academic_requirement_id'):
+         raise ValueError('protected obligations require authoritative item dispositions')
+     if not task.get('results'):
+@@ -86,7 +90,8 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
+         task = tasks.get(task_id)
+         if not isinstance(task, dict):
+             raise ValueError("unknown task: " + task_id)
+-        _validate(task, input_tasks.get(task_id), new_runtime, task_id, new_instance)
++        _validate(task, input_tasks.get(task_id), new_runtime, task_id, new_instance,
++                  actor_execution_id=execution_id)
+ 
+     for task_id, reason in requested:
+         task = tasks[task_id]
+@@ -288,10 +293,15 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
+                 if link['assessment_id'] in cited:
+                     return link['assessment_id']
+     if 'goal_audit' in judges:
++        from .planning import governance_revisions
++        from .input_basis import sources_current
++        editions = governance_revisions(instance)
+         owned = {row['id'] for row in records}
+         for judgment in instance.get('goal_judgments', []):
+             if (judgment.get('id') in cited and judgment.get('decision') == 'satisfied'
+                     and judgment.get('scope_complete') is True and judgment.get('current') is True
++                    and all(judgment.get(key) == value for key, value in editions.items())
++                    and sources_current(judgment.get('source_basis', []), instance)
+                     and owned.intersection(judgment.get('dependencies', []))
+                     and validate_basis(judgment.get('record_basis', []), instance, runtime)['valid']
+                     and all(usable_links(instance, kid) for kid in judgment.get('dependencies', [])
+diff --git a/.claude/skills/do-math/scripts/tests/test_efficiency.py b/.claude/skills/do-math/scripts/tests/test_efficiency.py
+index 7af1a3c9..e651f3a8 100644
+--- a/.claude/skills/do-math/scripts/tests/test_efficiency.py
++++ b/.claude/skills/do-math/scripts/tests/test_efficiency.py
+@@ -58,8 +58,6 @@ class EfficiencyTests(unittest.TestCase):
+         (self.root / "work" / "runs").mkdir(exist_ok=True)
+         self.engine._enqueue("research_preparation", reason="Prepare the bounded efficiency fixture")
+         self.engine._save()
+-        self.resources = {pool: {model: {"available": 3} for model in MODELS.values()}
+-                          for pool in ("work", "operations")}
+ 
+     def startup(self):
+         e = self.engine
+@@ -96,7 +94,7 @@ class EfficiencyTests(unittest.TestCase):
+         action = self.startup()
+         before = deepcopy(self.engine.runtime["events"])
+         self.assertNotIn('initial_preparation_wait', action)
+-        self.assertTrue(self.engine._dispatchable(action, self.resources))
++        self.assertTrue(self.engine._dispatchable(action))
+         self.assertEqual(self.engine.runtime["events"], before)
+         self.assertTrue(self.engine.runtime["pending_events"])
+ 
+@@ -117,16 +115,16 @@ class EfficiencyTests(unittest.TestCase):
+         self.assertNotIn(event['id'], e.runtime['pending_events'])
+ 
+     def test_regular_empty_plan_can_still_dispatch(self):
+-        self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}, self.resources))
++        self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}))
+ 
+-    def test_initial_plan_waits_for_other_reviews_only_up_to_the_settle_limit(self):
++    def test_plan_settle_waits_only_up_to_limit(self):
+         action = self.startup()
+         e = self.engine
+         e.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
+             "status": "ended", "outcome": "output_accepted", "action": {"role": "research_preparation"}}
+         e.runtime["tasks"] = {"first": {"status": "planned"}, "slow": {"status": "planned"}}
+         e.runtime["queue"].extend([{"role": "task_contract_review", "target": tid} for tid in e.runtime["tasks"]])
+-        self.assertFalse(e._dispatchable(action, self.resources))
++        self.assertFalse(e._dispatchable(action))
+         e.runtime["tasks"] = {}
+         original_queue = deepcopy(e.runtime["queue"])
+         e.runtime["queue"] = []
+@@ -141,11 +139,11 @@ class EfficiencyTests(unittest.TestCase):
+         self.assertTrue(any(row["state"] == "ready" for row in e._task_readiness.values()))
+         e.runtime["queue"] = original_queue
+         # The remaining reviews are awaited only up to plan_settle_seconds, never indefinitely.
+-        self.assertFalse(e._dispatchable(action, self.resources))
++        self.assertFalse(e._dispatchable(action))
+         self.assertEqual(action["dispatch_wait"]["kind"], "plan_settle")
+         from datetime import datetime, timedelta, timezone
+         action["settle_started_at"] = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
+-        self.assertTrue(e._dispatchable(action, self.resources))
++        self.assertTrue(e._dispatchable(action))
+ 
+     def test_pause_received_during_input_preparation_prevents_model_start(self):
+         e = self.engine
+@@ -223,7 +221,7 @@ class EfficiencyTests(unittest.TestCase):
+         action = self.startup()
+         event = self.engine._lifecycle_event("user_decision_applied", decision_id="new-policy")
+         action["event_refs"].append(event["id"])
+-        self.assertTrue(self.engine._dispatchable(action, self.resources))
++        self.assertTrue(self.engine._dispatchable(action))
+ 
+     def test_empty_or_failed_initial_preparation_does_not_wait_forever(self):
+         action = self.startup()
+@@ -231,7 +229,7 @@ class EfficiencyTests(unittest.TestCase):
+             with self.subTest(outcome=outcome):
+                 self.engine.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
+                     "status": "ended", "outcome": outcome, "action": {"role": "research_preparation"}}
+-                self.assertTrue(self.engine._dispatchable(action, self.resources))
++                self.assertTrue(self.engine._dispatchable(action))
+ 
+     def test_plan_receives_public_running_preparation_without_private_output(self):
+         e = self.engine
+diff --git a/.claude/skills/do-math/scripts/tests/test_governance_engine.py b/.claude/skills/do-math/scripts/tests/test_governance_engine.py
+index ccbafa4f..c81a9dfc 100644
+--- a/.claude/skills/do-math/scripts/tests/test_governance_engine.py
++++ b/.claude/skills/do-math/scripts/tests/test_governance_engine.py
+@@ -17,8 +17,9 @@ class CentralGovernanceTests(unittest.TestCase):
+     def host(self):
+         from test_redesign_GOVERNANCE import AuditRepairTests
+         from do_math.engine import DEFAULT_CONFIG
++        from do_math.lifecycle_engine import LifecycleEngineMixin
+         i, rt, bundle, request = AuditRepairTests().checked_import()
+-        class Host(self.mixin()):
++        class Host(self.mixin(), LifecycleEngineMixin):
+             _executor_running = False
+             _calls = None
+             _live_execution_ids = set()
+@@ -30,6 +31,8 @@ class CentralGovernanceTests(unittest.TestCase):
+             def _complete_initial_intent(self, target): self.completed_input = target
+             def _activate_initialization(self): self.activation_attempted = True
+         h = Host(); h.instance = i; h.runtime = rt
++        rt.setdefault('events', [])
++        rt.setdefault('pending_events', [])
+         for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
+         i['config'] = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None, 'scholarly_enabled': False}
+         # Config addition is not a premise of this charter import.
+@@ -176,9 +179,10 @@ class CentralGovernanceTests(unittest.TestCase):
+         h, _, _ = self.host()
+         h.instance, h.runtime = AuditRepairTests().audited()
+         h.instance.update(knowledge={}, goal_judgments=[])
++        h.runtime.update(events=[], pending_events=[], last_observed_utc='2020-01-01T00:00:00Z')
+         h._goal_basis_key = lambda: 'B'
+         action = {'role': 'goal_audit', 'basis': 'B', 'slot': 0, 'required': 1}
+-        execution = {'id': 'AUDITOR', 'role': 'goal_audit'}
++        execution = {'id': 'AUDITOR', 'role': 'goal_audit', 'action': deepcopy(action), 'status': 'ended'}
+         h._bind_governance_input(action, execution, h._governance_context(action, {}))
+         h.runtime['executions']['AUDITOR'] = execution
+         output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
+@@ -221,6 +225,9 @@ class CentralGovernanceTests(unittest.TestCase):
+                 h, action, output = self.audit_host()
+                 h.instance['knowledge'] = {'K': {'id': 'K', 'statement': 'fixture only'}}
+                 h.instance['formal_results'] = {'FR': {'id': 'FR'}}
++                old_judgment = {'id': 'GJ-old', 'basis': 'old', 'slot': 0, 'required': 1,
++                                'execution_id': 'EX-old', 'decision': 'not_satisfied', 'current': False}
++                h.instance['goal_judgments'].append(deepcopy(old_judgment))
+                 temporary = tempfile.TemporaryDirectory()
+                 self.addCleanup(temporary.cleanup)
+                 trusted = trust_fixture(Path(temporary.name), ['synthetic-audit-lean'])
+@@ -245,6 +252,8 @@ class CentralGovernanceTests(unittest.TestCase):
+                 jsonschema.validate(record_basis, basis_schema)
+                 self.assertEqual(h.instance.get('goal_status') == 'mathematically_solved', expected)
+                 self.assertEqual(getattr(h, 'academic_followup', False), expected)
++                self.assertEqual(h.instance['goal_judgments'][0], old_judgment)
++                self.assertEqual(len(h.instance['goal_judgments']), 2)
+ 
+     def test_raw_initial_charter_compares_lossless_input_not_nfc_projection(self):
+         import hashlib, unicodedata
+@@ -443,6 +452,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
+             action = {'id': 'AC-AUDITOR', 'role': 'goal_audit', 'target': None,
+                       'basis': engine._goal_basis_key(), 'slot': 0, 'required': 1}
+             self.execution_fixture(engine, 'AUDITOR', 'goal_audit', iid)
++            engine.runtime['executions']['AUDITOR']['action'] = deepcopy(action)
+             context = engine._context(action, Path(engine.instance['workspace']), execution_id='AUDITOR')
+             self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
+             self.assertIn('additional_audits', engine._response_schema(action)['required'])
+@@ -457,11 +467,60 @@ class PublicGitGovernanceTests(unittest.TestCase):
+                 with self.assertRaises(ValueError): engine._apply(action, {**output, 'additional_audits': invalid}, 'AUDITOR')
+                 self.assertEqual(engine.instance['goal_judgments'], [])
+             engine._apply(action, output, 'AUDITOR')
+-            engine._save()
++            # Preserve a crash immediately after the judgment/receipt publication,
++            # before the original execution's final output_accepted bookkeeping.
++            import hashlib
++            from do_math import integration, execution_lifecycle
++            from do_math.repository import canonical_json
++            output['integration_bundles'] = [{'integration_id': 'IN-audit', 'members': ['output'],
++                'impact_set': [], 'authority_refs': []}]
++            fixed = {'action': action, 'snapshot': engine.head}
++            bundle = next(integration.split_bundles(output, {}, fixed))
++            engine.runtime.setdefault('integrations', {})['IN-audit'] = {'id': 'IN-audit', 'execution_id': 'AUDITOR',
++                'payload_sha256': bundle['payload_sha256'], 'members': ['output'], 'input_snapshot': engine.head}
++            ex = engine.runtime['executions']['AUDITOR']
++            execution_lifecycle.transition_execution(ex, 'ended', at=engine.instance['created_at'],
++                outcome='start_failed', reason='crash fixture before finalization')
++            ex['capacity'] = {'local_termination': 'confirmed', 'reservation_ids': [], 'provider': None, 'process': None}
++            ex['input_bundle'] = 'BA-audit-input'
++            ex['input_snapshot'] = engine.head
++            ex['result_ref'] = 'runtime/artifacts/BA-audit/result.json'
++            artifacts = {ex['result_ref']: b'{"status":"completed"}',
++                'runtime/artifacts/BA-audit-input/input/submission/context.json': canonical_json(fixed),
++                'runtime/artifacts/BA-audit-input/schema.json': b'{}'}
++            ex['submission_intent'] = {}
++            refs = []
++            for name, value in (('output', output), ('extensions', {}), ('check', {'passed': True, 'issues': []})):
++                ref = 'runtime/artifacts/BA-audit/' + name + '.json'
++                raw = canonical_json(value)
++                artifacts[ref] = raw
++                digest = hashlib.sha256(raw).hexdigest()
++                ex['submission_intent'][name + '_ref'] = ref
++                ex['submission_intent'][name + '_sha256'] = digest
++                refs.append({'path': ref, 'sha256': digest, 'bytes': len(raw)})
++            ex['submission_receipt'] = {'state': 'accepted', 'execution_id': 'AUDITOR',
++                                        'payload': {'submission_check': {'artifacts': refs}}}
++            from do_math.submission import read_sealed_submission
++            read_sealed_submission(ex, engine.head, lambda snapshot, path: artifacts[path])
++            engine._save(artifacts)
+             restarted = self.engine_type()(root, iid)
+             self.assertEqual(restarted.instance['goal_judgments'][0]['additional_audits'][0]['decision'], 'not_satisfied')
+             self.assertNotEqual(restarted.runtime['status'], 'completed')
+             self.assertEqual(restarted.runtime['executions']['AUDITOR']['additional_audit_input'], context['additional_audit_input'])
++            judgments, events = deepcopy(restarted.instance['goal_judgments']), deepcopy(restarted.runtime['events'])
++            result_ref = restarted.runtime['executions']['AUDITOR']['result_ref']
++            with restarted.store.writer_lock():
++                restarted._recover_disappeared()
++                self.assertEqual(restarted.runtime['waiting_actions'][action['id']]['kind'], 'submission_publication',
++                                 restarted.runtime['waiting_actions'][action['id']])
++                restarted._retry_submission_publications()
++            final = self.engine_type()(root, iid)
++            self.assertEqual(final.runtime['executions']['AUDITOR']['outcome'], 'output_accepted')
++            self.assertEqual(final.runtime['activities']['ACT-AUDITOR']['status'], 'finished')
++            self.assertEqual(final.runtime['executions']['AUDITOR']['result_ref'], result_ref)
++            self.assertEqual(final.instance['goal_judgments'], judgments)
++            self.assertEqual(final.runtime['events'], events)
++            self.assertNotIn(action['id'], final.runtime['waiting_actions'])
+ 
+     def test_exact_initial_input_context_survives_actual_git_restart(self):
+         import tempfile
+diff --git a/.claude/skills/do-math/scripts/tests/test_lifecycle_engine.py b/.claude/skills/do-math/scripts/tests/test_lifecycle_engine.py
+index 6305f064..114be024 100644
+--- a/.claude/skills/do-math/scripts/tests/test_lifecycle_engine.py
++++ b/.claude/skills/do-math/scripts/tests/test_lifecycle_engine.py
+@@ -13,6 +13,7 @@ from do_math.lifecycle_engine import LifecycleEngineMixin
+ from do_math.revision_engine import RevisionEngineMixin
+ from do_math.scheduler import SchedulerMixin
+ from do_math.review_engine import ReviewEngineMixin
++from do_math.governance_engine import GovernanceEngineMixin
+ from do_math.initialization import initialize_state, FOUNDATION_AXIOMS, governance_working_view
+ from do_math import execution_profiles as profiles, knowledge_records as kr, planning
+ from do_math.governance import WORK_ROLES, OPERATING_ROLES
+@@ -24,7 +25,7 @@ class AdapterDouble:
+         return {'identity':self.capability_identity(),'verified':True,'scope':'cli_command_surface_only',
+                 'supported':{'jsonl':True,'model':True,'structured_output':True}}
+ 
+-class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin):
++class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin,GovernanceEngineMixin):
+     _register_execution=ResearchEngine._register_execution
+     _activity_for_action=ResearchEngine._activity_for_action
+     _provider_slots=ResearchEngine._provider_slots
+@@ -472,7 +473,7 @@ class LifecycleTests(unittest.TestCase):
+             e.activate()
+             action={'id':'AC-call','role':'research_preparation'}
+             with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+-                self.assertTrue(e._dispatchable(action,e._session_resources()))
++                self.assertTrue(e._dispatchable(action))
+ 
+     def test_initial_grant_does_not_queue_research_before_activation(self):
+         with tempfile.TemporaryDirectory() as root:
+@@ -551,14 +552,13 @@ class LifecycleTests(unittest.TestCase):
+         e=self.engine; t=e.task(); a={'id':'AC-work','role':'research_work','target':t['id']}
+         e.runtime['queue']=[a]
+         with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+-            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
+-            self.assertTrue(e._dispatchable(a,resources))
++            self.assertTrue(e._dispatchable(a))
+             e.runtime['tasks'][t['id']]['inputs'].append('absent')
+-            self.assertFalse(e._dispatchable(a,resources))
++            self.assertFalse(e._dispatchable(a))
+             e.runtime['tasks'][t['id']]['inputs']=[]
+             e.runtime['tasks'][t['id']]['status']='ready'
+             e.runtime['task_readiness']={t['id']:{'state':'ready'}}
+-            self.assertFalse(e._dispatchable(a,resources))
++            self.assertFalse(e._dispatchable(a))
+             self.assertEqual(a['dispatch_wait']['kind'],'task_readiness')
+ 
+     def test_task_artifact_context_reaches_refresh_schedule_and_dispatch(self):
+@@ -576,8 +576,7 @@ class LifecycleTests(unittest.TestCase):
+         a={'id':'AC-artifact','role':'research_work','target':t['id']}
+         e.runtime['queue']=[a]
+         with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True) as selected, patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+-            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
+-            self.assertTrue(e._dispatchable(a,resources))
++            self.assertTrue(e._dispatchable(a))
+             context=selected.call_args.kwargs['evaluation_context']
+             self.assertTrue(callable(context['validate_artifact']))
+             self.assertEqual(context['read_artifact']('sealed-evidence',path),raw)
+diff --git a/.claude/skills/do-math/scripts/tests/test_machine_scheduling.py b/.claude/skills/do-math/scripts/tests/test_machine_scheduling.py
+index db37b581..f32a3409 100644
+--- a/.claude/skills/do-math/scripts/tests/test_machine_scheduling.py
++++ b/.claude/skills/do-math/scripts/tests/test_machine_scheduling.py
+@@ -60,7 +60,7 @@ class MachineSchedulingTests(unittest.TestCase):
+         queue=[{'id':'AC-big','role':'formal_check','profile_ref':profiles.profile_ref(big)},
+                {'id':'AC-small','role':'trust_check','profile_ref':profiles.profile_ref(small)}]
+         before=deepcopy(runtime)
+-        choose=lambda:next((a for a in queue if SchedulerMixin._dispatchable(scheduler,a,{})),None)
++        choose=lambda:next((a for a in queue if SchedulerMixin._dispatchable(scheduler,a)),None)
+         self.assertEqual(choose()['id'],'AC-small')
+         self.assertEqual(runtime,before,'readiness must not reserve or create an execution')
+         self.assertEqual(queue[0]['dispatch_wait']['kind'],'host_capacity')
+diff --git a/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py b/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py
+index 972df2ed..d59b71b4 100644
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py
+@@ -175,22 +175,21 @@ class PriorityVectorTests(unittest.TestCase):
+             observation['id'] = 'CE-' + digest(observation)
+             e.instance['capability_evidence'][observation['id']] = observation
+         model = e.instance['config']['tier_models']['medium']
+-        resources = {'work': {model: {'available': 4}}, 'operations': {model: {'available': 4}}}
+         first = {'id': 'AC-first', 'role': 'research_work', 'target': task['id'], 'grant_id': 'GR-evidence',
+                  'owner_activity_id': 'AY-first', 'model_selection': {'model': model}}
+         other = {**first, 'id': 'AC-other', 'owner_activity_id': 'AY-other', 'role': 'supplemental_research'}
+         same_role = {**first, 'id': 'AC-other-work', 'owner_activity_id': 'AY-other'}
+-        self.assertTrue(e._dispatchable(other, resources), repr(other))
+-        self.assertTrue(e._dispatchable(same_role, resources), 'different work request is valid before occupancy')
+-        self.assertTrue(e._dispatchable(first, resources), 'reviewed unoccupied task must be dispatchable')
++        self.assertTrue(e._dispatchable(other), repr(other))
++        self.assertTrue(e._dispatchable(same_role), 'different work request is valid before occupancy')
++        self.assertTrue(e._dispatchable(first), 'reviewed unoccupied task must be dispatchable')
+         e.runtime['executions']['EX-first'] = {'id': 'EX-first', 'status': 'running',
+             'role': first['role'], 'action': deepcopy(first), 'owner_activity_id': 'AY-first'}
+-        self.assertFalse(e._dispatchable(other, resources))
+-        self.assertFalse(e._dispatchable(same_role, resources))
++        self.assertFalse(e._dispatchable(other))
++        self.assertFalse(e._dispatchable(same_role))
+         e.runtime['executions']['EX-first'].update(status='ended', outcome='execution_incomplete')
+-        self.assertTrue(e._dispatchable({**first, 'id': 'AC-retry', 'continuation_of': 'EX-first'}, resources),
++        self.assertTrue(e._dispatchable({**first, 'id': 'AC-retry', 'continuation_of': 'EX-first'}),
+                         'ended attempt must not consume a lifetime task slot')
+-        self.assertTrue(e._dispatchable(other, resources), 'ended work releases the task for the other role')
++        self.assertTrue(e._dispatchable(other), 'ended work releases the task for the other role')
+ 
+     def test_v112_engine_completion_rejects_open_then_applies_fulfilled_obligations(self):
+         e = engine_fixture(); task = task_fixture()
+diff --git a/.claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py b/.claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py
+index 1f715810..fae3ed3a 100644
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py
+@@ -256,7 +256,7 @@ class DomainGovernanceTests(unittest.TestCase):
+         h=Host();h.instance={"id":"I","feature_version":5}
+         h.runtime={"executions":{"E":{"id":"E","role":"research_plan","artifact_bundle":"B", "extensions":{"question_routes":[{"question_index":0,"owner":"user","target_ids":["I"],"blocks":False,"reason":"optional"}]}}}}
+         h._record_output_questions({"role":"research_plan"},{"questions":["Optional priority?"]},"E")
+-        self.assertFalse(h._has_global_user_question())
++        self.assertEqual(questions.user_waits({"role":"research_plan"}, h.instance, h.runtime), [])
+         one=questions.link(h.runtime,execution_id="A",field="questions/0",owner="research",targets=["I"])
+         h.runtime["executions"]["E"]["extensions"]={"question_resolutions":[
+             {"question_id":one["id"],"disposition":"resolved","evidence_refs":["EV"],"reason":"answered"},
+diff --git a/.claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py b/.claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py
+index 5b79d85a..8618c604 100644
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py
+@@ -17,10 +17,11 @@ from do_math.initialization import (  # noqa: E402
+ )
+ from do_math.knowledge import register_environment  # noqa: E402
+ from do_math.lifecycle_engine import LifecycleEngineMixin  # noqa: E402
++from do_math.governance_engine import GovernanceEngineMixin
+ from do_math.preflight import inspect_current_state  # noqa: E402
+ 
+ 
+-class FixtureEngine(LifecycleEngineMixin):
++class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
+     def __init__(self):
+         self.current_time = datetime(2026, 9, 20, tzinfo=timezone.utc)
+         self.lifecycle_clock = lambda: self.current_time.isoformat()
+diff --git a/.claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py b/.claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py
+index 503138cc..2365731f 100644
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py
+@@ -73,6 +73,52 @@ def archived_run(root):
+ 
+ 
+ class SurfaceRedesignTests(unittest.TestCase):
++    def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
++        from test_redesign_TASKS import task, disposition
++        from v5_fixtures import assessment, candidate
++        from test_contract_checks import checks
++        from do_math.submission import contract_check_errors
++        from do_math.planning import validate_plan_submission
++        instance, runtime = surface_state()
++        runtime['tasks'] = {identifier: {**task(), 'id': identifier, 'status': status, 'results': []}
++            for identifier, status in [('TK-ready', 'planned'), ('TK-completed', 'completed'), ('TK-waiting', 'waiting')]}
++        runtime['tasks']['TK-completed']['results'] = [{'execution_id': 'EX-old', 'report': 'preserved'}]
++        readers = deepcopy(list(runtime['tasks'].values()))
++        readers[1]['results'][0]['local_path'] = 'restored/output.txt'
++        returned = {**task(), 'id': 'TK-returned', 'status': 'waiting',
++                    'results': [{'execution_id': 'EX-returned', 'report': 'A returned proof sketch'}]}
++        for obligation in returned['completion_obligations']:
++            obligation['evidence_required'] = ['EX-returned']
++        runtime['tasks']['TK-returned'] = returned
++        readers.append(deepcopy(returned))
++        for role in ('research_plan', 'research_preparation'):
++            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
++                root = Path(directory)
++                profile = next(p for p in instance['execution_profiles'].values() if p['role'] == role)
++                fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': role},
++                    'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready']},
++                    instance=instance, runtime=runtime, role=role, profile=profile,
++                    snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
++                context = json.loads((root/'input/submission/context.json').read_bytes())
++                tasks = {t['id']: t for t in context['tasks']}
++                self.assertEqual(tasks, runtime['tasks'])
++                self.assertNotIn('TK-completed', [t['id'] for t in fitted['context']['tasks']])
++                plan = {'dispositions': [disposition('TK-ready')], 'task_assessments': [assessment(returned)]}
++                validate_plan_submission(plan, tasks, ['TK-ready'])
++                with self.assertRaises(ValueError):
++                    validate_plan_submission({**plan, 'task_assessments': []}, tasks, ['TK-ready'])
++                proposal = candidate('new')
++                entry = checks('new', sibling_boundaries=[{'task_id': 'TK-completed', 'revision': 1,
++                    'boundary': 'Use the completed sibling boundary', 'independent_of_next_revision': True}])
++                self.assertEqual(contract_check_errors(proposal, entry, [], tasks, set(), set()), [])
++                entry['sibling_boundaries'][0]['revision'] = 2
++                self.assertTrue(contract_check_errors(proposal, entry, [], tasks, set(), set()))
++                for extra in ('TK-completed', 'TK-waiting'):
++                    invalid = deepcopy(plan)
++                    invalid['dispositions'][0]['parallel_task_ids'] = [extra]
++                    with self.assertRaises(ValueError):
++                        validate_plan_submission(invalid, tasks, ['TK-ready'])
++
+     def test_plan_receives_returned_work_separately_from_ready_selection_population(self):
+         instance, runtime = surface_state()
+         runtime['tasks'] = {'TK-returned': {'id': 'TK-returned', 'status': 'waiting',
+diff --git a/.claude/skills/do-math/scripts/tests/test_repair_plan.py b/.claude/skills/do-math/scripts/tests/test_repair_plan.py
+new file mode 100644
+index 00000000..cc289d8c
+--- /dev/null
++++ b/.claude/skills/do-math/scripts/tests/test_repair_plan.py
+@@ -0,0 +1,346 @@
++"""Behavioral boundaries of the September 23 repair plan; no model calls."""
++from copy import deepcopy
++from datetime import datetime, timezone
++from pathlib import Path
++import sys
++import unittest
++from unittest.mock import patch
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from test_categories import test_group
++from do_math.engine import ResearchEngine, DEFAULT_CONFIG
++from do_math import execution_profiles, reporting
++from do_math.session_slots import GitSessionSlots
++
++
++@test_group('unit')
++class GoalAuditFlowRepairTests(unittest.TestCase):
++    def host(self):
++        e = ResearchEngine.__new__(ResearchEngine)
++        e.instance = {'id': 'IN-1', 'config': {'goal_auditors': 2}, 'goal_judgments': []}
++        e.runtime = {'executions': {}, 'queue': [], 'waiting_actions': {}, 'history': [],
++                     'events': [], 'pending_events': [], 'tasks': {}, 'activities': {}, 'reservations': {}}
++        e._goal_basis_key = lambda: 'basis'
++        return e
++
++    def seal(self, e, slot=0, **changes):
++        action = {'id': 'AC-original', 'role': 'goal_audit', 'basis': 'basis', 'required': 2, 'slot': slot}
++        e.runtime['executions']['EX-original'] = {'id': 'EX-original', 'role': 'goal_audit',
++            'action': action, 'status': 'ended', 'outcome': 'output_accepted'}
++        j = {'id': 'GJ-one', 'basis': 'basis', 'required': 2, 'slot': slot,
++             'execution_id': 'EX-original', 'current': True, **changes}
++        e.instance['goal_judgments'].append(j)
++        return action, j
++
++    def test_only_missing_slots_are_enqueued_and_consumed_event_is_not_repended(self):
++        e = self.host()
++        _, j = self.seal(e)
++        first = e._ensure_goal_audit_requests('basis', 'EX-plan')
++        self.assertEqual([s['state'] for s in first['slots']], ['sealed', 'queued_new'])
++        queued = deepcopy(e.runtime['queue'])
++        second = e._ensure_goal_audit_requests('basis', 'EX-plan2')
++        self.assertEqual([s['state'] for s in second['slots']], ['sealed', 'queued'])
++        self.assertEqual(e.runtime['queue'], queued)
++        event = e._record_goal_audit_followup('basis', [j])
++        e.runtime['pending_events'].remove(event)
++        self.assertEqual(e._record_goal_audit_followup('basis', [j]), event)
++        self.assertEqual(e.runtime['pending_events'], [])
++        j['current'] = False
++        self.assertEqual(e._ensure_goal_audit_requests('basis', 'EX-plan3')['slots'][0]['state'], 'sealed_unusable')
++
++    def test_owned_slot_wait_is_preserved(self):
++        e = self.host()
++        actions = [{'id': f'AC-{s}', 'role': 'goal_audit', 'basis': 'basis', 'slot': s, 'required': 2} for s in range(2)]
++        e.runtime['executions']['EX-live'] = {'id': 'EX-live', 'status': 'running', 'action': actions[0]}
++        e.runtime['waiting_actions']['AC-1'] = {'action': actions[1], 'kind': 'submission_failure', 'next_owner': 'engine'}
++        self.assertEqual([r['state'] for r in e._ensure_goal_audit_requests('basis', 'EX-plan')['slots']], ['running', 'waiting'])
++        self.assertEqual(e.runtime['queue'], [])
++
++    def test_recovery_confirms_termination_before_using_original_seal_without_recollection(self):
++        import hashlib
++        from types import SimpleNamespace
++        from do_math.repository import canonical_json
++        e = self.host()
++        action, _ = self.seal(e)
++        e.head = 'fixed'
++        e.instance['workspace'] = str(Path('.').resolve())
++        ex = e.runtime['executions']['EX-original']
++        ex.update(status='stopping', stop_phase='terminating', actor_kind='ai',
++            process={'job_name': 'fixture-job'}, result_ref='original-result', input_bundle='original-input',
++            capacity={'local_termination': 'confirmed'}, submission_intent={})
++        artifacts, refs = {}, []
++        for name, value in (('output', {'summary': 'original'}), ('extensions', {}), ('check', {'passed': True, 'issues': []})):
++            raw = canonical_json(value)
++            digest = hashlib.sha256(raw).hexdigest()
++            artifacts[name] = raw
++            refs.append({'path': name, 'bytes': len(raw), 'sha256': digest})
++            ex['submission_intent'].update({name + '_ref': name, name + '_sha256': digest})
++        ex['submission_receipt'] = {'state': 'accepted', 'execution_id': ex['id'],
++                                    'payload': {'submission_check': {'artifacts': refs}}}
++        e.runtime['integrations'] = {'IB-one': {'execution_id': ex['id'], 'members': ['output']}}
++        e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path])
++        e._slots = GitSessionSlots(e.runtime, e.instance)
++        with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=False), \
++                patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
++            e._recover_disappeared()
++        self.assertEqual(ex['status'], 'stopping')
++        self.assertEqual(e.runtime['waiting_actions'], {})
++        with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
++                patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
++            e._recover_disappeared()
++        self.assertEqual(ex['status'], 'ended')
++        self.assertEqual(ex['result_ref'], 'original-result')
++        self.assertEqual(ex['input_bundle'], 'original-input')
++        self.assertEqual(e.runtime['waiting_actions'][action['id']]['kind'], 'submission_publication')
++
++    def test_original_publication_and_reservations_are_protected_from_duplicate_cleanup(self):
++        e = self.host()
++        action, j = self.seal(e)
++        e.runtime['executions']['EX-original']['outcome'] = 'execution_incomplete'
++        duplicate = {**action, 'id': 'AC-duplicate'}
++        held = {**action, 'id': 'AC-held'}
++        e.runtime['executions']['EX-held'] = {'id': 'EX-held', 'action': held, 'status': 'ended'}
++        e.runtime['reservations']['RS-held'] = {'owner_id': 'EX-held', 'state': 'held'}
++        e.runtime['queue'] = [action, duplicate, held]
++        e.runtime['waiting_actions'] = {a['id']: {'action': a, 'kind': 'submission_publication',
++            'execution_id': 'EX-original' if a is action else 'EX-duplicate'} for a in (action, duplicate)}
++        self.assertTrue(e._retire_sealed_goal_audit_requests())
++        self.assertEqual([a['id'] for a in e.runtime['queue']], ['AC-original', 'AC-held'])
++        self.assertEqual(list(e.runtime['waiting_actions']), ['AC-original'])
++        self.assertFalse(e._retire_sealed_goal_audit_requests())
++        self.assertIsNone(e._obsolete_action_reason(action, execution_id='EX-original'))
++        self.assertIn('sealed', e._obsolete_action_reason(action, execution_id='EX-other'))
++
++    def test_committed_seal_requires_original_execution_and_output_receipt(self):
++        e = self.host()
++        _, j = self.seal(e)
++        with self.assertRaisesRegex(ValueError, 'receipt'):
++            e._committed_goal_audit('EX-original')
++        e.runtime['integrations'] = {'IB-one': {'execution_id': 'EX-original', 'members': ['output']}}
++        self.assertEqual(e._committed_goal_audit('EX-original'), j)
++        e.runtime['executions']['EX-original']['action']['slot'] = 1
++        with self.assertRaises(ValueError):
++            e._committed_goal_audit('EX-original')
++
++    def test_duplicate_retirement_preserves_evidence_and_other_activity_obligations(self):
++        from do_math.activities import open_activity, assign_execution
++        for other_obligation in (False, True):
++            with self.subTest(other_obligation=other_obligation):
++                e = self.host()
++                original, judgment = self.seal(e, current=False)
++                action = {**original, 'id': 'AC-duplicate', 'owner_activity_id': 'AT-duplicate'}
++                activity = open_activity(e.runtime, activity_id='AT-duplicate', activity_kind='goal_audit',
++                    owner_ref='IN-1', input_refs=[], opened_at='2026-09-23T00:00:00Z')
++                assign_execution(e.runtime, activity['id'], {'id': 'EX-duplicate', 'role': 'goal_audit',
++                    'owner_activity_id': activity['id'], 'action': action, 'status': 'ended',
++                    'outcome': 'execution_incomplete'})
++                activity.update(result_refs=['preserved-result'], unresolved=[{'action_id': action['id'], 'reason': 'failed'}])
++                if other_obligation:
++                    activity['followups'] = [{'reason': 'another outstanding obligation'}]
++                before = deepcopy(activity)
++                e.runtime['queue'] = [action]
++                e._retire_sealed_goal_audit_requests()
++                self.assertEqual(activity['result_refs'], before['result_refs'])
++                self.assertEqual(e.runtime['executions']['EX-duplicate']['outcome'], 'execution_incomplete')
++                if other_obligation:
++                    self.assertEqual(activity, before)
++                else:
++                    self.assertEqual(activity['status'], 'finished')
++                    self.assertIn(before['unresolved'][0], activity['unresolved'])
++                    self.assertTrue(any(row.get('judgment_id') == judgment['id'] for row in activity['unresolved']))
++    def test_last_slot_emits_one_event_and_invalid_slot_changes_nothing(self):
++        from test_governance_engine import CentralGovernanceTests
++        e, action, output = CentralGovernanceTests().audit_host()
++        action['required'] = 2
++        e.runtime['executions']['AUDITOR']['action'] = deepcopy(action)
++        first = e._apply_governance_goal_audit(action, output, 'AUDITOR')
++        self.assertEqual(e.runtime['events'], [])
++        before = deepcopy(e.instance)
++        for slot in (True, -1, 2):
++            with self.assertRaises(ValueError):
++                e._apply_governance_goal_audit({**action, 'slot': slot}, output, 'AUDITOR')
++            self.assertEqual(e.instance, before)
++        e.runtime['executions']['AUDITOR2'] = {**deepcopy(e.runtime['executions']['AUDITOR']), 'id': 'AUDITOR2'}
++        second = e._apply_governance_goal_audit({**action, 'slot': 1}, output, 'AUDITOR2')
++        self.assertEqual(len(e.instance['goal_judgments']), 2)
++        self.assertEqual(e.runtime['events'][0]['judgment_ids'], sorted([first['id'], second['id']]))
++        self.assertEqual(len(e.runtime['pending_events']), 1)
++
++
++@test_group('unit')
++class DispatchResourceRepairTests(unittest.TestCase):
++    def state(self, **changes):
++        config = {**deepcopy(DEFAULT_CONFIG), **changes}
++        instance = {**execution_profiles.build_profiles(config), 'config': config}
++        runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
++        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
++        return instance, runtime, profile
++
++    def test_budget_diagnosis_uses_pinned_edition_and_matches_actual_acquire(self):
++        instance, runtime, profile = self.state(session_limits=None, work_calls=0)
++        newer = execution_profiles.build_profiles({**instance['config'], 'work_calls': 1})
++        for family in ('execution_profiles', 'capacity_constraints'):
++            instance[family].update(newer[family])
++        instance['role_profile_refs'] = newer['role_profile_refs']
++        before = deepcopy((instance, runtime))
++        slots = GitSessionSlots(runtime, instance)
++        check = slots.admission_check(profile, current_time=123)
++        self.assertEqual((instance, runtime), before)
++        self.assertFalse(check['allowed'])
++        self.assertEqual(check['wait']['kind'], 'budget_exhausted')
++        self.assertEqual(check['wait']['next_owner'], 'user')
++        self.assertIn(check['wait']['constraint_id'], profile['ai']['usage_constraint_ids'])
++        self.assertFalse(slots.acquire('EX-one', profile['budget_kind'], profile['ai']['model'],
++                                      profile=profile, execution={'id': 'EX-one', 'status': 'queued'}, current_time=123))
++        self.assertEqual(slots.admission_wait, check['wait'])
++        self.assertEqual(slots.admission_reason, 'budget_exhausted')
++
++    def test_zero_capacity_and_provider_probe_are_distinct_and_read_only(self):
++        config = deepcopy(DEFAULT_CONFIG)
++        for model in config['session_limits']['work']:
++            config['session_limits']['work'][model] = 0
++        instance, runtime, profile = self.state(**config)
++        slots = GitSessionSlots(runtime, instance)
++        wait = slots.admission_check(profile)['wait']
++        self.assertEqual((wait['kind'], wait['next_owner']), ('capacity', 'user'))
++        self.assertNotIn('retry_at', wait)
++        provider = profile['ai']['provider']
++        runtime['provider_waits']['PW-' + provider] = {'provider': provider, 'state': 'waiting',
++            'retry_at': 100, 'probe_owner': None, 'probe_started_at': None}
++        before = deepcopy(runtime)
++        self.assertEqual(slots.admission_check(profile, current_time=90)['wait']['kind'], 'provider_limit')
++        self.assertEqual(slots.admission_check(profile, current_time=110)['wait']['kind'], 'capacity')
++        self.assertEqual(runtime, before)
++
++    def test_non_task_wait_projection_is_detached_and_printable(self):
++        runtime = {'executions': {}, 'queue': [{'id': 'AC-prep', 'role': 'research_preparation',
++            'dispatch_wait': {'kind': 'budget_exhausted', 'constraint_id': 'BC-old', 'next_owner': 'user'}}]}
++        rows = reporting.dispatch_waits(runtime)
++        text = '\n'.join(reporting.render_dispatch_waits({'tasks': [], 'dispatch_waits': rows}))
++        self.assertIn('AC-prep', text)
++        self.assertIn('budget_exhausted', text)
++        self.assertIn('BC-old', text)
++        rows[0]['wait']['kind'] = 'changed'
++        self.assertEqual(runtime['queue'][0]['dispatch_wait']['kind'], 'budget_exhausted')
++        runtime['executions']['EX-live'] = {'status': 'running', 'action': {'id': 'AC-prep'}}
++        self.assertEqual(reporting.dispatch_waits(runtime), [])
++
++    def test_configure_wakes_only_changed_resource_waits_and_keeps_pinned_profile(self):
++        from test_governance_engine import CentralGovernanceTests
++        e, _, _ = CentralGovernanceTests().host()
++        e.instance['workspace'] = str(Path('.').resolve())
++        e.instance['config']['operations_calls'] = 10
++        e.instance.update(execution_profiles.build_profiles(e.instance['config']))
++        e.runtime.update(status='waiting', queue=[{'id': 'AC-wait', 'role': 'research_preparation',
++            'profile_ref': deepcopy(e.instance['role_profile_refs']['research_preparation'][0]),
++            'dispatch_wait': {'kind': 'budget_exhausted', 'next_owner': 'user'}}])
++        original = deepcopy(e.runtime['queue'][0]['profile_ref'])
++        request = {'origin': 'user', 'config': {'operations_calls': e.instance['config']['operations_calls'] + 1}}
++        _, state = e._configure_candidate(e.instance, e.runtime, request)
++        self.assertEqual(state['status'], 'ready')
++        self.assertNotIn('dispatch_wait', state['queue'][0])
++        self.assertEqual(state['queue'][0]['profile_ref'], original)
++        self.assertEqual(e.runtime['status'], 'waiting')
++        _, same = e._configure_candidate(e.instance, e.runtime, {'origin': 'user', 'config': {}})
++        self.assertEqual(same['status'], 'waiting')
++        e.runtime['status'] = 'capacity_waiting'
++        _, same = e._configure_candidate(e.instance, e.runtime, {'origin': 'user', 'config': {}})
++        self.assertEqual(same['status'], 'capacity_waiting')
++        e.runtime['status'] = 'paused'
++        _, paused = e._configure_candidate(e.instance, e.runtime, request)
++        self.assertEqual(paused['status'], 'paused')
++
++
++@test_group('unit')
++class ReadinessCopyRepairTests(unittest.TestCase):
++    def test_historical_judgment_cannot_override_changed_governance_or_sources(self):
++        from test_redesign_GOVERNANCE import DomainGovernanceTests
++        from do_math import planning, task_scope
++        instance = DomainGovernanceTests().initial()
++        instance['sources'] = [{'name': 'source', 'path': 'source.txt', 'sha256': 'a'*64}]
++        instance['knowledge'] = {'KN-one': {'id': 'KN-one', 'task_id': 'TK-one'}}
++        judgment = {'id': 'GJ-one', 'decision': 'satisfied', 'scope_complete': True, 'current': True,
++            'dependencies': ['KN-one'], 'record_basis': [], **planning.governance_revisions(instance),
++            'source_basis': deepcopy(instance['sources'])}
++        instance['goal_judgments'] = [judgment]
++        def judge():
++            return task_scope.designated_judgment({'id': 'TK-one'}, {'judges': ['goal_audit']},
++                                                  {'evidence_refs': ['GJ-one']}, instance, {})
++        with patch('do_math.knowledge_records.usable_links', return_value=[{'assessment_id': 'AS-one'}]):
++            self.assertEqual(judge(), 'GJ-one')
++            instance['sources'][0]['sha256'] = 'b'*64
++            self.assertIsNone(judge())
++            instance['sources'][0]['sha256'] = 'a'*64
++            judgment['goal_revision'] = 'old-edition'
++            self.assertIsNone(judge())
++
++    def test_borrowed_inputs_and_copied_results_match_prior_evaluation(self):
++        from test_redesign_TASKS import approved_fixture
++        from do_math.planning import task_ready
++        task, instance, runtime = approved_fixture()
++        for scenario in ('ready', 'waiting', 'missing', 'invalid'):
++            with self.subTest(scenario=scenario):
++                value, state, working = deepcopy((task, instance, runtime))
++                working['tasks'][value['id']] = value
++                if scenario == 'waiting':
++                    value['waiting'] = {'kind': 'external_event', 'next_owner': 'user', 'reason': 'wait'}
++                elif scenario == 'missing':
++                    value['inputs'].append('SO-missing')
++                elif scenario == 'invalid':
++                    value['occurrence_condition'] = {'op': 'unknown'}
++                before = deepcopy((value, state, working))
++                old = task_ready(deepcopy(value), deepcopy(state), deepcopy(working))
++                result = deepcopy(task_ready(value, state, working))
++                self.assertEqual(result, old)
++                self.assertEqual((value, state, working), before)
++                if scenario == 'waiting':
++                    self.assertIn(value['waiting'], result['waits'])
++                    result['waits'][0]['reason'] = 'changed by result consumer'
++                    self.assertEqual(value['waiting']['reason'], 'wait')
++
++
++@test_group('integration')
++class DispatchWaitIntegrationTests(unittest.TestCase):
++    def test_actual_scheduler_and_both_status_readers_report_budget_wait_without_model(self):
++        import subprocess
++        import tempfile
++        from state_fixtures import active_engine
++        from test_lifecycle_engine import AdapterDouble
++        from do_math.cli import _human_status
++        class ForbiddenRunner:
++            def run(self, **kwargs):
++                raise AssertionError('exhausted budget must not call a model')
++        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
++            root = Path(directory)
++            subprocess.run(['git', 'init', '-q', str(root)], check=True)
++            e = active_engine(root, root/'work', runner=ForbiddenRunner(), config={
++                'operator_enabled': False, 'scholarly_enabled': False, 'session_limits': None,
++                'operations_calls': 1, 'work_calls': 10})
++            from do_math import execution_lifecycle
++            spent_action = {'id': 'AC-spent', 'role': 'maintenance'}
++            spent = e._register_execution(spent_action, {'id': 'EX-spent', 'role': 'maintenance', 'status': 'queued'})
++            profile = e._execution_profile(spent_action)
++            slots = e._provider_slots()
++            self.assertTrue(slots.acquire(spent['id'], 'operations', profile['ai']['model'],
++                                          profile=profile, execution=spent))
++            self.assertTrue(slots.release(spent['id']))
++            at = e._lifecycle_now().isoformat()
++            execution_lifecycle.transition_execution(spent, 'stopping', at=at, stop_phase='terminating')
++            execution_lifecycle.transition_execution(spent, 'ended', at=at, outcome='execution_incomplete')
++            e._settle_activity(spent['id'])
++            e._enqueue('research_preparation', reason='Observe the actual exhausted operations profile')
++            e._save()
++            previous = set(e.runtime['executions'])
++            status = e.run(max_steps=1)
++            self.assertEqual(status['status'], 'waiting')
++            self.assertEqual(set(e.runtime['executions']), previous)
++            self.assertEqual(status['dispatch_waits'][0]['wait']['kind'], 'budget_exhausted')
++            self.assertEqual(status['capacity_waiting'], [])
++            snapshot = reporting.snapshot_report(root, e.instance['id'], snapshot=e.head)
++            self.assertEqual(snapshot['dispatch_waits'], status['dispatch_waits'])
++            self.assertIn('budget_exhausted', _human_status(status))
++            self.assertIn('budget_exhausted', reporting.render_human_report(snapshot))
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/.claude/skills/do-math/scripts/tests/test_run_feedback.py b/.claude/skills/do-math/scripts/tests/test_run_feedback.py
+index 4191c8d6..f8508f4b 100644
+--- a/.claude/skills/do-math/scripts/tests/test_run_feedback.py
++++ b/.claude/skills/do-math/scripts/tests/test_run_feedback.py
+@@ -83,7 +83,6 @@ class PlanSettleTests(ActiveStateHarness):
+         from do_math.model_policy import MODELS
+         self.engine, _ = self.make(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
+         self.engine.runtime["queue"] = []
+-        self.resources = {pool: {model: {"available": 3} for model in MODELS.values()} for pool in ("work", "operations")}
+ 
+     def queue(self, plan, review=True):
+         self.engine.runtime["queue"] = [plan, *([{"id": "AC-review", "role": "task_contract_review", "target": "TK-x"}] if review else [])]
+@@ -91,21 +90,21 @@ class PlanSettleTests(ActiveStateHarness):
+ 
+     def test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision(self):
+         plan = self.queue({"id": "AC-plan", "role": "research_plan"})
+-        self.assertFalse(self.engine._dispatchable(plan, self.resources))
++        self.assertFalse(self.engine._dispatchable(plan))
+         self.assertEqual(plan["dispatch_wait"]["kind"], "plan_settle")
+         self.queue(plan, review=False)
+-        self.assertTrue(self.engine._dispatchable(plan, self.resources))
++        self.assertTrue(self.engine._dispatchable(plan))
+ 
+     def test_the_settle_wait_ends_at_its_configured_limit(self):
+         from datetime import datetime, timedelta, timezone
+         self.assertEqual(self.engine.instance["config"]["plan_settle_seconds"], 300)
+         started = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
+         plan = self.queue({"id": "AC-plan", "role": "research_plan", "settle_started_at": started})
+-        self.assertTrue(self.engine._dispatchable(plan, self.resources), "a slow review must not hold the first ready task for long")
++        self.assertTrue(self.engine._dispatchable(plan), "a slow review must not hold the first ready task for long")
+ 
+     def test_an_explicitly_requested_plan_does_not_settle(self):
+         plan = self.queue({"id": "AC-plan", "role": "research_plan", "requested_by": "UC-user"})
+-        self.assertTrue(self.engine._dispatchable(plan, self.resources))
++        self.assertTrue(self.engine._dispatchable(plan))
+ 
+ 
+ class RunWithoutDeadlineTests(ActiveStateHarness):
+diff --git a/.claude/skills/do-math/scripts/tests/test_submission_tools.py b/.claude/skills/do-math/scripts/tests/test_submission_tools.py
+index 061681f3..8d8eea16 100644
+--- a/.claude/skills/do-math/scripts/tests/test_submission_tools.py
++++ b/.claude/skills/do-math/scripts/tests/test_submission_tools.py
+@@ -266,7 +266,7 @@ class ProducerToolTests(purpose.PurposeHarness):
+         workspace = self.root / (role + "-producer-" + str(len(list(self.root.glob(role + "-producer-*")))))
+         workspace.mkdir(exist_ok=True)
+         context = {"action": {"id": "AC-producer", "role": role}, "execution_id": "EX-producer",
+-            "snapshot": "fixed-producer-input", "budget_unit": "concurrent_sessions",
++            "snapshot": "fixed-producer-input", "observed_at": "2026-09-23T00:00:00Z", "budget_unit": "concurrent_sessions",
+             "tasks": [], "ready_task_ids": [], "knowledge_catalog": [], "sources": [],
+             "kind_definitions": knowledge_io.catalog_definitions(knowledge_io.ensure_ontology({}))}
+         context.update(context_values or {})
+diff --git a/.claude/skills/do-math/scripts/tests/test_task_scope.py b/.claude/skills/do-math/scripts/tests/test_task_scope.py
+index 7c4c319e..50db8493 100644
+--- a/.claude/skills/do-math/scripts/tests/test_task_scope.py
++++ b/.claude/skills/do-math/scripts/tests/test_task_scope.py
+@@ -78,6 +78,29 @@ class TaskScopeTests(unittest.TestCase):
+         self.assertEqual(changed["tasks"]["TK-dependent"]["status"], "waiting")
+         self.assertEqual(runtime["tasks"]["TK-AI"]["status"], "planned")
+ 
++    def test_selected_unstarted_withdrawal_excludes_only_its_authorizing_execution(self):
++        _, runtime, snapshot = self.fixture()
++        runtime['tasks']['TK-AI']['status'] = 'active'
++        runtime['executions']['EX-plan'] = {'id': 'EX-plan', 'role': 'research_preparation',
++            'status': 'stopping', 'action': {'target': 'TK-AI'}}
++        _, changed = self.withdraw(runtime, snapshot)
++        self.assertEqual(changed['tasks']['TK-AI']['status'], 'closed')
++        runtime['executions']['EX-other'] = {**runtime['executions']['EX-plan'], 'id': 'EX-other'}
++        with self.assertRaisesRegex(ValueError, 'live execution'):
++            self.withdraw(runtime, snapshot)
++        del runtime['executions']['EX-other']
++        runtime['executions']['EX-plan']['role'] = 'research_work'
++        with self.assertRaisesRegex(ValueError, 'live execution'):
++            self.withdraw(runtime, snapshot)
++
++    def test_terminal_assessment_cannot_withdraw_even_without_results(self):
++        from do_math.task_scope import validate_withdrawal_scope
++        _, runtime, snapshot = self.fixture()
++        for decision in ('completed', 'closed'):
++            with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, 'terminal'):
++                validate_withdrawal_scope(runtime['tasks']['TK-AI'], snapshot['TK-AI'],
++                                          proposed_assessment={'decision': decision})
++
+     def test_rejects_changed_snapshot_user_or_academic_task_and_live_or_terminal_task(self):
+         for mutation in (
+             lambda runtime, snap: snap["TK-AI"].update(question="new"),
