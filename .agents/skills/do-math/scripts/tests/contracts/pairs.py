@@ -327,19 +327,23 @@ def _runner_result_samples(root):
 
 
 def _receive_stored_result(value):
-    """The engine keeps a runner result as a stored artifact: ``canonical_json(json_safe(result))``."""
+    """Decode the engine's stored artifact bytes so assertions can observe their content."""
+    import json
     from do_math.canonical import canonical_json
     from do_math.payloads import json_safe
-    canonical_json(json_safe(value))
+    return json.loads(canonical_json(json_safe(value)))
 
 
 def _receive_operator_record(value):
-    """The scheduled operator writes a runner result file with ``scheduled_operator._json(path, value)``."""
+    """Decode the file actually published by ``scheduled_operator._json(path, value)``."""
+    import json
     import tempfile
+    from do_math.file_io import read_bytes_shared
     from do_math.scheduled_operator import _json
     with tempfile.TemporaryDirectory() as directory:
         try:
             _json(Path(directory) / 'runner-result.json', value)
+            return json.loads(read_bytes_shared(Path(directory) / 'runner-result.json'))
         except (TypeError, ValueError) as error:
             raise ValueError(str(error)) from None
 

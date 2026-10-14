@@ -2,6 +2,7 @@
 receiver names no field that no producer branch writes. Branches a receiver rejects today are the known
 defects below, each with its own reproduction."""
 from copy import deepcopy
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -14,7 +15,13 @@ from contracts.pairs import (PAIRS, TEXT_RULE_ID_SAMPLES, accepted_condition, ac
 
 class ContractPairTests(unittest.TestCase):
     def test_runner_samples_cover_success_bound_incomplete_and_stopped(self):
+        """Eight real results also retain their receipts through both JSON consumers.
+
+        The external Job/CLI fakes leave the producer and serializers real (~0.4s locally).
+        """
         pair = next(pair for pair in PAIRS if pair.name == 'runner result (stored artifact)')
+        receivers = [pair for pair in PAIRS if pair.name.startswith('runner result (')]
+        self.assertEqual(len(receivers), 2)
         expected = {
             'collected': ('completed', {}, None, None, 'output_collected'),
             'collected, bound': ('completed', None, 'provider_evidence_only', None, 'output_collected'),
@@ -44,6 +51,76 @@ class ContractPairTests(unittest.TestCase):
                 if branch == 'collected, bound':
                     self.assertEqual(request['control_binding']['execution_id'], result['execution_id'])
                     self.assertEqual(collected['final']['raw'], b'Draft submitted.')
+                for receiver in receivers:
+                    with self.subTest(receiver=receiver.name):
+                        stored = receiver.receive(deepcopy(result))
+                        self.assert_received_runner_result(label, result, stored, expected[branch],
+                                                           artifact=receiver.name == pair.name)
+
+    def assert_received_runner_result(self, label, result, stored, expected, *, artifact):
+        """Compare decoded consumer output with fixture semantics and exact collected bytes.
+
+        Expectations do not call json_safe, bytes_evidence or either receiving serializer.
+        """
+        provider, branch = label.split(', ', 1)
+        bound = branch == 'collected, bound'
+        self.assertEqual(set(stored), set(result), 'preserve absent fields as well as present nulls')
+        self.assertEqual((stored['status'], stored['output'], stored.get('collection'),
+                          stored.get('error_kind'), stored['execution']['collect']['result']), expected)
+        self.assertEqual('collection' in stored, bound)
+        self.assertEqual('error_kind' in stored, branch in ('incomplete', 'stopped'))
+        self.assertEqual(stored['error'], 'cli_nonzero_exit' if branch == 'incomplete' else
+                         'stop requested or timeout' if branch == 'stopped' else None)
+        for name in ('evidence_dir', 'assigned_model', 'execution_id', 'profile_ref', 'provider_observation'):
+            self.assertEqual(stored[name], result[name])
+        self.assertEqual(stored['usage'], {'input_tokens': 1, 'output_tokens': 1} if provider == 'codex' else
+                         {'input_tokens': 7, 'output_tokens': 3})
+        self.assertEqual(set(stored['execution']), {'started', 'collect'})
+        self.assertEqual(stored['execution']['started'], result['execution']['started'])
+        collected, received = result['execution']['collect'], stored['execution']['collect']
+        self.assertEqual(set(received), set(collected))
+        for name in ('worker_status', 'process_identity', 'stop_receipts',
+                     'provider_observation', 'result', 'reasons', 'execution_id', 'profile_ref'):
+            self.assertEqual(received[name], collected[name])
+        self.assertEqual(received['worker_argv'], list(collected['worker_argv']))
+        self.assertEqual(received['termination_barrier'], {'active_processes': 0, 'process_ids': [],
+                                                         'root_signaled': True, 'confirmed': True})
+        self.assertIsNone(received['host_resources'])
+        self.assertEqual('execution_id' in received['worker_status'], bound)
+        self.assertEqual('profile_ref' in received['worker_status'], bound)
+        if bound:
+            self.assertEqual(received['execution_id'], 'EX-pair')
+            self.assertIsNone(received['worker_status']['schema_sha256'])
+        else:
+            self.assertIsNone(stored['execution_id'])
+            self.assertIsNone(stored['profile_ref'])
+            self.assertIsNone(received['execution_id'])
+            self.assertIsNone(received['profile_ref'])
+        for name in ('source_request', 'source_prompt', 'stdout', 'stderr', 'final'):
+            raw = collected[name]['raw']
+            digest = hashlib.sha256(raw).hexdigest()
+            self.assertEqual(received[name], {'present': True, 'bytes': len(raw), 'sha256': digest,
+                'raw': {'sha256': digest, 'text': raw.decode('utf-8', 'replace'),
+                        'base64': base64.b64encode(raw).decode('ascii')}})
+        parsed = received['jsonl']
+        self.assertTrue(parsed['parse_complete'])
+        self.assertEqual(parsed['unknown_events'], [])
+        self.assertEqual('total_cost_usd' in parsed, provider == 'claude')
+        if provider == 'claude':
+            self.assertEqual(parsed['total_cost_usd'], {'reported_decimal': '0.0123'} if artifact else 0.0123)
+            for selected in (parsed['selected_result'], stored['selected_result']):
+                self.assertIsNone(selected['origin'])
+                self.assertIsNone(selected['num_turns'])
+            self.assertEqual(stored['model_usage_reported'], {'claude-sonnet-5': {'inputTokens': 1}})
+            self.assertEqual(stored['usage_segments'], [{'segment': 0, 'line': 2,
+                'usage': {'input_tokens': 7, 'output_tokens': 3}}])
+            expected_parsed = deepcopy(collected['jsonl'])
+            expected_parsed['total_cost_usd'] = {'reported_decimal': '0.0123'} if artifact else 0.0123
+            self.assertEqual(parsed, expected_parsed)
+        else:
+            self.assertNotIn('selected_result', stored)
+            self.assertNotIn('model_usage_reported', stored)
+            self.assertEqual(parsed, collected['jsonl'])
 
     def test_every_producer_branch_is_received_and_every_named_field_is_produced(self):
         """All pairs, including forty real worker requests and two sets of eight results (~4.5s locally).
