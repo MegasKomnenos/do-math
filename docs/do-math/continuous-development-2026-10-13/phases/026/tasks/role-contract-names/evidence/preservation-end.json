@@ -1,0 +1,16 @@
+{
+  "baseline_count": 2675,
+  "current_count": 2675,
+  "mismatches": [],
+  "same": true,
+  "scope": [
+    ".claude/skills",
+    ".agents/skills",
+    ".agents/diff"
+  ],
+  "excludes": [
+    "__pycache__",
+    "*.pyc"
+  ],
+  "start_end_differences": []
+}

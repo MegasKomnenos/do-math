@@ -1,0 +1,56 @@
+[
+  {
+    "document": "repo:.claude/skills/do-math/계약/후보-준비.md",
+    "line": 156,
+    "value": {
+      "task_id": "TK-W",
+      "revision": 1,
+      "boundary": "하단 과제는 0≤k≤τ(n)−3, 현재 창 과제는 τ(n)−2≤k≤τ(n)+2를 맡으며 창의 하단 개정은 이 분담을 다시 판단하게 한다.",
+      "independent_of_next_revision": false
+    },
+    "field_paths": [
+      "boundary",
+      "independent_of_next_revision",
+      "revision",
+      "task_id"
+    ],
+    "owner": "submission.extension_schema contract_checks[].sibling_boundaries.items",
+    "decision": "keep",
+    "reason": "부분 객체 예시다. 하나는 모델 평가/보류 확장 파일 예시이고 다른 하나는 배열 원소 예시다. 주 응답 전체로 검사하지 않으며 assessment/checks의 현재 정의와 필드가 같다. TK-one/TK-two/TK-W는 예시 ID다.",
+    "schema_execution": "not_run; JSON parsing only; product schema inspected in source"
+  },
+  {
+    "document": "repo:.claude/skills/do-math/계약/후보-준비.md",
+    "line": 220,
+    "value": {
+      "model_assessments": [
+        {
+          "task_id": "TK-one",
+          "difficulty": "medium",
+          "importance": "high",
+          "reason": "여러 후속 검증이 의존하는 가정의 적용 범위를 대조한다."
+        }
+      ],
+      "model_assessment_deferrals": [
+        {
+          "task_id": "TK-two",
+          "reason": "필수 원문의 표를 읽을 수 없다. 판독 가능한 원문이 제공되면 평가한다."
+        }
+      ]
+    },
+    "field_paths": [
+      "model_assessment_deferrals",
+      "model_assessment_deferrals.[].reason",
+      "model_assessment_deferrals.[].task_id",
+      "model_assessments",
+      "model_assessments.[].difficulty",
+      "model_assessments.[].importance",
+      "model_assessments.[].reason",
+      "model_assessments.[].task_id"
+    ],
+    "owner": "submission.extension_schema research_preparation supplement-only",
+    "decision": "keep",
+    "reason": "부분 객체 예시다. 하나는 모델 평가/보류 확장 파일 예시이고 다른 하나는 배열 원소 예시다. 주 응답 전체로 검사하지 않으며 assessment/checks의 현재 정의와 필드가 같다. TK-one/TK-two/TK-W는 예시 ID다.",
+    "schema_execution": "not_run; JSON parsing only; product schema inspected in source"
+  }
+]

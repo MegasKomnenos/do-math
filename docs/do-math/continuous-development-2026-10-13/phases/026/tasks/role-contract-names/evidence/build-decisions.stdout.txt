@@ -1,0 +1,1 @@
+{"documents": 11, "lines": 1299, "slices": 144, "inline_occurrences": 1287, "document_token_pairs": 779, "json_examples": 2, "delta_slices_vs_historical_lexical_list": 44, "meaning_of_counts": "현재 원문의 좌표 대조 수이며 이름 수를 13-C/G 완료율로 쓰지 않는다. 기존 후보에 없던 dotted/code/file 이름의 상당수는 당시 목록 분류 차이이며 실제 소스 추가를 주장하지 않는다."}

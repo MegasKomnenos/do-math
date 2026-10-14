@@ -1,0 +1,143 @@
+{
+  "operators": {
+    "count": 6,
+    "equal": true
+  },
+  "condition_ops": {
+    "count": 11,
+    "equal": true
+  },
+  "families": {
+    "count": 21,
+    "equal": true
+  },
+  "exposed_fields": {
+    "families": 18,
+    "equal": true
+  },
+  "model_defaults": {
+    "equal": true,
+    "table": {
+      "high": [
+        "gpt-6-astra",
+        3
+      ],
+      "medium": [
+        "gpt-5.6-sol",
+        3
+      ],
+      "low": [
+        "gpt-5.6-terra",
+        3
+      ]
+    }
+  },
+  "fences": [
+    {
+      "path": "repo:.claude/skills/do-math/references/공통-실행.md",
+      "line": 170,
+      "kind": "JSON",
+      "keys": [
+        "current_claim",
+        "evidence_paths",
+        "attempts",
+        "remaining_work",
+        "next_step",
+        "progress_state",
+        "iteration",
+        "counters"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/공통-실행.md",
+      "line": 210,
+      "kind": "JSON",
+      "keys": [
+        "current_revision",
+        "reason",
+        "rules"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/공통-실행.md",
+      "line": 243,
+      "kind": "PowerShell",
+      "result": "inspected",
+      "owner": "repo:.claude/skills/do-math/scripts/do_math/submission_tool.py",
+      "flags": [
+        "--output",
+        "--submit",
+        "--wait-seconds"
+      ],
+      "limit": "No command executed; actual Python comes from submission_contract.command."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/공통-실행.md",
+      "line": 343,
+      "kind": "JSON",
+      "keys": [
+        "knowledge_metadata"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/과제-착수조건.md",
+      "line": 49,
+      "kind": "JSON",
+      "keys": [
+        "op",
+        "space",
+        "family",
+        "record_id",
+        "pointer",
+        "value"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/과제-착수조건.md",
+      "line": 55,
+      "kind": "JSON",
+      "keys": [
+        "task_conditions"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/모델과-실행예산.md",
+      "line": 51,
+      "kind": "JSON",
+      "keys": [
+        "model_assessments"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    },
+    {
+      "path": "repo:.claude/skills/do-math/references/자기-점검.md",
+      "line": 33,
+      "kind": "JSON",
+      "keys": [
+        "request_id",
+        "kind",
+        "payload"
+      ],
+      "result": "parses",
+      "limit": "JSON decoding only; actual schema/consumption evidence is the assigned current owner/test."
+    }
+  ],
+  "published_python_hashes_equal": 875,
+  "reused_doc_rows": 33,
+  "git_diff": {
+    "exit_code": 0,
+    "baseline": "56e961ff2b4666a373839e6524a9701d1f9c1462"
+  },
+  "scope": "stdlib AST/literal/text/JSON comparisons only. No product module, official test, mirror generator or external provider was executed."
+}

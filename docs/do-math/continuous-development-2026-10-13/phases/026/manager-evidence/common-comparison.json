@@ -1,0 +1,14 @@
+{
+  "before": {
+    "context.md": "7fb6891870a5fae871d8e421d45c222468681481a534f8041b943124d3181f7a",
+    "plan.md": "6354df5b008f5acf8526d406cdb095afe65b88fee06ca21970b2c4394dd5dfc7",
+    "seams.md": "a0ea8deb229c51c84cab982a1dfed9bb83e6d8d4a9be9105133cb640ddcddeb0"
+  },
+  "after": {
+    "context.md": "38b50e2cb3e2b38ee3a56b1a48288ec0db15130f1e3ee50b2fc75ed51939742d",
+    "plan.md": "ac1681f189152f06d522c5377c02a3f54deeaf0f49d386b31644e683225e6153",
+    "seams.md": "bc2daa744855f623fb553af667b897cc2d3e6537ab6a13a9e37f5401ccdacb32"
+  },
+  "criteria_unchanged": true,
+  "meaning": "C2/C8/C9/C10/C12에 검수 사실·한정 처분 추가, C5의 완료된026 배정을027로 교체. plan 다음 배정/관련 남김 갱신. 기존 G·L01·역사 실패/예외와 S의 의미는 불변."
+}

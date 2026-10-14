@@ -1,0 +1,282 @@
+{
+  "conversation_loss_policy": [
+    {
+      "id": "sim.test_engine_lifecycle_gates.ConversationLeaseTests.test_independent_operation_does_not_require_a_conversation_lease",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_lifecycle_gates.py",
+      "lines": [
+        126,
+        130
+      ],
+      "sha256_current": "766fb88337540f52f13bc7edb4a3db0646930403beff4274c0b15bf023095242"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_public.PublicControlBoundaryTests.test_conversation_lease_boundary_agrees_for_resume_heartbeat_and_loss",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+      "lines": [
+        238,
+        272
+      ],
+      "sha256_current": "1fdac9e1049438e82f03925be9d3e273b90cd6c77bcc20ca701383617b55fe21"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_controls.LifecycleControlTests.test_continue_policy_does_not_pause",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      "lines": [
+        424,
+        432
+      ],
+      "sha256_current": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a"
+    },
+    {
+      "id": "sim.test_call_stop_flags.PreparationStopTests.test_pause_publishes_a_stop",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+      "lines": [
+        165,
+        168
+      ],
+      "sha256_current": "84a559cce7286ac19d51a274cf088c5af87c5f392c76615dbdfecac496ad2027"
+    },
+    {
+      "id": "sim.test_call_stop_flags.PreparationStopTests.test_revoked_grant_publishes_a_stop",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+      "lines": [
+        175,
+        186
+      ],
+      "sha256_current": "84a559cce7286ac19d51a274cf088c5af87c5f392c76615dbdfecac496ad2027"
+    },
+    {
+      "id": "sim.test_call_stop_flags.PreparationStopTests.test_grant_expiry_is_a_clock_comparison",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+      "lines": [
+        231,
+        247
+      ],
+      "sha256_current": "84a559cce7286ac19d51a274cf088c5af87c5f392c76615dbdfecac496ad2027"
+    },
+    {
+      "id": "sim.test_call_stop_flags.PreparationStopTests.test_conversation_lease_expiry_stops_under_the_pause_policy",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+      "lines": [
+        249,
+        261
+      ],
+      "sha256_current": "84a559cce7286ac19d51a274cf088c5af87c5f392c76615dbdfecac496ad2027"
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_probe_routes_published_diagnosis_and_hold_blocks_recovery",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+      "lines": [
+        252,
+        291
+      ],
+      "sha256_current": "596efb4ca15c37d6d088f53e7ffe65903c919209ba8f14fb1c6aeb13b2fa9b0f"
+    },
+    {
+      "id": "sim.test_engine_lifecycle_gates.ActivationGateTests.test_activation_requires_recorded_evidence_then_opens_the_correct_first_action",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_lifecycle_gates.py",
+      "lines": [
+        41,
+        47
+      ],
+      "sha256_current": "766fb88337540f52f13bc7edb4a3db0646930403beff4274c0b15bf023095242"
+    }
+  ],
+  "disconnect_policy": [
+    {
+      "id": "sim.test_lifecycle_engine_public.PublicControlBoundaryTests.test_heartbeat_is_judged_at_delivery_and_cannot_revive_an_expired_generation",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+      "lines": [
+        195,
+        236
+      ],
+      "sha256_current": "1fdac9e1049438e82f03925be9d3e273b90cd6c77bcc20ca701383617b55fe21"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_public.PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+      "lines": [
+        274,
+        294
+      ],
+      "sha256_current": "1fdac9e1049438e82f03925be9d3e273b90cd6c77bcc20ca701383617b55fe21"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_controls.LifecycleControlTests.test_conversation_requires_new_live_generation",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      "lines": [
+        401,
+        414
+      ],
+      "sha256_current": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_controls.LifecycleControlTests.test_continue_alias_is_rejected_without_changing_conversation",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      "lines": [
+        416,
+        422
+      ],
+      "sha256_current": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_controls.LifecycleControlTests.test_control_replay_and_atomic_rejection",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      "lines": [
+        434,
+        444
+      ],
+      "sha256_current": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a"
+    },
+    {
+      "id": "boundary.test_engine_cli_advanced.AdvancedCliTests.test_external_prepare_is_model_free_and_conversation_lifecycle",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli_advanced.py",
+      "lines": [
+        101,
+        117
+      ],
+      "sha256_current": "d762a03afe21a616b8e55406214634a872c8c230ab252c11bbe0eeb57c97fc0f"
+    }
+  ],
+  "model_policy": [
+    {
+      "id": "unit.test_provider_profile_selection.SelectionTests.test_selection_is_pinned_and_contract_allowlist_is_enforced",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_provider_profile_selection.py",
+      "lines": [
+        89,
+        112
+      ],
+      "sha256_current": "a086d8b75aa327380bc8740add78daf026420d9b87ba5a839a9c957c696f64a3"
+    },
+    {
+      "id": "unit.test_provider_profile_selection.SelectionTests.test_explicit_old_edition_uses_its_model_but_preserves_floor_and_allowlist",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_provider_profile_selection.py",
+      "lines": [
+        114,
+        137
+      ],
+      "sha256_current": "a086d8b75aa327380bc8740add78daf026420d9b87ba5a839a9c957c696f64a3"
+    },
+    {
+      "id": "unit.test_provider_profile_selection.SelectionTests.test_ai_selection_uses_adopted_editions_without_building_or_reading_lean",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_provider_profile_selection.py",
+      "lines": [
+        71,
+        87
+      ],
+      "sha256_current": "a086d8b75aa327380bc8740add78daf026420d9b87ba5a839a9c957c696f64a3"
+    },
+    {
+      "id": "flows.test_scheduling_close_capability.CapabilityAdmissionTests.test_wrong_reported_model_pauses_after_the_real_bound_worker_returns",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/flows/test_scheduling_close_capability.py",
+      "lines": [
+        39,
+        104
+      ],
+      "sha256_current": "025a55bdcf411e9ee178c1500db3e875754df3737b4685f1e5e728d2a29d3e62"
+    }
+  ],
+  "external_policy": [
+    {
+      "id": "sim.test_academic_external_control_validation.AcademicExternalControlValidationTests.test_prepare_rejects_policy_that_disables_effects",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+      "lines": [
+        33,
+        39
+      ],
+      "sha256_current": "afb20941ebea856f1912ce2f85892548954542dd12ced717234725b6a710f50d"
+    },
+    {
+      "id": "sim.test_academic_external_control_validation.AcademicExternalControlValidationTests.test_prepare_rejects_missing_or_non_http_grant",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+      "lines": [
+        41,
+        48
+      ],
+      "sha256_current": "afb20941ebea856f1912ce2f85892548954542dd12ced717234725b6a710f50d"
+    },
+    {
+      "id": "sim.test_academic_external_control_validation.AcademicExternalControlValidationTests.test_prepare_rejects_actor_kind_different_from_actual_profile",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+      "lines": [
+        50,
+        55
+      ],
+      "sha256_current": "afb20941ebea856f1912ce2f85892548954542dd12ced717234725b6a710f50d"
+    },
+    {
+      "id": "unit.test_academic_external_validation.ExternalValidationTests.test_grant_scope_rejections_do_not_send_or_persist",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+      "lines": [
+        43,
+        58
+      ],
+      "sha256_current": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0"
+    },
+    {
+      "id": "sim.test_lifecycle_engine_external.SendTests.test_authority_revoked_at_send_gate_prevents_transport",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_external.py",
+      "lines": [
+        84,
+        93
+      ],
+      "sha256_current": "952a0df4b4ba79c15dabe0733ecad3f4b31dd05fbec6b17e3f02bb24bd39f1c8"
+    }
+  ],
+  "adopt_default_review_policy": [
+    {
+      "id": "sim.test_initialization_controls.ActivationEvidenceTests.test_a_changed_intent_receipt_or_unadopted_review_policy_is_missing",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        217,
+        225
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    },
+    {
+      "id": "sim.test_initialization_controls.InitialAdoptionTests.test_a_repeated_adoption_names_its_source_once_and_records_each_decision",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        282,
+        290
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    },
+    {
+      "id": "sim.test_initialization_controls.ProbeBatchTests.test_probe_without_named_editions_must_name_the_current_configuration",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        113,
+        119
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    },
+    {
+      "id": "sim.test_initialization_controls.AdoptionTests.test_adoption_of_a_configuration_other_than_the_current_one_is_rejected",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        342,
+        345
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    },
+    {
+      "id": "sim.test_initialization_controls.ActiveProbeTests.test_user_refreshes_exact_active_profile_and_other_authority_is_rejected",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        156,
+        181
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    },
+    {
+      "id": "sim.test_initialization_controls.AdoptionTests.test_public_default_init_rejects_unready_adoption_then_adopts_the_configured_one",
+      "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      "lines": [
+        353,
+        380
+      ],
+      "sha256_current": "110c9ea377788947d270be8a94dbd6d9d6502582f7795d94b8dfa5bb7964b114"
+    }
+  ]
+}

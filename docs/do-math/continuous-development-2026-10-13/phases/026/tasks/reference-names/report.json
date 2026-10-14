@@ -1,0 +1,133 @@
+{
+  "status": "complete",
+  "narrative": "N02 참조7문서의 현재810행에서 이름·표·코드예제를 고정판으로 판정했다. followup-packets의58 required_slices와 현재 제목/문장을 연결하고 1354개의 중복 포함 occurrence 좌표 및8코드펜스를 보존했다. 이 좌표수는 의미검증 완료율이 아니다. 각 절의 실제 owner/소비 문맥과 직접 대조한 단언·기존 실행을 구별한 판정표를 제출했으며 이 한정범위는 모두 유지 가능하다. 새 문구 교정·제거·검사수리 후보는 발견하지 못했다. 다른 기능의 전수 감사로 확장하거나 새 공통추론기를 만들지 않았다.\n\n공통 역할입력·저장/복원 원자료·설치후 도구·중앙 제출과 로컬 검사·수학승인, 조건문법·현재성·모델 요구/슬롯·자기점검·사용자 import·지식/학술을 실제 소유자로 연결했다. 동명 check/payload/record/checkpoint와 관계 입력 from_id/to_id·산출 source/target을 섞지 않았다. 이미 검수된 P01~P11/PURE와022~024의 제안단일지급·개정·입력초과/재시도 이름판정은 같은 현재 소비성질의 근거로 재사용했다.026 다른task 결과를 읽거나 기다리지 않았다.\n\nstdllib 보조분석으로6관찰연산·11조건연산·21기록가족·18가족 포인터와 기본모델 표를 현재 AST 정본에 직접 대조했고8예제의 JSON/명령 조합과 예시값을 구별했다.025 c2의875Python SHA가 현재와 같고 structure.test_doc_code의 정확33passed row를 원report에서 회수했다. 이 rows는025 실행이며026 새통과가 아니다. 제품 모듈/공식시험·미러·외부호출은 실행하지 않았다.\n\n시작/끝 소스2675개는025 source-inspected와 전건 동일하고 읽은 공용/배정/추가 정본·과거근거도 보존됐다. 제품 writes=[]·changes=[]이다. PR24/B110~B114는 현재 line-local owner/array/실제 boundary위임 slice만 유지한다. 정책다섯 의미의 별도배정과N01/N03·L01 Q1/Q2/원문byte·학술search/fetch실측·symlink미검사·최종전체일반/freshT3/전수변이/G7/최종review는 닫지 않는다. 상세한 근거와 재사용/제외/한계는 evidence/review.md와decisions.json에 있다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "025시작2675SHA 일치. 7문서810행/58 required_slices를 현재 제목/문장에 연결하고 현재 inline+8코드펜스의1354좌표를 한 번씩 배정했다. 기존 full source-census와 실제 Git baseline diff로 source_ref.sha256/bytes·preview 명시·sources[].local_path의 변화, 착수조건의이름불변 의미교정을 구별했다. 수학/예시ID/파일명/외부도구·산문 단수형은 review.md의구체적좌표로제외한다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/source-start.json",
+        "run:phases/026/tasks/reference-names/evidence/coordinate-check.json",
+        "run:phases/026/tasks/reference-names/evidence/decisions.json",
+        "run:phases/026/tasks/reference-names/evidence/occurrences.json",
+        "run:phases/026/tasks/reference-names/evidence/document-history.diff",
+        "run:phases/026/tasks/reference-names/evidence/review.md"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "실제 schema/상수/생산·소비함수와 현재 단언을 문맥별로 연결했다. 조건/관찰표·모델기본값·역할별평가/입출력·동명필드/저장vs복원·학술configuredvs완료를 구별했다.022~024의 지정 단일지급/재시도/개정은 재사용하고 부족한실행축은 review.md에구체적으로 유지한다. 별도정책task 결과와 L01외부결정에 의존하지 않는다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/decisions.json",
+        "run:phases/026/tasks/reference-names/evidence/static-checks.json",
+        "run:phases/026/tasks/reference-names/evidence/review.md",
+        "run:phases/022/tasks/review-delivery/evidence/section-name-decisions.json",
+        "run:phases/023/manager-evidence/review.md",
+        "run:phases/024/manager-evidence/review.md"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "58절의이름/조합에정의·소비·현재시험위치/직접대조단언 및 구체적비코드제외를 붙여유한 판정표로인도한다. 반복좌표는동일절소유의한정판정으로묶고원 occurrence를 유지했다. 한정범위는전부유지이며새수리/제거/추가검사후보가없어인위적장치를제안하지않는다. B110~B114/PR24는line-local·실제owner경계 slice만대조하고 다른N01/N03전체를닫지않는다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/decisions.json",
+        "run:phases/026/tasks/reference-names/evidence/coordinate-check.json",
+        "run:phases/026/tasks/reference-names/evidence/review.md",
+        "run:phases/025/tasks/document-trust/evidence/B110-doc-code.diff",
+        "run:phases/025/tasks/document-trust/evidence/B111-doc-code.diff",
+        "run:phases/025/tasks/document-trust/evidence/B112-doc-code.diff",
+        "run:phases/025/tasks/document-trust/evidence/B113-doc-code.diff",
+        "run:phases/025/tasks/document-trust/evidence/B114-doc-code.diff"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "시작/끝2675SHA와025검수판이전건같고읽은공용/원자료/정본·시험·과거근거의해시도같다. 제품/공용/기존task자료를수정하지않았다. 현재875Python과025실제33row증언·새정적분석·미실행제품관문을구별해report에인도했다. G4~G8과L01을완료로승격하지않는다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/source-start.json",
+        "run:phases/026/tasks/reference-names/evidence/source-end.json",
+        "run:phases/026/tasks/reference-names/evidence/end-protection.json",
+        "run:phases/026/tasks/reference-names/evidence/inputs-read.json",
+        "run:phases/026/tasks/reference-names/evidence/reused-rows.json",
+        "run:phases/026/tasks/reference-names/evidence/review.md"
+      ]
+    }
+  ],
+  "changes": [],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "fact",
+      "detail": "N02참조7문서/58절의현재이름·조합은현재소유자에연결해유지가능하다. 기존lexical표의이름수를완료분모로쓰지않았으며current source-census/full-span의실제변화3절과Git문장변화의성질을구별했다. 025공식33doc row와875PythonSHA의한정재사용을확인했고새제품수리후보는없다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/decisions.json",
+        "run:phases/026/tasks/reference-names/evidence/static-checks.json",
+        "run:phases/026/tasks/reference-names/evidence/reused-rows.json",
+        "run:phases/026/tasks/reference-names/evidence/review.md"
+      ],
+      "affects": [
+        "run:context.md#C10",
+        "run:plan.md",
+        "run:context.md#G1",
+        "run:context.md#G3"
+      ],
+      "next_action": "manager가이N02한정이름판정의유지/종결을반영한다. 별도담당에서구체적수리가반환되면공유work에통합하며이task만으로추론helper/반복회귀를추가하지않는다."
+    },
+    {
+      "id": "F2",
+      "kind": "fact",
+      "detail": "과거legacy후보의describe_source/not_implemented/restricted는현재scholarly서버의등록함수/ToolResult enum으로정의가확인된다. 이름의pending은이범위에서해소하되014list_sources완료와search/fetch/extract/원문이미지판독의실제성공은다른증언이다. scholarly.configured/tool:scholarly·TaskOutput조건문도설정/참조·조건부외부도구이며실제노출/완료를보장하지않는다. L01의운전프로필·출력byte/독해인증및다섯정책의전체의미는기존별도경계로남는다.",
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/decisions.json",
+        "run:phases/026/tasks/reference-names/evidence/review.md",
+        "repo:services/scholarly-mcp/server.py"
+      ],
+      "affects": [
+        "run:context.md#C10",
+        "run:context.md#G7",
+        "run:plan.md"
+      ],
+      "next_action": "manager는학술이름정의만유지판정으로처분하고G7의실측/말뭉치범위를확대하지않는다. L01 Q1/Q2와원문byte미충족,정책담당의독립판정은기존책임에남긴다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\026\\tasks\\reference-names\\evidence\\build_decisions.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/coordinates.stdout",
+        "run:phases/026/tasks/reference-names/evidence/coordinates.stderr"
+      ],
+      "detail": "58개 현재 절·7문서·inline/코드펜스 좌표 전건의 정확 단일 배정, 정본 파일/심볼 위치를 확인했다. 이름 존재는 의미 판정의 대체가 아니며 reason의 수기 문맥 판정과 함께 사용한다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\026\\tasks\\reference-names\\evidence\\verify_static.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/static.stdout",
+        "run:phases/026/tasks/reference-names/evidence/static.stderr"
+      ],
+      "detail": "제품 실행 없이 정본 AST/literal·문서 표·JSON 예제와 기존025 공식 row/875Python SHA를 대조했다. 기존 green과 정적 본문 검토, 신규 제품 실행을 구별한다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\026\\tasks\\reference-names\\evidence\\audit.py end",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/026/tasks/reference-names/evidence/preservation.stdout",
+        "run:phases/026/tasks/reference-names/evidence/preservation.stderr"
+      ],
+      "detail": "025 소스2675개의 시작/끝 및 현재 SHA, 읽은 공용 문서·원자료·추가 정본/시험/과거근거의 SHA를 대조했다."
+    }
+  ]
+}

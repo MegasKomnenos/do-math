@@ -1,0 +1,506 @@
+[
+  {
+    "reference": "repo:.claude/skills/do-math/README.md",
+    "lines": [
+      146,
+      157
+    ],
+    "symbol": "N01-020 policy sentence"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [
+      150,
+      154
+    ],
+    "symbol": "N01-218 defaults owner"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [
+      622,
+      639
+    ],
+    "symbol": "N01-230 conversation input and example"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [
+      977,
+      1000
+    ],
+    "symbol": "N01-268 model_policy failure row"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/references/초기화-운전.md",
+    "lines": [
+      162,
+      198
+    ],
+    "symbol": "N01-273 probe/adopt sentence and example"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+    "lines": [
+      9,
+      18
+    ],
+    "symbol": "_require_current_config"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+    "lines": [
+      21,
+      145
+    ],
+    "symbol": "_initialization_control"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+    "lines": [
+      21,
+      76
+    ],
+    "symbol": "capability_requirements/_capability_batch_requirements"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+    "lines": [
+      186,
+      274
+    ],
+    "symbol": "activation_requirements/grant_current"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+    "lines": [
+      277,
+      303
+    ],
+    "symbol": "initialize_state"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    "lines": [
+      27,
+      34
+    ],
+    "symbol": "conversation_lease_live"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    "lines": [
+      126,
+      177
+    ],
+    "symbol": "pause/conversation/resume"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    "lines": [
+      180,
+      272
+    ],
+    "symbol": "activation and dispatch gate"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    "lines": [
+      367,
+      525
+    ],
+    "symbol": "execution stop, preserved user control and conversation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+    "lines": [
+      1,
+      61
+    ],
+    "symbol": "DEFAULT_CONFIG/validate_config"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+    "lines": [
+      1,
+      21
+    ],
+    "symbol": "MODELS/LIMITS/ROLE_TIERS"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+    "lines": [
+      110,
+      174
+    ],
+    "symbol": "validate_policy/selection/work_profile_selection"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    "lines": [
+      205,
+      277
+    ],
+    "symbol": "build_profiles/apply_editions"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    "lines": [
+      299,
+      358
+    ],
+    "symbol": "select_profile/runtime_config/runner_tools"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/model_call.py",
+    "lines": [
+      143,
+      170
+    ],
+    "symbol": "classify_run lock prefix"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/provider_engine.py",
+    "lines": [
+      8,
+      13
+    ],
+    "symbol": "record_model_policy_violation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+    "lines": [
+      376,
+      426
+    ],
+    "symbol": "_call_stop_requested"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+    "lines": [
+      465,
+      533
+    ],
+    "symbol": "_receive_call model violation recording and pause"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+    "lines": [
+      1,
+      28
+    ],
+    "symbol": "deadlines and non-revoking notice"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/supervision.py",
+    "lines": [
+      15,
+      64
+    ],
+    "symbol": "supervision_facts/supervision_block"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    "lines": [
+      98,
+      134
+    ],
+    "symbol": "HOLD marker hold/release"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    "lines": [
+      182,
+      208
+    ],
+    "symbol": "engine_start_guard HOLD first"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    "lines": [
+      230,
+      253
+    ],
+    "symbol": "check HOLD first"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+    "lines": [
+      10,
+      50
+    ],
+    "symbol": "_external_control prepare"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+    "lines": [
+      163,
+      219
+    ],
+    "symbol": "_run_external_action send-time validation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+    "lines": [
+      38,
+      114
+    ],
+    "symbol": "validate_operation/execute_operation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+    "lines": [
+      384,
+      469
+    ],
+    "symbol": "grant interval/scope/authorize/source approval"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/review_policy.py",
+    "lines": [
+      36,
+      81
+    ],
+    "symbol": "build_review_policy"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+    "lines": [
+      122,
+      130
+    ],
+    "symbol": "DECISION adoption payload"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+    "lines": [
+      182,
+      187
+    ],
+    "symbol": "conversation payload"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    "lines": [
+      562,
+      568
+    ],
+    "symbol": "stored conversations schema"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    "lines": [
+      624,
+      647
+    ],
+    "symbol": "instance/lifecycle adoption schema"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "lines": [
+      695,
+      727
+    ],
+    "symbol": "lexical policy owner checker"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "lines": [
+      813,
+      827
+    ],
+    "symbol": "lexical tests"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    "lines": [
+      195,
+      294
+    ],
+    "symbol": "delivery/expiry/new-generation boundary assertions"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+    "lines": [
+      401,
+      444
+    ],
+    "symbol": "attach policy, omission, loss, replay"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_lifecycle_gates.py",
+    "lines": [
+      41,
+      68
+    ],
+    "symbol": "activation/pause initial phase"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_lifecycle_gates.py",
+    "lines": [
+      126,
+      130
+    ],
+    "symbol": "continue_authorized with zero connections"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    "lines": [
+      105,
+      119
+    ],
+    "symbol": "probe configuration hash"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    "lines": [
+      156,
+      180
+    ],
+    "symbol": "user authority for public initialization control"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    "lines": [
+      217,
+      225
+    ],
+    "symbol": "review adoption digest currentness"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    "lines": [
+      261,
+      290
+    ],
+    "symbol": "valid policy values and stored decisions"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+    "lines": [
+      336,
+      379
+    ],
+    "symbol": "stale adoption and current public configuration"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_engine_cli_advanced.py",
+    "lines": [
+      101,
+      117
+    ],
+    "symbol": "stored explicit pause and external prepare"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/flows/test_engine_cli_journey.py",
+    "lines": [
+      87,
+      101
+    ],
+    "symbol": "real CLI probe/adoption consumer"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/flows/test_engine_cli_journey.py",
+    "lines": [
+      141,
+      162
+    ],
+    "symbol": "activation returns before research execution"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    "lines": [
+      165,
+      186
+    ],
+    "symbol": "user pause and revocation stop propagation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    "lines": [
+      231,
+      261
+    ],
+    "symbol": "grant expiry/conversation loss stop propagation"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    "lines": [
+      252,
+      292
+    ],
+    "symbol": "HOLD blocks recovery without repeated calls"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+    "lines": [
+      33,
+      56
+    ],
+    "symbol": "disabled/missing grant/actor mismatch no effects"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_external.py",
+    "lines": [
+      56,
+      94
+    ],
+    "symbol": "success and revocation before send"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+    "lines": [
+      43,
+      58
+    ],
+    "symbol": "HTTP grant routing scope no effects"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_provider_profile_selection.py",
+    "lines": [
+      89,
+      137
+    ],
+    "symbol": "profile pinning and role floor/allowlist"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/flows/test_scheduling_close_capability.py",
+    "lines": [
+      39,
+      104
+    ],
+    "symbol": "model mismatch through worker and stored result"
+  },
+  {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+    "lines": [
+      1172,
+      1201
+    ],
+    "symbol": "13-A/B/C and preserved limits"
+  },
+  {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+    "lines": [
+      277,
+      309
+    ],
+    "symbol": "meaningful assertions independent expectation"
+  },
+  {
+    "reference": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+    "lines": [
+      500,
+      502
+    ],
+    "symbol": "soft time budget correction"
+  },
+  {
+    "reference": "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+    "lines": [
+      129,
+      157
+    ],
+    "symbol": "source freeze/test authoring rules"
+  }
+]

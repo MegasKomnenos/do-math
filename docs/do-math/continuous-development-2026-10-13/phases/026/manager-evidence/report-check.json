@@ -1,0 +1,47 @@
+[
+  {
+    "task": "policy-semantics",
+    "command": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\services\\continuous-development\\check.py",
+      "report",
+      "C:\\math",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+      "026",
+      "policy-semantics"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS report 026\n",
+    "stderr": ""
+  },
+  {
+    "task": "reference-names",
+    "command": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\services\\continuous-development\\check.py",
+      "report",
+      "C:\\math",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+      "026",
+      "reference-names"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS report 026\n",
+    "stderr": ""
+  },
+  {
+    "task": "role-contract-names",
+    "command": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\services\\continuous-development\\check.py",
+      "report",
+      "C:\\math",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+      "026",
+      "role-contract-names"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS report 026\n",
+    "stderr": ""
+  }
+]

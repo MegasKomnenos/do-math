@@ -1,0 +1,140 @@
+"""Evidence-only coordinates and literal comparisons; imports no product modules."""
+import ast
+from collections import Counter
+import hashlib
+import json
+from pathlib import Path
+import re
+from audit import REPO, RUN, OUT, DOCS, write
+
+P = '.claude/skills/do-math/scripts/do_math/'
+T = '.claude/skills/do-math/scripts/tests/'
+def source(path, symbols):
+    return {'path':'repo:'+P+path+'.py','symbols':symbols.split()}
+def test(path):
+    return {'path':'repo:'+T+path+'.py', 'scope':'현재 시험의 위치 근거. 직접 대조한 단언/기존 실행의 범위는 review.md와 static-checks.json에 한정한다. 이 세션에서 실행하지 않았다.'}
+
+# Each fixed slice is judged in its actual context. The inventories below are
+# lookup/coordinate data, not an inference of runtime behavior from string hits.
+SPECS = [
+('1', '행동 범위와 입력 판본 안내', '새 권한을 만들지 않는 역할 절차다. action/currentness와 허가 검사는 실제 경계가 맡는다.', [source('contracts','action_schema'),source('governance','authorize')], [test('unit/test_submission_check_invariants')]),
+('2', '실제 역할 입력/원자료/이력', 'submission_contract는 install_tools 후 반환, implementation_documents는 _context의 문서 metadata, task_catalog·configuration_source·ongoing_work는 prepare_role_input의 투영이다. recent_history는 계획/준비의 _planning_history와 다른 역할의 runtime.history[-8:]를 구별한다. results/output_files는 저장 task와 복원 경로, repair.previous_output는 action 수리 경계다. profile_selection은 실제 선택용 입력이며 다른 역할의 전체 profile source_ref와 다르다. 단일 제안 지급과 수리·retry 이름은022~024 지정 근거를 재사용한다.', [source('core_engine','CoreEngineMixin._context'),source('context_store','prepare_role_input'),source('role_input_requirements','judgment_input_keys judgment_input_paths'),source('submission','install_tools')], [test('sim/test_role_input_context')]),
+('3', '기록 지도 3분류와 record_map', 'INLINE_SCOPES/BLOCKED_KEYS/input_class가 싣기·지도·차단을 정하고 record_map이 snapshot/families/ledger/blocked_keys를 생성한다. read_tool은 설치 뒤 붙는 객체다.', [source('context_store','input_class record_map readable_record_index'),source('submission','install_tools')], [test('sim/test_role_input_context')]),
+('4', '저장 가족과 원장 파일', 'research/ 및 runtime/은 state_contract의 저장 가족이다. 표의 뒤 항목은 같은 root를 잇는 산문 단축 표기이지 독립 경로가 아니다. 지식 입력 사본은 원 형식 결과의 투영이며 원출력은 formal_results 기록에서 읽는다. state.json container는 identity 기록 색인과 구별한다.', [source('state_contract','default_state_contract'),source('context_store','readable_record_index readable_snapshot_path'),source('input_tool','main')], [test('sim/test_role_input_context')]),
+('5', '입력 읽기 명령/결과', '--list/--family/--id/--path/--output은 input_tool의 parser에 결합한다. --output은 단일 path·workspace 경계를 따르며 input/ 쓰기를 거부한다. records[].status 및 record/text/base64/output은 input_tool/read_content의 조건별 반환이다. checks/reads.jsonl은 읽기 로그이고 읽기 의미 인증이 아니다.', [source('input_tool','main'),source('context_store','read_content read_refusal')], [test('unit/test_context_catalog')]),
+('6', '참조 종류와 필드별 제한', 'reference_catalog.value/record_index/workspace:는 submission의 허용 참조 검사다. used_sources/evidence_refs는 각 역할의 필드 규칙을 추가로 받는다. 복사 파일은 새 workspace 근거와 구별하고 basis_refs는 admissible_basis_refs를 소비한다.', [source('submission','validate_reference reference_catalog validate_research_reference'),source('context_store','readable_snapshot_path')], [test('unit/test_submission_reference_catalog'),test('sim/test_role_input_context')]),
+('7', '독립 판단의 차단 이름', 'BLOCKED_KEYS/input_scope/readable_record_index/readable_snapshot_path가 역할+stage별로 실현한다. goal_audit의 research/goal_judgments는 연구 정본이지만 차단되며 supplied_only는 runtime의 지급 기록/산출만 허용한다. 이 역할 경계를 전역 이름 존재로 대체하지 않는다.', [source('context_store','input_scope readable_record_index readable_snapshot_path'),source('submission','supplied_reference_ids')], [test('sim/test_role_input_context')]),
+('8', '개정 대상과 처분/위임', 'action.revision_targets는 실행의 고정 대상/해시다. revision_requests는 요청이며 저작 권한이 아니다. revised/unchanged/deferred/delegated와 task_dispositions 대체는 revisions/integration의 실제 소비다.022~024 지정 이름 처분을 재사용한다.', [source('revisions','capture_targets'),source('submission','extension_schema'),source('integration','protocol_output')], [test('sim/test_planning_revision_obligations'),test('unit/test_submission_extension_semantics')]),
+('9', '질문 경로·해소·부분 대상', 'questions는 COMMON의 문자열 배열이며 question_routes/question_resolutions는 extension_schema의 역할별 가족이다. user/research/operations는 질문 owner이지 모델 역할 이름이 아니다. resolution_history/unresolved_target_ids는 questions 및 사용자 결정 적용의 저장 필드다.', [source('contracts','schema_for'),source('submission','extension_schema'),source('questions','link')], [test('sim/test_governance_question_sources'),test('unit/test_submission_extension_semantics')]),
+('10', '예산 표와 지급 검증/학술 도구', 'resources는 실제 per-model 슬롯 투영, formal_verifier는 중앙 검사 설정, preview는 install_tools 뒤 지급된 명령·한도다. preview.command의 --source/--declaration은 lean_preview parser다. scholarly.configured/tool:scholarly는 설정 전달과 허용 참조이며 실제 도구 완료 증거가 아니다.', [source('core_engine','CoreEngineMixin._context'),source('submission','install_tools'),source('lean_preview','main')], [test('sim/test_role_input_context'),test('boundary/test_submission_lean_preview')]),
+('11', '실행 기한/체크포인트/포착', 'execution-window/finish-request/stop-request는 관리 파일이며 checkpoint.json과 주 응답 checkpoint 문자열은 다르다. CHECKPOINT_SCHEMA 및 read_checkpoint/preserve_checkpoint/capture_checkpoint_files가 실제 필드·안정 바이트·누락·final_observation을 처리한다. TaskOutput은 제공될 때만 쓰는 외부 CLI 도구 이름이며 제품 필드가 아니다.', [source('observations','read_checkpoint capture_checkpoint_files preserve_checkpoint'),source('execution_window','')], [test('unit/test_observation_checkpoint'),test('unit/test_provider_execution_window')]),
+('12', '관찰 연산 표/규칙 예제', 'OPERATORS의 operator/subject_kind/source/unit 전건과 표가 일치한다. validate_rules가 id/operator/subject/basis/threshold/required_evidence/repeat_interval을 검사한다. current_revision/reason/rules는 교체 객체이며 최초 task_conditions에는 rules 배열만 쓴다. $execution과 현재 실행 ID/외국 실행 ID를 bind_task_rules/task_rules_from_execution으로 구별한다.', [source('observations','validate_rules validate_rule_proposal bind_task_rules task_rules_from_execution')], [test('unit/test_observation_rules'),test('unit/test_observation_rule_binding')]),
+('13', '정지 파일과 상태 이름', 'stop-request.json은 작업 실행 관리 자료다. output_accepted는 수신 결과이고 정지 요청 자체의 상태가 아니다. 새 execution ID/continuation은 기존 결과 포착 후 별도 실행에서 이어간다.', [source('execution_window',''),source('core_engine','CoreEngineMixin._context')], [test('unit/test_provider_execution_window')]),
+('14', '중앙 제출/로컬 검사/preview', 'submission_tool.main의 --output/--submit/--preview/--wait-seconds와 install_tools의 command/workspace가 실제 조합이다. control_server의 submit_draft/control_receipt 도구와 schema 필드는 별도 경계다. check.passed/capture_eligible/delivery.state=accepted/previewed/submitted는 각각 구조 검사·봉인·접수·미리보기·대기이며 편입·수학 승인과 다르다.022 실제 소비와 원row를 재사용한다.', [source('submission_tool','main'),source('submission','check_submission capture_eligible install_tools'),source('control_server','_mcp_server')], [test('sim/test_submission_control_protocol'),test('unit/test_submission_capture')]),
+('15', '주 응답·묶음·좌표·현재성', 'COMMON summary/used_sources/questions와 역할별 schema_for를 사용한다. integration_bundles의 output/knowledge/relations/확장 좌표는 member_values가 정하며 권한/currentness는 별도 적용한다. impact_set/previous_hashes의022~023 성과를 재사용한다. repair_responses와 checkpoint 문자열, 후보 저장과 output_accepted를 구별한다.', [source('contracts','schema_for'),source('integration','member_values protocol_output'),source('submission','payload_issues collect_outputs')], [test('unit/test_submission_bundle_coordinates'),test('unit/test_submission_integration_bundles')]),
+('16', '역할별 확장·metadata·기존 지식 변경', 'EXTENSION_ROLES/extension_schema가 일반·평가보충·고정 질문 조사별 가족을 제한한다. knowledge_metadata.title은 새 지식 제목이며 relation_claim은 종류·양끝·범위 주장이고 승인 관계가 아니다. knowledge_changes.changes는 knowledge.AUTHORED_FIELDS만 저작한다. --new-knowledge-id는 submission_tool의 ID 생성이며 권한/공개/예약을 만들지 않는다.', [source('submission','extension_schema load_extensions payload_issues'),source('knowledge','revise'),source('submission_tool','main')], [test('unit/test_submission_extension_semantics')]),
+('17', '과제 철회 이름과 전이', 'task_dispositions의 task_id/disposition=withdraw/reason은 준비·계획 확장이다. closed는 종료처분이며 완료 증거가 아니다. withdrawal은 contracts/revisions/task_scope의 현행계약·미완료·AI 생성·현재 incomplete 평가 조건으로 소비한다.', [source('submission','extension_schema'),source('task_scope','')], [test('unit/test_planning_task_withdrawal')]),
+('18', 'HTTP 요청/허가/원장과 학술 거부', 'external_requests.request의 method/url/body는 http_request가, grants의 origin/method/path와 기간은 external이 검사한다. GET/DELETE 비빈 body는 반려, POST/PUT 문자열은 UTF-8이며 redirect는 실 HTTP 포트가 제한한다. unknown은 미확인 효과, external_rejections.blocks_current_solution은 학술 해결 근거 거부이며 academic_resolutions는 계획 확장이다.', [source('http_request','check_url check_body'),source('external','prepare_operation'),source('academic','academic_status'),source('submission','extension_schema')], [test('unit/test_submission_extension_semantics'),test('sim/test_academic_external_control_validation')]),
+('19', '실패/수리/현재성 갱신/해소', 'max_output_repairs·waiting_actions·integration.currentness는 각각 수리 한도·보류·전제 변경이다. currentness_changed/provider_limit는 실제 실패 분류/후속. next_owner는 예시의 금지된 주 응답 필드이며 대기 진단의 실제 next_owner와 구별한다. action_resolutions는 정확 실패/수락된 같은 범위 결과만 해소한다.022~024의지정 재시도/운영처분 근거를 재사용하고 그 밖의 정책 다섯 의미는 별도 배정 경계다.', [source('submission','action_resolution_errors extension_schema'),source('repair_execution','')], [test('unit/test_submission_extension_semantics')]),
+('20', '조건 연산/가족/포인터/예제 전건', 'CONDITION_FIELDS/RECORD_FAMILIES/EXPOSED_FIELDS와 두 표·가족 목록·예제의 명령 조합을 정적으로 대조했다. source/target은 관계 산출 필드이며 relation_exists의 입력은 from_id/to_id다. decision_value_is는 task_scope.decision_is_current와 type(actual) is type(expected), /usable_as_k는 assess_use의 계산이다. artifact_ref는 불변 스냅숏의 archived path와 hash/format 검사다.', [source('planning','validate_condition evaluate_condition'),source('task_scope','decision_is_current')], [test('unit/test_planning_conditions'),test('unit/test_planning_condition_validation')]),
+('21', '예약 원장과 writer lock 안내', 'snapshot의 조회와 후속 live 예약을 구별한다. SessionSlots와 engine/recovery의 공유 reservation·writer lock이며 현장 관측은 그 시각만의 증거다.', [source('session_slots','SessionSlots')], [test('unit/test_provider_session_slots')]),
+('22', '기본 모델·용량·역할', 'MODELS/LIMITS/ROLE_TIERS와 기본표가 일치한다. work 역할은 execution_profiles.WORK_ROLES이며 starting/running/stopping 점유는 SessionSlots의 예약이다. 운영역할은 슬롯을 사용하지 않으며 누적 토큰/금액 예산으로 해석하지 않는다. 서비스 개발 모델 사용자 지시와 제품 기본 모델표는 다른 계약이다.', [source('model_policy','selection validate_policy'),source('session_slots','SessionSlots'),source('execution_profiles','')], [test('unit/test_scheduling_session_policy'),test('unit/test_provider_session_slots')]),
+('23', '평가 축과 역할 하한', 'difficulty/importance/reason은 ASSESSMENT_SCHEMA이며 등급은 높은 축+ROLE_TIERS를 사용한다. 미평가 수행/보충은 high, 지식을 낳은 task의 평가와 허용 profile 요구도 selection에서 소비한다. 빈 슬롯이나 연구 우선순위는 평가 축이 아니다.', [source('model_policy','assessment_tier selection work_profile_selection')], [test('unit/test_academic_model_policy_validation'),test('unit/test_scheduling_session_policy')]),
+('24', '평가 제출 예제·저장/전달', '일반 준비의 task_title과 계획의 선택 task_id는 assessment_key/validate_assessments의 문맥이다. 중복·누락·대상 밖을 구별하고 planning_engine의 수신자는 authored wire를 변형하지 않는다. model_assessment는 저장 task, model_decisions는 execution이며 model_assessments 확장과 구별한다.', [source('model_policy','assessment_key validate_assessments'),source('planning_engine','')], [test('unit/test_provider_model_metadata'),test('unit/test_academic_model_policy_validation')]),
+('25', '평가 보충 실행', 'assessment_targets/observation_rule_targets가 있는 준비는 일반 후보 생성과 다르며 task_id별 평가/보류만 허용한다. 미해소 반려를 취소하거나 과제를 새로 저작하는 경로가 아니다.', [source('model_policy','preparation_only validate_assessments'),source('submission','extension_schema')], [test('unit/test_academic_model_policy_validation')]),
+('26', '계획 순서와 미시작 queued_requests', 'queued_work는 입력된 미시작 요청이고 queued_requests.request_id/decision=keep|cancel/reason은 계획 확장이다. shared resource 예약을 넘는 선택 수와 순서·독립 후속의 admission은 SessionSlots/dispatch가 처리한다. 취소는 완료가 아니다.', [source('submission','extension_schema payload_issues'),source('dispatch_engine',''),source('session_slots','SessionSlots')], [test('unit/test_submission_extension_semantics'),test('unit/test_provider_session_slots')]),
+('27', '실행별 workspace와 결과 적용', 'runs/<ID>/workspace는 실행별 경로 템플릿이다. 입력/실행 산출 분리와 단일 정본 적용은 engine/context_store가 담당하며 OS sandbox를 뜻하지 않는다.', [source('core_engine','CoreEngineMixin._context'),source('context_store','prepare_role_input')], [test('sim/test_role_input_context')]),
+('28', '설정 변경과 capacity_waiting', 'session_limits.work의 zero/current capacity는 profile 판본이 아닌 현행 capacity constraint로 SessionSlots가 검사한다. configure는 CLI 설정 변경 명령이며 capacity_waiting은 reporting의 자원 대기 상태다.', [source('model_policy','validate_policy'),source('session_slots','SessionSlots'),source('cli_contract','build_parser')], [test('unit/test_scheduling_session_policy')]),
+('29', 'Claude 잠금/공급자 대기/사용량', 'claude_only_assigned_model은 Claude 호출 설정이며 모든 역할의 provider 선택을 바꾸지 않는다. tier_models/회복 profile·실제 reported model 불일치와 provider_limit dispatch_wait를 구별한다. provider_retry_*는 재관찰 간격이고 usage_segments와 model_usage_reported는 구간/누적 자료다. operator wake는 모델 없는 깨우기이며 unknown 외부효과를 재전송하지 않는다.', [source('model_policy','selection'),source('provider_limits',''),source('claude_adapter',''),source('cli_contract','build_parser')], [test('unit/test_provider_session_slots'),test('unit/test_provider_model_metadata')]),
+('30', '등록된 import 소비자와 payload 소유', 'import_consumer_catalog의 실제 kind/payload_contract를 사용하고 payload={}는 무변경이며 비빈 payload.kind=owner_kind/owner_ref 정확 대상은 validate_import_units가 소비한다. validate_governance_record는 함수 참조 표기이며 저장 record 전체와 제안 payload를 섞지 않는다.', [source('governance','import_consumer_catalog validate_import_units validate_governance_record')], [test('sim/test_governance_owner_contracts')]),
+('31', '통치 4종/내용 표', 'charter/policy/research_context/additional_audit는 GOVERNANCE_KINDS 및 validate_governance_record의 종류별 content다. 새 record의 id/kind/revision/supersedes/content와 status/approval_ref/source_ref/content_sha256 저장 metadata는 다른 경계다. decision_authority=user·nonempty scope/reasons·verdict_mapping enum은 직접 validator와 일치한다.', [source('governance','validate_governance_record governance_view')], [test('sim/test_governance_owner_contracts')]),
+('32', 'grant 내용과 교체', 'grant payload owner_ref=grant.id, local/http의 역할·과제·origin/method/path·credential_env는 control_contracts와 authorize/apply_decision에서 소비한다. local grant의 formal_check는 기계 역할이며 일반 model output 역할과 다르다. replaces는 payload wrapper에 속한다.', [source('control_contracts','validate_decision_shape'),source('governance','validate_import_units authorize apply_decision')], [test('sim/test_governance_owner_contracts')]),
+('33', 'revoke 좌표', 'payload.kind=revoke/grant_id와 owner_ref=grant_id는 validate_import_units 및 apply_decision의 허가 철회 경계다.', [source('governance','validate_import_units apply_decision'),source('control_contracts','validate_decision_shape')], [test('sim/test_governance_owner_contracts')]),
+('34', 'delegation 내용/권한 제외', 'delegation payload 새 id/status/original_decision_id/decision_kind/범위/resource_limits/expiry는 실제 사용자 결정 소비다. source_ref/decision_id/created_at은 적용기 소유다. proposal_adoption/contract_limit_continuation은 위임 제외 종류이며 enum 존재로 위임 가능하다고 승인하지 않는다.', [source('governance','validate_import_units apply_decision'),source('control_contracts','validate_decision_shape')], [test('sim/test_governance_owner_contracts')]),
+('35', '공개 질문 답변', 'question_answer.text/resolves_questions/target_ids·owner_ref는 validate_import_units와 사용자 결정/질문 해소를 잇는다. 질문 일부 대상 답변은 unresolved_target_ids를 남긴다. responds_to는 원 사용자 input 기록의 연결이지 payload 필드가 아니다.', [source('governance','validate_import_units apply_decision'),source('questions','link')], [test('sim/test_governance_question_sources')]),
+('36', 'task_scope 판본/처분', 'task_id/revision/contract_sha256/disposition/reason과 waive/transfer의 obligation_ids/target_task_id는 task_scope의 고정 계약/사용자 권한이다. 개정·면제·이전이 완료 의미를 대신하지 않는다.', [source('task_scope','decision_is_current'),source('governance','validate_import_units apply_decision')], [test('sim/test_governance_task_scope_contracts')]),
+('37', 'configuration 제안', 'payload.config는 변경 부분 객체이고 owner_ref=instance_id는 configuration owner가 확인한다. tier_models/session_limits.work/role_tiers는 config_schema와 validate_policy·configure의 실제 소비다. 초기 적용과 활성화 전 adoption은 별도다.', [source('configuration','validate_config'),source('model_policy','validate_policy'),source('governance','register_configuration_owner')], [test('sim/test_governance_owner_contracts'),test('unit/test_scheduling_session_policy')]),
+('38', '사용자 연구 기록/evidence', 'research_record/evidence의 record는 지식 후보이며 kind_definitions와 _KNOWLEDGE_FIELDS의 저작/원자료/origin/확인 범위 필드다. evidence라는 소비자 이름은 형식 인증/동일성 승인을 부여하지 않는다. record.explanation 등은 후보 record에 속한다.', [source('knowledge_io','import_candidate'),source('governance','import_owner_handlers')], [test('sim/test_knowledge_import_control')]),
+('39', '자기 점검의 역할 경계', 'research_work의 관찰은 실행 중 자기 점검이며 supplemental_research의 후속 observation_rules와 다른 경계다.', [source('execution_profiles',''),source('observations','ObservationTracker')], [test('unit/test_observation_tracker')]),
+('40', 'native 관찰/인지 경계', 'self_check_due는 의무 생성 사실이며 실제 진전 판단이 아니다. command 시작 위치·control_self_check 성공 반환·정확 payload 확인 뒤 응답 전 행동을 판정한다. 공급자 원시각/수신/중앙시각과 Job 종료를 구별한다.', [source('observations','ObservationTracker.record_delivery ObservationTracker._acknowledge_poll ObservationTracker.observe')], [test('unit/test_observation_tracker'),test('sim/test_observation_delivery')]),
+('41', 'rule_proposal 수신', '교체는 유효한 응답의 rule_proposal/current revision/profile binding 경계다. 제안 반려가 본체 응답 반려를 뜻하지 않고 이전 유효 rules를 유지한다.', [source('observations','ObservationTracker._replace_rules ObservationTracker.record_self_check_response')], [test('unit/test_observation_tracker')]),
+('42', '자기점검 응답/안전 경계/기한', 'SELF_CHECK_RESPONSE_SCHEMA가 execution_id/obligation_id/rule_revision/rule_results/progress/attempts/next_method와 정상·결함·판단불가를 정한다. 전달 self_check_id와 응답 obligation_id는 동일 실제 의무다. control_submit의 request_id/kind/payload는 제어 envelope이며 control_self_check의 고정 응답 ID와 구별한다. safety_boundary의 inflight_calls/call_ids는 실제 관찰 호출을 잇고 의무 인지를 대신하지 않는다. deadline_held_offset_ms는 저장 의무, payload.deadline_offset_ms는 전달 당시 worker_feedback이다.', [source('control_protocol','self_check_request_id self_check_response_errors'),source('control_transport','ControlTransport.worker_self_check'),source('observations','ObservationTracker.record_self_check_response ObservationTracker._hold_deadlines')], [test('unit/test_self_check_request_surface'),test('unit/test_observation_tracker')]),
+('43', '호출별 무응답/관측 window', 'tool_review_window_seconds는 선택 profile의 frozen window이고 tool timeout은 참고 설정이다. event_driven/periodic/deadline_only는 OBSERVATION_MODES며 모델 운영/기계에 재귀 진단을 만들지 않는다.', [source('observations','tracker_config ObservationTracker.observe'),source('execution_profiles','')], [test('unit/test_observation_tracker')]),
+('44', '재사용 안내', '질문에 맞는 가정/범위/근거/효력 대조를 하라는 수학 연구 절차다. 이름·자동 전이/새 함수 의무를 발명하지 않는다.', [source('knowledge','assess_use')], []),
+('45', '역할별 지식 저작 경계', 'action/role output와 EXTENSION_ROLES가 새 저작과 개정을 구별한다. 선언된 revision_targets의 후보 준비만 knowledge_changes를 쓰며 계획은 지식 본문을 저작하지 않는다. fixed review supplemental은 확장을 받지 않는다.', [source('submission','extension_schema'),source('contracts','action_schema')], [test('unit/test_submission_extension_semantics')]),
+('46', '질문/action/task와 부족 입력', 'action/task의 계약 질문을 읽는 절차다. questions와 remaining_work는 역할별 schema_for의 지원 필드이며 모든 역할에 remaining_work를 추가하는 주장이 아니다.', [source('contracts','schema_for')], [test('sim/test_role_input_context')]),
+('47', '지식 catalog·요약 효력·관계 종류', 'knowledge_catalog.path/summary는 원문·저자요약이고 verified_summaries의 item/exposition/basis와 formal_valid/usable_as_k/use_reasons는 현재 효력 투영이다. relation 종류 supports/analogous_to는 BUILTIN_DEFINITIONS의 비수학 연결이며 경로를 수학적 함의로 합성하지 않는다.', [source('knowledge','assess_use'),source('knowledge_io','catalog_definitions'),source('core_engine','CoreEngineMixin._context')], [test('sim/test_role_input_context')]),
+('48', '가정/범위/증거/효력 대조', 'confirmed_scope는 후보/지식의 저작 필드다. 원문 전사·가정·계산을 별도 확인하고 formal result/assessment의 효력을 분리하는 연구 절차는 기계 field 존재 검증과 구별한다.', [source('knowledge','assess_use'),source('knowledge_io','import_candidate')], [test('sim/test_knowledge_currentness')]),
+('49', 'reuse·인증 착수·최종 의존', 'reuse는 연구 입력 재사용 선언이며 인증 효력은 planning의 /usable_as_k 계산과 knowledge.assess_use가 추가로 검사한다. used_sources/dependencies는 원 입력 판본 의존, 불변 historical artifact는 과거 기록이며 현재 지식 ID와 다르다.', [source('planning','evaluate_condition'),source('knowledge','assess_use'),source('submission','validate_reference')], [test('unit/test_planning_conditions'),test('sim/test_knowledge_currentness')]),
+('50', 'knowledge/relations 저작·두 단계 수학관계', 'contracts의 새 지식·relations wire와 submission.extension_schema의 relations 증거를 구별한다. relation_claim은 knowledge_metadata의 종류·양끝·confirmed_scope 주장이다. formal_result_refs에는 FR, assessment_refs에는 IA를 넣고 KN/RC로 대체하지 않는다. relation_validation_source는 봉인된 relation-state이며 검사가 실제 source snapshot에서 검사한다. outcome submitted/partial/waiting/no_result는 수행 범위 상태다.', [source('contracts','schema_for'),source('submission','extension_schema payload_issues'),source('knowledge_io','import_candidate')], [test('unit/test_submission_extension_semantics'),test('sim/test_role_input_context')]),
+('51', 'H/P 수학 예시와 관계 방향', '정수 n의 인수분해/2·3 가분성/서로소 결합은 설명 예시다. H와 P/KN-H 등은 실제 기록 ID를 생성하지 않는다. derived_from/generated_from은 BUILTIN_DEFINITIONS상 source=H,target=P 방향이다. formally_implies는 형식·판정 증거가 필요한 수학 연결이며 H 인수분해만으로 P 가분성을 승인하지 않는다.', [source('knowledge_io','catalog_definitions'),source('contracts','schema_for')], [test('unit/test_submission_extension_semantics')]),
+('52', '학술 문서 도입', '제목만 있는 slice다. 호출이나 필드 계약을 주장하지 않는다.', [], []),
+('53', '학술 활용 목적', '문헌 반환과 연구 결론을 구별하는 절차다. 검색 무결과/한 요청 실패를 전 문헌 부재로 해석하지 않는다.', [], []),
+('54', 'scholarly 도구 이름', 'services/scholarly-mcp/server.py의 MCP 도구 scholarly/list_sources/describe_source를 실제 등록 정의와 연결했다. 도구 설정·허가·실제 노출은 서로 다르다.014 실호출은 list_sources 성공 완료 범위만 재사용한다.', [], [test('smoke/test_scholarly_live')]),
+('55', 'search/fetch/extract 상태와 source 선택', 'server.py search(source,query,options,start,limit,cursor,export)/fetch(source,target,parts)/extract(ref,...)와 ToolResult의 partial/not_implemented/restricted가 현재 이름/문맥 정본이다. 실패 뒤 source 선택은 호출자가 하고 operation은 지정 source에서 끝난다. search/fetch 실제 현재 실호출은 이번과014 최소 호출의 인증 범위 밖이다.', [], []),
+('56', '원문/이미지 extraction', 'extract의 render=true와 image_ref 재추출은 서버의 MCP ImageContent 반환 경계다. image artifact 저장과 AI 이미지 판독, 정의 전사와 계산은 다른 성질이다. 실제 PDF/DjVu 조회/판독을 수행했다고 주장하지 않는다.', [], []),
+('57', '학술 artifact 보존/복원/정정', 'scholarly-data/는 worker의 실행별 data-dir 및 context_store 수집 파일이며 scholarly://artifact URI는 발급 서버에 묶인다. knowledge_changes는 일반 생산자의 정정 가족이지 고정 질문 조사 권한이 아니다.429/Retry-After는 HTTP/자료원 오류 증거 어휘다.', [source('context_store','collect_outputs'),source('submission','extension_schema')], [test('smoke/test_scholarly_live')]),
+('58', '학술 역할/권한 경계', 'source/knowledge/grant는 이 절에서 기록 종류를 뜻하는 산문 단수형이다. grant 이름의 전역 존재로 문헌 도구에 외부 효과 권한을 부여하지 않는다. 고정 질문·동료 비공개 차단은 역할 계약과 input_scope가 담당한다.', [source('context_store','input_scope'),source('submission','extension_schema')], [test('sim/test_role_input_context')]),
+]
+
+packet = next(x for x in json.loads((RUN/'phases/001/tasks/document-closeout/evidence/followup-packets.json').read_text(encoding='utf-8-sig'))['packets'] if x['id']=='N02')
+census = json.loads((RUN/'phases/001/tasks/document-closeout/evidence/source-census.json').read_text(encoding='utf-8-sig'))
+for _, _, _, owners, _ in SPECS:
+    for ref in owners:
+        if ref['path'] == 'repo:'+P+'input_tool.py': ref['symbols'] = ['read_main']
+        if ref['path'] == 'repo:'+P+'lean_preview.py': ref['path'] = 'repo:'+P+'formal_preview.py'
+        if ref['path'] == 'repo:'+P+'provider_limits.py': ref['path'] = 'repo:'+P+'session_slots.py'; ref['symbols'] = ['SessionSlots']
+        if ref['path'] == 'repo:'+P+'submission.py' and 'collect_outputs' in ref['symbols']:
+            ref['symbols'].remove('collect_outputs')
+            owners.append(source('context_store','collect_outputs'))
+        if ref['path'] == 'repo:'+P+'knowledge.py' and 'revise' in ref['symbols']:
+            ref['symbols'] = ['validate_changes', 'revise_knowledge']
+occurrences = json.loads((OUT/'occurrences.json').read_text(encoding='utf-8'))
+decisions=[]
+for number, scope, reason, owners, tests in SPECS:
+    slice_id='N02-'+number.zfill(3)
+    old=next(x for x in packet['required_slices'] if x['id']==slice_id)
+    path=old['document'][5:]
+    lines=(REPO/path).read_text(encoding='utf-8-sig').splitlines()
+    start,end=old['start_line'],old['end_line']
+    assert start<=end<=len(lines)
+    if start>1: assert lines[start-1]==old['heading'], (slice_id,lines[start-1])
+    coords=[{**o, 'occurrence_id':i, 'decision_id':slice_id} for i,o in enumerate(occurrences) if o['path']==path and start<=o['line']<=end]
+    tokens=set(o['text'] for o in coords if o['kind']=='inline')
+    old_tokens={x['token'] for x in census['all_inline_spans'] if x['document']==old['document'] and start<=x['line']<=end}
+    if int(number)>=54:
+        owners.append({'path':'repo:services/scholarly-mcp/server.py','symbols':['ToolResult','list_sources','describe_source','search','fetch','extract','operation']})
+    decisions.append({'id':slice_id,'document':old['document'],'current_start_line':start,'current_end_line':end,
+                      'heading':old['heading'],'scope':scope,'decision':'maintain','reason':reason,
+                      'definitions_and_consumers':owners,'current_test_sources':tests,
+                      'occurrences':coords,'historical_lookup_added_tokens':sorted(tokens-old_tokens),
+                      'historical_lookup_missing_tokens':sorted(old_tokens-tokens),
+                      'prose_and_fence_review':'현재 slice 전문을 읽었다. 필드/명령 이외의 파일 경로·ID·값 예시는 아래 exceptions의 문맥별 제외에 따른다.',
+                      'required_repair':None, 'unobserved':'새 제품 실행/시험 통과/모델 독해를 주장하지 않는다.'})
+write('decisions.json', decisions)
+
+# Function names are checked for coordinate correctness, never accepted merely
+# because another module contains the same spelling.
+definition_errors=[]
+for row in decisions:
+    for ref in row['definitions_and_consumers']:
+        path=REPO/ref['path'][5:]
+        if not path.is_file(): definition_errors.append({'slice':row['id'],'missing_file':str(path)}); continue
+        tree=ast.parse(path.read_text(encoding='utf-8-sig'))
+        ref['sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+        ref['symbol_coordinates']=[{'name':n.name,'line':n.lineno,'end_line':n.end_lineno} for n in ast.walk(tree)
+                                   if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef)) and n.name in {s.split('.')[-1] for s in ref['symbols']}]
+        names={n.name for n in ast.walk(tree) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef))}
+        for symbol in ref['symbols']:
+            if symbol.split('.')[-1] not in names: definition_errors.append({'slice':row['id'],'path':ref['path'],'missing_symbol':symbol})
+    for ref in row['current_test_sources']:
+        if not (REPO/ref['path'][5:]).is_file(): definition_errors.append({'slice':row['id'],'missing_test':ref['path']})
+covered=[o['occurrence_id'] for d in decisions for o in d['occurrences']]
+assert sorted(covered)==list(range(len(occurrences)))
+write('decisions.json', decisions)
+write('coordinate-check.json',{'slices':len(decisions),'documents':len(DOCS),'lines':sum(len((REPO/f'.claude/skills/do-math/references/{d}.md').read_text(encoding='utf-8-sig').splitlines()) for d in DOCS),
+                             'occurrences':len(occurrences),'fences':sum(o['kind']=='fence' for o in occurrences),
+                             'all_occurrences_assigned_once':True,'definition_errors':definition_errors,
+                             'judgment_counts':dict(Counter(d['decision'] for d in decisions))})
+print('slices',len(decisions),'occurrences',len(occurrences),'definition_errors',definition_errors)
+raise SystemExit(1 if definition_errors else 0)

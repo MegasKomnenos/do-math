@@ -1,0 +1,167 @@
+[
+  {
+    "ref": "run:sources/user-decisions.md",
+    "sha256": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7",
+    "lines": 29
+  },
+  {
+    "ref": "run:sources/model-policy-2026-10-14.md",
+    "sha256": "1bb613af7f8679e62c193dee6918c246fc2661be81f50ac2d69051ad4fe11aa8",
+    "lines": 15
+  },
+  {
+    "ref": "run:sources/document-batching-2026-10-14.md",
+    "sha256": "e1c49aa20373f1a13fe138586b8eec241591060b4b2aadca06bf9fd39e336b41",
+    "lines": 18
+  },
+  {
+    "ref": "run:phases/001/tasks/document-closeout/evidence/followup-packets.json",
+    "sha256": "0a8339d872bf77bc6a0f319ac870063a5688ebbdd614fa46e06441c2c4619269",
+    "lines": 9916
+  },
+  {
+    "ref": "run:phases/001/tasks/document-closeout/evidence/binding-inventory.json",
+    "sha256": "c7641c59f1bec47c8beb9da2111da616213f4d267bfc30aacb790509a924e325",
+    "lines": 10302
+  },
+  {
+    "ref": "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+    "sha256": "6aed000e4aec62e504ed5942d96b2d2a6dfbcd7c4f1539fcf96cfc435887a754",
+    "lines": 11033
+  },
+  {
+    "ref": "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+    "sha256": "6552f056d4073d5f559ec10f20821c0860ee809b12688c9712fa22efd031b6a6",
+    "lines": 6681
+  },
+  {
+    "ref": "run:phases/025/manager-evidence/source-inspected.json",
+    "sha256": "f71a21459fb5f1cba4dca0c0d93009525c449f65569c1fafbb7045dbb542b0d0",
+    "lines": 2677
+  },
+  {
+    "ref": "run:phases/025/manager-evidence/verification.json",
+    "sha256": "84fa3de78da87458362bac846bee689edbd0468892e68005d4975c0ea14c1b1f",
+    "lines": 133
+  },
+  {
+    "ref": "run:phases/025/manager-evidence/review.md",
+    "sha256": "196651c4b154f45e6b4a1a3f1acda24f251bc82f9d23c43acb6f902a69eeea11",
+    "lines": 15
+  },
+  {
+    "ref": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+    "sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83",
+    "lines": 502
+  },
+  {
+    "ref": "repo:docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+    "sha256": "1f3b341cb52f2937135e25a97d2fa53b09c0eb4e997955aba6ba6db7da569336",
+    "lines": 1710
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/AGENTS.md",
+    "sha256": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2",
+    "lines": 12
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+    "sha256": "3eefbcd1a7f98e8db2d50e26885366161ee52e0dcb91c3dfe14fb8dc9255301e",
+    "lines": 157
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+    "sha256": "2ee9807356597d26f93f9385e91999871649b977bb7010cbfdbc24720588febb",
+    "lines": 779
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+    "sha256": "efb2f99163cbc490c3d098440828c4e38e9619a52bfb464de0788144d5766e09",
+    "lines": 831
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/독립-운영.md",
+    "sha256": "87b99d32dcf72f5164f094885cac0d3d8b47a5f09633e80de896c20f70106e48",
+    "lines": 62
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/동일성-검토.md",
+    "sha256": "de05683e4c1d1f1bb6f074b67aa6581febd4880f620d18c5544fcd2e49fd6279",
+    "lines": 107
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/목표-감사.md",
+    "sha256": "dfecc348d437b31c69acac5eb87f4abc8de9e8c02fd2592108ebe99e618b6453",
+    "lines": 49
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/보충-조사.md",
+    "sha256": "d6acf59643072a3944096bad33cc38322685e70d3292d350d7c2739a1a18f92f",
+    "lines": 61
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/연구-계획.md",
+    "sha256": "107dd250b6b2c5ec1c6243f9451f244086f7809e2696a05ea8fd66c6680e3429",
+    "lines": 155
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/연구-수행.md",
+    "sha256": "949bc5d7cf9200a8e26bd24c925c97ff99b5294cb469bf21d07a5b904e262e78",
+    "lines": 167
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/운영-점검.md",
+    "sha256": "c5141038e028d63767a1df70bb8d9be36e4c8a89ecab98008b530b489f563480",
+    "lines": 101
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/유지보수.md",
+    "sha256": "be999a68e22179b6aa33a78555453f8b04d3538040fa55f817c8b81f679e75f6",
+    "lines": 138
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/의도-해석.md",
+    "sha256": "ecc2265d459cea2ed77ea0ba4855fbcdeb80013b97f3c926889951da8e080f82",
+    "lines": 75
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/작업-계약-검토.md",
+    "sha256": "ff929bdf0c299a6632c32e138553383ab5cac2517d157750d95f2d4a3b988be7",
+    "lines": 143
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/계약/후보-준비.md",
+    "sha256": "2e85ca88a0ec0b24ba8a2d57f8a343eddaaf06e46550cc0ba5eccf580b86cfbb",
+    "lines": 241
+  },
+  {
+    "ref": "run:phases/022/tasks/review-delivery/evidence/section-name-decisions.json",
+    "sha256": "d55796c4accfd9517b98ea5b1fe60f4d787388611925f75500c9c420fce78f24",
+    "lines": 3519
+  },
+  {
+    "ref": "run:phases/023/manager-evidence/review.md",
+    "sha256": "7ae7f62522f17e7afa4d3094123e7f05b902ff29a56842f36376f73adffc56ad",
+    "lines": 25
+  },
+  {
+    "ref": "run:phases/024/manager-evidence/review.md",
+    "sha256": "534cd23bede6289757b1f8f616905394c12429abe61770dea00c1142e03ab98e",
+    "lines": 15
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+    "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a",
+    "lines": 372
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+    "sha256": "0312f31523828b63c6a45a39bac57cbab6cc669fbf8b77766d6ae1e1e0457077",
+    "lines": 174
+  },
+  {
+    "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    "sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+    "lines": 738
+  }
+]
