@@ -1,0 +1,82 @@
+{
+  "section": "N01-273",
+  "document": "repo:.claude/skills/do-math/references/초기화-운전.md",
+  "line": 180,
+  "quote": "`probe` 호출은 관측하는 프로필의 어댑터 `describe()`를 공급자마다 한 번 실제로 실행하고, 그 결과로 프로필마다 능력 증거를 만든다. 프로필·호스트·CLI 판본과 관측 시각에 결박된 증거이며, 능력 식별은 `{cli_path, cli_sha256, module_sha256, host}` 모양이다. `module_sha256`은 어댑터가 지정한 식별 모듈마다 그 파일의 해시를 담는다. Codex 어댑터의 식별 모듈은 `cli_worker`, `codex_worker`, `control_transport`, `file_io`, `windows_job`, `scholarly`, `codex_adapter`이고, Claude 어댑터는 여기에 `claude_worker`, `claude_adapter`, `claude_stream`을 더한다. 이 모듈 가운데 하나라도 바뀌면 기존 능력 증거는 현재 증거로 쓰이지 않는다. 증거는 `supported/unsupported/unknown`의 범위를 그대로 읽는다. 정적 `profile` 명령이나 시험용 fake CLI의 통과를 모든 실행 능력의 증거로 바꾸지 않는다. 실제 시작 실패의 증거는 단순 help/version 재관측으로 지워지지 않는다.",
+  "documented_codex": [
+    "cli_worker",
+    "codex_worker",
+    "control_transport",
+    "file_io",
+    "windows_job",
+    "scholarly",
+    "codex_adapter"
+  ],
+  "actual_codex": [
+    "cli_worker",
+    "codex_worker",
+    "control_transport",
+    "control_protocol",
+    "file_io",
+    "values",
+    "windows_job",
+    "scholarly",
+    "codex_adapter",
+    "codex_stream",
+    "provider_final",
+    "control_server",
+    "worker_request",
+    "cli_execution"
+  ],
+  "documented_claude": [
+    "cli_worker",
+    "codex_worker",
+    "control_transport",
+    "file_io",
+    "windows_job",
+    "scholarly",
+    "codex_adapter",
+    "claude_worker",
+    "claude_adapter",
+    "claude_stream"
+  ],
+  "actual_claude": [
+    "cli_worker",
+    "codex_worker",
+    "control_transport",
+    "control_protocol",
+    "file_io",
+    "values",
+    "windows_job",
+    "scholarly",
+    "codex_adapter",
+    "codex_stream",
+    "provider_final",
+    "control_server",
+    "worker_request",
+    "cli_execution",
+    "claude_worker",
+    "claude_adapter",
+    "claude_stream"
+  ],
+  "omitted_codex": [
+    "cli_execution",
+    "codex_stream",
+    "control_protocol",
+    "control_server",
+    "provider_final",
+    "values",
+    "worker_request"
+  ],
+  "extra_codex": [],
+  "current_helpers": {
+    "command": [],
+    "scoped": [],
+    "unowned": [],
+    "policy": [],
+    "function": [],
+    "constant": [],
+    "diagnostic": []
+  },
+  "scope": "actual class attributes and fixed document clause only; capability_identity was not invoked"
+}

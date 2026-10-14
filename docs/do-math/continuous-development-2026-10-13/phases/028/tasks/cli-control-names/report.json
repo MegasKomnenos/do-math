@@ -1,0 +1,187 @@
+{
+  "status": "complete",
+  "narrative": "028 cli-control-names의 A1~A4를 완료했다. N01-209~235의27절을 현재 제목·행·문서/절SHA에 다시 연결하고 원후보692전부와현재inline849/펜스374의1,223출현을 문맥의37소유묶음에 판정했다. 원packet의692는distinct_tokens에속하는후보합이며전체inline수는847이었다. 현재추가된234행의두dispatch_wait필드는024의승인된문장에연결했다. 이름없는구분절2개와synopsis자리값·stdlib/지역변수·외부이름/파일경로·23JSON의완전/부분객체를구별했다. 126행의needs_revision을포함한네명시음성예시는과제상태로승인하지않았다.\n\n판정은유지14·기존근거재사용8·검사보강3·문구수정2절이다. F1은knowledge의기존ID import 대체안내/새replacement·formal재사용/연산수와withdrawn재등록예외, F2는external609의전송원장과execution running 소유/HTTP409의failed·unknown분기, F3는현재문서helper의다섯최소오타거짓통과다. 실제도메인반례는현재코드와기존소비단언의정적대조이며새실행으로주장하지않는다. 순수schema/parser/문서helper관찰에서는잘못된query조합과sideways/improt반려, summary누락과개방control-shape의차이까지보존했다. 제품수리와관련회귀/미러는후속통합work에정확파일·성질·완료조건으로반환했다.\n\n027 manager와시작/종료2,675소스가같고입력30파일은불변이다. 027 c3의고유38문서passed row/selected/원보고SHA와현재875Python전건SHA를대조했으며새시험성공으로세지않았다. P03/P06/P08/P10·정책/연결및B132~B134의이미검수한정확성질만현재정의/문장/단언과원보고SHA에서재사용한다. 다른packet/같은owner의다른문장을인증하지않고, 이후달라진helper의옛전판본실행을일괄재사용하지않는다.\n\n초기분석helper의inspect이름충돌·미해결심볼좌표·후보692를전체inline으로가정한검산실패는자기evidence/실제tool반환과원verify-process exit1로보존하고최종순수관찰/좌표검산exit0과구별했다. 제품/시험/공용문서/미러/과거근거/캐시/index/graphify/Git상태의변경은0이며새제품시험은0건이다. complete는이배정조사완료다. L01 Q1/Q2·UTF8 byte요구/미충족·symlink1314 실제반려미검사·기본전체/freshT3/전수변이/G7최종판연결/G8최종review는유지한다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "원packet과배정의27 slice ID집합이정확히같고누락/중복0이다. 현재제목/행은원경계와일치하며027의시작소스2,675SHA도전건같다. 원692후보와현재전체849inline/374펜스의차이를명시했고코드펜스/표/산문의연산수·저장·반환이름주장을포함했다. 이름없는두절의이유도기록했다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/section-decisions.json",
+        "run:phases/028/tasks/cli-control-names/evidence/verification.json",
+        "run:phases/028/tasks/cli-control-names/evidence/source-start.json",
+        "run:phases/028/tasks/cli-control-names/evidence/input-profile.json"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "각출현을문맥의실제parser/schema/생산·소비좌표와입출력에연결했다. 동명state/field·부분객체·설정/명령·외부/파일명·음성예시를구분했다. knowledge와external의정확불일치는원문/실제정의/기존정상·반례단언에근거한F1/F2로반환했고정적대조를새실행으로쓰지않았다. 기존승인은동일문장/정의/단언과원manager/보고SHA가확인된성질만재사용했다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/section-decisions.json",
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/reuse-profile.json",
+        "run:phases/028/tasks/cli-control-names/evidence/pure-observations.json"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "현재doc_code/실제소비시험의단언을읽고검사결속표에보존했다. 027c3의38고유문서row와875Python전건SHA를재사용으로검산했다. 정상/최소오타5개의순수helper관찰과actualquery/operation반려를원결과로보존하며부분shape의허용과domain의반려를구분했다. 보강은한정CLI표/JSON/synopsis로제시하고제품시험은새로실행하지않았다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/pure-observations.json",
+        "run:phases/028/tasks/cli-control-names/evidence/observe-final-process.json",
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "27절전부에근거있는유지/기존근거재사용/문구수정/검사보강결론이있고정확미결0이다. 후속3발견을같은CLI문서·공유doc_code·소비시험·공식미러단위로묶을수있는정확파일/성질/완료조건으로인도했다. 시작/끝소스와사용한원보고SHA를보존하고자기검산을통과했다. 제출형식검사는report작성뒤지정Python/check.py로실행한다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/review.md",
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/source-start.json",
+        "run:phases/028/tasks/cli-control-names/evidence/source-end.json",
+        "run:phases/028/tasks/cli-control-names/evidence/reuse-profile.json",
+        "run:phases/028/tasks/cli-control-names/evidence/verification-submit-process.json"
+      ]
+    }
+  ],
+  "changes": [],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "issue",
+      "detail": "knowledge 절은 다섯 operation을 지원하고 기존 ID import로 그 기록을 대체·개정하며 두 경로에서 같은 과거 revision/history를 보존한다고 설명한다. 실제 PAYLOADS enum과 _knowledge_io_control/_knowledge_control은 import/register-kind/withdraw-kind/import-relation/revise/invalidate의 여섯 연산이다. import_candidate 275~276은 기존 ID를 'record ID already exists; revisions require a new ID'로 거부한다. replace_knowledge 513~558은 새 KN ID, supersedes, revision+1을 만들고 원 기록·해설을 superseded로 보존한다. summary만 개정하는 경우 현재 usable한 formal_result는 재사용하며 새 형식검사를 반드시 다시 실행하는 것은 아니다. register-kind의 기존 token 금지에도 withdrawn 종류는 새 KD 기록과 supersedes로 재등록하는 한정 예외가 있다.\n\n기대/최소반례: 문서의 현재 이름/조합을 실제 소비에 맞춘다. import의 id는 아직 사용하지 않은 새 canonical KN ID이며 기존 지식은 revise로 새 대체 기록을 만든다. 원 판정/형식 근거 보존과 현재 사용 여부, 조건부 formal 재사용을 구별한다. 여섯 operation 및 withdrawn 재등록 예외를 정확히 적는다. 이미 존재하는 KN ID와 완전한 정상 candidate를 import로 보내면 문서는 대체를 안내하지만 importer는 기존 ID 반려. 기존 test_duplicate_import_does_not_replace_saved_record는 실제 공개 control/inbox에서 원기록/기록수 불변과 정확 거부를 단언한다. test_same_id_import_rejected_explicit_revision_preserves_old_authorities는 import 거부, 새 replacement ID, old judgment/formal 권한 보존을 단언한다.\n\n검증범위: 정적 원문/소비/현재 기존 단언 대조. 도메인 함수나 테스트 runner를 새로 실행하지 않았다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ],
+      "next_action": "후속 통합 work에서 CLI knowledge 문장만 수정하고 공식 미러를 생성한다. 기존 두 import 거부/개정 소비 시험을 유지한다. 이 조사표를 별도 제품 schema로 만들지 않는다. 완료조건: 기존 ID import는 교체 경로로 안내하지 않으며 새 ID/supersedes/current formal 재사용과 여섯 operation/withdrawn 재등록 예외가 현재 정의와 일치한다. 관련 문서 검사와 기존 실제 소비 시험이 정상/반례를 보존한다."
+    },
+    {
+      "id": "F2",
+      "kind": "issue",
+      "detail": "609행은 외부 operation의 prepared·running을 기록하고 HTTP 응답이면 confirmed라고 설명한다. execute_operation의 실제 저장열은 prepared -> prepared(transmitted=true, transmission_phase=recorded) -> 결과다. running은 ExternalEngineMixin._external_execution_record가 생성하는 별도 execution.status다. 응답이 2xx이면 confirmed/succeeded=True, 비2xx와 effect_absent=True이면 failed/False, 비2xx 효과부재 미입증이면 unknown/succeeded=None이다. _run_external_action의 실제 persist 소비도 operation을 이 값 그대로 저장한다. enum에 running이 있다는 사실로 이 생산자의 전송원장이 running이라고 승인하지 않는다.\n\n기대/최소반례: 별도 실행 상태와 외부 원장의 전송 표지를 구분하고 HTTP 수신 사실/효과 성공/효과부재/불확실성을 실제 분기로 안내한다. 같은 POST 요청에 HTTP409를 받는다. effect_absent=True 응답은 failed/False, 근거 없는409는 unknown/None이다. 기존 test_non_2xx_is_failed_only_when_effect_absence_is_evidenced가 두 분기를 직접 단언하며 test_persist_before_send_confirm_and_redact는 성공 전 저장열 ['prepared','prepared','confirmed']와 전송표지를 단언한다.\n\n검증범위: 정적 원문/actual execute_operation 및 engine persist/현재 소비 시험 대조. HTTP 호출·도메인 실행·새 제품 시험 0건.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md"
+      ],
+      "next_action": "후속 CLI 외부 문장 수리를 같은 통합 문서/미러 작업에 포함한다. 외부 runtime의 기존 성공/불확실성 보호를 문서에 맞춘다는 이유로 바꾸지 않는다. 완료조건: HTTP409의 두 실제 분기와 2xx 정상, prepared 전송표지 및 별도 execution running이 문서에서 구분되며 기존 실제 소비 단언과 관련 회귀를 보존한다."
+    },
+    {
+      "id": "F3",
+      "kind": "issue",
+      "detail": "현재 문서에서 다섯 최소 변형(summary->summray, import->improt, capacity_waiting->capacity_waitng, reviewers 기본2->200, query direction both->sideways)을 각각 수행한 순수 문서 관찰에서 기존 command/scoped/unowned/policy/function 검사 결과가 모두 비었다. actual knowledge operation enum은 improt를 반려하고 candidate_shape_errors는 summary 누락을 반려하며 runtime.status enum에는 capacity_waitng가 없다. DEFAULT_CONFIG.reviewers는2다. actual JSON query parser는 sideways와 file-query+kind/record-query+prefix도 반려한다. 현재 정상문서는 이름/값이 맞으나 다음 같은 오타·동명/조합 변경이 문서검사를 빠져나가는 한정 공백이다. 초기화/준비/검토 산출과 operator mode를 검사하는027의 새 helper는 이 owner들을 맡지 않는다.\n\n기대/최소반례:  pure-observations.json에 원문/변형과 실제 helper 결과 및 실제 _json_arguments 반려 메시지를 보존했다. 정상/변형은 독립된 코드의 선언/DEFAULT_CONFIG/field owner와 대조했으며 current helper 결과를 기대값으로 삼지 않았다.\n\n검증범위: python -B observe.py가 순수 parser/schema/document helper만 호출했다. zero product tests; 최종 공식 회귀와 실제 domain 연결은 후속 작업 책임이다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/pure-observations.json",
+        "run:phases/028/tasks/cli-control-names/evidence/observe-final-process.json"
+      ],
+      "affects": [
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+        "repo:.claude/skills/do-math/scripts/tests/support/doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py"
+      ],
+      "next_action": "공유 doc_code/structure.test_doc_code의 한 작업으로 현재 CLI의 runtime 상태표, 설정 단일키 기본값/enum, query direction synopsis의 실제choices, knowledge 완전JSON의 실제operation/candidate_shape_errors를 한정 결속한다. 부분 academic_requirements/relation_claim·설정fragment·명령placeholder는 완전응답으로 검사하지 않는다. 다른 task 후보와 함께 한 통합 work/공식 미러/관련 소비 검사로 묶는다. 전역 자연어 추론기나 조사표의 제품 복제는 만들지 않는다. 완료조건: 현재 정상문서는통과하고 위의최소오타5개는각실제owner사유로반려한다. needs_revision 등126행의명시음성예시는그대로 유지하며 타역할/동명field 차용을허용하지않는다. 기존38문서단언과제공/소비시험을보존하고같은최종판본의공식회귀를확인한다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B evidence/observe.py (초기 inspect.py import)",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/analysis-failures.json"
+      ],
+      "detail": "자기helper의이름/인자처리오류로IndexError. 제품시험실패가아니며이름변경/가드뒤최종관찰에성공했다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B evidence/decide.py (초기 심볼 대조)",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/analysis-failures.json"
+      ],
+      "detail": "예비심볼을실제AST에서반려했다. engine.control/submit_control등현재정의를찾아연결한최종검산과구별한다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B docs/do-math/continuous-development-2026-10-13/phases/028/tasks/cli-control-names/evidence/observe.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/observe-final-process.json",
+        "run:phases/028/tasks/cli-control-names/evidence/pure-observations.json"
+      ],
+      "detail": "순수schema/parser/doc helper만호출. 정상문서와5오타/형태반례,23JSON의부분/완전구분,36설정키및actualquery조합/operation/candidate반려를관찰했다. unittest/run_tests나IOdomain실행이아니다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B docs/do-math/continuous-development-2026-10-13/phases/028/tasks/cli-control-names/evidence/decide.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/decisions-final-process.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/section-decisions.json"
+      ],
+      "detail": "27절/1,223출현과37owner의actualAST심볼·행·SHA및현재소비단언을작성하고미해결좌표0을확인했다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B docs/do-math/continuous-development-2026-10-13/phases/028/tasks/cli-control-names/evidence/verify.py (첫 판본)",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/verify-process.json"
+      ],
+      "detail": "원후보692를전체inline과동일하다고가정해실패했다. 원packet의distinct_tokens필터와847→849의현재차이를확인해수정했고원실패를보존한다."
+    },
+    {
+      "command": "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe -B docs/do-math/continuous-development-2026-10-13/phases/028/tasks/cli-control-names/evidence/verify.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/verification-submit-process.json",
+        "run:phases/028/tasks/cli-control-names/evidence/verification.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/reuse-profile.json"
+      ],
+      "detail": "027/start/end2,675SHA·입력30불변·원27slice집합/692후보전건·현재849inline차이·모든owner좌표/SHA·음성4값·c3원38row/875SHA와B132~B134원보고SHA를검산했다. 기존시험의읽기/재사용이며새실행통과수를보고하지않는다."
+    },
+    {
+      "command": "run_tests.py 공식 회귀·전체/freshT3/변이·새 OS/모델/HTTP/Lean/학술 실행",
+      "cwd": "repo:.",
+      "result": "not_run",
+      "exit_code": null,
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/review.md"
+      ],
+      "detail": "이번고정판조사의금지/배정밖실행이다. 새제품시험0이며필요수리의실제연결·공식회귀는후속통합work책임이다."
+    }
+  ]
+}

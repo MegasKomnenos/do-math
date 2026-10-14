@@ -1,0 +1,940 @@
+{
+  "existing_c3": {
+    "ref": "run:phases/027/tasks/doc-policy/evidence/c3/report.json",
+    "sha256": "81433763071a634c750c94f1c8fec1fdb2fbbfeaadb6cb08f80b8ecfb8cffaae",
+    "python_files": 875,
+    "python_sha_mismatches": [],
+    "document_rows": [
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_delivery_has_the_assigned_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.046999999962281436,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_governance_has_the_assigned_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.07800000003771856,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method",
+        "outcome": "passed",
+        "seconds": 0.0779999999795109,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_result_inputs_have_a_document_check_in_the_assigned_method",
+        "outcome": "passed",
+        "seconds": 0.18800000002374873,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_reviews_have_their_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_tools_have_their_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_trust_has_the_assigned_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_waits_have_the_assigned_actual_document_check",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_delivery_fields_require_their_actual_return_owner",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+        "outcome": "passed",
+        "seconds": 1.3119999999762513,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+        "outcome": "passed",
+        "seconds": 0.09399999998277053,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+        "outcome": "passed",
+        "seconds": 0.0470000000204891,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_governance_fields_require_their_actual_boundary_owner",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_identity_output_declarations_use_their_exact_stage_and_item",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_missing_preparation_document_section_or_json_example_is_rejected",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_missing_review_output_section_or_declaration_is_rejected",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_operating_summary_and_operational_input_keep_their_owners",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands",
+        "outcome": "passed",
+        "seconds": 0.125,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_preparation_partial_examples_use_their_exact_extension_branch",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_result_fields_require_their_actual_input_owner",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_review_fields_require_their_actual_input_owner",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_tool_fields_require_their_actual_installed_input",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_trust_fields_require_actual_inspection_and_environment_return",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      },
+      {
+        "id": "structure.test_doc_code.DocumentCodeTests.test_wait_fields_require_actual_condition_input_and_dispatch_wait",
+        "outcome": "passed",
+        "seconds": 0.0,
+        "details": []
+      }
+    ],
+    "new_run": false
+  },
+  "actual_current_assertions": {
+    "parser": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_documented_commands_and_options_exist",
+        "lines": [
+          564,
+          574
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "95c52ee49d18d17a9faa0afff197c501776bebd8f961a5f9505b79e844167da5",
+        "assertions": [
+          "self.assertGreater(len(options), 0)",
+          "self.assertEqual(sorted(set(missing)), [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+        "lines": [
+          576,
+          595
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "d964eff1229961430150d8072d570b792c357074db5e15339539142e66508aec",
+        "assertions": [
+          "self.assertEqual(command_issues('`do_math.py status --goal-file question.txt`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`do_math.py status [--goal-file question.txt]`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`status [--goal-file question.txt]`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`status [--json] [--snapshot OID]`', options, flags), [])",
+          "self.assertEqual(command_issues('`do_math.py init [--goal-file question.txt]`', options, flags), [])",
+          "self.assertEqual(command_issues('`timeline --include-operations`', options, flags), [])",
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli run `\\n --watch\\n```', options, flags), [])",
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli status `\\n [--goal-file question.txt]\\n```', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('```sh\\npython do_math.py status \\\\\\n [--goal-file question.txt]\\n```', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`do_math.py run --watch` and `--goal-file` belongs to init.', options, flags), [])",
+          "self.assertEqual(command_issues('`do_math.py run [--watch]` and `[--goal-file question.txt]` belongs to init.', options, flags), [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands",
+        "lines": [
+          81,
+          95
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "7d880c7bd97d49ab4988b6106f7cfad899d6c1806c8c9bce85e069c3893bb63a",
+        "assertions": [
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli operator invent `\\n --workspace here\\n```',\n                                       options, flags), [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`operator install|probe`', options, flags), [])",
+          "self.assertEqual(command_issues('`operator install|invent`', options, flags),\n                         [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`' + prefix + 'operator invent`', options, flags),\n                                 [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`' + prefix + 'operator ' + mode + '`', options, flags), [])"
+        ]
+      }
+    ],
+    "envelope": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "RequestFileTests.test_json_request_validates_types_and_preserves_common_error",
+        "lines": [
+          96,
+          106
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "fdfbef046f18018fc0dbb8fe12c8f08ef1f138a3572e522dca73b1b93fa99fbc",
+        "assertions": [
+          "self.assertEqual(code, 2)",
+          "self.assertEqual(calls.count('dispatch'), 0)",
+          "self.assertEqual(envelope['command'], 'query')",
+          "self.assertNotIn('result', envelope)",
+          "self.assertEqual(envelope['error'], {'kind': 'input_error', 'next_owner': 'user', 'retryable': False,\n                                             'message': \"invalid command payload: True is not of type 'integer'\"})"
+        ]
+      }
+    ],
+    "control": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "symbol": "JsonRequestMatrixTests.test_request_caller_and_top_level_identity_reach_the_parser",
+        "lines": [
+          10,
+          26
+        ],
+        "file_sha256": "c480d8517964dbcec31df188de0b1706cc0a831656eaadb54389e060a9ceb192",
+        "fragment_sha256": "a2d5a86d58f6edaabf2239aead1c700d79609e0c3518712fd2b8ce0819a8891c",
+        "assertions": [
+          "self.assertEqual((args.origin, args.request_id, args.idempotency_key, args.reason),\n                         ('operator', 'UC-explicit', 'try-2', '운영 중지'))",
+          "self.assertRaisesRegex(CliInputError, '^caller differs from payload origin$')",
+          "self.assertRaisesRegex(CliInputError, '^unexpected or duplicate ' + key + '$')",
+          "self.assertRaisesRegex(CliInputError, '^unexpected or duplicate ' + key + '$')"
+        ]
+      }
+    ],
+    "schedule": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "CliTests.test_configure_schedule_process_errors_preserve_the_applied_control",
+        "lines": [
+          72,
+          100
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "41042b12adc690313d21c85375d5571e5337656c4d4477a763209bc475b5f868",
+        "assertions": [
+          "self.assertEqual(code, 5)",
+          "self.assertEqual({key: result[key] for key in saved.snapshots[0]}, saved.snapshots[0])",
+          "self.assertEqual(result['effect'], 'applied')",
+          "self.assertEqual(scene.load()[1]['config']['operator_interval_seconds'], 8000)",
+          "self.assertEqual(result['operator_schedule']['status'], 'failed')",
+          "self.assertEqual(result['operator_schedule']['error'], str(error))",
+          "self.assertIsNone(result['operator_schedule']['reconcile'])",
+          "self.assertIn(repr(str(windowless.with_name('python.exe'))),\n                                  result['operator_schedule']['reconcile_error'])"
+        ]
+      }
+    ],
+    "task-state": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "symbol": "ReadinessTests.test_completed_removes_readiness_projection",
+        "lines": [
+          251,
+          258
+        ],
+        "file_sha256": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a",
+        "fragment_sha256": "4c5335128c4a9a2d381dd8ce64c18586b8292aee35fc0ec5148dbc2c4c4c7226",
+        "assertions": [
+          "self.assertIn(t['id'], e._task_readiness)",
+          "self.assertNotIn(t['id'], e._task_readiness)"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "symbol": "ReadinessTests.test_review_currentness_and_no_persisted_readiness",
+        "lines": [
+          174,
+          195
+        ],
+        "file_sha256": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a",
+        "fragment_sha256": "23cba10727ebcac35039a67c5c2687b1cd6ac5e26de22ed9f3171ece01504db4",
+        "assertions": [
+          "self.assertEqual(len([a for a in e.runtime['queue'] if a['role'] == 'task_contract_review']), 1)",
+          "self.assertEqual(e._task_readiness[t['id']]['state'], 'ready')",
+          "self.assertEqual(readiness_event['basis']['records'], e._task_readiness[t['id']]['basis'])",
+          "self.assertEqual(e.runtime['tasks'][t['id']]['status'], 'planned')",
+          "self.assertNotIn('task_readiness', e.runtime)",
+          "self.assertEqual(e._task_readiness[t['id']]['state'], 'not_ready')",
+          "self.assertNotIn('task_readiness', e.store.load()[2])"
+        ]
+      }
+    ],
+    "external-state": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "symbol": "ExternalSendTests.test_persist_before_send_confirm_and_redact",
+        "lines": [
+          80,
+          92
+        ],
+        "file_sha256": "25d82ccf869b275210f809345469f1424ff55260b1d8e82f86cf01cafd25f04e",
+        "fragment_sha256": "e2639ee2cc113f5d1bccba2c3731f827e1f80f8973d9370b5e509869103debf6",
+        "assertions": [
+          "self.assertEqual([x['status'] for x in calls], ['prepared', 'prepared', 'confirmed'])",
+          "self.assertTrue(calls[1]['transmitted'])",
+          "self.assertEqual(out['status'], 'confirmed')",
+          "self.assertNotIn('secret', str(out))",
+          "self.assertEqual([header for _, header, _ in http.requests], [[('X-Key', 'secret')]])"
+        ]
+      }
+    ],
+    "config": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationDefaultTests.test_default_input_limit_is_two_million_bytes_in_code_and_config_list",
+        "lines": [
+          14,
+          18
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "d90cb1bf7fc8903fee568eb3419decb0a77b987681625a297d9353ca1710d4c8",
+        "assertions": [
+          "self.assertEqual((DEFAULT_CONFIG['max_input_bytes'], int(documented)), (2_000_000, 2_000_000))"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationRuleTests.test_each_rule_names_the_field_it_refuses",
+        "lines": [
+          45,
+          60
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "7f6a09a171d96e8b1ef4fc9c503dea7944030ea825f54a59d80f560c92e62899",
+        "assertions": [
+          "self.assertIsNone(validate_config({'provider_retry_initial_seconds': 300, 'provider_retry_max_seconds': 300,\n                                           'lean_command': ['lean', 'file.lean']}, host_id=_entry.host_id))",
+          "self.assertRaisesRegex(ValueError, re.escape(message))"
+        ]
+      }
+    ],
+    "host": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationRuleTests.test_host_resources_name_this_host_and_every_capped_role",
+        "lines": [
+          72,
+          84
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "2380fdeebe024adfcbf999cca058d24c674412a04501f5a992932250b4e35b0e",
+        "assertions": [
+          "self.assertIsNone(validate_config({'host_resources': host}, host_id='fixture-host'))",
+          "self.assertRaisesRegex(ValueError, 'host_resources must name this local host')",
+          "self.assertRaisesRegex(ValueError, 'every capped role needs an explicit host demand')"
+        ]
+      }
+    ],
+    "init": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "symbol": "InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved",
+        "lines": [
+          279,
+          296
+        ],
+        "file_sha256": "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "fragment_sha256": "f60353a1f51a1ef5b41ee51579df5f1729fa1791e73c5237c7f79be3cab0b6cf",
+        "assertions": [
+          "self.assertNotIn('review_policy', self.sim.instance)",
+          "self.assertEqual(self.sim.engine.control_result(request['request_id'])['effect'], 'applied')",
+          "self.assert_public_policy_saved(expected, text='adopt configured default without prior policy',\n                                        adopt_default_review_policy=True)",
+          "self.assert_public_policy_saved(other, text='adopt another valid policy', review_policy=other)",
+          "self.assert_public_policy_saved(expected, text='replace prior policy with configured default',\n                                        adopt_default_review_policy=True)"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "symbol": "InitialAdoptionTests.test_explicit_review_policy_takes_precedence_over_default_adoption",
+        "lines": [
+          298,
+          304
+        ],
+        "file_sha256": "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "fragment_sha256": "d6a944cf5036133532039085b00d30aa4813f4b8380346a68a29cac010ed5a77",
+        "assertions": [
+          "self.assert_public_policy_saved(expected, text='explicit policy with default flag',\n                                        review_policy=expected, adopt_default_review_policy=True)"
+        ]
+      }
+    ],
+    "request": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "symbol": "RequestModeTests.test_retry_action_is_a_distinct_request_mode",
+        "lines": [
+          20,
+          35
+        ],
+        "file_sha256": "9f9f92e4dfee0153b7b19950ab956b9cd3849d8c2cb2722b78166fba9f378630",
+        "fragment_sha256": "1f8c2ad71af258607a6c516859fb5fc2b80c0b23eea42fc7846c2f20db3725c2",
+        "assertions": [
+          "self.assertEqual(retry.retry_action, 'AC-held')",
+          "self.assertIsNone(retry.role)",
+          "self.assertIn('reason', schema['properties'])",
+          "self.assertNotIn('text', schema['properties'])",
+          "self.assertRaisesRegex(CliInputError, '^argument --retry-action: not allowed with argument --role$')",
+          "self.assertRaisesRegex(CliInputError, '^unrecognized arguments: --text inspect state$')",
+          "self.assertRaisesRegex(CliInputError, r\"^invalid command payload: Additional properties are not allowed \"\n                                                   r\"\\('text' was unexpected\\)$\")"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "symbol": "RequestModeTests.test_operator_origin_is_offered_only_where_control_admission_accepts_it",
+        "lines": [
+          50,
+          60
+        ],
+        "file_sha256": "9f9f92e4dfee0153b7b19950ab956b9cd3849d8c2cb2722b78166fba9f378630",
+        "fragment_sha256": "d03fe061ae21209fc655062a07491e04423230c0616e83d18b587d1a2af7c4a9",
+        "assertions": [
+          "self.assertIn('decision', offered)",
+          "self.assertEqual({name for name, operator in offered.items() if operator}, set(OPERATOR_ACTIONS))",
+          "self.assertRaisesRegex(CliInputError, r\"^argument --origin: invalid choice: 'operator' \\(choose from user\\)$\")"
+        ]
+      }
+    ],
+    "operator": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "OperatorCommandTests.test_normal_probe_observes_without_calling_a_model_or_starting_research",
+        "lines": [
+          188,
+          200
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "8283d69ea18e93149fa7a1321bdeebf67a21b601bf5ba1507bc5c067d4c84463",
+        "assertions": [
+          "self.assertEqual(code, 0)",
+          "self.assertEqual(result['outcome'], 'observed')",
+          "self.assertIs(result['model_called'], False)",
+          "self.assertEqual(result['status']['snapshot'], before[0])",
+          "self.assertEqual(result['engine_start']['outcome'], 'startable')",
+          "self.assertEqual(self.scene.load(), before)",
+          "self.assertFalse(any(action.startswith('start') for action, _ in self.scene.ports.scheduler.calls))",
+          "self.assertEqual(self.scene.jobs.launched, [])",
+          "self.assertEqual(self.scene.cli.calls, [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "OperatorCommandTests.test_probe_status_failure_returns_its_error_without_a_required_model_marker",
+        "lines": [
+          202,
+          216
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "0558bec853781f0470cd2d7b4a013d2e3fa75dced737aeff2e95a0c08a666efb",
+        "assertions": [
+          "self.assertEqual(result, {'outcome': 'recovery_required', 'kind': 'engine_unavailable',\n            'error_type': 'SyntaxError', 'error': 'engine broken', 'observed_at': sim.clock.now()})",
+          "self.assertEqual(failure, result)",
+          "self.assertEqual(self.scene.load(), before)",
+          "self.assertEqual(self.scene.ports.scheduler.calls, [])",
+          "self.assertEqual(self.scene.jobs.launched, [])",
+          "self.assertEqual(self.scene.cli.calls, [])"
+        ]
+      }
+    ],
+    "knowledge-candidate": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "symbol": "CandidateImportTests.test_same_id_import_rejected_explicit_revision_preserves_old_authorities",
+        "lines": [
+          66,
+          80
+        ],
+        "file_sha256": "8220cf416676a54101a3324c4e87855461924f294db98c6bcd5d64dbc95bffe1",
+        "fragment_sha256": "4ac32e22965f2beb6840a8b217e8ea35faef6d90271af42bf75ca2e2bb06c3f3",
+        "assertions": [
+          "self.assertNotEqual(replacement['id'], kid)",
+          "self.assertEqual(replacement['formal_result_id'], ins['knowledge'][kid]['formal_result_id'])",
+          "self.assertEqual(changed['identity_assessments'], ins['identity_assessments'])",
+          "self.assertEqual(kr.proposal_view(changed, kid)['statement'], 'True')",
+          "self.assertEqual(kr.usable_links(changed, replacement['id']), [])",
+          "self.assertEqual(queued['queue'][-1]['role'], 'identity_review')",
+          "self.assertRaisesRegex(ValueError, '^record ID already exists; revisions require a new ID$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "symbol": "KnowledgeImportTests.test_duplicate_import_does_not_replace_saved_record",
+        "lines": [
+          84,
+          99
+        ],
+        "file_sha256": "4d532d66ce2c3a1599385518aa46c9b67a37f19de584d35ecb1b91dbf3318a8e",
+        "fragment_sha256": "37a4dd6eb2fb0751fdddfbff8cece75e46894e77f6ed8bfad0d15e23e5ad826f",
+        "assertions": [
+          "self.assertEqual(sim.instance['knowledge'][kid], saved)",
+          "self.assertEqual(len(sim.instance['knowledge']), count)",
+          "self.assertEqual(len(rejected), 1, sim.runtime['history'])",
+          "self.assertEqual(rejected[0]['reason'], 'record ID already exists; revisions require a new ID')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "symbol": "KnowledgeImportTests.test_ended_instance_refuses_knowledge_imports",
+        "lines": [
+          101,
+          112
+        ],
+        "file_sha256": "4d532d66ce2c3a1599385518aa46c9b67a37f19de584d35ecb1b91dbf3318a8e",
+        "fragment_sha256": "00750b7cff216446fc17b3c360a229ed31512db5ed3fafcd70ebc8dd99bfaa23",
+        "assertions": [
+          "self.assertEqual(engine.runtime['status'], status)",
+          "self.assertEqual(engine.instance['knowledge'], knowledge)",
+          "self.assertRaisesRegex(ValueError, '^closed/completed instance cannot apply knowledge controls$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_explanation_revision_preserves_formal_evidence_and_old_judgment",
+        "lines": [
+          52,
+          69
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "9fa62fb8aad0efdaa1d9beb5043a23fd6dc3d81e4f54deb3953d8d081ec24775",
+        "assertions": [
+          "self.assertEqual(revised['formal_results'], formal)",
+          "self.assertEqual(revised['identity_assessments'][aid], assessment)",
+          "self.assertEqual(revised['knowledge'][kid]['lifecycle'], 'superseded')",
+          "self.assertEqual(len(replacements), 1)",
+          "self.assertFalse(knowledge.assess_use(replacements[0], revised)['valid'])",
+          "self.assertEqual(old_use['status'], 'suspended')",
+          "self.assertEqual(revised['expositions'][state['knowledge'][kid]['exposition_id']]['lifecycle'], 'superseded')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_revision_changes_name_only_authored_fields",
+        "lines": [
+          86,
+          95
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "2a37a05dd215639a090b600bf88ac7f160645bae01add2126cd72b6a716b4ec0",
+        "assertions": [
+          "self.assertRaisesRegex(\n                    ValueError, '^changes name fields a revision cannot author: ' + field + '$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_revision_reuses_candidate_kind_and_dependency_validation",
+        "lines": [
+          75,
+          84
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "bfa827db514053cfddf711e754e65bb5b072659f0655bdbeb4596efa7f15d400",
+        "assertions": [
+          "self.assertRaisesRegex(ValueError, re.escape(reason))"
+        ]
+      }
+    ],
+    "knowledge-kind": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "symbol": "KindGuards.test_withdrawal_and_reregistration_preserve_predecessor",
+        "lines": [
+          202,
+          210
+        ],
+        "file_sha256": "7ff9f966a7cd990281f58fbeffda33b9d95df3529c3ac370967ac313b99d5412",
+        "fragment_sha256": "1f07316de6574ddb93630477eebfbd9c1dd7ec4eccafcf214e8fdce764ff8a2d",
+        "assertions": [
+          "self.assertEqual(runtime, {})",
+          "self.assertEqual(io.lookup_definition(withdrawn, 'knowledge', token)['status'], 'withdrawn')",
+          "self.assertEqual(io.lookup_definition(renewed, 'knowledge', token)['supersedes'], previous['id'])",
+          "self.assertEqual(io.lookup_definition(state, 'knowledge', token), previous)"
+        ]
+      }
+    ],
+    "knowledge-relation": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "symbol": "CandidateImportTests.test_relation_claim_endpoint_basis_matches_the_storage_contract",
+        "lines": [
+          82,
+          111
+        ],
+        "file_sha256": "8220cf416676a54101a3324c4e87855461924f294db98c6bcd5d64dbc95bffe1",
+        "fragment_sha256": "ad3da62d21fe97091b65863c42529a20ebcd696da82ff88bffab1db5a160b010",
+        "assertions": [
+          "self.assertEqual(ins['knowledge'][proof]['relation_endpoint_basis'], expected)",
+          "self.assertTrue(knowledge.validate_basis(expected, ins, run)['valid'])",
+          "self.assertEqual(list(caught.exception.absolute_path)[0], 'relation_endpoint_basis')",
+          "self.assertRaisesRegex(jsonschema.ValidationError, reason)"
+        ]
+      }
+    ],
+    "external": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "symbol": "ExternalOperationTests.test_non_2xx_is_failed_only_when_effect_absence_is_evidenced",
+        "lines": [
+          48,
+          61
+        ],
+        "file_sha256": "5754dc251f291cbf373ed439e2263c956909e8f2e20e4ab549cfaea375e30372",
+        "fragment_sha256": "5118ae2ad91fe83f612e4ba6b51e0f63255d33b96b5668cc7808397011e3ce9b",
+        "assertions": [
+          "self.assertEqual(result[\"status\"], \"failed\")",
+          "self.assertIs(result[\"succeeded\"], False)",
+          "self.assertTrue(result[\"effect_absent\"])",
+          "self.assertEqual((unproven[\"status\"], unproven[\"succeeded\"], unproven[\"error\"]),\n                         (\"unknown\", None, \"non-success response does not establish effect absence\"))"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "symbol": "ExternalOperationTests.test_reconciliation_cannot_assert_success_from_unbound_text",
+        "lines": [
+          42,
+          46
+        ],
+        "file_sha256": "5754dc251f291cbf373ed439e2263c956909e8f2e20e4ab549cfaea375e30372",
+        "fragment_sha256": "0c1c3c12bdfa11fc52b454c340c98127d2f70ce4ea878800b9bc69d0d488de74",
+        "assertions": [
+          "self.assertRaisesRegex(ValueError, \"^invalid reconciliation$\")"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_reconciliation_rejects_each_unbound_evidence_field",
+        "lines": [
+          162,
+          171
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "45bf43bef21d15d1d014de057824433a356a1f57667db99f38e6282d3d23b4ec",
+        "assertions": [
+          "self.assertEqual(len(self.case.http.requests), 1)",
+          "self.assertEqual(unknown, before)",
+          "self.assertRaisesRegex(ValueError, '^reconciliation evidence must bind the exact external operation$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_reconciliation_rejects_fact_different_from_outcome",
+        "lines": [
+          173,
+          178
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "8bec4c773839c2c62a837447d1c9ef07ccef44531560b86f28a6f2611dba434d",
+        "assertions": [
+          "self.assertEqual(unknown['status'], 'unknown')",
+          "self.assertRaisesRegex(ValueError, '^evidence fact differs from asserted outcome$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_effect_absence_retry_requires_established_absence",
+        "lines": [
+          150,
+          160
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "d072b8650408db91bcd08bbddab3bccf9ec841528dd7b6a7f8469b66095a61bd",
+        "assertions": [
+          "self.assertEqual(result, {**failed, 'status': 'prepared', 'transmitted': False,\n            'transmission_phase': 'not_started', 'retry_evidence': {**evidence, 'source': 'user'}, 'previous_outcome': 'failed'})",
+          "self.assertEqual(len(self.case.http.requests), 1)",
+          "self.assertRaisesRegex(ValueError, '^effect absence not established$')"
+        ]
+      }
+    ],
+    "conversation": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "symbol": "PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation",
+        "lines": [
+          274,
+          318
+        ],
+        "file_sha256": "c009ffd19f4c6297f157d2fb046f5edb4db597011f2467e9eaea213e10ed1275",
+        "fragment_sha256": "64b40060f74890c8355a8768c08c92678b5c1f9f30032d9241d6e6efbaef7141",
+        "assertions": [
+          "self.assertEqual(sim.instance['conversation_loss_policy'], 'continue_authorized')",
+          "self.assertFalse(sim.engine._conversation_live())",
+          "self.assertEqual(sim.runtime['lost_conversation_generations']['lease'], 1)",
+          "self.assertEqual(instance['conversation_loss_policy'], policy)",
+          "self.assertEqual(row['disconnect_policy'], policy)",
+          "self.assertEqual(row['generation'], generation)",
+          "self.assertEqual(row['source_ref'], request['request_id'])",
+          "self.assertFalse(sim.engine._conversation_live())",
+          "self.assertTrue(sim.engine._conversation_live())",
+          "self.assertEqual(sim.instance['lifecycle']['state'], 'active')",
+          "self.assertRaisesRegex(ValueError, 'new connection generation')"
+        ]
+      }
+    ],
+    "record-query": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+        "symbol": "QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+        "lines": [
+          23,
+          62
+        ],
+        "file_sha256": "2f5f54f25624fa7435564915ae6381c77bfeb237dc4c80be89b6eb00a61740fa",
+        "fragment_sha256": "81b207d5694465768a2c8035e33ca60f466bb8ff44c098e7714b70904abe9f44",
+        "assertions": [
+          "self.assertEqual(unowned_field_references(alias + '\\n`record.family`', schemas), ['record.family'])",
+          "self.assertEqual(_query_record({\"family\": \"question_links\", \"record\": {\"id\": \"Q\"}})[\"family\"], \"question\")",
+          "self.assertEqual(_query_record({\"family\": \"capability_evidence\", \"record\": {\"id\": \"C\"}})[\"family\"],\n                         \"capability_evidence\")",
+          "self.assertEqual(record[\"family\"], name)",
+          "self.assertEqual([(path, *issue) for path, text in texts\n                                      for issue in field_issues(text, record)], [])",
+          "self.assertEqual(field_issues('`query_record.family`', record), [])",
+          "self.assertEqual(field_issues(alias, record), [])",
+          "self.assertEqual(field_issues(alias, omitted), [('scoped field', 'record.family')])",
+          "self.assertIn(('references/CLI-실행-계약.md', 'scoped field', 'record.family'),\n                        [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])"
+        ]
+      }
+    ],
+    "file-query": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "QueryInputTests.test_query_rejects_unused_filters_before_reading_in_both_interfaces",
+        "lines": [
+          34,
+          64
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "77cee8bffaf10eb2c9166307076b3599dc835b19929c7f44884797c8ddf4c9ad",
+        "assertions": [
+          "self.assertEqual((calls.count('repository'), calls.count('records')), (0, 0))",
+          "self.assertEqual(str(refused.exception), argv_reason)",
+          "self.assertEqual(str(refused.exception), json_reason)",
+          "self.assertRaises(CliInputError)",
+          "self.assertRaises(CliInputError)"
+        ]
+      }
+    ],
+    "read": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "RequestFileTests.test_record_output_path_is_rejected_before_reading",
+        "lines": [
+          73,
+          79
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "11b4dbafff7cbdc4bfcd12540bc20edcf104dd10c213d0dd7d68a691126e3e3e",
+        "assertions": [
+          "self.assertEqual(code, 2)",
+          "self.assertEqual((calls.count('read'), calls.count('repository')), (0, 0))",
+          "self.assertEqual(envelope['error']['message'], '--output requires --path')"
+        ]
+      }
+    ]
+  },
+  "historical_binding_owners": [
+    {
+      "owner": "academic_validation",
+      "definition": "academic.py:academic_status",
+      "assessment": "두 고정 문서 경로 charter/status를 기존 순수 반환에 연결한다. 전체 학술 상태 의미 재감사를 추가하지 않는다."
+    },
+    {
+      "owner": "activation",
+      "definition": "RESEARCH_FIELDS.lifecycle.activation",
+      "assessment": "정본 정의의 이름/경로 검사로 유지한다. 필드 값과 권한·정책 의미의 전건 검증을 뜻하지 않는다."
+    },
+    {
+      "owner": "documents",
+      "definition": "B132 actual return boundary sentinel",
+      "assessment": "B132의 지정 실제 반환 검사를 유지한다. 문서 구조 검사의 defer는 이 생산자 제공 시험으로만 보완한다."
+    },
+    {
+      "owner": "formal_verifier",
+      "definition": "_context formal_verifier + install_tools.preview",
+      "assessment": "준비 완료/도구 설치 이후 실제 입력과 생성 도구 파일에 결속한다. configured/command 존재를 학술 호출이나 Lean 검증 성공으로 세지 않는다."
+    },
+    {
+      "owner": "governance_record",
+      "definition": "RECORDS.governance",
+      "assessment": "정본 정의의 이름/경로 검사로 유지한다. 필드 값과 권한·정책 의미의 전건 검증을 뜻하지 않는다."
+    },
+    {
+      "owner": "lifecycle",
+      "definition": "RESEARCH_FIELDS['lifecycle']",
+      "assessment": "저장 스키마와 역할 입력을 구별하는 정본 참조로 유지한다."
+    },
+    {
+      "owner": "plan_settle_wait",
+      "definition": "DispatchEngineMixin._plan_settle_waits action['dispatch_wait']",
+      "assessment": "13-C D-06 의미 대조와 함께 실제 dispatch_wait에 연결한다. 대기 이름 존재만으로 최초 준비/명시 요청/회복 예외를 증명하지 않는다."
+    },
+    {
+      "owner": "prompt",
+      "definition": "B132 actual return boundary sentinel",
+      "assessment": "B132의 지정 실제 반환 검사를 유지한다. 문서 구조 검사의 defer는 이 생산자 제공 시험으로만 보완한다."
+    },
+    {
+      "owner": "query_record",
+      "definition": "B130 actual return boundary sentinel",
+      "assessment": "B130의 지정 실제 반환 검사를 유지한다. 문서 구조 검사의 defer는 이 생산자 제공 시험으로만 보완한다."
+    },
+    {
+      "owner": "role_tiers",
+      "definition": "ROLE_TIERS",
+      "assessment": "제품의 공유 목록을 키로 투영하는 이름 검사다. 현재 문서 소비가 있으므로 유지하며 값의 의미나 실제 전달을 인증하지 않는다."
+    },
+    {
+      "owner": "runtime",
+      "definition": "default_state_contract families rooted at runtime",
+      "assessment": "저장 스키마와 역할 입력을 구별하는 정본 참조로 유지한다."
+    },
+    {
+      "owner": "scheduling_result",
+      "definition": "B131 actual return boundary sentinel",
+      "assessment": "B131의 지정 실제 반환 검사를 유지한다. 문서 구조 검사의 defer는 이 생산자 제공 시험으로만 보완한다."
+    },
+    {
+      "owner": "session_limits",
+      "definition": "config.properties.session_limits",
+      "assessment": "정본 정의의 이름/경로 검사로 유지한다. 필드 값과 권한·정책 의미의 전건 검증을 뜻하지 않는다."
+    },
+    {
+      "owner": "status",
+      "definition": "B121/B131 actual return boundary sentinel",
+      "assessment": "B121/B131의 지정 실제 반환 검사를 유지한다. 문서 구조 검사의 defer는 이 생산자 제공 시험으로만 보완한다."
+    },
+    {
+      "owner": "submission_contract",
+      "definition": "install_tools final contract",
+      "assessment": "준비 완료/도구 설치 이후 실제 입력과 생성 도구 파일에 결속한다. configured/command 존재를 학술 호출이나 Lean 검증 성공으로 세지 않는다."
+    },
+    {
+      "owner": "task",
+      "definition": "RECORDS['tasks']",
+      "assessment": "저장 스키마와 역할 입력을 구별하는 정본 참조로 유지한다."
+    }
+  ],
+  "limits": "doc_code는명령/flag·inline dotted owner·지정producer를검사한다. 모든단독값/JSON키/자연어검사가아니다. actual_current_assertions는현재소스단언이며새실행이아니다. 원38row는각범위에서만재사용한다."
+}

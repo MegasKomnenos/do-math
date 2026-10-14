@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\028\tasks\role-glossary-names\evidence\finish.py", line 56, in <module>
+    assert hashes[file]==sha(path),(origin,file)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('024/c2', 'tests/structure/test_doc_code.py')

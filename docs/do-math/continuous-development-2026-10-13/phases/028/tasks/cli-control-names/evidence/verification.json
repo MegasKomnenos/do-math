@@ -1,0 +1,92 @@
+{
+  "source_files": 2675,
+  "start_matches_027": true,
+  "source_changed": [],
+  "input_files": 30,
+  "inputs_unchanged": true,
+  "assigned_slices": 27,
+  "exact_slice_union": true,
+  "missing_slices": [],
+  "duplicate_slices": [],
+  "inline_occurrences": 849,
+  "historical_all_inline_occurrences": 847,
+  "historical_candidate_occurrences": 692,
+  "historical_candidates_covered": true,
+  "inline_added_since_001": [
+    [
+      234,
+      "dispatch_wait.since"
+    ],
+    [
+      234,
+      "dispatch_wait.limit_seconds"
+    ]
+  ],
+  "inline_removed_since_001": [],
+  "historical_inline_difference_explanation": "027 assignments sum original candidate_occurrences filtered by each slice distinct_tokens, not all inline spans. Current broader inventory retains all 849 inline, including two dispatch_wait fields introduced by prior approved024; every original692 candidate is retained.",
+  "fence_occurrences": 374,
+  "total_name_coordinates": 1223,
+  "owner_groups": 37,
+  "negative_task_examples": [
+    {
+      "line": 126,
+      "column": 280,
+      "surface": "ready",
+      "name": "ready",
+      "form": "inline/table",
+      "owner_groups": [
+        "task-state"
+      ],
+      "classification": "explicit-negative-task-state",
+      "judgment_basis": "126행의 명시 음성 예시. pure-observations.json의 실제 tasks.status enum 거부와 일치하며 과제상태 양성 목록에 넣지 않는다."
+    },
+    {
+      "line": 126,
+      "column": 289,
+      "surface": "performing",
+      "name": "performing",
+      "form": "inline/table",
+      "owner_groups": [
+        "task-state"
+      ],
+      "classification": "explicit-negative-task-state",
+      "judgment_basis": "126행의 명시 음성 예시. pure-observations.json의 실제 tasks.status enum 거부와 일치하며 과제상태 양성 목록에 넣지 않는다."
+    },
+    {
+      "line": 126,
+      "column": 303,
+      "surface": "assessing",
+      "name": "assessing",
+      "form": "inline/table",
+      "owner_groups": [
+        "task-state"
+      ],
+      "classification": "explicit-negative-task-state",
+      "judgment_basis": "126행의 명시 음성 예시. pure-observations.json의 실제 tasks.status enum 거부와 일치하며 과제상태 양성 목록에 넣지 않는다."
+    },
+    {
+      "line": 126,
+      "column": 316,
+      "surface": "needs_revision",
+      "name": "needs_revision",
+      "form": "inline/table",
+      "owner_groups": [
+        "task-state"
+      ],
+      "classification": "explicit-negative-task-state",
+      "judgment_basis": "126행의 명시 음성 예시. pure-observations.json의 실제 tasks.status enum 거부와 일치하며 과제상태 양성 목록에 넣지 않는다."
+    }
+  ],
+  "c3_reused_doc_rows": 38,
+  "c3_python_files": 875,
+  "c3_python_sha_mismatches": [],
+  "conclusions": {
+    "기존 근거 재사용": 8,
+    "유지": 14,
+    "검사 보강": 3,
+    "문구 수정": 2
+  },
+  "new_product_tests": 0,
+  "findings": 3,
+  "analysis_scope": "Fixed document and code; no OS/network/model/domain effects or test runner."
+}

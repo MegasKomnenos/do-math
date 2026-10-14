@@ -1,0 +1,2637 @@
+{
+  "parser": {
+    "role_and_io": "CLI argv/JSON request -> Namespace. Command-specific flags, exclusive modes and declared user/operator origin belong to cli_contract; execute supplies cross-option/domain checks.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "build_parser",
+        "lines": [
+          42,
+          178
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "4abe1055ffae288dd49ebc74fe4967f41aa5731db04ac7ac1f4d93e20ec7b73a"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "_json_arguments",
+        "lines": [
+          240,
+          282
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "6c6310b5ddf76308d40cfdbf044680c60df2056b01fd4de8a61c84e35b2ecfd3"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "describe_commands",
+        "lines": [
+          194,
+          237
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "825c5a3cdf76938921e09f3110bee32c006d4d81f90eeb8117df9dfb727d87c1"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "OPERATOR_ACTIONS",
+        "lines": [
+          28,
+          28
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "6abb66bd3915f0fcf706c7ff6b396c7a0537cbc3b3caa83252e712b27d0399ca"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "REQUESTABLE_ROLES",
+        "lines": [
+          20,
+          20
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "55437b33a0ac84c55b343ba1c4902b3a1d1be97f7daef72263bde5e46ad60181"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "USER_DECISION_SETTINGS",
+        "lines": [
+          24,
+          25
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "53cd388715bed5be58f493c16dfca83f07af262e7d4549c4d92cecb1597a6593"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_documented_commands_and_options_exist",
+        "lines": [
+          564,
+          574
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "95c52ee49d18d17a9faa0afff197c501776bebd8f961a5f9505b79e844167da5",
+        "assertions": [
+          "self.assertGreater(len(options), 0)",
+          "self.assertEqual(sorted(set(missing)), [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+        "lines": [
+          576,
+          595
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "d964eff1229961430150d8072d570b792c357074db5e15339539142e66508aec",
+        "assertions": [
+          "self.assertEqual(command_issues('`do_math.py status --goal-file question.txt`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`do_math.py status [--goal-file question.txt]`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`status [--goal-file question.txt]`', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`status [--json] [--snapshot OID]`', options, flags), [])",
+          "self.assertEqual(command_issues('`do_math.py init [--goal-file question.txt]`', options, flags), [])",
+          "self.assertEqual(command_issues('`timeline --include-operations`', options, flags), [])",
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli run `\\n --watch\\n```', options, flags), [])",
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli status `\\n [--goal-file question.txt]\\n```', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('```sh\\npython do_math.py status \\\\\\n [--goal-file question.txt]\\n```', options, flags),\n                         [('command option', 'status', '--goal-file')])",
+          "self.assertEqual(command_issues('`do_math.py run --watch` and `--goal-file` belongs to init.', options, flags), [])",
+          "self.assertEqual(command_issues('`do_math.py run [--watch]` and `[--goal-file question.txt]` belongs to init.', options, flags), [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "symbol": "DocumentCodeTests.test_operator_modes_use_the_actual_parser_for_bare_and_entry_commands",
+        "lines": [
+          81,
+          95
+        ],
+        "file_sha256": "78aecea80f01eaa42a08415b67a7d16a60d2127d6059803adee579ea049a5402",
+        "fragment_sha256": "7d880c7bd97d49ab4988b6106f7cfad899d6c1806c8c9bce85e069c3893bb63a",
+        "assertions": [
+          "self.assertEqual(command_issues('```powershell\\npython $dmCli operator invent `\\n --workspace here\\n```',\n                                       options, flags), [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`operator install|probe`', options, flags), [])",
+          "self.assertEqual(command_issues('`operator install|invent`', options, flags),\n                         [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`' + prefix + 'operator invent`', options, flags),\n                                 [('command mode', 'operator', 'invent')])",
+          "self.assertEqual(command_issues('`' + prefix + 'operator ' + mode + '`', options, flags), [])"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "envelope": {
+    "role_and_io": "execute -> (result/code), _emit -> one result/error envelope; input/tool/contract errors use 2/5/5. Human status and CSV timeline are text unless request-file forces envelope.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "_emit",
+        "lines": [
+          321,
+          327
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "11b58b7d308e2970fa5b02852da0f88e78040e67c32d3b574eea4a6fff815cbd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "_fail",
+        "lines": [
+          330,
+          334
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "8c3b7ed31d8716ce0f88f167be596bcf757548df0f3bf7dae62be95c90e3c1df"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "main",
+        "lines": [
+          337,
+          385
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "9e5156f1103cc6fe35e96d2cb3dfbfbff588eaf7a295e03fd3a90037dd9252a6"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "RESPONSE_FIELDS",
+        "lines": [
+          17,
+          17
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "fd1ee30ebc81a8e1a05b074e74e7990bc6d24a76a5ce3fa37c4d4a0fe8aab45d"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "ERROR_EXIT_CODES",
+        "lines": [
+          25,
+          25
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "349a432701d448e5c92e51136acfc2fb47d21c8944fd5c2f08ffb05b814627bf"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "WIRE_VERSION",
+        "lines": [
+          21,
+          21
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "87ad7259f16a5181d03069979d861a6d7dd496f3e35faa636d6f97781099400f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "symbol": "RESPONSE_CONTRACT_ID",
+        "lines": [
+          27,
+          27
+        ],
+        "file_sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a",
+        "fragment_sha256": "5877b3896841f9704e081e3d5a39673b7b6637ffdf607116b4d5a592d616fe80"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "RequestFileTests.test_json_request_validates_types_and_preserves_common_error",
+        "lines": [
+          96,
+          106
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "fdfbef046f18018fc0dbb8fe12c8f08ef1f138a3572e522dca73b1b93fa99fbc",
+        "assertions": [
+          "self.assertEqual(code, 2)",
+          "self.assertEqual(calls.count('dispatch'), 0)",
+          "self.assertEqual(envelope['command'], 'query')",
+          "self.assertNotIn('result', envelope)",
+          "self.assertEqual(envelope['error'], {'kind': 'input_error', 'next_owner': 'user', 'retryable': False,\n                                             'message': \"invalid command payload: True is not of type 'integer'\"})"
+        ]
+      }
+    ],
+    "reuse": [
+      "run:phases/027/tasks/doc-policy/evidence/c3/report.json"
+    ]
+  },
+  "control": {
+    "role_and_io": "control admission normalizes request identity and queues exact request; _control applies or returns pending/lock busy. Replay is the original receipt; origin is declared authority, not authentication.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "symbol": "control",
+        "lines": [
+          53,
+          62
+        ],
+        "file_sha256": "b16763fa9d6c01d535ba345c29a9b7af6d1dce6723734b7db7dc13dbb87381b5",
+        "fragment_sha256": "deb9582b48cfbfcd4b68071c20cfb33756a5afabcb84e21e68056919b0f05d8e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "submit_control",
+        "lines": [
+          229,
+          333
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "c2d0e9e722dad508e006ddacb52d926d729909b5171c416fec59dd2f5845d7bc"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "control_request_id",
+        "lines": [
+          36,
+          52
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "d551dbb53c6ccc92c9baea45a5119132f6b039d50ed3b6cfcc9a28393eda0fbd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "validate_control_payload",
+        "lines": [
+          209,
+          219
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "14a0a37e23a86c617b6004b75cf0f6a33dc2a127adda2af4baf29adc85189412"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "validate_request_id",
+        "lines": [
+          55,
+          57
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "ac301115f4f7451d6e3bed63ae197f70ffb05dd8523c5d893500a18b9c80a1c0"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "_control",
+        "lines": [
+          61,
+          83
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "acd6ff9675acd7184bb0663a16edf983d47474188057041672e47192078ff0be"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "symbol": "JsonRequestMatrixTests.test_request_caller_and_top_level_identity_reach_the_parser",
+        "lines": [
+          10,
+          26
+        ],
+        "file_sha256": "c480d8517964dbcec31df188de0b1706cc0a831656eaadb54389e060a9ceb192",
+        "fragment_sha256": "a2d5a86d58f6edaabf2239aead1c700d79609e0c3518712fd2b8ce0819a8891c",
+        "assertions": [
+          "self.assertEqual((args.origin, args.request_id, args.idempotency_key, args.reason),\n                         ('operator', 'UC-explicit', 'try-2', '운영 중지'))",
+          "self.assertRaisesRegex(CliInputError, '^caller differs from payload origin$')",
+          "self.assertRaisesRegex(CliInputError, '^unexpected or duplicate ' + key + '$')",
+          "self.assertRaisesRegex(CliInputError, '^unexpected or duplicate ' + key + '$')"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "schedule": {
+    "role_and_io": "init/configure scheduling failure preserves saved ID/snapshot under result.operator_schedule and exit5; console interpreter produces reconcile or reconcile_error.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "_schedule_failure",
+        "lines": [
+          102,
+          118
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "31d9738e6e25769f9a3d2526a477cc5019a8a4846ea433a233c949c27d71eca0"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "_reconcile_operator",
+        "lines": [
+          94,
+          99
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "bd9971b041ba35ea6c984f32bc7c5a3e6ebf52e83e4ab3f40ce33788365ce426"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "operator_schedule_after_configure",
+        "lines": [
+          290,
+          305
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "977ca8f2b9d70373b8a5fd9aa4dac9eb079a518e83f3d692e8f1e22625176ff6"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "CliTests.test_configure_schedule_process_errors_preserve_the_applied_control",
+        "lines": [
+          72,
+          100
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "41042b12adc690313d21c85375d5571e5337656c4d4477a763209bc475b5f868",
+        "assertions": [
+          "self.assertEqual(code, 5)",
+          "self.assertEqual({key: result[key] for key in saved.snapshots[0]}, saved.snapshots[0])",
+          "self.assertEqual(result['effect'], 'applied')",
+          "self.assertEqual(scene.load()[1]['config']['operator_interval_seconds'], 8000)",
+          "self.assertEqual(result['operator_schedule']['status'], 'failed')",
+          "self.assertEqual(result['operator_schedule']['error'], str(error))",
+          "self.assertIsNone(result['operator_schedule']['reconcile'])",
+          "self.assertIn(repr(str(windowless.with_name('python.exe'))),\n                                  result['operator_schedule']['reconcile_error'])"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "warnings": {
+    "role_and_io": "Applied adoption/trust registration may return role/profile tool-window warnings. Tool review duration is distinct from paused self-check window.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "symbol": "InitializationEngineMixin",
+        "lines": [
+          20,
+          170
+        ],
+        "file_sha256": "3c78ca0aa73ed60baebbdc65a16d2b2fd15238f567da019ac0d58c466b4f7c27",
+        "fragment_sha256": "b9450e170e22cdfc9777c1062c0f3fd2ad1e35722ed8dd71d47926d800482bb4"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "symbol": "FormalEngineMixin",
+        "lines": [
+          18,
+          534
+        ],
+        "file_sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+        "fragment_sha256": "e3422123d65c10462b1ccd6a4220aa7bcdc8292395a3422cf889435711806b43"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "symbol": "observation_window_warnings",
+        "lines": [
+          146,
+          183
+        ],
+        "file_sha256": "243267caeb572b7d2927c9a9d8ef62bbbe6a4b41fb3038b72a56aeaf2c7a1b63",
+        "fragment_sha256": "c0d87a553400c8583c4075f1721a5f2b0ac61044263a8c690f34e3116de01a85"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "launch": {
+    "role_and_io": "launch.ticket and launch transitions bind execution/profile/Job; maintenance_fence blocks general work; operation_progress is an observed workspace report.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "symbol": "ticket",
+        "lines": [
+          7,
+          13
+        ],
+        "file_sha256": "4c29e59f402733cb5a27d7b443ff3280dcaf4389330992f73938c30083ae0867",
+        "fragment_sha256": "c9a7c6d0f4521efddc0e204fcda06ad31779917ada865eb54f8dd390e42a39e2"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "symbol": "mark_dispatched",
+        "lines": [
+          51,
+          56
+        ],
+        "file_sha256": "4c29e59f402733cb5a27d7b443ff3280dcaf4389330992f73938c30083ae0867",
+        "fragment_sha256": "e5e4c5a9a7260fca17b583f5202b08decfee30f22ac9460a49a338bf95df2597"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "symbol": "mark_returned",
+        "lines": [
+          59,
+          71
+        ],
+        "file_sha256": "4c29e59f402733cb5a27d7b443ff3280dcaf4389330992f73938c30083ae0867",
+        "fragment_sha256": "a7e2c171b80b986a54d7f10a73337c7067966c8db30cf7b0a9cc7628f22e0882"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "symbol": "progress",
+        "lines": [
+          13,
+          26
+        ],
+        "file_sha256": "cbb0ca6168e6932ab57195dc05587f96afe8a20e9d554c8897d237cf51d0c5f4",
+        "fragment_sha256": "f8ace287ac3764993f39d8ba2e727fa998a3e82b169bc707a727089f5781ce3d"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "symbol": "RUNTIME_FIELDS",
+        "lines": [
+          676,
+          738
+        ],
+        "file_sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+        "fragment_sha256": "0dd8727d8a36e2d4005bf1e42fc8298c3a68d86db83fc423665245256e8d43ba"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "storage": {
+    "role_and_io": "State contract9 owns registered family/shape/schema. Repository encodes research/runtime families, preserves immutable artifacts, and publishes one-parent state by CAS. control/runs/formal workspace paths are transient.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "symbol": "STATE_CONTRACT_ID",
+        "lines": [
+          16,
+          16
+        ],
+        "file_sha256": "5b127b39b8c9e05e259af9b99329da6a34162b395da517fe73b0c29304a0d7bd",
+        "fragment_sha256": "291229ed4bbea934a37fb303c4c753c54a784fc199d479da80fa7e4c9725af88"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "symbol": "default_state_contract",
+        "lines": [
+          172,
+          181
+        ],
+        "file_sha256": "5b127b39b8c9e05e259af9b99329da6a34162b395da517fe73b0c29304a0d7bd",
+        "fragment_sha256": "8f4aee31337d9dab5c55372c5b2d228343ba09cdbcf466d12d4129ce045acb13"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.__init__",
+        "lines": [
+          201,
+          204
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "e8d48027042e9cfa1eaf01d4c62072ae8fb257f57cff95ce84ce63118b07ad06"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "_encode_families",
+        "lines": [
+          737,
+          790
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "1642d97b35bc5816da34e2f7de68715c39824e57a88e5b4862bcbb508475ff0f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "_decode_families",
+        "lines": [
+          793,
+          885
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "1d5ee37e82928e5f5b826e801572dd7779b4269a57582d8182502c74361dbdca"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository._publish_candidate",
+        "lines": [
+          404,
+          423
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "1818c99e43239118482733e0321358e33d124ba8cf5708b4c0d0047ccdccbf57"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository._snapshot_artifacts",
+        "lines": [
+          427,
+          437
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "085aa28d69f9f8d4dfded000c047396607c7e09da037de18c1056916f44cedd5"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "input-files": {
+    "role_and_io": "Input packaging owns prompt.artifact_ref, documents[].artifact_ref and fixed catalog/implementation/tools/submission paths; these are generated file identities, not arbitrary status fields.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "symbol": "prepare_role_input",
+        "lines": [
+          590,
+          934
+        ],
+        "file_sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3",
+        "fragment_sha256": "68fab2e857aeed41803f6d0e38a2807b8f8e79d2958f78eb4084b34a4ccc8c86"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "symbol": "write_source_catalog",
+        "lines": [
+          225,
+          254
+        ],
+        "file_sha256": "92b0d4bea14c78f6f8bdfaf283af2fc3dd0514232fa0b7cda7560632088590e3",
+        "fragment_sha256": "7c458db20e5f462aacc6a88a107e5ce2fe3b059d66bcac732c9cb51bedfa64c2"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._context",
+        "lines": [
+          1555,
+          1935
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "d41540d84e4d058a5c52e2edfa6d115401ac544414df1eaae982a05349acd7e5"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/020/manager-evidence/review.md",
+      "run:phases/022/manager-evidence/review.md"
+    ]
+  },
+  "result-files": {
+    "role_and_io": "Actual _preserve_outputs preserves result/output/files/output-manifest/omitted/checkpoint-recovery under new result bundle; formal_engine stores proposal.lean/formal.json separately.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._preserve_outputs",
+        "lines": [
+          993,
+          1032
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "c612a5ade08f20800756721db8d2ab932855ceed6a586c874fa2ad3f4718b2f0"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "symbol": "FormalEngineMixin",
+        "lines": [
+          18,
+          534
+        ],
+        "file_sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+        "fragment_sha256": "e3422123d65c10462b1ccd6a4220aa7bcdc8292395a3422cf889435711806b43"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/019/manager-evidence/review.md",
+      "run:phases/025/manager-evidence/review.md"
+    ]
+  },
+  "runtime-state": {
+    "role_and_io": "runtime.status is an instance-loop enum, produced by engine loop and exposed in status_report; glossary active is a conceptual lifecycle, not task ready.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "symbol": "RUNTIME_FIELDS",
+        "lines": [
+          676,
+          738
+        ],
+        "file_sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+        "fragment_sha256": "0dd8727d8a36e2d4005bf1e42fc8298c3a68d86db83fc423665245256e8d43ba"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "symbol": "ResearchEngine.run",
+        "lines": [
+          130,
+          136
+        ],
+        "file_sha256": "b16763fa9d6c01d535ba345c29a9b7af6d1dce6723734b7db7dc13dbb87381b5",
+        "fragment_sha256": "f729443bd1f681502d7901b923dcd1963653a8c07b385df84f4d651f0d2068ac"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "status_report",
+        "lines": [
+          196,
+          274
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "c17bb9c672951a4f091014e4eed991ab02ea39e772b2fb06d44ed54cacf17315"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "task-state": {
+    "role_and_io": "task.status belongs to LIFECYCLE_STATES. readiness is computed and null for live/terminal tasks or ended instance. assessment_pending/returned_task_ids and waiting_actions are distinct; completed history remains while current decision can be invalid.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "symbol": "LIFECYCLE_STATES",
+        "lines": [
+          16,
+          16
+        ],
+        "file_sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153",
+        "fragment_sha256": "fb66fc8790cf736c222325c61338d807e328c034d44d03e302adec43bb224369"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "symbol": "returned_task_ids",
+        "lines": [
+          248,
+          255
+        ],
+        "file_sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153",
+        "fragment_sha256": "01fbd16e0840f0d3abdfb8161521c95635e4a4a699cc2a6c95979881245c1158"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "task_status",
+        "lines": [
+          52,
+          108
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "6d8f1d63fb9834853d50c1d84260b7ec234c3e8cfc4be68f2f90a2e447190d98"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "waiting_action_rows",
+        "lines": [
+          111,
+          134
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "fc81bc1f7f407d8f684895f02be44789432214a7686336e15297c0a4eb6303df"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "dispatch_waits",
+        "lines": [
+          44,
+          49
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "252505d2e148c784e7634c214c0c0ce0f7be3eb1ee978c6c9beea43690131b10"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "symbol": "decision_is_current",
+        "lines": [
+          157,
+          181
+        ],
+        "file_sha256": "f73eba27e250f64d244febd6380afe61eaddfc505ed1b291efd9a1befe099f9f",
+        "fragment_sha256": "a26501c32a45a656e7b13b0f466efc3d8679a30d695ce0b8554c92031d3419dd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "symbol": "evaluate_condition",
+        "lines": [
+          496,
+          597
+        ],
+        "file_sha256": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709",
+        "fragment_sha256": "38d58c8e01d0b126f3c1bf5ec0c3fd7af2c40cb82ca4087520cfbe11acc6e6ae"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "symbol": "ReadinessTests.test_completed_removes_readiness_projection",
+        "lines": [
+          251,
+          258
+        ],
+        "file_sha256": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a",
+        "fragment_sha256": "4c5335128c4a9a2d381dd8ce64c18586b8292aee35fc0ec5148dbc2c4c4c7226",
+        "assertions": [
+          "self.assertIn(t['id'], e._task_readiness)",
+          "self.assertNotIn(t['id'], e._task_readiness)"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "symbol": "ReadinessTests.test_review_currentness_and_no_persisted_readiness",
+        "lines": [
+          174,
+          195
+        ],
+        "file_sha256": "0ba4a2da12b9f1f4e875d1003c85740911c0961e2ee71a99b6b1800f9bad3e7a",
+        "fragment_sha256": "23cba10727ebcac35039a67c5c2687b1cd6ac5e26de22ed9f3171ece01504db4",
+        "assertions": [
+          "self.assertEqual(len([a for a in e.runtime['queue'] if a['role'] == 'task_contract_review']), 1)",
+          "self.assertEqual(e._task_readiness[t['id']]['state'], 'ready')",
+          "self.assertEqual(readiness_event['basis']['records'], e._task_readiness[t['id']]['basis'])",
+          "self.assertEqual(e.runtime['tasks'][t['id']]['status'], 'planned')",
+          "self.assertNotIn('task_readiness', e.runtime)",
+          "self.assertEqual(e._task_readiness[t['id']]['state'], 'not_ready')",
+          "self.assertNotIn('task_readiness', e.store.load()[2])"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "goal": {
+    "role_and_io": "unsolved/mathematically_solved refer to current exact goal assurance; academic_status consumes solution basis and requirements; status.knowledge counts usable records/formal/exposition/assessment records.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "symbol": "academic_status",
+        "lines": [
+          153,
+          179
+        ],
+        "file_sha256": "9f865e81f9b15809782f9f77878a95dc47db820a7c118734b4682a75e898f9f7",
+        "fragment_sha256": "3c6203a40fa04bb09cc6367b4c3a5c8d903d81c54aba355e07d86018d9850ab2"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "status_report",
+        "lines": [
+          196,
+          274
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "c17bb9c672951a4f091014e4eed991ab02ea39e772b2fb06d44ed54cacf17315"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "symbol": "KnowledgeEngineMixin._invalidate_goal_currentness",
+        "lines": [
+          10,
+          29
+        ],
+        "file_sha256": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616",
+        "fragment_sha256": "82eb98a6e1700c3f8077760851ea6b6f710b3eefbfb626bb6c16788813216206"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/023/manager-evidence/review.md"
+    ]
+  },
+  "activity-state": {
+    "role_and_io": "Activity lifecycle ready/working/waiting/finished is ACTIVITY_STATUSES; unresolved belongs to result/decision, not lifecycle.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "symbol": "ACTIVITY_STATUSES",
+        "lines": [
+          16,
+          16
+        ],
+        "file_sha256": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
+        "fragment_sha256": "d35c3837a781f538a0e993d391c55ae67ed78036b91c1a43195ae12d52082e3c"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "symbol": "RECORDS",
+        "lines": [
+          164,
+          164
+        ],
+        "file_sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+        "fragment_sha256": "186922cd4d9f5be0797465234e2e36dcf99be97e2ff34903b297e63e241d4ea5"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "execution-state": {
+    "role_and_io": "Queued/starting/running/stopping/ended is EXECUTION_STATUSES; output_accepted is OUTCOMES and requires an acceptance receipt; it is not a mathematical verdict.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "symbol": "EXECUTION_STATUSES",
+        "lines": [
+          18,
+          18
+        ],
+        "file_sha256": "cedeeca89a0341167cd5c0b19eb3d2ac41a4d4d47643628ec36781a2582a4fde",
+        "fragment_sha256": "279f48d2a2a82f2a7761fa3c9b97e7bdcf4c519c4a95f031e1c36087db94dfbf"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "symbol": "OUTCOMES",
+        "lines": [
+          19,
+          19
+        ],
+        "file_sha256": "cedeeca89a0341167cd5c0b19eb3d2ac41a4d4d47643628ec36781a2582a4fde",
+        "fragment_sha256": "40a967b61fccd71c2e15d71e0d8205a36bdce9daec5c1755c9ed318ee10b13e7"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "symbol": "check_termination",
+        "lines": [
+          24,
+          33
+        ],
+        "file_sha256": "cedeeca89a0341167cd5c0b19eb3d2ac41a4d4d47643628ec36781a2582a4fde",
+        "fragment_sha256": "ead8215e08e2b5b6ac1ba2a5cbf7df6a02a56174f9ce33ecdd08a3182d53fcde"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "external-state": {
+    "role_and_io": "External lifecycle and confirmed/succeeded are separate OPERATION_STATUSES and result facts; HTTP non2xx is not success.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "OPERATION_STATUSES",
+        "lines": [
+          12,
+          12
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "1b8d414ee215d99278ebe7d79559353513e60017d0e17dc0e4e4647bdc8e8bfe"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "execute_operation",
+        "lines": [
+          64,
+          115
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "8f82dcc6ecdb28ebb8b8908dc6ce4df9e3855c51d8790243a14b2537d409d42f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "reconcile_operation",
+        "lines": [
+          138,
+          159
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "89d0f06f8c6fab97dedd3878b84a250bca97a84b2fe493c2984e8e9c7935a4bf"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "symbol": "ExternalSendTests.test_persist_before_send_confirm_and_redact",
+        "lines": [
+          80,
+          92
+        ],
+        "file_sha256": "25d82ccf869b275210f809345469f1424ff55260b1d8e82f86cf01cafd25f04e",
+        "fragment_sha256": "e2639ee2cc113f5d1bccba2c3731f827e1f80f8973d9370b5e509869103debf6",
+        "assertions": [
+          "self.assertEqual([x['status'] for x in calls], ['prepared', 'prepared', 'confirmed'])",
+          "self.assertTrue(calls[1]['transmitted'])",
+          "self.assertEqual(out['status'], 'confirmed')",
+          "self.assertNotIn('secret', str(out))",
+          "self.assertEqual([header for _, header, _ in http.requests], [[('X-Key', 'secret')]])"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "config": {
+    "role_and_io": "config_schema closes keys/types/ranges, DEFAULT_CONFIG fixes literal defaults, validate_config checks cross-field relations. Absence and explicit null differ for optional host_resources/lean/server. Model tables belong to model_policy, not duplicated here.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "symbol": "config_schema",
+        "lines": [
+          151,
+          174
+        ],
+        "file_sha256": "ac0b9a27302f17355ae42fddf9ba8f1f2c7c55c5a5d05679dfb1a8d6b5004bf9",
+        "fragment_sha256": "d2cae7e421134187484fb53c2b9705a99e003a9da8b825a5856abac626158d34"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "symbol": "DEFAULT_CONFIG",
+        "lines": [
+          17,
+          34
+        ],
+        "file_sha256": "eb4f7bc47cd496b779fc36b7096dcb9d275bd4d837b412b1ca7101d08b42371b",
+        "fragment_sha256": "a9cbab226d4b6aad0b3dca6972468d09cc20c95ae260cb40df0698f1ae0f9b85"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "symbol": "validate_config",
+        "lines": [
+          37,
+          61
+        ],
+        "file_sha256": "eb4f7bc47cd496b779fc36b7096dcb9d275bd4d837b412b1ca7101d08b42371b",
+        "fragment_sha256": "7287d8f51f0f3d4ccca101c69badd6291c6e99d8af54144a2c65c734f773326b"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "MODELS",
+        "lines": [
+          7,
+          7
+        ],
+        "file_sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9",
+        "fragment_sha256": "ff217aaadb58f1413ee9bd12abacc0eddfc6a3a33d9710069ef29de1a10551dd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "ROLE_TIERS",
+        "lines": [
+          11,
+          16
+        ],
+        "file_sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9",
+        "fragment_sha256": "18c026570b9faf970ac4c37d1eb8e2396f99983160fdc132f27b4cfd1b015d4a"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "LIMITS",
+        "lines": [
+          9,
+          9
+        ],
+        "file_sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9",
+        "fragment_sha256": "9d276bf4d6966f3ba701c8b1b61da6c06d861dd8febfe07bfa509e3466982e2e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "symbol": "validate_policy",
+        "lines": [
+          103,
+          116
+        ],
+        "file_sha256": "b98b016c754a62df70c76cfe7de00547f794e3e437d3df4da281c327437fb8c9",
+        "fragment_sha256": "4869015edf35946a86441a6407dc2e90851323a186779ff1789a491f3c3c1f63"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationDefaultTests.test_default_input_limit_is_two_million_bytes_in_code_and_config_list",
+        "lines": [
+          14,
+          18
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "d90cb1bf7fc8903fee568eb3419decb0a77b987681625a297d9353ca1710d4c8",
+        "assertions": [
+          "self.assertEqual((DEFAULT_CONFIG['max_input_bytes'], int(documented)), (2_000_000, 2_000_000))"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationRuleTests.test_each_rule_names_the_field_it_refuses",
+        "lines": [
+          45,
+          60
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "7f6a09a171d96e8b1ef4fc9c503dea7944030ea825f54a59d80f560c92e62899",
+        "assertions": [
+          "self.assertIsNone(validate_config({'provider_retry_initial_seconds': 300, 'provider_retry_max_seconds': 300,\n                                           'lean_command': ['lean', 'file.lean']}, host_id=_entry.host_id))",
+          "self.assertRaisesRegex(ValueError, re.escape(message))"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "host": {
+    "role_and_io": "host_constraint computes CP identity from host_id/limits/control_reserve/authority_refs; role demands are explicit jobs1/memory/cpu. Public configuration:request alias is resolved to preserved user source. Capped HOST_ROLES exclude Lean machine roles.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "symbol": "host_constraint",
+        "lines": [
+          136,
+          153
+        ],
+        "file_sha256": "bc8f89b16e7f4fd6424cc476d5ad36a55ca43ffa5485ccbb56c9a47e2402fcac",
+        "fragment_sha256": "82a89ef94d74d409507d810f199307e0b748e20dc28d07077882b3b6523206fa"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "symbol": "validate_host_resources",
+        "lines": [
+          187,
+          202
+        ],
+        "file_sha256": "bc8f89b16e7f4fd6424cc476d5ad36a55ca43ffa5485ccbb56c9a47e2402fcac",
+        "fragment_sha256": "d21183672fd34c6a15dabfe6725b1bd2e796711fa9b387bcbfcf347ad3763d13"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "symbol": "HOST_ROLES",
+        "lines": [
+          38,
+          38
+        ],
+        "file_sha256": "bc8f89b16e7f4fd6424cc476d5ad36a55ca43ffa5485ccbb56c9a47e2402fcac",
+        "fragment_sha256": "fc2369d129b405a2bb5a0e0b24a8485a342edf815d9d6e7024213302d01eb949"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "symbol": "UNCAPPED_ROLES",
+        "lines": [
+          31,
+          31
+        ],
+        "file_sha256": "bc8f89b16e7f4fd6424cc476d5ad36a55ca43ffa5485ccbb56c9a47e2402fcac",
+        "fragment_sha256": "45f6bc55a84a1a507da60887e9be61d0d48c811cd06cd37dfd1a9a996422dcc8"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "symbol": "GovernanceEngineMixin",
+        "lines": [
+          43,
+          464
+        ],
+        "file_sha256": "b0e32b634a1499744c840300173266a11352897863c6d7a2dcd0257863e89ceb",
+        "fragment_sha256": "f823c21aca0d93c30fdabfc6aed440a12ae50b75a8597c67d2d27fb17f2d8085"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "symbol": "ConfigurationRuleTests.test_host_resources_name_this_host_and_every_capped_role",
+        "lines": [
+          72,
+          84
+        ],
+        "file_sha256": "d8f844b0594386b187a310d38257a983b1a6abc71cab876b9f0b768ad93ecadc",
+        "fragment_sha256": "2380fdeebe024adfcbf999cca058d24c674412a04501f5a992932250b4e35b0e",
+        "assertions": [
+          "self.assertIsNone(validate_config({'host_resources': host}, host_id='fixture-host'))",
+          "self.assertRaisesRegex(ValueError, 'host_resources must name this local host')",
+          "self.assertRaisesRegex(ValueError, 'every capped role needs an explicit host demand')"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "formal-config": {
+    "role_and_io": "Lean central verification preserves declared dependency_closure/dependency_evidence, allowed axioms and raw evidence. Run max_steps counts new actions; machine/model termination follows explicit control, not elapsed research timeout.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "symbol": "verify_lean",
+        "lines": [
+          258,
+          324
+        ],
+        "file_sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc",
+        "fragment_sha256": "9461f1e1b23dbd55e432a770f3b7b8b1c885fb0aabe196ae908c57c99dbdfd43"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "symbol": "parse_evidence",
+        "lines": [
+          343,
+          427
+        ],
+        "file_sha256": "0d984d9996410b566f222e617d24005ec0688ca5b834477f0eeacd29adebeb43",
+        "fragment_sha256": "7406299d6704a59b26e3fad1f642c55afcb08b3a7633edfbc5008c66d691f4f4"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "symbol": "call_deadline",
+        "lines": [
+          16,
+          18
+        ],
+        "file_sha256": "539f8c14ea57bf261e65109cf8e94b5c6fe7b95a2cf79438c4157bda1d496707",
+        "fragment_sha256": "23b6042ea6251bc8fb0f3e3a070ff8b18d34f1d2f5747c2bb76c892ab1f62468"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "symbol": "CallEngineMixin",
+        "lines": [
+          36,
+          582
+        ],
+        "file_sha256": "32e3933fe006a8cd04ecff52a936ee4e7d315aeed591bb11fdadcdf7951e8898",
+        "fragment_sha256": "c192b294177dfb04b1ee4fe13d242174430c50ce465a4e0842784de162ca3fc1"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/025/manager-evidence/review.md"
+    ]
+  },
+  "observation-config": {
+    "role_and_io": "Profile rule_bindings and observation windows bind source/operator/subject_kind/unit. plan_settle_wait fields are actual DispatchEngineMixin values; missing observation settings are explicit activation errors.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "symbol": "observation_settings_errors",
+        "lines": [
+          217,
+          227
+        ],
+        "file_sha256": "c7e8a6e22880a5b13e7da9290526bb78c834704dd14c1f2167f47c22aeb8a71b",
+        "fragment_sha256": "474a994318f87d93c51e5f37f242fb0aa4c677e1488224f046274b14ff07c3b1"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "symbol": "DispatchEngineMixin._plan_settle_waits",
+        "lines": [
+          126,
+          138
+        ],
+        "file_sha256": "b4b1e45519122447f0896ddf3d348b03b109c57feddf844fc75eb8875327576b",
+        "fragment_sha256": "9b1de186240f86360a97f709520f8367e917a3a33ec80a77b8cbfceb85022104"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "symbol": "RECORDS",
+        "lines": [
+          164,
+          164
+        ],
+        "file_sha256": "a018f17cce73b0662987a8cc514d8f2c3ad5a4c4768eb177a890c439765a347e",
+        "fragment_sha256": "186922cd4d9f5be0797465234e2e36dcf99be97e2ff34903b297e63e241d4ea5"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/024/manager-evidence/review.md"
+    ]
+  },
+  "provider-config": {
+    "role_and_io": "provider_for routes claude:/claude- names; worker forwards supported model/effort/CLI flags and allowlisted environment. Paths PATH/CODEX_HOME/CLAUDE_CONFIG_DIR are external environment names; server resolution is config, not successful scholarly call.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "symbol": "provider_for",
+        "lines": [
+          8,
+          9
+        ],
+        "file_sha256": "f05c082f8a2522befb034f55be7d74240c39493cf42fc694b19a478abd0843bd",
+        "fragment_sha256": "fb9a55bfdbec781c7c37cec6565f2b5db824be1500b5c402553e14707f1d3e91"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "symbol": "resolve_scholarly_server",
+        "lines": [
+          47,
+          69
+        ],
+        "file_sha256": "7cf5498dd0725d100600ff145f68108a56e5377ef21e86593635eaf4d2c4261f",
+        "fragment_sha256": "c4eeefd95b6646ee89ed0b2be29bd475f6177a381dfd1ceda2ad1f3df357a5ed"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "symbol": "build_argv",
+        "lines": [
+          30,
+          35
+        ],
+        "file_sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05",
+        "fragment_sha256": "8a5cbe53a9e449ef0ef60957dbc69e612507eb203bc76271f91d5b222e0939c1"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "symbol": "sanitized_environment",
+        "lines": [
+          22,
+          23
+        ],
+        "file_sha256": "195bc3e21b7aa70abaf4da983ac58b69e75536c02b15d648f53904bb6f321e05",
+        "fragment_sha256": "49718616855f794a40cd7a1b607015c59dee0009dd578483a94bfa189197603f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "symbol": "build_argv",
+        "lines": [
+          33,
+          36
+        ],
+        "file_sha256": "a25067cec0e1753b6c6be577b319cc51b8af321b3b238d2ab0338e4e40ef68a0",
+        "fragment_sha256": "e19ec74b84c68f8e3915593ab92abaaff623e17f90ada6b627abb9733e4c811d"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "budget": {
+    "role_and_io": "session_slots.budget_view/reporting status expose work model limit/used/available/execution_ids and concurrent_sessions. Operations is history category, not a second budget. Live execution IDs are computed, not persisted fields.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "symbol": "DispatchEngineMixin._session_resources",
+        "lines": [
+          110,
+          111
+        ],
+        "file_sha256": "b4b1e45519122447f0896ddf3d348b03b109c57feddf844fc75eb8875327576b",
+        "fragment_sha256": "dd104043f6e5bede86678f2ec3622a3be2adfaa83c1c6cbfb72761698754133c"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "status_report",
+        "lines": [
+          196,
+          274
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "c17bb9c672951a4f091014e4eed991ab02ea39e772b2fb06d44ed54cacf17315"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "init": {
+    "role_and_io": "initialize preserves immutable_input UTF8 text/hash/bytes and initial runtime.inputs.config.goal. config_sha256 binds current initialization target; no implicit grant/queue. Console command is a tool invocation, not the Pythonw worker itself.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "symbol": "initialize",
+        "lines": [
+          40,
+          50
+        ],
+        "file_sha256": "b16763fa9d6c01d535ba345c29a9b7af6d1dce6723734b7db7dc13dbb87381b5",
+        "fragment_sha256": "3cf7d03f3e16b6300c65dbae82d2ecce47938679a7c41e48e310413a3b5df2a9"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "initialize_instance",
+        "lines": [
+          123,
+          163
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "385fd4a94d1e21304ce94869cf3dd00b68dca10142f67942e52e307d94451ce8"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "symbol": "original_input_bytes",
+        "lines": [
+          11,
+          18
+        ],
+        "file_sha256": "243267caeb572b7d2927c9a9d8ef62bbbe6a4b41fb3038b72a56aeaf2c7a1b63",
+        "fragment_sha256": "bd97a5f2dd672692620a421ca8c12e9587686beba51bf106af525f4054008bb1"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "symbol": "initialize_state",
+        "lines": [
+          277,
+          304
+        ],
+        "file_sha256": "243267caeb572b7d2927c9a9d8ef62bbbe6a4b41fb3038b72a56aeaf2c7a1b63",
+        "fragment_sha256": "5f5ef8d92d5e5fa649723881ff3aed79827d15277529b6ed359f83d9465514af"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "symbol": "InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved",
+        "lines": [
+          279,
+          296
+        ],
+        "file_sha256": "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "fragment_sha256": "f60353a1f51a1ef5b41ee51579df5f1729fa1791e73c5237c7f79be3cab0b6cf",
+        "assertions": [
+          "self.assertNotIn('review_policy', self.sim.instance)",
+          "self.assertEqual(self.sim.engine.control_result(request['request_id'])['effect'], 'applied')",
+          "self.assert_public_policy_saved(expected, text='adopt configured default without prior policy',\n                                        adopt_default_review_policy=True)",
+          "self.assert_public_policy_saved(other, text='adopt another valid policy', review_policy=other)",
+          "self.assert_public_policy_saved(expected, text='replace prior policy with configured default',\n                                        adopt_default_review_policy=True)"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "symbol": "InitialAdoptionTests.test_explicit_review_policy_takes_precedence_over_default_adoption",
+        "lines": [
+          298,
+          304
+        ],
+        "file_sha256": "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "fragment_sha256": "d6a944cf5036133532039085b00d30aa4813f4b8380346a68a29cac010ed5a77",
+        "assertions": [
+          "self.assert_public_policy_saved(expected, text='explicit policy with default flag',\n                                        review_policy=expected, adopt_default_review_policy=True)"
+        ]
+      }
+    ],
+    "reuse": [
+      "run:phases/020/manager-evidence/review.md",
+      "run:phases/027/manager-evidence/review.md"
+    ]
+  },
+  "status-check": {
+    "role_and_io": "status_report exposes a loaded snapshot and minimal inspection; check explicitly checks full artifacts/diagnostics and inspection exit. profile verified is CLI surface capability, not authenticated model work.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "status_report",
+        "lines": [
+          196,
+          274
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "c17bb9c672951a4f091014e4eed991ab02ea39e772b2fb06d44ed54cacf17315"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "symbol": "snapshot_report",
+        "lines": [
+          277,
+          288
+        ],
+        "file_sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564",
+        "fragment_sha256": "66f956d3a7ab7d2de87bf5dfb8964383e6f3ab3dfa6b658fd71ee92d488ce8e7"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "symbol": "inspection_exit_code",
+        "lines": [
+          77,
+          81
+        ],
+        "file_sha256": "0437c327c91fb588d291293529b4337430da97b05165e3209890a36c01a4864b",
+        "fragment_sha256": "303cd36b668f2509d08b06db54fd4efb21e88f2fc3008dcf5adb47bacd118936"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "symbol": "inspect_state",
+        "lines": [
+          84,
+          137
+        ],
+        "file_sha256": "0437c327c91fb588d291293529b4337430da97b05165e3209890a36c01a4864b",
+        "fragment_sha256": "c46b6a2efcbe289577152ade72b2ed942a2fd6cf945903ce306bdf8128c1337d"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin.check",
+        "lines": [
+          3669,
+          3697
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "00afd2f5898e42214bba6b4cc0c68226386cc16a153b177a185042c1c542ccef"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "request": {
+    "role_and_io": "requestable role is admission vocabulary. supplemental target must have task_ready.state=ready, not task.status=ready. Retry and reassessment are separate modes with exact IDs/evidence; same action/continuation and current authority are preserved.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "symbol": "control",
+        "lines": [
+          53,
+          62
+        ],
+        "file_sha256": "b16763fa9d6c01d535ba345c29a9b7af6d1dce6723734b7db7dc13dbb87381b5",
+        "fragment_sha256": "deb9582b48cfbfcd4b68071c20cfb33756a5afabcb84e21e68056919b0f05d8e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "submit_control",
+        "lines": [
+          229,
+          333
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "c2d0e9e722dad508e006ddacb52d926d729909b5171c416fec59dd2f5845d7bc"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "symbol": "RequestModeTests.test_retry_action_is_a_distinct_request_mode",
+        "lines": [
+          20,
+          35
+        ],
+        "file_sha256": "9f9f92e4dfee0153b7b19950ab956b9cd3849d8c2cb2722b78166fba9f378630",
+        "fragment_sha256": "1f8c2ad71af258607a6c516859fb5fc2b80c0b23eea42fc7846c2f20db3725c2",
+        "assertions": [
+          "self.assertEqual(retry.retry_action, 'AC-held')",
+          "self.assertIsNone(retry.role)",
+          "self.assertIn('reason', schema['properties'])",
+          "self.assertNotIn('text', schema['properties'])",
+          "self.assertRaisesRegex(CliInputError, '^argument --retry-action: not allowed with argument --role$')",
+          "self.assertRaisesRegex(CliInputError, '^unrecognized arguments: --text inspect state$')",
+          "self.assertRaisesRegex(CliInputError, r\"^invalid command payload: Additional properties are not allowed \"\n                                                   r\"\\('text' was unexpected\\)$\")"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "symbol": "RequestModeTests.test_operator_origin_is_offered_only_where_control_admission_accepts_it",
+        "lines": [
+          50,
+          60
+        ],
+        "file_sha256": "9f9f92e4dfee0153b7b19950ab956b9cd3849d8c2cb2722b78166fba9f378630",
+        "fragment_sha256": "d03fe061ae21209fc655062a07491e04423230c0616e83d18b587d1a2af7c4a9",
+        "assertions": [
+          "self.assertIn('decision', offered)",
+          "self.assertEqual({name for name, operator in offered.items() if operator}, set(OPERATOR_ACTIONS))",
+          "self.assertRaisesRegex(CliInputError, r\"^argument --origin: invalid choice: 'operator' \\(choose from user\\)$\")"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "operator": {
+    "role_and_io": "operator modes are actual parser choices; scheduled_operator guards HOLD/user pause/current state, normal probe has false marker, held/read-error can return earlier; OS scheduling bootstrap/restore is a distinct boundary.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "build_parser",
+        "lines": [
+          42,
+          178
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "4abe1055ffae288dd49ebc74fe4967f41aa5731db04ac7ac1f4d93e20ec7b73a"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "check",
+        "lines": [
+          230,
+          276
+        ],
+        "file_sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f",
+        "fragment_sha256": "6e5c2e343d76206f4b8db9ce31a3985710ac41683daa16ac57052461992d9354"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "run_engine",
+        "lines": [
+          139,
+          177
+        ],
+        "file_sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f",
+        "fragment_sha256": "7a315e184eb3e000df0a5ae2d0539a582bbafcbafa9e21e1352afeec1a03734a"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "hold",
+        "lines": [
+          119,
+          123
+        ],
+        "file_sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f",
+        "fragment_sha256": "f400cc4ba5e51fa7e7692d364c69dd8d2700a04a5be25d77d5a2a0c75ab63ec5"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "symbol": "release",
+        "lines": [
+          126,
+          135
+        ],
+        "file_sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f",
+        "fragment_sha256": "7e7271763529a8f6d7283a7df29b0dcabcbe77e1c123dd8f926b6ae96ec4bca5"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "symbol": "main",
+        "lines": [
+          146,
+          169
+        ],
+        "file_sha256": "58efaa37d6e35e6de9efa627efd60200e5d0c4cce1a30f4e0f974e5b922906f7",
+        "fragment_sha256": "13d65c4dcfc50ddfedf7911e69e1ca07d762b824b6aea639e1cacdd0ef2c1ee4"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "OperatorCommandTests.test_normal_probe_observes_without_calling_a_model_or_starting_research",
+        "lines": [
+          188,
+          200
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "8283d69ea18e93149fa7a1321bdeebf67a21b601bf5ba1507bc5c067d4c84463",
+        "assertions": [
+          "self.assertEqual(code, 0)",
+          "self.assertEqual(result['outcome'], 'observed')",
+          "self.assertIs(result['model_called'], False)",
+          "self.assertEqual(result['status']['snapshot'], before[0])",
+          "self.assertEqual(result['engine_start']['outcome'], 'startable')",
+          "self.assertEqual(self.scene.load(), before)",
+          "self.assertFalse(any(action.startswith('start') for action, _ in self.scene.ports.scheduler.calls))",
+          "self.assertEqual(self.scene.jobs.launched, [])",
+          "self.assertEqual(self.scene.cli.calls, [])"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "symbol": "OperatorCommandTests.test_probe_status_failure_returns_its_error_without_a_required_model_marker",
+        "lines": [
+          202,
+          216
+        ],
+        "file_sha256": "d8511258c238442c8e5bf21c60dac30d7cdc2b0331f0f31b6ee0d3fe05b2fb61",
+        "fragment_sha256": "0558bec853781f0470cd2d7b4a013d2e3fa75dced737aeff2e95a0c08a666efb",
+        "assertions": [
+          "self.assertEqual(result, {'outcome': 'recovery_required', 'kind': 'engine_unavailable',\n            'error_type': 'SyntaxError', 'error': 'engine broken', 'observed_at': sim.clock.now()})",
+          "self.assertEqual(failure, result)",
+          "self.assertEqual(self.scene.load(), before)",
+          "self.assertEqual(self.scene.ports.scheduler.calls, [])",
+          "self.assertEqual(self.scene.jobs.launched, [])",
+          "self.assertEqual(self.scene.cli.calls, [])"
+        ]
+      }
+    ],
+    "reuse": [
+      "run:phases/027/manager-evidence/review.md"
+    ]
+  },
+  "decision": {
+    "role_and_io": "decision.change routes to apply_decision/initialization; governance record, grant, revoke, task_scope, import_approval, repetition_continue and academic_rejection each own their kind-specific coordinates and authority. Partial academic array is record.content.academic_requirements, not a decision.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "DECISION",
+        "lines": [
+          122,
+          130
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "86ae7b9fef3e5de14d25af15371e9d8f34e3e90c392659e90fd943c892b84477"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "GOVERNANCE_RECORD",
+        "lines": [
+          102,
+          104
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "4db2d5b8fcf37f8b0c6d135cf8bb3cfd367a2db2079b884b2ab61907d6cc1672"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "GRANT",
+        "lines": [
+          106,
+          109
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "5acd116b59fb8cfde08358f1fba85a888bdb6a83f6fa8c3767af4fd8d6b85c7f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "ACTION",
+        "lines": [
+          115,
+          117
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "68d398badc5df87c0277b4b04c683d21f6b0be1c6f30396b38b8f9c3c3bb2e49"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "symbol": "apply_decision",
+        "lines": [
+          518,
+          675
+        ],
+        "file_sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595",
+        "fragment_sha256": "f419ba8d12e38aa95e94b2c49a3f4429c44cd404d42a23f220e9e1f70ba2780d"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "symbol": "requirement_record",
+        "lines": [
+          33,
+          41
+        ],
+        "file_sha256": "9f865e81f9b15809782f9f77878a95dc47db820a7c118734b4682a75e898f9f7",
+        "fragment_sha256": "ca75b99220589680a9eeafa95f326b8d01bab84b4c7bad770abb41c184219dea"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "symbol": "apply_task_dispositions",
+        "lines": [
+          83,
+          137
+        ],
+        "file_sha256": "f73eba27e250f64d244febd6380afe61eaddfc505ed1b291efd9a1befe099f9f",
+        "fragment_sha256": "dc4aedf64fc8f38c5e72ddce40ea8eb6d3e1d616a06671c3b5eb492fda6c55c5"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "symbol": "action_scope",
+        "lines": [
+          162,
+          167
+        ],
+        "file_sha256": "a121ed676fa33cf273fdb61dc1a0523737abd2da59582ff7916e8d534dba41ce",
+        "fragment_sha256": "17faa3030a1268af72381f1a110246bfb0352f926418a8b37cedff0b5f2b1a5b"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "symbol": "continue_repetition",
+        "lines": [
+          280,
+          327
+        ],
+        "file_sha256": "a121ed676fa33cf273fdb61dc1a0523737abd2da59582ff7916e8d534dba41ce",
+        "fragment_sha256": "e5489c800e42a8caaee279451e278ef2bd814330347cf965bf0dfc2daf14c9da"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/023/manager-evidence/review.md",
+      "run:phases/024/manager-evidence/review.md"
+    ]
+  },
+  "source": {
+    "role_and_io": "CLI reads a file and normalized_source fixes safe name/base64/hash/bytes at admission. _source adds source.bin, rechecks identity, revises same source name; completed task history is separate currentness.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "normalized_source",
+        "lines": [
+          60,
+          63
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "9ec87c11b76c513960b49685029a71f09122bd6478a759fea2f6c03626834d93"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "normalized_source_bytes",
+        "lines": [
+          66,
+          83
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "ae22606c6fa3bd7cdbc65cc836c479a387b0f80119f3b877a519dd1a93929f8b"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "submit_control",
+        "lines": [
+          229,
+          333
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "c2d0e9e722dad508e006ddacb52d926d729909b5171c416fec59dd2f5845d7bc"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._apply_inbox",
+        "lines": [
+          792,
+          913
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "efd922a2b94524fe6c917f576ca71bb83b3b39b1784fb9e2028f210e845dcf68"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  },
+  "knowledge-candidate": {
+    "role_and_io": "Import accepts CANDIDATE authored keys and registered kind/dependencies/source refs; same existing ID is rejected. Revise validates changes and creates a new replacement record while preserving original authority/history.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "CANDIDATE",
+        "lines": [
+          133,
+          135
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "cced979b72d6699cdf25c28852dce78554563711b19c4413da1baf9f4e8a7774"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "PAYLOADS",
+        "lines": [
+          163,
+          187
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "ba39ecdc845d1b6eb8e567333d09dc839af450613f52012138a84ed5672c6137"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "_KNOWLEDGE_FIELDS",
+        "lines": [
+          20,
+          20
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "fa16a3f30aa923387ce9c88e7918123d3450db95e5191fb86b8b48bec2495c49"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "candidate_shape_errors",
+        "lines": [
+          201,
+          221
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "076195be8b835cdaa89bccd682339f73cb314031c617deed2d9d1fb4fd95b8de"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "import_candidate",
+        "lines": [
+          240,
+          320
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "a2efa47c2b0cfaf92001b38ecea7df8a1933ed5ae197e6a7bdaa7fa8e7506ebd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "symbol": "AUTHORED_FIELDS",
+        "lines": [
+          482,
+          485
+        ],
+        "file_sha256": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
+        "fragment_sha256": "a30476857e989071d50888919bb3c3b304d4ea7d8d71495824415156efdff03d"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "symbol": "validate_changes",
+        "lines": [
+          488,
+          494
+        ],
+        "file_sha256": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
+        "fragment_sha256": "d2cb01675b583b951e3ae951edf58125dff7332d9e04dafde92a1654aec76ea7"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "symbol": "replace_knowledge",
+        "lines": [
+          513,
+          558
+        ],
+        "file_sha256": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
+        "fragment_sha256": "b56e24dd7a08d1cdb91631b39d6326197a9c842a5baea9543558b0fc36be5638"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "symbol": "revise_knowledge",
+        "lines": [
+          561,
+          570
+        ],
+        "file_sha256": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
+        "fragment_sha256": "336bd03e3fec832ca1ce840f02e94bdafbe8a7b197ba2f365864400fabc12ec9"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._knowledge_io_control",
+        "lines": [
+          1388,
+          1411
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "71d2a6da19782d1a2ecddf8ee5fcccce3c6eda864ac972aa39feff3fb632fc2a"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "symbol": "KnowledgeEngineMixin._knowledge_control",
+        "lines": [
+          31,
+          60
+        ],
+        "file_sha256": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616",
+        "fragment_sha256": "865538ec10a7b51dffae024f1fc54715b0f10e4b346f035b5e8fc9c16beb3c1a"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "symbol": "CandidateImportTests.test_same_id_import_rejected_explicit_revision_preserves_old_authorities",
+        "lines": [
+          66,
+          80
+        ],
+        "file_sha256": "8220cf416676a54101a3324c4e87855461924f294db98c6bcd5d64dbc95bffe1",
+        "fragment_sha256": "4ac32e22965f2beb6840a8b217e8ea35faef6d90271af42bf75ca2e2bb06c3f3",
+        "assertions": [
+          "self.assertNotEqual(replacement['id'], kid)",
+          "self.assertEqual(replacement['formal_result_id'], ins['knowledge'][kid]['formal_result_id'])",
+          "self.assertEqual(changed['identity_assessments'], ins['identity_assessments'])",
+          "self.assertEqual(kr.proposal_view(changed, kid)['statement'], 'True')",
+          "self.assertEqual(kr.usable_links(changed, replacement['id']), [])",
+          "self.assertEqual(queued['queue'][-1]['role'], 'identity_review')",
+          "self.assertRaisesRegex(ValueError, '^record ID already exists; revisions require a new ID$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "symbol": "KnowledgeImportTests.test_duplicate_import_does_not_replace_saved_record",
+        "lines": [
+          84,
+          99
+        ],
+        "file_sha256": "4d532d66ce2c3a1599385518aa46c9b67a37f19de584d35ecb1b91dbf3318a8e",
+        "fragment_sha256": "37a4dd6eb2fb0751fdddfbff8cece75e46894e77f6ed8bfad0d15e23e5ad826f",
+        "assertions": [
+          "self.assertEqual(sim.instance['knowledge'][kid], saved)",
+          "self.assertEqual(len(sim.instance['knowledge']), count)",
+          "self.assertEqual(len(rejected), 1, sim.runtime['history'])",
+          "self.assertEqual(rejected[0]['reason'], 'record ID already exists; revisions require a new ID')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "symbol": "KnowledgeImportTests.test_ended_instance_refuses_knowledge_imports",
+        "lines": [
+          101,
+          112
+        ],
+        "file_sha256": "4d532d66ce2c3a1599385518aa46c9b67a37f19de584d35ecb1b91dbf3318a8e",
+        "fragment_sha256": "00750b7cff216446fc17b3c360a229ed31512db5ed3fafcd70ebc8dd99bfaa23",
+        "assertions": [
+          "self.assertEqual(engine.runtime['status'], status)",
+          "self.assertEqual(engine.instance['knowledge'], knowledge)",
+          "self.assertRaisesRegex(ValueError, '^closed/completed instance cannot apply knowledge controls$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_explanation_revision_preserves_formal_evidence_and_old_judgment",
+        "lines": [
+          52,
+          69
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "9fa62fb8aad0efdaa1d9beb5043a23fd6dc3d81e4f54deb3953d8d081ec24775",
+        "assertions": [
+          "self.assertEqual(revised['formal_results'], formal)",
+          "self.assertEqual(revised['identity_assessments'][aid], assessment)",
+          "self.assertEqual(revised['knowledge'][kid]['lifecycle'], 'superseded')",
+          "self.assertEqual(len(replacements), 1)",
+          "self.assertFalse(knowledge.assess_use(replacements[0], revised)['valid'])",
+          "self.assertEqual(old_use['status'], 'suspended')",
+          "self.assertEqual(revised['expositions'][state['knowledge'][kid]['exposition_id']]['lifecycle'], 'superseded')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_revision_changes_name_only_authored_fields",
+        "lines": [
+          86,
+          95
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "2a37a05dd215639a090b600bf88ac7f160645bae01add2126cd72b6a716b4ec0",
+        "assertions": [
+          "self.assertRaisesRegex(\n                    ValueError, '^changes name fields a revision cannot author: ' + field + '$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "symbol": "AuthorityTests.test_revision_reuses_candidate_kind_and_dependency_validation",
+        "lines": [
+          75,
+          84
+        ],
+        "file_sha256": "31c1d325a002e9d0921f9bf89e62a698b7e4e7983e9813fd471cbd847b932ddf",
+        "fragment_sha256": "bfa827db514053cfddf711e754e65bb5b072659f0655bdbeb4596efa7f15d400",
+        "assertions": [
+          "self.assertRaisesRegex(ValueError, re.escape(reason))"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "knowledge-kind": {
+    "role_and_io": "register-kind definition requires exact family/token/meaning/constraints. Active duplicates are refused; withdrawn token may be registered as new KD record with supersedes. Installed kinds are initially active; new ones are candidate -> checked -> active, with explicit withdrawal.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "register_kind_definition",
+        "lines": [
+          111,
+          146
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "0bc42bdecbeb6cdca94f02809167d81e7d28d7ec1f5cdcc19753252a998548d7"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "withdraw_kind_definition",
+        "lines": [
+          173,
+          190
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "fd9a775dae03b18472c7dbd02672c1d2a81cdc0607c7a444258b9fc5fb547fa0"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "check_kind_definition",
+        "lines": [
+          149,
+          158
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "57ea0cda4e39db3386cb273f98c303d2782c229076e6220b791b8c1ca8fb1a1e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "activate_kind_definition",
+        "lines": [
+          161,
+          170
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "aed3ed5916777ccd3ecba23d48eef472905b35d563108f8119a68f7f7fce9da8"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "CoreEngineMixin._knowledge_io_control",
+        "lines": [
+          1388,
+          1411
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "71d2a6da19782d1a2ecddf8ee5fcccce3c6eda864ac972aa39feff3fb632fc2a"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "symbol": "KindGuards.test_withdrawal_and_reregistration_preserve_predecessor",
+        "lines": [
+          202,
+          210
+        ],
+        "file_sha256": "7ff9f966a7cd990281f58fbeffda33b9d95df3529c3ac370967ac313b99d5412",
+        "fragment_sha256": "1f07316de6574ddb93630477eebfbd9c1dd7ec4eccafcf214e8fdce764ff8a2d",
+        "assertions": [
+          "self.assertEqual(runtime, {})",
+          "self.assertEqual(io.lookup_definition(withdrawn, 'knowledge', token)['status'], 'withdrawn')",
+          "self.assertEqual(io.lookup_definition(renewed, 'knowledge', token)['supersedes'], previous['id'])",
+          "self.assertEqual(io.lookup_definition(state, 'knowledge', token), previous)"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "knowledge-relation": {
+    "role_and_io": "relation_claim is a partial four-key authored object; import-relation owns kind/source/target/evidence refs/formal results/assessments. Known endpoints and exact claim/accepted formal evidence are required before actual relation admission.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "validate_relation",
+        "lines": [
+          328,
+          378
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "69f4a8e3c03099a6f5f9797d4bce72dd37799035f4df850a0db10ce7fd72d77e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "import_relation",
+        "lines": [
+          381,
+          406
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "90f637acf397e47aaaef48a61687a4e828c4e69c26126f5a8c6b38340e729b34"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "symbol": "import_candidate",
+        "lines": [
+          240,
+          320
+        ],
+        "file_sha256": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "fragment_sha256": "a2efa47c2b0cfaf92001b38ecea7df8a1933ed5ae197e6a7bdaa7fa8e7506ebd"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "RELATION",
+        "lines": [
+          131,
+          132
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "900755f2f6a5676498fe5e347f37accd67e9527c23e3570e3e813623fa3b34d6"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "symbol": "CandidateImportTests.test_relation_claim_endpoint_basis_matches_the_storage_contract",
+        "lines": [
+          82,
+          111
+        ],
+        "file_sha256": "8220cf416676a54101a3324c4e87855461924f294db98c6bcd5d64dbc95bffe1",
+        "fragment_sha256": "ad3da62d21fe97091b65863c42529a20ebcd696da82ff88bffab1db5a160b010",
+        "assertions": [
+          "self.assertEqual(ins['knowledge'][proof]['relation_endpoint_basis'], expected)",
+          "self.assertTrue(knowledge.validate_basis(expected, ins, run)['valid'])",
+          "self.assertEqual(list(caught.exception.absolute_path)[0], 'relation_endpoint_basis')",
+          "self.assertRaisesRegex(jsonschema.ValidationError, reason)"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "trust": {
+    "role_and_io": "trust operation vocabulary register/transition/invalidate routes formal_engine; toolchain_record/binding are consumed by trust_validation. Register is inactive candidate, transition queues trust_check/activate; rerecord is setup_lean control, not a trust operation.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "symbol": "FormalEngineMixin._trust_control",
+        "lines": [
+          19,
+          79
+        ],
+        "file_sha256": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+        "fragment_sha256": "279c0ca94e656199af7475775067f5f8439300765e5eceafa55cc017876196ea"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "symbol": "register_request_errors",
+        "lines": [
+          81,
+          87
+        ],
+        "file_sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+        "fragment_sha256": "47d49fb70e56a90d5449e09cc78582d05914c690c2f6ab34278d792458fca52c"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "symbol": "environment_errors",
+        "lines": [
+          61,
+          78
+        ],
+        "file_sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260",
+        "fragment_sha256": "9df4d225c38f39bbd397e90e1a9f1be8363e2426022a6086b6d1716db9adec82"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "symbol": "main",
+        "lines": [
+          208,
+          278
+        ],
+        "file_sha256": "5450208069e8274bad89a3424ff35ec7c36a1135c05a32b7cdd2f45d80cb1a3c",
+        "fragment_sha256": "e47ffab5e7e1b2ad782dad35c6fc23c987f284600e7f7f814dee5971437868ff"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": [
+      "run:phases/025/manager-evidence/review.md"
+    ]
+  },
+  "external": {
+    "role_and_io": "Prepare owns HTTP request and exact grant. check_url/check_body validate safe method/path/text before prepare/send. Reconcile owns exact operation ID/hash/key/fact/time evidence; retry keeps ledger identity with current grant and request-bound evidence; optional external_id/idempotency_evidence live in evidence.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "PAYLOADS",
+        "lines": [
+          163,
+          187
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "ba39ecdc845d1b6eb8e567333d09dc839af450613f52012138a84ed5672c6137"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "EVIDENCE",
+        "lines": [
+          138,
+          138
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "bd7f45396d21f1b69f161d3cbd013b9a1bf2784cdc97a41073a9df3c9eee736c"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "symbol": "check_url",
+        "lines": [
+          5,
+          11
+        ],
+        "file_sha256": "1ab85079050fb6c7005f9674573488b67c6ee40b7ff878a9ccbfbf8438e9961c",
+        "fragment_sha256": "d660c97f43523b586209714764cf3df42e95309517ae2f3692b50007eee1586f"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "symbol": "check_body",
+        "lines": [
+          14,
+          20
+        ],
+        "file_sha256": "1ab85079050fb6c7005f9674573488b67c6ee40b7ff878a9ccbfbf8438e9961c",
+        "fragment_sha256": "58358713149724a4178f65cf82e1ad882ed7bb99a91556f2d445eedf7646616c"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "symbol": "ExternalEngineMixin._external_control",
+        "lines": [
+          9,
+          109
+        ],
+        "file_sha256": "3c182a9e07cdad33a6877de465b34ce90152004a12d5507cb4adf24fa52785e6",
+        "fragment_sha256": "84a4e0d309df44797b9b927baeaf717a361d2e9c636fbc4752d1d8b124d4bd3e"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "prepare_operation",
+        "lines": [
+          26,
+          36
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "0df944fdc833891ca839cc511ea823d2cc5b4ac6c164a179e662a816f80a5145"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "prepare_retry",
+        "lines": [
+          125,
+          136
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "11eae7501a82af007eba1e10fe0cfc9c359cf5b2301f864348021f84abece170"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "symbol": "reconcile_operation",
+        "lines": [
+          138,
+          159
+        ],
+        "file_sha256": "c72686d492e7a56b308779d3ba2b2721d39cb229d0abece3500b40383eabb95c",
+        "fragment_sha256": "89d0f06f8c6fab97dedd3878b84a250bca97a84b2fe493c2984e8e9c7935a4bf"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "symbol": "ExternalOperationTests.test_non_2xx_is_failed_only_when_effect_absence_is_evidenced",
+        "lines": [
+          48,
+          61
+        ],
+        "file_sha256": "5754dc251f291cbf373ed439e2263c956909e8f2e20e4ab549cfaea375e30372",
+        "fragment_sha256": "5118ae2ad91fe83f612e4ba6b51e0f63255d33b96b5668cc7808397011e3ce9b",
+        "assertions": [
+          "self.assertEqual(result[\"status\"], \"failed\")",
+          "self.assertIs(result[\"succeeded\"], False)",
+          "self.assertTrue(result[\"effect_absent\"])",
+          "self.assertEqual((unproven[\"status\"], unproven[\"succeeded\"], unproven[\"error\"]),\n                         (\"unknown\", None, \"non-success response does not establish effect absence\"))"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "symbol": "ExternalOperationTests.test_reconciliation_cannot_assert_success_from_unbound_text",
+        "lines": [
+          42,
+          46
+        ],
+        "file_sha256": "5754dc251f291cbf373ed439e2263c956909e8f2e20e4ab549cfaea375e30372",
+        "fragment_sha256": "0c1c3c12bdfa11fc52b454c340c98127d2f70ce4ea878800b9bc69d0d488de74",
+        "assertions": [
+          "self.assertRaisesRegex(ValueError, \"^invalid reconciliation$\")"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_reconciliation_rejects_each_unbound_evidence_field",
+        "lines": [
+          162,
+          171
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "45bf43bef21d15d1d014de057824433a356a1f57667db99f38e6282d3d23b4ec",
+        "assertions": [
+          "self.assertEqual(len(self.case.http.requests), 1)",
+          "self.assertEqual(unknown, before)",
+          "self.assertRaisesRegex(ValueError, '^reconciliation evidence must bind the exact external operation$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_reconciliation_rejects_fact_different_from_outcome",
+        "lines": [
+          173,
+          178
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "8bec4c773839c2c62a837447d1c9ef07ccef44531560b86f28a6f2611dba434d",
+        "assertions": [
+          "self.assertEqual(unknown['status'], 'unknown')",
+          "self.assertRaisesRegex(ValueError, '^evidence fact differs from asserted outcome$')"
+        ]
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "symbol": "ExternalValidationTests.test_effect_absence_retry_requires_established_absence",
+        "lines": [
+          150,
+          160
+        ],
+        "file_sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0",
+        "fragment_sha256": "d072b8650408db91bcd08bbddab3bccf9ec841528dd7b6a7f8469b66095a61bd",
+        "assertions": [
+          "self.assertEqual(result, {**failed, 'status': 'prepared', 'transmitted': False,\n            'transmission_phase': 'not_started', 'retry_evidence': {**evidence, 'source': 'user'}, 'previous_outcome': 'failed'})",
+          "self.assertEqual(len(self.case.http.requests), 1)",
+          "self.assertRaisesRegex(ValueError, '^effect absence not established$')"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "conversation": {
+    "role_and_io": "attach/heartbeat/detach belong to _conversation_control. Positive integer generation/lease are stored; explicit disconnect_policy updates both runtime conversation and instance policy, omitted uses current policy. Heartbeat only live newer-generation connection.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "symbol": "PAYLOADS",
+        "lines": [
+          163,
+          187
+        ],
+        "file_sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9",
+        "fragment_sha256": "ba39ecdc845d1b6eb8e567333d09dc839af450613f52012138a84ed5672c6137"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "symbol": "LifecycleEngineMixin._conversation_control",
+        "lines": [
+          470,
+          507
+        ],
+        "file_sha256": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
+        "fragment_sha256": "ece896d9362c02fd3586bd1feb76b2fc77a2c8bf78393d255220a161a137be9b"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "symbol": "conversation_lease_live",
+        "lines": [
+          31,
+          34
+        ],
+        "file_sha256": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
+        "fragment_sha256": "d331c562fe39abec5b50741a745b7bfa62391c7a0b41d66d83ae548cf90388d4"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "symbol": "PublicControlBoundaryTests.test_resume_requires_a_live_generation_newer_than_the_lost_generation",
+        "lines": [
+          274,
+          318
+        ],
+        "file_sha256": "c009ffd19f4c6297f157d2fb046f5edb4db597011f2467e9eaea213e10ed1275",
+        "fragment_sha256": "64b40060f74890c8355a8768c08c92678b5c1f9f30032d9241d6e6efbaef7141",
+        "assertions": [
+          "self.assertEqual(sim.instance['conversation_loss_policy'], 'continue_authorized')",
+          "self.assertFalse(sim.engine._conversation_live())",
+          "self.assertEqual(sim.runtime['lost_conversation_generations']['lease'], 1)",
+          "self.assertEqual(instance['conversation_loss_policy'], policy)",
+          "self.assertEqual(row['disconnect_policy'], policy)",
+          "self.assertEqual(row['generation'], generation)",
+          "self.assertEqual(row['source_ref'], request['request_id'])",
+          "self.assertFalse(sim.engine._conversation_live())",
+          "self.assertTrue(sim.engine._conversation_live())",
+          "self.assertEqual(sim.instance['lifecycle']['state'], 'active')",
+          "self.assertRaisesRegex(ValueError, 'new connection generation')"
+        ]
+      }
+    ],
+    "reuse": [
+      "run:phases/027/manager-evidence/review.md",
+      "run:phases/026/tasks/policy-semantics/evidence/policy-decisions.json"
+    ]
+  },
+  "record-query": {
+    "role_and_io": "query_records/read_record use one snapshot and exact persisted file evidence; query family labels derive from planning.RECORD_FAMILIES, not unrelated storage name. logical hash differs from raw sha/bytes. Cursor binds all query filters.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "query_records",
+        "lines": [
+          357,
+          404
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "243b047af707e84de59d56af83f36c213d2c12785e62f3f06356bb5e0326f066"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "read_record",
+        "lines": [
+          407,
+          410
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "8bb741de24e67230ca7a31cf9d5c1236c7830d6fe1f8117dd124a68632d69173"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "_record_evidence",
+        "lines": [
+          336,
+          340
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "ddcc7b3f518d0d90b36514374dfef5406e79baaa591f1c6dd42227adec6059af"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "symbol": "RECORD_FAMILIES",
+        "lines": [
+          382,
+          392
+        ],
+        "file_sha256": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709",
+        "fragment_sha256": "d89f760821fc4dfee67010df51e7d83c1f543ecb3a99a715dbfdea83dff10b86"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.load_records",
+        "lines": [
+          481,
+          485
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "cc018983c24de5d81c00827ce4f267753055902662f1e96d23a5f32ffdb048aa"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.read_record",
+        "lines": [
+          487,
+          492
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "4a2a9939860ef8a4ddca9a83e249f80723ad1c022c28bc1e25c03b0b4d9aef8a"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+        "symbol": "QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+        "lines": [
+          23,
+          62
+        ],
+        "file_sha256": "2f5f54f25624fa7435564915ae6381c77bfeb237dc4c80be89b6eb00a61740fa",
+        "fragment_sha256": "81b207d5694465768a2c8035e33ca60f466bb8ff44c098e7714b70904abe9f44",
+        "assertions": [
+          "self.assertEqual(unowned_field_references(alias + '\\n`record.family`', schemas), ['record.family'])",
+          "self.assertEqual(_query_record({\"family\": \"question_links\", \"record\": {\"id\": \"Q\"}})[\"family\"], \"question\")",
+          "self.assertEqual(_query_record({\"family\": \"capability_evidence\", \"record\": {\"id\": \"C\"}})[\"family\"],\n                         \"capability_evidence\")",
+          "self.assertEqual(record[\"family\"], name)",
+          "self.assertEqual([(path, *issue) for path, text in texts\n                                      for issue in field_issues(text, record)], [])",
+          "self.assertEqual(field_issues('`query_record.family`', record), [])",
+          "self.assertEqual(field_issues(alias, record), [])",
+          "self.assertEqual(field_issues(alias, omitted), [('scoped field', 'record.family')])",
+          "self.assertIn(('references/CLI-실행-계약.md', 'scoped field', 'record.family'),\n                        [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])"
+        ]
+      }
+    ],
+    "reuse": [
+      "run:phases/009/manager-evidence/review.md"
+    ]
+  },
+  "file-query": {
+    "role_and_io": "ResearchRepository.query validates research/runtime slash prefix and limit, byte search/order/page cursor; JSON query schema and execute reject unused cross-mode filters.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.query",
+        "lines": [
+          549,
+          624
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "9f19b0593cad909b348870948f67530a7c5a800541cdbbc1cf626d423cc4a476"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "_validate_prefix",
+        "lines": [
+          694,
+          703
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "8ed71b8ac7a8d39aa3be4f12c688464d4ddb79f5800eee3384033ebd3c9db814"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "symbol": "describe_commands",
+        "lines": [
+          194,
+          237
+        ],
+        "file_sha256": "346d74b626cceba4a628d738134679964d9dc0abde1f4b860a357bef18509801",
+        "fragment_sha256": "825c5a3cdf76938921e09f3110bee32c006d4d81f90eeb8117df9dfb727d87c1"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "QueryInputTests.test_query_rejects_unused_filters_before_reading_in_both_interfaces",
+        "lines": [
+          34,
+          64
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "77cee8bffaf10eb2c9166307076b3599dc835b19929c7f44884797c8ddf4c9ad",
+        "assertions": [
+          "self.assertEqual((calls.count('repository'), calls.count('records')), (0, 0))",
+          "self.assertEqual(str(refused.exception), argv_reason)",
+          "self.assertEqual(str(refused.exception), json_reason)",
+          "self.assertRaises(CliInputError)",
+          "self.assertRaises(CliInputError)"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "read": {
+    "role_and_io": "read_record gives decoded record and raw/logical evidence; exact-path read gives text/base64 or writes bytes locally with --output. --output with --id is rejected before read.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "symbol": "read_record",
+        "lines": [
+          407,
+          410
+        ],
+        "file_sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "fragment_sha256": "8bb741de24e67230ca7a31cf9d5c1236c7830d6fe1f8117dd124a68632d69173"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.read",
+        "lines": [
+          494,
+          510
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "5bdfa7143d962992e7134b651310840f3629055176feb6d963252880cd0c0727"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.resolve_snapshot",
+        "lines": [
+          669,
+          675
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "866a22688de570d7cd4346c7031ad07a4f0e38857df42925ed22126123cce4c1"
+      }
+    ],
+    "consumer_tests": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "symbol": "RequestFileTests.test_record_output_path_is_rejected_before_reading",
+        "lines": [
+          73,
+          79
+        ],
+        "file_sha256": "5df8ca6951f82ada4baf0e67125ad66b18d048c472547d832d29689bc3ac7e8a",
+        "fragment_sha256": "11b4dbafff7cbdc4bfcd12540bc20edcf104dd10c213d0dd7d68a691126e3e3e",
+        "assertions": [
+          "self.assertEqual(code, 2)",
+          "self.assertEqual((calls.count('read'), calls.count('repository')), (0, 0))",
+          "self.assertEqual(envelope['error']['message'], '--output requires --path')"
+        ]
+      }
+    ],
+    "reuse": []
+  },
+  "export": {
+    "role_and_io": "Repository.export writes selected research or all research/runtime prefixes to empty destination and rejects reparse path. Snapshot copy has no authority to be a new state/workspace.",
+    "definitions": [
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "symbol": "ResearchRepository.export",
+        "lines": [
+          626,
+          663
+        ],
+        "file_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7",
+        "fragment_sha256": "9ec5b1cc857d0a70d9dbee0020bda2ba5d461b0216c6657b88061b0a8bc764a5"
+      },
+      {
+        "ref": "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "symbol": "execute",
+        "lines": [
+          121,
+          318
+        ],
+        "file_sha256": "52d4908c8f911d9d1b3855cac56946965e34d3d55eb22c29a9709dd25af35226",
+        "fragment_sha256": "564c2a45d64d1b371ddb6eb2b7958af9d0487fb73a2d505a6c9dfac31d860570"
+      }
+    ],
+    "consumer_tests": [],
+    "reuse": []
+  }
+}

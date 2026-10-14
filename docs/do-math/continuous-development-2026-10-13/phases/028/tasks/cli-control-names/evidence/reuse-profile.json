@@ -1,0 +1,1217 @@
+{
+  "properties": [
+    {
+      "phase": "008",
+      "report_ref": "run:phases/008/tasks/document-recovery/report.json",
+      "report_sha256": "368d9a0972d806f5f3c9943119a123ffe895c150bb9a1868b58f6b96da790356",
+      "status": "partial",
+      "manager_ref": "run:phases/008/manager-evidence/review.md",
+      "manager_sha256": "da8a9ec27788b632a277061393f1e9325ff1c4f9234f3589052812b40e50df8b"
+    },
+    {
+      "phase": "019",
+      "report_ref": "run:phases/019/tasks/document-results/report.json",
+      "report_sha256": "8b6f8371e2e922b1a0e2261e60e1cda414398465c073a1ada81a0e212387b922",
+      "status": "complete",
+      "manager_ref": "run:phases/019/manager-evidence/review.md",
+      "manager_sha256": "9054c38dee778990463da1300dd6eedde5403841d631a5bf6a321904965f634d",
+      "source_profile_ref": "run:phases/019/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "b83f96d4b53cc5ee8997ca404caf9ae8254eab4f60c126a883abb8ff10dcc2ad",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "020",
+      "report_ref": "run:phases/020/tasks/document-tools/report.json",
+      "report_sha256": "e45d89e5962c17c97c0521bd068be73ee6bc7c767b383873f25922f31d21a75e",
+      "status": "complete",
+      "manager_ref": "run:phases/020/manager-evidence/review.md",
+      "manager_sha256": "aac7554c1b886a73b681b1150dbde44433cf637db31d338141cde878636b97b2",
+      "source_profile_ref": "run:phases/020/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "ee362a7f0f4f12b27534948683d3c1704852645835c35c91c1145cb7fb1602a4",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "022",
+      "report_ref": "run:phases/022/tasks/review-delivery/report.json",
+      "report_sha256": "32f0e7b4125b5eb61e55ea562cb9a512ca70d0afa5982fb88f0cd179930d4188",
+      "status": "complete",
+      "manager_ref": "run:phases/022/manager-evidence/review.md",
+      "manager_sha256": "04762e4869d058047931fdad35d865667ee4c8fe0ed1d9e21173f0b45c5cf6c4",
+      "source_profile_ref": "run:phases/022/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "c7cf2bd4029a20ed51e46888e7f63c009ad7f5c57c8e17c366dfdbedc6c264c7",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "023",
+      "report_ref": "run:phases/023/tasks/document-governance/report.json",
+      "report_sha256": "1bac9c0dfdd77b16e41dec1d6e24652ff879dcf25cba59e0652f937e47683816",
+      "status": "complete",
+      "manager_ref": "run:phases/023/manager-evidence/review.md",
+      "manager_sha256": "7ae7f62522f17e7afa4d3094123e7f05b902ff29a56842f36376f73adffc56ad",
+      "source_profile_ref": "run:phases/023/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "0c96b75cc71000956ccbdcfe327f4360216a0346e8d27edaa41ef41f6c5dff5c",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "024",
+      "report_ref": "run:phases/024/tasks/document-waits/report.json",
+      "report_sha256": "8c93bf9842baa5ab525dde4313f874d866c6cd11c74c48a946c6f557ab2a1c25",
+      "status": "complete",
+      "manager_ref": "run:phases/024/manager-evidence/review.md",
+      "manager_sha256": "534cd23bede6289757b1f8f616905394c12429abe61770dea00c1142e03ab98e",
+      "source_profile_ref": "run:phases/024/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "215f49904ef2921264f1fa78682e5de8577cb993f2c6ba8370352650561d24dc",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "025",
+      "report_ref": "run:phases/025/tasks/document-trust/report.json",
+      "report_sha256": "b56c3c2caa8b9ac3fc061f3571ab76b2de6b3f741ef443e1ad1bce3a3ef7f8a7",
+      "status": "complete",
+      "manager_ref": "run:phases/025/manager-evidence/review.md",
+      "manager_sha256": "196651c4b154f45e6b4a1a3f1acda24f251bc82f9d23c43acb6f902a69eeea11",
+      "source_profile_ref": "run:phases/025/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "f71a21459fb5f1cba4dca0c0d93009525c449f65569c1fafbb7045dbb542b0d0",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "026",
+      "report_ref": "run:phases/026/tasks/policy-semantics/report.json",
+      "report_sha256": "69fdbd7c27ef58e5d70d920bdc8a5ed593aa9737fce0fc580f78ed2eb420fb1d",
+      "status": "complete",
+      "manager_ref": "run:phases/026/manager-evidence/review.md",
+      "manager_sha256": "52964f23366f0146845b595565985f2db929d87778b243123b4f5fe77881c7be",
+      "source_profile_ref": "run:phases/026/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "86e1ac8f7fbdca4f1cd8a80265d985fb9ddf77fa9c99882ea41b6b917b6542fe",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "changed_used_files": [
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py"
+      ],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    },
+    {
+      "phase": "027",
+      "report_ref": "run:phases/027/tasks/doc-policy/report.json",
+      "report_sha256": "37eb89f8265ad251731bb1ed43214862eb76ccc3cf39ce9d7a130e6f18a26b3c",
+      "status": "complete",
+      "manager_ref": "run:phases/027/manager-evidence/review.md",
+      "manager_sha256": "d40fa1a20df46dad1b2faac09850e3dd9698ae9f2bc4751bef30712be4af6d18",
+      "source_profile_ref": "run:phases/027/manager-evidence/source-inspected.json",
+      "source_profile_sha256": "c808471fbb09601250f45e1ce77b5324be11516325c713caa5fa9e75ec433966",
+      "matched_used_files": [
+        "repo:.claude/skills/do-math/scripts/do_math/academic.py",
+        "repo:.claude/skills/do-math/scripts/do_math/activities.py",
+        "repo:.claude/skills/do-math/scripts/do_math/call_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli.py",
+        "repo:.claude/skills/do-math/scripts/do_math/cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "repo:.claude/skills/do-math/scripts/do_math/configuration.py",
+        "repo:.claude/skills/do-math/scripts/do_math/context_store.py",
+        "repo:.claude/skills/do-math/scripts/do_math/contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/dispatch_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "repo:.claude/skills/do-math/scripts/do_math/execution_window.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external.py",
+        "repo:.claude/skills/do-math/scripts/do_math/external_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "repo:.claude/skills/do-math/scripts/do_math/formal_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance.py",
+        "repo:.claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/http_request.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization.py",
+        "repo:.claude/skills/do-math/scripts/do_math/initialization_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "repo:.claude/skills/do-math/scripts/do_math/launch.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lean_evidence.py",
+        "repo:.claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "repo:.claude/skills/do-math/scripts/do_math/model_policy.py",
+        "repo:.claude/skills/do-math/scripts/do_math/observations.py",
+        "repo:.claude/skills/do-math/scripts/do_math/planning.py",
+        "repo:.claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "repo:.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "repo:.claude/skills/do-math/scripts/do_math/repository.py",
+        "repo:.claude/skills/do-math/scripts/do_math/revisions.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "repo:.claude/skills/do-math/scripts/do_math/scholarly_config.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_checks.py",
+        "repo:.claude/skills/do-math/scripts/do_math/state_contract.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "repo:.claude/skills/do-math/scripts/do_math/task_scope.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "repo:.claude/skills/do-math/scripts/setup_lean.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_engine_cli_input.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+        "repo:.claude/skills/do-math/scripts/tests/sim/test_operator_finish_cli.py",
+        "repo:.claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_operations.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_sends.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_academic_external_validation.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_configuration.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_engine_cli_request_matrix.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_close_imports.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_knowledge_record_authorities.py",
+        "repo:.claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py"
+      ],
+      "changed_used_files": [],
+      "limitation": "Changed helper/source paths are not whole-file execution evidence; only unchanged exact definition/assertion and manager-approved sentence properties are reused."
+    }
+  ],
+  "historical_B_reports": [
+    {
+      "increment": "B132",
+      "mode": "red",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red.json",
+      "expected_sha256": "b64c12cf9685115b980430d2b5b9640ec97f18493d0c3b14329cd23f733bf714",
+      "actual_sha256": "b64c12cf9685115b980430d2b5b9640ec97f18493d0c3b14329cd23f733bf714",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "failed"
+        }
+      ]
+    },
+    {
+      "increment": "B132",
+      "mode": "green",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green.json",
+      "expected_sha256": "a9bc14f91bd37d36818db9707a305502f9f5cf596b1303001eeea75a8c4120ff",
+      "actual_sha256": "a9bc14f91bd37d36818db9707a305502f9f5cf596b1303001eeea75a8c4120ff",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+          "outcome": "passed"
+        }
+      ]
+    },
+    {
+      "increment": "B132",
+      "mode": "red-documents",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red-documents.json",
+      "expected_sha256": "fcef15ab15a9fc37beb727bcc9a49c9c32f66fea2d87979196d9ef79a0274b7d",
+      "actual_sha256": "fcef15ab15a9fc37beb727bcc9a49c9c32f66fea2d87979196d9ef79a0274b7d",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "failed"
+        }
+      ]
+    },
+    {
+      "increment": "B132",
+      "mode": "green-documents",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green-documents.json",
+      "expected_sha256": "a01d3b8235cb485d0d2dd1de21d94187d42a648cf53ace7551ea356e32edf9a1",
+      "actual_sha256": "a01d3b8235cb485d0d2dd1de21d94187d42a648cf53ace7551ea356e32edf9a1",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+          "outcome": "passed"
+        }
+      ]
+    },
+    {
+      "increment": "B133",
+      "mode": "red",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/red.json",
+      "expected_sha256": "afa40a102e764b800e5b9dac3602ee825b708f5f9cad84b03efe3cda33d3378f",
+      "actual_sha256": "afa40a102e764b800e5b9dac3602ee825b708f5f9cad84b03efe3cda33d3378f",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed"
+        }
+      ]
+    },
+    {
+      "increment": "B133",
+      "mode": "green",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/green.json",
+      "expected_sha256": "2e69304c9b2620db3b32738465ee19423e52ba7655c53152a8511fbebe5ed74f",
+      "actual_sha256": "2e69304c9b2620db3b32738465ee19423e52ba7655c53152a8511fbebe5ed74f",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_scoped_packaging.InputFittingTests.test_continuation_preserves_older_files_and_latest_replacements",
+          "outcome": "passed"
+        }
+      ]
+    },
+    {
+      "increment": "B134",
+      "mode": "red",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/red.json",
+      "expected_sha256": "a00a4640b8cfa7567f5b59cdcf71773e4e401b58276932c15bdc06ef2ff973d1",
+      "actual_sha256": "a00a4640b8cfa7567f5b59cdcf71773e4e401b58276932c15bdc06ef2ff973d1",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "failed"
+        }
+      ]
+    },
+    {
+      "increment": "B134",
+      "mode": "green",
+      "ref": "repo:docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/green.json",
+      "expected_sha256": "44fe6fb2c83c55e80aad6855f02004eabd0908cd6eb5acc3dd8d931baa54c9ae",
+      "actual_sha256": "44fe6fb2c83c55e80aad6855f02004eabd0908cd6eb5acc3dd8d931baa54c9ae",
+      "exists": true,
+      "reuse_scope": "Only the designated manifest/restore/profile_selection owner assertion; not entire CLI-control sections.",
+      "actual_rows": [
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+          "outcome": "passed"
+        },
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+          "outcome": "passed"
+        },
+        {
+          "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "outcome": "passed"
+        }
+      ]
+    }
+  ],
+  "history_index_sha256": "7b0436c64c13939bb7bb240001714f24210e62a8e5586bf088921eb5a2b54a12",
+  "policy_decisions_ref": "run:phases/026/tasks/policy-semantics/evidence/policy-decisions.json",
+  "policy_decisions_sha256": "c4b77f43735baf88497e848dd22ed06ede5b0123409b792f513c02b5310aa72e",
+  "limits": "P04/P05/P07 are role input/output outside this 27-section slice; no extra section-wide reuse claim. P03/P06/P08/P10 and policy/connection only exact current sentence/owner property. No new product execution."
+}

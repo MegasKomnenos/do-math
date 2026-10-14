@@ -49,3 +49,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 026의 고정판 판정 결과를 검수했다.027은 기존 초기화 채택/대화 연결 저장, scheduled_operator의 probe 분기, stage_schema/extension_schema 및 cli_contract의 mode choices를 소비한다. 실제 코드 정의가 정본이고 반환·권한·오류 의미를 바꾸지 않는다. 문서/기존 시험/helper·공식 미러를 한 task가 소유하므로 새 S항목이나 provides/uses는 추가하지 않는다. 조사표를 별도 제품 schema로 복제하지 않으며 runtime 수리가 필요하면 정확 반례를 반환한다.
 
 027의 기존 정책 저장·probe 분기와 stage/extension/parser 경계 소비를 검수했다.028은 같은 고정판의 이름·조합·기존 검사 범위를 읽는 세 독립 task다. 새 제품 인터페이스를 제공/소비하거나 제품을 수정하지 않으며 S항목 개정과 provides/uses는 없다. 코드/공유 schema가 계속 정본이고 조사표는 제품 정의가 아니다. 발견된 수리의 실제 연결 검증은 다음 통합 work가 맡는다.
+
+028의 고정판 판정을 검수했다.029는 기존 setup/probe parser의 인자·기본값·오류 의미를 보존하며 main과 문서 검사가 같은 실제 정의를 소비하게 한다. configuration/control·knowledge/external·stage/checkpoint·identity_modules의 정본은 기존 코드이며 문서용 별도 제품 schema를 만들지 않는다. 문구/helper/필요한 parser 추출·미러·관련 실제 소비를 한 task가 함께 맡으므로 S항목과 provides/uses를 추가하지 않는다. 구현/권한의 새 의미가 필요하면 정확 반례로 반환한다.

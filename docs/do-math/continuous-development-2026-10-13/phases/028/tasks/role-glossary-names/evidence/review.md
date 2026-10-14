@@ -1,0 +1,17 @@
+# 028 role-glossary-names 판정
+
+N01-047~208 및 N01-236~268의 195절(용어집162·CLI33)을 현재 제목/행/SHA에 연결했다. 누락과 중복은 없고 원 출현634개를 소유자별로 보존했다. 역사520회와의 차이는 후보 추출 방식의 차이이며 이름의 의미 검증 완료율이나 제품 변화가 아니다. 시작·끝의 정본/미러/diff2675파일과 파일 집합은027 source-inspected와 같다. 제품·시험·캐시·공용 문서·과거 근거를 수정하지 않았다.
+
+읽기 표는 decision-table.md, 원 출현과 절별 결정은 section-decisions.json이다. 같은 절의 반복은 원 행을 유지하고 서로 다른 소유 문단은 분리했다. owner-profiles.json은 각 문맥의 실제 역할/단계/생산/소비를 설명하며 source-profiles.json은 그54파일의 SHA와 실제 선언 위치를 제공한다. non-inline-claims.json은 산문 투영, 단계별 배열 원소, checkpoint JSON 키, timeline synopsis를 추가로 명시한다. 이 조사표는 제품 schema를 대신하지 않는다. 모든 일반 단어를 코드 이름으로 찾거나 존재만으로 승인하지 않았다.
+
+용어집의 K/F/U·보편 상태·금지 동의어는 구현 지원의 보증이 아니다. 특히 형식 사용 효력의 보편 historical과 현행 formal_results.formal_use의 withdrawn을 같은 literal 값으로 전사하지 않는다. 도입5행이 보편/CLI 이름 차이와 비추측 경계를 명시하므로 이를 곧바로 runtime 결함이나 개명 지시로 만들지 않았다. 실제 활동/실행 상태는 ACTIVITY_STATUSES와 EXECUTION_STATUSES, 기록 효력과 판정 효력은 각 별도 상수/저장 가족으로 확인했다. 이름이 없는 절은 보편 개념·권한·수학 판단·보증 범위 또는 구획인 이유를 절별로 적었다.
+
+CLI의 입력은 _context와 prepare_role_input, INLINE_SCOPES/BLOCKED_KEYS/input_class에 연결했다. 주 JSON은 각 action_schema/interpretation_schema, 검토 계보는 stage_schema, 고정 질문 조사는 research_schema, 보조 확장은 extension_schema의 실제 소유자로 구분했다. 순수 schema 관찰의82경로가 실제 정의에 도달한다. 일반 supplemental_research의 submitted와 고정 질문의 answered, operational_review의 disposition과 다른 역할의 decision, judge 전체 decision과 issue_verdicts[].decision, 주 응답 문자열 checkpoint와 파일 객체는 서로 차용하지 않는다. {id,version}과 operational_review의 root decision은 명시 음성 예시다. checkpoint fence는 완전 checkpoint 객체이고, 단편 객체 표기와 timeline 명령 synopsis는 완전 역할 응답이 아니다.
+
+후속은 repair-candidates.json의 두 묶음이다. F1은 CLI748의 active knowledge 동적 enum 설명 교정이다. 실제 contracts.action_schema는 연구 생산자 kind를 TEXT로 바꾸고 _response_schema/_governance_schema는 이를 enum으로 다시 만들지 않는다. submission._payload_issues는 활성 정의와 같은 묶음의 신규 제안을 대조한다. 기존 ExtensionMeaningTests.test_proposed_kind_is_actually_registered_before_checking_its_consumer가 실제 수신의 정상/반례를 단언한다. 이번에는 그 본문만 읽었고 소비 시험을 새로 실행하지 않았다. runtime을 문구에 맞춰 제한하지 않고 문구를 현재 구조 검사/의미 검사 경계에 맞추면 된다.
+
+F2는 CLI initial/organize/answer/judge의 명시 산출 문장과 checkpoint 예제의 검출 공백이다. findings→findingz, organize root decision 추가, answers→answerz, judge issue decision approved→match, checkpoint current_claim→current_cliam의 다섯 변형을 메모리에서만 만들었다. 적용 가능한 scoped/unowned/function/constant helper 진단은 정상과 같이 비었다. 실제 stage schema의 해당 소유 경로/enum에는 잘못된 이름/값이 없고 checkpoint_value는 정상 예제를 받아 오타 예제를 ValidationError로 반려한다. 이는 순수 helper 관찰이며 공식 전체 suite의 새 거짓 green을 재현했다는 주장이 아니다. 027의 review_output_issues/preparation_example_issues는 다른 계약 문서의 정확한 제목/문단/예제를 읽는다. 그 수리 성과는 유지하면서 이번 CLI 좌표만 같은 실제 schema에 결속하면 된다. 임의 자연어 소유 추론기나 전체 단어 목록을 제품에 추가할 이유는 없다.
+
+027 c3의 정확38문서 passed rows와 실행중 변경0, Python875개 SHA의 현재 일치를 reused-rows.json에 보존했다. test-bindings.json의8그룹은 현재 단언 본문과 그 SHA, 실제로 재사용 가능한 exact row만 연결한다. 024의 N01-237/260 지정6이름행·3고유문단은 현재 원문과 같은 것으로 확인했고 exact-reuse.json에 범위를 제한했다. 그 밖의 문장은 독립 판정했다. 024 c2의 변경된 structure 시험 SHA를 현재와 같다고 가정한 첫 보조 검산은 실패했고 finish-initial.py/stderr에 보존했다. 수정 뒤에는 실제 SHA가 같은 row만 재사용한다. 관찰 도구 첫 checkpoint 호출에 str을 준 AttributeError도 observe-initial.stderr에 남기고 실제 bytes API/ValidationError로 교정했다. 이들은 제품 실패가 아니다.
+
+결론은 유지187절·기존 근거 재사용2절·문구 수정1절·검사 보강5절이다. 두 후보는 같은 doc_code/structure 시험·미러를 쓰므로 후속 한 통합 work로 전달한다. 원자료 복원·실제 반환 P01~P11/PURE·단일 제안 지급을 재구현하지 않았다. 새 공식 제품 시험·유료 모델·OS 예약·Lean·학술 호출은0이며, L01 Q1/Q2와 UTF-8 byte 미충족, symlink1314 실제 반려 미검사, G4 기본전체/G5 freshT3/G6 전수변이/G7 최종판 연결/G8 최종review는 남는다. 이 task complete는 유한한 이름 판정과 수리 후보 인도의 완료다.

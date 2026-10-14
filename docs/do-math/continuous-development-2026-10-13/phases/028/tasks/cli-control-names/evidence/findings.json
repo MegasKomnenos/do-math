@@ -1,0 +1,43 @@
+[
+  {
+    "id": "F1",
+    "kind": "issue",
+    "sections": ["N01-227"],
+    "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [487, 512, 514, 546, 573],
+    "detail": "knowledge 절은 다섯 operation을 지원하고 기존 ID import로 그 기록을 대체·개정하며 두 경로에서 같은 과거 revision/history를 보존한다고 설명한다. 실제 PAYLOADS enum과 _knowledge_io_control/_knowledge_control은 import/register-kind/withdraw-kind/import-relation/revise/invalidate의 여섯 연산이다. import_candidate 275~276은 기존 ID를 'record ID already exists; revisions require a new ID'로 거부한다. replace_knowledge 513~558은 새 KN ID, supersedes, revision+1을 만들고 원 기록·해설을 superseded로 보존한다. summary만 개정하는 경우 현재 usable한 formal_result는 재사용하며 새 형식검사를 반드시 다시 실행하는 것은 아니다. register-kind의 기존 token 금지에도 withdrawn 종류는 새 KD 기록과 supersedes로 재등록하는 한정 예외가 있다.",
+    "expected": "문서의 현재 이름/조합을 실제 소비에 맞춘다. import의 id는 아직 사용하지 않은 새 canonical KN ID이며 기존 지식은 revise로 새 대체 기록을 만든다. 원 판정/형식 근거 보존과 현재 사용 여부, 조건부 formal 재사용을 구별한다. 여섯 operation 및 withdrawn 재등록 예외를 정확히 적는다.",
+    "minimal_counterexample": "이미 존재하는 KN ID와 완전한 정상 candidate를 import로 보내면 문서는 대체를 안내하지만 importer는 기존 ID 반려. 기존 test_duplicate_import_does_not_replace_saved_record는 실제 공개 control/inbox에서 원기록/기록수 불변과 정확 거부를 단언한다. test_same_id_import_rejected_explicit_revision_preserves_old_authorities는 import 거부, 새 replacement ID, old judgment/formal 권한 보존을 단언한다.",
+    "execution": "정적 원문/소비/현재 기존 단언 대조. 도메인 함수나 테스트 runner를 새로 실행하지 않았다.",
+    "next_action": "후속 통합 work에서 CLI knowledge 문장만 수정하고 공식 미러를 생성한다. 기존 두 import 거부/개정 소비 시험을 유지한다. 이 조사표를 별도 제품 schema로 만들지 않는다.",
+    "completion": "기존 ID import는 교체 경로로 안내하지 않으며 새 ID/supersedes/current formal 재사용과 여섯 operation/withdrawn 재등록 예외가 현재 정의와 일치한다. 관련 문서 검사와 기존 실제 소비 시험이 정상/반례를 보존한다.",
+    "owner_groups": ["knowledge-candidate", "knowledge-kind"]
+  },
+  {
+    "id": "F2",
+    "kind": "issue",
+    "sections": ["N01-229"],
+    "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [609],
+    "detail": "609행은 외부 operation의 prepared·running을 기록하고 HTTP 응답이면 confirmed라고 설명한다. execute_operation의 실제 저장열은 prepared -> prepared(transmitted=true, transmission_phase=recorded) -> 결과다. running은 ExternalEngineMixin._external_execution_record가 생성하는 별도 execution.status다. 응답이 2xx이면 confirmed/succeeded=True, 비2xx와 effect_absent=True이면 failed/False, 비2xx 효과부재 미입증이면 unknown/succeeded=None이다. _run_external_action의 실제 persist 소비도 operation을 이 값 그대로 저장한다. enum에 running이 있다는 사실로 이 생산자의 전송원장이 running이라고 승인하지 않는다.",
+    "expected": "별도 실행 상태와 외부 원장의 전송 표지를 구분하고 HTTP 수신 사실/효과 성공/효과부재/불확실성을 실제 분기로 안내한다.",
+    "minimal_counterexample": "같은 POST 요청에 HTTP409를 받는다. effect_absent=True 응답은 failed/False, 근거 없는409는 unknown/None이다. 기존 test_non_2xx_is_failed_only_when_effect_absence_is_evidenced가 두 분기를 직접 단언하며 test_persist_before_send_confirm_and_redact는 성공 전 저장열 ['prepared','prepared','confirmed']와 전송표지를 단언한다.",
+    "execution": "정적 원문/actual execute_operation 및 engine persist/현재 소비 시험 대조. HTTP 호출·도메인 실행·새 제품 시험 0건.",
+    "next_action": "후속 CLI 외부 문장 수리를 같은 통합 문서/미러 작업에 포함한다. 외부 runtime의 기존 성공/불확실성 보호를 문서에 맞춘다는 이유로 바꾸지 않는다.",
+    "completion": "HTTP409의 두 실제 분기와 2xx 정상, prepared 전송표지 및 별도 execution running이 문서에서 구분되며 기존 실제 소비 단언과 관련 회귀를 보존한다.",
+    "owner_groups": ["external", "external-state", "execution-state"]
+  },
+  {
+    "id": "F3",
+    "kind": "issue",
+    "sections": ["N01-214", "N01-218", "N01-227", "N01-232"],
+    "document": "repo:.claude/skills/do-math/references/CLI-실행-계약.md",
+    "lines": [109, 164, 499, 504, 647],
+    "detail": "현재 문서에서 다섯 최소 변형(summary->summray, import->improt, capacity_waiting->capacity_waitng, reviewers 기본2->200, query direction both->sideways)을 각각 수행한 순수 문서 관찰에서 기존 command/scoped/unowned/policy/function 검사 결과가 모두 비었다. actual knowledge operation enum은 improt를 반려하고 candidate_shape_errors는 summary 누락을 반려하며 runtime.status enum에는 capacity_waitng가 없다. DEFAULT_CONFIG.reviewers는2다. actual JSON query parser는 sideways와 file-query+kind/record-query+prefix도 반려한다. 현재 정상문서는 이름/값이 맞으나 다음 같은 오타·동명/조합 변경이 문서검사를 빠져나가는 한정 공백이다. 초기화/준비/검토 산출과 operator mode를 검사하는027의 새 helper는 이 owner들을 맡지 않는다.",
+    "minimal_counterexample": "pure-observations.json에 원문/변형과 실제 helper 결과 및 실제 _json_arguments 반려 메시지를 보존했다. 정상/변형은 독립된 코드의 선언/DEFAULT_CONFIG/field owner와 대조했으며 current helper 결과를 기대값으로 삼지 않았다.",
+    "execution": "python -B observe.py가 순수 parser/schema/document helper만 호출했다. zero product tests; 최종 공식 회귀와 실제 domain 연결은 후속 작업 책임이다.",
+    "next_action": "공유 doc_code/structure.test_doc_code의 한 작업으로 현재 CLI의 runtime 상태표, 설정 단일키 기본값/enum, query direction synopsis의 실제choices, knowledge 완전JSON의 실제operation/candidate_shape_errors를 한정 결속한다. 부분 academic_requirements/relation_claim·설정fragment·명령placeholder는 완전응답으로 검사하지 않는다. 다른 task 후보와 함께 한 통합 work/공식 미러/관련 소비 검사로 묶는다. 전역 자연어 추론기나 조사표의 제품 복제는 만들지 않는다.",
+    "completion": "현재 정상문서는통과하고 위의최소오타5개는각실제owner사유로반려한다. needs_revision 등126행의명시음성예시는그대로 유지하며 타역할/동명field 차용을허용하지않는다. 기존38문서단언과제공/소비시험을보존하고같은최종판본의공식회귀를확인한다.",
+    "owner_groups": ["parser", "runtime-state", "config", "knowledge-candidate"]
+  }
+]

@@ -1,0 +1,289 @@
+[
+  {
+    "report": "run:phases/025/tasks/document-trust/evidence/c2/report.json",
+    "sha256": "4aeef7a084704d37d865b8bb7d365853f53ae008a6276683e1fac390d8657747",
+    "matched_production_slice": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/trust_inventory.py",
+        "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "sha256": "1defc898b59df7afe3f2d85699c4263df777f3f61cedfc917d67933f8ab0d260"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/formal.py",
+        "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc"
+      }
+    ],
+    "same_test_file_rows": [
+      {
+        "id": "unit.test_toolchain_records.FingerprintTests.test_changed_files_lists_added_removed_and_different_rows",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.FingerprintTests.test_fingerprint_and_content_name_every_judgment_file",
+        "outcome": "passed",
+        "seconds": 0.03200000000651926,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_a_record_names_its_identity_and_first_content_baseline",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_every_baseline_inventory_and_validation_digest_binds_its_exact_content",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_read_record_refuses_a_record_that_breaks_its_contract",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_recomputed_inventory_digest_cannot_hide_a_different_file_population_or_source_text",
+        "outcome": "passed",
+        "seconds": 0.03200000000651926,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_record_errors_name_the_broken_rule",
+        "outcome": "passed",
+        "seconds": 0.062000000034458935,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_representative_check_seconds_round_up",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_the_validation_program_follows_the_project",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_usable_needs_a_verified_current_compile_and_no_later_mismatch",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.RecordContractTests.test_validation_summary_fields_are_sensitive_and_recording_metadata_is_not",
+        "outcome": "passed",
+        "seconds": 0.03200000000651926,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_baseline_needs_a_verified_compile_and_unmoved_files",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_command_without_a_record_name_needs_exactly_one_record",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_compile_is_verified_only_when_it_ran_to_exit_code_zero",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_content_check_compares_with_the_current_baseline",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_rerecord_keeps_the_identity_and_the_judgment_file_contents",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_a_writer_excludes_other_writers",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_evidence_must_be_outside_the_recorded_roots",
+        "outcome": "passed",
+        "seconds": 0.030999999959021807,
+        "details": []
+      },
+      {
+        "id": "unit.test_toolchain_records.WriterJudgmentTests.test_the_matching_usable_record_is_reused_and_a_changed_one_is_not",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ActivationProfileTests.test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_formal_use_needs_the_active_valid_environment_and_its_current_identity",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_formal_verification_runs_only_after_the_environment_is_admitted",
+        "outcome": "passed",
+        "seconds": 0.03200000000651926,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_record_state_marks_a_record_change_and_a_missing_record",
+        "outcome": "passed",
+        "seconds": 0.031000000017229468,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_the_current_identity_is_observed_only_when_asked",
+        "outcome": "passed",
+        "seconds": 0.10899999999674037,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_the_record_must_be_the_registered_one_with_the_registered_identity",
+        "outcome": "passed",
+        "seconds": 0.09399999998277053,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentCheckTests.test_unreadable_judgment_files_invalidate_the_check",
+        "outcome": "passed",
+        "seconds": 0.061999999976251274,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentContractTests.test_a_registration_request_has_exactly_its_fields",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.EnvironmentContractTests.test_each_environment_rule_names_what_it_refuses",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ObservationWindowWarningTests.test_a_stale_profile_reference_is_passed_over_and_a_repeated_profile_warned_once",
+        "outcome": "passed",
+        "seconds": 0.0470000000204891,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ObservationWindowWarningTests.test_an_invalid_or_unreadable_toolchain_gives_no_warning",
+        "outcome": "passed",
+        "seconds": 0.045999999972991645,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ObservationWindowWarningTests.test_the_self_check_response_window_is_not_bound_by_a_compile",
+        "outcome": "passed",
+        "seconds": 0.0470000000204891,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ObservationWindowWarningTests.test_windows_shorter_than_the_representative_compile_are_warned",
+        "outcome": "passed",
+        "seconds": 0.06300000002374873,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_current_environment_is_verified_from_record_identity_and_fingerprint",
+        "outcome": "passed",
+        "seconds": 0.0779999999795109,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_documented_environment_branches_keep_absence_and_exact_changes",
+        "outcome": "passed",
+        "seconds": 0.7029999999795109,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_fingerprint_detects_size_modification_creation_and_recreation",
+        "outcome": "passed",
+        "seconds": 0.4690000000409782,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_live_admission_rejects_a_missing_recorded_member_even_when_installed_files_are_unchanged",
+        "outcome": "passed",
+        "seconds": 0.125,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes",
+        "outcome": "passed",
+        "seconds": 0.2029999999795109,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_rebind_requires_the_current_baseline_and_the_same_identity",
+        "outcome": "passed",
+        "seconds": 0.40600000001722947,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_search_paths_outside_the_recorded_roots_are_rejected",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_success_label_cannot_replace_failed_representative_evidence",
+        "outcome": "passed",
+        "seconds": 0.125,
+        "details": []
+      },
+      {
+        "id": "unit.test_trust_environment.ToolchainRecordTests.test_unknown_record_field_and_other_schema_are_rejected",
+        "outcome": "passed",
+        "seconds": 0.23399999999674037,
+        "details": []
+      }
+    ],
+    "scope": "unchanged exact consumer test file only; current helper and document bindings observed separately; no whole-run reuse"
+  },
+  {
+    "report": "run:phases/024/tasks/document-waits/evidence/c2/report.json",
+    "sha256": "edcbcd39e3c2c51233471209d07c7073f3f84fedd9d3c5bf51cee2ade2419ed1",
+    "matched_production_slice": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/reporting.py",
+        "sha256": "1ce8a494097d3d9bc4a523a23b32a432cb9cc9423a630b264281014ed6965564"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/trace_report.py",
+        "sha256": "cbb0ca6168e6932ab57195dc05587f96afe8a20e9d554c8897d237cf51d0c5f4"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/core_engine.py",
+        "sha256": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b"
+      }
+    ],
+    "same_test_file_rows": [],
+    "scope": "unchanged exact consumer test file only; current helper and document bindings observed separately; no whole-run reuse"
+  }
+]

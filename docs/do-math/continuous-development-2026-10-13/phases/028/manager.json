@@ -1,0 +1,289 @@
+{
+  "next": "029",
+  "decision": "세 report의 A1~A4 complete를 승인한다. 현재2675소스·원task92파일 불변, 정확288절과현재좌표/정의118파일·기존38문서row/875Python을 검산했다. 문구4묶음과 검사 공백의 issue8개가 실제 코드/원관찰에 근거하므로 개발 완료를 선언하지 않는다. role F3의 한정재사용 사실만 종결한다. 029 doc-names가 실제 parser·schema·소비 단언을 이용해 문구·공유helper·미러·최종 관련 회귀를 통합한다. 동일 doc_code/test_doc_code와 미러/캐시가 겹쳐 구현을 병렬화하지 않으며 완료된288절 조사를 반복하지 않는다. 두 도구의 parser 추출 외 runtime/권한/도메인 의미는 바꾸지 않는다. G1~G8·역사실패·L01 외부결정/byte미충족·symlink미검사·기본전체/freshT3/전수변이/G7최종판/G8review를 유지한다. 공용 diff의 의미 변경은 context_updates와review에 기록했다. 이번에는 제품 변경 없이 원task자료와관리인계·기억만 직접추적하며 handoff 통과/게시 후 정확파일을 커밋하고 push하지 않는다.",
+  "reports": [
+    {
+      "task": "operator-names",
+      "state": "read",
+      "detail": "operator-names report 전문과 A1~A4를 검수했고 report 형식 검사를 통과했다. 배정된 조사 complete를 승인하며 issue의 제품 수리는029로 넘긴다. 새 제품 실행은 없다.",
+      "evidence": [
+        "run:phases/028/tasks/operator-names/report.json",
+        "run:phases/028/manager-evidence/check-operator-names.txt",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "task": "cli-control-names",
+      "state": "read",
+      "detail": "cli-control-names report 전문과 A1~A4를 검수했고 report 형식 검사를 통과했다. 배정된 조사 complete를 승인하며 issue의 제품 수리는029로 넘긴다. 새 제품 실행은 없다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/report.json",
+        "run:phases/028/manager-evidence/check-cli-control-names.txt",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "task": "role-glossary-names",
+      "state": "read",
+      "detail": "role-glossary-names report 전문과 A1~A4를 검수했고 report 형식 검사를 통과했다. 배정된 조사 complete를 승인하며 issue의 제품 수리는029로 넘긴다. 새 제품 실행은 없다.",
+      "evidence": [
+        "run:phases/028/tasks/role-glossary-names/report.json",
+        "run:phases/028/manager-evidence/check-role-glossary-names.txt",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "028/operator-names/F1",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A3",
+        "run:context.md#C10"
+      ],
+      "reason": "실제 두 parser 선언과 타도구 flag 반례를 확인했다. main과 helper의 공유 정의·정상/반려 연결을029에 배정한다.",
+      "evidence": [
+        "run:phases/028/tasks/operator-names/evidence/minimal-counterexamples.json",
+        "run:phases/028/tasks/operator-names/evidence/test-bindings.json",
+        "run:phases/028/tasks/operator-names/evidence/source-anchors.json",
+        "run:phases/028/tasks/operator-names/evidence/review.md",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/operator-names/F2",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A3",
+        "run:context.md#C10"
+      ],
+      "reason": "실제 config/GRANT 반려와 문서helper 빈 진단을 확인했다. 지정 예제와 부재 검사를 실제 정의에 결속한다.",
+      "evidence": [
+        "run:phases/028/tasks/operator-names/evidence/minimal-counterexamples.json",
+        "run:phases/028/tasks/operator-names/evidence/json-example-bindings.json",
+        "run:phases/028/tasks/operator-names/evidence/test-bindings.json",
+        "run:phases/028/tasks/operator-names/evidence/review.md",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/operator-names/F3",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A2",
+        "run:context.md#C10"
+      ],
+      "reason": "문장7/10과 실제14/17·생산자 전건 해시의 차이를 확인했다. 문구와 실제 집합 비교를 수리한다.",
+      "evidence": [
+        "run:phases/028/tasks/operator-names/evidence/identity-module-mismatch.json",
+        "run:phases/028/tasks/operator-names/evidence/source-anchors.json",
+        "run:phases/028/tasks/operator-names/evidence/test-bindings.json",
+        "run:phases/028/tasks/operator-names/evidence/section-decisions.json",
+        "run:phases/028/tasks/operator-names/evidence/review.md",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/cli-control-names/F1",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A2",
+        "run:context.md#C10"
+      ],
+      "reason": "기존ID import 반려·새replacement·현재formal 재사용·withdrawn 예외를 실제 코드/소비 단언에서 확인했다. 문구와 최종 관련 실행에 반영한다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/cli-control-names/F2",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A2",
+        "run:context.md#C10"
+      ],
+      "reason": "prepared 전송표지와 HTTP결과 세 분기 및 기존 직접 단언을 확인했다. execution.running과 구별한 문구 수리를 맡긴다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/cli-control-names/F3",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A4",
+        "run:context.md#C10"
+      ],
+      "reason": "다섯 최소 변형의 helper 거짓통과와 실제 정의 반려를 확인했다. 상태표·설정·query·완전knowledge예제만 결속한다.",
+      "evidence": [
+        "run:phases/028/tasks/cli-control-names/evidence/findings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/owner-profiles.json",
+        "run:phases/028/tasks/cli-control-names/evidence/check-bindings.json",
+        "run:phases/028/tasks/cli-control-names/evidence/pure-observations.json",
+        "run:phases/028/tasks/cli-control-names/evidence/observe-final-process.json",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/role-glossary-names/F1",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A2",
+        "run:context.md#C10"
+      ],
+      "reason": "실제 action_schema의TEXT와 활성/같은묶음 제안 수신 검사를 확인했다. 동적enum 설명을 교정하고 runtime 의미는 유지한다.",
+      "evidence": [
+        "run:phases/028/tasks/role-glossary-names/evidence/schema-observations.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/repair-candidates.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/test-bindings.json",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/role-glossary-names/F2",
+      "action": "carry",
+      "destination": [
+        "run:phases/029/tasks/doc-names/objective.md#A4",
+        "run:context.md#C10"
+      ],
+      "reason": "CLI 네단계/checkpoint의 다섯 반례와 실제 owner를 확인했다.027 검사와 현재CLI 좌표의 차이를 보존하며 좁은 결속/부재검사를 추가한다.",
+      "evidence": [
+        "run:phases/028/tasks/role-glossary-names/evidence/schema-observations.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/test-bindings.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/repair-candidates.json",
+        "run:phases/028/manager-evidence/decisive-sources.json",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "028/role-glossary-names/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C10",
+        "run:context.md#C12"
+      ],
+      "reason": "195절/2675소스/원task 보존과 기존38문서row의 한정 재사용을 검산했다. 용어집 보편 개념과 구현 이름을 동의어로 강제하지 않으며 새 runtime 결함이나 전체G 성공으로 올리지 않는다.",
+      "evidence": [
+        "run:phases/028/tasks/role-glossary-names/evidence/verification.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/reused-rows.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/exact-reuse.json",
+        "run:phases/028/tasks/role-glossary-names/evidence/review.md",
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "028 세 조사 완료와 실제 검수 수치·한계·여덟 후속issue를 추가했다. 기존 이력은 보존했다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "028 독립 조사 예정 문단을 완료 상태와029 단일소유로 교체했다. 공유 helper/미러/캐시 중첩과 실제 parser의 좁은 추출 책임을 명시하고 자원 규칙은 유지했다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "029 task의 사용자 지정 gpt-6.1-sol/high 승계를 추가했다. manager/제품 모델은 변경하지 않았다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "028 정적 재사용의 실제판본·범위를 기록하고 기존 직접소비 단언의 새실행을029 책임으로 구분했다. PR 전체 종결로 확대하지 않았다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "N01 유지/재사용 판정과 여덟 수리 책임을 현재로 갱신했다. 이전 승인 문장과 L01/byte 미충족을 보존했다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "제품 불변과 원task92파일의 직접추적·로컬 행정수신 구분을 추가했다. 기존 dirty/untracked를 포함하지 않는다.",
+      "evidence": [
+        "run:phases/028/manager-evidence/verification.json",
+        "run:phases/028/manager-evidence/review.md",
+        "run:phases/028/manager-evidence/common-docs.diff",
+        "run:phases/029/tasks/doc-names/objective.md"
+      ]
+    }
+  ],
+  "plan_update": "028의 조사 결과를 추가하고 다음 phase를029 단일 통합수리로 변경했다. 여덟issue의 문구·공유helper·두parser·미러/관련실행 책임과 종료조건을 지정했다. 완료된 이름 조사는 재배정하지 않으며 기존의 의미/PR 질문·외부결정·최종관문 선행관계를 유지했다.",
+  "seam_updates": [],
+  "completion": null
+}

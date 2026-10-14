@@ -105,6 +105,8 @@ phase 026 세 고정판 task의 A1~A4 complete를 검수했다. 025·시작·끝
 
 phase 027 doc-policy의 A1~A5 complete를 검수했다. 시작2675소스는026 검수본과 같고 종료/현재 전건 SHA 일치 및 허용18변경(비캐시16·캐시2)을 확인했다. 최종 정본/미러 같은134선택·고유row가 전부passed·exit0이며 각875Python과 전후판본을 대조했다. 실제 저장/CLI 반환각84개에서 기본방침3/2/17·명시우선·해시와 연결4세대의 양쪽 정책/정확ref, probe 정상/HOLD/조회오류를 검산했다. 기존33문서시험과 나머지 helper/단언을 보존했다. 원task196파일은 불변이고 초기3집중실패·TEMP표기1실패·보조검산2오류는 역사 기록으로 유지한다. 근거는 run:phases/027/manager-evidence/verification.json·return-check.json·review.md다. 지정 범위 완료이며 전체G 완료가 아니다.
 
+phase 028 세 고정판 task의 A1~A4 complete를 검수했다. report 형식 검사 뒤027·각 시작/끝·현재2675소스의 전건 SHA와 파일 집합 일치, 원task92파일 불변을 확인했다. 288절의 정확 합집합과 현재 이름 좌표655/1223/634개·정의/시험118파일을 대조했다. 가운데1223은 inline849와 fence374의 합이므로 같은 모집단으로 합산하지 않는다. 027 c3의134선택/고유row 중38문서passed 및 현재875Python SHA를 재사용했고 새 제품 실행은0이다. 유지241·재사용29·문구수정4·검사보강14절이며 후속 issue는8개다. 조사 완료와 제품 합격을 구분하고 여덟 수리를029에 통합한다. 근거는 run:phases/028/manager-evidence/verification.json·decisive-sources.json·review.md와 세 원report다. 전체G 완료가 아니다.
+
 ## C3 현재 정본과 이력의 역할
 
 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
@@ -123,7 +125,7 @@ task의 complete는 A 완료다. 검토 task는 결함을 발견해도 배정된
 
 2026-10-14 사용자 추가 지시: 다음 manager는 run:sources/document-batching-2026-10-14.md를 읽고 남은 문서 작업 배정에 적용한다. 현재021은 그대로 마치며, 이후 P06~P11과 관련 N 항목은 문서 번호별 phase를 관성적으로 반복하지 않고 공유 수정 지점별로 한정된 구현 묶음을 만든다. 고정 입력의 독립 조사·실제 비중첩 쓰기만 병렬 후보로 삼고 공유 helper/미러/검사는 한 담당자가 통합한다. 같은 회귀와 관리 마감의 반복 비용을 줄이되 한 문맥에서 끝내는 크기·소스 고정·기존 검증 의미는 유지한다. 구체적 묶음과 병렬화 판단은 다음 plan/manager decision에 기록한다.
 
-phase 001~027 task 세션은 종료됐고027 통합 수리를 검수했다.028은 고정판 N01의 이름 판정을 operator-names(66절), cli-control-names(27절), role-glossary-names(195절)의 세 독립 읽기 task로 배정한다. 정확288절 합집합은028 assignments.json에 있고 작은 용어집 절162개를 개별 작업으로 나누지 않는다. 제품 쓰기·공식 시험·미러/캐시 갱신·같은 phase 결과 소비가 없어 병렬 가능하다. 결과가 요구하는 공유 helper/문서/미러 수리는 후속 통합 work가 맡는다. 공식 검사에는 jobs1·전체worker3 이하·한 묶음씩·소스 고정을 유지한다.
+phase 028의 세 독립 읽기 task는 모두 종료됐고288절의 정확 합집합을 검수했다.029 doc-names는 여덟 issue의 문구·doc_code/test_doc_code·두 도구 parser 연결·공식 미러/관련 회귀를 한 담당자에게 배정한다. 공유 helper와 미러/캐시가 겹치므로 병렬 구현은 하지 않는다. 이미 끝난 이름 조사를 반복하지 않고 정확 문장·14최소 helper 반례·모듈 집합과 부재 검사를 통합한다. 실제 parser 정의가 main과 문서 검사에 함께 쓰이게 하는 작은 추출만 제품 코드 쓰기 범위에 포함한다. 공식 검사는 jobs1·전체worker3 이하·한 묶음씩·소스 고정을 유지한다.
 
 do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
 
@@ -189,6 +191,8 @@ manager는 next phase와 공용 문서·기억 등을 먼저 확정하고 pendin
 
 027의 gpt-6.1-sol/high 작업을 검수했다.028의 세 독립 조사에도 같은 model/effort를 명시하며 manager와 제품 공급자 모델 설정은 바꾸지 않는다.
 
+028 세 task의 gpt-6.1-sol/high 수행을 검수했고029 doc-names에도 같은 model/effort를 명시한다. manager와 제품 공급자 모델 설정은 바꾸지 않는다.
+
 ## C9 요구별 상태와 과거 검토의 재사용 범위
 
 phase 001의 requirement-state.json은 원래 19/11/61/12 항목을 각각 한 번씩 연결했고 tracking-state.json은 기존 109개 작업을 연결했다. 이들은 역사 근거와 종료 질문의 진입점이며 새로 수행한 전수 의미 감사가 아니다. 현재 판정은 이 context와 후속 report/manager의 처분을 따른다. 1-D/11-A/11-B의 검토된 성질, R17과 R07의 완료 부분, DOC-RETURN-PURE/CLI 및 B132~B134의 지정 경계는 유지하고 최종 판본 근거를 연결한다. 9-A의 R18 현재 외부 호출 전건, 1-E의 최종 반환 소유권 처분은 별도로 남는다. K-27/38/72/75와 P2 A-31/B-32는 후속 수리 이전의 낡은 remaining만으로 재수리하지 않는다.
@@ -238,6 +242,7 @@ phase 006은 B49/065a323a의 전달·반려·수치·종료 slice를 실제 도�
 
 026 정책 F4와 이름 task의 역사 재사용을 한정 승인한다. B57의 실제 policy helper 세 함수와 B110~B114의 owner/line-local/배열/실제 반환 위임 부분은 유지한다. B64는 이번 다섯 의미를 변경한 hunk가 없으며 부재 Temp 보고의 counts를 새 성공으로 쓰지 않는다. B129 unsuccessful와 current HOLD/지원 코드 변화는 유지하고 필요한 현재 실행을027에 배정한다. PR24 전체나 G2 전부의 종결은 아니다. 근거는026 manager review.md와 각 task 역사 근거다.
 
+028의 기존 근거 재사용은 같은 현재 문장/정의/단언과 원report SHA가 확인된 성질로 제한한다. 과거38문서passed를 새 실행으로 세지 않고, knowledge/external/종류 제안의 기존 직접 소비 단언은 원문과 대조한 정적 근거다.029가 그 단언을 포함한 최종 관련 실행을 맡는다. 이번 조사로 PR 전체나 G2의 나머지를 종결하지 않는다. 근거는028 manager review.md·reused-report.json 및 세 task의 결속표다.
 
 ## C10 문서 결속에서 남은 고정 범위
 
@@ -277,6 +282,8 @@ L01/13-C의 읽기 한도 절은010 조사 뒤에도 미인증이다. 실제 개
 026에서 N02 참조7문서/58절의 이름·조합 유지 판정을 종결하고, N03 역할11문서/144절은 유지 부분을 승인하되 독립-운영15의 분기 문구와 역할 단계·부분 JSON·operator mode 검사 공백은027에 남긴다. 024 F2 중 conversation_loss_policy/model_policy/external_policy의 지정 의미 질문은 닫는다. disconnect_policy 문장은 유지하지만 명시/생략·양쪽 저장/restart 단언, adopt_default_review_policy는 현 설정의 기본 방침 생성·채택 설명과 독립 기대 단언이 필요하다. scholarly describe_source/not_implemented/restricted의 이름 정의는 확인됐고 실제 search/fetch/독해 성공으로 확대하지 않는다. 이러한 미주장은 새 실행 의무를 추가하지 않으며 원래 G7 범위를 따른다.027은 공유 helper·직접 시험·문구/미러를 한 담당자에게 통합한다. N01의 나머지 이름·L01 Q1/Q2·원문byte 미충족과 최종 관문은 유지한다. 근거는026 manager review.md 및027 objective다.
 
 027에서026 policy F2/F3와 role F1/F2의 지정 남김을 닫았다. 기본방침 생성/명시우선 문구와 probe 정상/조기 반환 문구를 교정했고, 공개 저장/restart의 독립 기대·4세대 양쪽 정책과 정확 ref를 검수했다. initial/organize의 지정 출력 문장, 두 부분 JSON과 operator mode는 실제 stage_schema/extension_schema/parser에 연결돼 오타·타단계 차용·누락 반례를 반려한다. 기존33문서시험과 P/PURE/소유 helper는 보존했다. 문서 전반의 자연어 소유 추론으로 확대하지 않는다.028은 N01의288절에서 이미 닫힌 정확 문장을 재사용하고 나머지 이름/조합만 판정한다. N02/N03의 승인된 부분을 다시 조사하지 않으며 L01 Q1/Q2·원문byte 미충족은 유지한다. 근거는027 manager verification.json·return-check.json·review.md와028 assignments/objectives다.
+
+028에서 N01 288절의 이름/조합 판정을 마쳤다. 유지241·재사용29절을 승인하고 문구수정4·검사보강14절은 여덟 issue로029에 넘긴다. operator F1은 setup/probe의 실제 parser 옵션 소유, F2는 README 설정/초기화grant 예제, F3는 능력 식별모듈 누락7개다. cli F1은 knowledge의 기존ID import 금지·새 replacement/조건부formal 재사용·여섯연산/withdrawn예외, F2는 전송원장과 실행running·HTTP409 failed/unknown 구별, F3는 상태표/설정기본값/query/knowledgeJSON의 다섯 검사 반례다. role F1은 knowledge.kind의 TEXT와 활성/같은묶음 제안 검사 설명, F2는 CLI네단계/checkpoint의 다섯 반례다. role F3의 보존/한정재사용 사실은 종결한다. 029가 문구와 실제 정의 소비·미러/관련 검사를 통합한다.027/P/PURE/N02/N03의 승인 성질과 L01 Q1/Q2·원문UTF-8 byte 미충족은 유지한다. 근거는 run:phases/028/manager-evidence/review.md 및 run:phases/029/tasks/doc-names/objective.md다.
 
 ## C11 최종 관문을 막는 도구·실경계 공백
 
@@ -405,3 +412,6 @@ phase 006은 provider_final.output_contract/semantic_output에 Codex 문자열 �
 026은 제품·시험·문서·미러 변경이 없어025 판본의 기존 승인 성질과 제한을 유지한다. 이번 관리 커밋은 원task84파일을 직접 추적하고 공용 인계·검수 근거·027 배정·기억을 포함한다. 새 중복 archive는 만들지 않는다. 진행 로그와 stage/commit 행정 수신은 로컬 보관으로 정리 시 사라질 수 있다. 기존 dirty/untracked 제품·운영자 변경은 stage하지 않는다. 정확 추적 범위와 원자료 SHA는 run:phases/026/manager-evidence/preservation.json에 둔다.
 
 027의18변경 밖 소스는026 시작판과 같아 runtime/schema/choices/corpus 및 기존 승인 하위 성질을 유지한다. 문구 두 곳이 바꾸는 향후 prompt/설치 문서 hash를 과거 모델 독해·전판본 성공으로 인증하지 않는다. 이번 검수한16비캐시 문서/시험/지침/미러 경로를 관리 커밋으로 마감한다. 원task196파일과16제품 원바이트는 manager-evidence/raw-evidence.zip에 보존하고 선별 원경로 및 전건 SHA는 preservation.json에 둔다. 압축으로만 추적하는 중복 소스 snapshot의 원경로와 진행 로그·stage/commit 행정 수신은 로컬 보관으로 정리 시 사라질 수 있다. 압축은 복원 지시가 아니다.028 배정·관리/기억 추가는 검수한 제품판본을 바꾸지 않는다.
+
+028은 제품·시험·문서·미러 변경이 없어027 판본의 승인된 성질과 제한을 유지한다. 이번 관리 커밋은 원task92파일을 직접 추적하고 공용 인계·검수 근거·029 배정·기억을 포함한다. 새 중복 archive는 만들지 않는다. 진행 로그·stage/commit 행정 수신은 로컬 보관으로 정리 시 사라질 수 있다. 기존 dirty/untracked 제품·운영자 변경은 stage하지 않는다. 정확 추적 범위와 원자료 SHA는 run:phases/028/manager-evidence/preservation.json에 둔다.
+

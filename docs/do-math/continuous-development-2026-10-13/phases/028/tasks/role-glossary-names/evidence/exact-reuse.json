@@ -1,0 +1,55 @@
+{
+  "reference": "run:phases/024/tasks/document-waits/evidence/section-semantic-review.json",
+  "sha256": "4f9ecf013029088d4e88dc6c79efa50222429a549f2615696e8253551ce68621",
+  "rows": [
+    {
+      "section": "N01-237",
+      "token": "input_overflow_retry_failed",
+      "sentences": [
+        "재시도 요청을 적용하면 상태는 “재시도 중”이며 요청 자체로 질문을 해소하지 않는다. 현재 포장이 한도 안에 들어온 사실을 확인하면 아직 열린 질문을 해소하고 `input_overflow_retry_resolved`를 기록한다. 다른 적법한 결정이 이미 질문을 해소했다면 그 근거와 이력을 보존한다. 다시 넘치면 아직 열린 이전 질문을 새 실패 질문으로 대체했다는 해소 이력과 `input_overflow_retry_failed`를 기록하고, 새 질문과 같은 action을 다시 보류한다. 과거 overflow detail·source manifest·질문 원문은 삭제하거나 현재 성공으로 덮지 않는다. 원문이나 필수 직접 입력을 몰래 줄이지 않으며, 승인되지 않은 프로필·범위·자원·권한 변경을 재시도 명령으로 대신하지 않는다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    },
+    {
+      "section": "N01-237",
+      "token": "input_overflow_retry_resolved",
+      "sentences": [
+        "재시도 요청을 적용하면 상태는 “재시도 중”이며 요청 자체로 질문을 해소하지 않는다. 현재 포장이 한도 안에 들어온 사실을 확인하면 아직 열린 질문을 해소하고 `input_overflow_retry_resolved`를 기록한다. 다른 적법한 결정이 이미 질문을 해소했다면 그 근거와 이력을 보존한다. 다시 넘치면 아직 열린 이전 질문을 새 실패 질문으로 대체했다는 해소 이력과 `input_overflow_retry_failed`를 기록하고, 새 질문과 같은 action을 다시 보류한다. 과거 overflow detail·source manifest·질문 원문은 삭제하거나 현재 성공으로 덮지 않는다. 원문이나 필수 직접 입력을 몰래 줄이지 않으며, 승인되지 않은 프로필·범위·자원·권한 변경을 재시도 명령으로 대신하지 않는다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    },
+    {
+      "section": "N01-237",
+      "token": "question_links",
+      "sentences": [
+        "`input_overflow`는 원 action, owner activity, 취소된 입력 준비 실행, 입력 크기·원인·현재 한도, 공개 질문과 그 source artifact를 보존한다. 문맥은 한도 전체가 아니라 한도에서 지급 문서·출력 스키마·틀의 고정 부분을 뺀 문맥 예산과 비교되므로, 기록은 한도(`limit_bytes`)와 함께 그 예산(`context_budget_bytes`)을 남긴다. `status --json`의 `question_links`는 이 artifact의 `resolution_question/question`을 원문으로 읽는다. 설치·필수 입력·승인 설정이 실제로 달라진 뒤 `request --retry-action AC-ID`로 같은 action을 다시 포장할 수 있다. 일반 `resume`은 이 대기를 해제하지 않는다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    },
+    {
+      "section": "N01-260",
+      "token": "repair_target",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    },
+    {
+      "section": "N01-260",
+      "token": "replay_safety",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    },
+    {
+      "section": "N01-260",
+      "token": "scope",
+      "sentences": [
+        "입력 손상에 쓰는 `retry`와 설치 결함에 쓰는 `repair` 가운데 무엇을 고를지, `scope`·`replay_safety`·`repair_target`에 무엇을 적을지는 [운영 점검](../계약/운영-점검.md)이 정한다. 중앙은 `retry`를 받으면 선행 실행의 종료와 봉인된 입력을 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「독립 운영」 계약을 따른다."
+      ],
+      "scope": "024 exact paragraph only; remaining current section independently judged here"
+    }
+  ],
+  "manager": "run:phases/024/manager-evidence/section-check.json"
+}

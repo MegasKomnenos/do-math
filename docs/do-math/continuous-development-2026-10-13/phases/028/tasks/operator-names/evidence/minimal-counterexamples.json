@@ -1,0 +1,141 @@
+[
+  {
+    "kind": "tool flag ownership gap",
+    "normal": "```powershell\npython setup_lean.py --verify-only --trust-file new.json\n```",
+    "counterexample": "```powershell\npython setup_lean.py --verify-only --watch\n```",
+    "normal_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "counterexample_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "actual_refusal": "static: setup_lean.main/probe_cli.main parser declarations do not accept the borrowed flag; tool main was not executed"
+  },
+  {
+    "kind": "tool flag ownership gap",
+    "normal": "`probe_cli.py --skill-only`",
+    "counterexample": "`probe_cli.py --skill-only --verify-only`",
+    "normal_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "counterexample_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "actual_refusal": "static: setup_lean.main/probe_cli.main parser declarations do not accept the borrowed flag; tool main was not executed"
+  },
+  {
+    "kind": "initialization JSON fence gap",
+    "section": "N01-018",
+    "mutation": "session_limitz",
+    "normal": {
+      "tier_models": {
+        "high": "gpt-6-astra",
+        "medium": "gpt-5.6-sol",
+        "low": "gpt-5.6-terra"
+      },
+      "session_limits": {
+        "work": {
+          "gpt-6-astra": 3,
+          "gpt-5.6-sol": 3,
+          "gpt-5.6-terra": 3
+        }
+      }
+    },
+    "counterexample": {
+      "tier_models": {
+        "high": "gpt-6-astra",
+        "medium": "gpt-5.6-sol",
+        "low": "gpt-5.6-terra"
+      },
+      "session_limitz": {
+        "work": {
+          "gpt-6-astra": 3,
+          "gpt-5.6-sol": 3,
+          "gpt-5.6-terra": 3
+        }
+      }
+    },
+    "counterexample_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "actual_schema_refusal": "configuration has fields outside the stored configuration section: session_limitz",
+    "scope": "existing pure document helpers and actual schema/config checker; no consumer application or grant approval"
+  },
+  {
+    "kind": "initialization JSON fence gap",
+    "section": "N01-272",
+    "mutation": "budget_kind",
+    "normal": {
+      "kind": "grant",
+      "grant": {
+        "id": "GR-initial-01",
+        "kind": "local",
+        "roles": [
+          "intent_interpretation",
+          "maintenance"
+        ],
+        "task_ids": [],
+        "reuse": "reusable",
+        "expires_at": "<허가 범위에 맞게 확정한 UTC 만료 시각>"
+      }
+    },
+    "counterexample": {
+      "kind": "grant",
+      "grant": {
+        "id": "GR-initial-01",
+        "kind": "local",
+        "roles": [
+          "intent_interpretation",
+          "maintenance"
+        ],
+        "task_ids": [],
+        "reuse": "reusable",
+        "expires_at": "<허가 범위에 맞게 확정한 UTC 만료 시각>",
+        "budget_kind": "work"
+      }
+    },
+    "counterexample_helper": {
+      "command": [],
+      "scoped": [],
+      "unowned": [],
+      "policy": [],
+      "function": [],
+      "constant": [],
+      "diagnostic": []
+    },
+    "actual_schema_refusal": [
+      "Additional properties are not allowed ('budget_kind' was unexpected)"
+    ],
+    "scope": "existing pure document helpers and actual schema/config checker; no consumer application or grant approval"
+  }
+]

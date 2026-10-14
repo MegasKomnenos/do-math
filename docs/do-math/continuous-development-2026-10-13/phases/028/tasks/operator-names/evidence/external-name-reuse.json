@@ -1,0 +1,80 @@
+[
+  {
+    "phase": "013",
+    "report": "run:phases/013/tasks/scheduler-smoke/evidence/canonical-related/report.json",
+    "report_sha256": "8fda3e3fb4eefe8994cdd418eb815dcaee08266c7adea8d5b644a3b2b61e3cb9",
+    "rows": [
+      {
+        "id": "smoke.test_scheduler_live.SchedulerLiveTests.test_held_pythonw_tasks_start_wake_and_uninstall",
+        "outcome": "passed",
+        "seconds": 85.31300000002375,
+        "details": []
+      }
+    ],
+    "matched_source_slice": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/operator_schedule.ps1",
+        "sha256": "54901087ed02e0d86a62fd6bacfb95cf00f8c4e604fb9631ebbc7a3d5ec9b1e0"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/operator_bootstrap.py",
+        "sha256": "58efaa37d6e35e6de9efa627efd60200e5d0c4cce1a30f4e0f974e5b922906f7"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "sha256": "531266c09c6c7905e1d5877f818558a2e63e19bc5fed266ed5d587dd6859149f"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+        "sha256": "bee5b391f1cac7e79af95d02ffb4db15a4cedbb2e85edbdb152e42f376a6e937"
+      }
+    ],
+    "original_source": "run:phases/013/tasks/scheduler-smoke/evidence/source-final.json",
+    "original_source_sha256": "c2d6b0536af8f263c6d81534c26167e6d6e0df730a44e77a933d9dfb5881b85f",
+    "limit": "existing local OS boundary only; no new invocation, whole-edition equivalence, research/model success or universal filesystem support claim"
+  },
+  {
+    "phase": "018",
+    "report": "run:phases/018/tasks/job-cleanup/evidence/c4/report.json",
+    "report_sha256": "a051c598b10605b4e6addc8c906a95468e2b3e369f84ca5a497e8bee00d19cdf",
+    "rows": [
+      {
+        "id": "boundary.test_storage_atomic_replace.MetadataPublicationTests.test_permanent_failure_is_bounded_and_unrelated_errors_are_not_retried",
+        "outcome": "passed",
+        "seconds": 0.40700000000651926,
+        "details": []
+      },
+      {
+        "id": "boundary.test_storage_atomic_replace.MetadataPublicationTests.test_reader_keeps_one_version_without_blocking_atomic_replacement",
+        "outcome": "passed",
+        "seconds": 0.015000000013969839,
+        "details": []
+      },
+      {
+        "id": "boundary.test_storage_atomic_replace.MetadataPublicationTests.test_sharing_failure_retries_only_the_same_rename",
+        "outcome": "passed",
+        "seconds": 0.01600000000325963,
+        "details": []
+      },
+      {
+        "id": "boundary.test_storage_atomic_replace.MetadataPublicationTests.test_unicode_long_paths_and_changing_lengths_preserve_exact_target",
+        "outcome": "passed",
+        "seconds": 0.0940000000409782,
+        "details": []
+      }
+    ],
+    "matched_source_slice": [
+      {
+        "path": "repo:.claude/skills/do-math/scripts/do_math/file_io.py",
+        "sha256": "7ef4a0d2543d42e296cf6e991e91996a715b850a2d7803144b6a8b04f3f0182f"
+      },
+      {
+        "path": "repo:.claude/skills/do-math/scripts/tests/boundary/test_storage_atomic_replace.py",
+        "sha256": "15c59106766ec297f33b7d9bfdbb1ceecd9dfadbc9c04c8eec17739ca49a8e60"
+      }
+    ],
+    "original_source": "run:phases/018/tasks/job-cleanup/evidence/source-final.json",
+    "original_source_sha256": "7bb7db5fcf40d578e0e404e447b76998a1053f2cf3bad726ad979460285794c5",
+    "limit": "existing local OS boundary only; no new invocation, whole-edition equivalence, research/model success or universal filesystem support claim"
+  }
+]

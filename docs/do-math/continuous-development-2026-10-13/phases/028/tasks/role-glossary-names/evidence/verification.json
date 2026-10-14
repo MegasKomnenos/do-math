@@ -1,0 +1,27 @@
+{
+  "assigned_sections": 195,
+  "glossary_sections": 162,
+  "cli_sections": 33,
+  "missing": [],
+  "duplicates": [],
+  "source_files": 2675,
+  "source_changes": [],
+  "source_additions": [],
+  "source_deletions": [],
+  "inline_occurrences": 634,
+  "conclusions": {
+    "유지": 187,
+    "기존 근거 재사용": 2,
+    "문구 수정": 1,
+    "검사 보강": 5
+  },
+  "resolved_schema_paths": 82,
+  "new_helper_counterexamples": 5,
+  "reused_027_doc_rows": 38,
+  "reused_027_python_files": 875,
+  "test_binding_groups": 8,
+  "repair_candidates": 2,
+  "product_changes": 0,
+  "new_official_test_runs": 0,
+  "new_model_OS_network_store_calls": 0
+}

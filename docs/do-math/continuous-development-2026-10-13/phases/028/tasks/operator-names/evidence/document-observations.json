@@ -1,0 +1,877 @@
+{
+  "kind": "new pure helper observations, not official tests",
+  "calls": [
+    "field_schemas",
+    "build_parser",
+    "parser_options",
+    "tool_options",
+    "declared_policy_names",
+    "diagnostic_names",
+    "command_issues",
+    "scoped_field_issues",
+    "unowned_field_references",
+    "policy_issues",
+    "function_reference_issues",
+    "constant_reference_issues",
+    "diagnostic_reference_issues"
+  ],
+  "deferred_boundaries": {
+    "defer_status": true,
+    "defer_operation_progress": true,
+    "defer_query_record": true,
+    "defer_query_result": true,
+    "defer_cli_results": [
+      "init_result",
+      "scheduling_result",
+      "selection_result"
+    ],
+    "defer_role_inputs": [
+      "input_manifest",
+      "prompt",
+      "documents",
+      "profile_selection"
+    ],
+    "defer_continuations": [
+      "result_source",
+      "rejected_response",
+      "previous_output_files"
+    ],
+    "defer_operational_inputs": [
+      "operational_evidence",
+      "recovery_materials"
+    ],
+    "defer_result_inputs": [
+      "source_ref",
+      "materialized_output_files",
+      "research_sources",
+      "results"
+    ],
+    "defer_tool_inputs": [
+      "execution_window",
+      "scholarly",
+      "formal_verifier",
+      "preview",
+      "record_map.read_tool",
+      "submission_contract"
+    ],
+    "defer_review_inputs": [
+      "role_review",
+      "pending_findings",
+      "review_research",
+      "review_sources"
+    ],
+    "defer_delivery_inputs": [
+      "submission_check",
+      "repair"
+    ],
+    "defer_governance": [
+      "import_payload",
+      "import_check",
+      "governance",
+      "academic_validation"
+    ],
+    "defer_waits": [
+      "change",
+      "plan_settle_wait"
+    ],
+    "defer_trust": [
+      "project",
+      "toolchain",
+      "environment_check"
+    ]
+  },
+  "sections": [
+    {
+      "id": "N01-001",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-002",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-003",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-004",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-005",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-006",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-007",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-008",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-009",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-010",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-011",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-012",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-013",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-014",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-015",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-016",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-017",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-018",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-019",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-020",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-021",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-022",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-023",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-024",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-025",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-026",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-027",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-028",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-029",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-030",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-031",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-032",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-033",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-034",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-035",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-036",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-037",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-038",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-039",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-040",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-041",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-042",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-043",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-044",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-045",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-046",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-269",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-270",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-271",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-272",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-273",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-274",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-275",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-276",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-277",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-278",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-279",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-280",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-281",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-282",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-283",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-284",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-285",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-286",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-287",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    },
+    {
+      "id": "N01-288",
+      "issues": {
+        "command": [],
+        "scoped": [],
+        "unowned": [],
+        "policy": [],
+        "function": [],
+        "constant": [],
+        "diagnostic": []
+      }
+    }
+  ]
+}
