@@ -1,0 +1,311 @@
+{
+  "archive": "accepted-results.zip",
+  "sha256": "e1c244a9eec17f8d7df59e75f4fd6836a8c57271af1bcd4a5c8142261942ccbf",
+  "files": [
+    {
+      "entry": "assignments/r04/objective.md",
+      "sha256": "995bb72a5cdc0ad08ed86ac3696a4f2a5a9b1c69af53059fe62b335a04cad499"
+    },
+    {
+      "entry": "assignments/r05/objective.md",
+      "sha256": "0502eff49c166a89b1c1859d316991ea40c8762a67a0686747dc9a088a43314f"
+    },
+    {
+      "entry": "assignments/r11/objective.md",
+      "sha256": "4b21f979f1270878aa6c5e1e3db59245e765fe4fed68506ad6cb5d147dbb04ab"
+    },
+    {
+      "entry": "common/context.md",
+      "sha256": "c877ee53314ec5a883ef1043408bc2585fc90f61f134e84cfbfcfdc99ffe45d7"
+    },
+    {
+      "entry": "common/plan.md",
+      "sha256": "07827bc941d9b4a3eddbf8c57370096b042034b978e28ef99e35624cc7b3f7fb"
+    },
+    {
+      "entry": "common/seams.md",
+      "sha256": "112a89048e50f3d923867c4c2c03c88138b5658800ecb00fc828c5d0f4e6d7a0"
+    },
+    {
+      "entry": "manager/inbox.json",
+      "sha256": "d972fb679c7eaa65285d823a50932b2c4624f2f3ae6c6826de1e9da0640ec66d"
+    },
+    {
+      "entry": "manager/integrated-check.json",
+      "sha256": "bb791c4afea2a5d7f53645ac085695939d1e0c130cfbcb76156fef47a6f44896"
+    },
+    {
+      "entry": "manager/memory-index-line.txt",
+      "sha256": "d7bf146dcc844793cca94baf55f5f5648fe52eba7e082f27feba649633001cca"
+    },
+    {
+      "entry": "manager/queue-check.json",
+      "sha256": "32eedc0d7f0670bc490cb13a853eb7d7631b904ba740aacb2ed9c4af40c6ca03"
+    },
+    {
+      "entry": "manager/queue.pending.json",
+      "sha256": "763399f4605bc90cf65e426bd8626ac3a489d6bd94d034c61b61b5ee316affd2"
+    },
+    {
+      "entry": "manager/r07-fix.diff",
+      "sha256": "32183a7aa58b3f58960cb536ada56b5d36852c6ee2de46559c1fa19a823ef454"
+    },
+    {
+      "entry": "manager/r18-fix.diff",
+      "sha256": "7529ecd2a80fc018173041cc70247496577065815107646224a482ecb14ab561"
+    },
+    {
+      "entry": "manager/review.md",
+      "sha256": "9c75dcc1246eaddea568e43effd7798f6c0f48e1ad8585e3afc8b59f5457c554"
+    },
+    {
+      "entry": "manager/source-review.json",
+      "sha256": "467db33cbd25aa2da022a6bdb7ab6fe4919e832af0128a2b9f83a31ae5d53902"
+    },
+    {
+      "entry": "manager/verify_results.py",
+      "sha256": "ab1b448ab011b35e61a7f781cd7f7dbeac5adf5d6caf0c4172791f3a49e95f0d"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.agents/skills/do-math/scripts/do_math/provider_final.py",
+      "sha256": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      "sha256": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.agents/skills/do-math/scripts/이음새-정본.md",
+      "sha256": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.claude/skills/do-math/scripts/do_math/provider_final.py",
+      "sha256": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      "sha256": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+    },
+    {
+      "entry": "tasks/r07-fix/base/.claude/skills/do-math/scripts/이음새-정본.md",
+      "sha256": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519"
+    },
+    {
+      "entry": "tasks/r07-fix/baseline.json",
+      "sha256": "61f26753d3e9417b65b9458b46dd37e93e5796589c88ac8daef2773b257b1523"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/cost-cache/agents.timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/cost-cache/claude.timings.json",
+      "sha256": "2e3ddf5de129bf51159d39aed56765e7b9f4b20aa2028f40a79cd2ec830c9cb2"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/cost-cache/restoration.json",
+      "sha256": "f0e9e953d5b8df974c160db6a55b6dbccd7ef6f1f67be7498747056ac6cd7741"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/finalize-evidence.py",
+      "sha256": "04c915cb6454388f0e29c97f3c0589086afc3771a972d5f6e9a4c8b70b3a17b8"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/green-console.log",
+      "sha256": "23bfb2f28b305c032315b9b23f2ca1601b4ef7c5f35fe0ed04c9bae5bde41209"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/green-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/green/report.json",
+      "sha256": "449b1c228f3a4188522ce6075e358e0d1aa8bdfd61640a88c11fa31fe98bf507"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/green/structure/result.json",
+      "sha256": "027cce6a4c015cc3e49f0f1cc03fd73b1502a680ee13ce82c81325ef577d661b"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/mirror-check-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/mirror-check.log",
+      "sha256": "6aaae826da3fb9482c0b17b950f567a355100ba598cdfbd76e47ff8b7ac7fe25"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/red/report.json",
+      "sha256": "85a5ce3a46734d1ef0edc7a769a8b2043a8d1bfd1a76250be2b8d4dd64dc958b"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/red/structure/failures/7fcaebfdaca10b2afb701719e4c51eb7c7ab828ae4e46f98b62de5b809c6ee8c.json",
+      "sha256": "3e80eb7f93d775b309a6180999a5d0a25cac80f419fcdb5994141c5b9a4dc2f0"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/red/structure/result.json",
+      "sha256": "9b6014ebf71999dcf2885bc2489d92189a46611274f1b1c20645b0dcd9ab4fd8"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/report-check-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/report-check.log",
+      "sha256": "364ecb1ace49f778f8d2c9673c68c7df259e353306e81dc81da5a9686638004e"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/source-delta.json",
+      "sha256": "90007fcd81e3ac92ce8f4ae91e854b08ca9911e38b8b2b97db786c8780f1ce32"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/source.diff",
+      "sha256": "32183a7aa58b3f58960cb536ada56b5d36852c6ee2de46559c1fa19a823ef454"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/static-checks.json",
+      "sha256": "deac93e4c24e39a3b4b85820f0fede8cafbd0170823b17073e41efd787e13c45"
+    },
+    {
+      "entry": "tasks/r07-fix/evidence/verification.json",
+      "sha256": "509d0173c9367b9c6a45f267ee876aed0419cf47abb5b5e6e2e67216d219a0e7"
+    },
+    {
+      "entry": "tasks/r07-fix/integration.json",
+      "sha256": "b9d009e345337fae8f26a7fd5a232087e7a51f21bfef6b68712d84132bcefd2f"
+    },
+    {
+      "entry": "tasks/r07-fix/objective.md",
+      "sha256": "9c5b18d7e1ca7c848ba16a3fc9665489d57b58e9748fd60b309fbe3f7d7eb53f"
+    },
+    {
+      "entry": "tasks/r07-fix/report.json",
+      "sha256": "c621e1c792d2d181d43dd77faf8570dda2c64cc5102274f467ebbc247ce6deb2"
+    },
+    {
+      "entry": "tasks/r07-fix/task.json",
+      "sha256": "ec81460279c2cfbb78d00db01ecb359de7b0829b1b6c49c738c895ac6a2740f5"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.agents/skills/do-math/scripts/do_math/provider_final.py",
+      "sha256": "ad88a9d0bdf644e3eb6111a8f374b79635b4e0beb0b6f1e545271b42be3f9463"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      "sha256": "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.agents/skills/do-math/scripts/이음새-정본.md",
+      "sha256": "6830306e0b7313a12b5de0438d971eab16bc0624c29f5a066e1c2c5cf277653b"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.claude/skills/do-math/scripts/do_math/provider_final.py",
+      "sha256": "ad88a9d0bdf644e3eb6111a8f374b79635b4e0beb0b6f1e545271b42be3f9463"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      "sha256": "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494"
+    },
+    {
+      "entry": "tasks/r07-fix/workspace/.claude/skills/do-math/scripts/이음새-정본.md",
+      "sha256": "6830306e0b7313a12b5de0438d971eab16bc0624c29f5a066e1c2c5cf277653b"
+    },
+    {
+      "entry": "tasks/r18-fix/base/.agents/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+      "sha256": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137"
+    },
+    {
+      "entry": "tasks/r18-fix/base/.claude/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+      "sha256": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137"
+    },
+    {
+      "entry": "tasks/r18-fix/baseline.json",
+      "sha256": "61f26753d3e9417b65b9458b46dd37e93e5796589c88ac8daef2773b257b1523"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/conclusion.md",
+      "sha256": "7929088f258cf22b2ebc3d9d6d25fef497c66cccd51d8a633d42d451d9ea05a3"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/fixture-observations.json",
+      "sha256": "fcec492d3e67238a553ea3e4164d48d671545633d470d8f7f0c8272fa0048c49"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/green-agents-timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/green-claude-timings.json",
+      "sha256": "75b0bbdb9473c24307869057cc2eb182329c5fb308f8708567642f97ff137933"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/green/report.json",
+      "sha256": "c0776aa85b51cef2d7d34b1cb432959dff389492c9bf1860a786049838459610"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/green/structure/result.json",
+      "sha256": "89a018ed8d149d28e5c275e754e146e16f871b5bc4bfd56834cbceef303fac56"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/native-path.json",
+      "sha256": "69bdf5d7afcff26f29e419abd9136a30c9b4912963ebbf3ae279fa17595ef5e6"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/product.diff",
+      "sha256": "cf51e0b996de1d1fa271130859b1de938fb72974f19cbed7acd91239b997496c"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/record_result.py",
+      "sha256": "9ab761a4701f711bf2ea0cbc26f8d6d5b346f98404a68ad51df9a0eb47868615"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/red-agents-timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/red-claude-timings.json",
+      "sha256": "bef66a2a9c18a13be95c47b5cfce5b0cfe8556e4a5254a6ae7de4fa46e9a8112"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/red/report.json",
+      "sha256": "777192ce08bfbe254613f160e61f85e9a2fc3cff7964d8015a89490afe0de3c3"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/red/structure/failures/b902271dd301981980ad01929806f1439b38c85bb794bcdfbfd7786ac7370a30.json",
+      "sha256": "8dbd3b22a6eed5181a4507c9ff6004ad9a0ced8f0978e56fb8153d011f3c4d1e"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/red/structure/result.json",
+      "sha256": "7da555c92f683e4bf84b9f6f5b8872b24a97d242f6dd408c174001d47d671020"
+    },
+    {
+      "entry": "tasks/r18-fix/evidence/verification.json",
+      "sha256": "68548acb9a72b3a62eebb33726e032c3304e96a1de0e7d1ab714852db6f3b92c"
+    },
+    {
+      "entry": "tasks/r18-fix/integration.json",
+      "sha256": "e66c7f450fb85c8aadc12670f8e068cbd7d591e4a2d31d9311533c5ac9a2b312"
+    },
+    {
+      "entry": "tasks/r18-fix/objective.md",
+      "sha256": "d207839a2d36ab10759f70487cfe459b55c5e972439995d7f55222aa3edf9e45"
+    },
+    {
+      "entry": "tasks/r18-fix/report.json",
+      "sha256": "e064e1bd46d698f895f606ae92134dd7f66f5793bc7135b3348e9b94b5b89f68"
+    },
+    {
+      "entry": "tasks/r18-fix/task.json",
+      "sha256": "9103f93ca8e98a5a2ca70edf6ecf1957e6f08205a93fe3c3eed3febb7b60d10f"
+    },
+    {
+      "entry": "tasks/r18-fix/workspace/.agents/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+      "sha256": "5852d672f1f8d33eedbae3b80fc252f28e94f5f477d4e1d75efa86cf51a69093"
+    },
+    {
+      "entry": "tasks/r18-fix/workspace/.claude/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+      "sha256": "5852d672f1f8d33eedbae3b80fc252f28e94f5f477d4e1d75efa86cf51a69093"
+    }
+  ],
+  "limit": "Full workspaces/session logs and other untracked manager records remain local only."
+}

@@ -15,7 +15,8 @@ reviewed once instead of being found in operation:
 Every subprocess start uses the standard ``CREATE_NO_WINDOW`` value and the
 native Job root passes that bit to ``CreateProcessW`` (조사 A-16);
 no script module shadows a standard-library module (조사 A-12), and only
-``file_io`` replaces files.
+``file_io`` replaces files. File replacement includes the native Windows
+binding and calls through its returned tuple, not just ``os.replace``.
 """
 import ast
 from pathlib import Path
@@ -81,11 +82,12 @@ def _process_start_sites():
             yield relative, function, node.func.attr, node
 
 
-def _sites():
+def _sites(trees=None):
     """Yield ``(relative path, enclosing function, node)`` for every node of the product."""
-    for path in _product_files():
-        tree = ast.parse(path.read_text(encoding='utf-8'))
-        relative = path.relative_to(SCRIPTS).as_posix()
+    if trees is None:
+        trees = ((path.relative_to(SCRIPTS).as_posix(), ast.parse(path.read_text(encoding='utf-8')))
+                 for path in _product_files())
+    for relative, tree in trees:
 
         def walk(node, function):
             for child in ast.iter_child_nodes(node):
@@ -98,6 +100,55 @@ def _sites():
 def _is(node, owner, names):
     return (isinstance(node, ast.Attribute) and node.attr in names
             and isinstance(node.value, ast.Name) and node.value.id == owner)
+
+
+def _replacement_sites(trees=None):
+    """Python replacement calls, native bindings and their connected calls.
+
+    Follow the current direct binding -> tuple return -> tuple unpacking shape,
+    including an absolute from-import if a consumer moves to another module.
+    Names alone (``rename``, ``_windows_files``) do not establish a connection.
+    This is a finite source check, not general Python alias/data-flow analysis.
+    """
+    sites = list(_sites(trees))
+    aliases, exports, imports = {}, {}, {}
+    for relative, function, node in sites:
+        scope = relative, function
+        if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute)
+                and node.value.attr == 'SetFileInformationByHandle'):
+            aliases.setdefault(scope, set()).update(target.id for target in node.targets
+                                                    if isinstance(target, ast.Name))
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            for name in node.names:
+                imports[relative, function, name.asname or name.name] = (node.module.replace('.', '/') + '.py', name.name)
+    for relative, function, node in sites:
+        scope = relative, function
+        if isinstance(node, ast.Return) and isinstance(node.value, ast.Tuple):
+            indexes = {index for index, value in enumerate(node.value.elts)
+                       if isinstance(value, ast.Name) and value.id in aliases.get(scope, ())}
+            if indexes:
+                exports.setdefault(scope, set()).update(indexes)
+    for relative, function, node in sites:
+        if not (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name)):
+            continue
+        name = node.value.func.id
+        producer = imports.get((relative, function, name),
+                               imports.get((relative, '<module>', name), (relative, name)))
+        for target in node.targets:
+            if isinstance(target, ast.Tuple):
+                aliases.setdefault((relative, function), set()).update(
+                    value.id for index, value in enumerate(target.elts)
+                    if index in exports.get(producer, ()) and isinstance(value, ast.Name))
+    for relative, function, node in sites:
+        if isinstance(node, ast.Call) and (_is(node.func, 'os', {'replace'}) or _is(node.func, 'shutil', {'move'})):
+            yield relative, function, 'python-call', node
+        if isinstance(node, ast.Attribute) and node.attr == 'SetFileInformationByHandle':
+            yield relative, function, 'native-binding', node
+        if isinstance(node, ast.Call) and (
+                isinstance(node.func, ast.Attribute) and node.func.attr == 'SetFileInformationByHandle'
+                or isinstance(node.func, ast.Name) and node.func.id in aliases.get((relative, function), ())):
+            yield relative, function, 'native-call', node
 
 
 def _executable_identities():
@@ -171,9 +222,59 @@ class BoundaryInvariantTests(unittest.TestCase):
         self.assertEqual(sorted(names & set(sys.stdlib_module_names)), [])
 
     def test_only_file_io_replaces_files(self):
-        sites = {(relative, function) for relative, function, node in _sites()
-                 if isinstance(node, ast.Call) and (_is(node.func, 'os', {'replace'}) or _is(node.func, 'shutil', {'move'}))}
-        self.assertEqual({relative for relative, _ in sites}, {'do_math/file_io.py'})
+        sites = list(_replacement_sites())
+        self._assert_file_io_replacements(sites)
+        self.assertEqual([(relative, function, kind) for relative, function, kind, _ in sites
+                          if kind.startswith('native-')],
+                         [('do_math/file_io.py', '_windows_files', 'native-binding'),
+                          ('do_math/file_io.py', '_replace_once', 'native-call')])
+
+    def _assert_file_io_replacements(self, sites):
+        self.assertEqual({relative for relative, _, _, _ in sites}, {'do_math/file_io.py'})
+
+    def test_native_file_replacement_remains_visible_when_relocated(self):
+        # Reuse actual source without executing WinAPI. Remove the non-Windows
+        # branch so os.replace cannot make a missed native relocation fail.
+        tree = ast.parse((SCRIPTS / 'do_math/file_io.py').read_text(encoding='utf-8'))
+        functions = {node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)}
+        binding = functions['_windows_files']
+        consumer = ast.parse(ast.unparse(functions['_replace_once'])).body[0]
+        consumer.body = [statement for statement in consumer.body
+                         if not any(isinstance(node, ast.Call) and _is(node.func, 'os', {'replace'})
+                                    for node in ast.walk(statement))]
+        reader = functions['shared_reader']
+
+        def module(*body):
+            return ast.Module(body=list(body), type_ignores=[])
+
+        owner, other = 'do_math/file_io.py', 'do_math/relocated_file_boundary.py'
+        unrelated = ast.parse('''
+def rename(handle, kind, buffer, size):
+    return None
+def _windows_files():
+    return None, None, None, rename
+def unrelated_call(handle, buffer, size):
+    create, close, invalid, rename = _windows_files()
+    return rename(handle, 22, buffer, size)
+''')
+        cases = {
+            'current': ([(owner, module(binding, consumer, reader)), (other, unrelated)], owner, owner),
+            'both relocated': ([(other, module(binding, consumer, reader))], other, other),
+            'consumer relocated': ([(owner, module(binding, reader)),
+                                    (other, module(ast.parse('from do_math.file_io import _windows_files').body[0],
+                                                   consumer))], owner, other),
+        }
+        for label, (trees, binding_owner, consumer_owner) in cases.items():
+            with self.subTest(case=label):
+                sites = list(_replacement_sites(trees))
+                self.assertEqual([(relative, function, kind) for relative, function, kind, _ in sites],
+                                 [(binding_owner, '_windows_files', 'native-binding'),
+                                  (consumer_owner, '_replace_once', 'native-call')])
+                if label == 'current':
+                    self._assert_file_io_replacements(sites)
+                else:
+                    with self.assertRaises(AssertionError):
+                        self._assert_file_io_replacements(sites)
 
     def test_executable_identity_has_one_normalization(self):
         sites = sorted(_executable_identities())

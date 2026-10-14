@@ -14,6 +14,7 @@ does not certify that the name-based census covers the whole 1-E population.
 Action/extension samples cover ROLES and their shape-changing preparation,
 review-cycle and stage inputs, without multiplying unrelated axes. Audit and
 impact samples exercise filtering and repeated option construction.
+Output-contract samples cover both providers with a shared caller leaf.
 """
 import ast
 from copy import deepcopy
@@ -134,9 +135,14 @@ def _containers(value):
 
 def _composition_calls():
     """Schema constructors omitted by the schema-name walk; use their real schema inputs."""
-    from do_math import cli_contract, contracts, control_contracts, review_cycle, review_engine
+    from do_math import cli_contract, contracts, control_contracts, provider_final, review_cycle, review_engine
     from do_math.record_schemas import schemas
+    leaf = {'type': 'string'}
+    shared_schema = {'type': 'object', 'properties': {'left': leaf, 'right': leaf}}
     return {
+        'do_math.provider_final.output_contract': [
+            lambda provider=provider: provider_final.output_contract(provider, shared_schema)
+            for provider in ('codex', 'claude')],
         'do_math.contracts.closed_object': [
             lambda: contracts.closed_object({'name': contracts.STRING}),
             lambda: contracts.closed_object({'name': contracts.STRING}, [])],
@@ -283,6 +289,29 @@ class SchemaBuilderTests(unittest.TestCase):
 
     def test_unnamed_schema_composition_results_detach_every_mutable_node(self):
         self.assertEqual(_isolation_problems(_composition_calls()), [])
+
+    def test_output_contract_preserves_values_and_detaches_the_caller_input(self):
+        import json
+        from do_math.provider_final import CODEX_OUTPUT_KEY, output_contract
+        leaf = {'type': 'string'}
+        schema = {'type': 'object', 'properties': {'left': leaf, 'right': leaf}}
+        expected = {'type': 'object', 'properties': {
+            'left': {'type': 'string'}, 'right': {'type': 'string'}}}
+        first, second = output_contract('claude', schema), output_contract('claude', schema)
+        self.assertEqual(first, expected)
+        self.assertEqual(second, expected)
+        transport = output_contract('codex', schema)
+        self.assertEqual(transport['type'], 'object')
+        self.assertIs(transport['additionalProperties'], False)
+        self.assertEqual(transport['required'], [CODEX_OUTPUT_KEY])
+        self.assertEqual(set(transport['properties']), {CODEX_OUTPUT_KEY})
+        field = transport['properties'][CODEX_OUTPUT_KEY]
+        self.assertEqual(field['type'], 'string')
+        self.assertEqual(json.loads(field['description'].split('\n', 1)[1]), expected)
+        first['properties']['left']['enum'] = ['left-only']
+        self.assertEqual(first['properties']['right'], expected['properties']['right'])
+        self.assertEqual(schema, expected)
+        self.assertEqual(second, expected)
 
     def test_constant_object_builders_detach_mutable_nodes_and_keep_immutable_leaves(self):
         from do_math import planning

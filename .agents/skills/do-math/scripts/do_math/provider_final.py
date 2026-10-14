@@ -11,7 +11,7 @@ import json
 
 import jsonschema
 
-from .values import strict_json_loads
+from .values import json_copy, strict_json_loads
 
 EXECUTABLE_KEYS = {"codex": "codex_path", "claude": "claude_path"}
 CODEX_OUTPUT_KEY = "output_json"
@@ -24,7 +24,8 @@ def output_contract(provider: str, schema: dict) -> dict:
     carries the complete semantic value without collapsing absence and null or
     translating arbitrary schema constraints. The property's description gives
     the model the original schema; the receiver still enforces that schema.
-    Claude receives its original schema. Neither branch mutates the caller.
+    Claude receives the same schema value. Both branches return independent
+    mutable nodes, including within one result, without mutating the caller.
     """
     if provider == "codex":
         return {"type": "object", "additionalProperties": False,
@@ -35,8 +36,7 @@ def output_contract(provider: str, schema: dict) -> dict:
                     + json.dumps(schema, ensure_ascii=False, sort_keys=True, allow_nan=False)}},
                 "required": [CODEX_OUTPUT_KEY]}
     if provider == "claude":
-        from copy import deepcopy
-        return deepcopy(schema)
+        return json_copy(schema)
     raise ValueError("unsupported final-response provider: " + provider)
 
 

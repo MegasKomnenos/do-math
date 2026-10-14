@@ -1,0 +1,334 @@
+{
+  "r07-fix": {
+    "report_check": "PASS",
+    "actual_changes": [
+      {
+        "path": ".agents/skills/do-math/scripts/do_math/provider_final.py",
+        "base": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239",
+        "workspace": "ad88a9d0bdf644e3eb6111a8f374b79635b4e0beb0b6f1e545271b42be3f9463",
+        "source_before_integration": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239"
+      },
+      {
+        "path": ".agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "base": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b",
+        "workspace": "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494",
+        "source_before_integration": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+      },
+      {
+        "path": ".agents/skills/do-math/scripts/이음새-정본.md",
+        "base": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519",
+        "workspace": "6830306e0b7313a12b5de0438d971eab16bc0624c29f5a066e1c2c5cf277653b",
+        "source_before_integration": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519"
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_final.py",
+        "base": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239",
+        "workspace": "ad88a9d0bdf644e3eb6111a8f374b79635b4e0beb0b6f1e545271b42be3f9463",
+        "source_before_integration": "e9e06c35eb80bf90f5c3c4a7acf9908b9390cbe594c0e4fbad4ed64d44336239"
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "base": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b",
+        "workspace": "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494",
+        "source_before_integration": "280db8287e2a05931b240f2644eba08cf668a119867404d33af1605a2839687b"
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/이음새-정본.md",
+        "base": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519",
+        "workspace": "6830306e0b7313a12b5de0438d971eab16bc0624c29f5a066e1c2c5cf277653b",
+        "source_before_integration": "f7aa7a94a784034e176ded1d744c22decbfa0444ac651252d6c27a8a2bf7d519"
+      }
+    ],
+    "mirror_pairs": [
+      {
+        "source": ".claude/skills/do-math/scripts/do_math/provider_final.py",
+        "mirror": ".agents/skills/do-math/scripts/do_math/provider_final.py",
+        "bytes_equal": true
+      },
+      {
+        "source": ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "mirror": ".agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+        "bytes_equal": true
+      },
+      {
+        "source": ".claude/skills/do-math/scripts/이음새-정본.md",
+        "mirror": ".agents/skills/do-math/scripts/이음새-정본.md",
+        "bytes_equal": true
+      }
+    ],
+    "runs": {
+      "red": {
+        "report_sha256": "85a5ce3a46734d1ef0edc7a769a8b2043a8d1bfd1a76250be2b8d4dd64dc958b",
+        "selected": [
+          "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node"
+        ],
+        "actual_rows": [
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node",
+            "outcome": "failed",
+            "seconds": 0.045999999972991645,
+            "details": [
+              "Traceback (most recent call last):\n  File \"C:\\math\\.async\\dm\\tasks\\r07-fix\\workspace\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_schema_builders.py\", line 290, in test_unnamed_schema_composition_results_detach_every_mutable_node\n    self.assertEqual(_isolation_problems(_composition_calls()), [])\nAssertionError: Lists differ: [('do_math.provider_final.output_contract'[133 chars]t'])] != []\n\nFirst list contains 2 additional elements.\nFirst extra element 0:\n('do_math.provider_final.output_contract', 1, 0, ['a node appears twice in one result'])\n\n+ []\n- [('do_math.provider_final.output_contract',\n-   1,\n-   0,\n-   ['a node appears twice in one result']),\n-  ('do_math.provider_final.output_contract',\n-   1,\n-   1,\n-   ['a node appears twice in one result'])]\n"
+            ]
+          }
+        ],
+        "counts": {
+          "failed": 1
+        },
+        "complete": true,
+        "successful": false,
+        "fixture_counts": {},
+        "changed_during_run": [],
+        "python_hashes": 875,
+        "final_workspace_mismatches": null,
+        "seconds": 0.1,
+        "parent_exit": null,
+        "limit": "Task did not retain parent exit; original failed assertion is preserved."
+      },
+      "green": {
+        "report_sha256": "449b1c228f3a4188522ce6075e358e0d1aa8bdfd61640a88c11fa31fe98bf507",
+        "selected": [
+          "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_a_builder_without_a_schema_cannot_pass_by_having_no_mutable_nodes",
+          "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_a_retained_mutable_result_is_detected_on_the_repeated_call",
+          "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_independent_results_remain_valid_on_the_repeated_call",
+          "structure.test_schema_builders.SchemaBuilderTests.test_blocked_key_builder_returns_independent_sets_of_immutable_names",
+          "structure.test_schema_builders.SchemaBuilderTests.test_constant_object_builders_detach_mutable_nodes_and_keep_immutable_leaves",
+          "structure.test_schema_builders.SchemaBuilderTests.test_control_schema_composition_does_not_share_mutable_field_nodes",
+          "structure.test_schema_builders.SchemaBuilderTests.test_every_schema_function_is_declared",
+          "structure.test_schema_builders.SchemaBuilderTests.test_observation_contract_builders_detach_all_rows_from_each_other_and_operators",
+          "structure.test_schema_builders.SchemaBuilderTests.test_output_contract_preserves_values_and_detaches_the_caller_input",
+          "structure.test_schema_builders.SchemaBuilderTests.test_results_share_no_node_with_each_other_or_a_module_global",
+          "structure.test_schema_builders.SchemaBuilderTests.test_schema_samples_reach_context_dependent_shapes",
+          "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node"
+        ],
+        "actual_rows": [
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_a_builder_without_a_schema_cannot_pass_by_having_no_mutable_nodes",
+            "outcome": "passed",
+            "seconds": 0.015000000013969839,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_a_retained_mutable_result_is_detected_on_the_repeated_call",
+            "outcome": "passed",
+            "seconds": 0.01600000000325963,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderIsolationCheckTests.test_independent_results_remain_valid_on_the_repeated_call",
+            "outcome": "passed",
+            "seconds": 0.030999999959021807,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_blocked_key_builder_returns_independent_sets_of_immutable_names",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_constant_object_builders_detach_mutable_nodes_and_keep_immutable_leaves",
+            "outcome": "passed",
+            "seconds": 0.01600000000325963,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_control_schema_composition_does_not_share_mutable_field_nodes",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_every_schema_function_is_declared",
+            "outcome": "passed",
+            "seconds": 1.3900000000139698,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_observation_contract_builders_detach_all_rows_from_each_other_and_operators",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_output_contract_preserves_values_and_detaches_the_caller_input",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_results_share_no_node_with_each_other_or_a_module_global",
+            "outcome": "passed",
+            "seconds": 0.09399999998277053,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_schema_samples_reach_context_dependent_shapes",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node",
+            "outcome": "passed",
+            "seconds": 0.0470000000204891,
+            "details": []
+          }
+        ],
+        "counts": {
+          "passed": 12
+        },
+        "complete": true,
+        "successful": true,
+        "fixture_counts": {},
+        "changed_during_run": [],
+        "python_hashes": 875,
+        "final_workspace_mismatches": [],
+        "seconds": 1.6,
+        "parent_exit": 0
+      }
+    },
+    "cost_caches": [
+      {
+        "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+        "restored_to_base": true
+      },
+      {
+        "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+        "restored_to_base": true
+      }
+    ],
+    "manager_product_test_runs": 0
+  },
+  "r18-fix": {
+    "report_check": "PASS",
+    "actual_changes": [
+      {
+        "path": ".agents/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+        "base": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137",
+        "workspace": "5852d672f1f8d33eedbae3b80fc252f28e94f5f477d4e1d75efa86cf51a69093",
+        "source_before_integration": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137"
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+        "base": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137",
+        "workspace": "5852d672f1f8d33eedbae3b80fc252f28e94f5f477d4e1d75efa86cf51a69093",
+        "source_before_integration": "692ae1f9dcd4def54eac4ee60b2bfbc645458e95924a00f3b8c7c2964c7dd137"
+      }
+    ],
+    "mirror_pairs": [
+      {
+        "source": ".claude/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+        "mirror": ".agents/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+        "bytes_equal": true
+      }
+    ],
+    "runs": {
+      "red": {
+        "report_sha256": "777192ce08bfbe254613f160e61f85e9a2fc3cff7964d8015a89490afe0de3c3",
+        "selected": [
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_file_replacement_remains_visible_when_relocated"
+        ],
+        "actual_rows": [
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_file_replacement_remains_visible_when_relocated",
+            "outcome": "failed",
+            "seconds": 0.01600000000325963,
+            "details": [
+              "Traceback (most recent call last):\n  File \"C:\\math\\.async\\dm\\tasks\\r18-fix\\workspace\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_boundary_invariants.py\", line 193, in test_native_file_replacement_remains_visible_when_relocated\n    self.assertEqual(native, [('_windows_files', 'native-binding'), ('_replace_once', 'native-call')])\nAssertionError: Lists differ: [] != [('_windows_files', 'native-binding'), ('_replace_once', 'native-call')]\n\nSecond list contains 2 additional elements.\nFirst extra element 0:\n('_windows_files', 'native-binding')\n\n- []\n+ [('_windows_files', 'native-binding'), ('_replace_once', 'native-call')]\n"
+            ]
+          }
+        ],
+        "counts": {
+          "failed": 1
+        },
+        "complete": true,
+        "successful": false,
+        "fixture_counts": {},
+        "changed_during_run": [],
+        "python_hashes": 875,
+        "final_workspace_mismatches": null,
+        "seconds": 0.0,
+        "parent_exit": 1
+      },
+      "green": {
+        "report_sha256": "c0776aa85b51cef2d7d34b1cb432959dff389492c9bf1860a786049838459610",
+        "selected": [
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_file_replacement_remains_visible_when_relocated",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_no_script_module_shadows_a_standard_library_module",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files",
+          "structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window"
+        ],
+        "actual_rows": [
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization",
+            "outcome": "passed",
+            "seconds": 1.1410000000032596,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_interpreter_uses_are_declared",
+            "outcome": "passed",
+            "seconds": 1.172000000020489,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_file_replacement_remains_visible_when_relocated",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_native_job_creation_passes_suspended_and_no_window_bits",
+            "outcome": "passed",
+            "seconds": 1.125,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_no_script_module_shadows_a_standard_library_module",
+            "outcome": "passed",
+            "seconds": 0.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_only_file_io_replaces_files",
+            "outcome": "passed",
+            "seconds": 2.0,
+            "details": []
+          },
+          {
+            "id": "structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window",
+            "outcome": "passed",
+            "seconds": 2.25,
+            "details": []
+          }
+        ],
+        "counts": {
+          "passed": 7
+        },
+        "complete": true,
+        "successful": true,
+        "fixture_counts": {},
+        "changed_during_run": [],
+        "python_hashes": 875,
+        "final_workspace_mismatches": [],
+        "seconds": 7.7,
+        "parent_exit": 0
+      }
+    },
+    "cost_caches": [
+      {
+        "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+        "restored_to_base": true
+      },
+      {
+        "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+        "restored_to_base": true
+      }
+    ],
+    "manager_product_test_runs": 0
+  }
+}
