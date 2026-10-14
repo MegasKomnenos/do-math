@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 import unittest
+from unittest import mock
 
 from support.branch_gate import (FORMAT, REASONED_EXCLUSION, FunctionRecorder, build_index, fixture_label,
                                  function_key, gate, module_label)
@@ -81,6 +82,15 @@ class IndexTests(unittest.TestCase):
 
 
 class MergeTests(unittest.TestCase):
+    def test_stopping_an_unstarted_merger_preserves_the_active_measurement(self):
+        from support import branch_gate
+        root = Path(__file__).resolve().parents[6]
+        active = branch_gate.Measurement(root)
+        merger = branch_gate.Measurement(root)
+        with mock.patch.object(branch_gate, '_ACTIVE', active):
+            merger.abandon()
+            self.assertIs(branch_gate._ACTIVE, active)
+
     def test_a_worker_that_left_no_measurement_is_reported_missing_and_the_others_still_merge(self):
         """결함 D6: a worker that timed out never saved; combining must not end the whole run with no report."""
         import json

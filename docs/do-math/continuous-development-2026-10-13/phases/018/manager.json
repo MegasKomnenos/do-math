@@ -1,0 +1,158 @@
+{
+  "next": "019",
+  "decision": "job-cleanup의 report 전문과 근거를 대조해 A1~A4 complete를 승인한다. 시작/현재2675파일과 허용8변경, 실제 Job 종료·빈 Job·디렉터리 정리, 정확1·양쪽 관련27·최종 양쪽 T4 각295passed/exit0 및 각60worker 측정complete를 확인했다. close가 동기 종료가 아니라는 실제 관측과 현 API를 쓰는 fixture 수리로017 cleanup 남김을 닫는다. 역사 race 미재현·오류 당시 상태 미관측 및 bootstrap WinError5 원인 미확인은 그대로다. 측정102/142는 정보이며 기능 합격과 별도로 판단했다. manager 첫 검산exit1은 생성 전 미러를 정본 관련 검사 판본에 잘못 포함한 관리 오류다. 검사한 tree와 최종 전체를 구별해 교정했다. 원task2463파일·이전017 evidence5917파일은 불변이다.\n\n015~016제품22경로에018fixture2를 더한24경로는 관련 검수와 최종 T4 연결이 충분하므로 이번 로컬 관리 커밋에 포함한다. 지침2는 허용된 추가이며 나머지20은 불변이다. 비용 캐시·무관 dirty는 제외한다. 원자료 압축·선별 추적과 한 개의 기억 노드를 함께 보존한다.\n\n전체 일반·fresh T3·전수 변이·최종 review와 남은 문서·의미·L01은 미완료다. 다음019 work는 P02 네 owner의 AST 문서 결속을 실제 catalog·_apply·복원·포장과 연결한다. 기존 수제 result의 물질화와 실제 생산을 구별하고 기존 수신·600k flow를 사용한다. 공통 doc_code·미러·캐시를 독립 검증해야 하므로 단일 task로 배정한다. L01의 외부 결정 없이 수행 가능하며 현재 byte 요구를 바꾸지 않는다. manager는 제품 코드를 수정하지 않고 다음 phase를 배정한다.",
+  "reports": [
+    {
+      "task": "job-cleanup",
+      "state": "read",
+      "detail": "check.py report 통과 뒤 전체 report 및 원관측/코드/공식실행/판본을 대조했다. A1~A4 pass를 승인하고 F1~F3를 지정범위로 종결한다.",
+      "evidence": [
+        "run:phases/018/tasks/job-cleanup/report.json",
+        "run:phases/018/manager-evidence/report-check.json",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/018/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "018/job-cleanup/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:context.md#C11"
+      ],
+      "reason": "현 API의 종료 확인 fixture와 새 실제3상태·오류2경로, 회귀·전체 통과를 승인해 cleanup 남김을 닫는다. 역사 인과·빈도 및 bootstrap 원인은 미확인으로 보존하며 과거 원보고를 바꾸지 않는다.",
+      "evidence": [
+        "run:phases/018/tasks/job-cleanup/evidence/job-observation-before2.json",
+        "run:phases/018/tasks/job-cleanup/evidence/job-observation-after.json",
+        "run:phases/018/tasks/job-cleanup/evidence/cleanup-faults.json",
+        "run:phases/018/manager-evidence/verification.json"
+      ]
+    },
+    {
+      "item": "018/job-cleanup/F2",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C11",
+        "run:plan.md"
+      ],
+      "reason": "현재 판본의 양쪽295고유passed/exit0와 worker 게시·DB·adapter 정보를 원자료에서 검수했다. 지정 T4 미통과를 종결하고 다른 G·문서·L01은 남긴다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/018/tasks/job-cleanup/evidence/c4/report.json",
+        "run:phases/018/tasks/job-cleanup/evidence/m4/report.json"
+      ]
+    },
+    {
+      "item": "018/job-cleanup/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C12",
+        "run:plan.md"
+      ],
+      "reason": "139입력·144corpus·150SHA·host8·도구·baseline910·기존20제품·과거 raw 불변과 허용 지침2변화를 검산했다. 한정 실호출 재사용을 유지하고 검수한24제품경로를 이번 관리 마감에 포함한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/018/tasks/job-cleanup/evidence/preservation.json",
+        "run:phases/018/manager-evidence/preservation.json"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "018의 실제 검수·부분 범위와 관리 검산 오류를 추가하고 역사 결과를 보존한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "다음 단일 work와 공유 helper·캐시·미러의 독립성 조건을019 기준으로 교체한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "019에도 사용자 지정 gpt-6.1-sol/high를 명시한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "PR02의 Job 도입·포트·fixture 종료 소비 slice만 종결하고 전체 범위를 유지한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "외부 L01과 독립인 P02의 네 owner, 실제 생산·물질화의 구별 및 후속 범위를 명시한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "cleanup·T4의 지정 남김을 새 전체 근거로 닫고 역사 미관측·최종 G의 한계를 유지한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "018 보존 검수·지침의 허용 변화·24제품 마감과 압축·추적 경계를 추가한다.",
+      "evidence": [
+        "run:phases/018/manager-evidence/common-docs.diff",
+        "run:phases/018/manager-evidence/verification.json",
+        "run:phases/019/tasks/document-results/objective.md"
+      ]
+    }
+  ],
+  "plan_update": "018의 지정 cleanup 및 T4 전체 연결을 종결하고24비캐시 제품의 관리 마감을 기록했다. 다음은019 document-results의 P02 실제 생산·저장·문서 결속이다. 공통 helper·미러·캐시를 한 task가 소유한다. 나머지 의미·문서·L01 외부 결정과 G4~G6/G8 관문·최종 review 순서는 유지한다. 과거 실패를 소급 삭제하지 않았다.",
+  "seam_updates": [],
+  "completion": null
+}

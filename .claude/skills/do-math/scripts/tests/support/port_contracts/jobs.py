@@ -12,7 +12,11 @@ import sys
 
 import tempfile
 
+import time
+
 import unittest
+
+from do_math.cli_execution import termination_confirmed
 
 from do_math.windows_job import process_identity
 
@@ -37,8 +41,20 @@ class JobsContract:
     def launch(self):
         job = self.jobs.launch([sys.executable, '-c', MARK, str(self.mark)], cwd=self.directory,
                                env=dict(os.environ), name='Local\\DoMath-contract-' + os.urandom(8).hex())
-        self.addCleanup(job.close)
+        self.addCleanup(self._cleanup_job, job)
         return job
+
+    def _cleanup_job(self, job):
+        # close releases handles and kills remaining processes; it does not
+        # wait for their cwd to be released. Keep ownership until the root and
+        # all Job processes have ended, before TemporaryDirectory's cleanup.
+        try:
+            job.terminate()
+            self.assertTrue(job.wait(), 'owned Job root did not end')
+            while not termination_confirmed(job.inspect()):
+                time.sleep(0.02)
+        finally:
+            job.close()
 
     def test_a_launched_job_is_suspended_until_resumed(self):
         job = self.launch()

@@ -1,0 +1,139 @@
+commit 0b05e8aba59902f50f26c0957ea0260c1cd102d0
+Author: MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+Date:   Tue Sep 29 07:58:22 2026 +0900
+
+    do-math 시험 재편 1b Job 포트: Jobs 포트·WindowsJobs·프로세스 안 대역·양쪽 계약 시험을 두고 공급자 어댑터와 Lean 실행의 Job 기동을 포트로 받게 하며 엔진이 기본 러너와 검증기에 포트를 넘김
+
+diff --git a/.claude/skills/do-math/scripts/do_math/windows_job.py b/.claude/skills/do-math/scripts/do_math/windows_job.py
+index 20536181..8076a28c 100644
+--- a/.claude/skills/do-math/scripts/do_math/windows_job.py
++++ b/.claude/skills/do-math/scripts/do_math/windows_job.py
+@@ -625,3 +625,10 @@ def owner_ended(identity):
+         return _kernel32.WaitForSingleObject(handle, 0) == 0
+     finally:
+         _kernel32.CloseHandle(handle)
++
++
++class WindowsJobs:
++    """Real Jobs port."""
++
++    def launch(self, argv, *, cwd=None, env=None, name=None, resource_limits=None):
++        return WindowsJob(argv, cwd=cwd, env=env, name=name, resource_limits=resource_limits)
+diff --git a/.claude/skills/do-math/scripts/tests/boundary/test_port_jobs.py b/.claude/skills/do-math/scripts/tests/boundary/test_port_jobs.py
+new file mode 100644
+index 00000000..c7da83a1
+--- /dev/null
++++ b/.claude/skills/do-math/scripts/tests/boundary/test_port_jobs.py
+@@ -0,0 +1,14 @@
++"""Real side of the Jobs port contract: Windows Jobs."""
++import unittest
++
++from contracts.test_port_jobs import JobsContract
++from do_math.wiring import real_ports
++
++
++class WindowsJobsContract(JobsContract, unittest.TestCase):
++    def make(self):
++        return real_ports().jobs
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/.claude/skills/do-math/scripts/tests/contracts/test_port_jobs.py b/.claude/skills/do-math/scripts/tests/contracts/test_port_jobs.py
+new file mode 100644
+index 00000000..6d7deddd
+--- /dev/null
++++ b/.claude/skills/do-math/scripts/tests/contracts/test_port_jobs.py
+@@ -0,0 +1,92 @@
++"""Jobs port contract (설계 2.2, A12): an owned Job runs one program; the real Windows Job and the fake agree.
++
++The program writes a marker file so both sides show that it ran exactly when
++resumed. The fake resolves the same argv through its program table.
++"""
++import os
++from pathlib import Path
++import sys
++import tempfile
++import unittest
++
++from do_math.windows_job import process_identity
++from support.fakes.jobs import make_fake
++
++MARK = "import sys, pathlib; pathlib.Path(sys.argv[1]).write_text('ran'); raise SystemExit(0)"
++
++
++def _write_mark(argv, cwd, env):
++    Path(argv[-1]).write_text('ran')
++    return 0
++
++
++@unittest.skipUnless(os.name == 'nt', 'Windows Jobs exist only on Windows')
++class JobsContract:
++    def make(self):
++        raise NotImplementedError
++
++    def setUp(self):
++        self.directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
++        self.mark = self.directory / 'mark.txt'
++        self.jobs = self.make()
++
++    def launch(self):
++        job = self.jobs.launch([sys.executable, '-c', MARK, str(self.mark)], cwd=self.directory,
++                               env=dict(os.environ), name='Local\\DoMath-contract-' + os.urandom(8).hex())
++        self.addCleanup(job.close)
++        return job
++
++    def test_a_launched_job_is_suspended_until_resumed(self):
++        job = self.launch()
++        observed = job.inspect()
++        self.assertFalse(observed.root_signaled)
++        self.assertFalse(self.mark.exists())
++
++    def test_a_resumed_program_runs_and_the_termination_barrier_is_observed(self):
++        job = self.launch()
++        job.resume()
++        self.assertTrue(job.wait(30))
++        # The root's signal can precede the Job accounting's release of its last
++        # process, so the barrier is polled for, as the product does.
++        barrier = None
++        for _ in range(500):
++            observed = job.inspect()
++            barrier = (observed.root_signaled, observed.active_processes, observed.process_ids)
++            if barrier == (True, 0, ()):
++                break
++            job.wait(0.02)
++        self.assertEqual(barrier, (True, 0, ()))
++        self.assertEqual(self.mark.read_text(), 'ran')
++
++    def test_termination_before_resume_means_the_program_never_runs(self):
++        job = self.launch()
++        job.terminate()
++        self.assertTrue(job.wait(30))
++        self.assertTrue(job.inspect().root_signaled)
++        self.assertFalse(self.mark.exists())
++
++    def test_identity_and_resource_usage_have_the_product_shape(self):
++        job = self.launch()
++        identity = process_identity(job)
++        self.assertIsInstance(identity['pid'], int)
++        self.assertTrue(identity['creation_filetime'].isdigit())
++        job.resume()
++        job.wait(30)
++        usage = job.resource_usage()
++        self.assertEqual(set(usage), {'limits', 'peak_job_memory_bytes', 'cpu_time_100ns', 'scope'})
++        self.assertEqual(set(usage['limits']), {'memory_bytes', 'cpu_rate_basis_points'})
++
++    def test_a_job_resumes_only_once(self):
++        job = self.launch()
++        job.resume()
++        with self.assertRaisesRegex(RuntimeError, 'already been resumed'):
++            job.resume()
++
++
++class FakeJobsContract(JobsContract, unittest.TestCase):
++    def make(self):
++        return make_fake(programs=[(lambda argv: argv[1:3] == ['-c', MARK], _write_mark)])
++
++
++if __name__ == '__main__':
++    unittest.main()

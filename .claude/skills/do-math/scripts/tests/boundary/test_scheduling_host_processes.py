@@ -30,8 +30,6 @@ class WriterLockTests(unittest.TestCase):
     def test_two_processes_cannot_both_own_the_git_writer(self):
         from support.entry import entry
         _entry = entry()
-        from support.entry import entry
-        _entry = entry()
         ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -44,8 +42,10 @@ class WriterLockTests(unittest.TestCase):
                 'import sys', 'from pathlib import Path',
                 'sys.path.insert(0, sys.argv[1])',
                 'from do_math.repository import ResearchRepository',
+                'import os', 'from do_math.wiring import real_ports',
+                'ports = real_ports(environment=dict(os.environ))',
                 'try:',
-                ' with ResearchRepository(Path(sys.argv[2]),sys.argv[3]).writer_lock(): print("acquired")',
+                ' with ResearchRepository(Path(sys.argv[2]),sys.argv[3], backend=ports.git_backend, clock=ports.clock).writer_lock(): print("acquired")',
                 'except Exception as error: print(type(error).__name__)'])
             with engine.store.writer_lock():
                 child = subprocess.run([sys.executable, '-c', program, str(SCRIPTS), str(root / 'repository'),
@@ -53,6 +53,11 @@ class WriterLockTests(unittest.TestCase):
             self.assertEqual(child.returncode, 0, child.stderr)
             self.assertIn('LockError', child.stdout)
             self.assertNotIn('acquired', child.stdout)
+            released = subprocess.run([sys.executable, '-B', '-c', program, str(SCRIPTS), str(root / 'repository'),
+                                       engine.instance['id']], capture_output=True, text=True, timeout=30,
+                                      creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            self.assertEqual(released.returncode, 0, released.stderr)
+            self.assertEqual(released.stdout.strip(), 'acquired')
 
 
 @test_group('resource')

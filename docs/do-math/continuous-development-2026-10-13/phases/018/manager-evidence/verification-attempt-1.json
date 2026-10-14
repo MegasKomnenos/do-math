@@ -1,0 +1,6 @@
+{
+  "exit_code": 1,
+  "observed_error": "AssertionError at verify.py line 73: all current sources equal canonical-exact-job source-after except caches",
+  "cause": "The canonical exact and related runs preceded official mirror generation. Only the mirror guidance and Job fixture differ; the tested canonical tree is the final version.",
+  "correction": "Check the executed tree for each related run, and both trees for the final whole T4 runs. Original script preserved as verify-v1.py."
+}

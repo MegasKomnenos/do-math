@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\verify_task.py",
+    "mirror-plan"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T01:38:42.092959+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\verify-mirror-plan",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\verify-mirror-plan",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\verify-mirror-plan",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 24288,
+  "output": null,
+  "pid": 29296,
+  "ended": "2026-10-14T01:38:45.147490+00:00",
+  "exit_code": 0,
+  "seconds": 1.5939999999827705,
+  "source_changes": []
+}

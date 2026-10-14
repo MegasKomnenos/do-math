@@ -1,0 +1,22 @@
+test_a_job_name_nobody_created_is_empty (contracts.test_port_jobs.FakeJobsContract.test_a_job_name_nobody_created_is_empty) ... ok
+test_a_job_resumes_only_once (contracts.test_port_jobs.FakeJobsContract.test_a_job_resumes_only_once) ... ok
+test_a_launched_job_is_suspended_until_resumed (contracts.test_port_jobs.FakeJobsContract.test_a_launched_job_is_suspended_until_resumed) ... ok
+test_a_named_job_is_not_empty_until_its_program_ends (contracts.test_port_jobs.FakeJobsContract.test_a_named_job_is_not_empty_until_its_program_ends) ... ok
+test_a_resumed_program_runs_and_the_termination_barrier_is_observed (contracts.test_port_jobs.FakeJobsContract.test_a_resumed_program_runs_and_the_termination_barrier_is_observed) ... ok
+test_an_owner_on_another_host_is_unknown (contracts.test_port_jobs.FakeJobsContract.test_an_owner_on_another_host_is_unknown) ... ok
+test_identity_and_resource_usage_have_the_product_shape (contracts.test_port_jobs.FakeJobsContract.test_identity_and_resource_usage_have_the_product_shape) ... ok
+test_termination_before_resume_means_the_program_never_runs (contracts.test_port_jobs.FakeJobsContract.test_termination_before_resume_means_the_program_never_runs) ... ok
+test_the_current_owner_has_not_ended (contracts.test_port_jobs.FakeJobsContract.test_the_current_owner_has_not_ended) ... ok
+test_the_owner_identity_names_this_process_stably (contracts.test_port_jobs.FakeJobsContract.test_the_owner_identity_names_this_process_stably) ... ok
+test_the_same_pid_with_another_creation_time_has_ended (contracts.test_port_jobs.FakeJobsContract.test_the_same_pid_with_another_creation_time_has_ended) ... ok
+test_a_resumed_program_is_still_running_at_its_first_turn (contracts.test_port_jobs.LiveFakeJobTests.test_a_resumed_program_is_still_running_at_its_first_turn) ... ok
+test_a_runner_polling_with_wait_also_runs_the_program_on (contracts.test_port_jobs.LiveFakeJobTests.test_a_runner_polling_with_wait_also_runs_the_program_on)
+``formal._job_run`` polls ``wait(0)`` rather than ``inspect``; both are the runner's probe. ... ok
+test_a_turn_outside_a_live_program_does_nothing (contracts.test_port_jobs.LiveFakeJobTests.test_a_turn_outside_a_live_program_does_nothing) ... ok
+test_each_barrier_probe_runs_the_program_to_its_next_turn (contracts.test_port_jobs.LiveFakeJobTests.test_each_barrier_probe_runs_the_program_to_its_next_turn) ... ok
+test_termination_ends_the_program_at_its_turn (contracts.test_port_jobs.LiveFakeJobTests.test_termination_ends_the_program_at_its_turn) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.020s
+
+OK

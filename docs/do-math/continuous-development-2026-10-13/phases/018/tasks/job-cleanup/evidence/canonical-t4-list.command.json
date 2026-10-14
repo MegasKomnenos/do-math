@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\run_tests.py",
+    "--tier",
+    "T4",
+    "--jobs",
+    "1",
+    "--list"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T01:39:30.060264+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\canonical-t4-list",
+    "TMP": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\canonical-t4-list",
+    "TMPDIR": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\scratch\\canonical-t4-list",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": false,
+  "parent_pid": 1276,
+  "output": null,
+  "pid": 31796,
+  "ended": "2026-10-14T01:39:33.670359+00:00",
+  "exit_code": 0,
+  "seconds": 2.172000000020489,
+  "source_changes": []
+}

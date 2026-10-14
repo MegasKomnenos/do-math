@@ -1,0 +1,24 @@
+[
+  {
+    "side": "WindowsJobsContract",
+    "expected_errors": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\cleanup_faults.py\", line 28, in test_fault\n    raise ValueError('explicit original test-body fault')\nValueError: explicit original test-body fault\n",
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\port_contracts\\jobs.py\", line 54, in _cleanup_job\n    while not termination_confirmed(job.inspect()):\n                                    ^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\cleanup_faults.py\", line 25, in inspect\n    raise ObservationFault('explicit fixture inspection fault')\nObservationFault: explicit fixture inspection fault\n"
+    ],
+    "close_attempted": true,
+    "handles_closed": true,
+    "directory_removed": true,
+    "scope": "Fault injected into fixture observation only; termination, root wait and close use the actual Job."
+  },
+  {
+    "side": "FakeJobsContract",
+    "expected_errors": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\cleanup_faults.py\", line 28, in test_fault\n    raise ValueError('explicit original test-body fault')\nValueError: explicit original test-body fault\n",
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\port_contracts\\jobs.py\", line 54, in _cleanup_job\n    while not termination_confirmed(job.inspect()):\n                                    ^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\018\\tasks\\job-cleanup\\evidence\\cleanup_faults.py\", line 25, in inspect\n    raise ObservationFault('explicit fixture inspection fault')\nObservationFault: explicit fixture inspection fault\n"
+    ],
+    "close_attempted": true,
+    "handles_closed": true,
+    "directory_removed": true,
+    "scope": "Fault injected into fixture observation only; termination, root wait and close use the actual Job."
+  }
+]

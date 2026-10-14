@@ -1,0 +1,1 @@
+{'outputs': 1336, 'changes': ['.agents/skills/do-math/scripts/tests/.timings-t3.json', '.agents/skills/do-math/scripts/tests/.timings.json'], 'outside_writes': [], 'manifest_value_equal': True, 'manifest_bytes_equal': True}

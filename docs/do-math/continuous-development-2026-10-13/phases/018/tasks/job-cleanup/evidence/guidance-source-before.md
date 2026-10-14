@@ -1,0 +1,153 @@
+# do-math 시험 지침
+
+이 문서는 do-math 코드를 고치는 작업자가 언제 어떤 시험을 어떤 방식으로 돌리는지, 그리고 새 시험을 어떻게 쓰는지를 정한다. 혼자 일하는 작업자와, 통합자가 여러 작업자를 각자의 git worktree에 병렬로 파견하는 경우 모두에 적용한다. 혼자 작업하면 그 작업자가 통합자의 검증도 맡는다.
+
+요점은 셋이다. 시험은 설계 5절의 T0~T5 실행 층으로 돌린다. 작업자는 편집하는 동안 고친 성질의 시험만, 작업을 넘기기 전에 고친 영역의 시험만 한 번 돌리고, 전체 시험은 통합자가 병합한 뒤 한 번 돌린다. 시험이 도는 동안에는 백그라운드 실행 하나와 완료 알림으로 기다리며, 그 작업 트리를 건드리지 않는다. 새 시험은 검사할 성질이 성립하는 가장 싼 시작 상태에서 시작해, 단언할 값이 확정되는 지점에서 멈춘다.
+
+## 1. 실행 도구
+
+모든 시험은 스킬 폴더의 `scripts/run_tests.py` 하나로 돌린다. 이 도구는 `lean`·`resource` 표시가 붙은 시험을 격리된 Windows Job 안에서 돌리고, 실행마다 새 출력 폴더에 결과(`report.json`)를 남긴다. 출력 폴더는 기본으로 임시 폴더 아래에 새로 만들어지며, 실행이 끝나면 마지막 줄 `Report:`에 `report.json`의 경로가 출력된다. `--output 폴더`로 비어 있는 새 폴더를 지정할 수도 있다. 시험 결과 캐시는 없다. T3의 증분 실행만 유효한 측정 자료를 재사용하며, 재사용 없는 전체 측정은 `--tier T3 --full`로 요청한다.
+
+| 명령 | 돌리는 것 |
+|---|---|
+| `python scripts/run_tests.py ID [ID ...]` | 폴더·모듈·클래스·메서드. 예: `unit`, `unit.test_runner_tiers`, `unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages` |
+| `python scripts/run_tests.py --tier T0` | T0~T5 실행 층. 여러 번 주면 합집합 |
+| `python scripts/run_tests.py` | 인프로세스 폴더 전체. `flows` 포함, `boundary`·`smoke` 제외 |
+| `--match 'glob'` | 위 선택 안에서 시험 ID가 glob에 맞는 것만 |
+| `--list` | 실행하지 않고 선택된 시험을 폴더 이름과 함께 출력 |
+
+폴더와 층의 정본은 `run_tests.py`의 `FOLDERS`, `TIERS`다. 위치 인자는 완전한 폴더 경로로 시작하는 점 구분 이름을 쓴다. `unit.test_same`과 `sim.test_same`은 별개이며 `test_same` 같은 짧은 이름 별칭은 없다. 층과 위치 인자를 함께 주면 교집합을 고른다. 모르는 ID가 하나라도 있으면 선택 전체를 거부한다. `test_categories.py`는 격리 표지만 정의한다.
+
+`run_tests.py`는 `scripts/tests/<폴더>/test_*.py`를 unittest discovery로 모아 폴더 단위로 차례로 실행한다. 폴더 밖 시험 파일, 필수 폴더나 패키지의 `__init__.py` 누락, 디스크 모듈과 수집 모집단의 불일치, 중복 시험 ID는 실행 전에 거부한다. 선택된 시험이 하나도 없으면 통과를 세우지 않고 실패로 끝난다. `lean`·`resource` 표시가 붙은 시험은 Windows Job이 소유한 별도 프로세스에서 클래스 단위로 돈다. 시험·준비·종료 국면에 시간에 따른 자동 종료는 없다. 실행기는 작업자 루트와 그 Job의 자식들이 종료될 때까지 기다리고, 실제 오류나 사용자가 중단한 실행의 미완료 시험은 미실행으로 기록한다. 경과 시간이 길다는 이유만으로 시험을 실패시키거나 뒤의 시험을 생략하지 않는다.
+
+`report.json`은 시험별 결과와 시간, 실행 묶음별 시간(`group_seconds`)과 합계, 느린 시험 목록, 코드 판본과 실행 중 변경 여부를 기록한다. 실행 중 코드가 바뀌었거나 일부 시험이 끝나지 않았으면 전체 통과로 기록하지 않는다. 선택 폴더는 `folders`, 각 실행 묶음 이름은 `reports[].group`에 기록한다. 병렬 작업자의 시간은 `group_seconds.parallel`에 기록한다. 격리 실행의 stdout·stderr와 진행 기록은 같은 출력 폴더 안에서 격리 묶음마다 만드는 하위 폴더 `<폴더>-isolated-<번호>/`에 남는다. 격리 작업자의 임시 파일은 그 하위 폴더의 `scratch/` 아래에 만들어지므로, 강제 종료로 정리되지 않은 Lean 입력·출력도 그곳에서 찾는다.
+
+`python -m unittest discover -s scripts/tests -p "test_*.py"`로도 시험을 돌릴 수 있지만 안전한 선택·시간 보고·외부 프로세스 소유 관리가 없다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로, 파일별 종료 코드만으로 회귀 검사를 마쳤다고 판단하지 않는다.
+
+## 2. 실행 층과 인계
+
+설계 5절과 `tests/budgets.json`이 실행 범위와 예산의 정본이다. 폴더 구성이나 도달 모집단을 임의로 줄이지 않는다. 시간 예산은 최적화와 실행 일정의 기준선인 소프트 제약이다. 정확성·검증 범위를 희생해 맞추지 않으며, 실익 판단에 따라 초과를 허용하고 실제 시간·초과 사유·개선 실익을 기록한다. 예산 초과는 자동 종료나 기능 시험·단계 완료의 일률적인 실패 조건이 아니다.
+
+| 층 | 대상·시점 | 전체 예산 |
+|---|---|---|
+| T0 | 구조 + 선택 색인이 고른 변경 영향 시험. 편집 확인 | 목표 30초, 참고 기준 60초 |
+| T1 | T0 + 고친 모듈의 제품 1·2층 시험(순수 계산과 도메인·저장 판정)과 새로 쓰거나 고친 시험. 작업 인계 전 | 3분 |
+| T2 | structure·unit·contracts·sim. 통합자가 병합 뒤 실행하고 flows도 함께 확인 | 5분 |
+| T3 | T2 + flows의 분기·함수 진입 측정. 일상 증분, 설계 하위 단계의 완료 판정에는 `--full` | 일상 12분, 전체 55분(A30) |
+| T4 | boundary. 경계 어댑터 변경·하위 단계 닫기 | 5분(Mathlib 컴파일 제외) |
+| T5 | smoke. 실제 공급자를 포함한 설치 전체 연쇄(Job·Lean·예약)의 최소 실호출 | 10분 + 공급자마다 1~2회 호출 |
+
+`--tier T1`의 정적 폴더 집합은 structure·unit·contracts이며, 표의 변경 범위를 자동으로 모두 계산하는 명령은 아니다. 작업자는 고친 성질의 완전한 모듈·시험 ID로 인계 범위를 좁힌다. 수정한 sim·flows 시험은 `--tier T1`과 함께 주면 교집합에서 빠지므로, 층 옵션 없이 해당 ID를 명시한 별도 명령으로 실행한다. **병렬 작업 중 작업자는 전체를 돌리지 않는다.** 통합자가 병합 뒤 T2와 flows를 확인한다. 병렬 실행은 통합자의 슬롯 배정 안에서만 `--jobs`로 요청한다. 모듈 전체를 직전 시간 기록에 따라 균형 배정하며, T3 측정 시간은 일반 실행 시간과 따로 기록한다.
+
+고친 정의의 소비자는 AST·`py_compile`·이름 참조 확인으로 점검한다. 시험 모듈 import 확인도 실행 슬롯 제한을 따른다. 실패하면 먼저 보고와 코드를 읽고 원인을 좁힌 뒤 필요한 시험만 다시 돌린다.
+
+T0은 T3가 만든 선택 색인으로 변경 함수에 들어간 시험을 고른다. 색인이 없거나 오래되면 모듈 단위의 안전한 선택 규칙으로 물러난다(설계 5.3). T3의 부분 선택은 색인을 덮어쓰지 않는다. T3 저장소는 시험 결과가 아닌 측정 자료를 재사용하며, 실행기 또는 격리 규칙 파일의 어느 내용이 바뀌어도 전체 재측정한다. 닫기 증거는 재사용 없는 온전한 측정에서만 성립한다. 선택 색인과 T3 증거를 수동으로 갱신하지 않는다.
+
+### T4 adapter 분기 보고
+
+`--tier T4`는 선택한 boundary 시험을 실제 실행하며 `report.json.t4_adapter`와 같은 내용의 `adapter-coverage.json`을 남긴다. 정의와 worker 게시 검사는 `support/adapter_coverage.py`가 정한다. `do_math.layers.LAYERS`의 adapter 파일 전부를 소스에서 분석하므로 미도달 파일도 빠지지 않는다. 파일별 경로·소스 SHA256·실행/미실행 행과 분기·사유 있는 제외·coverage 요약과 전체 합계를 읽는다. 기존 `REASONED_EXCLUSION` 계약을 사용한다. 도달률은 정보 보고이며 통과 임계값이 없다.
+
+jobs 1의 T4 단독은 인프로세스 시험/fixture와 lean/resource 클래스별 실제 격리 worker를 측정한다. worker는 discovery import부터 측정하고 새 격리 출력 폴더에 coverage.data/opened.json/entered.json과 adapter-measurement.json을 게시한다. 부모는 실행 ID·요청 시험·전체 Python 소스 판본·게시 파일 해시와 branch 데이터 형식을 대조한 자료만 합친다. jobs 2 이상은 일반 boundary 모듈도 worker로 실행한다. runner의 자체 Job 생성·파일 읽기·결과 직렬화는 측정에서 멈춘다. 제품이 임의로 생성한 별도 Python 자식, PowerShell·Lean 내부는 이 측정의 범위 밖이다.
+
+`t4_adapter.complete`는 측정 자료의 완전성이다. 시험의 성공은 최상위 successful과 counts/fixture_counts 및 각 row, 미실행은 tests_complete/test_counts에서 따로 확인한다. skip·failed·error·not_run을 도달률로 통과시킬 수 없다. 필요한 worker 자료의 부재·파손·다른 실행/요청/판본은 workers의 invalid와 problems의 원경로·사유로 남고, 나머지 파일의 합집합은 부분 측정이다. 측정이 불완전하면 시험이 모두 passed여도 runner는 exit 1이다. 분기 미도달 자체는 exit 실패 사유가 아니다.
+
+여러 tier에 T4를 함께 주면 boundary를 별도 worker/자료로 측정한다. T4 자료와 시험 ID는 T3 관문·함수 진입/선택 색인·증분 저장소에 들어가지 않는다. T4 단독은 T3 저장소/색인·pseudo_tested/변이 결과를 쓰지 않는다. adapter 측정 시간은 기존 일반 또는 T3 비용 캐시에 넣지 않고 실행 보고에만 남긴다. runner 변경 뒤 이전 증분 T3를 최종 증거로 재사용하지 않으며, 최종 일반/fresh T3/전체 변이와 검토는 별도로 수행한다.
+
+시간은 다른 실행이 없는 기계에서 비교한다. 폴더별 시간은 실행 순서와 공유 템플릿 준비의 영향을 받으므로 별도 실행 시간과 섞지 않는다. 시험 하나의 예산 초과는 보고하며 통과 판정을 바꾸지 않는다. 층 전체 예산 초과도 보고하며, 단계 검토에서는 정확성·비용·개선 실익과 함께 판단한다. 시간만으로 종료하거나 완료를 거부하지 않는다.
+
+극단 변이의 포착은 정상 소스에서 실제 통과한 시험의 실패·오류·예상 밖 성공으로 확인한다. 실패 후보에만 정상 child를 실행하며, 같은 선택의 확인 결과는 그 변이 실행 안에서 재사용한다. 정상 실패 시험은 제외하고 다음 포착 후보를 검사하지만 `baseline_failing`에 남겨 최종 통과를 막는다. 수집 오류는 오류가 난 같은 선택이 정상 소스에서 실제 수집·실행·통과했을 때만 포착으로 인정한다. 수집 오류 문자열을 시험 ID로 쓰지 않는다.
+
+정상·변이 child의 결과 부재·파손·선택 불일치·비정상 종료, 0건 실행·필수 시험 미실행, skip·expected failure·fixture 오류는 실행 근거 오류다. 이를 정상 통과나 포착으로 바꾸지 않는다. 결과 형식과 공통 검사는 `support/mutation.py`가 정의하며 CLI와 T3는 같은 `passed` 판정을 쓴다. 각 재시도의 spec·result·출력·PID·종료 코드는 별도 `attempt-*` 경로에 보존하고, 보고의 `baselines`와 `outcomes[].attempts`로 어느 정상 기준을 썼는지 연결한다. 경과 시간은 포착 증거가 아니다.
+
+실제 Lean이 필요한 경계 확인에서는 도구 사슬이 보여야 한다. worktree는 Git 비추적 도구 사슬을 갖지 않으므로 `DO_MATH_KNOWLEDGE_TEST_LEAN`으로 주 트리 `.skill-workspace/do-math-toolchains` 아래 `lean.exe`를 지정한다.
+
+### T5 공급자 최소 호출
+
+`smoke.test_provider_live`는 Codex와 Claude에 각각 한 번 실제 요청한다. 두 시험은 `resource` 격리 안에서 `real_ports`의 Windows Job, 실제 `ModelRunner`·worker·adapter·수신 parser를 사용한다. `contracts.action_schema({'role': 'maintenance'})` 전체를 의미 계약으로 유지하며, 일반 maintenance 응답의 파일 쓰기·네이티브 도구 읽기·checkpoint·최종 응답 선택·local termination barrier를 확인한다. 연구의 control_binding, 중앙 제출과 저장, Job/pythonw 전용 연쇄, Lean/Mathlib, 예약 등록·발화·해제, 학술 MCP 및 운전 문서 읽기 한도는 이 두 시험의 범위에 포함되지 않는다.
+
+실행 전에 해당 셸 환경에 다음 비밀 아닌 입력을 모두 지정한다. CLI 절대 경로는 그 기계의 실제 설치에서, 모델은 현재 설정이나 설치 CLI가 확인한 모델에서 얻는다. 시험에 개인 경로나 모델 ID를 고정하지 않는다. effort 역시 현재 CLI/모델의 지원 값을 명시한다. 짧은 스모크에는 지원되는 `low`를 사용할 수 있다. 인증 파일·토큰·전체 환경을 출력하지 않는다.
+
+| 환경 변수 | 값 |
+|---|---|
+| `DO_MATH_SMOKE_CODEX_CLI`, `DO_MATH_SMOKE_CLAUDE_CLI` | 각 CLI의 존재하는 절대 실행 파일 경로 |
+| `DO_MATH_SMOKE_CODEX_MODEL`, `DO_MATH_SMOKE_CLAUDE_MODEL` | CLI에 전달할 모델 이름. Claude는 `claude:` 접두사 없이 지정하며 현재 설정의 alias도 허용 |
+| `DO_MATH_SMOKE_CODEX_EFFORT`, `DO_MATH_SMOKE_CLAUDE_EFFORT` | 공급자별 effort |
+| `DO_MATH_SMOKE_HOST` | 현재 실행 호스트 식별자 |
+
+`python -u -B scripts/run_tests.py --tier T5 --list`로 선택을 확인한 뒤 `python -u -B scripts/run_tests.py --tier T5 --jobs 1 --output <새 출력 폴더>`로 실행한다. 단일 공급자 재확인이 필요하면 `--match '*test_claude_maintenance_files_and_termination'` 또는 해당 Codex 메서드를 선택한다. 자동 재시도·시간 제한·skip·대역 전환은 없으며, 입력 부재·인증·계정 한도·스키마 거부도 실패다. 실제 실행 한 번은 선택된 공급자마다 한 호출을 시도하므로 과금이 생길 수 있다. CLI 내부 모델 요청 수나 금액은 native usage가 제공한 범위에서만 해석한다. 준비 오류와 실패를 포함한 모든 시도를 보존하고, 이미 유효한 호출은 이유 없이 반복하지 않는다.
+
+원자료는 공식 출력의 `smoke-isolated-*/scratch/provider-smoke-<provider>-*/`에 남는다. `smoke.json`은 명시 입력·버전·호출 횟수·시각·개별 판정·실제 수집 결과를, `started.json`은 worker PID/Job 식별을 담는다. `call/`에는 원 prompt·전체 의미 schema(`output.schema.json`)·request·stdout·stderr·worker 상태가, `workspace/`에는 nonce 파일과 checkpoint가, `selected-final.txt`에는 파서가 선택한 응답이 있다. 공식 `report.json`의 selected/rows/exit·소스 불변과 함께 대조한다. 녹화는 실행 종료 후 corpus로 승격하고 source·prompt·schema 해시와 실제 worker argv 해시를 연결한다. Codex 비결박 경로는 `provider_final.output_contract`의 `output_json` 문자열 봉투를 `transport.schema.json`으로 전달하고, 문자열 설명에 원 schema 전체를 싣는다. prompt는 그대로다. `schema_unchanged`는 원 schema 보존, `transport_schema`는 제품 전송 정의와의 일치, `worker_schema_hash`는 실제 snapshot의 결속을 검사한다. `selected_final`은 원바이트 일치와 `semantic_output` 해석을 함께 확인하고 최종 output은 원 schema 검증을 통과해야 한다. 외부 CLI 대역도 실제 전송 schema와 의미 schema를 구분하며 explicit raw stdout/final은 자동 변환하지 않는다. native stream 성공과 smoke의 전체 성공은 다르므로 실패한 판정을 소급 수정하지 않는다.
+
+2026-10-13의 대표 호출에서는 Claude maintenance 경계가 통과했고 Codex 0.162.1은 선택 필드 `integration_bundles`를 포함한 현 역할 스키마를 HTTP 400으로 거부했다. 실패 녹화는 현재 오류 해석의 근거이며 Codex 역할 호출 성공이 아니다. 2026-10-14의 새 Codex 호출은 전체 원 계약을 보존하는 전송 봉투로 11개 판정을 통과했다. 두 schema·raw final과 실패한 이전 녹화를 함께 corpus에 보존하며, parser 재생과 의미 수신 검증을 별도로 수행한다. 이 대표 호출은 다른 G7 실제 연쇄나 최종 전체 관문을 대신하지 않는다.
+
+### T5 Windows 호스트 연쇄
+
+`python -u -B scripts/run_tests.py --tier T5 --list`는 공급자 두 건, `smoke.test_host_live` 세 건과 아래 Lean·예약·학술 각 한 건을 함께 선택한다. 호스트만 확인하려면 `python -u -B scripts/run_tests.py --tier T5 smoke.test_host_live --jobs 1 --output <새 출력 폴더>`를 사용한다. 실제 Windows·현재 Python의 `pythonw.exe`·PowerShell·Git이 필요하며, 환경 부재와 실경계 실패는 실패로 보고한다.
+
+호스트 시험은 실제 `real_ports`·ModelRunner·Codex worker·수집기를 유지하고 외부 모델 CLI 자리에서만 결정적 로컬 프로그램을 실행한다. 시작 공개 전 CLI 미기동, PID/FILETIME·이름 있는 Job의 커널 소유, 정확한 정상 JSON 및 비정상 exit 7·stderr, 명시 취소 뒤 worker·CLI·자손의 held handle 신호와 빈 Job을 검사한다. 별도로 실제 pythonw가 설치한 읽기 명령을 PowerShell로 실행해 console_python 지급, 온전한 JSON·exit 0/1 및 읽기 기록의 성공/반려를 검사한다. 기존 boundary도 `support.host_live`의 동일 준비/관측 코드를 사용하며 기존 커널·읽기 단언을 유지한다.
+
+원자료는 공식 출력의 `smoke-isolated-*/scratch/host-job-*/`와 `host-pythonw-*/`에 남는다. `smoke.json`은 실제 판정과 시각·Python 판본·PID/FILETIME·Job·정리 결과를 기록하고, `call/`은 prompt·schema·worker 요청/argv·stdout/stderr·종료 수집을 보존한다. pythonw 하위 폴더에는 부모 argv/cwd/console·PowerShell 판본/명령·원 출력 바이트·제품 지급 context·파싱 결과·읽기 기록과 시험 전용 Git snapshot이 남는다. 이 로컬 CLI 출력은 실제 공급자 녹화나 모델 호출 성공이 아니며 corpus에 넣지 않는다. 유료 호출·OS 예약 등록/변경은 수행하지 않고 자신이 생성한 Job과 자손만 정리한다. 실제 Lean/Mathlib·예약 발화/해제·학술 MCP 및 운전 문서 읽기 한도는 별도 후속 검증이다.
+
+### T5 Lean/Mathlib 실제 컴파일
+
+Lean만 확인하려면 `python -u -B scripts/run_tests.py --tier T5 smoke.test_lean_live --jobs 1 --output <새 출력 폴더>`를 사용한다. `lean` 격리에서 기존 `support.entry`와 `real_ports`를 사용한다. 현재 `formal.discover_lean()`이 Mathlib 프로젝트를 포함한 설치를 찾아야 하며, PATH에 Lean이 없어도 portable 설치를 탐색한다. Windows Job·Git·현재 Lean/Lake 실행 파일·고정된 Mathlib 의존 소스와 컴파일 캐시가 필요하다. 설치 부재·core-only 탐색·컴파일 오류·불완전한 증거는 실패이며, skip이나 compiler/Job/clock/parser 대역으로 전환하지 않는다.
+
+`setup_lean.verify_environment`가 `trust_inventory.validation_program`의 `import Mathlib`와 Nat·실수 대표 증명을 실제 컴파일한다. 이어 같은 Mathlib 명령으로 `formal.verify_lean(extract_evidence=True)`의 작은 정상 선언 두 개와 짝을 이루는 타입 오류를 실행한다. 정확 선언 집합·서명/서명 해시·빈 공리·실제 전체 의존 증거와 오류의 exit 1·failed·타입 진단을 검사한다. preview와 달리 전체 증거를 추출하지만 연구의 등록·신뢰 채택·저장·평가를 수행하는 시험은 아니다. 비용은 Mathlib 모듈을 읽는 데 크게 좌우되므로 차가운 파일 캐시에서는 수분이 걸릴 수 있다. 실제 소요와 소프트 예산 초과를 기록하며 시간만으로 중단하거나 성공/실패로 바꾸지 않는다.
+
+원자료는 공식 출력의 `smoke-isolated-*/scratch/lean-smoke-*/`에 남는다. `smoke.json`은 설치 입력·의존 revision·실행 파일 SHA·도구 정체성·개별 판정·시각·정리를 기록하고, `environment/*/validation.json`은 대표 소스와 정확 명령/결과를 보존한다. `normal.lean`·`invalid.lean`과 각 JSON은 verifier 입력과 최종 판정이다. `jobs/<번호>/`에는 실제 request/argv/cwd·원 stdout/stderr 바이트·completion·컴파일 입력과 실제 Job/PID/FILETIME·종료 시 빈 Job·사용량이 남는다. 기존 `ObservedCalls`가 실제 Job의 close 직전에 임시 spool을 복사하며 실행을 대체하지 않는다. 정상 결과의 stdout은 의존 본문을 해시로 줄인 제품 결과이므로 원출력 `jobs/*/out`과 구별한다.
+
+설치 입력·신뢰 기록의 바이트와 판단 파일의 메타데이터를 전후 대조한다. 다운로드·lake update/cache get·설치기 main·신뢰 기록 승인/재기록·예약·유료 공급자 호출은 수행하지 않는다. 자기 Job의 root/자손 종료와 close·named Job 부재/빈 상태를 확인하고 제품이 proposal 임시 폴더를 지웠는지 검사한 뒤 자기 workspace를 정리한다. 의도적으로 보존한 scratch 원자료는 인계 근거다. 작은 실제 정상 출력만 원바이트·입력·명령·판본·시각·전체/preview 범위를 결속해 corpus에 추가하며 기존 녹화의 판정과 바이트를 유지한다. 이 한 건은 나머지 T5·9-C나 최종 전체 관문의 완료를 뜻하지 않는다.
+
+### T5 Windows 예약 등록·발화·해제
+
+예약만 확인하려면 `python -u -B scripts/run_tests.py --tier T5 smoke.test_scheduler_live --jobs 1 --output <새 출력 폴더>`를 사용한다. `resource` 격리에서 현재 Windows Task Scheduler 서비스·PowerShell·Python/pythonw와 현재 사용자로 Interactive/Limited 작업을 등록·실행·해제할 권한, 해당 사용자의 로그온 세션이 필요하다. 권한 거부·환경 부재·실제 발화 오류는 실패다. 계정·서비스 정책이나 권한을 변경하지 않는다.
+
+`support.scheduler_live`는 공식 scratch의 새 repository/workspace와 instance에서 `supervision.task_names`의 정확 세 이름이 모두 부재인지 먼저 조회한다. 그 뒤 공개 `scheduled_operator.hold`로 HOLD를 기록하고 `real_ports`의 실제 예약 포트·기본 subprocess runner·PowerShell cmdlet·현재 bootstrap을 사용한다. install의 실제 pythonw freeze, manifest/복제 파일 바이트, frozen operator/engine action과 WorkingDirectory, Interactive/Limited principal, operator 주기·시간 제한 및 engine 무제한을 대조한다. HOLD는 연구 상태 조회·모델 호출 전에 적용되므로 빈 시험 repository를 그대로 유지한다. 실제 연구 운전이나 공급자 호출 성공을 뜻하지 않는다.
+
+operator/engine start와 가까운 미래의 `WakeAt/WakeKey` one-shot wake를 등록하고, 실행 전 미실행 상태에서 새 LastRunTime ticks와 종료 결과 0으로 바뀐 것을 관찰한다. wake에는 start 요청을 보내지 않는다. XML의 시각 트리거·live bootstrap action을 결속하며 요청 수락이나 이전 결과 0만으로 통과시키지 않는다. Windows 서비스의 LastRunTime과 관찰자의 벽시계가 다를 수 있어 두 시각과 차이를 그대로 보존하고, 같은 작업의 실행 전후 ticks로 새 실행을 확인한다. 시각 차이를 숨기거나 대기 시간을 발화 증거로 쓰지 않는다. 시간에 따른 자동 종료는 없다.
+
+원자료는 `smoke-isolated-*/scratch/scheduler-smoke-*/`에 남는다. `ownership.json`과 `requests.json`은 생성 전 대상/요청을, `smoke.json`은 판본·SHA·명령 감사·HOLD·snapshot·OS XML/action·시각/결과·개별 판정·정리를 기록한다. `*.stdout.bin`, `*.stderr.bin`, `*.command.json`은 추가 실조회와 직접 pythonw freeze/held 실행의 원바이트·실명령·exit를 보존한다. 별도 freeze 확인의 JSON과 직접 held stdout은 OS task stdout이 아니다. 빠른 pythonw의 PID가 관측되지 않거나 작업 이벤트 로그가 꺼져 있으면 그 한계를 기록하며 로그 설정을 바꾸지 않는다.
+
+성공·실패 모두 finally에서 action·workspace 소유를 재확인하고 자기 세 작업만 uninstall한다. 실행 중이면 소유가 결속된 작업만 정지하고, 최종 세 null·자기 pythonw 부재·HOLD 불변·연구/복구 미생성을 확인한다. cleanup 오류는 정확 이름·마지막 상태·오류를 먼저 인계하고 기존 예약에는 손대지 않는다. workspace의 snapshot과 원자료는 근거로 보존한다. 작은 실제 등록/해제 조회만 corpus에 원바이트로 복사하며 OS 발화·보조 JSON은 실행 evidence에 남긴다. 재생은 기존 `scheduler_json` reader와 현재 `PowerShellScheduler` JSON 수신 경계를 사용한다. 다른 T5·학술·읽기 한도·전체 일반/T3/변이·최종 검토는 별도다.
+
+### T5 학술 MCP 실제 list_sources
+
+학술만 확인하려면 `python -u -B scripts/run_tests.py --tier T5 smoke.test_scholarly_live --jobs 1 --output <새 출력 폴더>`를 사용한다. 위 공급자 입력 중 `DO_MATH_SMOKE_CODEX_CLI`, `DO_MATH_SMOKE_CODEX_MODEL`, `DO_MATH_SMOKE_CODEX_EFFORT`, `DO_MATH_SMOKE_HOST`를 명시한다. 기존 probe가 PATH에서 선택하는 Codex 실행 파일이 명시 CLI와 같아야 한다. 현재 대표 실측 설정은 Codex 0.162.1 / `gpt-6-astra` / `low`이며 개발 작업자의 모델 설정과 별개다. 시험에는 이 설치 경로나 모델 이름을 고정하지 않는다. Windows Job과 `resolve_scholarly_server`가 프로젝트·상위 프로젝트·CODEX_HOME 순서로 선택하는 scholarly command/args, 해당 서버의 Python·MCP·registry가 필요하다. 입력·인증·서버 부재는 실패이며 skip·대역·MCP 직접 호출로 대신하지 않는다.
+
+`resource` 격리에서 변경하지 않은 `probe_cli.run_case(files, scholarly=True)`를 한 번 호출한다. 실제 ModelRunner·real_ports·worker·adapter·collector를 지나 `list_sources` 한 번과 지정 nonce 파일/checkpoint 작업만 수행한다. 검색·fetch·브라우저·로그인·다른 모델/에이전트 호출·기존 연구 재개는 하지 않는다. 설정의 scholarly 쌍만 현재 validator로 읽으며 설정·서비스·설치·인증을 바꾸지 않는다. 실제 worker snapshot의 cwd와 argv/해시로 새 workspace 안의 `scholarly-data` 전달을 확인한다. ArtifactStore는 자료 저장 시에만 디렉터리를 생성하므로 목록 조회 뒤 그 디렉터리가 없어도 정상이다. 호출이 끝나면 실제 local termination barrier·worker exit 0·빈 Job을 확인하고 자기 Job/자손을 회수한다. scratch는 원근거로 보존한다.
+
+기존 probe의 `scholarly_actual_tool`은 시작 도구명만 확인한다. `support.scholarly_live.list_sources_observation`은 제품 `codex_stream`의 성공 lifecycle 판정 뒤 같은 native ID/server/tool의 시작·완료와 `status=completed`, native 오류 부재, MCP `isError` 비참, 온전한 content JSON의 `status=ok`를 확인한다. 유일한 자료원 ID와 각 summary 전체를 설치 서버 Python에서 읽은 현재 `registry.Source.summary` 결과와 대조하며 고정 개수나 복제 목록을 쓰지 않는다. content 본문 전체를 보존하고 structuredContent가 있으면 두 표현의 일치도 검사한다. 현재 Codex JSONL은 MCP structuredContent를 `structured_content` 키로 노출하며 이번 원녹화에는 content와 같은 structured 본문이 있다. 이 native 표기를 직접 읽는다. 제품 parser는 MCP payload 의미를 판정하지 않으므로 이 작은 정의는 live/replay가 공유하는 시험 전용 관찰자다. MCP wire의 isError는 별도 출력되지 않았고 native status/error를 확인했다.
+
+원자료는 `smoke-isolated-*/scratch/scholarly-smoke-*/`에 남는다. `smoke.json`은 명시 모델/effort·CLI/Python SHA와 판본·서버 선택 좌표·패키지/서버 코드 SHA·registry·도구 원응답·worker snapshot/재구성 argv·시각·개별 판정과 한계를 기록한다. `files/evidence/`에는 원 prompt·의미/전송 schema·stdout/stderr·final·worker 상태가, `files/workspace/`에는 nonce와 checkpoint가, `files/do-math-cli-*/`에는 실제 worker 요청/snapshot이 있다. registry subprocess는 서버를 시작하지 않고 public summary만 읽는다. native 완료는 초기화된 실제 세션에서 도구를 썼다는 근거지만 CLI가 MCP handshake/협상 protocolVersion을 출력하지 않아 해당 wire 자료는 미관측이다. 패키지 판본을 협상값으로 쓰지 않는다. 원 schema protocol_probe는 maintenance 전체 역할·연구 저장 검증이 아니며 자료원의 과거 verification 문자열도 이번 search/fetch 성공이 아니다. 실제 모델명·내부 요청 수·비용·원격 종료는 공급자가 보고한 범위에서만 해석한다.
+
+성공한 최종 호출의 native stream과 안전한 원요청/schema/final/stderr·registry snapshot을 corpus/scholarly에 원바이트로 넣고 현재 parser와 같은 관찰자로 재생한다. 기존 scholarly_config는 설정 해석 녹화로 그대로 유지한다. 시작만 있음·오류·응답 부재·ID 불일치·도구 이탈·content 파손·자료원 누락/중복·summary 누락/변조는 원녹화를 정상 대조군으로 둔 파생 반례이며 새 실제 실패 녹화로 표시하지 않는다. 초기 보고 bytes 직렬화 오류와 lazy 디렉터리 존재 단언 실패는 당시 공식 실패로 보존했다. 그 두 시험 오류 수리 때문에 총 세 실호출을 수행했고 최종 호출만 전체 T5 통과였다. 유효한 성공을 이유 없이 반복하지 않는다. 미러는 공식 변환·동일 오프라인 회귀와 원녹화 재생으로 확인하며 새 유료 호출은 호출 경로/입력이 달라 재사용 근거가 없을 때만 수행한다. 학술 목록 도달 성공은 다른 T5·L01·전체 일반/T3/변이·최종 review를 대신하지 않는다.
+
+## 3. 시험을 돌리는 동안의 규칙
+
+이 절의 규칙은 여러 작업자가 한 기계(4코어)를 나눠 쓰는 상황에서 실제로 비용을 크게 늘렸던 행동을 막는다. 각 규칙에 그 이유를 적는다.
+
+1. **1분 넘게 걸릴 실행은 백그라운드로 띄우고 완료 알림을 받는다.** 알림은 `run_tests.py`가 아니라 작업자가 명령을 실행하는 에이전트 도구가 준다. Claude Code에서는 Bash 도구의 `run_in_background`로 띄우면 실행이 끝날 때 알림이 온다. 백그라운드 실행과 알림이 없는 환경에서는 실행을 전경에서 한 번 돌리되, 호출 제한 시간을 예상 실행 시간보다 길게 준다. `until grep ...; do sleep ...; done` 같은 대기 반복문으로 결과를 기다리지 않는다. 대기 반복문을 전경에서 돌리면 그 호출이 끝날 때까지 작업자는 다른 일을 하지 못한다. 호출 제한 시간에 걸리면 반복문이 셸로 남고, 다시 기다릴 때마다 같은 조건을 기다리는 반복문이 하나씩 쌓인다. 기다리는 동안에는 코드를 읽고 다음 수정을 설계한다. 진행 상황이 궁금하면 출력 폴더의 `report.json`이나 로그를 한 번 읽는다.
+2. **실행 중인 작업 트리는 편집하지 않는다.** `git stash`, `git checkout`, 파일 덮어쓰기도 편집이다. 엔진은 실행 중에 설치 코드나 역할 문서가 바뀌면 멈추므로, 편집은 거짓 실패를 만든다. 시험 모듈과 fixture는 실행 도중에 늦게 import되기도 한다. 그래서 편집하면 결과가 어느 판본에 대한 것인지 정할 수 없고, 그 실행은 다시 해야 한다. 급히 고칠 것이 생기면 실행을 멈추고 결과를 버린 뒤 고친다.
+3. **로그와 임시 파일은 실행마다 새 경로에 둔다.** `run_tests.py`의 기본 출력 폴더를 쓴다. `/tmp/verify.log` 같은 고정 경로는 다른 작업자나 다음 실행이 덮어쓰거나 지운다.
+4. **기계 전체에서 동시에 도는 시험 실행은 세 개 이하다(코어 수보다 하나 적게).** 무거운 실행이 코어 수를 넘으면 모든 실행이 함께 느려지고, 잰 시간도 모두 부풀려진다. 그래서 파견된 작업자 한 명은 시험 실행을 한 번에 하나만 돌리고, 통합자는 시험을 돌리는 작업자를 동시에 세 명 이하로 파견한다. `--jobs N`의 시험 작업자는 실행 N개로 센다. 다른 시험 실행이 없다면 통합자가 `--jobs 3`을 쓸 수 있으며, 별도 작업자들의 실행이 있으면 그 수와 합쳐 세 개를 넘지 않는다.
+5. **실패하면 먼저 읽는다.** 실패 메시지와 traceback과 코드를 읽어 원인의 가설을 세운다. 가설을 가르는 데 실행이 필요할 때만, 가설을 가를 수 있는 가장 작은 시험을 돌린다. 무거운 시험에 계측을 붙여 여러 번 돌리는 것은 코드만으로 가를 수 없을 때의 마지막 수단이다. 고친 뒤에는 실패했던 시험만 다시 돌린다. 코드를 바꾸지 않고 같은 시험을 다시 돌리는 경우는 불안정(flaky) 여부를 가리는 한 번뿐이며, 그 결과를 반환에 적는다.
+6. **이미 있던 실패인지는 기준 결과와 대조한다.** 통합자가 기준 판본의 시험 결과(출력 폴더 경로)를 주었으면 그것과 비교한다. 기준 결과가 없거나 그 시험이 기준 결과에 없으면, 기준 판본을 별도 worktree에 두고 그 시험 ID만 돌린다. 기준 판본은 통합자가 지정한 커밋이고, 지정이 없으면 이 작업의 브랜치를 만든 커밋이다. 자기 작업 트리를 stash해서 기준 판본을 만들지 않는다(규칙 2).
+7. **시간 측정과 통과 확인을 섞지 않는다.** 변경의 속도 효과를 재려면 대표 시험 몇 개를 변경 전 판본과 변경 후 판본에서 연달아 돌려 쌍으로 비교한다. 두 판본은 서로 다른 트리에 둔다. 통과 확인을 위해 돌린 모듈 전체의 시간은 부하에 따라 크게 흔들리므로 속도 효과의 근거로 쓰지 않는다. 폴더별 시간은 통합자가 다른 실행이 없는 기계에서 폴더 하나만 준 실행으로 잰다(2절).
+
+## 4. 새 시험 쓰기
+
+1. **같은 성질을 검사하는 시험이 이미 있는지 먼저 찾는다.** 있으면 새 시험을 만들지 않고 그 시험에 단언을 더한다. 같은 경로를 같은 종류의 입력으로 지나 같은 성질을 단언하는 시험 둘은 비용만 두 배다. 시험 모듈은 검사하는 제품 모듈이나 성질의 이름을 달고 있으므로(이 절의 규칙 9), 그 이름의 모듈부터 찾는다.
+2. **시험 하나는 성질 하나를 검사하고, 이름은 그 성질을 문장으로 말한다.** 예: `test_selected_task_that_is_no_longer_ready_is_rejected`. 실패했을 때 이름만 보고 무엇이 깨졌는지 알 수 있어야 한다.
+3. **시작 상태는 그 성질을 검사할 수 있는 가장 싼 준비를 고른다.** 다음 순서로 보고 처음 성립하는 것을 쓴다. 현재 도우미의 계약은 `tests/support/sim.py`와 해당 영역의 `support` 모듈 docstring에서 확인한다.
+   1. 순수 함수나 검증기를 입력값으로 직접 부른다. 생산자가 있는 입력은 그 생산자로 만든다.
+   2. 저장이 필요하면 `support.storage_records`의 실제 `ResearchRepository`와 Git 포트 대역을 쓴다. 엔진 판정이 필요하면 같은 저장소·포트 묶음 위의 실제 엔진을 쓴다. 메모리 저장소나 가짜 엔진으로 검증을 대신하지 않는다.
+   3. 배선이 필요하면 `Sim.activated()`로 공개 활성화를 완료한 템플릿을 복원한다. 특정 상태는 `built(name, build, **parameters)`로 공개 경로를 한 번 빌드해 복원한다. 빌더의 가변 입력은 명시 JSON 인자로 전달하며 기본값도 캐시 키에 반영된다. 각 템플릿은 빌드했던 동일 절대 경로에 복원한다. 앞 사본 사용을 끝낸 뒤 다음 사본을 요청한다. 빌더가 만든 원본을 템플릿으로 복사하기 직전, 원본의 미종결 execution과 held 예약이 없어야 한다. 원본이 쓴 모든 Job 객체는 done·closed이고, Calls에는 미수집 future와 남은 turn이 없어야 한다.
+   4. 공개 초기화·활성화 과정 자체가 검사 대상이면 임시 경로의 `Sim`을 처음부터 돈다. 최종 상태가 같더라도 과정의 결함에서 이 시험이 실패해야 한다면 템플릿 복원으로 바꾸지 않는다.
+4. **단언할 값이 모두 확정되는 첫 상태에서 멈춘다.** 엔진을 모는 시험은 조건 함수와 단계 상한을 주어 필요한 상태에 이르면 멈추게 한다. 다음 두 경우에는 필요한 마지막 검사 단계까지 계속한다. 하나는 목표 판정 자체가 단언의 대상인 경우다. 다른 하나는 이른 종료로 생략될 후속 단계에서 모델 입력을 검사하는 경우다. 그 입력 검사가 실제로 실행되는 단계까지 계속한다. 예를 들어 `support.purpose_answers.PurposeAnswers`의 목표 감사 응답은 효력 있는 최종 판정만 받았는지 검사하므로, 그 검사가 도는 시험은 목표 감사까지 몬다.
+5. **고정 시간 대기(`time.sleep`)를 쓰지 않는다.** 다른 스레드나 프로세스의 결과를 기다릴 때는 조건을 폴링하고 상한을 둔다. 상한은 정상 경로에서 닿지 않을 만큼 넉넉하게 둔다. 시각에 의존하는 동작은 시계를 주입해 시험한다.
+6. **외부 자원은 검사 대상일 때만 실제로 쓴다.** 저장 준비는 `support.fakes.git_backend.make_repository`와 Git 포트 대역을 쓰고, CLI 배선은 `cli.main(argv, ports=sim.ports, environment=sim.environment, host_id=sim.host_id, codex_home=sim.codex_home)`으로 프로세스 안에서 부른다. 실제 `ResearchEngine`, `ModelRunner`, 검증기, worker와 저장 검증은 유지한다. 모델·Lean은 Job 대역이 실행하는 실제 worker의 `spawn`에서만 대역으로 제공한다. Lean 대역은 소스 바이트와 선언 목록을 명시 등록하며 임의 증명을 성공시키지 않는다. 종료 코드·표준 입출력·pythonw·Windows Job·프로세스 식별 자체를 검사할 때는 실제 자원을 쓰고 `boundary`에 둔다. 실제 Lean에는 `test_group('lean')`, 실제 프로세스 수명·자원 한도에는 `test_group('resource')`를 붙인다.
+7. **제품 코드에 이름 붙은 정의는 import해서 쓴다.** 역할 이름, 스키마, 상수, 오류 문구처럼 제품이 정의한 값을 시험 안에 다시 적지 않는다. 계산이나 상태 전이의 결과처럼 시험이 검사하려는 행동의 결과값은 시험에 직접 적는다. 제품의 정의가 바뀌었을 때 시험이 따라가지 않으면, 시험과 제품이 서로 다른 계약을 검사하게 된다.
+8. **정확성을 시간 예산보다 우선한다.** 폴더별 시험 하나의 예산은 `tests/budgets.json`을 따른다(단위 200ms, 시뮬레이션 2초, 경계 30초; 설계 5.2). 넘으면 더 싼 시작 상태·가상 시간·포트 대역을 쓰거나 사유와 시간을 docstring에 적는다. 시험을 다른 폴더로 옮기려면 검사 성질의 층과 실행 비용에 관한 설계 판단·근거가 필요하다. 단언 약화, 경로를 건너뛰는 입력 축소, 제품 내부 패치, 시험 건너뛰기로 시간을 맞추지 않는다(설계 6.1).
+9. **새 시험은 검사하는 제품 모듈이나 성질의 이름을 단 기존 모듈에 넣는다.** 예를 들어 `do_math/scheduler.py`의 배정 규칙은 `sim.test_scheduling_session_slots`에, 역할 입력의 포장은 `sim.test_role_input_context`에 둔다. 알맞은 모듈이 없을 때만 새 모듈을 만들고, 그 이름도 제품 모듈이나 성질로 짓는다. 수리 회차나 점검처럼 시험이 생긴 계기로 모듈·클래스·시험의 이름을 짓지 않는다. 계기 이름 아래에서는 같은 성질의 시험이 여러 모듈로 흩어져 규칙 1의 검색이 작동하지 않는다. 새 모듈은 성질에 맞는 층 폴더에 둔다. 수동 등록은 없다. 폴더·패키지 누락과 실제 디스크 모집단의 수집 누락은 실행기가 거부한다.
+10. **도우미는 다른 시험 모듈에서 import하지 않는다.** 한 모듈만 쓰면 그 모듈의 함수로 둔다. 두 번째 소비자가 생기면 해당 영역의 `tests/support/<영역>_<주제>.py` 정본으로 옮긴다. 실제·대역 포트 계약의 공통 정의는 `support/port_contracts/`에 둔다. 같은 규칙을 복제하지 않으며, 새 지원 정의와 모든 소비자가 같은 계약을 직접 사용하게 고친다.
+11. **결함을 고칠 때는 그 결함을 재현하는 시험을 먼저 쓰고**, 고치기 전의 코드에서 실패함을 확인한 뒤 고친다.

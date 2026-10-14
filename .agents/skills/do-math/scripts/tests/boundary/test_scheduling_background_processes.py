@@ -22,6 +22,8 @@ PYTHONW = str(Path(sys.executable).with_name('pythonw.exe'))
 
 # Observe the Git process the store starts, with the arguments it passes, and
 # its descendants: consoles (AttachConsole) and visible windows (EnumWindows).
+# AttachConsole/FreeConsole run in a separate observer: with a null stdin they
+# leave a closed console handle in the observer's standard-input slot.
 # The positive control starts the same command with a new hidden console.
 DESCENDANTS_PROBE = r'''import ctypes,json,subprocess,sys,time,psutil
 from pathlib import Path
@@ -45,9 +47,26 @@ store._backend._run(store.repository,'cat-file','--batch',input=b'')
 command=captured['command']; options=captured['kwargs']; options.pop('input'); options.pop('check')
 kernel=ctypes.WinDLL('kernel32',use_last_error=True); user=ctypes.WinDLL('user32',use_last_error=True)
 kernel.GetConsoleWindow.restype=ctypes.c_void_p
+kernel.GetStdHandle.argtypes=[ctypes.c_ulong]; kernel.GetStdHandle.restype=ctypes.c_void_p
 user.IsWindowVisible.argtypes=[ctypes.c_void_p]
 user.GetWindowThreadProcessId.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_ulong)]
 callback_type=ctypes.WINFUNCTYPE(ctypes.c_bool,ctypes.c_void_p,ctypes.c_void_p)
+console_probe=r"""import ctypes,json,sys
+from pathlib import Path
+kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+kernel.GetConsoleWindow.restype=ctypes.c_void_p
+consoles=[]
+for pid in json.loads(sys.argv[1]):
+    if kernel.AttachConsole(pid):
+        try: consoles.append(int(kernel.GetConsoleWindow() or 0))
+        finally: kernel.FreeConsole()
+    else:
+        error=ctypes.get_last_error()
+        assert error in (6,87), (pid,error)
+        consoles.append(0)
+Path(sys.argv[2]).write_text(json.dumps(consoles))
+"""
+stdin_before=kernel.GetStdHandle(-10 & 0xffffffff)
 results=[]
 for positive in (True,False):
     launch=dict(options)
@@ -66,15 +85,15 @@ for positive in (True,False):
             if owner.value in pids and user.IsWindowVisible(hwnd): visible.append(owner.value)
             return True
         user.EnumWindows(callback_type(visit),None)
-        for child in family:
-            if kernel.AttachConsole(child.pid):
-                handle=kernel.GetConsoleWindow(); consoles.append(int(handle or 0)); kernel.FreeConsole()
-            else:
-                error=ctypes.get_last_error()
-                assert error in (6,87), (child.pid,error)
-                consoles.append(0)
+        console_path=root/('console-'+str(positive)+'.json')
+        observer=subprocess.run([sys.executable,'-B','-c',console_probe,
+            json.dumps([child.pid for child in family]),str(console_path)],
+            stdin=subprocess.DEVNULL,capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW)
+        assert observer.returncode==0, observer.stderr
+        consoles=json.loads(console_path.read_bytes())
+        assert kernel.GetStdHandle(-10 & 0xffffffff)==stdin_before, 'console observer changed storage stdin'
         results.append({'positive':positive,'names':[x.name() for x in family],
-                        'consoles':consoles,'visible':visible})
+                        'consoles':consoles,'visible':visible,'stdin_unchanged':True})
     finally:
         p.communicate(timeout=10)
 raw=bytes(range(256))+b'\r\n'
@@ -134,10 +153,12 @@ class BackgroundProcessTests(unittest.TestCase):
             self.assertEqual(process.returncode, 0, process.stderr)
             positive, observed = json.loads((root / 'actual.json').read_text())
             self.assertTrue(any(positive['consoles']), positive)
+            self.assertTrue(positive['stdin_unchanged'])
             self.assertTrue(any('git' in name.lower() for name in observed['names']), observed)
             self.assertTrue(observed['consoles'])
             self.assertFalse(any(observed['consoles']), observed)
             self.assertEqual(observed['visible'], [])
+            self.assertTrue(observed['stdin_unchanged'])
 
     @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')
     def test_pythonw_git_calls_have_no_console_and_preserve_binary_state(self):

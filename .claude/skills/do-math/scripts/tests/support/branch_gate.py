@@ -329,10 +329,12 @@ class Measurement:
 
     def _stop(self):
         global _ACTIVE
-        _ACTIVE = None
+        if _ACTIVE is self:
+            _ACTIVE = None
         if self.started:
             self.calls.stop()
             self.coverage.stop()
+            self.started = False
 
     def abandon(self):
         """Stop measuring without a report (the run ended before any test ran)."""

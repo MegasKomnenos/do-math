@@ -32,6 +32,11 @@ nothing may close a sub-stage or region. Measured runs keep their times in
 Lean and resource tests run per class in an owned Windows Job. Elapsed time
 never terminates tests or worker phases. Budgets are soft comparison baselines.
 This runner never changes the product's Lean time limits.
+
+T4 reports actual Python adapter reach separately (support/adapter_coverage.py),
+including owned lean/resource workers and zero-reach files. Reach has no gate;
+missing/invalid worker measurement fails completeness. Combined tiers keep T4
+workers and data apart from T3's gate, index and store.
 """
 from __future__ import annotations
 
@@ -373,7 +378,7 @@ def _isolated(tests, directory, *, measure=False):
     identifiers = [test.id() for test in tests]
     _write_json(directory / 'requested.json', identifiers)
     if measure:  # a parallel T3 worker measures its own tests (support/branch_gate.py)
-        _write_json(directory / 'measure.json', True)
+        _write_json(directory / 'measure.json', {**measure, 'requested': identifiers} if isinstance(measure, dict) else True)
     scratch = directory / 'scratch'
     scratch.mkdir()
     environment = {**os.environ, 'TMP': str(scratch), 'TEMP': str(scratch), 'TMPDIR': str(scratch)}
@@ -415,7 +420,14 @@ def _worker(directory):
     measurement = None
     if (directory / 'measure.json').exists():
         from support.branch_gate import DATA, Measurement, repository_root
-        measurement = Measurement(repository_root(), data_file=directory / DATA)
+        # Read runner configuration without importing product file_io before
+        # the T3 tracer starts; otherwise workers miss its import-time lines.
+        request = json.loads((directory / 'measure.json').read_text(encoding='utf-8'))
+        if isinstance(request, dict):
+            from support.adapter_coverage import AdapterMeasurement
+            measurement = AdapterMeasurement(repository_root(), data_file=directory / DATA, request=request)
+        else:
+            measurement = Measurement(repository_root(), data_file=directory / DATA)
         measurement.start()  # before the tests load, so import-time lines count
     with (directory / 'stdout.txt').open('w', encoding='utf-8', buffering=1) as out, \
             (directory / 'stderr.txt').open('w', encoding='utf-8', buffering=1) as err, \
@@ -477,6 +489,7 @@ def main(argv=None):
     before = _edition()
     started_run = time.monotonic()
     measurement = None
+    adapter = None
     if 'T3' in tiers:
         if str(TESTS) not in sys.path:
             sys.path.insert(0, str(TESTS))
@@ -492,6 +505,8 @@ def main(argv=None):
     def bail(code):
         if measurement is not None:
             measurement.abandon()
+        if adapter is not None:
+            adapter.abandon()
         return code
 
     loader = unittest.TestLoader()
@@ -537,7 +552,8 @@ def main(argv=None):
     store = None
     if measurement is not None:
         # Incremental T3 (설계 A29): the modules the store's measurement still holds for are not run again.
-        store = _t3_plan(args, discovered, selected)
+        with _unmeasured():
+            store = _t3_plan(args, discovered, selected)
         plan = store['plan']
         print(f"T3 store ({plan.mode}: {plan.reason}): measuring {len(plan.measure)} modules, "
               f"reusing {len(plan.reuse)}", flush=True)
@@ -547,6 +563,16 @@ def main(argv=None):
         bail(None)
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
+    if 'T4' in tiers:
+        from support.adapter_coverage import AdapterMeasurement
+        from support.branch_gate import repository_root
+        request = {'kind': 't4', 'run_id': uuid.uuid4().hex, 'source_sha256': before}
+        with _unmeasured():
+            adapter = AdapterMeasurement(repository_root(), data_file=directory / 'adapter.data', request=request)
+        # T4 alone observes its in-process tests. In a union containing T3, all
+        # boundary tests use separate workers so none enter T3 data or its index.
+        if args.jobs == 1 and set(tiers) == {'T4'}:
+            adapter.start()
     from support.known_defects import open_count  # tests/ is importable after discovery
     with _unmeasured():  # the runner's own reading of the ledger is no test's input (결함 D5)
         open_defects = open_count()
@@ -563,7 +589,8 @@ def main(argv=None):
                            if folder_of(test) == group and isolation_for(test) is None])
     parallel = args.jobs > 1
     if parallel:
-        workers = _run_parallel([test for test in selected if isolation_for(test) is None],
+        workers = _run_parallel([test for test in selected if isolation_for(test) is None
+                                 and not (adapter and folder_of(test) == 'boundary')],
                                 directory, args.jobs, group_seconds, measure=measurement is not None)
         reports += workers
         if measurement is not None:
@@ -575,21 +602,38 @@ def main(argv=None):
             continue
         started = time.monotonic()
         print(f'[{group}] {len(tests)} tests', flush=True)
-        in_process = [test for test in tests if isolation_for(test) is None and not parallel]
+        is_adapter = adapter is not None and group == 'boundary'
+        in_process = [test for test in tests if isolation_for(test) is None and not parallel
+                      and not (is_adapter and not adapter.started)]
         if in_process:
+            observer = adapter if is_adapter else measurement
+            if is_adapter and observer.started:
+                observer.begin([test.id() for test in in_process])
             reports.append({'group': group, **_run_suite(
-                in_process, directory / group, measurement=measurement if measurement and measurement.started else None)})
+                in_process, directory / group, measurement=observer if observer and observer.started else None)})
+        if is_adapter and not adapter.started:
+            # Separate pool and data: a T4 union never contributes to T3 reach.
+            with _unmeasured():
+                boundary_workers = _run_parallel([test for test in tests if isolation_for(test) is None],
+                    directory / 'adapter-workers', args.jobs, {}, measure=adapter.request)
+            for index, report in enumerate(boundary_workers):
+                report['group'] = f'boundary-parallel-{index}'
+            reports += boundary_workers
         classes = defaultdict(list)
         for test in tests:
             if isolation_for(test) is not None:
                 classes[type(test)].append(test)
         for index, members in enumerate(classes.values()):
             print('  isolated: ' + members[0].id().rsplit('.', 1)[0], flush=True)
-            report = _isolated(members, directory / f'{group}-isolated-{index:03}')
+            with _unmeasured():
+                report = _isolated(members, directory / f'{group}-isolated-{index:03}',
+                                   measure=adapter.request if is_adapter else False)
             print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
             reports.append({'group': group, **report})
         group_seconds[group] = round(time.monotonic() - started, 1)
         _write_json(directory / 'report.json', {'complete': False, 'group_seconds': group_seconds, 'reports': reports})
+    if adapter is not None and adapter.started:
+        adapter.abandon()
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
@@ -599,9 +643,21 @@ def main(argv=None):
             module_totals[module] += seconds
     complete = all(report['complete'] for report in reports)
     if not changed and complete:
-        _record_timings(_whole_module_costs(module_totals, discovered, selected, rows),
+        _record_timings(_whole_module_costs({m: s for m, s in module_totals.items()
+                                            if not (adapter and m.startswith('boundary.'))}, discovered, selected, rows),
                         measured=measurement is not None)
-    t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
+    t3_selected = [test for test in selected if folder_of(test) in TIERS['T3']]
+    t3 = _finish_t3(measurement, directory, t3_selected, args, complete and not changed, store, rows) if measurement else {}
+    t4 = adapter.finish_report(directory, reports=[report for report in reports
+        if 'directory' in report and report['requested']
+        and all(identifier.startswith('boundary.') for identifier in report['requested'])], changed=changed) if adapter else None
+    if t4 is not None:
+        t4['selected'] = [test.id() for test in selected if folder_of(test) == 'boundary']
+        t4_rows = [row for row in rows if not row.get('fixture') and row['id'].startswith('boundary.')]
+        t4['test_counts'] = dict(Counter(row['outcome'] for row in t4_rows))
+        t4['tests_complete'] = len(t4_rows) == len(t4['selected']) and all(
+            row['outcome'] not in {'running', 'not_run'} for row in t4_rows)
+        _write_json(directory / 'adapter-coverage.json', t4)
     # Report T3's whole run, analysis and mutation against its soft baseline (설계 5.1, 5.2).
     total = round(time.monotonic() - started_run if measurement else sum(group_seconds.values()), 1)
     budget = budget_report(rows, budget_tiers(args.tier or [], store), total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
@@ -618,6 +674,8 @@ def main(argv=None):
         'source_sha256': before, 'changed_during_run': changed, 'reports': reports,
         'slowest': sorted((row for row in rows if not row.get('fixture')),
                           key=lambda row: row['seconds'], reverse=True)[:20]}
+    if t4 is not None:
+        result['t4_adapter'] = t4
     _write_json(directory / 'report.json', result)
     tier = budget['tier']
     for line in t3.get('summary', []):
@@ -634,7 +692,7 @@ def main(argv=None):
     if changed:
         print('Files changed during the run, so this is not a pass: ' + ', '.join(changed), file=sys.stderr)
     print('Report: ' + str(directory / 'report.json'))
-    return 0 if result['successful'] and t3.get('passed', True) else 1
+    return 0 if result['successful'] and t3.get('passed', True) and (t4 is None or t4['complete']) else 1
 
 
 def _run_parallel(tests, directory, jobs, group_seconds, *, measure=False):
@@ -650,7 +708,7 @@ def _run_parallel(tests, directory, jobs, group_seconds, *, measure=False):
     by_module = defaultdict(list)
     for test in tests:
         by_module[module_of(test)].append(test)
-    recorded = recorded_seconds(measure)
+    recorded = recorded_seconds(measure is True)
     # An incremental T3 with no module to measure still measures import time in one worker (A29).
     groups = lpt_groups(module_seconds({m: len(t) for m, t in by_module.items()}, recorded), jobs) or [[]]
     print(f'[parallel] {len(tests)} tests in {len(groups)} workers', flush=True)

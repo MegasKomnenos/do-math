@@ -29,3 +29,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 016은 현재 fixture 소비만 교정했고 Git과 과거 입력 원바이트를 검수했다.017은 기존 SHARED_INPUT_BASELINE_SCRIPTS 소비·TestCase/WORKER/SNAPSHOT·run_tests/AdapterMeasurement의 실제 연결을 검증한다. 두 task 사이 새 인터페이스를 구현하지 않고 한 task가 고정된 제공/소비를 함께 실행하므로 S 항목·provides/uses는 추가하지 않는다. 의미/형식/오류의 정본은 기존 코드와015 측정 정의이며 과거910파일을 새 제품 계약이나 호환 분기로 만들지 않는다.
 
 017의 두 exact 비교와 실제 T4 측정·게시 연결을 검수했다.018은 현 Jobs 포트의 launch/resume/terminate/wait/inspect/close를 사용하는 시험 fixture cleanup만 교정한다. close의 핸들 닫기/kill-on-close와 root/빈Job 종료 관측을 구별하며 제품 API 의미를 개정하지 않는다. real/fake 공유 fixture와 관련 시험·전체 T4를 한 task가 소유하므로 새 S 항목·provides/uses는 없다. runtime/계약 개정 필요성은 정확 반례로 다음 manager에 반환한다.
+
+018의 기존 Jobs API 소비와 최종 양쪽T4 연결을 검수했다.019는 기존 write_source_catalog·_preserve_outputs·_apply·_context·prepare_role_input의 생산/저장/복원을 실제 소비하는 문서 검사 수리다. 정본은 해당 함수·contracts/record schema이며 별도 제품 형식을 만들지 않는다. 같은task가 doc_code와 직접소비/helper·미러를 소유하고 독립 제공자/소비자로 나누지 않으므로 S항목·provides/uses는 추가하지 않는다. runtime/입출력 의미 개정이 필요하면 반례로 후속 판단에 반환한다.

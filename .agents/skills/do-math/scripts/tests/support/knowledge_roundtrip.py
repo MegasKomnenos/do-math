@@ -21,7 +21,7 @@ directly and their cycle runs through the pure review cycle.
   published head on the port fakes that share the repository's clock and Git fake.
 - ``installed_request(workspace, toolchain)``: the registration request that
   adopts the installed ``toolchain`` through a toolchain record written under
-  ``workspace`` (its content baseline and validation are doubles).
+  ``workspace`` (its fingerprint and content hashes are real; validation is a double).
 - ``installed_trust_state(workspace, toolchain)``: ``(instance, runtime, kid)``, an
   unverified candidate "Truth" in the active environment ``TE-old`` registered
   from ``installed_request``. This is the state half of
@@ -130,22 +130,21 @@ def installed_request(workspace, toolchain):
     """The registration request (``operation: register``) that adopts the installed ``toolchain``.
 
     Its toolchain record is written under ``workspace/'records'``; the record's
-    content baseline and clean-build validation are doubles (only ``--rerecord``
-    and ``--check-contents`` read them).
+    fingerprint and content baseline use the installed judgment files' actual
+    metadata and bytes. Clean-build validation alone is synthetic: this fixture
+    does not approve or rewrite the installation's shared trust record.
     """
     from support.entry import entry
     _entry = entry()
     from do_math import trust_inventory as records
-    from do_math.canonical import exact_content_hash
-    request = trust_fixture(workspace, toolchain['configured_command'])
     identity = deepcopy(toolchain)
-    record = records.new_record(identity, records.new_baseline(records.observe_fingerprint(identity),
-        {'files': {}, 'sha256': exact_content_hash({})}, validation_fixture(identity, Path(workspace) / 'smoke.lean'), clock=_entry.ports.clock))
+    fingerprint = records.observe_fingerprint(identity)
+    content = records.content_hashes(identity, fingerprint['files'])
+    record = records.new_record(identity, records.new_baseline(fingerprint,
+        content, validation_fixture(identity, Path(workspace) / 'smoke.lean'), clock=_entry.ports.clock))
     path = Path(workspace) / 'records' / (record['id'] + '.json')
     records.write_record(path, record)
-    request.update(toolchain=identity, toolchain_record={'path': str(path), 'id': record['id']},
-                   binding=records.binding(record))
-    return request
+    return records.registration_request(record, path, records.binding(record))
 
 
 def installed_trust_state(workspace, toolchain):

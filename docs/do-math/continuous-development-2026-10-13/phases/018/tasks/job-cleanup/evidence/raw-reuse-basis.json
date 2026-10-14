@@ -1,0 +1,16 @@
+{
+  "unchanged_current_definitions": {
+    ".claude/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+    ".agents/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+    ".claude/skills/do-math/scripts/tests/support/adapter_coverage.py": "123ecb613f6934207f29efb35781127cbbb0dba25ad683ae7d0bac7d8e8699e5",
+    ".agents/skills/do-math/scripts/tests/support/adapter_coverage.py": "123ecb613f6934207f29efb35781127cbbb0dba25ad683ae7d0bac7d8e8699e5",
+    ".claude/skills/do-math/scripts/tests/support/branch_gate.py": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+    ".agents/skills/do-math/scripts/tests/support/branch_gate.py": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+    ".claude/skills/do-math/scripts/run_tests.py": "a7e5984dc1743097e7b32661d529847a10e5352717d775d4236721d3a4383697",
+    ".agents/skills/do-math/scripts/run_tests.py": "a7e5984dc1743097e7b32661d529847a10e5352717d775d4236721d3a4383697"
+  },
+  "previous_evidence_files": 5917,
+  "companion_manifest_sha256": "243a4cb06a683e7fa1689f1cd13ba0051889191ec8954deeac7a90e6b9635758",
+  "baseline_manifest_sha256": "5eb43b73b70a85e9143839b4931b5116420c3c5f660c83f7e7e58fc019b73d10",
+  "scope": "017 canonical actual TestCase/WORKER/SNAPSHOT companion and measurement evidence only; mirror execution is new and separate; no mirror companion raw claim."
+}

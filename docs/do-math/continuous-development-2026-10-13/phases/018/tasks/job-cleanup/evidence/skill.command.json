@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\probe_cli.py",
+    "--skill-only"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-14T02:28:22.591324+00:00",
+  "environment": {
+    "SHARED_INPUT_BASELINE_SCRIPTS": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\pre-provenance\\scripts",
+    "TEMP": "C:\\Users\\wogud\\AppData\\Local\\Temp\\dm018-qo_xpqfz",
+    "TMP": "C:\\Users\\wogud\\AppData\\Local\\Temp\\dm018-qo_xpqfz",
+    "TMPDIR": "C:\\Users\\wogud\\AppData\\Local\\Temp\\dm018-qo_xpqfz",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "external_temp": true,
+  "parent_pid": 38296,
+  "output": null,
+  "temp_git_probe": {
+    "argv": [
+      "git",
+      "-C",
+      "C:\\Users\\wogud\\AppData\\Local\\Temp\\dm018-qo_xpqfz",
+      "rev-parse",
+      "--show-toplevel"
+    ],
+    "cwd": "C:\\math",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  "pid": 26032,
+  "ended": "2026-10-14T02:28:25.246365+00:00",
+  "exit_code": 0,
+  "seconds": 1.1410000000032596,
+  "source_changes": []
+}

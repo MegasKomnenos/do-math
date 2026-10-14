@@ -32,6 +32,7 @@ class RealJobObservationTests(unittest.TestCase):
         from do_math.codex_adapter import CLIExecution, CodexExecAdapter
         from do_math.model_runner import ModelRunner
         from do_math.observations import ObservationTracker
+        from do_math.provider_final import CODEX_OUTPUT_KEY
         from do_math.windows_job import WindowsJob
 
         class LocalStream(CodexExecAdapter):
@@ -46,11 +47,12 @@ class RealJobObservationTests(unittest.TestCase):
                 status = {'state': 'exited', 'cli_exit_code': 0,
                     'request_sha256': hashlib.sha256(request_path.read_bytes()).hexdigest(),
                     'stdin_sha256': hashlib.sha256(prompt.read_bytes()).hexdigest(), 'schema_sha256': schema_hash}
+                final = json.dumps({CODEX_OUTPUT_KEY: json.dumps({'ok': True})})
                 events = [{'type': 'thread.started', 'thread_id': 'local-test'}, {'type': 'turn.started'},
-                    {'type': 'item.completed', 'item': {'id': 'final', 'type': 'agent_message', 'text': '{"ok":true}'}},
+                    {'type': 'item.completed', 'item': {'id': 'final', 'type': 'agent_message', 'text': final}},
                     {'type': 'turn.completed', 'usage': {}}]
                 payload = {request['stdout_path']: ''.join(json.dumps(e) + '\n' for e in events),
-                    request['stderr_path']: '', request['final_path']: '{"ok":true}',
+                    request['stderr_path']: '', request['final_path']: final,
                     request['status_path']: json.dumps(status)}
                 script = ('import json,sys; from pathlib import Path; '
                           '[(Path(p).write_bytes(v.encode())) for p,v in json.loads(sys.argv[1]).items()]')
@@ -76,7 +78,9 @@ class RealJobObservationTests(unittest.TestCase):
         runner = ModelRunner(clock=sim.ports.clock, environment=sim.environment, host_id=sim.host_id, jobs=sim.ports.jobs)
         runner.adapters['codex'] = LocalStream('local-fixture', jobs=sim.ports.jobs, clock=sim.ports.clock)
         with tempfile.TemporaryDirectory() as directory:
-            result = runner.run(prompt='Local stream fixture, no model.', output_schema={'type': 'object'},
+            result = runner.run(prompt='Local stream fixture, no model.', output_schema={
+                'type': 'object', 'properties': {'ok': {'type': 'boolean'}},
+                'required': ['ok'], 'additionalProperties': False},
                 workspace=workspace, evidence_dir=Path(directory) / 'evidence', model='fixture', effort='low',
                 timeout_seconds=15, on_observation=delayed)
         self.assertEqual(result['status'], 'completed', result.get('error'))
