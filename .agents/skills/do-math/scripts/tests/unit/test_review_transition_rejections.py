@@ -283,6 +283,9 @@ class TransitionRejectionTests(unittest.TestCase):
         cycle, action, output = stage_input('initial')
         output['decision'] = 'unresolved'
         requests = [{'id': 'r', 'question': '범위는 무엇인가', 'source_refs': ['proposal']}]
+        rc.validate_research_requests(requests)
+        with self.assertRaisesRegex(ValueError, 'duplicate research request ID'):
+            rc.validate_research_requests([*requests, {**requests[0], 'question': '다른 고정 질문'}])
         sources = [[rc.inline_source_row('proposal', cycle['proposal'])]]
         deferred = rc.defer_for_research(cycle, action, output, requests, 'requester', sources, limit=3)
         with self.assertRaisesRegex(ValueError, 'review action is not pending'):

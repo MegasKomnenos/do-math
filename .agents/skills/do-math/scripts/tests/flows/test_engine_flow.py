@@ -219,6 +219,8 @@ class PublicGitFlow(unittest.TestCase):
     def test_public_activation_work_receipt_assessment_and_next_plan(self):
         """About 11 s, over the 2 s Sim budget: the public activation and every role of one research round are what it checks."""
         from support.engine_flow import BoundedObservationResponder, record_submissions, worker_bindings
+        from do_math.canonical import canonical_json, exact_content_hash
+        from do_math.submission import issued_input, read_sealed_submission
         with tempfile.TemporaryDirectory() as temporary:
             sim = Sim(Path(temporary), goal="Record and assess a bounded observation", config={
                 "observation_mode": "periodic", "tool_review_window_seconds": 600,
@@ -263,6 +265,26 @@ class PublicGitFlow(unittest.TestCase):
                     self.assertEqual(row["binding"].get("self_check", False), row["role"] == "research_work")
                     self.assertIn(row["delivery"], {"submitted", "already_received"})
                     self.assertEqual(row["receipt"], "accepted")
+                    execution = runtime['executions'][row['binding']['execution_id']]
+                    context, schema = issued_input(execution, engine.head, engine.store.read)
+                    archived = engine.store.read(f"runtime/artifacts/{execution['input_bundle']}/schema.json", engine.head)
+                    self.assertEqual(archived, row['schema_bytes'])
+                    self.assertEqual(archived, canonical_json(schema))
+                    sealed = read_sealed_submission(execution, engine.head, engine.store.read)
+                    self.assertEqual(sealed['check']['mode'], 'receiver')
+                    self.assertTrue(sealed['check']['passed'], sealed['check'])
+                    self.assertEqual(sealed['check']['input_hashes']['schema'], hashlib.sha256(archived).hexdigest())
+                    self.assertEqual(sealed['check']['input_hashes']['context'], exact_content_hash(context))
+                    self.assertTrue(sealed['output']['integration_bundles'])
+                    if row['role'] == 'research_preparation':
+                        for candidate in sealed['output']['candidates']:
+                            self.assertTrue(candidate['profile_refs'])
+                            self.assertTrue(all(ref in context['role_profile_refs']['research_work']
+                                                for ref in candidate['profile_refs']))
+                            self.assertTrue(candidate['authority_refs'])
+                            self.assertLessEqual(set(candidate['authority_refs']),
+                                {grant['id'] for grant in context['grants']
+                                 if grant['status'] == 'active' and 'research_work' in grant['roles']})
 
 
 class MaintenanceConnections(unittest.TestCase):

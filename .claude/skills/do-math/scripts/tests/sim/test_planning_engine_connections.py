@@ -75,6 +75,71 @@ class WorkProfileAdmissionTests(unittest.TestCase):
             engine.instance)['profile_ref'], t['profile_refs'][0])
 
 
+class MachineCapacityConnections(unittest.TestCase):
+    def test_actual_machine_admission_preserves_wait_until_resources_return(self):
+        from do_math import execution_lifecycle
+        from support.wait_reporting import assert_status_report, assert_activity_wait_row
+        sim = Sim.activated()
+        clear_work(sim)
+        constraint = execution_profiles.host_constraint(host_id=sim.host_id,
+            limits={'jobs': 3, 'memory_bytes': 3 * 1024**2, 'cpu_rate_basis_points': 3000},
+            control_reserve={'jobs': 1, 'memory_bytes': 1024**2, 'cpu_rate_basis_points': 1000},
+            authority_refs=['configuration:request'])
+        demand = {'jobs': 1, 'memory_bytes': 1024**2, 'cpu_rate_basis_points': 1000}
+        applied(sim, 'configure', config={'host_resources': {'constraint': constraint,
+            'demands_by_role': {role: demand for role in execution_profiles.HOST_ROLES}}})
+        clear_work(sim)
+        engine = sim.engine
+        # external_action is the current publicly authored capped machine role.
+        profile = execution_profiles.resolve_profile(sim.instance['execution_profiles'],
+            sim.instance['role_profile_refs']['external_action'][0])
+        def register(action, identifier):
+            return engine._register_execution(action,
+                {'id': identifier, 'role': 'external_action', 'status': 'running'}, profile=profile)
+        first = register({'id': 'AC-held-one', 'role': 'external_action'}, 'EX-held-one')
+        second = register({'id': 'AC-held-two', 'role': 'external_action'}, 'EX-held-two')
+        self.assertIsNotNone(first)
+        self.assertIsNotNone(second)
+        action = {'id': 'AC-machine-wait', 'role': 'external_action'}
+        sim.runtime['queue'].append(action)
+        self.assertIsNone(register(action, 'EX-denied'))
+        owner = action['owner_activity_id']
+        self.assertEqual(sim.runtime['activities'][owner]['waiting']['kind'], 'machine_capacity')
+        self.assertNotIn('EX-denied', sim.runtime['executions'])
+        engine._save()
+        sim.restart()
+        engine = sim.engine
+        action = next(a for a in sim.runtime['queue'] if a['id'] == action['id'])
+        before = deepcopy((sim.runtime['activities'], sim.runtime['executions'], sim.runtime['reservations']))
+        report, _ = assert_status_report(self, engine)
+        assert_activity_wait_row(self, report, owner, sim.runtime['activities'][owner])
+        for number in range(2):
+            sim.advance(1)
+            self.assertIsNone(register(action, 'EX-denied-' + str(number)))
+            self.assertEqual((sim.runtime['activities'], sim.runtime['executions'], sim.runtime['reservations']), before)
+        self.assertTrue(engine._session_slots().release(first['id'], reason='No process was launched'))
+        execution_lifecycle.transition_execution(sim.runtime['executions'][first['id']], 'stopping', at=sim.clock.now())
+        execution_lifecycle.transition_execution(sim.runtime['executions'][first['id']], 'ended', at=sim.clock.now(), outcome='start_failed')
+        other = deepcopy((sim.runtime['activities'][second['owner_activity_id']], sim.runtime['executions'][second['id']]))
+        admitted = register(action, 'EX-machine-next')
+        self.assertIsNotNone(admitted)
+        self.assertEqual(admitted['owner_activity_id'], owner)
+        self.assertNotIn('waiting', sim.runtime['activities'][owner])
+        self.assertNotIn('dispatch_wait', action)
+        self.assertEqual(sim.runtime['activities'][owner]['assigned_execution_ids'], ['EX-machine-next'])
+        self.assertEqual((sim.runtime['activities'][second['owner_activity_id']], sim.runtime['executions'][second['id']]), other)
+        held = [r for r in sim.runtime['reservations'].values() if r['state'] == 'held']
+        self.assertEqual({r['owner_id'] for r in held}, {second['id'], admitted['id']})
+        self.assertEqual(len(held), len(second['capacity']['reservation_ids']) + len(admitted['capacity']['reservation_ids']))
+        engine._save()
+        report, _ = assert_status_report(self, engine)
+        self.assertNotIn(owner, report['waiting_activities'])
+        before = deepcopy(sim.runtime)
+        with self.assertRaisesRegex(ValueError, 'execution IDs are single-use'):
+            register(action, 'EX-machine-next')
+        self.assertEqual(sim.runtime, before)
+
+
 class PlanningConnections(unittest.TestCase):
     def test_snapshot_preserves_the_assessment_producers_stored_wait_and_its_coordinates(self):
         import json
@@ -99,6 +164,42 @@ class PlanningConnections(unittest.TestCase):
         reported_wait['basis_ref'] = 'not stored'
         self.assertEqual((instance, runtime), before)
         self.assertEqual(engine.store.load(), (head, *before))
+
+    def test_assessment_input_keeps_its_basis_until_exact_arrival_and_accepted_reassessment(self):
+        from support.wait_reporting import assert_task_wait_report
+        sim = reassessment_sim()
+        engine = sim.engine
+        original = deepcopy(sim.runtime['tasks']['TK-1'])
+        assert_task_wait_report(self, engine, 'TK-1')
+        arrive(sim, 'irrelevant.txt')
+        engine._refresh_readiness()
+        self.assertEqual(sim.runtime['tasks']['TK-1'], original)
+        engine._save()
+        sim.restart()
+        engine = sim.engine
+        self.assertEqual(sim.runtime['tasks']['TK-1'], original)
+        source = arrive(sim, MISSING_SOURCE)
+        engine._refresh_readiness()
+        current = sim.runtime['tasks']['TK-1']
+        self.assertFalse(current['assessment']['current'])
+        self.assertEqual(current['waiting'], original['waiting'])
+        self.assertEqual(current['results'], original['results'])
+        _ended_execution(engine, 'EX-arrival-plan', 'research_plan')
+        assessment = {key: deepcopy(current['assessment'][key]) for key in
+            ('task_id', 'decision', 'reason', 'item_dispositions', 'unresolved')}
+        assessment.update(decision='incomplete', reason='자료 도착 후 잔여 증명을 다음 연구에 넘긴다.', unresolved=[])
+        assessment['item_dispositions'].insert(0, {'obligation_id': 'OB-proof', 'kind': 'open',
+            'evidence_refs': [source['id']]})
+        engine._apply_task_plan({'dispositions': [], 'task_assessments': [assessment]},
+            'EX-arrival-plan', deepcopy(sim.runtime['tasks']), [], evaluation_context=engine._evaluation_context())
+        self.assertEqual(sim.runtime['tasks']['TK-1']['status'], 'waiting')
+        self.assertEqual(sim.runtime['tasks']['TK-1']['waiting']['kind'], 'research_followup')
+        self.assertEqual(sim.runtime['tasks']['TK-1']['waiting']['basis_ref'], 'EX-arrival-plan')
+        self.assertTrue(sim.runtime['tasks']['TK-1']['assessment']['current'])
+        self.assertEqual(sim.runtime['tasks']['TK-1']['results'], original['results'])
+        engine._save()
+        sim.restart()
+        self.assertNotIn(original['waiting'], next(row for row in sim.engine.status()['tasks'] if row['id'] == 'TK-1')['waits'])
 
     def test_snapshot_permission_wait_preserves_the_actual_grant_target_and_next_owner(self):
         from do_math.reporting import snapshot_report, render_human_report

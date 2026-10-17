@@ -23,6 +23,66 @@ from support.storage_records import record_store
 
 
 class PayloadCodecTests(unittest.TestCase):
+    def test_object_editions_share_key_paths_without_repeating_the_coordinate_table(self):
+        source = {f'source-{i}': f'exact source row {i}' for i in range(32)}
+        blobs, refs = {}, {}
+        for index in range(1, 17):
+            # Insert in reverse lexical order: prefix-sharing a sorted flat
+            # table would copy its suffix at every insertion.
+            key = f'coordinate-{17 - index:02d}'
+            refs[key] = source
+            envelope, nodes = encode({'contract_id': 'test', 'family': 'delegation_applications',
+                'record': {'id': 'DA', 'basis': deepcopy(refs)}})
+            blobs.update(nodes)
+            self.assertEqual(decode(envelope, blobs.__getitem__)['basis'], refs)
+        leaves = [json.loads(raw) for path, raw in blobs.items() if '/snapshot-' in path]
+        coordinates = [row['key'] for row in leaves if 'key' in row and row['key'].startswith('coordinate-')]
+        self.assertEqual(sorted(coordinates), sorted(refs))
+        # A full-key trie has at most nine nodes per UTF-8 key byte plus one
+        # for each new coordinate, independent of the referenced source size.
+        self.assertLessEqual(len(leaves), 9 * sum(len(key.encode()) for key in [*source, *refs]) + 2)
+
+    def test_structural_fanout_shares_small_rows_and_restores_independent_values(self):
+        """About 10 s exceeds 0.2 s: full structured fanout is encoded and decoded.
+
+        This checks logical bytes and detached values, not execution speed.
+        """
+        # No string reaches LIMIT. The independent input is made once, before
+        # any repeated basis, owner or pending-seat coordinates are produced.
+        source = {'rows': [{'id': f'row-{i}', 'text': f'exact 원천 {i}', 'flags': [True, None, i]}
+                           for i in range(256)]}
+        source_bytes = len(canonical_json(source))
+        for count in (1, 8):
+            blobs, envelopes = {}, []
+            for index in range(count):
+                for family, record in (
+                    ('delegation_applications', {'id': f'DA-{index}', 'basis': {'target': source, 'references': {'KN': source}}}),
+                    ('intent_imports', {'id': f'II-{index}', 'owner_basis': {'unit': source},
+                                       'application': {'post_owner_basis': {'unit': source}}}),
+                    ('review_inputs', {f'seat-{index}': {'proposal': source, 'restored_messages': [source]}})):
+                    envelope, added = encode({'contract_id': 'test', 'family': family, 'record': deepcopy(record)})
+                    blobs.update(added)
+                    envelopes.append((envelope, record))
+            # Node cells, child hashes and list links: <= 32 source bytes per
+            # byte of these short input rows; 4096 for the six fanout roots per
+            # index. Constants come from this encoding, not Git compression.
+            self.assertLessEqual(sum(map(len, blobs.values())) + sum(len(canonical_json(e)) for e, _ in envelopes),
+                                 32 * source_bytes + 4096 * count)
+            print('R22 codec bytes', {'references': count, 'source': source_bytes,
+                'logical': sum(map(len, blobs.values())) + sum(len(canonical_json(e)) for e, _ in envelopes),
+                'bound': 32 * source_bytes + 4096 * count})
+            for envelope, expected in envelopes:
+                restored = decode(envelope, blobs.__getitem__)
+                self.assertEqual(restored, expected)
+            restored = decode(envelopes[0][0], blobs.__getitem__)
+            restored['basis']['target']['rows'][0]['text'] = 'mutated'
+            self.assertEqual(restored['basis']['references']['KN'], source)
+            self.assertEqual(decode(envelopes[0][0], blobs.__getitem__), envelopes[0][1])
+            # Exact source markers occur once across all graph node blobs.
+            for index in range(256):
+                marker = canonical_json(f'exact 원천 {index}').strip()
+                self.assertEqual(sum(raw.count(marker) for raw in blobs.values()), 1)
+
     def test_multiple_payload_references_follow_canonical_key_order(self):
         value = {'z': 'z' * 70000, 'a': 'a' * 70000}
         envelope, blobs = encode({'contract_id': 'test', 'family': 'test', 'record': seal_large(value)})
@@ -100,6 +160,12 @@ class PayloadEncodingTests(unittest.TestCase):
         # The reference's path names the old digest, so the reference itself is refused.
         with self.assertRaisesRegex(ValueError, '^invalid immutable payload reference$'):
             payloads.decode(bad, read)
+        # A graph's text cell shares the existing large-text blob with an
+        # ordinary leaf; structural sharing must not inline that original.
+        mixed = payloads.seal_large({'id': 'DA', 'title': text, 'basis': {'large': text}})
+        graph, graph_blobs = payloads.encode({'contract_id': 'test', 'family': 'delegation_applications', 'record': mixed})
+        self.assertEqual(sum('/payload-' in path for path in graph_blobs), 1)
+        self.assertEqual(payloads.decode(graph, graph_blobs.__getitem__), mixed)
 
 
 class PayloadStorageTests(unittest.TestCase):

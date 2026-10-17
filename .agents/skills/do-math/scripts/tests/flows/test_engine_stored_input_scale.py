@@ -14,7 +14,8 @@ from do_math import contracts, input_tool, submission
 from do_math.canonical import canonical_json, exact_content_hash
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.context_store import prepare_role_input, verify_manifest_artifacts
-from support.engine_size_cases import stored_scale_sim, TASK_COUNT, HISTORY_PER_TASK, PROFILE_COUNT
+from support.engine_size_cases import assert_input_budget, stored_scale_sim, TASK_COUNT, HISTORY_PER_TASK, PROFILE_COUNT
+from support.role_input_requirements import assert_judgment_inputs
 from support.engine_tool_output import invoke_tool
 from support.engine_cli_journey import Journey
 from support.trust_inputs import trust_fixture
@@ -99,8 +100,9 @@ class StoredInputScaleTests(unittest.TestCase):
             packed = prepare_role_input(context, instance=sim.instance, runtime=sim.runtime,
                 role='maintenance', profile=profile, snapshot=sim.engine.head, workspace=root,
                 activity_id=action['id'], artifact_prefix='runtime/artifacts/BA-manifest', clock=sim.clock)
-            self.assertIsNone(packed['overflow'], packed['overflow'])
-            self.assertLessEqual(packed['actual_bytes'], DEFAULT_CONFIG['max_input_bytes'])
+            self.assertEqual(profile['input']['max_input_bytes'], DEFAULT_CONFIG['max_input_bytes'])
+            assert_input_budget(self, packed, 'maintenance', profile)
+            assert_judgment_inputs(self, 'maintenance', packed, root, producer_context=context)
             verify_manifest_artifacts(packed['manifest'], packed['artifacts'].__getitem__)
             submission.install_tools(root, packed['validation_context'], contracts.schema_for('maintenance'), None, clock=sim.clock)
             code, output = invoke_tool(input_tool.read_main, root,
@@ -118,6 +120,13 @@ class StoredInputScaleTests(unittest.TestCase):
         self.assertEqual([len(t['results']) for t in runtime['tasks'].values()], [HISTORY_PER_TASK] * TASK_COUNT)
         current = {ref['id'] for refs in instance['role_profile_refs'].values() for ref in refs}
         self.assertEqual(len(current), PROFILE_COUNT)
+        store = sim.engine.store
+        paths = store.list_files('research/', head) + store.list_files('runtime/', head)
+        documents = store.read_many(paths, head)
+        # Real task/execution/profile producers and registered metadata share the family codec.
+        # Charge every serialized file, including both manifests and referenced payloads.
+        logical = canonical_json({'instance': instance, 'runtime': runtime})
+        self.assertLessEqual(sum(map(len, documents.values())), 2 * len(logical) + 1024 * len(paths))
         for role in ('research_preparation', 'research_plan'):
             with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
@@ -128,21 +137,24 @@ class StoredInputScaleTests(unittest.TestCase):
                 packaged = prepare_role_input(context, instance=instance, runtime=runtime,
                     role=role, profile=profile, snapshot=head, workspace=root, activity_id=action['id'],
                     artifact_prefix='runtime/artifacts/BA-size-' + role, clock=sim.clock)
-                self.assertIsNone(packaged['overflow'], packaged['overflow'])
-                self.assertLessEqual(len(packaged['prompt'].encode('utf-8')), DEFAULT_CONFIG['max_input_bytes'])
+                self.assertEqual(profile['input']['max_input_bytes'], DEFAULT_CONFIG['max_input_bytes'])
+                assert_input_budget(self, packaged, role, profile)
+                assert_judgment_inputs(self, role, packaged, root, producer_context=context)
                 verify_manifest_artifacts(packaged['manifest'], packaged['artifacts'].__getitem__)
                 fixed = {**deepcopy(packaged['validation_context']), 'record_store': {
                     'repository': str(sim.repository), 'instance_id': sim.instance_id}}
                 submission.install_tools(root, fixed, contracts.schema_for(role), None, clock=sim.clock)
-                arguments = [part for identifier in runtime['tasks'] for part in ('--id', identifier)]
+                identifiers = [*runtime['tasks'], *sorted(current)]
+                arguments = [part for identifier in identifiers for part in ('--id', identifier)]
                 code, raw = invoke_tool(input_tool.read_main, root, arguments,
                                        ports=sim.ports, environment=sim.environment)
                 answer = json.loads(raw)
                 self.assertEqual((code, answer['status'], answer['snapshot']), (0, 'ok', head))
-                self.assertEqual([r['record'] for r in answer['records']], list(runtime['tasks'].values()))
+                originals = [*runtime['tasks'].values(), *[instance['execution_profiles'][key] for key in sorted(current)]]
+                self.assertEqual([r['record'] for r in answer['records']], originals)
                 # 출력 크기는 요청한 정상 레코드 전체와 각 행의 메타데이터 한 벌로 제한한다.
-                source_bytes = sum(len(canonical_json(t)) for t in runtime['tasks'].values())
-                self.assertLessEqual(len(raw), 2 * source_bytes + 1024 * TASK_COUNT)
+                source_bytes = sum(len(canonical_json(row)) for row in originals)
+                self.assertLessEqual(len(raw), 2 * source_bytes + 1024 * len(identifiers))
                 rows = [json.loads(line) for line in (root / 'checks/reads.jsonl').read_bytes().splitlines()]
-                self.assertEqual([r['request'] for r in rows], list(runtime['tasks']))
-                self.assertEqual([r['status'] for r in rows], ['ok'] * TASK_COUNT)
+                self.assertEqual([r['request'] for r in rows], identifiers)
+                self.assertEqual([r['status'] for r in rows], ['ok'] * len(identifiers))

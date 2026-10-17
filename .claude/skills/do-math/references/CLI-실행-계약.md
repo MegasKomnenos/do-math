@@ -2,7 +2,7 @@
 
 초기화의 검사 분리, 큰 불변 payload의 저장 코덱, `launch_ticket`, `quiesce`/`release-quiesce`, 신뢰 환경의 툴체인 기록·재기록, `timeline --include-operations`는 [초기화 효율과 정비](초기화-효율과-정비.md)의 현행 계약을 함께 따른다. `maintenance_fence`와 `operation_progress`는 각각 정비 상태와 별도 로컬 진행 관측이며 수학적 완료 판정이 아니다.
 
-이 문서는 현행 do-math의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/9`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
+이 문서는 현행 do-math의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/10`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
 
 역할 응답, 기록 저장과 소비 API는 정확한 판본·해시를 대조하며, 옛 필드를 암묵 변환해 현재 계약으로 취급하지 않는다.
 
@@ -47,6 +47,8 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 
 동일 인스턴스의 writer lock을 다른 실행기가 보유하면 요청은 inbox에 남고 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 다음 실행기 제어 처리에서 전제가 달라졌으면 해당 요청은 `effect="rejected"`와 이유를 남기고 소비된다. 접수 사실은 적용·실행·성공을 뜻하지 않는다.
 
+처리 결과가 아직 게시되지 않은 접수 요청은 `effect="pending engine processing"`, `next_owner="engine"`으로 반환한다. 접수 뒤 내부 계약 오류가 나면 같은 `request_id`와 `kind="contract_error"`, `next_owner="maintenance"`를 반환한다. JSON·텍스트 입력 파일은 UTF-8로 읽으며, 읽기·디코딩·JSON 해석 오류는 저장소에 접수하기 전에 `kind="input_error"`로 반환한다.
+
 공개 Python 제어와 CLI는 같은 payload 구조 검사를 사용한다. `config`는 객체이며, 생략을 뜻하는 Python `None`만 빈 객체로 처리한다. 중첩 결정·과거 실행 복구·신뢰 환경 등의 값도 사용 전에 해당 구조를 확인한다. 수신자는 inbox의 식별 가능한 요청을 다시 검사하고, 잘못된 payload를 거절 영수증과 함께 한 번 정산한 뒤 다음 요청을 처리한다. 입력 구조 검사는 현재 권한·참조·환경 관측을 대신하지 않는다. JSON 해석이나 요청 정체성 자체가 손상된 파일은 정상 사용자 요청으로 간주하지 않는다.
 
 `pause`, `resume`, `close`, `quiesce`, `release-quiesce`, `input`, `configure`, `request`, `decision`, `knowledge`, `trust`, `external`, `conversation`, `source`는 제어 요청의 재전송과 새 적용을 구별한다. `--request-id`를 생략하면 인스턴스·명령·출처·원문·payload·선택적 `--idempotency-key`에서 요청 ID를 계산한다. `pause`와 `resume`은 상태를 오가는 제어이므로, `--idempotency-key` 없이 보낸 요청의 ID에는 마지막으로 접수된 반대 제어(`pause`에는 `resume`, `resume`에는 `pause`)의 요청 ID도 들어간다. 아직 처리되지 않은 반대 제어도 접수된 것으로 센다. 같은 내용의 재전송은 이미 처리한 효과를 반복하지 않고 최초 영수증을 `replayed=true`로 돌려준다. 그래서 재개 뒤 같은 이유로 다시 보낸 정지는 새 요청으로 적용되고, 그 사이에 반대 제어가 없는 정지의 재전송은 재생된다. 이 영수증의 상태와 snapshot은 현재 상태가 아니므로 현재 상태는 `status`로 조회한다.
@@ -55,9 +57,11 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 
 ## 현재 저장과 작업 경로
 
-인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다. 각 상태 commit은 직전 상태 commit 하나를 부모로 가지며, 저장소는 등록된 기록군을 `research/<family>/...`와 `runtime/<family>/...` 아래에 분리해 저장한다. `runtime/artifacts/<bundle_id>/...`의 불변 산출은 추가 전용으로 보존한다. 정확한 기록군·shape·스키마는 설치본의 `do-math-state/9` manifest가 소유한다.
+인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다. 각 상태 commit은 직전 상태 commit 하나를 부모로 가지며, 저장소는 등록된 기록군을 `research/<family>/...`와 `runtime/<family>/...` 아래에 분리해 저장한다. `runtime/artifacts/<bundle_id>/...`의 불변 산출은 추가 전용으로 보존한다. 정확한 기록군·shape·스키마는 설치본의 `do-math-state/10` manifest가 소유한다.
 
 일시적으로 재구성되는 `instance`·`runtime` 객체는 코드 내부 view이며 그 자체로 정본에 저장되지 않는다. 등록되지 않은 기록군, 알려지지 않은 필드, 중복 전역 ID와 잘못된 참조는 공개 전에 거부된다. 사건 기록군 `events`는 목록 형태로만 저장한다.
+
+저장 코덱 `scripts/do_math/payloads.py`는 큰 문자열과 반복되는 불변 구조를 내용 해시로 공유한다. `review_cycles`, `delegation_applications`, `intent_imports`의 최상위 객체·목록 필드와 `review_inputs`의 자리별 문맥은 `runtime/artifacts/snapshot-<sha256>/value.json`의 구조 노드로 분리하고, 큰 문자열은 `runtime/artifacts/payload-<sha256>/value.json`에 둔다. 읽을 때 바이트 수·해시·정규 JSON과 구조 참조를 검사한 뒤 원래 값과 목록 순서를 복원한다. 이 저장 해시는 제안·근거의 논리 해시를 대체하지 않으며, 복원된 객체·목록은 서로 독립적으로 변경할 수 있다. 자세한 정의는 [이음새 정본 7절](../scripts/이음새-정본.md#7-검토위임해석의-불변-구조-저장)을 따른다.
 
 artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다. 대표 경로는 다음과 같다.
 
@@ -124,6 +128,20 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 | `closed` | 범위 처분 근거로 닫은 종결 과제 |
 
 `readiness`는 배정 대기를 제외한 계약·근거 평가다. 이것만으로 현재 선택 모집단이라고 판단하지 않는다. 실행 중이거나 종결된 과제에는 `readiness`가 null이다. 인스턴스가 `closed`나 `completed`이면 새 배정이 없으므로 모든 과제의 `readiness`가 null이고, 과제의 `status`는 종결 시점의 값으로 남는다. 결과 판정이 필요하면 `assessment_pending=true`이며 계획 입력의 `returned_task_ids`가 전건을 지정한다. `ready`, `performing`, `assessing`, `needs_revision`은 이 API가 반환하는 과제 상태값이 아니다.
+
+과제에 저장된 대기는 `status.tasks[].waits`의 사유(`reason`), 대상(`target_refs`), 다음 담당자(`next_owner`), 원 요청 또는 판정 실행(`basis_ref`)으로 확인한다. 사람 출력의 `wait:` JSON도 같은 값이다.
+
+| 저장 과제 대기 | 이어지는 조건과 담당자 |
+|---|---|
+| `contract_review` | 선택한 계약이나 승인 근거가 바뀌었다. 준비·계약검토가 현재 계약을 독립 승인하면 해소된다 |
+| `contract_revision` | 계약 개정 요청 또는 검토 반려·미해결이다. 연구 준비가 새 계약을 작성하고 독립 검토가 승인한다 |
+| `assessment` | 개정 수행 결과를 연구 계획이 독립 평가한다. 수행 결과가 waiting이라는 사실만으로 이 대기를 강제하지 않는다 |
+| `assessment_input` | 원 평가가 지정한 자료를 기다린다. 해당 자료 도착 뒤 원 수행 결과를 보존하고 새 평가를 받는다 |
+| `research_followup` | 불완전 평가의 잔여 의무를 연구 계획이 이어 갈 현재 과제로 선택한다 |
+
+준비 상태의 permission·condition·contract_revision 표시와 이 저장 대기는 구별한다. 자료 도착이나 원 실행의 종료가 과제 완료를 뜻하지 않는다. 개정 행동의 `revision_dependency`가 정확한 처분·위임·대상 종결로 해소되면 원 활동도 남은 요청·실행·의무에 맞게 정리된다. 활동의 finished는 미해결 결과를 보존할 수 있다.
+
+학술 과제의 검토 반려는 사용자 계약을 보존하면서 평가·관찰 규칙을 다시 준비한다. 이 전용 준비는 요청의 `assessment_targets`·`observation_rule_targets`로 과제에 연결된다. 같은 status 과제 행에서 준비 역할의 next_owner와 queued 요청 ID를 확인하고, 준비가 실행 중이면 active_records의 실제 실행 ID로 확인한다.
 
 `dispatch_waits`는 미시작 queue 요청의 보존된 대기 사유다. `capacity`는 동시 슬롯, `host_capacity`는 호스트 자원이다. 현재 예약 충돌은 제약 종류와 좌표를 함께 생산한다. 알려지지 않은 제약 종류를 새 대기로 대신 해석하지 않는다. 각 행의 `next_owner`, `profile_ref`, `constraint_id` 또는 `provider`로 후속을 확인한다. `status.budget`은 현행 설정의 요약이며 요청의 사유는 그 요청에 고정된 프로필·제약 판본을 따른다. 한도 변경은 재평가를 열지만 고정 프로필을 자동 교체하지 않는다. 과거 snapshot 조회는 새 예약 검사를 실행하지 않는다.
 
@@ -289,6 +307,9 @@ init --repository PATH [--create-repository] --workspace PATH
 
 - `run [--max-steps N] [--watch] [--until-active]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 쓰기 전에는 현재 기록이 참조하는 보존 artifact가 있고 저장 길이가 기록과 같은지 확인한다. 제어 적용도 같은 사전 점검을 거친다. 전 바이트 대조는 `check`가 맡는다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 슬롯을 예약하지 않는 운영 역할로 계속 처리하며 일반 step 수에 넣지 않는다.
 - `--until-active`는 lifecycle이 active가 되면 연구 action을 배정하기 전에 반환한다. 이미 active인 인스턴스에도 새 연구를 시작하지 않는다. 누락 관문이 있는 반환은 활성화 성공이 아니다.
+- `run --installation-manifest PATH`는 [`verify_snapshot`](../scripts/operator_bootstrap.py)이 검증하는 동결 설치 manifest를 받아 live 설치의 전체 파일 해시와 독립 대조한다. manifest의 원 설치 경로가 현재 설치 경로와 다르거나 동결본이 손상됐으면 입력/도구 오류로 끝나며 배정하지 않는다. 파일 차이·관측 불가는 `startup.bootstrap.comparison=different|unavailable`과 차이/오류로 기록하고 배정 전에 pause한다. 종결 인스턴스는 종결을 유지한다. 경로를 생략하면 `no_recorded_manifest`이며 독립 대조 성공을 뜻하지 않는다. run의 JSON 결과 `startup`과 `<workspace>/execution-control/<instance>/startup.json`은 같은 기동 근거다. `manifest_path`, 실제 설치/Git 관측 `installation`, 적재 패키지 위치 `runtime_root`, 진행 중 검사 기준 `polling_edition`, 처리 시각 `observed_at`을 보존한다. 생성자와 읽기 전용 status는 이 해시 수집을 실행하지 않는다.
+
+run은 inbox를 적용한 뒤 이전 owner의 실행을 복구하고 upkeep을 수행한다. 복구 전 옛 running 행을 예정 검토의 live 대상으로 삼지 않는다. 제어만 처리하는 process_controls는 실행 생존을 복구하지 않으므로 due 예약의 queue 생산을 실행 owner에 남긴다. tracker가 소유한 periodic/explicit 검토는 caught-up tick의 수신 시각/단조 시각 규칙을 쓰고, tracker 없는 수락된 continue 예약은 실행 중 upkeep이 처리 UTC와 비교해 한 번 queue에 넣는다. stopping/ended 대상의 옛 예약은 신규 검토를 만들지 않고 원 실행의 근거로 보존한다. 대화 임대는 관찰 행의 수신 시각과 구별하여 실제 처리 UTC에서 `expiry > now`로 판단하며, 재시작도 이 엄격 경계와 상실 세대·명시 resume 권한을 유지한다.
 - `select-profile --role ROLE [--task TK-ID] [--snapshot OID]`는 현재 역할 하한·과제 평가·허용 프로필을 실제 선택과 같은 규칙으로 대조한다. 반환은 선택과 정확한 프로필 원문이며 실행·채택은 하지 않는다.
 - `prepare-import-approval --import-id IM-ID [--snapshot OID] --output NEW-PATH`는 독립 검사를 통과한 현행 수입의 정확한 승인 좌표를 새 파일로 생성한다. 파일 생성은 승인·적용이 아니며, 실제 결정은 기존 `decision --file`을 사용한다.
 - `status [--json] [--snapshot OID]`은 같은 Git snapshot에서 연구 상태·예약·예산·공급자 대기를 재구성한다. `config_sha256`은 그 snapshot의 설정 내용 해시이며, 초기화의 probe와 채택이 대상 설정을 지정할 때 쓴다. 저장된 기록을 보고하며, `inspection`은 기록 관계와 참조 artifact의 존재·저장 길이만 확인한다. 보존 artifact를 다시 읽는 제출 검사 진단은 계산하지 않고 `submission_checks.status=not_evaluated`로 둔다. 실제 새 배정은 최신 머리에서 권한과 여유를 다시 검사하고 예약한다. 별도 운영 로그나 현장 프로세스 관측을 함께 읽을 때에는 그 관측 시각과 범위를 구별한다. JSON 필드는 README의 운영 표를 따른다. `--snapshot`을 주면 그 과거 snapshot을 같은 필드로 재구성하며, 조회 순간에 이 호스트에서 관측하는 필드는 null이다.
@@ -323,9 +344,15 @@ workspace는 인스턴스에 보존된 경로와 같아야 한다. `install`은 
 
 `check`는 상태·기록·HOLD·예약 상태를 모델 없이 감독하고 실행 가능할 때 엔진 작업을 요청한다. 엔진 상태를 읽지 못했거나 보존된 최근 엔진 실패 또는 수락된 설치 결함 진단이 있을 때 실패 전용 설치 복구를 열 수 있다. `probe`는 같은 상태를 읽되 복구나 예약 변경을 하지 않고 `model_called=false` 또는 실패 증거를 반환한다. `engine`은 예약 작업에서 연구를 운전하는 진입점이며 HOLD·사용자 정지·현재 상태를 다시 검사한다. `hold`는 고유 ID의 HOLD와 사용자 pause를 만들고, `release`는 같은 HOLD가 만든 현재 사용자 정지에만 재개를 적용한다.
 
+wake 예약 취소에 실패한 `hold`도 HOLD를 유지한다. 응답의 `wake_cleanup`은 `status="failed"`, 원오류 `error`, `hold_still_blocks_wake=true`를 제공하며, 이후 `wake`는 `outcome="held"`를 반환한다.
+
 예약은 현재 Windows 사용자의 Interactive 로그인, IgnoreNew, StartWhenAvailable로 구성한다. 작업 이름은 저장소·인스턴스로 구별한다. 운영과 연구 프로세스는 서로 별도 예약 작업에 속한다. 운영 예약의 시간 상한은 [설정 계약](#config-list)의 독립 운영 설명대로 운영 timeout에 종료 여유를 더한 값이다. 연구 예약은 `ExecutionTimeLimit=PT0S`로 실행하며, 두 작업의 중복 억제와 연구 저장소의 writer lock을 함께 사용한다.
 
 예약 bootstrap은 설치 시점의 파일 manifest·해시에 고정되며 실행할 때 재분석 지점과 경로를 검사한다. 실패 복구는 writer lock과 설치 유지보수 lock, 종료된 선행 실행, 고정 복구 프로필·능력 증거와 착수 조건(공급자 대기, 설정된 호스트 자원)을 검사한 뒤 live 설치만 수리한다. 연구 기록·사용자 설정·예약 작업을 고치지 않고, 설치 정적 검사가 통과한 경우에만 lock을 놓은 뒤 엔진 재시작을 요청한다. 이 경계는 같은 사용자 OS 권한 안의 지시 계약이지 인증된 호출자나 강한 격리가 아니다. 로그와 복구 근거는 `workspace/operator/` 아래에 있다. 복구 AI의 호출·CLI 사용량은 engine 내부 운영 호출과 구별하며, 독립 운영 계약은 `계약/독립-운영.md`가 소유하고 내부 `operational_review`를 대신하지 않는다.
+
+동결 bootstrap은 입구 옆 `bootstrap-manifest.json`을 검증한 뒤 그 사본의 `scheduled_operator`를 적재하고 원 설치 경로와 manifest 경로를 명시적으로 전달한다. `scheduled_operator.main(...)` → `execute`는 이 `installation_manifest`로 기동 근거를 만들고 `run_engine`에 같은 경로를 넘긴다. 호출자가 비교 결과를 따로 공급하거나 `run_engine`이 runtime 옆 manifest를 재탐색하지 않는다. package API에서 경로를 생략하면 live/no_recorded_manifest다. 검증된 manifest의 원 설치 경로가 실행 대상과 같아야 하며, live `scripts/do_math.py run` 명령의 `--installation-manifest`로 그 파일의 절대 경로를 넘긴다. bootstrap의 import 전 검증과 엔진 시작 직전 `run_engine`의 검증은 각각 적재할 package와 실행할 child를 보호한다. `operator/startup.json`의 `runtime_root`는 실제 적재 사본이고 같은 파일의 `installation` 객체 안 `installation_root`는 원 설치이므로 서로 다를 수 있다. HOLD에서도 기동 근거는 기록하고 작업은 시작하지 않는다.
+
+직접 interpreter 입구의 import·dispatch는 T4가 맡는다. `codex_adapter.LocalCLIAdapter.start`의 두 worker 파일 명령은 [test_provider_worker_roots.py](../scripts/tests/boundary/test_provider_worker_roots.py)가 usage·실제 REQUEST 처리와 해시/신원·CLI 종료 기록을 확인한다. `control_server.mcp_server_config(...)`의 MCP 파일 명령과 bare transport import는 [test_provider_control_server.py](../scripts/tests/boundary/test_provider_control_server.py), 그 입구의 `submit_draft` import/배달은 [test_submission_mcp_server.py](../scripts/tests/boundary/test_submission_mcp_server.py)가 확인한다. 독립 bootstrap의 live/frozen package 적재·HOLD 기동 기록은 [test_operator_bootstrap.py](../scripts/tests/boundary/test_operator_bootstrap.py), 설치 사본의 직접 probe 입구는 [test_operator_standalone.py](../scripts/tests/boundary/test_operator_standalone.py)이 확인한다. 이 새 interpreter 전용 구간만 설계 5.5의 같은 행 사유로 T3에서 제외한다. import 선택 조건의 도달한 반대쪽 arc도 분모에서 빠질 수 있지만, package 처리 함수·입력 검사·반려·영수증·manifest 검증은 T3에 남는다. 원본 package의 명시 manifest 전달은 [test_operator_supervision_contract.py](../scripts/tests/sim/test_operator_supervision_contract.py)가 확인하며, T4 child/동결 파일의 동작 증거를 T3 raw 도달·함수 진입·선택 색인에 합치지 않는다.
 
 ## 구조화 제어 JSON
 
@@ -437,6 +464,14 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 ```
 
 철회는 해당 grant를 쓰는 미종료 실행에 정지 요청을 남기고 새 queue 요청을 제거한다. 수학 판정을 직접 바꾸지는 않는다.
+
+#### 검토 자리 교체와 사례 위임
+
+현재 영구 복구 실패가 기록된 검토 자리는 공개 `request`의 `config.role="maintenance"`, `config.review_replacement={action, grant_id}`로 명시적으로 교체한다. `action`은 조회한 현재 대상·cycle·stage·round·slot을 그대로 사용한다. 실행기는 현재 사용자 원문을 `governance_sources[request.id]`로 보존하고, `governance.apply_decision(...)`으로 `kind="review_replacement"`인 사용자 결정을 만든다. 그 결정은 `change` 안의 `allowed_action`, 정확한 실패 인덱스·원인까지 포함한 `effect`, 대상 `affected`, 실제 `grant_id`와 원문 해시를 보존한다. 이미 봉인된 자리나 현재 실패가 아닌 자리는 원결정을 만들지 않는다. 공개 `decision`의 `change={kind:"review_replacement", allowed_action, grant_id}`도 같은 교체 경계를 사용한다.
+
+그 결정을 유사한 후속 사례에 재사용하려면 별도의 사용자 `delegation` 결정에서 같은 `decision_kind="review_replacement"`와 실제 `original_decision_id`, 포함·제외 대상, 자원·외부 효과 한계와 만료를 승인한다. 승인 결정의 `original_decision_sha256`은 당시 원결정 전체에 결합하며, 이후 원결정이나 승인 원문이 달라지면 재사용을 거부한다. 기계 실행 grant만으로 이 사례 비교를 통과한 것으로 간주하지 않는다.
+
+후속 `request`의 `review_replacement`에는 현재 `action`, 기계 `grant_id`, `delegation_id`와 `case`를 준다. 사례는 `id`, `decision_kind`, `target_id`, `external_effects`, `resources`, `effect`, `basis_refs`를 가지며, `effect`는 정확한 `review_cycle_id`, `stage`, `slot`, `round`, `replacement_for`, `continuity_break_cause`다. `basis_refs`에는 현재 cycle ID가 있어야 한다. 두 독립 의도 판단은 동일한 봉인 입력을 받고 서로의 판정을 받지 않는다. 양쪽 `within_scope`일 때만 현재 권한·자리를 다시 검사해 실제 교체를 적용한다. `outside_scope`나 `unresolved`가 있으면 교체하지 않고 해당 대상의 사용자 질문을 남긴다. 같은 사례 ID의 같은 요청은 진행 중인 판단이나 적용 영수증을 재사용하며, 다른 내용이나 바뀐 cycle은 반려한다. 사용자 pause와 종결 권한은 이 경로에서도 그대로 적용된다.
 
 #### 과제 범위
 
@@ -994,7 +1029,7 @@ Codex는 CLI가 쓴 최종 파일 `final.txt`를 final 바이트로 사용한다
 
 `lineage_id`는 같은 의무의 수리·재시도를 연결한다. `refresh`는 전제 변경과 원 실행을, `recovery`는 복구할 원 실행을 식별한다. 원 응답·파일·체크포인트와 실패 이력은 보존한다.
 
-`question_links`는 원문 위치·발생 실행·owner(user/research/operations/unclassified)·영향 대상·status(open/resolved/superseded)·해소 근거다. 해소 근거는 해소마다 `{kind, resolution_ref, affected_ids}`와 선택적 `evidence`를 쌓는 `resolution_history`로 남는다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."],"target_ids":["실제-미해소-대상-ID"]}`다. `target_ids`는 비어 있지 않은 목록이며, 열거한 각 질문의 `unresolved_target_ids`(그 필드가 없으면 `target_ids`) 중 이번 답으로 실제 해소하는 대상만 넣는다. 서로 다른 대상 집합의 질문은 각각 답한다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
+`question_links`는 원문 위치·발생 실행·owner(user/research/operations)·영향 대상·status(open/resolved/superseded)·해소 근거다. 해소 근거는 해소마다 `{kind, resolution_ref, affected_ids}`와 선택적 `evidence`를 쌓는 `resolution_history`로 남는다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."],"target_ids":["실제-미해소-대상-ID"]}`다. `target_ids`는 비어 있지 않은 목록이며, 열거한 각 질문의 `unresolved_target_ids` 중 이번 답으로 실제 해소하는 대상만 넣는다. 서로 다른 대상 집합의 질문은 각각 답한다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
 
 `claude_only_assigned_model`의 효과와 공급자 한도의 대기·재관찰 절차는 [모델과 실행예산](모델과-실행예산.md)의 「인스턴스의 Claude 모델 잠금과 공급자 대기」 절이 정한다. 기록은 같은 Git 원장의 `provider_waits`와 예약에 남는다. 인증 문맥 하나를 사용하는 인스턴스 안에서 `waiting/checking/available`을 구별하며, 오래된 정상 응답으로 새로운 제한 generation을 해제하지 않는다. status `provider_waits`의 공급자 행은 지금 새 호출을 허용하는지를 `open`으로 보여 준다.
 
@@ -1016,3 +1051,9 @@ timeline --repository PATH --instance RI-ID [--snapshot OID]
 `input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 목록은 `source_ref`의 원문으로 회수하고 ready·returned 전건과 제출 검사기의 원 집합을 유지한다.
 
 `status.operating_summary`는 같은 snapshot에서 lifecycle, 실행·목표 상태, 최상위 차단 원인과 다음 소유자, 지속 정책, workspace, grant 만료, 감독 설정을 함께 제공한다. 실제 프로세스와 예약의 관측은 `operator status` 및 호스트 정보로 별도 확인한다.
+
+`status.question_links`는 `question_engine.question_view(...)`가 같은 snapshot의 원문 위치에서 복원한 질문 본문과 연결 기록 전건이다. 사람용 status는 이 중 status가 open인 질문을 과제·대상 유무와 관계없이 표시한다. 질문 ID, 본문, 다음 소유자(owner), 차단 여부, 배정 사유(routing_reason), 발생 실행·원문 좌표, 원 대상(target_ids)과 남은 대상(unresolved_target_ids)을 함께 보여 준다. 부분 답변 뒤에는 남은 대상만 답변을 기다린다. resolved·superseded 질문은 JSON 이력에 남고 현재 답해야 할 질문으로 출력하지 않는다. 원문을 복원하지 못하면 text=null과 source_status=unavailable을 표시한다. 기존 `status.questions`는 user 소유의 open 질문 본문 목록을 유지한다.
+
+`status.repetition_holds`는 `revisions.active_repetition_holds(...)`가 반환하는 현재 보류 기록의 목록이다. 정본 공급자의 키 순서를 유지하며 tuple 키는 JSON에 내보내지 않는다. 각 행은 lineage·lineage_id, event_ref, count·limit, owner·next_owner, reason, release_condition과 원 question을 보존한다. 사람용 출력은 계보·계보 ID, 횟수/한도, 다음 소유자, 사유, 원 사건 참조와 해소 조건을 표시한다. 과제가 없어도 표시하며, 정확한 공개 repetition_continue로 해소된 보류는 현재 목록과 사람용 출력에서 빠지고 원 이력은 유지된다. 이 목록은 독립 보류의 조회이며 operating_summary의 최상위 차단 우선순위를 바꾸지 않는다.
+
+사용자 pause의 operating_summary 차단 행은 `status.user_pause`의 reason·request_id·created_at를 함께 보존하며 사람용 출력에도 세 값을 표시한다. 운영자의 resume 반려 후에도 같은 요청을 가리키고 명시적인 사용자 resume 뒤에는 현재 pause 표시가 사라진다. 사람용 출력은 전달받은 report만 읽으며 표시를 위해 상태·호스트·시계를 다시 조회하지 않는다.

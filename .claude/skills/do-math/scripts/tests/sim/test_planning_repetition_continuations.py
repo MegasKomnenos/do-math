@@ -220,32 +220,19 @@ class RepetitionContinuationTests(unittest.TestCase):
         self.assertEqual(next(q for q in self.sim.runtime['question_links'] if q['id'] == question['id']), closed)
 
     def test_waiting_owner_becomes_ready_on_its_exact_continuation(self):
-        import ast
-        import inspect
-        import textwrap
         from do_math import governance
         self.sim.step()
         self.assertEqual(self.sim.runtime['status'], 'waiting')
         self.action = next(a for a in self.sim.runtime['queue'] if a['id'] == self.change['allowed_action']['id'])
         self.change['allowed_action'] = revisions.action_scope(self.action)
         source_ref = next(row['id'] for row in self.sim.instance['governance_sources'].values() if row['origin'] == 'user')
-        from support.planning_paths import ExecutedLines
-        source, first_line = inspect.getsourcelines(revisions.continue_repetition)
-        nodes = list(ast.walk(ast.parse(textwrap.dedent(''.join(source)))))
-        guard = next(node for node in nodes if isinstance(node, ast.If) and
-            any(isinstance(value, ast.Constant) and value.value == 'repetition_hold'
-                for value in ast.walk(node.test)))
-        following = next(node for node in nodes if isinstance(node, ast.ImportFrom) and node.module == 'questions')
-        guarded_lines = {first_line + node.lineno - 1 for statement in guard.body for node in ast.walk(statement)
-                         if isinstance(node, ast.stmt)}
         self.assertNotIn('waiting_actions', self.sim.runtime)
-        with ExecutedLines(revisions.continue_repetition) as reached:
-            instance, runtime, decision = governance.apply_decision(self.sim.instance, self.sim.runtime, self.change,
-                source_ref=source_ref, clock=self.sim.ports.clock)
-        self.assertTrue(reached.crossed(first_line + guard.lineno - 1, first_line + following.lineno - 1), reached.lines)
-        self.assertFalse(guarded_lines & set(reached.lines))
+        instance, runtime, decision = governance.apply_decision(self.sim.instance, self.sim.runtime, self.change,
+            source_ref=source_ref, clock=self.sim.ports.clock)
         self.assertEqual(runtime['status'], 'ready')
         self.assertIsNone(revisions.repetition_hold(runtime, 'contract_revision', self.change['lineage_id']))
+        continued = next(row for row in runtime['queue'] if row['id'] == self.action['id'])
+        self.assertEqual(revisions.action_scope(continued), self.change['allowed_action'])
         self.assertEqual(decision['affected'], [self.change['hold_event_ref'], self.action['id']])
         self.engine.instance, self.engine.runtime = instance, runtime
         self.engine._save()

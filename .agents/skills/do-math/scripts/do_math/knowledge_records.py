@@ -119,9 +119,8 @@ def proposal_view(instance, knowledge_id):
     if formal.get("trust_environment_id"):
         record["formal"]["trust_environment_id"] = formal["trust_environment_id"]
         # A judgment compares the axioms with those its trust environment allows.
-        environment = instance.get("trust_environments", {}).get(formal["trust_environment_id"], {})
-        if "allowed_axioms" in environment:
-            record["formal"].setdefault("allowed_axioms", deepcopy(environment["allowed_axioms"]))
+        environment = instance["trust_environments"][formal["trust_environment_id"]]
+        record["formal"].setdefault("allowed_axioms", deepcopy(environment["allowed_axioms"]))
     record["status"] = "verified" if usable_links(instance, knowledge_id) else "candidate"
     return record
 

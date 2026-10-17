@@ -21,6 +21,7 @@ from support.engine_lifecycle import applied
 from support.fakes.host import FakeHost
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template
+from support.wait_reporting import assert_wait_report
 
 setUpModule = warm_template
 
@@ -131,6 +132,7 @@ class SubmissionPublicationWaitTests(unittest.TestCase):
             (wait,) = waiting(sim)
             self.assertEqual((wait['kind'], wait['next_owner']), ('submission_publication', 'engine'))
             self.assertEqual(wait['detail']['environment_id'], environment['id'])
+            assert_wait_report(self, engine, wait['action']['id'])
             execution = engine.runtime['executions'][wait['execution_id']]
             self.assertEqual(execution['role'], 'identity_review')
             sealed_ref = execution['submission_intent']['output_ref']
@@ -148,6 +150,9 @@ class SubmissionPublicationWaitTests(unittest.TestCase):
             self.assertNotIn(wait['action']['id'], engine.runtime['waiting_actions'])
             self.assertEqual(engine.runtime['executions'][execution['id']]['outcome'], 'output_accepted')
             self.assertEqual(engine.store.read(sealed_ref), submitted)
+            released = deepcopy(engine.store.load())
+            engine._retry_submission_publications()
+            self.assertEqual(engine.store.load(), released)
             with ObservedCalls(identity=FakeHost.toolchain_identity_errors,
                                scan=records.observe_fingerprint) as calls:
                 engine.status()

@@ -14,6 +14,7 @@ SCRIPTS = Path(__file__).resolve().parents[2]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 import run_tests
+from support.runner_contracts import runner_tree
 
 
 def _case(module):
@@ -72,21 +73,100 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(run_tests._edition(), {})
 
     def test_changed_source_rejects_pass_and_does_not_publish_timing_cache(self):
-        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        test = _case('unit.test_source_probe')
-        with mock.patch.object(run_tests, 'discover', return_value=[test]), \
-                mock.patch.object(run_tests, '_edition', side_effect=[{'source.py': 'before'}, {'source.py': 'after'}]), \
-                mock.patch.object(run_tests, 'TIMINGS', root / 'times.json'), \
-                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            code = run_tests.main([test.id(), '--output', str(root / 'out')])
+        root = runner_tree(self)
+        (root.parent / 'source.py').write_bytes(b'VALUE = 1\r\n')
+        (root.parent / 'removed.py').write_bytes(b'old source\n')
+        (root / 'unit/test_source_probe.py').write_text(
+            'import unittest\nfrom pathlib import Path\n'
+            'class Case(unittest.TestCase):\n'
+            '    def test_value(self):\n'
+            '        scripts = Path(__file__).parents[2]\n'
+            "        (scripts / 'source.py').write_bytes(b'VALUE = 2\\r\\n')\n"
+            "        (scripts / 'removed.py').unlink()\n"
+            "        (scripts / 'added.py').write_bytes(b'new source\\n')\n", encoding='utf-8')
+        before = {p.relative_to(root.parent).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                  for p in root.parent.rglob('*.py')}
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = run_tests.main(['unit.test_source_probe', '--jobs', '1', '--output', str(root / 'out')])
         report = json.loads((root / 'out' / 'report.json').read_text(encoding='utf-8'))
         self.assertEqual(code, 1)
+        self.assertTrue(report['complete'])
         self.assertFalse(report['successful'])
-        self.assertEqual(report['source_sha256'], {'source.py': 'before'})
-        self.assertEqual(report['changed_during_run'], ['source.py'])
+        self.assertEqual(report['source_sha256'], before)
+        self.assertEqual(report['changed_during_run'], ['added.py', 'removed.py', 'source.py'])
+        self.assertEqual(report['selected'], ['unit.test_source_probe.Case.test_value'])
         self.assertEqual(report['counts'], {'passed': 1})
+        self.assertTrue(report['reports'][0]['successful'])
         self.assertEqual(set(report['module_total_seconds']), {'unit.test_source_probe'})
-        self.assertFalse((root / 'times.json').exists())
+        self.assertFalse((root / '.timings.json').exists())
+
+    def test_new_and_empty_outputs_run_again_and_existing_evidence_is_never_overwritten(self):
+        root = runner_tree(self)
+        (root / 'unit/test_output_probe.py').write_text(
+            'import unittest\nfrom pathlib import Path\n'
+            'class Case(unittest.TestCase):\n'
+            '    def test_value(self):\n'
+            "        with (Path(__file__).parents[2] / 'invocations.txt').open('a') as stream:\n"
+            "            stream.write('ran\\n')\n", encoding='utf-8')
+        new, empty = root / 'new', root / 'empty'
+        empty.mkdir()
+        reports = []
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+            for output in (new, empty):
+                self.assertEqual(run_tests.main(['unit.test_output_probe', '--jobs', '1',
+                                                 '--output', str(output)]), 0)
+                raw = (output / 'report.json').read_bytes()
+                reports.append(json.loads(raw))
+                with self.assertRaisesRegex(SystemExit, '^2$'):
+                    run_tests.main(['unit.test_output_probe', '--jobs', '1', '--output', str(output)])
+                self.assertEqual((output / 'report.json').read_bytes(), raw)
+        self.assertIn('--output must be new or empty; previous evidence is never overwritten', err.getvalue())
+        self.assertEqual((root.parent / 'invocations.txt').read_text(), 'ran\nran\n')
+        for report in reports:
+            self.assertTrue(report['complete'])
+            self.assertTrue(report['successful'])
+            self.assertEqual(report['selected'], ['unit.test_output_probe.Case.test_value'])
+            self.assertEqual([r['id'] for g in report['reports'] for r in g['rows']], report['selected'])
+            self.assertEqual(report['counts'], {'passed': 1})
+            self.assertEqual(report['fixture_counts'], {})
+            self.assertEqual(report['changed_during_run'], [])
+        self.assertEqual(reports[0]['source_sha256'], reports[1]['source_sha256'])
+
+    def test_setup_failures_and_skips_account_for_every_selected_id_in_the_final_report(self):
+        for scope in ('setUpClass', 'setUpModule'):
+            for skipped in (False, True):
+                with self.subTest(scope=scope, skipped=skipped):
+                    root = runner_tree(self)
+                    failure = "unittest.SkipTest('fixture unavailable')" if skipped else "RuntimeError('fixture broken')"
+                    fixture = (f'    @classmethod\n    def setUpClass(cls): raise {failure}\n' if scope == 'setUpClass'
+                               else '')
+                    (root / 'unit/test_setup_probe.py').write_text(
+                        'import unittest\n'
+                        + (f'def setUpModule(): raise {failure}\n' if scope == 'setUpModule' else '')
+                        + 'class Case(unittest.TestCase):\n' + fixture
+                        + "    def test_one(self): self.fail('must not start')\n"
+                        + "    def test_two(self): self.fail('must not start')\n", encoding='utf-8')
+                    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        code = run_tests.main(['unit.test_setup_probe', '--jobs', '1', '--output', str(root / 'out')])
+                    report = json.loads((root / 'out/report.json').read_bytes())
+                    self.assertEqual(code, 0 if skipped else 1)
+                    self.assertTrue(report['complete'])
+                    self.assertEqual(report['successful'], skipped)
+                    selected = ['unit.test_setup_probe.Case.test_one', 'unit.test_setup_probe.Case.test_two']
+                    self.assertEqual(report['selected'], selected)
+                    self.assertEqual(report['counts'], {'skipped' if skipped else 'not_run': 2})
+                    self.assertEqual(report['fixture_counts'], {'skipped' if skipped else 'error': 1})
+                    group = report['reports'][0]
+                    self.assertEqual(group['tests_run'], 0)
+                    rows = [r for r in group['rows'] if not r.get('fixture')]
+                    self.assertEqual([r['id'] for r in rows], selected)
+                    self.assertTrue(all(r['seconds'] == 0 for r in rows))
+                    fixture_row, = [r for r in group['rows'] if r.get('fixture')]
+                    expected_scope = 'unit.test_setup_probe.Case' if scope == 'setUpClass' else 'unit.test_setup_probe'
+                    self.assertEqual(fixture_row['id'], f'{scope} ({expected_scope})')
+                    self.assertIn('fixture unavailable' if skipped else 'fixture broken', fixture_row['details'][0])
+                    self.assertTrue(all('fixture unavailable' in r['details'][0] if skipped else
+                                        'A fixture failed before this test could run.' == r['details'][0] for r in rows))
 
     def test_report_states_the_number_of_open_known_defects(self):
         """About 0.3 s, over the 0.2 s unit budget: it runs the runner's whole main, discovery included."""

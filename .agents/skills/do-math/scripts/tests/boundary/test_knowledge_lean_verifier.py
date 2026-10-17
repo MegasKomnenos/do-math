@@ -4,8 +4,9 @@ The Lean tests run the portable compiler (``DO_MATH_KNOWLEDGE_TEST_LEAN`` when
 set, else ``portable_bin(toolchain_root())/'lean.exe'``) through the product's
 real Job transport, with no expected identity unless a test gives one, so
 ``inspect_toolchain`` observes the compiler with its own ``--version`` Job. A
-worktree reaches the toolchain through a junction to the main tree's
-``.skill-workspace/do-math-toolchains``. The Job tests run small Python programs
+worktree uses ``DO_MATH_KNOWLEDGE_TEST_LEAN`` to read the main tree's installed
+compiler without copying or changing the toolchain. The Lake project test uses
+the sibling lake.exe from that same compiler installation. The Job tests run small Python programs
 in real Jobs, where the process tree, the termination and the native exit code
 are the operating system's.
 """
@@ -16,6 +17,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from do_math import formal
 from do_math.formal import inspect_toolchain, toolchain_root, verify_lean
@@ -159,6 +161,16 @@ class InstalledLeanTests(unittest.TestCase):
         self.assertEqual(result['toolchain'], observed)
 
 
+class ToolchainInputTests(unittest.TestCase):
+    def test_compiler_command_uses_explicit_environment_without_requiring_a_snapshot_install(self):
+        command = str(Path(tempfile.gettempdir()) / 'main tree' / 'lean.exe')
+        with patch.dict(os.environ, {'DO_MATH_KNOWLEDGE_TEST_LEAN': command}):
+            self.assertEqual(actual_command(), [command])
+        with patch.dict(os.environ):
+            os.environ.pop('DO_MATH_KNOWLEDGE_TEST_LEAN', None)
+            self.assertEqual(actual_command(), [str(portable_bin(toolchain_root()) / 'lean.exe')])
+
+
 class ToolchainContractTests(unittest.TestCase):
     @category('lean')
     def test_inspection_matches_actual_formal_verifier(self):
@@ -166,7 +178,7 @@ class ToolchainContractTests(unittest.TestCase):
         _entry = entry()
         from do_math.wiring import real_ports
         _entry.ports = real_ports(environment=_entry.environment)
-        command = [str(portable_bin(toolchain_root()) / 'lean.exe')]
+        command = actual_command()
         if not Path(command[0]).is_file():
             self.skipTest('portable Lean is not installed')
         with tempfile.TemporaryDirectory() as directory:
@@ -203,7 +215,7 @@ class LakeEnvironmentTests(unittest.TestCase):
         _entry = entry()
         from do_math.wiring import real_ports
         _entry.ports = real_ports(environment=_entry.environment)
-        lake = portable_bin(toolchain_root()) / 'lake.exe'
+        lake = Path(actual_command()[0]).with_name('lake.exe')
         with tempfile.TemporaryDirectory() as d:
             root = Path(d).resolve()
             project = root / 'project'
@@ -259,7 +271,7 @@ class LakeEnvironmentTests(unittest.TestCase):
                 del parent[path[-1]]
                 self.assertEqual(trust_field_issues('`' + token + '`', owner, value), [('actual field', token)])
             wrong = {**observed['project'], 'source_identity': {**expected_source, 'untracked_file_count': 0}}
-            with self.assertRaises(AssertionError):
+            with self.assertRaisesRegex(AssertionError, 'untracked_file_count'):
                 assert_trust_documents(self, wrong, owner='project', expected=expected_project)
 
 

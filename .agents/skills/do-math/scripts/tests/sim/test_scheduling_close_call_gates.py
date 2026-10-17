@@ -10,10 +10,26 @@ from support.sim import Sim, warm_template
 
 def setUpModule():
     warm_template()
-    ready_work_sim(1)
 
 
 class CallGateTests(unittest.TestCase):
+    def test_preparation_checkpoint_interrupts_for_a_pending_control(self):
+        from do_math.call_engine import InputPreparationInterrupted
+        sim = Sim.activated()
+        engine = sim.engine
+        engine._preparing_input = True
+        try:
+            self.assertIsNone(engine._preparation_checkpoint())
+            request = sim.control('pause', text='Pause while the input is being prepared')
+            pending = engine._inbox()
+            self.assertEqual([row['id'] for row in pending], [request['request_id']])
+            with self.assertRaises(InputPreparationInterrupted):
+                engine._preparation_checkpoint()
+            self.assertEqual(engine._inbox(), pending)
+        finally:
+            engine._preparing_input = False
+            engine.process_controls()
+
     def test_prepare_rechecks_clock_before_creating_execution(self):
         sim = ready_work_sim(1)
         action = deepcopy(sim.runtime['queue'][0])

@@ -139,5 +139,143 @@ class FingerprintTests(unittest.TestCase):
             self.assertEqual(moved.read_bytes(), b'keep\x00\xff')
 
 
+
+class FileFailureBoundaryTests(unittest.TestCase):
+    def test_atomic_replace_retries_same_source_then_publishes_exact_bytes(self):
+        import ctypes
+        from ctypes import wintypes
+        from unittest.mock import patch
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        create = kernel.CreateFileW
+        create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                           wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        create.restype = wintypes.HANDLE
+        close = kernel.CloseHandle; close.argtypes = [wintypes.HANDLE]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / 'source', root / 'target'
+            source.write_bytes(b'exact-new'); target.write_bytes(b'old')
+            handle = create(str(source), 0x80000000, 0, None, 3, 0, None)
+            self.assertNotEqual(handle, wintypes.HANDLE(-1).value)
+            delays = []
+            def release(delay):
+                delays.append(delay)
+                self.assertTrue(source.exists())
+                self.assertEqual(target.read_bytes(), b'old')
+                close(handle)
+            try:
+                with patch('time.sleep', side_effect=release):
+                    file_io.atomic_replace(source, target)
+            finally:
+                if not delays: close(handle)
+            self.assertEqual(delays, [.01])
+            self.assertFalse(source.exists())
+            self.assertEqual(target.read_bytes(), b'exact-new')
+
+    def test_permanent_replace_failure_retains_source_and_destination(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / 'source', root / 'target'
+            source.write_bytes(b'recoverable'); target.mkdir()
+            with patch('time.sleep') as waits:
+                with self.assertRaises(OSError) as caught:
+                    file_io.atomic_replace(source, target)
+            self.assertEqual([call.args[0] for call in waits.call_args_list], [.01, .025, .05, .1, .2])
+            self.assertIn(caught.exception.winerror, {5, 32, 33})
+            self.assertEqual(source.read_bytes(), b'recoverable')
+            self.assertTrue(target.is_dir())
+            with self.assertRaises(FileNotFoundError) as absent:
+                file_io.atomic_replace(root / 'missing', root / 'new')
+            self.assertEqual(absent.exception.winerror, 2)
+            self.assertFalse((root / 'new').exists())
+
+    def test_reader_closes_handle_when_crt_descriptor_conversion_fails(self):
+        import ctypes
+        from ctypes import wintypes
+        from unittest.mock import patch
+        handles = []
+        def refuse(handle, flags):
+            handles.append(handle)
+            raise OSError(errno.EMFILE, 'descriptor table full')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'data'; path.write_bytes(b'keep')
+            with patch('msvcrt.open_osfhandle', side_effect=refuse):
+                with self.assertRaises(OSError) as caught: file_io.read_bytes_shared(path)
+            self.assertEqual(caught.exception.errno, errno.EMFILE)
+            self.assertEqual(len(handles), 1)
+            kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+            info = kernel.GetHandleInformation
+            info.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+            flags = wintypes.DWORD()
+            self.assertEqual(info(handles[0], ctypes.byref(flags)), 0)
+            self.assertEqual(ctypes.get_last_error(), 6)
+            self.assertEqual(path.read_bytes(), b'keep')
+
+    def test_windows_volume_boundary_rejects_each_external_failure_and_identity_drift(self):
+        import ctypes
+        from unittest.mock import Mock, patch
+        # Replace only selected kernel32 API results, keeping real file handles,
+        # no_reparse, stat, and PhysicalBoundary's judgments and cleanup.
+        real_dll = ctypes.WinDLL
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            boundary = file_io.PhysicalBoundary(root)
+            original = boundary.volume
+            for fault, expected in [('final', OSError), ('unc', ValueError), ('volume_path', OSError),
+                                    ('drive', ValueError), ('volume_info', OSError), ('filesystem', ValueError),
+                                    ('elsewhere', ValueError), ('serial', ValueError)]:
+                messages = {'unc': 'storage requires a local fixed NTFS volume',
+                    'drive': 'storage requires a local fixed volume', 'filesystem': 'storage requires NTFS',
+                    'elsewhere': 'physical directory handle resolves elsewhere', 'serial': 'physical volume identity changed'}
+                kernel = real_dll('kernel32', use_last_error=True)
+                class Kernel:
+                    def __getattr__(self, name): return getattr(kernel, name)
+                proxy = Kernel()
+                if fault in {'final', 'unc', 'elsewhere'}:
+                    def final(handle, buffer, size, flags):
+                        if fault == 'final': ctypes.set_last_error(6); return 0
+                        buffer.value = ('\\\\?\\UNC\\server\\share' if fault == 'unc' else str(root / 'elsewhere'))
+                        return len(buffer.value)
+                    proxy.GetFinalPathNameByHandleW = Mock(side_effect=final)
+                elif fault == 'volume_path':
+                    def unavailable(*args): ctypes.set_last_error(3); return 0
+                    proxy.GetVolumePathNameW = Mock(side_effect=unavailable)
+                elif fault == 'drive': proxy.GetDriveTypeW = Mock(return_value=4)
+                elif fault in {'volume_info', 'filesystem', 'serial'}:
+                    real_info = kernel.GetVolumeInformationW
+                    from ctypes import wintypes
+                    real_info.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR, wintypes.DWORD]
+                    def volume_info(volume, label, size, serial, maximum, flags, fs, fs_size):
+                        if fault == 'volume_info': ctypes.set_last_error(5); return 0
+                        result = real_info(volume, label, size, serial, maximum, flags, fs, fs_size)
+                        if fault == 'filesystem': fs.value = 'FAT32'
+                        else: ctypes.cast(serial, ctypes.POINTER(ctypes.c_ulong)).contents.value += 1
+                        return result
+                    proxy.GetVolumeInformationW = Mock(side_effect=volume_info)
+                with self.subTest(fault=fault), patch('ctypes.WinDLL', return_value=proxy):
+                    with self.assertRaises(expected) as caught: boundary.check()
+                    if fault in messages: self.assertEqual(str(caught.exception), messages[fault])
+                    else: self.assertIn(caught.exception.winerror, {3, 5, 6})
+                self.assertEqual(boundary.volume, original)
+                self.assertIsNone(boundary.check())
+
+
+class PhysicalRootDeviceTests(unittest.TestCase):
+    def test_changed_root_device_is_rejected_before_any_handle_is_opened(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            boundary = file_io.PhysicalBoundary(root)
+            original = os.stat
+            def moved(path, *args, **kwargs):
+                actual = original(path, *args, **kwargs)
+                return SimpleNamespace(st_dev=actual.st_dev+1) if Path(path) == root and kwargs.get('follow_symlinks', True) else actual
+            with patch('os.stat', side_effect=moved):
+                with self.assertRaisesRegex(ValueError, '^physical root volume changed$'):
+                    boundary.check()
+            self.assertIsNone(boundary.check())
+
 if __name__ == '__main__':
     unittest.main()

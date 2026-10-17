@@ -40,7 +40,8 @@ class Tests(unittest.TestCase):
                 assert_governance_documents(self, value, owner='academic_validation', status=status, reason=reason)
                 for damaged in ({'reason': reason}, {'status': 'completed', 'reason': reason},
                                 {'goal': 'P'}, {'status': status}):
-                    with self.subTest(damaged=damaged), self.assertRaises(AssertionError):
+                    field = 'status' if damaged.get('status') != status else 'reason'
+                    with self.subTest(damaged=damaged), self.assertRaisesRegex(AssertionError, field):
                         assert_governance_documents(self, damaged, owner='academic_validation', status=status, reason=reason)
 
     def setUp(self):

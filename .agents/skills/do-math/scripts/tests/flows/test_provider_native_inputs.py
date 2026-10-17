@@ -109,16 +109,33 @@ class NativeInputContractTests(unittest.TestCase):
                 self.assertEqual(len(rejected), 1, label)
                 self.assertEqual(rejected[0]['execution_id'], eid)
                 self.assertEqual(rejected[0]['next_owner'], 'adapter')
-                self.assertIsInstance(rejected[0]['reason'], str)
-                self.assertTrue(rejected[0]['reason'])
                 if label.startswith('public:'):
-                    self.assertEqual(rejected[0]['reason'], 'invalid normalized public message')
+                    reason = 'invalid normalized public message'
+                elif label == 'codex:missing-text':
+                    reason = 'agent message requires text'
+                elif label.startswith('codex:'):
+                    reason = 'invalid provider item'
+                elif label.endswith(':missing-text'):
+                    reason = 'public text block requires text'
+                else:
+                    reason = 'invalid provider public message'
+                self.assertEqual(rejected, [{'kind': 'observation_input_rejected', 'execution_id': eid,
+                    'reason': reason, 'next_owner': 'adapter', 'observed_at': self.sim.clock.now(),
+                    'artifact_ref': rejected[0]['artifact_ref'], 'event_index': 1}])
+                self.assertEqual(self.sim.engine.store.read(rejected[0]['artifact_ref'], self.sim.engine.head), incoming.rows[0])
                 messages = cycle_of(self.sim)['turns'][self.action['slot']]
                 self.assertEqual(messages[:-1], turns)
                 self.assertEqual(messages[-1]['content'], '정상')
                 self.assertEqual(messages[-1]['source']['event_index'], 2)
                 self.assertEqual(self.sim.engine.store.load(self.sim.engine.head)[2], self.sim.runtime)
+                self.assertEqual(self.sim.runtime['executions'][eid]['observation_stream']['end_offset'], incoming.end_offset)
+                self.assertEqual(len(self.sim.runtime['executions'][eid]['observation_receipts']), 3)
                 state, head = deepcopy(self.sim.runtime), self.sim.engine.head
+                fresh = ObservationTracker(eid, tracker.workspace,
+                    {'observation_mode': 'deadline_only', 'research_self_checks': False}, time_port=self.sim.clock)
+                self.sim.engine._observe_running(eid, fresh, incoming)
+                self.assertEqual(self.sim.runtime, state)
+                self.assertEqual(self.sim.engine.head, head)
                 self.sim.advance(1)
                 self.sim.engine._observe_running(eid, tracker, batch(self.sim, [], stream,
                     start=incoming.end_offset, first_row=3, terminated=True))

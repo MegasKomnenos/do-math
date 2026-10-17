@@ -379,10 +379,8 @@ class ReviewEngineMixin:
         adoption = self.instance['lifecycle']['adoption']
         if policy is None or exact_content_hash(policy) != adoption['review_policy_sha256']:
             return
-        try:
-            self._adopted_review_policy()
-        except ValueError:
-            return
+        # activation_requirements built this adopted policy; the hash above
+        # binds the current value to that validated adoption.
         for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
             if waiting.get('kind') != 'review_initialization':
                 continue
@@ -434,7 +432,10 @@ class ReviewEngineMixin:
                                                 *([item['producer_execution']] if item.get('producer_execution') else [])])))
         cycle['identity_basis'] = kr.identity_basis(self.instance, knowledge_id)
         cycle['slot_profiles'] = deepcopy(previous.get('slot_profiles', {})) if previous else {}
-        cycle['input_bindings'] = deepcopy(previous.get('input_bindings', {})) if previous else {}
+        # Each predecessor cycle keeps and verifies its own execution bindings.
+        # Transcript restoration uses turns/manifest, so copying those bindings
+        # into every successor adds no evidence and grows with the lineage.
+        cycle['input_bindings'] = {}
         cycle['policy_ref'] = cycle['review_policy']['id'] + ':' + exact_content_hash(cycle['review_policy'])
         cycle['publication_premises'] = self._review_publication_premises(knowledge_id)
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
@@ -549,7 +550,7 @@ class ReviewEngineMixin:
             raise ValueError('review action is not pending')
         return _seat_schema(cycle, action)
 
-    def _prepare_review_context(self, action, workspace: Path, *, sources=None):
+    def _prepare_review_context(self, action, workspace: Path, *, sources=None, execution_id=None):
         """Return a runnable context or an activity-owned recovery disposition.
 
         ENGINE must branch on this result before it creates a provider execution.
@@ -564,7 +565,7 @@ class ReviewEngineMixin:
                 'disposition': 'replacement_authorization_required', 'review_cycle_id': cycle['id'],
                 'action': _action(action), 'recovery_event': deepcopy(event), 'owner_activity_id': cycle.get('owner_activity_id'),
                 'next_owner': 'governance', 'review_status': cycle['status'], 'review_closure': 'not_closed'}}
-        authority = self._review_replacement_authority(action)
+        authority = self._review_replacement_authority(action, execution_id)
         if authority is not None and not authority['allowed']:
             return {'disposition': 'authorization_denied', 'authority': authority,
                     'recovery': {'disposition': 'authorization_denied', 'authority': authority,
@@ -1036,11 +1037,10 @@ class ReviewEngineMixin:
         elif kind == 'source':
             snapshot = prepared.get('source_snapshot', self.head)
             raw = self.store.read(value['path'], snapshot)
-            if value.get('sha256'):
-                self._sealed_bytes(value['path'], value['sha256'], raw=raw,
-                                   error='supplied research source bytes changed')
+            self._sealed_bytes(value['path'], value['sha256'], raw=raw,
+                               error='supplied research source bytes changed')
             return {'ref': reference, 'artifact_ref': value['path'], 'snapshot': snapshot,
-                    'sha256': value.get('sha256') or hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+                    'sha256': value['sha256'], 'bytes': len(raw)}
         elif kind == 'knowledge':
             value = {**_proposal(self.instance, reference), 'usable_links': kr.usable_links(self.instance, reference)}
         return inline_source_row(reference, value)
@@ -1174,9 +1174,9 @@ class ReviewEngineMixin:
             if path is None: continue
             file = next((entry for entry in outputs if entry['path'] == path), None)
             if file is None: raise ValueError('investigation evidence file was not preserved')
-            if name not in allowed:
-                records.append({'ref': name, 'artifact_ref': file['artifact_ref'], 'sha256': file['sha256'], 'bytes': file['bytes']})
-                allowed.add(name)
+            # fixed_research_reference_path returns None for a name already in allowed.
+            records.append({'ref': name, 'artifact_ref': file['artifact_ref'], 'sha256': file['sha256'], 'bytes': file['bytes']})
+            allowed.add(name)
         updated = accept_research_result(cycle, request['id'], output, execution_id, source_records=records)
         self.runtime['review_cycles'][action['review_cycle_id']] = updated
         self._queue_identity_actions(action['target'], action['review_cycle_id'])

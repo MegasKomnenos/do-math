@@ -71,6 +71,8 @@ def build_parser() -> _Parser:
     run.add_argument("--max-steps", type=int)
     run.add_argument("--watch", action="store_true")
     run.add_argument('--until-active', action='store_true', help='return after activation before dispatching research')
+    run.add_argument('--installation-manifest', type=Path,
+                     help='verified frozen bootstrap manifest to compare with the live installation before dispatch')
 
     status = commands.add_parser("status", help="show current status")
     _instance_arguments(status)

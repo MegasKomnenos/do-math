@@ -40,6 +40,25 @@ class HostResourceContractTests(ReviewOwnerCase):
         self.assertEqual(self.engine._reconcile_review_host_profiles(), [])
         self.assertEqual(self.engine.runtime, before)
 
+    def test_upkeep_publishes_the_resource_disposition_of_a_real_frozen_review(self):
+        """T3 22.6 s cold: public import/formal check and scope execution provide a saveable frozen review."""
+        from support.review_sim import opened_sim, cycle_of
+        sim = opened_sim()
+        sim.run_until(lambda current: bool(cycle_of(current).get('slot_profiles')), max_steps=3)
+        engine = sim.engine
+        cycle = cycle_of(sim)
+        original_profiles = deepcopy(cycle.get('slot_profiles', {}))
+        settings = host_configuration()['host_resources']
+        engine.instance, engine.runtime = engine._configure_candidate(
+            engine.instance, engine.runtime, {'config': {'host_resources': settings}})
+        engine._save()
+        engine._upkeep(schedule_reviews=False)
+        cycle = cycle_of(sim)
+        record = rc.resource_disposition(cycle)
+        self.assertEqual((record['reason'], record['state']), ('review_host_configuration_changed', 'ended'))
+        self.assertEqual(cycle.get('slot_profiles', {}), original_profiles)
+        self.assertEqual(engine.store.load()[2]['review_cycles'][cycle['id']], cycle)
+
     def test_changed_host_creates_owner_for_unstarted_frozen_scope(self):
         cycle, record = self.changed_host(owner=False)
         self.assertIn(cycle['owner_activity_id'], self.engine.runtime['activities'])

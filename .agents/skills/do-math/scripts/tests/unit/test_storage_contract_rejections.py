@@ -13,6 +13,77 @@ from support.storage_records import record_store
 
 
 class ContractRejections(unittest.TestCase):
+    def test_host_authoring_source_and_reservation_authority_are_bound_to_registered_records(self):
+        from do_math.budget import plan_reservations
+        from do_math.execution_profiles import host_constraint
+        from do_math.governance import preserve_source
+        from support.provider_inputs import host_capacity_fixture, PROFILE_CONFIG
+        from support.record_builders import execution_state
+        instance, _, host = host_capacity_fixture()
+        instance = current_state(instance)[0]
+        runtime = execution_state('research_work', config=PROFILE_CONFIG)[1]
+        profile = instance['execution_profiles'][runtime['executions']['EX-1']['execution_profile_ref']['id']]
+        reservation, = plan_reservations([], instance['capacity_constraints'], profile, owner_id='EX-1')
+        runtime['reservations'] = {reservation['id']: reservation}
+        with tempfile.TemporaryDirectory() as directory:
+            store = record_store(Path(directory))
+            head = store.initialize(instance, runtime)
+            _, saved_i, saved_r = store.load(head)
+            other_host = host_constraint(host_id=host['host_id'],
+                limits={'jobs': host['max_jobs'] + 1, 'memory_bytes': host['memory_bytes'],
+                        'cpu_rate_basis_points': host['cpu_rate_basis_points']},
+                control_reserve=host['control_reserve'], authority_refs=host['authority_refs'])
+            for case, reason in (
+                    ('authoring', 'host authoring input differs from the registered constraint edition'),
+                    ('origin', 'host constraint authority source is not user-origin'),
+                    ('reservation', 'reservation authority reference does not resolve')):
+                broken_i, broken_r = deepcopy(saved_i), deepcopy(saved_r)
+                if case == 'authoring':
+                    broken_i['config'] = {'host_resources': {'constraint': other_host, 'demands_by_role': {}}}
+                elif case == 'origin':
+                    source_id = host['authority_refs'][0]
+                    source = broken_i['governance_sources'][source_id]
+                    broken_i['governance_sources'][source_id] = preserve_source(source_id, source['text'], origin='ai')
+                else:
+                    broken_r['reservations'][reservation['id']]['authority_refs'] = ['PF-unissued']
+                with self.subTest(case=case), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                    store.validate_candidate(broken_i, broken_r)
+                self.assertEqual(store.load(), (head, saved_i, saved_r))
+
+    def test_nonexecution_question_requires_its_preserved_source(self):
+        from do_math import questions
+        from support.fakes.clock import FakeClock
+        instance, runtime = current_state()
+        question = questions.link(runtime, execution_id=None, field='input/question', owner='user',
+            targets=['UI-fixture'], source_ref='UI-fixture', reason='Clarify the original input', clock=FakeClock())
+        contract = installed_contract()
+        contract.validate({**instance, 'object_format': 'sha1'}, runtime)
+        before = deepcopy(runtime)
+        question.pop('source_ref')
+        with self.assertRaisesRegex(ValueError, '^nonexecution question requires a preserved source reference$'):
+            contract.validate({**instance, 'object_format': 'sha1'}, runtime)
+        self.assertEqual({key: value for key, value in question.items() if key != 'source_ref'},
+                         {key: value for key, value in before['question_links'][0].items() if key != 'source_ref'})
+
+    def test_held_question_and_delegation_targets_resolve_in_their_declared_namespaces(self):
+        from do_math.wait_rules import waiting_action
+        instance, runtime = current_state()
+        wait = waiting_action({'kind': 'execution_failure', 'action': {'id': 'AC-held', 'role': 'research_preparation'},
+                               'next_owner': 'operational_review', 'reason': 'Preserved failed action'})
+        runtime['waiting_actions'] = {'AC-held': wait}
+        contract = installed_contract()
+        instance['object_format'] = 'sha1'
+        contract.validate(instance, runtime)
+        for field, value, reason in (
+                ('question_id', 'QU-unissued', 'waiting action question reference is missing'),
+                ('delegated_targets', {'slot': 'UI-fixture'}, 'waiting action reference does not resolve: delegated_targets')):
+            with self.subTest(field=field):
+                broken = deepcopy(runtime)
+                broken['waiting_actions']['AC-held'][field] = value
+                with self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                    contract.validate(instance, broken)
+        self.assertEqual(runtime['waiting_actions'], {'AC-held': wait})
+
     def test_invalid_registration_never_installs_a_family(self):
         for options, reason in (
                 ({'root': 'other', 'name': 'x'}, 'invalid family root/name'),

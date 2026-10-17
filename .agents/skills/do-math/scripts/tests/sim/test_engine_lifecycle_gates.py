@@ -10,6 +10,7 @@ port (``support.engine_gates.gate_engine``), which a test moves. Nothing
 replaces an engine method or the store.
 """
 from datetime import timedelta
+from copy import deepcopy
 import unittest
 
 from support.engine_gates import gate_engine, initialized_sim
@@ -20,6 +21,64 @@ CLOCK_REFUSAL = '^clock prevents new authority: '
 
 
 class ActivationGateTests(unittest.TestCase):
+    def test_initial_dispatch_rechecks_transition_grant_and_adopted_profile(self):
+        sim = Sim.activated()
+        engine = sim.engine
+        engine.instance['lifecycle']['state'] = 'initializing'
+        engine.runtime['status'] = 'initializing'
+        engine.store.contract.validate(engine.instance, engine.runtime)
+        cases = [({'role': 'trust_check', 'transition_id': 'TR-absent'},
+                  'trust preparation requires explicit transition authority'),
+                 ({'role': 'intent_interpretation', 'grant_id': 'GR-research-sim'},
+                  'narrow initial operating grant required')]
+        from do_math.execution_profiles import profile_ref
+        adopted = engine.instance['lifecycle']['adoption']['initial_profile_ref']
+        alternate = next(profile_ref(p) for p in engine.instance['execution_profiles'].values()
+                         if p['role'] == 'intent_interpretation' and p['id'] != adopted['id'])
+        # A later adopted role/model selection does not silently replace the
+        # separately adopted exact initial profile.
+        engine.instance['lifecycle']['adoption']['initial_profile_ref'] = alternate
+        cases.append(({'role': 'intent_interpretation', 'grant_id': 'GR-initial-sim'},
+                      'initial interpretation must use its adopted exact profile'))
+        before = deepcopy((engine.instance, engine.runtime))
+        import re
+        for action, reason in cases:
+            with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+                engine._action_lifecycle_gate(action)
+            self.assertEqual((engine.instance, engine.runtime), before)
+
+    def test_active_external_dispatch_requires_the_adopted_explicit_grant_policy(self):
+        engine = Sim.activated().engine
+        engine.instance['lifecycle']['adoption']['external_policy'] = 'disabled'
+        before = deepcopy((engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^the adopted policy does not permit external effects$'):
+            engine._action_lifecycle_gate({'role': 'external_action'})
+        self.assertEqual((engine.instance, engine.runtime), before)
+
+    def test_closed_activation_and_resume_without_a_retained_phase_are_rejected(self):
+        engine = initialized_sim().engine
+        engine._apply_extended_control({'id': 'UC-close', 'action': 'close', 'config': {}})
+        closed = deepcopy((engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^closed/completed instance cannot activate$'):
+            engine._activate_initialization()
+        self.assertEqual((engine.instance, engine.runtime), closed)
+        engine = initialized_sim().engine
+        # A paused record may load without resume_lifecycle; it must not guess a phase.
+        engine.instance['lifecycle']['state'] = 'paused'
+        engine.runtime['status'] = 'paused'
+        engine.store.contract.validate(engine.instance, engine.runtime)
+        before = deepcopy((engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^resume lifecycle is missing$'):
+            engine._resume_lifecycle({'origin': 'user', 'config': {}})
+        self.assertEqual((engine.instance, engine.runtime), before)
+
+    def test_lifecycle_controls_require_their_preserved_request_identity(self):
+        engine = initialized_sim().engine
+        before = deepcopy((engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^extended control requires its preserved user request ID$'):
+            engine._apply_extended_control({'action': 'pause', 'config': {}})
+        self.assertEqual((engine.instance, engine.runtime), before)
+
     def test_formal_use_cannot_register_or_activate_an_environment(self):
         engine = initialized_sim().engine
         with self.assertRaisesRegex(ValueError, '^approved fixed trust environment required: trust environment absent$'):

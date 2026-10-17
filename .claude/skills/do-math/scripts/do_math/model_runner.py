@@ -18,6 +18,11 @@ from .provider_final import output_contract
 from .model_call import (classify_run, frame_rows, launch_conflict_result, runner_assignment,
                          unsupported_result, worker_request_fields)
 
+# A stream read is an I/O unit, not an indivisible owner transaction. Four
+# native rows keep each queued application finite before controls/returns can
+# take the owner again (one second in the 0.25-second-per-row progress model).
+OBSERVATION_BATCH_ROWS = 4
+
 
 class ModelRunner:
     """Run one configured model through its provider's adapter (``claude_adapter.ADAPTERS``).
@@ -141,8 +146,16 @@ class ModelRunner:
             current = self.clock.monotonic()
             if chunk or final or current - last_tick >= 1:
                 last_tick = current
-                on_observation(ObservationBatch(events, offsets, rows, rows_emitted,
-                    self.clock.now(), current, offset, stdout_path, terminated))
+                received_at = self.clock.now()
+                for first in range(0, max(1, len(rows)), OBSERVATION_BATCH_ROWS):
+                    end = min(first + OBSERVATION_BATCH_ROWS, len(rows))
+                    # Only the final part reaches this read's offset and can
+                    # evaluate its tick. Preserve blank/partial trailing bytes
+                    # there; all other parts end at their last complete row.
+                    end_offset = offset if end == len(rows) else offsets[end - 1][1]
+                    on_observation(ObservationBatch(events[first:end], offsets[first:end], rows[first:end],
+                        rows_emitted + first, received_at, current, end_offset, stdout_path, terminated,
+                        ends_read=end == len(rows)))
                 rows_emitted += len(rows)
         from .windows_job import process_identity
         started = {**process_identity(execution.job),

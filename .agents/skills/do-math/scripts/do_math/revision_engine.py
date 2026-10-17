@@ -9,7 +9,20 @@ from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 class RevisionEngineMixin:
+    def _settle_revision_owner(self, entry):
+        """Retire the resolved action's actual ended owner, preserving other work."""
+        action = entry['action']
+        activity = self.runtime.get('activities', {}).get(action.get('owner_activity_id'), {})
+        waiting = activity.get('waiting', {})
+        execution = self.runtime['executions'].get(entry.get('execution_id'), {})
+        if (waiting.get('kind') == 'revision_dependency'
+                and action.get('id') in waiting['condition'].get('action_ids', [])
+                and execution.get('owner_activity_id') == activity.get('id')
+                and execution.get('status') == 'ended'):
+            self._settle_activity(execution['id'])
+
     def _retire_closed_revision_targets(self):
+        retired_entries = []
         closed = {identifier for identifier, task in self.runtime['tasks'].items()
                   if task.get('status') in TERMINAL_TASK_STATUSES}
         live = live_action_ids(self.runtime)
@@ -31,6 +44,7 @@ class RevisionEngineMixin:
                 if not action.get('assessment_targets') and not action.get('observation_rule_targets'):
                     if entry:
                         del self.runtime['waiting_actions'][identifier]
+                        retired_entries.append(entry)
                     else:
                         self._remove_action(action)
                     continue
@@ -40,6 +54,7 @@ class RevisionEngineMixin:
                                                 'previous': deepcopy(entry)})
                 if entry:
                     self.runtime['waiting_actions'].pop(identifier, None)
+                    retired_entries.append(entry)
                 else:
                     self._remove_action(action)
                 continue
@@ -57,8 +72,11 @@ class RevisionEngineMixin:
             if entry:
                 if not remaining and not action.get('unbound_request'):
                     del self.runtime['waiting_actions'][identifier]
+                    retired_entries.append(entry)
             elif not remaining and not action.get('unbound_request'):
                 self._remove_action(action)
+        for entry in retired_entries:
+            self._settle_revision_owner(entry)
 
     def _selected_action_current(self, action, *, evaluation_context=None):
         if not task_research(action):
@@ -77,7 +95,10 @@ class RevisionEngineMixin:
                                         "reason": "selected contract or its approval is no longer current", "readiness": result})
         if task["status"] not in TERMINAL_TASK_STATUSES:
             task["status"] = "waiting"
-            task['waiting']={'kind':'contract_review','target_refs':[task['id']],'next_owner':'research_preparation','reason':result['errors']}
+            task['waiting']={'kind':'contract_review','target_refs':[task['id']],'next_owner':'research_preparation',
+                'basis_ref':action['id'], 'errors':result['errors'],
+                'reason':'Selected contract changed before dispatch' if contract_changed else
+                         'Selected contract approval is no longer current'}
             task.pop("selected_by", None)
         self._enqueue("research_plan", reason="A selected contract or its approval changed before dispatch")
         return False
@@ -150,7 +171,8 @@ class RevisionEngineMixin:
                 task.pop('selected_by', None)
                 continue
             task["status"] = "waiting"
-            task['waiting']={'kind':'contract_revision','target_refs':[identifier],'next_owner':'research_preparation','basis_ref':action['id']}
+            task['waiting']={'kind':'contract_revision','target_refs':[identifier],'next_owner':'research_preparation',
+                'basis_ref':action['id'], 'reason':'contract revision requested'}
             task['revision_requested']={'revision':task['revision'],'source':action['id'],'reason':'contract revision requested'}
             task.pop("selected_by", None)
 
@@ -189,7 +211,8 @@ class RevisionEngineMixin:
                 # Dependency propagation must not hide this writer's newly
                 # submitted result from the completion assessor.
                 task["status"] = "waiting"
-                task['waiting']={'kind':'assessment','target_refs':[execution_id],'next_owner':'research_plan'}
+                task['waiting']={'kind':'assessment','target_refs':[execution_id],'next_owner':'research_plan',
+                    'basis_ref':execution_id, 'reason':'Returned revised work requires independent assessment'}
                 task.pop("status_before_reassessment", None)
         resolutions = {row["record_id"]: row for row in extension.get("revision_resolutions", [])}
         withdrawals = {row["task_id"] for row in extension.get("task_dispositions", [])}
@@ -212,6 +235,7 @@ class RevisionEngineMixin:
                 delegated[identifier] = task["id"]
         owners = list(dict.fromkeys([*([action["revision_request_action_id"]] if action.get("revision_request_action_id") else []),
                                      *action.get("revision_parent_ids", [])]))
+        resolved_entries = []
         for owner in owners:
             entry = self.runtime.get("waiting_actions", {}).get(owner)
             if entry and entry.get("kind") == "revision_dependency":
@@ -237,6 +261,7 @@ class RevisionEngineMixin:
                     self.runtime["history"].append({"kind": "revision_obligation_transferred" if transferred else "revision_obligation_resolved", "action_id": owner,
                         "execution_id": execution_id, "to_action_id": action["id"] if transferred else None, "previous": deepcopy(entry)})
                     del self.runtime["waiting_actions"][owner]
+                    resolved_entries.append(entry)
         if unresolved:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                 "action": {**deepcopy(action), "revision_targets": unresolved}, "kind": "revision_dependency",
@@ -248,6 +273,9 @@ class RevisionEngineMixin:
                 self.runtime["history"].append({"kind": "revision_obligation_resolved", "action_id": action["id"],
                     "execution_id": execution_id, "previous": deepcopy(previous)})
                 del self.runtime["waiting_actions"][action["id"]]
+                resolved_entries.append(previous)
+        for entry in resolved_entries:
+            self._settle_revision_owner(entry)
 
     def _record_task_receipt(self, action, output, execution_id, *, accepted):
         """Receiver hook for rejected output and non-revision accepted output."""

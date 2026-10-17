@@ -44,7 +44,7 @@ RESULT_REF = 'runtime/artifacts/BA-original/result.json'
 INPUT_BUNDLE = 'BA-original-input'
 
 
-def committed_goal_audit(sim, *, required=2, slot=0):
+def committed_goal_audit(sim, *, required=2, slot=0, local_termination='confirmed'):
     engine = sim.engine
     action = {'id': 'AC-original', 'role': 'goal_audit', 'target': None, 'basis': engine._goal_basis_key(),
               'slot': slot, 'required': required}
@@ -70,7 +70,7 @@ def committed_goal_audit(sim, *, required=2, slot=0):
     profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
     execution.update(result_ref=RESULT_REF, input_bundle=INPUT_BUNDLE, input_snapshot=engine.head,
                      launch_ticket={**ticket(EXECUTION, profile, jobs=sim.ports.jobs, clock=sim.clock), 'phase': 'dispatched'},
-                     capacity={'local_termination': 'confirmed', 'reservation_ids': [], 'provider': None,
+                     capacity={'local_termination': local_termination, 'reservation_ids': [], 'provider': None,
                                'process': None})
     artifacts = {RESULT_REF: b'{"status":"completed"}',
                  f'runtime/artifacts/{INPUT_BUNDLE}/input/submission/context.json': canonical_json(fixed),

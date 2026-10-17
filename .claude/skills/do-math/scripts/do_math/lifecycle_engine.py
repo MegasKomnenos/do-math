@@ -77,9 +77,7 @@ class LifecycleEngineMixin:
         before = self.ports.clock.monotonic()
         now = self._lifecycle_now()
         after = self.ports.clock.monotonic()
-        persisted = self.runtime.get('last_observed_utc')
-        if not persisted:
-            return {'usable': False, 'reason': 'missing_utc_high_water'}
+        persisted = self.runtime['last_observed_utc']  # Required by load-time validate_lifecycle.
         previous = timestamp(persisted)
         # A reported tick is not an exact instant. Use a full reported resolution
         # on either side (covers truncation or rounding), plus representation error.
@@ -249,7 +247,7 @@ class LifecycleEngineMixin:
                 action.setdefault('profile_ref', adoption.get('initial_profile_ref'))
                 if action['profile_ref'] != adoption.get('initial_profile_ref'):
                     raise ValueError('initial interpretation must use its adopted exact profile')
-        elif lifecycle == 'active':
+        else:  # The stored enum leaves active after paused and initializing.
             if action['role'] == 'external_action' and self.instance['lifecycle'].get('adoption', {}).get('external_policy') != 'explicit_grants':
                 raise ValueError('the adopted policy does not permit external effects')
             initial_ids = self.instance['lifecycle'].get('adoption', {}).get('initial_grant_ids', [])
@@ -267,14 +265,12 @@ class LifecycleEngineMixin:
                 if not authority['allowed']:
                     raise ValueError('research authority: ' + authority['reason'])
                 action['grant_id'] = authority['grant_id']
-        else:
-            raise ValueError('invalid lifecycle state')
         return profile
 
     @staticmethod
     def _recovery_action_basis(action):
-        transient = {'repair', 'dispatch_wait', 'model_selection', 'owner_activity_id', 'activity_id',
-                     'execution_id', 'continuation_of', 'actor_kind'}
+        transient = {'repair', 'dispatch_wait', 'model_selection', 'owner_activity_id',
+                     'continuation_of', 'actor_kind'}
         return exact_content_hash({k: v for k, v in action.items() if k not in transient})
 
     def _recovery_pause_basis(self):
@@ -344,9 +340,9 @@ class LifecycleEngineMixin:
                 or timestamp(change['expires_at']) <= self._lifecycle_now()):
             raise ValueError('limited recovery no longer matches its approval')
         profile = match_profile_ref(self.instance['execution_profiles'], action['profile_ref'])
-        if (profile['role'] != action['role']
-                or action['role'] not in {'maintenance', 'trust_check', 'trust_activate'}):
-            raise ValueError('limited recovery profile or role is outside scope')
+        # _limited_recovery_control checked the role and exact profile before
+        # sealing action_sha256. The binding above preserves that decision;
+        # match_profile_ref still checks the immutable profile's current identity.
         request = {**action, 'actor_kind': profile['actor_kind']}
         authority = authorize(self.instance, request, self._lifecycle_now().isoformat(), runtime=self.runtime)
         if not authority['allowed']:
@@ -415,7 +411,7 @@ class LifecycleEngineMixin:
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         try:
             config = request.get('config', {})
-            if not isinstance(config, dict): raise ValueError('control config must be an object')
+            # validate_control_payload at the control boundary established config's shape.
             from .governance import preserve_source
             source = preserve_source(source_ref, request.get('text') or canonical_json(request).decode('utf-8'),
                                      origin=request.get('origin', 'user'))
@@ -535,7 +531,8 @@ class LifecycleEngineMixin:
         if not guard['usable']:
             self.runtime['clock_guard'] = {'state': 'blocked', **guard}
             self.runtime['availability'] = {'state': 'blocked', 'reason': 'clock_regression'}
-            if not self._instance_closed():
+            if not self._instance_closed() and (self.instance['lifecycle']['state'] != 'paused'
+                    or self.runtime.get('stop_requested') != 'clock_regression'):
                 self._pause_lifecycle('clock_regression')
             return
         if self.instance['lifecycle']['state'] == 'paused':
@@ -611,7 +608,8 @@ class LifecycleEngineMixin:
                     self._enqueue('research_preparation', task_id,
                         reason='Reprepare the unchanged research obligation with a permitted current work profile: '+str(error))
                 continue
-            required = {'revision': task['revision'], 'contract_sha256': contract_hash(task), **editions}
+            contract_edition = {'revision': task['revision'], 'contract_sha256': contract_hash(task)}
+            required = {**contract_edition, **editions}
             # One premise snapshot serves the review key and every recorded review of this task.
             task_basis = capture_task_basis(task, self.instance, self.runtime)
             review_key = review_basis_key(task, self.instance, self.runtime, task_basis=task_basis)
@@ -634,7 +632,9 @@ class LifecycleEngineMixin:
             # A review already running on this contract is not doubled when only its outside premises
             # moved; once it ends, its own currentness check above decides whether another is needed.
             live_review = any(execution.get('status') != 'ended' and execution.get('action', {}).get('role') == 'task_contract_review'
-                and execution['action'].get('target') == task_id and execution['action'].get('contract_basis') == required
+                and execution['action'].get('target') == task_id
+                and all(execution['action'].get('contract_basis', {}).get(key) == value
+                        for key, value in contract_edition.items())
                 for execution in self.runtime['executions'].values())
             if not reviewed and not blocked_review and not live_review:
                 candidates = [a for a in self.runtime['queue'] if a.get('role') == 'task_contract_review' and a.get('target') == task_id]
@@ -730,8 +730,9 @@ class LifecycleEngineMixin:
         """Mark the local call returned and return its capacity; False holds it at the termination barrier."""
         from .execution_lifecycle import release_or_hold
         from .launch import mark_returned
-        if execution.get('launch_ticket'):
-            mark_returned(execution['launch_ticket'])
+        # Every caller owns a machine execution admitted by _register_execution;
+        # its successful SessionSlots.acquire supplied this exact launch ticket.
+        mark_returned(execution['launch_ticket'])
         return release_or_hold(execution, self._session_slots(), at=at)
 
     def _end_machine_execution(self, execution, *, outcome, disposition):

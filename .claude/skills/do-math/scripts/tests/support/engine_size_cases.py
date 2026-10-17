@@ -14,6 +14,27 @@ TASK_COUNT = 100
 HISTORY_PER_TASK = 10
 PROFILE_COUNT = 37
 
+
+def assert_input_budget(test, prepared, role, profile):
+    """Measure the delivered UTF-8 prompt and its complete mandatory portion."""
+    import hashlib
+    from do_math import contracts
+    from do_math.canonical import canonical_json
+    from do_math.execution_profiles import prepare_prompt
+
+    raw = prepared['prompt'].encode('utf-8')
+    limit = profile['input']['max_input_bytes']
+    test.assertIsNone(prepared['overflow'], prepared['overflow'])
+    test.assertEqual(prepared['actual_bytes'], len(raw))
+    test.assertLessEqual(len(raw), limit)
+    test.assertEqual(prepared['manifest']['prompt']['bytes'], len(raw))
+    test.assertEqual(prepared['manifest']['prompt']['sha256'], hashlib.sha256(raw).hexdigest())
+    required = prepared['manifest']['required_direct_keys']
+    mandatory = canonical_json({key: prepared['context'][key] for key in required})
+    fixed = prepare_prompt(contracts.render_prompt(role, {}, output_schema=contracts.schema_for(role),
+        documents=contracts.prompt_documents(role)), profile).encode('utf-8')
+    test.assertLessEqual(len(mandatory), limit - len(fixed))
+
 # 각 행은 공통 정상 상태 외에 입력 분류나 필수 근거가 달라지는 실제 조건이다.
 VARIANTS = {
     'research_preparation': ({}, {'assessment_targets': {'TK-000': 1}},

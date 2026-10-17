@@ -3,7 +3,7 @@ import json
 import unittest
 
 from support.provider_probes import ObservedCalls
-from support.scheduling_return_observer import OwnerProbe
+from support.scheduling_return_observer import OwnerProbe, assert_drained, assert_owned
 from support.scheduling_parallel import ready_work_sim
 from support.sim import warm_template
 
@@ -45,7 +45,7 @@ class MachineTerminationEvidenceTests(unittest.TestCase):
                 with OwnerProbe(sim) as probe:
                     answer = sim.engine.run(max_steps=1)
                 self.assertEqual(probe.failures, [])
-                self.assertEqual([pending for _, _, pending, _ in probe.collections if pending], [])
+                assert_drained(self, sim, probe)
                 added = set(sim.runtime['executions']) - before
                 self.assertEqual(len(added), 1)
                 eid, = added
@@ -55,7 +55,7 @@ class MachineTerminationEvidenceTests(unittest.TestCase):
                 self.assertEqual(row['capacity']['local_termination'], 'unknown')
                 self.assertEqual(row['launch_ticket']['phase'], 'finished')
                 self.assertIn(row['launch_ticket']['job_name'], queried)
-                self.assertTrue(row['owner_activity_id'])
+                assert_owned(self, sim.runtime, eid)
                 raw = json.loads(sim.engine.store.read(row['raw_result_ref'], sim.engine.head))
                 result = json.loads(sim.engine.store.read(row['result_ref'], sim.engine.head))
                 self.assertEqual(raw['status'], 'verified')

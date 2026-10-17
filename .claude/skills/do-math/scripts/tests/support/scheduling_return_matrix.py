@@ -7,6 +7,7 @@ from support.engine_lifecycle import (applied, clear_work, external_sim, http_gr
 from support.monitoring_slots import reserve_tool
 from support.scheduling_machine import formal_scene, trust_scene
 from support.scheduling_parallel import ready_work_sim
+from support.scheduling_return_observer import assert_drained, assert_owned
 
 
 def scene(role):
@@ -63,17 +64,19 @@ class AfterReturn:
 def assert_returned(test, sim, before, probe, role):
     """종류별 증거 저장과 소유·용량·회수 전건을 확인한다."""
     test.assertEqual(probe.failures, [])
-    test.assertEqual([pending for _, _, pending, _ in probe.collections if pending], [])
+    assert_drained(test, sim, probe)
     added = set(sim.runtime['executions']) - before
     test.assertEqual(len(added), 1)
     eid, = added
     _, _, stored = sim.engine.store.load(sim.engine.head)
     test.assertEqual(stored['executions'], sim.runtime['executions'])
+    test.assertEqual(stored['activities'], sim.runtime['activities'])
+    test.assertEqual(stored['reservations'], sim.runtime['reservations'])
     row = stored['executions'][eid]
     test.assertEqual(row['role'], role)
     test.assertEqual(row['status'], 'ended')
     test.assertEqual(row['capacity']['local_termination'], 'confirmed')
-    test.assertTrue(row['owner_activity_id'])
+    assert_owned(test, stored, eid)
     for rid in row['capacity']['reservation_ids']:
         reservation = stored['reservations'][rid]
         test.assertEqual((reservation['state'], reservation['returned'], reservation['confirmed_consumed']),

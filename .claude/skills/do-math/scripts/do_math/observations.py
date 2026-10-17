@@ -792,9 +792,13 @@ class ObservationTracker:
             if obligation["status"] != "open" or deadline is None:
                 continue
             if running and _HELD not in obligation and offset <= deadline:
-                obligation[_HELD] = offset
+                # Buffered starts before delivery cannot hold time before the
+                # response window opened (or time already added by a prior hold).
+                obligation[_HELD] = max(offset, deadline - self.response_window_ms)
             elif not running and _HELD in obligation:
-                obligation["deadline_offset_ms"] = deadline + offset - obligation.pop(_HELD)
+                # A completion received before the request was delivered may
+                # reach the owner afterwards; it cannot shorten the fresh window.
+                obligation["deadline_offset_ms"] = deadline + max(0, offset - obligation.pop(_HELD))
 
     def stored_obligations(self, identifiers=None) -> dict:
         """Copies of the obligations (all, or ``identifiers``) as ENGINE saves them, storage-checked."""
@@ -855,15 +859,18 @@ class ObservationTracker:
 
     def _snapshot(self) -> dict:
         # Each operator has one source (OPERATORS), so one flat snapshot is unambiguous.
+        # UTC rules use the same batch receipt as monotonic rules; record creation
+        # timestamps still describe when the owner processed the observation.
         return {"completed_call_ids": sorted(self.completed_call_ids),
                 "safe_boundary_ids": sorted(self.safe_boundary_ids), "counters": dict(self.counters),
                 "iterations": dict(self.iterations), "checkpoint_counts": {self.execution_id: self.checkpoint_count},
-                "observed_at": self.time_port.now()}
+                "observed_at": self.observation_source['received_at']}
 
     def _self_check_obligation(self, due: list[dict], when: float) -> dict:
         fingerprint = json.dumps({"execution_id": self.execution_id, "revision": self.rule_revision, "due": due}, ensure_ascii=False, sort_keys=True)
         identifier = "SC-" + hashlib.sha256(fingerprint.encode()).hexdigest()[:20]
-        if identifier in self.obligations: return self.obligations[identifier]
+        # observe consumes each due boundary before creating its obligation;
+        # a changed rule revision and a later maximum interval have distinct bases.
         opened = _offset_ms(self.started, when)
         obligation = {"kind": "self_check_due", "id": identifier, "execution_id": self.execution_id,
                       "rule_revision": self.rule_revision, "due": due, "opened_offset_ms": opened,
@@ -1071,7 +1078,7 @@ class ObservationTracker:
                                               "field": "observation_interval_seconds", "unit": "milliseconds"},
                                     "observed_at": self.time_port.now()})
             for review in self.explicit_reviews.values():
-                if not review["fired"] and _utc(self.time_port.now(), "now") >= _utc(review["at"], "review at"):
+                if not review["fired"] and _utc(source['received_at'], "received_at") >= _utc(review["at"], "review at"):
                     review["fired"] = True
                     emitted.append({"kind": "explicit_review_due", "execution_id": self.execution_id,
                                     **{key: review[key] for key in ("review_id", "reason", "basis_ref", "at")},

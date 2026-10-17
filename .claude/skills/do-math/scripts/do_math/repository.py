@@ -790,16 +790,13 @@ def _encode_families(instance, runtime, contract, object_format, *, parent=None)
     return files
 
 
-def _decode_families(files, contract, object_format, *, read_payload=None, git_dir=None, describe=False):
+def _decode_families(files, contract, object_format, *, read_payload, git_dir=None, describe=False):
     """Decode one snapshot's record files and check their family layout.
 
     Returns (research, runtime, descriptors). The descriptors, the exact
     persisted record rows, are built only with ``describe``; otherwise the
     third value is None.
     """
-    if read_payload is None:
-        def read_payload(path):
-            raise ValueError('immutable payload reader required: ' + path)
     states, descriptors, expected = {}, [], set()
     installed = contract.manifest()
     for root in ("research", "runtime"):

@@ -4,12 +4,12 @@ from copy import deepcopy
 from support.academic_scenes import consumer_sim, ended, user_source
 
 
-def rejection_case():
+def rejection_case(*, actor='합성 심사자', text='논증 설명을 보완하라'):
     sim = consumer_sim()
     engine = sim.engine
     basis = engine._solution_basis()
     engine._academic_control({'id': user_source(engine), 'action': 'decision', 'created_at': sim.clock.now(),
-        'config': {'change': {'kind': 'academic_rejection', 'actor': '합성 심사자', 'text': '논증 설명을 보완하라'}}})
+        'config': {'change': {'kind': 'academic_rejection', 'actor': actor, 'text': text}}})
     execution = ended(engine, 'EX-academic-resolution', 'research_plan', input_solution_basis=deepcopy(basis))
     rejection = engine.runtime['external_rejections'][-1]
     reference = next(iter(engine.instance['knowledge']))

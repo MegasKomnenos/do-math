@@ -20,7 +20,9 @@ def assert_judgment_inputs(test, role, prepared, workspace, *, producer_context)
     catalog = {row['key']: {k: v for k, v in row.items() if k != 'key'}
                for row in manifest['catalog']}
     resolved_keys = {}
-    paths = judgment_input_paths(role, original['action'], context=original)
+    paths = (*judgment_input_paths(role, original['action'], context=original),
+             *judgment_source_lists(role, original['action'], context=original),
+             *judgment_source_refs(role, original['action'], context=original))
     keys = tuple(dict.fromkeys((*judgment_input_keys(role, original['action']),
                                *(path.split('.')[0].removesuffix('[]') for path in paths))))
     for key in keys:
@@ -81,9 +83,9 @@ def assert_judgment_inputs(test, role, prepared, workspace, *, producer_context)
         for ref in sources:
             assert_judgment_source(test, role, path, ref, workspace)
     for path in judgment_source_refs(role, original['action'], context=original):
-        ref, = required_path_values(test, resolved_keys, path)
-        if ref is not None:
-            assert_judgment_source(test, role, path, ref, workspace)
+        for ref in required_path_values(test, resolved_keys, path):
+            if ref is not None:
+                assert_judgment_source(test, role, path, ref, workspace)
 
 
 def required_path_values(test, root, path):
@@ -112,9 +114,9 @@ def assert_judgment_source(test, role, path, ref, workspace):
             test.assertNotIn('local_path', ref, 'unverified evidence must not be materialized')
             test.assertTrue({'error_type', 'reason', 'observed_sha256', 'observed_bytes'} <= ref['restoration_error'].keys())
             return
-        test.assertIn('local_path', ref)
+        location = ref['local_path'] if 'local_path' in ref else ref['path']
         test.assertIn('sha256', ref)
-        resolved = read_source(workspace, {**ref, 'path': ref['local_path']},
+        resolved = read_source(workspace, {**ref, 'path': location},
                                limit=ref['bytes'] if ref.get('bytes') else 2 ** 63 - 1)
         test.assertEqual(resolved['status'], 'ok')
         test.assertFalse(resolved['truncated'])
@@ -180,7 +182,7 @@ def assert_recovery_judgment_input(test, scene, execution, *, source_snapshot):
 
 
 def assert_missing_judgment_inputs_rejected(test, role, prepared, workspace, *, producer_context):
-    """Remove each required root from both views; collect the real checker's failures.
+    """Remove each root from both views; collect this test observer's failures.
 
     The prepared input is a real producer result, shared read-only below its
     top-level dictionaries. A unittest result preserves subtest failures; an
@@ -204,7 +206,10 @@ def assert_missing_judgment_inputs_rejected(test, role, prepared, workspace, *, 
 
 
 def judgment_check_result(role, prepared, workspace, *, producer_context):
-    """Collect both assertions and unittest subtest failures from the real checker."""
+    """Collect assertions and subtest failures of the requirement observer.
+
+    This is not an invocation of the product's prepare/submit receiver.
+    """
     import unittest
 
     class InputCheck(unittest.TestCase):
@@ -232,10 +237,16 @@ def assert_unreadable_requirement_rejected(test, role, prepared, workspace, *, p
     test.assertTrue(original)
     try:
         path.unlink()
+        read = read_source(workspace, ref, limit=max(1, ref['bytes']))
+        test.assertEqual((read['status'], read['path'], read['reason']),
+                         ('missing', ref['path'], 'source_missing'))
         result = judgment_check_result(role, prepared, workspace, producer_context=producer_context)
         test.assertFalse(result.wasSuccessful(), 'missing mandatory source passed: ' + key)
         path.write_bytes(b'X' + original[1:])
         test.assertEqual(path.stat().st_size, len(original))
+        read = read_source(workspace, ref, limit=max(1, ref['bytes']))
+        test.assertEqual((read['status'], read['path'], read['reason']),
+                         ('error', ref['path'], 'source hash differs from reference'))
         result = judgment_check_result(role, prepared, workspace, producer_context=producer_context)
         test.assertFalse(result.wasSuccessful(), 'same-size source corruption passed: ' + key)
     finally:

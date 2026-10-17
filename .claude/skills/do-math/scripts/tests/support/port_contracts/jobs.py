@@ -12,11 +12,9 @@ import sys
 
 import tempfile
 
-import time
-
 import unittest
 
-from do_math.cli_execution import termination_confirmed
+from run_tests import wait_for_worker
 
 from do_math.windows_job import process_identity
 
@@ -51,8 +49,7 @@ class JobsContract:
         try:
             job.terminate()
             self.assertTrue(job.wait(), 'owned Job root did not end')
-            while not termination_confirmed(job.inspect()):
-                time.sleep(0.02)
+            wait_for_worker(job)
         finally:
             job.close()
 

@@ -15,11 +15,14 @@ This module: a task dependency, a large task history, and the solution the publi
 """
 import hashlib
 import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from do_math import trust_validation
 from do_math.canonical import exact_content_hash
-from support.engine_purpose import PurposeResponder, drive, purpose_sim
+from support.engine_purpose import PURPOSE_CONFIG, PurposeResponder, drive, purpose_sim
+from support.sim import Sim
 from support.knowledge_formal_engine import ReturnedValues
 from support.lean_preservation import assert_default_result
 
@@ -70,8 +73,15 @@ class PurposeFlowTests(unittest.TestCase):
 
 class SolvedPurposeTests(unittest.TestCase):
     def test_public_activation_reaches_the_solution_with_archived_role_inputs(self):
-        """The public initialization and activation (the purpose template) driven to the goal."""
-        sim = purpose_sim()
+        """A fresh public initialization and activation driven through the goal audit.
+
+        Initialization is part of this assertion, so this test always builds
+        its own instance even when another purpose consumer warmed a template.
+        Other purpose scenarios restore an activation to test later decisions.
+        """
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        sim = Sim.activated(root, config=PURPOSE_CONFIG)
+        self.assertIn('intent_interpretation', [call['role'] for call in sim.model.calls])
         responder = sim.model.responder = PurposeResponder()
         with ReturnedValues(trust_validation.verify_formal) as returned:
             drive(self, sim)

@@ -18,6 +18,7 @@ from unittest.mock import patch
 import jsonschema
 
 from do_math.record_schemas import RECORD_RULES, RECORDS
+from support.wait_reporting import assert_activity_wait_row
 from support.engine_lifecycle import (CREDENTIAL, ORIGIN, applied, control_at_inbox_check, executions, external_sim,
                                       extended, http_fails, http_grant, lifecycle_sim, only, prepared_environment,
                                       run_machine, ticking_clock, transition, warm_external, warm_lifecycle)
@@ -93,7 +94,7 @@ class SendTests(unittest.TestCase):
         self.assertEqual(operation(self.sim)['status'], 'cancelled')
 
     def test_failure_before_any_send_step_is_an_untransmitted_cancellation(self):
-        self.prepare()
+        config = self.prepare()
         # A pause arrives at the first inbox read, which the first ledger publication makes: the send fails there.
         with control_at_inbox_check(self.sim, 1, 'pause') as arrival:
             run_machine(self.sim, 'external_action')
@@ -102,6 +103,28 @@ class SendTests(unittest.TestCase):
         stored = self.e.store.load()[2]['external_operations']['OP-audit']
         self.assertEqual((stored['status'], stored['transmitted'], stored['succeeded']), ('cancelled', False, False))
         RECORD_RULES['external_operations'](stored)  # the storage rules of one operation record
+        first = deepcopy(self.sim.runtime['executions'][stored['execution_id']])
+        owner = first['owner_activity_id']
+        activity = deepcopy(self.sim.runtime['activities'][owner])
+        self.assertEqual(activity['waiting']['kind'], 'external_followup')
+        self.assertEqual(activity['waiting']['condition'], {'operation_id': stored['id'], 'status': 'cancelled'})
+        assert_activity_wait_row(self, self.e.status(), owner, activity)
+        retry = {'operation': 'retry', 'id': stored['id'], 'grant_id': config['grant_id']}
+        applied(self.sim, 'external', config=retry, request_id='UC-untransmitted-retry')
+        self.assertEqual(len([row for row in self.sim.runtime['queue'] if row.get('target') == stored['id']]), 1)
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'ready')
+        prepared = deepcopy(self.sim.runtime)
+        applied(self.sim, 'external', config=retry, request_id='UC-untransmitted-retry')
+        self.assertEqual(self.sim.runtime, prepared)
+        self.assertEqual(self.http.requests, [])
+        self.http.table['/effect'] = (201, b'created', None)
+        applied(self.sim, 'resume')
+        run_machine(self.sim, 'external_action')
+        self.assertEqual(len(self.http.requests), 1)
+        self.assertEqual(self.sim.runtime['executions'][first['id']], first)
+        current = self.sim.runtime['executions'][operation(self.sim)['execution_id']]
+        self.assertEqual((current['owner_activity_id'], current['continuation_of']), (owner, first['id']))
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'finished')
 
     def test_an_unrelated_control_during_the_send_steps_does_not_cancel_the_effect(self):
         self.http.table['/effect'] = (201, b'created', None)
@@ -132,26 +155,90 @@ class SendTests(unittest.TestCase):
         self.assertEqual(op['http_status'], 503)
         self.assertEqual(op['status'], 'unknown')
         self.assertIsNone(op['succeeded'])
+        first = deepcopy(self.sim.runtime['executions'][op['execution_id']])
+        owner = first['owner_activity_id']
+        activity = deepcopy(self.sim.runtime['activities'][owner])
+        self.assertEqual(activity['waiting']['kind'], 'external_reconciliation')
+        assert_activity_wait_row(self, self.e.status(), owner, activity)
+        self.assertEqual(self.sim.runtime['activities'][owner], activity)
         with self.assertRaisesRegex(ValueError, 'retry requires request-bound effect or idempotency evidence'):
             extended(self.e, 'external', {'operation': 'retry', 'id': op['id'], 'grant_id': 'GR-http'})
         with self.assertRaisesRegex(ValueError, 'reconciliation requires structured operation evidence'):
             extended(self.e, 'external', {'operation': 'reconcile', 'id': op['id'], 'result': 'failed', 'evidence': 'string'})
-        extended(self.e, 'external', {'operation': 'reconcile', 'id': op['id'], 'result': 'failed', 'evidence': {
+        applied(self.sim, 'external', config={'operation': 'reconcile', 'id': op['id'], 'result': 'failed', 'evidence': {
             'evidence_ref': 'remote-admin-log', 'operation_id': op['id'], 'request_sha256': op['request_sha256'],
             'idempotency_key': op['idempotency_key'], 'fact': 'effect_absent',
             'observed_at': self.sim.clock.now()}})
-        extended(self.e, 'external', {'operation': 'retry', 'id': op['id'], 'grant_id': 'GR-http'})
+        failed = deepcopy(operation(self.sim, 'EO-test'))
+        self.assertIs(failed['effect_absent'], True)
+        activity = deepcopy(self.sim.runtime['activities'][owner])
+        self.assertEqual(activity['waiting'], {**activity['waiting'], 'kind': 'external_followup',
+            'condition': {'operation_id': op['id'], 'status': 'failed'}, 'next_owner': 'user'})
+        assert_activity_wait_row(self, self.e.status(), owner, activity)
+        self.assertEqual(len(self.http.requests), 1)
+        retry = {'operation': 'retry', 'id': op['id'], 'grant_id': 'GR-http'}
+        applied(self.sim, 'external', config=retry, request_id='UC-external-retry-once')
+        successor, = [row for row in self.sim.runtime['queue'] if row.get('target') == op['id']]
+        self.assertEqual((successor['owner_activity_id'], successor['continuation_of']), (owner, first['id']))
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'ready')
+        before_replay = deepcopy(self.sim.runtime)
+        applied(self.sim, 'external', config=retry, request_id='UC-external-retry-once')
+        self.assertEqual(self.sim.runtime, before_replay)
+        self.assertEqual(len(self.http.requests), 1)
         # The new attempt is not the reconciled one: its handling goes with its reconciliation.
         retried = operation(self.sim, 'EO-test')
         self.assertEqual(retried['status'], 'prepared')
         self.assertNotIn('handling', retried)
         self.assertNotIn('reconciliation', retried)
         RECORD_RULES['external_operations'](retried)  # the storage rules of one operation record
+        self.http.table['/effect'] = (201, b'created', None)
         run_machine(self.sim, 'external_action')
         self.assertEqual(len(self.http.requests), 2)
         attempts = executions(self.sim, 'external_action')
         self.assertEqual(attempts[0]['owner_activity_id'], attempts[1]['owner_activity_id'])
         self.assertEqual(attempts[1]['continuation_of'], attempts[0]['id'])
+        self.assertEqual(self.sim.runtime['executions'][first['id']], first)
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'finished')
+        self.assertEqual(operation(self.sim, 'EO-test')['request'], failed['request'])
+        self.sim.restart()
+        self.assertEqual(self.sim.runtime['executions'][first['id']], first)
+        self.assertNotIn(owner, self.sim.engine.status()['waiting_activities'])
+
+    def test_public_success_reconciliation_finishes_only_the_exact_unknown_owner(self):
+        self.http.table['/effect'] = (503, b'uncertain', None)
+        config = self.prepare()
+        run_machine(self.sim, 'external_action')
+        first = deepcopy(operation(self.sim))
+        first_execution = deepcopy(self.sim.runtime['executions'][first['execution_id']])
+        owner = first_execution['owner_activity_id']
+        extended(self.e, 'external', {**config, 'id': 'OP-other'})
+        run_machine(self.sim, 'external_action')
+        other = deepcopy(operation(self.sim, 'OP-other'))
+        other_owner = self.sim.runtime['executions'][other['execution_id']]['owner_activity_id']
+        other_activity = deepcopy(self.sim.runtime['activities'][other_owner])
+        self.sim.restart()
+        self.e = self.sim.engine
+        # A redelivered preparation and an owner retry without evidence cannot send again.
+        applied(self.sim, 'external', config=config)
+        self.e._run_external_action(first_execution['action'])
+        self.assertEqual(operation(self.sim), first)
+        self.assertEqual(len(self.http.requests), 2)
+        activity = deepcopy(self.sim.runtime['activities'][owner])
+        assert_activity_wait_row(self, self.e.status(), owner, activity)
+        proof = {'operation': 'reconcile', 'id': first['id'], 'result': 'confirmed', 'evidence': {
+            'operation_id': first['id'], 'request_sha256': first['request_sha256'],
+            'idempotency_key': first['idempotency_key'], 'fact': 'succeeded',
+            'evidence_ref': 'remote:exact-receipt', 'observed_at': self.sim.clock.now()}}
+        applied(self.sim, 'external', config=proof, request_id='UC-exact-reconcile')
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'finished')
+        self.assertEqual(self.sim.runtime['activities'][other_owner], other_activity)
+        self.assertEqual(operation(self.sim, 'OP-other'), other)
+        self.assertEqual(self.sim.runtime['executions'][first_execution['id']], first_execution)
+        current = deepcopy(self.sim.runtime)
+        applied(self.sim, 'external', config=proof, request_id='UC-exact-reconcile')
+        self.assertEqual(self.sim.runtime, current)
+        self.assertEqual(len(self.http.requests), 2)
+        self.assertNotIn(owner, self.e.status()['waiting_activities'])
 
     def test_scoped_http_control_preserves_exact_envelope(self):
         self.http.table['/effect'] = (201, b'ok', None)

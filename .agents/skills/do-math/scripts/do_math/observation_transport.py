@@ -18,7 +18,7 @@ def decode_observation_row(raw: bytes) -> dict:
 
 @dataclass(frozen=True)
 class ObservationBatch:
-    """Rows decoded from one read of the stream.
+    """Consecutive rows decoded from a bounded part of one stream read.
 
     ``rows[i]`` holds the exact bytes of ``events[i]`` at ``offsets[i]``; its
     stream row number (nonblank rows, from zero) is ``first_row + i``.
@@ -32,6 +32,9 @@ class ObservationBatch:
     end_offset: int
     stream_path: Path
     is_terminated: Callable[[], bool]
+    # Direct batches represent a whole read. Runner parts mark its last part,
+    # so a collector can join one read without moving its tick boundary.
+    ends_read: bool = True
 
     def source(self, offset, *, start_offset):
         return {'stream': 'stdout.jsonl', 'start_offset': start_offset, 'end_offset': offset, 'received_at': self.received_at,
@@ -41,4 +44,4 @@ class ObservationBatch:
         return self.stream_path.stat().st_size if self.stream_path.exists() else 0
 
     def caught_up(self):
-        return self.end_offset >= self.stream_size()
+        return self.ends_read and self.end_offset >= self.stream_size()

@@ -52,13 +52,17 @@ def dispatch_waits(runtime):
 def task_status(instance, runtime, *, evaluation_context=None):
     """Per-task rows; readiness uses ``evaluation_context`` so a current view judges as dispatch does."""
     from . import planning, questions, task_contracts
+    def targets_task(action, identifier):
+        return (action.get('target') == identifier
+                or (action.get('role') == 'research_preparation' and any(identifier in action.get(field, {})
+                    for field in ('assessment_targets', 'observation_rule_targets'))))
     rows = []
     pending_assessments = set(task_contracts.returned_task_ids(runtime.get('tasks', {})))
     live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"]
     ended = planning.instance_ended(instance, runtime)
     for identifier, task in runtime.get("tasks", {}).items():
-        queued = [action for action in runtime.get("queue", []) if action.get("target") == identifier]
-        executions = [e for e in live if e.get("action", {}).get("target") == identifier]
+        queued = [action for action in runtime.get("queue", []) if targets_task(action, identifier)]
+        executions = [e for e in live if targets_task(e.get('action', {}), identifier)]
         running_ids = {e.get("action", {}).get("id") for e in executions}
         obligations = [aid for aid, entry in runtime.get("waiting_actions", {}).items()
                        if entry.get("action", {}).get("target") == identifier or identifier in entry.get("action", {}).get("revision_targets", {})
@@ -151,7 +155,7 @@ def operating_summary(instance, runtime):
     code=supervision_block({key:value for key,value in facts.items() if key!='operator_enabled'})
     repair=facts['installation_repair']
     if code=='user_pause':
-        blocker={'kind':'user_pause','next_owner':'user','reason':runtime['user_pause'].get('reason')}
+        blocker={'kind':'user_pause','next_owner':'user',**facts['user_pause']}
     elif code=='maintenance':
         blocker={'kind':'maintenance_fence','next_owner':'operator','reason':runtime['maintenance_fence'].get('state')}
     elif code=='model_policy':
@@ -211,6 +215,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
     from .knowledge_records import knowledge_view
     from .question_engine import question_view, user_questions
     from .retention import pending_cleanup_failures
+    from .revisions import active_repetition_holds
     from .supervision import supervision_facts
     from .wait_rules import SLOT_WAITS
     observed = dict.fromkeys(OBSERVED_FIELDS)
@@ -252,6 +257,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
             "latest_results": list(runtime.get("activities", {}).values())[-5:],
             "questions": user_questions(questions),
             "question_links": questions,
+            "repetition_holds": list(active_repetition_holds(runtime).values()),
             "operational_notices": deepcopy(runtime.get("questions", [])),
             # user_pause, conversation_lost, model_policy_violation, maintenance_fence,
             # installation_repair and operator_enabled: the facts supervision decides on.
@@ -307,6 +313,9 @@ def render_human_report(report: dict) -> str:
     blocker = summary.get('primary_blocker')
     if blocker:
         lines.append('blocking: '+str(blocker['kind'])+' next='+str(blocker.get('next_owner')))
+        if blocker['kind'] == 'user_pause':
+            for field in ('reason', 'request_id', 'created_at'):
+                lines.append('  ' + field + ': ' + str(blocker[field]))
     if summary.get('lifecycle') == 'initializing':
         lines.append('initialization missing: '+', '.join(summary.get('initialization', {}).get('missing', [])))
     for finding in inspection["findings"]:
@@ -322,6 +331,22 @@ def render_human_report(report: dict) -> str:
             lines.append('    wait: ' + json.dumps(wait, ensure_ascii=False, sort_keys=True))
         if task.get('readiness') and task['readiness']['errors']:
             lines.append('    readiness: ' + '; '.join(task['readiness']['errors']))
+    for row in report.get('question_links', []):
+        if row['status'] != 'open':
+            continue
+        lines.append(f"question {row['id']}: status=open next={row['owner']} "
+                     f"blocks={str(row['blocks']).lower()} reason={row.get('routing_reason')}")
+        lines.append('  text: ' + json.dumps(row.get('text'), ensure_ascii=False))
+        coordinates = {field: row[field] for field in ('origin_execution_id', 'origin_field',
+            'source_ref', 'source_kind', 'source_id', 'source_status') if field in row}
+        lines.append('  coordinates: ' + json.dumps(coordinates, ensure_ascii=False, sort_keys=True))
+        lines.append('  targets: ' + json.dumps({field: row[field] for field in
+            ('target_ids', 'unresolved_target_ids')}, ensure_ascii=False, sort_keys=True))
+    for row in report.get('repetition_holds', []):
+        lines.append(f"repetition hold: {row['lineage']}/{row['lineage_id']} "
+                     f"count={row['count']}/{row['limit']} next={row['next_owner']} reason={row['reason']}")
+        lines.append('  event_ref: ' + row['event_ref'])
+        lines.append('  release_condition: ' + row['release_condition'])
     for name, gate in (report.get('provider_waits') or {}).get('providers', {}).items():
         lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} "
                      f"generation={gate['generation']}")
@@ -346,6 +371,7 @@ def render_waiting_activities(report):
         lines.append(f"activity {identifier}: {row['activity_kind']} wait={row['kind']} next={row['next_owner']} "
                      f"reason={row['reason']}")
         lines.append('  coordinates: ' + json.dumps(row['coordinates'], ensure_ascii=False, sort_keys=True))
+        lines.append('  condition: ' + json.dumps(row['condition'], ensure_ascii=False, sort_keys=True))
     return lines
 
 

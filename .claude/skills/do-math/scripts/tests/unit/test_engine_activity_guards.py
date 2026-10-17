@@ -25,6 +25,29 @@ def attempt(identifier='EX-one', owner='AY-one'):
 
 
 class ActivityGuardTests(unittest.TestCase):
+    def test_resume_distinguishes_boolean_and_integer_conditions_without_releasing_other_owners(self):
+        for recorded, supplied in ((1, True), (True, 1), (0, False), (False, 0),
+                ({'slot': [1]}, {'slot': [True]})):
+            with self.subTest(recorded=recorded, supplied=supplied):
+                runtime, record, _ = opened()
+                activities.open_activity(runtime, activity_id='AY-peer', activity_kind='research',
+                    owner_ref='RI-peer', input_refs=[], opened_at=AT)
+                for identifier in (record['id'], 'AY-peer'):
+                    activities.wait_for(runtime, identifier, kind='required_input', reason='Exact public input',
+                        condition=recorded, next_owner='user', at=AT)
+                before = deepcopy(runtime)
+                with self.assertRaisesRegex(ValueError, '^the resolved condition differs from the recorded wait$'):
+                    activities.resume_activity(runtime, record['id'], condition=supplied, at=LATER)
+                self.assertEqual(runtime, before)
+                activities.resume_activity(runtime, record['id'], condition=deepcopy(recorded), at=LATER)
+                self.assertEqual((record['status'], record['resumed_at']), ('ready', LATER))
+                self.assertNotIn('waiting', record)
+                self.assertEqual(runtime['activities']['AY-peer'], before['activities']['AY-peer'])
+                released = deepcopy(runtime)
+                with self.assertRaisesRegex(ValueError, '^only a waiting activity can resume$'):
+                    activities.resume_activity(runtime, record['id'], condition=recorded, at=LATER)
+                self.assertEqual(runtime, released)
+
     def test_every_declared_wait_kind_preserves_condition_and_resumes_only_for_that_condition(self):
         from do_math.wait_rules import ACTIVITY_WAIT_RULES
         from do_math.record_schemas import RECORDS
@@ -179,6 +202,18 @@ class ActivityGuardTests(unittest.TestCase):
                         activities.open_activity(runtime, **declaration)
                     else:
                         activities.continue_activity(runtime, 'EX-one', at=LATER, reason='이어가기')
+
+    def test_stored_wait_with_an_unregistered_kind_is_reported_without_mutation(self):
+        runtime, activity, _ = opened()
+        activities.wait_for(runtime, activity['id'], kind='required_input', reason='Input required',
+                            condition='SO-two', next_owner='user', at=AT)
+        for kind in ('unregistered', None, []):
+            with self.subTest(kind=kind):
+                activity['waiting']['kind'] = kind
+                before = deepcopy(runtime)
+                self.assertEqual(activities.validate_activities(runtime),
+                                 ['AY-one: activity wait kind is unregistered'])
+                self.assertEqual(runtime, before)
 
 
 class ActivityTransitionBoundaryTests(unittest.TestCase):

@@ -18,7 +18,7 @@ import unittest
 from unittest.mock import patch
 
 from do_math import file_io
-from do_math.operation_trace import LIVE_INTERVAL, OperationTrace, child_environment, phase, tracing, workspace_operation
+from do_math.operation_trace import LIVE_INTERVAL, OperationTrace, child_environment, measured, phase, tracing, workspace_operation
 from do_math.trace_report import phase_rows, progress
 from support.provider_probes import ObservedCalls
 
@@ -47,6 +47,27 @@ class OperationTraceTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         return directory.name
+
+    def test_measured_factory_preserves_return_and_exception_and_records_the_phase(self):
+        token, failure = object(), ValueError('original measured failure')
+        def work(value, *, fail=False):
+            if fail:
+                raise failure
+            return value
+        # Construct both factory and decorate during the test, not discovery import.
+        wrapped = measured('direct_measurement')(work)
+        self.assertIs(wrapped(token), token)
+        with tracing(self.directory()) as sink:
+            self.assertIs(wrapped(token), token)
+            with self.assertRaisesRegex(ValueError, '^original measured failure$') as caught:
+                wrapped(token, fail=True)
+            self.assertIs(caught.exception, failure)
+        rows = [json.loads(line) for line in sink.path.read_text(encoding='utf-8').splitlines()]
+        self.assertEqual([(row['phase'], row['event']) for row in rows],
+                         [('direct_measurement', event) for event in
+                          ('started', 'completed', 'started', 'interrupted')])
+        self.assertEqual(rows[0]['span_id'], rows[1]['span_id'])
+        self.assertEqual(rows[2]['span_id'], rows[3]['span_id'])
 
     @unittest.skipUnless(os.name == 'nt', 'Windows refuses to replace a directory with a file; the failure is its own')
     def test_telemetry_failure_identifies_operation_without_leaking_exception_text(self):

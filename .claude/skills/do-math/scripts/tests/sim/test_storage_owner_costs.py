@@ -36,7 +36,7 @@ class OwnerCosts(unittest.TestCase):
                         self.fail('공개 pause 뒤 watch가 종료되지 않음')
 
                 clock.on_sleep = sample
-                sim.engine.run(watch=True)
+                result = sim.engine.run(watch=True)
                 self.assertEqual(len(points), count + 1)
                 begin, end = points[0][0], points[-1][0]
                 commits = [args for name, args in backend.calls[begin:end]
@@ -44,8 +44,15 @@ class OwnerCosts(unittest.TestCase):
                 self.assertEqual(commits, [])
                 self.assertEqual([point[1:] for point in points], [points[0][1:]] * (count + 1))
                 self.assertEqual(len(request), 1)
+                self.assertEqual((result['status'], result['snapshot']), ('paused', sim.engine.head))
+                self.assertNotEqual(sim.engine.head, points[-1][1])
+                sim.restart()
+                self.assertEqual(sim.engine.head, result['snapshot'])
                 self.assertEqual(sim.runtime['status'], 'paused')
                 self.assertIn(request[0]['request_id'], sim.runtime['processed_controls'])
+                self.assertEqual(sim.runtime['queue'], [])
+                self.assertEqual(sim.runtime['executions'], {})
+                self.assertEqual(sim.jobs.launched, [])
 
     def test_readiness_copies_results_but_never_whole_state_at_measured_scale(self):
         """100과제×이력10의 실제 owner 평가. 2초 초과 여부는 슬롯 수신 후 실측한다."""
@@ -65,9 +72,9 @@ class OwnerCosts(unittest.TestCase):
                 sim.engine._save()
                 sim.engine._refresh_readiness()
                 # 두 번째 평가가 사건 발행 대신 안정 평가 구간이 되도록 첫 결과를 보존한다.
-                before_tasks = canonical_json(sim.runtime['tasks'])
+                before = canonical_json([sim.instance, sim.runtime])
                 state_ids = {id(sim.instance), id(sim.runtime)}
-                with Returns(planning.task_ready) as returned, ObservedCalls(
+                with Returns(planning.task_ready, snapshot=deepcopy) as returned, ObservedCalls(
                         copies=deepcopy, ready=planning.task_ready,
                         capture={'copies': lambda args: id(args['x']),
                                  'ready': lambda args: args['task']['id']}) as calls:
@@ -79,16 +86,27 @@ class OwnerCosts(unittest.TestCase):
                 self.assertEqual(len(returned.values), calls.count('ready'))
                 owner_results = [value for (caller, _), value in zip(calls.calls['ready'], returned.values)
                                  if caller == 'do_math.lifecycle_engine']
+                owner_snapshots = [value for (caller, _), value in zip(calls.calls['ready'], returned.snapshots)
+                                   if caller == 'do_math.lifecycle_engine']
                 self.assertEqual(len(owner_results), count)
+                self.assertEqual(owner_results, owner_snapshots)
                 self.assertEqual([(v['state'], v['errors']) for v in owner_results], [('ready', [])] * count)
                 self.assertEqual([value for value in calls.captured('copies') if value in state_ids], [])
-                self.assertEqual([value for value in calls.captured('copies') if value in {id(v) for v in owner_results}],
+                # Return snapshots are test observations, separate from the owner's copies.
+                self.assertEqual([value for value in calls.captured('copies', caller='do_math.lifecycle_engine')
+                                  if value in {id(v) for v in owner_results}],
                                  [id(v) for v in owner_results])
-                self.assertEqual(canonical_json(sim.runtime['tasks']), before_tasks)
-                for index, result in enumerate(owner_results):
+                self.assertEqual(canonical_json([sim.instance, sim.runtime]), before)
+                for index, (result, snapshot) in enumerate(zip(owner_results, owner_snapshots)):
                     stored = sim.engine._task_readiness[f'TK-cost-{index:03}']
-                    self.assertEqual({key: stored[key] for key in result}, result)
+                    self.assertEqual({key: stored[key] for key in snapshot}, snapshot)
                     self.assertIsNot(stored['basis'], result['basis'])
+                    self.assertTrue(result['basis'])
+                    # A shallow list copy would retain these nested record references.
+                    result['basis'][0]['id'] = 'changed returned basis'
+                    result['profile_ids'].append('changed returned profile')
+                    self.assertEqual({key: stored[key] for key in snapshot}, snapshot)
+                self.assertEqual(canonical_json([sim.instance, sim.runtime]), before)
 
 
 if __name__ == '__main__':

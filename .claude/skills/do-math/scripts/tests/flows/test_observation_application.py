@@ -54,6 +54,36 @@ class RefHeldByAnotherWriter:
 
 
 class ModelCallObservationTests(unittest.TestCase):
+    def test_owner_delayed_tick_does_not_open_utc_obligations_before_its_receipt_time(self):
+        sim = Sim.activated()
+        execution_id = 'EX-delayed-utc'
+        workspace = running_execution(sim, execution_id, 'research_work', bind=True)
+        at = (sim.clock.wall() + timedelta(seconds=2)).isoformat()
+        tracker = ObservationTracker(execution_id, workspace, {
+            'observation_mode': 'event_driven', 'research_self_checks': True,
+            'observation_rules': [observation_rule('wall_time_reached', 'clock', 'UTC', at)],
+            'observation_interval_seconds': 300, **WINDOWS}, time_port=sim.clock)
+        tracker.schedule_review('RECHECK', at=at, reason='inspect recovery', basis_ref=execution_id)
+        stream = workspace / 'stdout.jsonl'
+        incoming = batch(sim, [], stream)
+        sim.advance(1000)
+        queue = deepcopy(sim.runtime['queue'])
+        sim.engine._observe_running(execution_id, tracker, incoming)
+        self.assertFalse(tracker.obligations)
+        self.assertFalse(tracker.explicit_reviews['RECHECK']['fired'])
+        self.assertEqual(sim.runtime['queue'], queue)
+        applied = sim.runtime['executions'][execution_id]['observation_stream']
+        self.assertEqual((applied['received_at'], applied['applied_at']), (incoming.received_at, sim.clock.now()))
+        self.assertFalse(applied['local_termination_confirmed'])
+        sim.engine._observe_running(execution_id, tracker, batch(sim, [], stream))
+        obligation, = tracker.obligations.values()
+        self.assertEqual(obligation['snapshot']['observed_at'], sim.clock.now())
+        self.assertEqual(obligation['opened_offset_ms'], 1000000)
+        self.assertIn('delivered_request_sha256', obligation)
+        review, = [action for action in sim.runtime['queue'] if action['role'] == 'operational_review']
+        self.assertEqual(review['target'], execution_id)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts(self):
         """The wiring the other tests enter directly: runner, calls port and owner apply a real call's stream.
 
@@ -168,7 +198,8 @@ class OperationalReviewTriggerTests(unittest.TestCase):
         from support.default_responder import DefaultResponder
         from support.model import Answer
 
-        for state in ('no_schedule', 'before', 'at', 'after', 'stopping', 'ended'):
+        for state in ('no_schedule', 'before', 'at', 'after', 'stopping', 'ended',
+                      'tracker_at', 'tracker_after', 'restart_before', 'restart_after', 'tracker_restart'):
             with self.subTest(state=state):
                 sim = Sim.activated()
                 sim.model.responder = DefaultResponder(preparation_candidates=[])
@@ -185,6 +216,9 @@ class OperationalReviewTriggerTests(unittest.TestCase):
                 write_checkpoint(workspace)
                 tracker = ObservationTracker(target, workspace,
                     {'observation_mode': 'event_driven', 'research_self_checks': False}, time_port=sim.clock)
+                tracked = state.startswith('tracker')
+                if tracked:
+                    sim.engine._trackers[target] = tracker
                 sim.engine._observe_running(target, tracker, batch(sim,
                     [{'type': 'turn.started', 'execution_id': 'EX-other'}], workspace / 'stdout.jsonl'))
                 at = sim.clock.wall() + timedelta(seconds=30)
@@ -205,16 +239,37 @@ class OperationalReviewTriggerTests(unittest.TestCase):
                 disposition_id = saved['disposition_id']
                 self.assertEqual(sim.runtime['executions'][target]['status'], 'running')
                 self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['executions'][target]['operational_continuation'], saved)
+                if tracked:
+                    self.assertEqual(tracker.explicit_reviews[disposition_id]['at'], next_review['at'])
+                    self.assertFalse(tracker.explicit_reviews[disposition_id]['fired'])
+                restarted = 'restart' in state
+                if restarted:
+                    sim.restart()
+                    self.assertNotIn(target, sim.engine._trackers)
                 if state in ('stopping', 'ended'):
                     execution = sim.runtime['executions'][target]
                     transition_execution(execution, 'stopping', at=sim.clock.now(), reason='work stopped')
                     if state == 'ended':
                         transition_execution(execution, 'ended', at=sim.clock.now(), outcome='cancelled')
                     sim.engine._save()
-                offset = -1 if state == 'before' else 1 if state in ('after', 'stopping', 'ended', 'no_schedule') else 0
+                offset = -1 if state in ('before', 'restart_before') else 1 if state in (
+                    'after', 'stopping', 'ended', 'no_schedule', 'tracker_after', 'restart_after', 'tracker_restart') else 0
                 sim.advance((at - sim.clock.wall()).total_seconds() + offset)
+                if restarted:
+                    sim.engine.process_controls()
+                    self.assertEqual(sim.runtime['executions'][target]['operational_continuation'], saved)
+                    self.assertFalse(any(a['role'] == 'operational_review' and a.get('live')
+                                         and a.get('target') == target for a in sim.runtime['queue']))
+                    # Public run recovers the old owner; never make its execution running again.
+                    sim.engine.run(max_steps=1)
+                    self.assertIn(sim.runtime['executions'][target]['status'], ('stopping', 'ended'))
+                elif tracked:
+                    # A caught-up empty tick is what the runner emits without new stdout rows.
+                    sim.engine._schedule_operational_reviews()
+                    self.assertNotIn('dispatched_at', sim.runtime['executions'][target]['operational_continuation'])
+                    sim.engine._observe_running(target, tracker, batch(sim, [], workspace / 'stdout.jsonl'))
                 owner_pass()
-                expected = int(state in ('at', 'after'))
+                expected = int(state in ('at', 'after', 'tracker_at', 'tracker_after'))
                 after = assert_call_records(self, sim)
                 self.assertEqual(after['operational_review'] - before['operational_review'], expected,
                     {'target_status': sim.runtime['executions'][target]['status'],
@@ -224,8 +279,12 @@ class OperationalReviewTriggerTests(unittest.TestCase):
                 if expected:
                     review = next(row for row in sim.runtime['executions'].values()
                                   if row['role'] == 'operational_review'
-                                  and row['action'].get('observation', {}).get('kind') == 'scheduled_review_due')
-                    self.assertEqual(review['action']['observation_refs'], [disposition_id])
+                                  and row['action'].get('observation', {}).get('kind') == (
+                                      'explicit_review_due' if tracked else 'scheduled_review_due'))
+                    if tracked:
+                        self.assertTrue(tracker.explicit_reviews[disposition_id]['fired'])
+                    else:
+                        self.assertEqual(review['action']['observation_refs'], [disposition_id])
                     self.assertEqual(review['action']['target'], target)
                     self.assertEqual(review['outcome'], 'output_accepted', review.get('error'))
                 else:

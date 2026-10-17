@@ -24,6 +24,70 @@ def workspace(test):
 
 
 class FinalCheckpointCaptureTests(unittest.TestCase):
+    def test_native_capture_refuses_a_changed_input_then_preserves_one_exact_final(self):
+        """T3 13.6 s: published input and native receipt need the real repository."""
+        from copy import deepcopy
+        from support.submission_scenes import native_scene
+        from support.submission_receiver import native_result
+        scene = native_scene()
+        engine = scene.engine
+        execution = engine.runtime['executions']['EX-history']
+        raw = canonical_json(scene.output)
+        result = native_result(scene.sim, execution, scene.context, raw, scene.workspace)
+        engine._save()
+        execution = engine.runtime['executions']['EX-history']
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^native capture differs from the published input or schema$'):
+            engine._capture_native_submission(execution, result, {**scene.context, 'goal': 'unpublished goal'},
+                                             scene.schema, scene.workspace, raw)
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+        receipt = engine._capture_native_submission(execution, result, scene.context, scene.schema, scene.workspace, raw)
+        self.assertEqual(receipt['state'], 'accepted')
+        execution = engine.runtime['executions'][execution['id']]
+        published = deepcopy((engine.head, engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^a different native final was already captured for this execution$'):
+            engine._capture_native_submission(execution, result, scene.context, scene.schema, scene.workspace, raw + b' ')
+        self.assertEqual((engine.head, engine.instance, engine.runtime), published)
+        self.assertEqual(engine.store.read(execution['submission_intent']['output_ref'], engine.head), raw)
+
+    def test_native_incomplete_outputs_preserve_the_central_rejection_and_provider_status(self):
+        """T3 15.5 s: real capture must preserve its rejected check and provider status."""
+        from support.submission_scenes import native_scene
+        from support.submission_receiver import native_result
+        from do_math import submission
+        import jsonschema
+        scene = native_scene()
+        engine = scene.engine
+        execution = engine.runtime['executions']['EX-history']
+        output = scene.output
+        jsonschema.Draft202012Validator(scene.schema).validate(output)
+        (scene.workspace / 'too-large.txt').write_bytes(b'x' * (engine.instance['config']['max_artifact_bytes'] + 1))
+        result = native_result(scene.sim, execution, scene.context, canonical_json(output), scene.workspace)
+        collected = engine._collect_submitted_result(execution, result, scene.context, scene.schema, scene.workspace)
+        self.assertEqual((collected['status'], collected['provider_result_status'], collected['error_kind']),
+                         ('failed', 'completed', 'execution_failure'))
+        self.assertTrue(collected['error'].startswith('native final failed central structural validation; see '),
+                        collected['error'])
+        receipt = next(event['basis']['receipt'] for event in engine.runtime['events']
+                       if event['kind'] == 'submission_checked' and event.get('target') == execution['id']
+                       and event.get('basis', {}).get('origin') == 'native_final')
+        self.assertEqual(receipt['state'], 'rejected')
+        check = submission.load_json(engine.store.read(receipt['payload']['submission_check']['check_ref'], engine.head))
+        self.assertFalse(check['passed'])
+        self.assertNotIn('failure_kind', check)
+        self.assertTrue(any(issue['rule_id'] == 'artifact.preservation' and issue['path'] == 'too-large.txt'
+                            for issue in check['issues']))
+        self.assertEqual(engine.store.load()[2], engine.runtime)
+
+    def test_task_evidence_format_checks_checkpoint_structure_and_declines_unknown_formats(self):
+        from do_math.core_engine import _artifact_format_valid
+        raw = canonical_json(CHECKPOINT)
+        self.assertTrue(_artifact_format_valid({'path': 'runtime/artifacts/BA/checkpoint.json'}, raw))
+        self.assertFalse(_artifact_format_valid({'path': 'runtime/artifacts/BA/checkpoint.json'}, b'{}'))
+        self.assertTrue(_artifact_format_valid({'path': 'runtime/artifacts/BA/result.json'}, b'{}'))
+        self.assertFalse(_artifact_format_valid({'path': 'runtime/artifacts/BA/result.bin'}, b'proof'))
+        self.assertFalse(_artifact_format_valid({'path': 'runtime/artifacts/BA/result.md'}, b'\x00'))
+
     def test_final_capture_owns_exact_raw_and_input_evidence_independently_of_submission_outputs(self):
         from support.entry import entry
         _entry = entry()

@@ -69,14 +69,18 @@ class SealedReplayTests(unittest.TestCase):
                 validate_sealed_review(cycle, engine.runtime, instance=engine.instance, at=engine.ports.clock.now(), clock=engine.ports.clock)
 
     def test_previous_review_must_resolve_to_its_actual_preserved_cycle(self):
+        from do_math.canonical import exact_content_hash
+        from do_math.review_cycle import _replacement_sealed_input
         from support.entry import entry
         _entry = entry()
         runtime = {'executions': {}, 'review_cycles': {}}
+        sealed_inputs = []
         previous = None
         for revision in (1, 2):
             seed = scoped_start({'revision': revision}, reviewers=2)
             cycle = start_review({'revision': revision}, reviewers=2, previous=previous,
                 policy=seed['review_policy'], scope_assessment=seed['scope_assessment'])
+            sealed_inputs.append(exact_content_hash(_replacement_sealed_input(cycle, [])))
             cid = 'cycle-' + str(revision)
             cycle['id'] = cid
             while next_actions(cycle):
@@ -88,6 +92,7 @@ class SealedReplayTests(unittest.TestCase):
                 cycle = accept_result(cycle, action, output, eid)
             runtime['review_cycles'][cid] = cycle
             previous = cycle
+        self.assertNotEqual(sealed_inputs[0], sealed_inputs[1])
         self.assertEqual(validate_sealed_review(cycle, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
         forged = copy.deepcopy(cycle)
         next(iter(forged['results'].values()))['stage'] = 'judge'

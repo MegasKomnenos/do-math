@@ -10,6 +10,7 @@ concurrent Git ref transaction does. Writing a damaged record past the
 contract goes through the store's own ``_store.publish``.
 """
 from copy import deepcopy
+from datetime import datetime
 import hashlib
 import json
 from pathlib import Path
@@ -19,8 +20,10 @@ import unittest
 from do_math.canonical import canonical_json
 from do_math.events import EventPublisher, check_sequence
 from do_math.git_store import GitStateStoreConflict
+from do_math.initialization import initialize_state
 from support.state_builders import current_state, installed_contract, with_validator
 from support.fakes.clock import FakeClock
+from support.fakes.host import make_fake as fake_host
 from support.storage_records import INSTANCE_ID, OTHER_INSTANCE_ID, RecordingGit, held_ref_lock, record_store
 
 LOST_RACE = '^state ref changed before the publish compare-and-swap$'
@@ -43,6 +46,211 @@ class StoreCase(unittest.TestCase):
 
 
 class FamilyRecordStorageTests(StoreCase):
+    def test_live_clock_guards_store_the_observed_utc_and_independent_lower_bound(self):
+        """About 0.22 s: two real guard writers, cold metadata decodes and historical heads."""
+        from datetime import timedelta
+        from support.storage_records import engine_on, fake_ports
+        for reason, expected_seconds in (('live_utc_regression', 10), ('live_monotonic_regression', 1.999998)):
+            with self.subTest(reason=reason):
+                clock = self.clock
+                store = self.store(path=self.root / reason)
+                instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='Clock sample',
+                    workspace=self.root / 'work', config={}, source_input='Clock sample',
+                    clock=clock, host=fake_host())
+                engine, initial = engine_on(store, instance, runtime, workspace=self.root / 'work',
+                                           ports=fake_ports(clock, self.backend))
+                start = clock.wall()
+                if reason == 'live_utc_regression':
+                    clock.set_wall(start + timedelta(seconds=10))
+                self.assertTrue(engine._clock_guard()['usable'])
+                if reason == 'live_utc_regression':
+                    clock.set_wall(start + timedelta(seconds=9))
+                else:
+                    clock.advance(2)
+                    clock.set_wall(start + timedelta(seconds=1))
+                # Zero resolution still has a 1us wall radius and float ULPs on both
+                # monotonic samples: the outward lower bound is 2s minus 2us.
+                expected = {'state': 'blocked', 'usable': False, 'reason': reason,
+                    'last_observed_utc': start.isoformat(), 'observed_utc': clock.now(),
+                    'expected_at_least': (start + timedelta(seconds=expected_seconds)).isoformat()}
+                engine._refresh_readiness()
+                engine._save()
+                reader = self.store(path=self.root / reason, contract=installed_contract())
+                head, _, loaded = reader.load(engine.head)
+                self.assertEqual(loaded['clock_guard'], expected)
+                self.assertEqual(json.loads(reader.read('runtime/_state/metadata.json', head))['record']['clock_guard'], expected)
+                self.assertEqual(json.loads(reader.read('runtime/_state/manifest.json', head))['containers']['clock_guard'],
+                                 {'shape': 'metadata'})
+                trusted = start + timedelta(seconds=10) if reason == 'live_utc_regression' else start
+                self.assertEqual(loaded['last_observed_utc'], trusted.isoformat())
+                self.assertNotIn('clock_guard', reader.load(initial)[2])
+
+    def test_control_state_values_are_rejected_before_writes_and_on_corrupt_read(self):
+        """About 0.27 s: real writers, cold decodes and precise pre-write rejection on Git fakes."""
+        from datetime import timedelta
+        from support.storage_records import engine_on, fake_ports
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='원문 e\u0301\r\n',
+            workspace=self.root / 'work', config={}, source_input='원문 e\u0301\r\n',
+            clock=self.clock, host=fake_host())
+        engine, initial = engine_on(self.repository, instance, runtime, workspace=self.root / 'work',
+                                   ports=fake_ports(self.clock, self.backend))
+        request = {'id': 'UC-stored', 'action': 'conversation', 'text': '승인\r\n', 'origin': 'user',
+            'created_at': self.clock.now(), 'config': {'operation': 'attach', 'id': 'chat',
+                'generation': 1, 'lease_seconds': 60, 'disconnect_policy': 'continue_authorized'}}
+        engine._apply_extended_control(request)
+        # The owner method stores a deep copy even when invoked directly, before the public inbox layer.
+        request['config']['generation'] = 999
+        self.assertEqual(engine.runtime['extended_controls']['UC-stored']['request']['config']['generation'], 1)
+        self.clock.set_wall(self.clock.wall() - timedelta(seconds=1))
+        engine._refresh_readiness()
+        engine._save()
+        head = engine.head
+        reader = self.store(contract=installed_contract())
+        _, instance, runtime = reader.load(head)
+        cases = [
+            ('research', ('lifecycle', 'state'), 'closed',
+             "research/lifecycle/None/state: 'closed' is not one of ['initializing', 'active', 'paused']"),
+            ('research', ('lifecycle', 'immutable_input', 'bytes'), True,
+             'immutable original input changed'),
+            ('research', ('lifecycle', 'immutable_input', 'sha256'), '0' * 64,
+             'immutable original input changed'),
+            ('research', ('lifecycle', 'input_id'), None,
+             "research/lifecycle/None/input_id: None is not of type 'string'"),
+            ('research', ('lifecycle', 'required_capabilities'), [],
+             "research/lifecycle/None/: Additional properties are not allowed ('required_capabilities' was unexpected)"),
+            ('research', ('lifecycle', 'activation', 'completed'), [],
+             "research/lifecycle/None/activation: Additional properties are not allowed ('completed' was unexpected)"),
+            ('runtime', ('clock_guard', 'observed_at'), self.clock.now(),
+             "runtime/clock_guard/None/: Additional properties are not allowed ('observed_at' was unexpected)"),
+            ('runtime', ('clock_guard', 'usable'), 'false',
+             "runtime/clock_guard/None/usable: 'false' is not of type 'boolean'"),
+            ('runtime', ('processed_controls',), [17],
+             "runtime/processed_controls/None/0: 17 is not of type 'string'"),
+            ('runtime', ('extended_controls', 'UC-stored', 'processed_at'), 17,
+             "runtime/extended_controls/None/UC-stored/processed_at: 17 is not of type 'string'"),
+        ]
+        for field in ('source_ref', 'status', 'result'):
+            cases.append(('runtime', ('extended_controls', 'UC-stored', field), {},
+                f"runtime/extended_controls/None/UC-stored: Additional properties are not allowed ('{field}' was unexpected)"))
+        for root, tokens, value, reason in cases:
+            with self.subTest(root=root, tokens=tokens):
+                candidate = deepcopy((instance, runtime))
+                target = candidate[0 if root == 'research' else 1]
+                for token in tokens[:-1]:
+                    target = target[token]
+                target[tokens[-1]] = value
+                self.backend.writes.clear()
+                with self.assertRaises(ValueError) as error:
+                    self.repository.save_with_state(head, *candidate)
+                self.assertEqual(str(error.exception), reason)
+                self.assertEqual(self.repository.load()[0], head)
+                self.assertEqual(self.backend.writes, [])
+                self.assertEqual(reader.load(head)[1:], (instance, runtime))
+        # A self-consistent replacement still cannot change the immutable original in this research.
+        candidate = deepcopy(instance)
+        text = '다른 원문'
+        candidate['lifecycle']['immutable_input'] = {'text': text, 'bytes': len(text.encode()),
+            'sha256': hashlib.sha256(text.encode()).hexdigest()}
+        self.backend.writes.clear()
+        with self.assertRaisesRegex(ValueError, '^immutable original input changed$'):
+            self.repository.save_with_state(head, candidate, runtime)
+        self.assertEqual(self.backend.writes, [])
+        self.assertEqual(self.repository.load()[0], head)
+        path = 'research/lifecycle/state.json'
+        broken = json.loads(reader.read(path, head))
+        broken['record']['immutable_input']['sha256'] = '0' * 64
+        corrupt = self.repository._store.publish(head, {path: canonical_json(broken)}).head
+        with self.assertRaises(ValueError) as error:
+            self.store(contract=installed_contract()).load(corrupt)
+        self.assertEqual(str(error.exception), 'immutable input bytes or hash differs')
+        self.assertEqual(reader.load(head)[1:], (instance, runtime))
+        self.assertEqual(reader.load(initial)[2]['extended_controls'], {})
+
+    def test_conversation_control_values_are_rejected_before_publication_and_on_corrupt_read(self):
+        """About 0.25 s: real control producers, cold reads and exact pre-write rejection on Git fakes."""
+        from support.storage_records import engine_on, fake_ports
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='Keep the conversation',
+            workspace=self.root / 'work', config={}, source_input='Keep the conversation',
+            clock=self.clock, host=fake_host())
+        engine, initial = engine_on(self.repository, instance, runtime, workspace=self.root / 'work',
+                                   ports=fake_ports(self.clock, self.backend))
+        from do_math.engine import control
+        for lease, reason in ((1.5, 'config/lease_seconds: invalid type (expected integer)'),
+                              (True, 'config/lease_seconds: invalid type (expected integer)'),
+                              (0, 'config/lease_seconds: invalid minimum (expected 1)')):
+            with self.subTest(public_lease=lease):
+                self.backend.writes.clear()
+                with self.assertRaises(ValueError) as error:
+                    control(self.repository.repository, INSTANCE_ID, 'conversation', ports=engine.ports,
+                        host_id=engine.host_id, config={'operation': 'attach', 'id': 'chat', 'generation': 6,
+                                                       'lease_seconds': lease, 'disconnect_policy': 'pause'})
+                self.assertEqual(str(error.exception), reason)
+                self.assertEqual(self.repository.load()[0], initial)
+                self.assertEqual(self.backend.writes, [])
+        engine._conversation_control({'operation': 'attach', 'id': 'chat', 'generation': 6,
+                                     'lease_seconds': 7, 'disconnect_policy': 'pause'}, 'UI-attach')
+        engine._conversation_control({'operation': 'detach', 'id': 'chat', 'generation': 6}, 'UI-detach')
+        engine._apply_extended_control({'id': 'UI-pause', 'action': 'pause', 'text': 'Keep this hold',
+                                        'origin': 'user', 'created_at': self.clock.now(), 'config': {}})
+        engine._save()
+        head = engine.head
+        reader = self.store(contract=installed_contract())
+        _, instance, runtime = reader.load(head)
+        self.assertEqual(runtime['lost_conversation_generations'], {'chat': 6})
+        self.assertEqual(runtime['user_pause'], {'request_id': 'UI-pause', 'reason': 'Keep this hold',
+                                               'created_at': self.clock.now()})
+        self.assertEqual(reader.load(initial)[2]['conversations'], {})
+        cases = (
+            ('research', 'conversation_loss_policy', (), 5,
+             "research/conversation_loss_policy/None/: 5 is not of type 'string'"),
+            ('runtime', 'user_pause', (), 5, "runtime/user_pause/None/: 5 is not of type 'boolean', 'object'"),
+            ('runtime', 'availability', (), {'reason': 'missing state'},
+             "runtime/availability/None/: 'state' is a required property"),
+            ('runtime', 'availability', (), {'state': 'blocked', 'unknown': True},
+             "runtime/availability/None/: Additional properties are not allowed ('unknown' was unexpected)"),
+            ('runtime', 'conversations', ('chat', 'lease_seconds'), 1.5,
+             'JSON floating-point numbers are not permitted'),
+            ('runtime', 'conversations', ('chat', 'lease_seconds'), 0,
+             'runtime/conversations/chat/lease_seconds: 0 is less than the minimum of 1'),
+            ('runtime', 'conversations', ('chat', 'generation'), True,
+             "runtime/conversations/chat/generation: True is not of type 'integer'"),
+            ('runtime', 'conversations', ('chat', 'status'), 'detached',
+             "runtime/conversations/chat/status: 'detached' is not one of ['connected', 'lost']"),
+            ('runtime', 'conversations', ('chat', 'disconnect_policy'), 'continue',
+             "runtime/conversations/chat/disconnect_policy: 'continue' is not one of ['pause', 'continue_authorized']"),
+            ('runtime', 'lost_conversation_generations', (), {'chat': -1},
+             'runtime/lost_conversation_generations/None/chat: -1 is less than the minimum of 0'),
+            ('runtime', 'lost_conversation_generations', (), {'chat': True},
+             "runtime/lost_conversation_generations/None/chat: True is not of type 'integer'"),
+        )
+        for root, name, tokens, value, reason in cases:
+            with self.subTest(root=root, family=name, tokens=tokens, value=value):
+                candidate_instance, candidate_runtime = deepcopy((instance, runtime))
+                target, key = (candidate_instance if root == 'research' else candidate_runtime), name
+                for token in tokens:
+                    target, key = target[key], token
+                target[key] = value
+                self.backend.writes.clear()
+                with self.assertRaises(ValueError) as error:
+                    self.repository.save_with_state(head, candidate_instance, candidate_runtime)
+                self.assertEqual(str(error.exception), reason)
+                self.assertEqual(self.repository.load()[0], head)
+                self.assertEqual(self.backend.writes, [])
+                self.assertEqual(reader.load(head)[1:], (instance, runtime))
+        # Allowed representations are distinct from the objects the current producer writes.
+        family = reader.contract.family('runtime', 'user_pause')
+        for allowed in (False, True, {'open_extension': [1]}):
+            self.assertEqual(list(family.checker.iter_errors(allowed)), [])
+        path = 'runtime/lost_conversation_generations/state.json'
+        broken = json.loads(reader.read(path, head))
+        broken['record']['chat'] = -1
+        bad = self.repository._store.publish(head, {path: canonical_json(broken)}).head
+        with self.assertRaises(ValueError) as error:
+            self.store(contract=installed_contract()).load(bad)
+        self.assertEqual(str(error.exception),
+                         'runtime/lost_conversation_generations/None/chat: -1 is less than the minimum of 0')
+        self.assertEqual(reader.load(head)[1:], (instance, runtime))
+
     def test_state_persists_as_family_files_and_reconstructs_views(self):
         instance, runtime = current_state(
             {'sources': [{'id': 'SO-01', 'path': 'runtime/artifacts/input/source.txt', 'sha256': 'a' * 64}]},
@@ -58,15 +266,139 @@ class FamilyRecordStorageTests(StoreCase):
         self.assertNotIn('runtime/state.json', files)
 
     def test_scalar_metadata_is_one_closed_record_per_root(self):
-        instance, runtime = current_state({'id': INSTANCE_ID, 'title': 'Title', 'created_at': '2026-09-20T00:00:00Z'},
-                                          {'status': 'ready', 'cycles': 0})
-        head = self.repository.initialize(instance, runtime)
-        self.assertIn('research/_state/metadata.json', self.repository.list_files('research/', head))
-        self.assertNotIn('research/title/state.json', self.repository.list_files('research/', head))
-        self.assertEqual(self.repository.load(head)[1]['title'], 'Title')
-        rows = [row for row in self.repository.load_records(head)[3] if row['family'] == 'metadata']
-        self.assertEqual(len(rows), 2)
-        self.assertTrue(all(row['sha256'] == hashlib.sha256(row['bytes']).hexdigest() for row in rows))
+        """About 0.5 s: both Git formats, real initialization and exact pre-write/read rejections."""
+        # Two real producers cover title/time choices and both Git formats.
+        # The 80-codepoint prefix is independent of the producer's slicing.
+        prefix = 'e\u0301한\n' * 20
+        title = '\u212a K e\u0301 é\r\n연구 제목'
+        cases = (
+            ('sha1', INSTANCE_ID, title, '2026-09-20T12:34:56.123456+09:00',
+             self.root / 'e\u0301 work', title, '2026-09-20T03:34:56.123456+00:00'),
+            ('sha256', OTHER_INSTANCE_ID, '', None,
+             'relative/e\u0301/../ work\\연구', prefix, '2026-10-14T16:02:03.456789+00:00'),
+        )
+        for fmt, identifier, supplied_title, created_at, workspace, expected_title, when in cases:
+            with self.subTest(object_format=fmt):
+                clock = FakeClock(datetime.fromisoformat('2026-10-15T01:02:03.456789+09:00'))
+                repository = self.store(path=self.root / fmt, instance_id=identifier, object_format=fmt)
+                instance, runtime = initialize_state(instance_id=identifier, goal=prefix + 'suffix',
+                    title=supplied_title, created_at=created_at, workspace=workspace, config={},
+                    source_input='원문 e\u0301\r\n', clock=clock, host=fake_host())
+                expected = {'id': identifier, 'title': expected_title, 'workspace': str(workspace),
+                            'created_at': when, 'object_format': fmt}
+                self.assertNotIn('object_format', instance)  # Repository owns this value.
+                self.assertEqual({name: instance[name] for name in expected if name != 'object_format'},
+                                 {name: value for name, value in expected.items() if name != 'object_format'})
+                head = repository.initialize(instance, runtime)
+                # A distinct contract key forces the new reader to decode and validate Git bytes.
+                reader = self.store(path=repository.repository, instance_id=identifier, contract=installed_contract())
+                _, loaded, run = reader.load(head)
+                self.assertEqual({name: loaded[name] for name in expected}, expected)
+                expected_runtime = {'status': 'initializing', 'cycles': 0, 'recovery_checked': False,
+                                    'updated_at': when, 'last_observed_utc': when}
+                runtime_path = 'runtime/_state/metadata.json'
+                runtime_envelope = json.loads(reader.read(runtime_path, head))
+                runtime_manifest = json.loads(reader.read('runtime/_state/manifest.json', head))
+                for name, value in expected_runtime.items():
+                    self.assertEqual(run[name], value, name)
+                    self.assertIs(type(run[name]), type(value), name)
+                    self.assertEqual(runtime_envelope['record'][name], value)
+                    family = reader.contract.family('runtime', name)
+                    self.assertEqual(family.shape, 'metadata')
+                    self.assertEqual(runtime_manifest['containers'][name], {'shape': 'metadata'})
+                    self.assertEqual(list(family.checker.iter_errors(value)), [])
+                for name in ('resume_lifecycle', 'stop_requested', 'next_research_reconsider_at'):
+                    self.assertNotIn(name, run)
+                    self.assertNotIn(name, runtime_envelope['record'])
+                    self.assertNotIn(name, runtime_manifest['containers'])
+                self.assertEqual(len(head), 40 if fmt == 'sha1' else 64)
+                path = 'research/_state/metadata.json'
+                files = reader.list_files('research/', head)
+                self.assertIn(path, files)
+                manifest = json.loads(reader.read('research/_state/manifest.json', head))
+                rows = [row for row in reader.load_records(head)[3] if row['family'] == 'metadata']
+                self.assertEqual({row['root'] for row in rows}, {'research', 'runtime'})
+                self.assertEqual(len(rows), 2)
+                for row in rows:
+                    self.assertEqual(row['sha256'], hashlib.sha256(row['bytes']).hexdigest())
+                metadata = next(row for row in rows if row['root'] == 'research')
+                self.assertEqual(metadata['path'], path)
+                self.assertEqual(metadata['json_pointer'], '/record')
+                self.assertEqual({name: metadata['record'][name] for name in expected}, expected)
+                envelope = json.loads(reader.read(path, head))
+                self.assertEqual(envelope['record'], metadata['record'])
+                for name in expected:
+                    family = reader.contract.family('research', name)
+                    self.assertEqual(family.shape, 'metadata')
+                    self.assertEqual(manifest['containers'][name], {'shape': 'metadata'})
+                    self.assertEqual(list(family.checker.iter_errors(loaded[name])), [])
+                    self.assertFalse(any(file.startswith('research/' + name + '/') for file in files))
+
+                changed_title = '다음 e\u0301\n제목'
+                changed = {**loaded, 'title': changed_title}
+                next_head = repository.save_with_state(head, changed, run)[0]
+                self.assertNotEqual(next_head, head)
+                next_instance = reader.load(next_head)[1]
+                self.assertEqual({name: next_instance[name] for name in expected},
+                                 {**expected, 'title': changed_title})
+                old_instance = reader.load(head)[1]
+                self.assertEqual({name: old_instance[name] for name in expected}, expected)
+                self.assertEqual(reader.read(path, head), metadata['bytes'])
+                self.assertEqual(reader.read(runtime_path, next_head), reader.read(runtime_path, head))
+
+                # Deliberate non-producer values must fail at their scalar slot before publication.
+                for name in ('id', 'title', 'workspace', 'created_at'):
+                    with self.subTest(field=name):
+                        self.backend.writes.clear()
+                        with self.assertRaises(ValueError) as error:
+                            repository.save_with_state(next_head, {**changed, name: 17}, run)
+                        self.assertEqual(str(error.exception),
+                                         f"research/{name}/None/: 17 is not of type 'string'")
+                        self.assertEqual(repository.load()[0], next_head)
+                        self.assertEqual(self.backend.writes, [])
+
+                # Each scalar's installed checker rejects its own invalid value before any Git write.
+                invalid = (
+                    ('status', 'active', "'active' is not one of ['initializing', 'ready', 'running', 'paused', 'waiting', 'capacity_waiting', 'completed', 'closed']"),
+                    ('cycles', -1, '-1 is less than the minimum of 0'),
+                    ('recovery_checked', 0, "0 is not of type 'boolean'"),
+                    ('updated_at', 17, "17 is not of type 'string'"),
+                    ('last_observed_utc', 17, "17 is not of type 'string'"),
+                    ('resume_lifecycle', 17, "17 is not of type 'string'"),
+                    ('stop_requested', 17, "17 is not of type 'boolean', 'string'"),
+                    ('next_research_reconsider_at', 17, "17 is not valid under any of the given schemas"),
+                )
+                for name, value, reason in invalid:
+                    with self.subTest(runtime_field=name):
+                        self.backend.writes.clear()
+                        with self.assertRaises(ValueError) as error:
+                            repository.save_with_state(next_head, changed, {**run, name: value})
+                        self.assertEqual(str(error.exception), f'runtime/{name}/None/: {reason}')
+                        self.assertEqual(repository.load()[0], next_head)
+                        self.assertEqual(self.backend.writes, [])
+
+                # Only corruption probes bypass validation; normal producer values above never do.
+                broken = deepcopy(envelope)
+                broken['record']['id'] = 17
+                bad = repository._store.publish(next_head, {path: canonical_json(broken)}).head
+                with self.assertRaises(ValueError) as error:
+                    reader.load(bad)
+                self.assertEqual(str(error.exception), "research/id/None/: 17 is not of type 'string'")
+                broken = deepcopy(envelope)
+                broken['record']['unexpected_metadata'] = 'extra'
+                bad = repository._store.publish(bad, {path: canonical_json(broken)}).head
+                with self.assertRaises(ValueError) as error:
+                    reader.load(bad)
+                self.assertEqual(str(error.exception),
+                                 "metadata fields differ from declared membership: ['unexpected_metadata']")
+                self.assertEqual(reader.load(head)[1]['id'], identifier)
+                damaged_runtime = deepcopy(runtime_envelope)
+                damaged_runtime['record']['cycles'] = -1
+                bad = repository._store.publish(bad, {path: metadata['bytes'],
+                    runtime_path: canonical_json(damaged_runtime)}).head
+                with self.assertRaises(ValueError) as error:
+                    reader.load(bad)
+                self.assertEqual(str(error.exception), 'runtime/cycles/None/: -1 is less than the minimum of 0')
 
     def test_final_goal_assessment_keeps_its_recorded_group_key_in_git(self):
         basis = 'a' * 64
@@ -322,8 +654,11 @@ class ContractEditionTests(StoreCase):
         head = self.repository.initialize(*current_state())
         _, instance, runtime = self.repository.load(head)
         instance['object_format'] = 'sha256'
-        with self.assertRaisesRegex(ValueError, 'object_format'):
+        self.backend.writes.clear()
+        with self.assertRaisesRegex(ValueError, '^persisted object_format differs from Git$'):
             self.repository.save_with_state(head, instance, runtime)
+        self.assertEqual(self.repository.load()[0], head)
+        self.assertEqual(self.backend.writes, [])
         path = 'research/_state/manifest.json'
         manifest = json.loads(self.repository.read(path, head))
         manifest['contract']['sha256'] = '0' * 64

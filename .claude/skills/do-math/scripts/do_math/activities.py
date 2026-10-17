@@ -9,6 +9,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from .canonical import same_json_value
 from .values import require_text
 from .wait_rules import ACTIVITY_WAIT_RULES, activity_wait_record
 
@@ -220,7 +221,7 @@ def resume_activity(runtime: dict, activity_id: str, *, condition: Any, at: str)
         raise ValueError(f"unknown activity {activity_id}")
     if activity["status"] != "waiting":
         raise ValueError("only a waiting activity can resume")
-    if activity["waiting"].get("condition") != condition:
+    if not same_json_value(activity["waiting"]["condition"], condition):
         raise ValueError("the resolved condition differs from the recorded wait")
     require_text(at, "at")
     activity["status"] = "ready"

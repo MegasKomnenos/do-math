@@ -81,6 +81,80 @@ class PreparationReceiverTests(unittest.TestCase):
         issue(self.engine, execution, issued, 'BA-' + identifier)
         return execution
 
+    def test_preparation_rechecks_revision_status_and_the_current_dependency_graph(self):
+        """T3 2.1 s: two stored tasks and an issued revision exercise the candidate receiver."""
+        from support.role_answers import candidate
+        from support.engine_lifecycle import research_grant
+        engine = self.engine
+        first = task(engine, 'TK-first')
+        second = task(engine, 'TK-second')
+        second['dependencies'] = [first['id']]
+        engine._save()
+        self.preparation('EX-revision-author', {'available_input_refs': [first['id'], second['id']],
+            'supplied_record_ids': [first['id'], second['id']]})
+        wire = candidate('Revised first', revises=first['id'])
+        wire['profile_refs'] = deepcopy(first['profile_refs'])
+        wire['authority_refs'] = [research_grant(engine)]
+        wire['dependencies'] = [second['id']]
+        def apply(candidate_runtime):
+            # This is the preparation receiver's own seam. The integration
+            # caller owns these copies; impact-review behavior has its tests.
+            original = engine.runtime
+            try:
+                engine.runtime = candidate_runtime
+                engine._apply({'role': 'research_preparation'}, {'candidates': [wire]},
+                    'EX-revision-author', owns_response=False)
+            finally:
+                engine.runtime = original
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^explicit task dependency cycle: '):
+            apply(deepcopy(engine.runtime))
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+        current = deepcopy(engine.runtime)
+        current['tasks'][first['id']]['status'] = 'active'
+        with self.assertRaisesRegex(ValueError, '^revision must identify an existing unfinished task$'):
+            apply(current)
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+
+    def test_replacement_preserves_the_actual_delegated_revision_owner(self):
+        """T3 52.6 s cold: the real theorem/relation, delegation and replacement preserve the original owner."""
+        from support.planning_contract_inputs import relation_sim, delegated_revision, produce_task
+        sim = relation_sim()
+        parent, tid, kid = delegated_revision(sim)
+        engine = sim.engine
+        self.assertEqual(engine.runtime['tasks'][tid]['revision_request_action_id'], parent)
+        old_revision = engine.runtime['tasks'][tid]['revision']
+        replacement = produce_task(sim, 'Revised delegated task', revises=tid, revision_targets=[kid])
+        self.assertEqual(replacement, tid)
+        self.assertEqual(engine.runtime['tasks'][tid]['revision'], old_revision + 1)
+        self.assertEqual(engine.runtime['tasks'][tid]['revision_request_action_id'], parent)
+        self.assertEqual(engine.store.load()[2]['tasks'][tid]['revision_request_action_id'], parent)
+
+    def test_preparation_rejects_an_unfinished_execution_outcome_condition(self):
+        from support.role_answers import candidate
+        from support.engine_lifecycle import research_grant
+        engine = self.engine
+        prior = task(engine, 'TK-current-revision')
+        self.preparation('EX-current-author', {'available_input_refs': [], 'supplied_record_ids': []})
+        live = engine._register_execution({'id': 'AC-condition-live', 'role': 'maintenance'},
+            {'id': 'EX-condition-live', 'role': 'maintenance', 'status': 'running'})
+        proposal = candidate('Conditional work')
+        proposal['profile_refs'] = deepcopy(prior['profile_refs'])
+        proposal['authority_refs'] = [research_grant(engine)]
+        extension = {'task_conditions': [{'task_title': proposal['title'], 'occurrence_condition': {
+            'op': 'record_field_equals', 'space': 'runtime', 'family': 'execution',
+            'record_id': live['id'], 'pointer': '/outcome', 'value': 'output_accepted'}}]}
+        # The grammar is valid. A still-running execution has no scalar outcome
+        # yet, which must remain an evaluation error rather than a ready task.
+        planning.validate_condition(extension['task_conditions'][0]['occurrence_condition'])
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        bundle = {'integration_id': 'IN-current-candidate', 'output': {'candidates': [proposal]},
+                  'extensions': extension, 'owns_response': False}
+        with self.assertRaisesRegex(ValueError, "^invalid task occurrence condition: '/outcome'$"):
+            engine._apply_bundle_candidate(deepcopy(engine.instance), deepcopy(engine.runtime), bundle,
+                action={'role': 'research_preparation'}, execution_id='EX-current-author', extensions=extension)
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+
     def test_actual_input_seal_excludes_a_later_task_and_binds_same_response_siblings(self):
         from support.planning_contract_inputs import issue_preparation, produce_task
         from support.role_answers import candidate
@@ -177,6 +251,72 @@ class PreparationReceiverTests(unittest.TestCase):
         applied = next(t for t in engine.runtime['tasks'].values() if t.get('title') == 'Followup')
         self.assertEqual(applied['dependencies'], [prior['id']])
         self.assertEqual(applied['occurrence_condition']['args'][1]['task_id'], prior['id'])
+
+
+class ContractVerdictReceivers(unittest.TestCase):
+    def test_each_contract_verdict_is_stored_and_replayed_without_a_second_effect(self):
+        from do_math import contracts, integration
+        from support.default_responder import common
+        from support.planning_contract_inputs import prepared_sim, only_task, produce_task
+        from support.role_answers import review_items
+        from support.wait_reporting import assert_task_wait_report
+        decisions = contracts.REVIEW_ITEM['properties']['decision']['enum']
+        self.assertEqual(set(decisions), {'approved', 'revision_required', 'unresolved'})
+        for decision in decisions:
+            with self.subTest(decision=decision):
+                sim = prepared_sim()
+                engine = sim.engine
+                task_id = only_task(sim)['id']
+                clear_work(sim)
+                eid = 'EX-verdict-' + decision
+                _ended_execution(engine, eid, 'task_contract_review')
+                action = {**engine.runtime['executions'][eid]['action'], 'target': task_id}
+                engine.runtime['executions'][eid]['action'] = deepcopy(action)
+                engine.runtime['executions'][eid].update(input_snapshot=engine.head,
+                    contract_sha256=planning.contract_hash(engine.runtime['tasks'][task_id]),
+                    **engine._governance_revisions())
+                output = {**common('task_contract_review'), **review_items([task_id], decision=decision,
+                    next_owner='research_preparation', findings=[] if decision == 'approved' else ['계약 근거 보완'])}
+                context = {'action': action, 'execution_id': eid, 'snapshot': engine.head,
+                    'tasks': list(engine.runtime['tasks'].values())}
+                def apply(instance, runtime, bundle):
+                    engine._apply_bundle_candidate(instance, runtime, bundle,
+                        action=action, execution_id=eid, extensions={})
+                def publish(instance, runtime, bundle, validated):
+                    engine.instance, engine.runtime = instance, runtime
+                    engine._save()
+                callbacks = {'apply_bundle': apply,
+                    'validate_current': lambda i, r, b: engine._validate_bundle_current(i, r, b,
+                        action=action, execution_id=eid, context=context),
+                    'validate_candidate': engine._validate_bundle_candidate,
+                    'publish': publish}
+                first = integration.apply_bundles(engine.instance, engine.runtime, output, {}, context,
+                    execution_id=eid, **callbacks)
+                self.assertEqual(first['status'], 'accepted', first['issues'])
+                current = engine.runtime['tasks'][task_id]
+                self.assertEqual(current['reviews'][-1]['decision'], decision)
+                self.assertEqual(current['reviews'][-1]['execution_id'], eid)
+                preparations = [a for a in engine.runtime['queue'] if a['role'] == 'research_preparation']
+                self.assertEqual(len(preparations), int(decision != 'approved'))
+                if decision == 'approved':
+                    self.assertEqual(current['status'], 'planned')
+                    self.assertNotIn('waiting', current)
+                else:
+                    self.assertEqual(current['waiting']['basis_ref'], eid)
+                    self.assertEqual(preparations[0]['contract_review_execution'], eid)
+                    assert_task_wait_report(self, engine, task_id)
+                before = deepcopy(engine.store.load())
+                second = integration.apply_bundles(engine.instance, engine.runtime, output, {}, context,
+                    execution_id=eid, **callbacks)
+                self.assertEqual(second['bundles'][0]['status'], 'already_accepted', second['issues'])
+                self.assertEqual(engine.store.load(), before)
+                self.assertEqual((second['instance'], second['runtime']), before[1:])
+                sim.restart()
+                self.assertEqual(sim.runtime['tasks'][task_id], before[2]['tasks'][task_id])
+                if decision != 'approved':
+                    produce_task(sim, '수정 계약', revises=task_id)
+                    self.assertNotIn('waiting', sim.runtime['tasks'][task_id])
+                    self.assertEqual(sim.runtime['tasks'][task_id]['reviews'][-1]['decision'], 'approved')
 
 
 if __name__ == '__main__':

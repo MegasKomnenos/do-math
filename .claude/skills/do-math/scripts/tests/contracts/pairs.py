@@ -17,9 +17,10 @@ Each ``Pair`` names a producer and the check that receives what it makes:
 ``tests/contracts/test_pairs.py`` walks every pair. To add a pair, add a ``Pair``
 to ``PAIRS``; a pair with no samples fails the walk. A branch a pair's receiver
 rejects today is a known defect: it stays out of the samples, and a test of its
-own in ``test_pairs.py`` carries the ledger mark. The storage families' pair is
-two whole-product checks in ``tests/structure/test_storage_fields.py``
-(설계 10절 A22).
+own in ``test_pairs.py`` carries the ledger mark. Storage has whole-product
+checks in ``tests/structure/test_storage_fields.py`` (설계 10절 A22) and direct
+stored-producer field walks in ``test_storage_knowledge_pairs.py``. The
+structural name walk alone does not establish actual optional-field production.
 """
 from __future__ import annotations
 
@@ -36,6 +37,23 @@ class Pair:
     receive: Callable[[Any], Any]
     fields: frozenset | None
     written: Callable[[Any], set] = lambda value: set(value)
+
+
+def assert_pair(case, pair, samples):
+    """Receive actual values, then check every required and optional field in reverse."""
+    case.assertGreater(len(samples), 0, 'a pair needs producer samples')
+    rejected = []
+    for branch, value in samples:
+        try:
+            from copy import deepcopy
+            pair.receive(deepcopy(value))
+        except ValueError as error:
+            rejected.append((branch, str(error)))
+    case.assertEqual(rejected, [], 'producer branches the receiving check rejects')
+    if pair.fields is not None:
+        written = set().union(*(pair.written(value) for _, value in samples))
+        case.assertEqual(sorted(pair.fields - written), [],
+                         'fields the receiving check names that no producer branch writes')
 
 
 def worker_request_run(root, provider, *, identity, limits, control, scholarly, only,
@@ -140,44 +158,13 @@ def _receive_worker_request(provider):
 
 
 def _trust_request_samples(root):
-    """Registration requests ``trust_inventory.registration_request`` makes for a Lean core and a Lake project
-    toolchain, from the record's first baseline and from a rerecorded (second) baseline."""
-    import hashlib
-    from do_math import formal, trust_inventory as records
-    from do_math.file_io import sha256_file
-    from support.trust_inputs import validation_fixture
-    from support.fakes.clock import FakeClock
-    rows = []
-    for kind in ('core', 'project'):
-        directory = root / kind
-        for relative in ('toolchain/bin/lean.exe', 'toolchain/bin/lake.exe', 'toolchain/lib/lean/Init/Prelude.olean'):
-            path = directory / relative
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b'synthetic ' + relative.encode())
-        lean, lake = (directory / 'toolchain/bin/lean.exe').resolve(), (directory / 'toolchain/bin/lake.exe').resolve()
-        checker = Path(formal.__file__).resolve()
-        project = None
-        if kind == 'project':
-            (directory / 'project' / '.lake').mkdir(parents=True)
-            (directory / 'project' / 'lakefile.lean').write_text('-- synthetic', encoding='utf-8')
-            project = {'manifest_hashes': {'lakefile.lean': hashlib.sha256(b'-- synthetic').hexdigest()},
-                       'source_identity': {'root': str((directory / 'project').resolve())},
-                       'search_paths': [str((directory / 'project' / '.lake').resolve())]}
-        identity = {'executable': str(lean), 'sha256': sha256_file(lean), 'version': 'Lean 4.32.0',
-                    'version_exit': 0, 'configured_command': [str(lean)],
-                    'verifier_sha256': sha256_file(checker), 'verifier_path': str(checker),
-                    'executables': {str(lean): sha256_file(lean), str(lake): sha256_file(lake)}, 'project': project}
-        fingerprint = records.observe_fingerprint(identity)
-        content = records.content_hashes(identity, fingerprint['files'])
-        validation = validation_fixture(identity, directory / 'smoke.lean')
-        record = records.new_record(identity, records.new_baseline(fingerprint, content, validation, clock=FakeClock()))
-        path = records.record_path(directory / 'records', record['id'])
-        records.write_record(path, record)
-        rows.append((kind + ', first baseline', records.registration_request(record, path, records.binding(record))))
-        record['baselines'].append(records.new_baseline(fingerprint, content, validation, clock=FakeClock()))
-        records.write_record(path, record)
-        rows.append((kind + ', rerecorded', records.registration_request(record, path, records.binding(record))))
-    return rows
+    """Requests read from files setup publishes after real new/reuse/rerecord operations.
+
+    The worker and writer are real; only the external Job/Lean/Lake ports use
+    the existing doubles. See setup_request_runs for the independent inputs.
+    """
+    from support.trust_inputs import setup_request_runs
+    return [(branch, run['request']) for branch, run in setup_request_runs(root)]
 
 
 def _receive_trust_request(value):
@@ -224,6 +211,40 @@ def receive_stored_rule_ids(value):
     errors = stored_rule_id_errors(value)
     if errors:
         raise ValueError('; '.join(errors))
+
+
+def observation_pairs(contract=None):
+    """Four whole-record receivers; metadata is received as a map and measured per row.
+
+    Fields come from the installed schema, including every optional property.
+    The rule-ID fragment pair remains an independent input-preservation check.
+    """
+    from do_math.state_contract import default_state_contract, validate_record
+    from support.observation_inputs import owner_observation_samples, tracker_record_samples
+    contract = default_state_contract() if contract is None else contract
+    pairs = []
+    for name in ('observation_facts', 'self_check_obligations', 'self_check_responses', 'observations'):
+        family = contract.family('runtime', name)
+        metadata = name == 'observations'
+        schema = family.schema['additionalProperties'] if metadata else family.schema
+
+        def samples(root, name=name, metadata=metadata):
+            rows = [(branch, {record['execution_id']: record} if metadata else record)
+                    for branch, own, record in tracker_record_samples(root / 'tracker') if own == name]
+            if metadata:
+                rows.extend(owner_observation_samples(root / 'owner'))
+            return rows
+
+        def receive(value, family=family):
+            validate_record(family.checker, value, family.name)
+            if family.validator:
+                family.validator(value)
+
+        pairs.append(Pair('observation record (' + name + ')', samples, receive,
+                          frozenset(schema['properties']),
+                          written=(lambda value: set().union(*(set(row) for row in value.values())))
+                          if metadata else (lambda value: set(value))))
+    return pairs
 
 
 def accepted_condition(space, family, pointer, value):
@@ -354,6 +375,7 @@ PAIRS = [Pair('worker request (' + provider + ')', _worker_request_samples(provi
     Pair('trust registration request', _trust_request_samples, _receive_trust_request, _trust_request_fields()),
     Pair('observation rule id', lambda root: accepted_rule_ids(STORABLE_RULE_IDS), receive_stored_rule_ids,
          frozenset({'rule_ids'})),
+    *observation_pairs(),
     *_condition_pairs(),
     Pair('runner result (stored artifact)', _runner_result_samples, _receive_stored_result, None),
     Pair('runner result (operator file)', _runner_result_samples, _receive_operator_record, None),

@@ -127,6 +127,20 @@ class ReportProjections(unittest.TestCase):
 
     def test_human_report_preserves_loaded_initialization_blocker_and_machine_finding(self):
         from support.record_builders import execution_state
+        from support.engine_lifecycle import task_wait_report
+
+        task_report = task_wait_report()
+        task_row, = task_report['tasks']
+        self.assertEqual(task_row['waits'], [{
+            'kind': 'research_followup', 'target_refs': ['TK-status-wait'],
+            'next_owner': 'research_plan', 'basis_ref': 'EX-review-TK-status-wait',
+            'reason': 'Select the next research step'}])
+        task_token = '`status.tasks[].waits`'
+        self.assertEqual(scoped_field_issues(task_token, {'status': status_field_schema(task_report)}), [])
+        damaged = deepcopy(task_report)
+        del damaged['tasks'][0]['waits']
+        self.assertEqual(scoped_field_issues(task_token, {'status': status_field_schema(damaged)}),
+                         [('scoped field', 'status.tasks[].waits')])
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -143,7 +157,10 @@ class ReportProjections(unittest.TestCase):
             texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
                      for document in documents(skill)]
             schemas = field_schemas()
-            schemas['status'] = status_field_schema(report)
+            self.assertEqual(report['tasks'], [])
+            self.assertEqual(scoped_field_issues(task_token, {'status': status_field_schema(report)}),
+                             [('scoped field', 'status.tasks[].waits')])
+            schemas['status'] = status_field_schema(report, task_report=task_report)
             self.assertEqual([(name, *issue) for name, text in texts
                               for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
                                                               defer_query_record=True, defer_query_result=True,
@@ -157,7 +174,8 @@ class ReportProjections(unittest.TestCase):
             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
                 '`status.budget` `status.operating_summary.supervision.configured_enabled` '
                 '`status.status` `status.user_pause` `status.maintenance_fence` `status.model_policy_violation` '
-                '`status.conversation_lost` `status.installation_repair` `status.operator_enabled`', schemas), [])
+                '`status.conversation_lost` `status.installation_repair` `status.operator_enabled` '
+                '`status.question_links` `status.repetition_holds`', schemas), [])
             alias = '`result.config_sha256` <!-- do-math fields: result=status -->'
             self.assertEqual(scoped_field_issues(alias, schemas), [])
             for token in ('status.allowed_profiles', 'status.configured_enabled',
@@ -169,14 +187,15 @@ class ReportProjections(unittest.TestCase):
             facts = supervision_facts(instance, runtime)
             self.assertEqual({name: report[name] for name in facts}, facts)
             self.assertEqual(report['operating_summary'], reporting.operating_summary(instance, runtime))
-            for name in ('operating_summary', *facts, *reporting.OBSERVED_FIELDS, 'config_sha256'):
+            for name in ('operating_summary', *facts, *reporting.OBSERVED_FIELDS, 'config_sha256',
+                         'question_links', 'repetition_holds'):
                 with self.subTest(omitted=name):
                     omitted = dict(report)
                     del omitted[name]
                     schemas['status'] = status_field_schema(omitted)
                     token = 'status.' + name
                     self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
-                    if name in {'operating_summary', 'budget', 'config_sha256'}:
+                    if name in {'operating_summary', 'budget', 'config_sha256', 'question_links', 'repetition_holds'}:
                         self.assertTrue([(path, *issue) for path, text in texts
                                          for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
                                                                          defer_query_record=True, defer_query_result=True,

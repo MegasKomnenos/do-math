@@ -209,3 +209,20 @@ def fake_ports(clock, git_backend, jobs):
     from support.fakes.scheduler import make_fake as fake_scheduler
     return Ports(clock=clock, git_backend=git_backend, calls=fake_calls(clock), jobs=jobs,
                  scheduler=fake_scheduler(), http=fake_http({}), host=fake_host())
+
+
+def collector_request(root, **changes):
+    """A checked Codex request with outputs outside its model workspace."""
+    evidence, workspace = root / 'evidence', root / 'ws'
+    evidence.mkdir(exist_ok=True)
+    workspace.mkdir(exist_ok=True)
+    prompt = evidence / 'prompt'
+    prompt.write_bytes(b'p')
+    request = {"codex_path": str(root / 'codex.exe'), "prompt_path": str(prompt), "cwd": str(workspace),
+               "model": "m", "effort": "low", "sandbox": "read-only", "approval_policy": "never",
+               "max_runtime_seconds": 1, **{key: str(evidence / name) for key, name in (
+                   ("stdout_path", "out"), ("stderr_path", "err"), ("final_path", "final"),
+                   ("status_path", "status"))}, **changes}
+    path = evidence / 'request.json'
+    path.write_text(json.dumps(request), encoding='utf-8')
+    return path

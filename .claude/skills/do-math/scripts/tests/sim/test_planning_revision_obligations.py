@@ -257,6 +257,34 @@ class DelegatedWorkRevisionTests(unittest.TestCase):
         self.sim.restart()
         self.assertEqual(self.sim.engine.store.load(), published)
 
+        # A genuine revised return asks the independent assessor; the waiting
+        # return above did not. Preserve the same delegated parent's evidence.
+        from support.default_responder import common
+        from support.role_answers import assessment
+        from support.wait_reporting import assert_task_wait_report
+        from do_math.task_scope import apply_task_assessments
+        self.engine = self.sim.engine
+        _ended_execution(self.engine, 'EX-revised-work', 'research_work')
+        self.sim.runtime['executions']['EX-revised-work']['extensions'] = deepcopy(extension)
+        output = {**common('research_work'), 'outcome': 'submitted', 'report': '개정된 설명의 수행 결과'}
+        self.engine._apply(action, output, 'EX-revised-work')
+        self.engine._apply_revision_followup(action, output, 'EX-revised-work')
+        self.engine._remove_action(action)
+        self.engine._save()
+        self.assertEqual(self.sim.runtime['tasks'][self.tid]['waiting']['kind'], 'assessment')
+        assert_task_wait_report(self, self.engine, self.tid)
+        parent = deepcopy(self.sim.runtime['waiting_actions'][self.parent])
+        self.sim.restart()
+        self.engine = self.sim.engine
+        _ended_execution(self.engine, 'EX-revised-assessor', 'research_plan')
+        self.engine.instance, self.engine.runtime = apply_task_assessments(self.sim.instance, self.sim.runtime,
+            [assessment(self.sim.runtime['tasks'][self.tid])], execution_id='EX-revised-assessor',
+            input_tasks=deepcopy(self.sim.runtime['tasks']), clock=self.sim.ports.clock)
+        self.assertNotIn('waiting', self.sim.runtime['tasks'][self.tid])
+        self.assertEqual(self.sim.runtime['tasks'][self.tid]['status'], 'completed')
+        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent], parent)
+        self.engine._save()
+
 
 if __name__ == '__main__':
     unittest.main()

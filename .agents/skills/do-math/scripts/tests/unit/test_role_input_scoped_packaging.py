@@ -141,6 +141,37 @@ class FormalJudgmentInputTests(unittest.TestCase):
 
 
 class RoleInputClassTests(unittest.TestCase):
+    def test_action_variants_require_their_owned_judgment_evidence(self):
+        from do_math.role_input_requirements import (judgment_input_keys, judgment_input_paths,
+                                                    judgment_source_lists)
+        cases = (
+            ({'role': 'intent_interpretation', 'stage': 'check'},
+             {'interpretation_to_check'}, ('user_request.text',), ()),
+            ({'role': 'maintenance', 'stage': 'impact_review'},
+             {'impact_review_input'}, tuple('impact_review_input.' + key for key in
+                 ('request', 'output', 'extensions', 'records')), ()),
+            ({'role': 'maintenance', 'initial_submission_diagnosis': True},
+             {'initial_submission_diagnosis'}, tuple('initial_submission_diagnosis.' + key for key in
+                 ('failed_execution', 'checkpoint', 'preserved_output_files', 'materials')),
+             ('initial_submission_diagnosis.materials',)),
+            ({'role': 'supplemental_research', 'review_cycle_id': 'RC-owned'},
+             {'review_research', 'proposal'}, tuple('review_research.' + key for key in
+                 ('id', 'request_digest', 'proposal_digest', 'question', 'sources')),
+             ('review_research.sources',)),
+        )
+        for action, keys, paths, sources in cases:
+            before = deepcopy(action)
+            with self.subTest(action=action):
+                role = action['role']
+                baseline = set(judgment_input_keys(role, {'role': role}))
+                self.assertEqual(set(judgment_input_keys(role, action)) - baseline, keys)
+                self.assertEqual(judgment_input_paths(role, action, context={}), paths)
+                self.assertEqual(judgment_source_lists(role, action, context={}), sources)
+                continued = {**action, 'continuation_of': 'EX-preserved'}
+                self.assertEqual(judgment_input_paths(role, continued, context={}), paths +
+                    ('previous_execution', 'previous_output_files', 'resume_checkpoint', 'continuation_history'))
+                self.assertEqual(action, before)
+
     def test_every_role_judgment_requirement_names_its_installed_contract(self):
         from do_math.role_input_requirements import ROLE_INPUT_REQUIREMENTS, judgment_input_keys
         assignments = contracts.reading_map()

@@ -125,13 +125,16 @@ class RecoveryMaterialTests(unittest.TestCase):
                 source['sha256'] = '0' * 64
             if fault == 'output_size':
                 source['bytes'] += 1
-            role = 'formal_check' if fault not in ('normal_inline', 'missing_checkpoint') else 'research_preparation'
+            role = 'research_preparation' if fault == 'missing_checkpoint' else 'formal_check'
             engine.runtime['executions']['EX-formal-diagnostic'] = {
                 'id': 'EX-formal-diagnostic', 'role': role, 'status': 'ended',
                 'action': {'role': role}, 'artifact_bundle': 'BA-formal-diagnostic-' + fault,
                 'result_ref': prefix + 'result.json', 'output_files': [source]}
             if fault == 'normal_inline':
-                engine.runtime['executions']['EX-formal-diagnostic']['parent_execution_id'] = 'EX-parent'
+                engine.runtime['executions']['EX-parent'] = {
+                    'id': 'EX-parent', 'role': 'formal_check', 'status': 'ended'}
+                engine.runtime['executions']['EX-formal-diagnostic']['continuation_of'] = 'EX-parent'
+                engine.runtime['executions']['EX-formal-diagnostic']['action']['continuation_of'] = 'EX-parent'
             with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault):
                 root = Path(directory)
                 context = engine._context({'role': 'operational_review', 'target': 'EX-formal-diagnostic'}, root)
@@ -247,7 +250,7 @@ class RecoveryMaterialTests(unittest.TestCase):
         for eid, parent in [('EX-parent', None), ('EX-inline', 'EX-parent')]:
             attempt_action = action if parent is None else {'id': 'AC-inline', 'role': 'operational_review', 'target': parent}
             execution = engine._register_execution(attempt_action, {'id': eid, 'role': attempt_action['role'],
-                'status': 'running', 'input_snapshot': engine.head, 'input_manifest': [], 'parent_execution_id': parent})
+                'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})
             profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
             execution['launch_ticket'] = {**ticket(eid, profile, jobs=sim.ports.jobs, clock=sim.clock), 'phase': 'dispatched'}
             # An admitted launch: its capacity holds the started Job's identity.
@@ -271,7 +274,11 @@ class RecoveryMaterialTests(unittest.TestCase):
         for eid in ('EX-parent', 'EX-inline'):
             execution = engine.runtime['executions'][eid]
             self.assertEqual(execution['status'], 'ended')
+            self.assertEqual(execution['action']['role'], 'research_preparation' if eid == 'EX-parent' else 'operational_review')
+            if eid == 'EX-inline':
+                self.assertEqual(execution['action']['target'], 'EX-parent')
             self.assertEqual(engine.store.read(execution['output_files'][0]['artifact_ref']), eid.encode())
+            self.assertEqual(engine.store.load()[2]['executions'][eid], execution)
         review_workspace = sim.root / 'disappeared-review-preview'
         review_workspace.mkdir()
         context = engine._context({'role': 'operational_review', 'target': 'EX-parent'}, review_workspace)

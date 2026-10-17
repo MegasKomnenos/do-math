@@ -147,7 +147,8 @@ def execute(args: argparse.Namespace, *, ports, codex_home, environment, host_id
         return result, 0
     if command == "run":
         return ResearchEngine(args.repository, args.instance, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id).run(max_steps=args.max_steps, watch=args.watch,
-                                                                 until_active=args.until_active), 0
+                                                                 until_active=args.until_active,
+                                                                 installation_manifest=args.installation_manifest), 0
     if command == 'select-profile':
         from .model_policy import selection
         from .execution_profiles import match_profile_ref
@@ -276,46 +277,45 @@ def execute(args: argparse.Namespace, *, ports, codex_home, environment, host_id
             raise CliInputError(f"--{other}-path requires --provider {other}")
         result = json_safe(provider_adapter(args.provider, paths[args.provider], clock=ports.clock, jobs=ports.jobs).describe())
         return result, 0 if result.get("verified") else 1
-    if command == "operator":
-        workspace = _operator_workspace(args.repository, args.instance, args.workspace, ports=ports)
-        mode = args.mode
-        if mode in {"install", "uninstall", "status", "start", "start-operator"}:
-            action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
-            if action == "start-engine":
-                guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
-                if guard["outcome"] != "startable":
-                    return guard, 0
-            settings = {}
-            if action == "install":
-                configuration = ResearchRepository(args.repository, args.instance, backend=ports.git_backend, clock=ports.clock).load()[1]["config"]
-                settings = {"interval_seconds": configuration["operator_interval_seconds"],
-                            "operator_timeout_seconds": configuration["operator_timeout_seconds"]}
-            return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance,
-                                               workspace=workspace, scheduler=ports.scheduler, **settings), 0
-        if mode == "hold":
-            marker = scheduled_operator.hold(workspace, reason=args.reason, clock=ports.clock)
-            pause = _control(args, "pause", ports=ports, text=scheduled_operator.hold_pause_reason(marker["id"]), codex_home=codex_home, environment=environment, host_id=host_id)
-            try:
-                cleanup = scheduled_operator.cancel_wake(args.repository, args.instance, workspace, scheduler=ports.scheduler)
-            except (RuntimeError, OSError) as error:
-                cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
-            return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
-        if mode == "release":
-            released = scheduled_operator.release(workspace, clock=ports.clock)
-            marker = released.get("released")
-            expected = scheduled_operator.hold_pause_reason(marker["id"]) if marker else None
-            if expected:
-                released["resume"] = _control(args, "resume", ports=ports, text="User released scheduled operator HOLD " + marker["id"],
-                                              config={"expected_user_pause_reason": expected}, codex_home=codex_home, environment=environment, host_id=host_id)
-            else:
-                released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
-            return released, 0
-        if mode == "wake":
-            return scheduled_operator.wake(args.repository, args.instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id), 0
-        if mode == "engine":
-            return scheduled_operator.run_engine(args.repository, args.instance, workspace, ports=ports, environment=environment, codex_home=codex_home, host_id=host_id), 0
-        return scheduled_operator.check(args.repository, args.instance, workspace, ports=ports, probe=mode == "probe", codex_home=codex_home, environment=environment, host_id=host_id), 0
-    raise CliInputError("unknown command")
+    # The parser admits only the commands handled above and operator.
+    workspace = _operator_workspace(args.repository, args.instance, args.workspace, ports=ports)
+    mode = args.mode
+    if mode in {"install", "uninstall", "status", "start", "start-operator"}:
+        action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
+        if action == "start-engine":
+            guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
+            if guard["outcome"] != "startable":
+                return guard, 0
+        settings = {}
+        if action == "install":
+            configuration = ResearchRepository(args.repository, args.instance, backend=ports.git_backend, clock=ports.clock).load()[1]["config"]
+            settings = {"interval_seconds": configuration["operator_interval_seconds"],
+                        "operator_timeout_seconds": configuration["operator_timeout_seconds"]}
+        return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance,
+                                           workspace=workspace, scheduler=ports.scheduler, **settings), 0
+    if mode == "hold":
+        marker = scheduled_operator.hold(workspace, reason=args.reason, clock=ports.clock)
+        pause = _control(args, "pause", ports=ports, text=scheduled_operator.hold_pause_reason(marker["id"]), codex_home=codex_home, environment=environment, host_id=host_id)
+        try:
+            cleanup = scheduled_operator.cancel_wake(args.repository, args.instance, workspace, scheduler=ports.scheduler)
+        except (RuntimeError, OSError) as error:
+            cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
+        return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
+    if mode == "release":
+        released = scheduled_operator.release(workspace, clock=ports.clock)
+        marker = released.get("released")
+        expected = scheduled_operator.hold_pause_reason(marker["id"]) if marker else None
+        if expected:
+            released["resume"] = _control(args, "resume", ports=ports, text="User released scheduled operator HOLD " + marker["id"],
+                                          config={"expected_user_pause_reason": expected}, codex_home=codex_home, environment=environment, host_id=host_id)
+        else:
+            released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
+        return released, 0
+    if mode == "wake":
+        return scheduled_operator.execute('wake', args.repository, args.instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id), 0
+    if mode == "engine":
+        return scheduled_operator.execute('run-engine', args.repository, args.instance, workspace, ports=ports, environment=environment, codex_home=codex_home, host_id=host_id), 0
+    return scheduled_operator.execute('check', args.repository, args.instance, workspace, ports=ports, probe=mode == "probe", codex_home=codex_home, environment=environment, host_id=host_id), 0
 
 
 def _emit(value, *, command=None, request_id=None, code=0, error=False, force_json=False) -> None:

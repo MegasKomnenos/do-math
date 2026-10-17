@@ -107,11 +107,12 @@ def held_work(sim):
     The task offers two research profiles, the adopted one (``small``) and a
     sealed copy with twice its input limit (``large``, which the wait offers).
     The action's activity ``AY-held`` waits for the planner; the wait names the
-    question ``QU-held``. The state is the engine's, unsaved (the legacy
+    question produced by ``questions.link``. The state is the engine's, unsaved (the legacy
     ``context_engine`` held it in memory). Returns ``large``'s reference.
     """
     from copy import deepcopy
-    from do_math import activities, execution_profiles, planning
+    from do_math import activities, execution_profiles, planning, questions
+    from do_math.wait_rules import waiting_action
     from support.engine_lifecycle import approve, research_grant, task
     engine = sim.engine
     clear_work(sim)
@@ -134,10 +135,14 @@ def held_work(sim):
                              input_refs=[row['id']], opened_at=at)
     activities.wait_for(engine.runtime, 'AY-held', kind='input_overflow', reason='input_overflow', condition={'action_ids': ['AC-held']},
                         next_owner='research_plan', at=at)
-    engine.runtime['waiting_actions'] = {'AC-held': {'kind': 'input_overflow', 'action': action,
-        'question_id': 'QU-held', 'next_owner': 'research_plan', 'detail': {
+    question = questions.link(engine.runtime, execution_id='EX-preparation', field='held_input_profile',
+        owner='research', targets=[row['id']], reason='Choose an allowed profile for the held task',
+        clock=engine.ports.clock)
+    engine.runtime['waiting_actions'] = {'AC-held': waiting_action({'kind': 'input_overflow', 'action': action,
+        'reason': 'Required role input exceeds the selected profile limit',
+        'question_id': question['id'], 'next_owner': 'research_plan', 'detail': {
             'allowed_profile_candidates': [large['id']], 'cause': 'required_role_input',
-            'packed_bytes': small['input']['max_input_bytes'] + 10}}}
+            'packed_bytes': small['input']['max_input_bytes'] + 10}})}
     return execution_profiles.profile_ref(large)
 
 

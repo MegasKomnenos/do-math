@@ -9,6 +9,7 @@ and, for a unit that changes authority, the user's approval of that exact change
 these same product functions; each rejection is pinned to its reason.
 """
 from copy import deepcopy
+import re
 import unittest
 
 import jsonschema
@@ -29,6 +30,7 @@ def approved_check(bundle, **changes):
 
 class ImportSealTests(unittest.TestCase):
     def test_documented_import_check_is_bound_to_its_exact_bundle(self):
+        self.maxDiff = None
         from support.entry import entry
         clock = entry().ports.clock
         for decision, complete, findings in (('approved', True, []),
@@ -57,20 +59,25 @@ class ImportSealTests(unittest.TestCase):
                         damaged = {'passed': True}
                     else:
                         damaged['execution_id'] = 'OTHER'
-                    with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
+                    reason = {'missing_hash': r'actual field.*check\.sha256',
+                              'changed_hash': "'sha256': '" + '0' * 64 + "'",
+                              'other_bundle': "'bundle_sha256': '" + '0' * 64 + "'",
+                              'submission_check': r'actual field.*check\.sha256',
+                              'changed_execution': "'execution_id': 'OTHER'"}[fault]
+                    with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                         assert_governance_documents(self, damaged, owner='import_check', **arguments)
                 if decision != 'approved' or not complete:
                     with self.assertRaisesRegex(ValueError, '^independent complete approval required$'):
                         gov.apply_import(i, rt, bundle['id'], clock=clock)
                 else:
                     # The whole import bundle is not the check it contains.
-                    with self.assertRaises((AssertionError, KeyError)):
+                    with self.assertRaisesRegex(AssertionError, re.escape("'id': " + repr(checked['id']))):
                         assert_governance_documents(self, checked, owner='import_check', **arguments)
                     other = gov.prepare_import(i, rt, source, out, execution_id='ANOTHER', input_ref='IN', clock=clock)
                     rt['executions']['OTHER-CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': other['sha256']}
                     other_checked = gov.check_import(i, rt, other['id'], approved_check(other),
                                                     execution_id='OTHER-CHECK', clock=clock)
-                    with self.assertRaises((AssertionError, KeyError)):
+                    with self.assertRaisesRegex(AssertionError, "'execution_id': 'OTHER-CHECK'"):
                         assert_governance_documents(self, other_checked['check'], owner='import_check', **arguments)
 
     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):

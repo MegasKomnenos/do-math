@@ -164,6 +164,67 @@ class GoalAuditSlotTests(unittest.TestCase):
 
 
 class SealRecoveryTests(unittest.TestCase):
+    def test_recovery_keeps_the_barrier_when_settlement_cannot_reobserve_the_empty_job(self):
+        from dataclasses import replace
+        sim = Sim.activated()
+        action, judgment = committed_goal_audit(sim, local_termination='unknown')
+        sim.restart()
+        engine, jobs = sim.engine, sim.jobs
+        class UncertainJobs:
+            observations = 0
+            def __getattr__(self, name):
+                return getattr(jobs, name)
+            def named_job_empty(self, name):
+                self.observations += 1
+                return jobs.named_job_empty(name) if self.observations == 1 else None
+        uncertain = UncertainJobs()
+        engine.ports = replace(engine.ports, jobs=uncertain)
+        self.recover(engine)
+        self.assertEqual(uncertain.observations, 2)
+        execution = engine.runtime['executions'][EXECUTION]
+        self.assertEqual(execution['status'], 'stopping')
+        self.assertEqual(execution['capacity']['local_termination'], 'unknown')
+        self.assertNotIn(action['id'], engine.runtime.get('waiting_actions', {}))
+        self.assertEqual(engine.instance['goal_judgments'], [judgment])
+        recovery = next(reversed(engine.runtime['recoveries'].values()))
+        self.assertEqual(recovery['dispositions'][-1]['next_owner'], 'operator')
+
+    def test_unreadable_committed_audit_keeps_its_judgment_and_routes_the_original_producer(self):
+        """T3 8.0 s: real committed judgment/receipt and process recovery preserve the damaged original seal."""
+        from support.engine_context import damage
+        from support.submission_scenes import unmatched
+        sim = Sim.activated()
+        action, judgment = committed_goal_audit(sim)
+        sim.restart()
+        engine = unmatched(sim, name='repository-unreadable-goal-seal')
+        execution = engine.runtime['executions'][EXECUTION]
+        reference = execution['submission_intent']['output_ref']
+        raw = engine.store.read(reference, engine.head)
+        broken = raw.replace(b'a', b'b', 1)
+        self.assertNotEqual(broken, raw)
+        damage(engine.store, reference, broken)
+        engine._reload()
+        from do_math.wait_rules import waiting_action
+        previous_wait = waiting_action({'action': deepcopy(action), 'execution_id': EXECUTION,
+            'kind': 'execution_failure', 'reason': 'Preserve the earlier owner failure'})
+        engine.runtime.setdefault('waiting_actions', {})[action['id']] = deepcopy(previous_wait)
+        engine._save()
+        receipts = deepcopy(engine.runtime['integrations'])
+        self.recover(engine)
+        waiting = engine.runtime['waiting_actions'][action['id']]
+        self.assertEqual((waiting['kind'], waiting['execution_id']), ('submission_failure', EXECUTION))
+        self.assertIn('sealed output_ref hash differs', waiting['reason'])
+        self.assertEqual(engine.runtime['integrations'], receipts)
+        self.assertEqual(engine.instance['goal_judgments'], [judgment])
+        recovered, = [h for h in engine.runtime['history']
+                      if h.get('kind') == 'goal_audit_publication_recovered']
+        self.assertEqual(recovered['previous_wait'], previous_wait)
+        self.assertEqual([a['target'] for a in engine.runtime['queue'] if a['role'] == 'operational_review'], [EXECUTION])
+        self.assertEqual(engine.store.read(reference, engine.head), broken)
+        previous = deepcopy((engine.head, engine.instance, engine.runtime))
+        self.assertFalse(engine._restore_goal_audit_publication(engine.runtime['executions'][EXECUTION]))
+        self.assertEqual((engine.head, engine.instance, engine.runtime), previous)
+
     def recover(self, engine):
         """Run the owner's recovery of disappeared executions; return the calls that would recollect output files."""
         with ObservedCalls(collect=code_of(context_store.collect_outputs),
@@ -200,6 +261,9 @@ class SealRecoveryTests(unittest.TestCase):
         self.assertEqual(execution['result_ref'], RESULT_REF)
         self.assertEqual(execution['input_bundle'], INPUT_BUNDLE)
         self.assertEqual(engine.runtime['waiting_actions'][action['id']]['kind'], 'submission_publication')
+        previous = deepcopy((engine.head, engine.instance, engine.runtime))
+        self.assertFalse(engine._restore_goal_audit_publication(execution))
+        self.assertEqual((engine.head, engine.instance, engine.runtime), previous)
 
 
 if __name__ == '__main__':

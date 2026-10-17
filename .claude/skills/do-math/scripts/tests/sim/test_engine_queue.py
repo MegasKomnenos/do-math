@@ -8,6 +8,7 @@ the model process of a call is a Jobs-fake Job carrying the launch ticket's name
 """
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import timedelta
 import hashlib
 import json
 from pathlib import Path
@@ -244,6 +245,54 @@ class QueuedPreparationTests(unittest.TestCase):
             self.assertEqual(e.runtime['executions'][arguments['execution_id']]['effort'], pinned)
         finally:
             steps.close()
+
+    def test_call_window_starts_after_input_publication_and_keeps_the_pinned_deadline(self):
+        from do_math.execution_window import notice_seconds
+        from support.storage_finish_installation import at_return
+        e = self.engine
+        action = e.runtime['queue'][0]
+        profile = e._execution_profile(action)
+        duration = profile['window']['call_timeout_seconds']
+        notice = notice_seconds(profile['window'])
+        e.instance['config'].update(call_timeout_seconds=1, finish_notice_seconds=1)
+        steps = e._call_steps(action)
+        with at_return(e._context, lambda: self.sim.advance(500)):
+            arguments = next(steps)
+        published = self.sim.clock.wall()
+        deadline = self.sim.clock.monotonic() + duration
+        self.assertEqual(arguments['timeout_seconds'], duration)
+        self.assertEqual(e.runtime['executions'][arguments['execution_id']]['input_published_at'],
+                         published.isoformat())
+        try:
+            self.sim.advance(1)  # Worker launch consumes the already-open window.
+            with self.model_process(arguments):
+                window = e.runtime['executions'][arguments['execution_id']]['execution_window']
+                self.assertEqual(window['remaining_ms_at_start'], (duration - 1) * 1000)
+                self.assertEqual(window['effective_deadline_at'],
+                                 (published + timedelta(seconds=duration)).isoformat())
+                self.assertEqual(e._stop_deadlines[arguments['execution_id']], (deadline - notice, deadline))
+                self.sim.advance(duration - notice - 1)
+                self.assertFalse(arguments['should_stop']())
+                control = Path(arguments['workspace']) / '.control'
+                finish = json.loads((control / 'finish-request.json').read_bytes())
+                self.assertEqual(finish['requested_at'], self.sim.clock.now())
+                self.assertFalse(finish['revokes_authority'])
+                self.assertFalse((control / 'stop-request.json').exists())
+                self.sim.advance(notice - 0.001)
+                self.assertFalse(arguments['should_stop']())
+                self.sim.advance(0.001)
+                self.assertTrue(arguments['should_stop']())
+                stopped_at = e.runtime['executions'][arguments['execution_id']]['stop_observed_at']
+                stop_bytes = (control / 'stop-request.json').read_bytes()
+                self.sim.advance(1)
+                self.assertTrue(arguments['should_stop']())
+                self.assertEqual(e.runtime['executions'][arguments['execution_id']]['stop_observed_at'], stopped_at)
+                self.assertEqual((control / 'stop-request.json').read_bytes(), stop_bytes)
+        finally:
+            with self.assertRaises(StopIteration) as ended:
+                steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'call deadline'})
+            self.assertIsInstance(ended.exception.value, bool)
+        self.assertNotIn(arguments['execution_id'], e._stop_deadlines)
 
     def test_running_model_stops_immediately_after_public_pause(self):
         e = self.engine

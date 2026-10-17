@@ -9,6 +9,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+
 from do_math import submission
 from do_math.canonical import canonical_json
 from support.engine_lifecycle import applied
@@ -16,6 +17,7 @@ from support.provider_probes import ObservedCalls
 from support.record_builders import two_observation_output
 from support.scheduling_parallel import ready_work_sim
 from support.sim import Sim, warm_template
+from support.ingress import NOT_TEXTS, PATHS
 from support.submission_calls import submission_model, submitted
 from support.submission_owner_obligations import OwnerIngressAssertions
 from support.known_defects import known_defect
@@ -96,6 +98,7 @@ class OwnerIngressTests(OwnerIngressAssertions, unittest.TestCase):
 
 
     def test_workspace_roots_are_consumed_once_before_a_valid_maintenance_submission(self):
+        """루트·빈·상위·드라이브 경로와 비문자 JSON 참조의 정확 중앙 반려."""
         sim = Sim.activated()
         sim.engine.runtime['queue'] = [{'id': 'AC-submission-root', 'role': 'maintenance'}]
         sim.engine._save()
@@ -105,23 +108,44 @@ class OwnerIngressTests(OwnerIngressAssertions, unittest.TestCase):
         def malformed(context, workspace):
             fixed = json.loads((Path(workspace) / 'input/submission/context.json').read_bytes())
             seen.append(fixed['execution_id'])
-            for index, reference in enumerate(ROOT_REFERENCES):
+            cases = [(reference, 'submission.output.used_sources.*',
+                      'unsafe relative path: ' + reference.removeprefix('workspace:'))
+                     for reference in ROOT_REFERENCES]
+            for name in PATHS:
+                # used_sources는 문자열 목록이다. 경로의 비어 있음은 경로 수신이 검사한다.
+                cases.append((name, 'submission.output.used_sources.*',
+                    'path must be a nonempty relative POSIX path' if name == '' or ':' in name else
+                    'unsafe relative path: ' + name))
+                cases.append(('workspace:' + name, 'submission.output.used_sources.*',
+                    'path must be a nonempty relative POSIX path' if name == '' or ':' in name else
+                    'unsafe relative path: ' + name))
+            cases.extend((value, 'schema.type', f"{value!r} is not of type 'string'")
+                         for value in NOT_TEXTS)
+            for index, (reference, rule, message) in enumerate(cases):
                 self.reject_and_replay(sim, workspace, fixed['control_binding'],
                     {**maintenance_output(), 'used_sources': [reference]}, {},
-                    ('submission.output.used_sources.*', 'output/used_sources/0',
-                     'unsafe relative path: ' + reference.removeprefix('workspace:')), index)
+                    [(rule, 'output/used_sources/0', message)], index)
+            seen.append(len(cases))
             (Path(workspace) / 'activity-extensions.json').write_bytes(b'{}')
 
         model.before('maintenance', malformed)
         model.on('maintenance').reply(submitted(maintenance_output()))
         with ObservedCalls(seal=submission.seal_submission, producer=submission.producer_check) as calls:
             sim.run_until(lambda s: bool(seen) and s.runtime['executions'][seen[0]]['status'] == 'ended', max_steps=8)
-        self.assertEqual(calls.count('producer'), 0)
-        self.assertEqual(calls.count('seal'), len(ROOT_REFERENCES) + 1)
+        # Each malformed case is checked by the helper; the normal submission adds none.
+        self.assertEqual(calls.count('producer', caller=self.reject_and_replay.__module__), seen[1])
+        self.assertEqual(calls.count('producer'), seen[1])
         execution = sim.runtime['executions'][seen[0]]
-        self.assertEqual(execution['outcome'], 'output_accepted')
-        stored = json.loads(sim.engine.store.read(execution['submission_intent']['output_ref'], sim.engine.head))
-        self.assertEqual(stored['report'], maintenance_output()['report'])
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(calls.count('seal'), seen[1] + 1)
+        stored_raw = sim.engine.store.read(execution['submission_intent']['output_ref'], sim.engine.head)
+        stored = json.loads(stored_raw)
+        self.assertEqual({key: value for key, value in stored.items() if key != 'integration_bundles'},
+                         maintenance_output())
+        sim.restart()
+        self.assertEqual(sim.runtime['executions'][seen[0]]['outcome'], 'output_accepted')
+        self.assertEqual(sim.engine.store.read(execution['submission_intent']['output_ref'], sim.engine.head),
+                         stored_raw)
 
     def test_maintenance_extension_table_is_consumed_before_a_valid_submission(self):
         sim = Sim.activated()
@@ -136,15 +160,18 @@ class OwnerIngressTests(OwnerIngressAssertions, unittest.TestCase):
             seen.append(fixed['execution_id'])
             for index, (row, (_, value)) in enumerate((r, item) for r in rows for item in item_shapes()):
                 self.reject_and_replay(sim, workspace, fixed['control_binding'], maintenance_output(),
-                    {row.family: [value]}, ('schema.type', 'activity-extensions.json/' + row.family + '/0',
-                                           f"{value!r} is not of type 'object'"), index)
+                    {row.family: [value]}, [('schema.type', 'activity-extensions.json/' + row.family + '/0',
+                                           f"{value!r} is not of type 'object'")], index)
             (Path(workspace) / 'activity-extensions.json').write_bytes(b'{}')
 
         model.before('maintenance', malformed)
         model.on('maintenance').reply(submitted(maintenance_output()))
         with ObservedCalls(seal=submission.seal_submission, producer=submission.producer_check) as calls:
             sim.run_until(lambda s: bool(seen) and s.runtime['executions'][seen[0]]['status'] == 'ended', max_steps=8)
-        self.assertEqual(calls.count('producer'), 0)
+        # The rejection helper checks each malformed case at both boundaries.
+        expected_producer_calls = len(rows) * len(item_shapes())
+        self.assertEqual(calls.count('producer', caller=self.reject_and_replay.__module__), expected_producer_calls)
+        self.assertEqual(calls.count('producer'), expected_producer_calls)
         self.assertEqual(calls.count('seal'), len(rows) * len(item_shapes()) + 1)
         self.assertEqual(sim.runtime['executions'][seen[0]]['outcome'], 'output_accepted')
 
@@ -161,8 +188,8 @@ class OwnerIngressTests(OwnerIngressAssertions, unittest.TestCase):
             for index, (_, value) in enumerate(item_shapes()):
                 self.reject_and_replay(sim, workspace, fixed['control_binding'], good,
                     {'knowledge_metadata': [value]},
-                    ('schema.type', 'activity-extensions.json/knowledge_metadata/0',
-                     f"{value!r} is not of type 'object'"), index)
+                    [('schema.type', 'activity-extensions.json/knowledge_metadata/0',
+                     f"{value!r} is not of type 'object'")], index)
             (Path(workspace) / 'activity-extensions.json').write_bytes(b'{}')
 
         model.before('research_work', malformed)

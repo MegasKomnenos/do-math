@@ -190,8 +190,8 @@ class ReplacementEvidenceTests(ReviewOwnerCase):
     def delegated(self):
         cid, action = self.blocked()
         engine = self.engine
-        engine.instance['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user',
-            'kind': 'review_replacement', 'source_ref': 'SOURCE-review'}
+        from support.governance_delegation import original_replacement
+        original_replacement(engine, action)
         engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
             {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {'id': 'DG', 'status': 'active',
              'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',

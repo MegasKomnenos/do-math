@@ -1,6 +1,6 @@
 """중첩 오입력의 실제 owner 반려·저장·두 번째 순회와 뒤 정상 입력을 확인한다.
 
-미실행으로 시간 미측정. 16개 행의 실제 저장 게시가 필요하므로 flows에 둔다.
+16개 행의 실제 저장 게시가 필요하므로 flows에 둔다.
 """
 from copy import deepcopy
 import json
@@ -51,7 +51,15 @@ class NestedControlConsumptionTests(unittest.TestCase):
                                'extended_controls', 'inputs', 'questions', 'question_links'):
                     self.assertEqual(stored.get(family), before.get(family), family)
                 self.assertEqual((sim.model.calls, sim.engine.control_result(identifier)['effect']), ([], 'rejected'))
+        rejected_state = deepcopy((sim.engine.head, sim.instance, sim.runtime))
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual((sim.engine.head, sim.instance, sim.runtime), rejected_state)
         resumed = sim.control('resume', text='중첩 반려 후 정상 요청')
         sim.engine.process_controls()
         self.assertEqual(sim.engine.control_result(resumed['request_id'])['effect'], 'applied')
         self.assertEqual(sim.runtime['processed_controls'].count(resumed['request_id']), 1)
+        receipt = deepcopy(sim.engine.control_result(resumed['request_id']))
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(resumed['request_id']), receipt)

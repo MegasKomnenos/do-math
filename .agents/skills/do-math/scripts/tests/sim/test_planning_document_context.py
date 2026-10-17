@@ -6,6 +6,7 @@ with the provider adapter patched). Here the engine is a restored Sim's: the
 public activation's instance on the port fakes, with nothing replaced.
 """
 import hashlib
+from pathlib import Path
 import unittest
 
 from support.sim import Sim, warm_template
@@ -41,6 +42,62 @@ if __name__ == '__main__':
 
 
 class InstallationEditionTests(unittest.TestCase):
+    def test_public_run_cli_returns_the_persisted_startup_evidence(self):
+        """About 3 s: freeze the real installation and run the public CLI without research dispatch."""
+        import io
+        import json
+        from contextlib import redirect_stdout
+        from do_math import cli
+        import operator_bootstrap as bootstrap
+        sim = Sim.activated()
+        receipt = bootstrap.freeze(Path(cli.__file__).resolve().parents[2], sim.root / 'cli-frozen')
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(['run', '--repository', str(sim.repository), '--instance', sim.instance_id,
+                             '--until-active', '--installation-manifest', receipt['manifest']], ports=sim.ports, environment=sim.environment,
+                            host_id=sim.host_id, codex_home=sim.codex_home)
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())['result']
+        saved = Path(sim.instance['workspace']) / 'execution-control' / sim.instance_id / 'startup.json'
+        self.assertEqual(result['startup'], json.loads(saved.read_bytes()))
+        self.assertEqual(result['startup']['bootstrap']['comparison'], 'match')
+        self.assertEqual(result['startup']['manifest_path'], receipt['manifest'])
+
+    def test_startup_compares_recorded_manifest_before_dispatch_and_reports_missing_basis(self):
+        """About 8 s: freeze/copy, restart on entry-file drift, and compare a distinct root."""
+        import json
+        import operator_bootstrap as bootstrap
+        from do_math.engine import ResearchEngine
+        sim, root = self.engine()
+        receipt = bootstrap.freeze(root, sim.root / 'frozen')
+        manifest = Path(receipt['manifest'])
+        # A public run on the unchanged installation consumes the independent record.
+        baseline = sim.engine.run(until_active=True, installation_manifest=manifest)['startup']
+        self.assertEqual(baseline['bootstrap']['comparison'], 'match')
+        self.assertEqual(baseline['manifest_path'], str(manifest.resolve()))
+        self.assertIsNone(baseline['installation']['source_commit'])
+        # This entry file was outside the engine's polling edition, but is in the recorded installation.
+        entry = root / 'scripts/do_math.py'
+        entry.write_bytes(entry.read_bytes() + b'\n# startup drift\n')
+        sim.engine = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, installation_root=root,
+                                    codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
+        before = len(sim.model.calls)
+        result = sim.engine.run(max_steps=1, installation_manifest=manifest)
+        self.assertEqual(result['status'], 'paused')
+        self.assertEqual(len(sim.model.calls), before)
+        self.assertEqual(result['startup']['bootstrap']['comparison'], 'different')
+        self.assertEqual([row['path'] for row in result['startup']['bootstrap']['differences']], ['scripts/do_math.py'])
+        saved = Path(sim.instance['workspace']) / 'execution-control' / sim.instance_id / 'startup.json'
+        self.assertEqual(json.loads(saved.read_bytes()), result['startup'])
+        sim.engine.run(until_active=True)
+        unrecorded = json.loads(saved.read_bytes())
+        self.assertEqual(unrecorded['bootstrap'], {'mode': 'live', 'comparison': 'no_recorded_manifest'})
+        self.assertIsNone(unrecorded['manifest_path'])
+        with self.assertRaisesRegex(ValueError, 'different installation root'):
+            other = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports,
+                                   codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
+            other.run(until_active=True, installation_manifest=manifest)
+
     def engine(self):
         from do_math.engine import ResearchEngine
         from support.storage_finish_installation import copy_installation

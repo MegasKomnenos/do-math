@@ -28,6 +28,7 @@ from do_math.input_basis import capture_decision_basis
 from support.engine_lifecycle import applied, clear_work, ticking_clock
 from support.sim import Sim, warm_template
 from support.submission_receiver import native_result
+from support.wait_reporting import assert_status_report
 
 setUpModule = warm_template
 
@@ -83,6 +84,58 @@ def issued(sim, action, execution):
 
 
 class RepetitionEngineTests(unittest.TestCase):
+    def test_targetless_empty_hold_has_one_public_continuation_after_restart(self):
+        from support.planning_contract_inputs import empty_hold_sim
+        sim = empty_hold_sim()
+        hold, = revisions.active_repetition_holds(sim.runtime).values()
+        self.assertEqual(hold['lineage'], 'exhaustion_empty')
+        self.assertEqual(sim.runtime['tasks'], {})
+        self.assertEqual(sim.runtime['executions'][hold['event_ref']]['submission_receipt']['state'], 'accepted')
+        report, human = assert_status_report(self, sim.engine)
+        self.assertEqual(report['tasks'], [])
+        self.assertIsNone(report['operating_summary']['primary_blocker'])
+        self.assertEqual(report['repetition_holds'], [hold])
+        self.assertIn('repetition hold: ' + hold['lineage'] + '/' + hold['lineage_id'] +
+                      ' count=1/1 next=user reason=research_preparation', human)
+        self.assertIn('  event_ref: ' + hold['event_ref'], human)
+        self.assertIn('  release_condition: explicit scoped continuation or replacement strategy', human)
+        self.assertIn(hold['question'], report['questions'])
+        question, = [row for row in report['question_links'] if row['status'] == 'open']
+        self.assertEqual((question['owner'], question['target_ids']), ('user', [hold['event_ref']]))
+        self.assertIn('tasks: none', human)
+        self.assertIn('question ' + question['id'] + ': status=open next=user', human)
+        report['repetition_holds'][0]['reason'] = 'observer changed the reason'
+        self.assertEqual(revisions.active_repetition_holds(sim.engine.store.load()[2]),
+                         {(hold['lineage'], hold['lineage_id']): hold})
+        sim.restart()
+        sim.engine._refresh_readiness()
+        self.assertEqual(revisions.active_repetition_holds(sim.runtime),
+                         {(hold['lineage'], hold['lineage_id']): hold})
+        restored_report, _ = assert_status_report(self, sim.engine)
+        self.assertEqual(restored_report['repetition_holds'], [hold])
+        change = {'kind': 'repetition_continue', 'decision_id': 'DC-targetless-continue',
+            'lineage': hold['lineage'], 'lineage_id': hold['lineage_id'], 'hold_event_ref': hold['event_ref'],
+            'allowed_action': {'id': 'AC-targetless-next', 'role': 'research_preparation',
+                'repetition_bases': {'exhaustion_empty': hold['lineage_id']}, 'revision_targets': {}}}
+        applied(sim, 'decision', text='Continue this empty preparation only',
+                request_id='UI-targetless-continue', config={'change': change})
+        history = deepcopy(sim.runtime['history'])
+        sim.control('decision', text='Continue this empty preparation only',
+                    request_id='UI-targetless-continue', config={'change': change})
+        sim.engine.process_controls()
+        self.assertEqual(sim.runtime['history'], history)
+        sim.restart()
+        self.assertEqual(revisions.active_repetition_holds(sim.runtime), {})
+        self.assertEqual(sum(row['id'] == 'AC-targetless-next' for row in sim.runtime['queue']), 1)
+        self.assertEqual(task_contracts.repetition_lineages(sim.runtime)['exhaustion_empty']['count'], 0)
+        self.assertEqual(next(row for row in sim.runtime['question_links'] if row['id'] == question['id'])['status'],
+                         'resolved')
+        report, human = assert_status_report(self, sim.engine)
+        self.assertEqual(report['repetition_holds'], [])
+        self.assertIn(hold, sim.runtime['history'])
+        self.assertNotIn('repetition hold:', human)
+        self.assertNotIn('question ' + question['id'] + ':', human)
+
     def test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration(self):
         """About 2.2 s, over the 2 s Sim budget: the preparation is one model call through the worker."""
         sim = Sim.activated()

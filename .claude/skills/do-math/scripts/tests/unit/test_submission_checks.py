@@ -35,13 +35,24 @@ def install(workspace, context, schema):
     return submission.install_tools(workspace, context, schema, None, clock=FakeClock())
 
 
-def setUpModule():
-    """Build the support archive's digests once, so no single test pays the first installation."""
-    with tempfile.TemporaryDirectory() as directory:
-        install(Path(directory), research_work_context(), contracts.schema_for("research_work"))
-
-
 class CheckHistoryTests(unittest.TestCase):
+    def test_check_preservation_failure_cannot_leave_a_capture_eligible_result(self):
+        self.draft.write_bytes(canonical_json(self.good))
+        before = self.draft.read_bytes()
+        good = submission._producer_check(self.workspace, self.draft, [], clock=FakeClock())
+        self.assertTrue(good['passed'], good['issues'])
+        target = self.workspace / 'checks' / (good['id'] + '.json')
+        target.unlink()
+        target.mkdir()
+        result = submission._producer_check(self.workspace, self.draft, [], clock=FakeClock())
+        self.assertFalse(result['passed'])
+        self.assertFalse(result['capture_eligible'])
+        self.assertEqual([(r['rule_id'], r['path']) for r in result['issues']],
+                         [('machine_check.preservation', 'checks')])
+        self.assertEqual(self.draft.read_bytes(), before)
+        self.assertTrue(target.is_dir())
+        self.assertFalse((self.workspace / 'checks/.producer-head').exists())
+
     def test_documented_pass_is_bound_to_the_actual_candidate_and_check(self):
         from support.engine_context import assert_delivery_documents
         from do_math.canonical import exact_content_hash
@@ -66,7 +77,11 @@ class CheckHistoryTests(unittest.TestCase):
                     changed['mode'] = 'receiver'
                 else:
                     changed = {'sha256': 'import-check', 'execution_id': 'EX-1'}
-                with self.subTest(passed=passed, fault=fault), self.assertRaises((AssertionError, KeyError)):
+                reason = ("check.passed" if fault in ('missing_passed', 'other_check') else
+                          "'EX-other' != 'EX-1'" if fault == 'other_execution' else
+                          "'receiver' != 'producer'" if fault == 'other_mode' else
+                          'MC-' + exact_content_hash({k: v for k, v in changed.items() if k != 'id'})[:24])
+                with self.subTest(passed=passed, fault=fault), self.assertRaisesRegex(AssertionError, re.escape(reason)):
                     assert_delivery_documents(self, changed, owner='submission_check', output=output,
                         schema=self.schema, context=self.context, extensions={}, execution_id='EX-1', passed=passed)
 
@@ -232,6 +247,16 @@ class CheckHistoryTests(unittest.TestCase):
 
 
 class SubmissionBoundaryTests(unittest.TestCase):
+    def test_seat_schema_checks_the_review_payload_without_an_integration_envelope(self):
+        from do_math.review_cycle import stage_schema
+        from support.review_transition_inputs import stage_input
+        cycle, action, output = stage_input('initial')
+        output['used_sources'] = ['proposal']
+        context = {'action': {'role': 'identity_review', **action}, 'proposal': cycle['proposal']}
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(submission.payload_issues(output, stage_schema('initial'), context, {},
+                Path(directory), clock=FakeClock()), [])
+
     def test_nontext_insight_identity_is_a_structured_schema_rejection(self):
         from do_math import knowledge_io
         from support.default_responder import common
@@ -406,6 +431,32 @@ class SubmissionBoundaryTests(unittest.TestCase):
             self.assertTrue(any(row["rule_id"] == "intent.import_units" for row in issues), issues)
             output["import_units"][0]["source_range"]["end"] = len(text)
             self.assertEqual([], submission.payload_issues(output, schema, ctx, {}, Path(directory), clock=_entry.ports.clock))
+            output['import_units'][0].update(owner_ref='CH-incomplete',
+                payload={'kind': 'charter', 'record': {'id': 'CH-incomplete'}})
+            issues = submission.payload_issues(output, schema, ctx, {}, Path(directory), clock=_entry.ports.clock)
+            self.assertEqual([(r['rule_id'], r['path']) for r in issues], [
+                ('intent.governance_record', 'output/import_units/0/payload/record')])
+
+    def test_planner_fulfilment_requires_evidence_from_its_designated_specialist(self):
+        from support.record_builders import evidence_task
+        from support.role_answers import assessment
+        from support.entry import entry
+        task = evidence_task()
+        task['results'] = [{'execution_id': 'EX-report', 'report': 'A proposed result'}]
+        for obligation in task['completion_obligations']:
+            obligation['evidence_required'] = []
+        task['completion_obligations'][0]['judges'] = ['formal_check']
+        output = {'summary': 'Plan', 'used_sources': [], 'questions': [], 'dispositions': [],
+                  'preparation_requests': [], 'goal_audit': False, 'task_assessments': [assessment(task)],
+                  'integration_bundles': [{'integration_id': 'IN-plan', 'members': ['output'],
+                                           'impact_set': [], 'authority_refs': []}]}
+        context = {**research_work_context(), 'execution_id': 'EX-plan',
+                   'action': {'role': 'research_plan'}, 'tasks': [task]}
+        with tempfile.TemporaryDirectory() as directory:
+            issues = submission.payload_issues(output, contracts.schema_for('research_plan'), context, {},
+                Path(directory), clock=entry().ports.clock)
+            self.assertEqual([(r['rule_id'], r['path']) for r in issues],
+                [('submission.judge_coverage', 'output/task_assessments/0/item_dispositions')])
 
     def test_contract_review_evidence_must_be_supplied(self):
         from support.entry import entry
@@ -435,6 +486,25 @@ class SubmissionBoundaryTests(unittest.TestCase):
             self.assertFalse(producer["passed"])
             self.assertTrue(any(row["path"] == "checkpoint.json" for row in producer["issues"]))
             self.assertEqual("matched", receiver["comparison"]["status"])
+
+    def test_checkpoint_evidence_must_resolve_in_the_preserved_candidate(self):
+        from support.entry import entry
+        clock = entry().ports.clock
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            checkpoint = {'current_claim': 'Check', 'evidence_paths': ['workspace:missing.txt'],
+                          'attempts': [], 'remaining_work': [], 'next_step': 'Finish', 'progress_state': 'working'}
+            (workspace / 'checkpoint.json').write_bytes(canonical_json(checkpoint))
+            context = research_work_context()
+            candidate = {'files': {'checkpoint.json': canonical_json(checkpoint)}, 'manifest': [], 'omitted': []}
+            issues, _ = submission._workspace_checks(context, workspace, candidate, clock=clock)
+            self.assertEqual([(r['rule_id'], r['path']) for r in issues],
+                             [('checkpoint.reference', 'checkpoint.json/evidence_paths')])
+            (workspace / 'missing.txt').write_bytes(b'preserved evidence')
+            # A later local file is insufficient until those bytes belong to the captured candidate.
+            self.assertEqual(submission._workspace_checks(context, workspace, candidate, clock=clock)[0], issues)
+            candidate['files']['missing.txt'] = b'preserved evidence'
+            self.assertEqual(submission._workspace_checks(context, workspace, candidate, clock=clock)[0], [])
 
     def test_check_summary_preserves_unresolved_failures_outside_window(self):
         failure = integration.issue("schema.required", "output/report", "missing", "IN-A")

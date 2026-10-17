@@ -14,6 +14,93 @@ def setUpModule():
 
 
 class OwnerGuardTests(ReviewOwnerCase):
+    def test_fixed_source_io_failure_records_original_coordinate_without_materializing(self):
+        from do_math.git_store import GitStateStoreError
+        source = {'ref': 'source:missing', 'artifact_ref': 'research/sources/not-published.txt',
+                  'snapshot': self.engine.head, 'sha256': 'a' * 64, 'bytes': 1}
+        workspace = self.root / 'source-io'
+        with self.assertRaisesRegex(rc.ReviewRestorationError, 'git cat-file blob') as caught:
+            self.engine._materialize_research_sources([source], workspace, slot='initial-0')
+        error = caught.exception
+        self.assertIsInstance(error.__cause__, GitStateStoreError)
+        self.assertEqual(error.diagnostics['cause_kind'], 'fixed_source_io_unavailable')
+        self.assertEqual(error.diagnostics['coordinate'], {'slot': 'initial-0', 'source_index': 0,
+            'source_ref': source['ref'], 'artifact_ref': source['artifact_ref'], 'snapshot': self.engine.head,
+            'errno': None, 'path': None})
+        self.assertFalse(error.diagnostics['retryable'])
+        self.assertEqual(list((workspace / 'input/review-research').iterdir()), [])
+
+    def test_review_materialization_refuses_an_external_source_directory(self):
+        from support.storage_files import junction, remove_link
+        cid, action = self.opened()
+        workspace, outside = self.root / 'review-boundary', self.root / 'outside'
+        (workspace / 'input').mkdir(parents=True)
+        outside.mkdir()
+        link = junction(outside, workspace / 'input/review-sources')
+        try:
+            with self.assertRaisesRegex(ValueError, '^review source directory escapes workspace$'):
+                self.engine._build_review_context(action, workspace, self.engine.runtime['review_cycles'][cid])
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_link(link)
+
+        link = junction(outside, workspace / 'input/review-research')
+        try:
+            with self.assertRaisesRegex(ValueError, '^research source directory escapes workspace$'):
+                self.engine._materialize_research_sources([], workspace)
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_link(link)
+
+    def test_review_materialization_refuses_an_external_path_for_one_source(self):
+        from support.storage_files import junction, remove_link
+        from do_math.review_cycle import context_for, record_turn, review_action
+        cid, action = self.opened()
+        cycle = record_turn(self.engine.runtime['review_cycles'][cid], action['slot'],
+                            [{'role': 'user', 'kind': 'proposal', 'message_id': 'fixed-message',
+                              'content': deepcopy(self.engine.runtime['review_cycles'][cid]['proposal'])}])
+        self.engine.runtime['review_cycles'][cid] = cycle
+        workspace, outside = self.root / 'file-boundary', self.root / 'outside-file'
+        directory = workspace / 'input/review-sources'
+        directory.mkdir(parents=True)
+        outside.mkdir()
+        reference = context_for(cycle, review_action(action))['source_refs'][0]
+        link = junction(outside, directory / (reference['sha256'] + '.json'))
+        try:
+            with self.assertRaisesRegex(ValueError, '^review source file escapes its materialization directory$'):
+                self.engine._build_review_context(action, workspace, cycle)
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_link(link)
+        source = rc.inline_source_row('proposal', {'text': 'fixed proposal'})
+        directory = workspace / 'input/review-research'
+        directory.mkdir(parents=True)
+        link = junction(outside, directory / ('0000-' + source['sha256'] + '.json'))
+        try:
+            with self.assertRaisesRegex(ValueError, '^research source file escapes workspace$'):
+                self.engine._materialize_research_sources([source], workspace)
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            remove_link(link)
+    def test_initialization_retry_leaves_inactive_and_stale_accepted_proposals_held(self):
+        from do_math import knowledge_io
+        from support.engine_lifecycle import external_sim
+        from support.record_builders import observation_knowledge
+        sim = external_sim()
+        engine = sim.engine
+        engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
+            observation_knowledge('Held proposal'), source_ref='fixture:held', actor_ref='fixture:held', clock=sim.clock)
+        engine.instance['lifecycle']['state'] = 'paused'
+        before = deepcopy(engine.runtime)
+        engine._retry_review_initialization()
+        self.assertEqual(engine.runtime, before)
+        engine.instance['lifecycle']['state'] = 'active'
+        engine.runtime.setdefault('waiting_actions', {})['AC-init-held'] = {
+            'kind': 'review_initialization', 'action': {'target': kid}, 'execution_id': 'EX-stale-verifier'}
+        before = deepcopy(engine.runtime)
+        engine._retry_review_initialization()
+        self.assertEqual(engine.runtime, before)
+
     def test_admission_ignores_unowned_or_non_ai_attempt(self):
         before = deepcopy(self.engine.runtime)
         self.assertEqual(self.engine._admit_review_execution({'role': 'maintenance'}, {'actor_kind': 'ai'}), {'disposition': 'not_applicable'})
@@ -24,6 +111,15 @@ class OwnerGuardTests(ReviewOwnerCase):
         _, action, execution = self.registered()
         changed = {**execution, 'owner_activity_id': 'other'}
         self.assert_engine_rejected('review execution admission identity changed', lambda: self.engine._admit_review_execution(action, changed))
+
+    def test_delivered_input_rechecks_cycle_owner_after_execution_admission(self):
+        from do_math.activities import open_activity
+        cid, action, execution = self.registered()
+        other = open_activity(self.engine.runtime, activity_id=self.engine.ports.clock.new_id('AT'),
+            activity_kind='identity_review', owner_ref=cid, input_refs=['K1'], opened_at=self.engine.ports.clock.now())
+        self.engine.runtime['review_cycles'][cid]['owner_activity_id'] = other['id']
+        self.assert_engine_rejected('^review execution changed its owner activity$',
+            lambda: self.engine._record_review_input(action, execution['id']))
 
     def test_admission_requires_actual_owner(self):
         _, action = self.opened()

@@ -24,8 +24,11 @@ OPERATOR_SCHEMA = {
         "evidence_paths": {"type": "array", "items": {"type": "string"}},
         "user_questions": {"type": "array", "items": {"type": "string"}},
         "next_step": {"type": "string"},
+        "installation_version": {"type": "string"},
+        "source_commit": {"type": ["string", "null"]},
     },
-    "required": ["summary", "observed_status", "actions", "evidence_paths", "user_questions", "next_step"],
+    "required": ["summary", "observed_status", "actions", "evidence_paths", "user_questions", "next_step",
+                 "installation_version", "source_commit"],
 }
 
 
@@ -94,6 +97,18 @@ def collect_repair_verification(output, workspace):
         rows.append({'path': path.relative_to(workspace).as_posix(), 'sha256': hashlib.sha256(raw).hexdigest(),
                      'bytes': len(raw)})
     return rows
+
+
+def check_repair_version(output, observed):
+    """Bind a received report to the launcher's post-repair bytes and source HEAD.
+
+    A source commit is a Git observation, not proof that these installed bytes
+    were committed. Unavailable source Git is represented by null, never by the
+    research state snapshot or a model-invented commit.
+    """
+    for field in ('installation_version', 'source_commit'):
+        if output[field] != observed[field]:
+            raise ValueError('repair report ' + field + ' differs from observed installation')
 
 
 def task_names(repository: Path, instance: str) -> dict[str, str]:

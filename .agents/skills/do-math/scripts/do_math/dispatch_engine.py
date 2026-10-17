@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .wait_rules import waiting_action
 from copy import deepcopy
-from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
+from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, task_research
 from .state_contract import ARTIFACT_ROOT
 from .model_policy import selection
 from .wait_rules import SLOT_WAITS
@@ -171,10 +171,7 @@ class DispatchEngineMixin:
             return False
         if role in PLANNING_ROLES and any(e["role"] == role for e in live):
             return False
-        if task_research(action) and any(
-                e["role"] in RESEARCH_PRODUCER_ROLES and e.get("action", {}).get("target") == target
-                and not e.get("action", {}).get("review_cycle_id") for e in live):
-            return False
+        # task_ready above already refuses every other live execution on this task.
         if role in MACHINE_ROLES:
             if role in LEAN_ROLES and any(e['role'] in LEAN_ROLES for e in live):
                 action['dispatch_wait'] = {'kind': 'formal_execution'}

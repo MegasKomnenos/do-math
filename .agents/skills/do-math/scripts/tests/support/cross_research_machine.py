@@ -71,7 +71,24 @@ class RoleInputSelection:
             # The copied action may acquire a profile/grant; never publish it.
             # Effective adopted authority is narrower than all active grants.
             profile = self.sim.engine._action_lifecycle_gate(deepcopy(action))
-        except ValueError:
+        except ValueError as error:
+            # Revocation/expiry can legitimately leave a queued input without
+            # authority. A broken profile or an unknown gate error must fail
+            # 2-D, even if a nested helper uses the same rejection text.
+            from do_math.lifecycle_engine import LifecycleEngineMixin
+            allowed = {
+                'narrow initial operating grant required',
+                'initial operating authority: no current grant permits this action',
+                'initial operating authority: ambiguous current grants',
+                'research authority: no current grant permits this action',
+                'research authority: ambiguous current grants',
+            }
+            origin = error.__traceback__
+            while origin.tb_next is not None:
+                origin = origin.tb_next
+            if (str(error) not in allowed or origin.tb_frame.f_code is not
+                    LifecycleEngineMixin._action_lifecycle_gate.__code__):
+                raise
             return False
         # Product admission restricts generation only. CapacityWitness, not this
         # admission result, supplies the independent expected reservation value.
@@ -277,6 +294,14 @@ class ReviewAlphabetMachine(AlphabetMachine):
     @rule(value=st.sampled_from(['approved', 'rejected', 'unresolved']))
     def issue_verdict(self, value):
         self.answer('identity_review', 'verdict', value, 'judge')
+
+
+class DelegationAlphabetMachine(AlphabetMachine):
+    def new_sim(self):
+        from support.governance_delegation import public_replacement_case
+        sim, config = public_replacement_case()
+        applied(sim, 'request', text='Independently judge this exact delegated review replacement.', config=config)
+        return sim
 
 
 class OperationAlphabetMachine(AlphabetMachine):

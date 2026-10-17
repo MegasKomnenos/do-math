@@ -68,8 +68,9 @@ def held_ref(sim):
 class Call:
     """One running research call: the arguments the scheduler hands its runner, and its worker's actions."""
 
-    def __init__(self, sim, arguments):
+    def __init__(self, sim, arguments, steps):
         self.sim, self.arguments = sim, arguments
+        self.steps = steps
         self.engine = sim.engine
         self.execution_id = arguments['execution_id']
         self.binding = arguments['control_binding']
@@ -118,6 +119,16 @@ class Call:
         from do_math.control_transport import ControlTransport
         return ControlTransport.worker_receipt(self.binding, request_id)
 
+    def finish(self, result):
+        """Return an observed runner result to the same owner call generator."""
+        job = next(job for job in self.sim.jobs.launched if job.name == self.arguments['launch_ticket']['job_name'])
+        job.terminate()
+        self.engine._local_call_returned(self.execution_id, result)
+        try:
+            self.steps.send(result)
+        except StopIteration:
+            pass
+
 
 @contextmanager
 def running_work(sim, *, rules=None):
@@ -144,7 +155,7 @@ def running_work(sim, *, rules=None):
                           name=arguments['launch_ticket']['job_name'])
     try:
         arguments['on_started']({**process_identity(job), 'job_name': job.name})
-        yield Call(sim, arguments)
+        yield Call(sim, arguments, steps)
     finally:
         steps.close()
         job.terminate()

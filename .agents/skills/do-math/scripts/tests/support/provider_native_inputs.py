@@ -1,6 +1,20 @@
 """Malformed native message shapes retain each normal provider envelope."""
 from copy import deepcopy
-from support.ingress import malformed
+from support.ingress import NOT_TEXTS, malformed
+
+# Explicit wire bytes keep the expected encoding independent of the product codec.
+# Bytes themselves are not a JSON value; native stream bytes are tested as artifacts.
+EXTERNAL_JSON_VALUES = (
+    ('decimal', 0.25, b'0.25'),
+    ('safe-bound', 2 ** 53 - 1, b'9007199254740991'),
+    ('unsafe-bound', 2 ** 53, b'9007199254740992'),
+    ('unsafe-over', 2 ** 53 + 1, b'9007199254740993'),
+    ('unicode', ' 한글 e\N{COMBINING ACUTE ACCENT} 😀 ', '" 한글 e\N{COMBINING ACUTE ACCENT} 😀 "'.encode('utf-8')),
+    ('whitespace', ' \t\n', b'" \\t\\n"'),
+    ('null', None, b'null'),
+    ('empty-list', [], b'[]'),
+    ('empty-object', {}, b'{}'),
+)
 
 NATIVE_ROWS = (
     ('public', {'type': 'public_message', 'message': {'role': 'assistant', 'content': '정상'}},
@@ -40,8 +54,9 @@ def native_rejection_cases():
             yield kind + ':content:' + label, {'type': kind, 'message': {'content': value}}
         yield kind + ':missing-text', {'type': kind, 'message': {'content': [{'type': 'text'}]}}
     yield 'codex:missing-text', {'type': 'item.completed', 'item': {'type': 'agent_message'}}
-    for label, role in malformed({'type': 'string'}):
-        yield 'public:role:' + label, {'type': 'public_message', 'message': {'role': role, 'content': '내용'}}
+    # malformed() expands root objects and their fields, not root strings.
+    for role in NOT_TEXTS:
+        yield 'public:role:' + repr(role), {'type': 'public_message', 'message': {'role': role, 'content': '내용'}}
     for label, message in (('missing-content', {'role': 'assistant'}),
                            ('invalid-role', {'role': 'outside', 'content': '내용'})):
         yield 'public:' + label, {'type': 'public_message', 'message': message}

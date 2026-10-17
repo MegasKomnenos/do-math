@@ -39,6 +39,22 @@ def _status(record: dict) -> str:
     return "present"
 
 
+def basis_record(record: dict) -> dict:
+    """Record premises for currentness, distinct from exact storage/seal identity.
+
+    Only mutable split knowledge records have proven administrative fields.
+    Keep all other fields (including unknown ones): content, revision, references
+    and provenance, lifecycle/publication/use, trust and verification are premises.
+    An assessment's review-cycle ID identifies its sealed evidence; the K record's
+    two cycle pointers merely schedule review and do not change its current use.
+    """
+    family = record.get('family')
+    excluded = {'history', 'use_history'} if family in {'knowledge', 'formal_results', 'expositions', 'assessment_uses'} else set()
+    if family == 'knowledge':
+        excluded |= {'review_cycle_id', 'previous_review_cycle_id'}
+    return {key: deepcopy(value) for key, value in record.items() if key not in excluded}
+
+
 def capture_basis(instance: dict, runtime: dict, record_ids: list[str]) -> list[dict]:
     if not isinstance(record_ids, list) or len(record_ids) != len(set(record_ids)):
         raise ValueError("record_ids must be a list of distinct IDs")
@@ -49,7 +65,7 @@ def capture_basis(instance: dict, runtime: dict, record_ids: list[str]) -> list[
         record = records.get(record_id)
         if record is None:
             raise ValueError(f"unknown record ID: {record_id}")
-        basis.append({"id": record_id, "sha256": _hash(record), "status": _status(record)})
+        basis.append({"id": record_id, "sha256": _hash(basis_record(record)), "status": _status(record)})
     return basis
 
 
@@ -72,7 +88,7 @@ def validate_basis(basis: list[dict], instance: dict, runtime: dict) -> dict:
         if record is None:
             reasons.append(f"missing:{record_id}")
             continue
-        if _hash(record) != row["sha256"]:
+        if _hash(basis_record(record)) != row["sha256"]:
             reasons.append(f"hash_changed:{record_id}")
         if _status(record) != row["status"]:
             reasons.append(f"status_changed:{record_id}")
@@ -320,13 +336,13 @@ def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_
         elif family in {"knowledge", "expositions"}:
             # Currentness is derived from the actual premise/use, not a duplicate lifecycle.
             continue
-        elif rid in new_runtime.get('executions', {}) or rid in new_runtime.get('activities', {}):
-            # Preserve historical attempts and activity results. Their input
-            # snapshots and execution currentness checks own validity; the
-            # affected IDs remain in the reassessment event below.
-            continue
         else:
-            record["input_current"] = False
+            # Kind definitions and trust environments retain their authority
+            # until their explicit withdrawal/invalidation procedures run.
+            # Execution snapshots and activity results are historical evidence.
+            # All remain named in the reassessment event; none has a generic
+            # input_current/use_history disposition in its storage contract.
+            continue
         record.setdefault("use_history", []).append({"reason": reason, "impact_digest": impact_digest})
     new_runtime.setdefault("history", []).append({"kind": "knowledge_reassessment_required",
         "affected_ids": sorted(affected), "reason": reason, "impact_digest": impact_digest})
@@ -539,9 +555,8 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     reuse_formal = not formal_changed and kr.formal_usable(
         output, output.get("formal_results", {}).get(old_fid, {}))
     if reuse_formal:
-        unused = replacement.get("formal_result_id")
-        if unused:
-            del output["formal_results"][unused]
+        # Unchanged usable Lean source made import_candidate create this result.
+        del output["formal_results"][replacement["formal_result_id"]]
         replacement["formal_result_id"] = old_fid
         output["expositions"][replacement["exposition_id"]]["formal_result_id"] = old_fid
     # Superseding the authored record retires its pending checks at the domain
@@ -616,7 +631,7 @@ def begin_transition(instance: dict, new_env_id: str, *, clock) -> dict:
         targets.append({"id": kid, "formal_result_id": formal["id"],
             "exposition_id": record["exposition_id"],
             "source_sha256": lean_source_sha256(formal["lean_code"]),
-            "basis": {"id": kid, "sha256": _hash(record), "status": _status(record)},
+            "basis": {"id": kid, "sha256": _hash(basis_record(record)), "status": _status(record)},
             "formal_basis": kr.record_digest(formal), "exposition_basis": kr.record_digest(instance["expositions"][record["exposition_id"]]),
             **{field: deepcopy(verification.get(field)) for field in FORMAL_EVIDENCE_FIELDS},
             "previous_environment_ids": [formal.get("trust_environment_id")]})
@@ -726,7 +741,8 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None, clock
         exposition = output["expositions"].get((record or {}).get("exposition_id"), {})
         result = results[kid]
         if (not record or record.get("exposition_id") != target["exposition_id"]
-                or _hash(record) != target["basis"]["sha256"] or kr.record_digest(formal) != target["formal_basis"]
+                or _hash(basis_record(record)) != target["basis"]["sha256"]
+                or kr.record_digest(formal) != target["formal_basis"]
                 or kr.record_digest(exposition) != target["exposition_basis"]):
             raise ValueError("transition basis changed: " + kid)
         # This checks source, toolchain, declarations and axioms. formal is unchanged

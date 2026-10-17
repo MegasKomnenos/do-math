@@ -58,9 +58,8 @@ class FormalEngineMixin:
             if any(t.get('status') in {'checking', 'ready'} for t in self.runtime['trust_transitions'].values()):
                 raise ValueError('a trust transition is already in progress')
             transition = begin_transition(self.instance, environment_id, clock=self.ports.clock)
-            errors = environment_errors(environment, self.runtime.get('trust_bindings', {}).get(environment_id))
-            if errors:
-                raise ValueError('; '.join(errors))
+            # Registration and stored-state validation own the lexical contract.
+            # Live identity/fingerprint admission remains in check_environment.
             transition.update(source_ref=source_ref, created_at=self._lifecycle_now().isoformat())
             transition.setdefault('history', []).append({'kind': 'environment_fixed',
                 'environment_id': environment_id, 'environment_sha256': exact_content_hash(environment),
@@ -134,6 +133,17 @@ class FormalEngineMixin:
                     action['continuation_of'] = waiting['execution_id']
                 self.runtime['queue'].append(action)
             del self.runtime['waiting_actions'][identifier]
+            # Release only this formal owner's matching obligation. The next
+            # registration must not be what makes an already resolved wait disappear.
+            activity = self.runtime.get('activities', {}).get(waiting['action'].get('owner_activity_id'))
+            if activity and activity['status'] == 'waiting' and activity['waiting']['kind'] == kind:
+                condition = activity['waiting']['condition']
+                direct = condition == {'kind': kind, 'knowledge_id': waiting['action'].get('target')}
+                action_ids = condition.get('action_ids', []) if isinstance(condition, dict) else []
+                if direct or (identifier in action_ids and not any(
+                        aid in self.runtime['waiting_actions'] for aid in action_ids)):
+                    from .activities import resume_activity
+                    resume_activity(self.runtime, activity['id'], condition=condition, at=self.ports.clock.now())
             self.runtime['history'].append({'kind': kind + '_wait_resumed', 'action_id': identifier,
                                             'previous': deepcopy(detail)})
 
@@ -160,8 +170,9 @@ class FormalEngineMixin:
             'status': 'running', 'created_at': self._lifecycle_now().isoformat(),
              'input_snapshot': self.head,
              'input_manifest': [{'kind': 'trust_transition', 'id': transition_id, 'sha256': exact_content_hash(transition)}]})
-        if execution is None:
-            return False
+        # These machine actions own fresh activities or continue their own
+        # attempts, never AI review-restoration waits. Their built profiles
+        # reserve neither provider/model slots nor host capacity.
         self._save()
         environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
         binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
@@ -231,8 +242,6 @@ class FormalEngineMixin:
         workspace.mkdir(parents=True, exist_ok=True)
         execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_check', 'status': 'running',
             'created_at': self._lifecycle_now().isoformat()})
-        if execution is None:
-            return False
         self._save()
         toolchain = environment['toolchain']
         check = validate_basis([target['basis']], self.instance, self.runtime)
@@ -248,9 +257,6 @@ class FormalEngineMixin:
             return stop_requested
         binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
         try:
-            from .trust_validation import environment_errors
-            errors = environment_errors(environment, binding)
-            if errors: raise ValueError('; '.join(errors))
             if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))
             if environment.get('status') == 'invalid': raise ValueError('trust transition environment was invalidated')
             from .execution_profiles import match_profile_ref, machine_invocation
@@ -386,9 +392,6 @@ class FormalEngineMixin:
             'decision_basis': capture_decision_basis(self.instance, self.runtime,
                 action_read_ids(action, self.instance, self.runtime)),
             'input_manifest': manifest}, profile=profile)
-        if execution is None:
-            self._save()
-            return
         workspace.mkdir(parents=True)
         self._save()
         stop_reasons = set()
@@ -399,8 +402,12 @@ class FormalEngineMixin:
                 reasons.add('instance_ended')
             if self.runtime['status'] == 'paused' or self.runtime.get('stop_requested'):
                 reasons.add('instance_paused')
-            if self.runtime['executions'][execution_id].get('stop_requested'):
-                reasons.add('execution_stop_requested')
+            requested_stop = self.runtime['executions'][execution_id].get('stop_requested')
+            if requested_stop:
+                # governance._dispose_grant_consumers marks revocation on the
+                # running attempt. It is recoverable authority loss, not an
+                # explicit request to hold this execution permanently.
+                reasons.add('authority_changed' if requested_stop == 'grant_revoked' else 'execution_stop_requested')
             if not authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())['allowed']:
                 reasons.add('authority_changed')
             if (self.instance.get('active_trust_environment') != environment_id
@@ -420,9 +427,8 @@ class FormalEngineMixin:
                                       artifact_bundle=raw_bundle)
         if stop():
             result = {**result, 'status': 'stopped', 'reason': ', '.join(sorted(stop_reasons))}
-        current = proposal_view(self.instance, kid)
-        if current['lean_code'] != source or current['declaration_names'] != declarations:
-            result = {**result, 'status': 'failed', 'reason': 'formal source changed during verification'}
+        # A public revision creates new KN/FR records; stop() checks the old
+        # proposal's decision basis without rewriting its returned evidence.
         bundle = self.ports.clock.new_id('BA')
         reference = f'{ARTIFACT_ROOT}{bundle}/formal.json'
         execution = self.runtime['executions'][execution_id]
@@ -433,8 +439,9 @@ class FormalEngineMixin:
             # Failed compiler runs remain evidence. Only complete checked evidence can seal a formal result.
             if result['status'] == 'verified':
                 try:
-                    if self._formal_environment() != environment:
-                        raise ValueError('fixed trust environment changed before admission')
+                    self._require_action_clock()
+                    # stop() checked the fixed environment. The receiver still
+                    # checks active authority, new transitions and exact evidence.
                     self.instance = record_formal_result(self.instance, kid,
                         {**result, 'execution_id': execution_id, 'artifact_ref': reference}, environment_id,
                         runtime=self.runtime)

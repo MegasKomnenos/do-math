@@ -23,6 +23,27 @@ SKILL = Path(file_io.__file__).resolve().parents[2]
 
 
 class FrozenSnapshotTests(unittest.TestCase):
+    def test_missing_live_installation_is_reported_without_losing_the_frozen_identity(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        installation = root / 'installation'
+        source = installation / 'scripts/do_math/scheduled_operator.py'
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b'# minimal frozen supervisor\n')
+        receipt = bootstrap.freeze(installation, root / 'workspace')
+        manifest = bootstrap.verify_snapshot(Path(receipt['manifest']))
+        raw = Path(receipt['manifest']).read_bytes()
+        source.unlink()
+        source.parent.rmdir()
+        source.parent.parent.rmdir()
+        installation.rmdir()
+        result = bootstrap.startup_evidence(manifest)
+        self.assertEqual({key: value for key, value in result.items() if key != 'error'}, {
+            'mode': 'frozen', 'snapshot_sha256': receipt['snapshot_sha256'],
+            'installation_root': str(installation) , 'comparison': 'unavailable'})
+        self.assertTrue(result['error'].startswith('FileNotFoundError: '), result)
+        self.assertIn('installation', result['error'])
+        self.assertEqual(Path(receipt['manifest']).read_bytes(), raw)
+
     def test_verified_frozen_files_are_rehashed_only_after_their_fingerprint_changes(self):
         """About 3 s: freezing copies and hashes the whole installed skill, which is the subject of the check."""
         with tempfile.TemporaryDirectory() as directory:

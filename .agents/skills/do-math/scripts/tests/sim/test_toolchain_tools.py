@@ -131,6 +131,51 @@ class SetupToolTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
+    def test_real_setup_refuses_failed_compile_moved_files_and_reuse_after_metadata_change(self):
+        from support.trust_inputs import setup_recording
+        from support.knowledge_verifier_jobs import OutputCompiler, worker_jobs
+        for failure in ('compile', 'moved'):
+            with self.subTest(failure=failure):
+                fixture = setup_recording(self.root / failure)
+                options = {key: fixture[key] for key in ('jobs', 'clock', 'environment', 'git_backend')}
+                if failure == 'compile':
+                    fixture['lean'].inputs.clear()  # an unregistered representative program exits 1
+                    reason = 'the representative compile did not succeed'
+                else:
+                    olean = self.root / failure / 'toolchain/lib/lean/Init/Prelude.olean'
+                    def move():
+                        olean.write_bytes(b'changed during representative compile')
+                    compiler = OutputCompiler('explicit compiler success', during=move)
+                    # Identity was genuinely inspected; only the external compiler changes for this run.
+                    identity = setup_lean.observe_identity(fixture['command'], **options)
+                    options.update(identity=identity, jobs=worker_jobs(compiler))
+                    reason = 'judgment files changed while the baseline was being recorded'
+                with self.assertRaises(setup_lean.Refused) as refused:
+                    setup_lean.record_installation(fixture['command'], fixture['records_dir'],
+                                                  fixture['evidence_root'], **options)
+                self.assertEqual(refused.exception.result['reason'], reason)
+                self.assertEqual(refused.exception.result['status'], 'failed')
+                self.assertEqual(list(fixture['records_dir'].glob('*.json')), [])
+                if failure == 'compile':
+                    validation = refused.exception.result['validation']
+                    self.assertEqual((validation['status'], validation['exit_code']), ('failed', 1))
+                    self.assertIn('unregistered synthetic Lean', validation['stderr'])
+                    self.assertNotIn('error', validation)
+        fixture = setup_recording(self.root / 'metadata')
+        options = {key: fixture[key] for key in ('jobs', 'clock', 'environment', 'git_backend')}
+        created = setup_lean.record_installation(fixture['command'], fixture['records_dir'],
+                                                fixture['evidence_root'], **options)
+        olean = self.root / 'metadata/toolchain/lib/lean/Init/Prelude.olean'
+        stat = olean.stat()
+        os.utime(olean, ns=(stat.st_atime_ns, stat.st_mtime_ns - 2_000_000_000))
+        before = Path(created['record_path']).read_bytes()
+        with self.assertRaises(setup_lean.Refused) as refused:
+            setup_lean.record_installation(fixture['command'], fixture['records_dir'], fixture['evidence_root'], **options)
+        self.assertEqual(refused.exception.result['status'], 'rerecord_required')
+        self.assertEqual(refused.exception.result['record_path'], created['record_path'])
+        self.assertEqual(Path(created['record_path']).read_bytes(), before)
+        self.assertEqual(len(fixture['lean'].checks), 1, 'reuse refusal must precede a second compile')
+
     def test_trust_request_names_the_record_and_its_current_baseline(self):
         request = trust_fixture(self.root, ['synthetic-lean'])
         record_path = Path(request['toolchain_record']['path'])

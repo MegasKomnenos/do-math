@@ -102,7 +102,7 @@ class ToolchainRecordTests(RecordCase):
                 del broken['changed_files']
                 self.assertEqual(trust_field_issues('`environment_check.changed_files`',
                     'environment_check', broken), [('actual field', 'environment_check.changed_files')])
-                with self.assertRaises(AssertionError):
+                with self.assertRaisesRegex(AssertionError, f'0 != {len(changes)}.*changed_file_count'):
                     assert_trust_documents(self, {**value, 'changed_file_count': 0},
                         owner='environment_check', expected={'changed_file_count': len(changes)})
             return value

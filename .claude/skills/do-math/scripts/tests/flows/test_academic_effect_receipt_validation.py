@@ -9,10 +9,6 @@ from do_math import academic
 from support.academic_effect_cases import confirmed_effect_sim
 
 
-def setUpModule():
-    confirmed_effect_sim()
-
-
 class AcademicEffectReceiptValidationTests(unittest.TestCase):
     def setUp(self):
         self.sim = confirmed_effect_sim()

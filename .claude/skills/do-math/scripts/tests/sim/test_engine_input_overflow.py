@@ -88,6 +88,40 @@ class OverflowConnections(unittest.TestCase):
                     engine._apply_input_overflow_resolutions([choice], fixed, 'EX-plan')
                 self.assertIn('AC-held', engine.runtime['waiting_actions'])
 
+    def test_revised_task_keeps_the_original_overflow_contract_pin_and_cannot_resume_it(self):
+        """T3 18.5 s cold: actual review, replacement and sealed planner input establish the old contract pin."""
+        from do_math import planning
+        from do_math.execution_lifecycle import transition_execution
+        from support.role_answers import review_items
+        from support.planning_contract_inputs import produce_task
+        engine = self.engine
+        original = deepcopy(engine.runtime['tasks']['TK-1'])
+        pin = engine.runtime['waiting_actions']['AC-held']['action']['selected_contract_sha256']
+        self.assertEqual(pin, planning.contract_hash(original))
+        action = {'id': 'AC-revision-review', 'role': 'task_contract_review', 'target': 'TK-1'}
+        review = engine._register_execution(action,
+            {'id': 'EX-revision-review', 'role': 'task_contract_review', 'status': 'running'})
+        transition_execution(review, 'stopping', at=self.sim.clock.now())
+        transition_execution(review, 'ended', at=self.sim.clock.now(), outcome='execution_incomplete')
+        engine._apply(action, review_items(['TK-1'], decision='revision_required',
+            next_owner='research_preparation', findings=['Clarify the held task contract']),
+            review['id'], owns_response=False)
+        self.assertEqual(engine.runtime['tasks']['TK-1']['status'], 'waiting')
+        identifier = produce_task(self.sim, 'Revised held task', revises='TK-1',
+                                  profiles=[self.reference])
+        self.assertEqual(identifier, 'TK-1')
+        self.assertGreater(engine.runtime['tasks'][identifier]['revision'], original['revision'])
+        self.assertNotEqual(planning.contract_hash(engine.runtime['tasks'][identifier]), pin)
+        _, fixed = package(engine, directory(self))
+        request, = fixed['input_overflow_requests']
+        self.assertEqual(request['contract_revision'], engine.runtime['tasks'][identifier]['revision'])
+        self.assertEqual(request['contract_sha256'], pin)
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        choice = {'action_id': 'AC-held', 'profile_ref': self.reference, 'reason': 'Larger input fits'}
+        with self.assertRaisesRegex(ValueError, '^input overflow task contract changed: AC-held$'):
+            engine._apply_input_overflow_resolutions([choice], fixed, 'EX-plan')
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+
     def test_shared_submission_check_rejects_duplicate_and_unoffered_choices(self):
         from support.entry import entry
         _entry = entry()

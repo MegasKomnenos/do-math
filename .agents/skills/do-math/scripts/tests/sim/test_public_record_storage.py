@@ -22,6 +22,93 @@ class PublicRecordStorageTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
+    def test_setup_published_requests_reach_public_registration_and_stored_environments(self):
+        from do_math.trust_validation import environment_errors
+        from support.trust_inputs import setup_request_runs
+        sim = Sim(self.root / 'consumer', goal='Store the actual setup request')
+        runs = list(setup_request_runs(self.root / 'producer'))
+        selected = [runs[0], runs[-1]]  # core baseline 0 and project(paths=2) baseline 1
+        for branch, run in selected:
+            with self.subTest(branch=branch):
+                request = run['request']
+                apply_control(sim, 'trust', config=request)
+                eid = next(key for key, environment in sim.instance['trust_environments'].items()
+                           if environment['toolchain_record'] == request['toolchain_record'])
+                _, instance, runtime = sim.engine.store.load()
+                environment = instance['trust_environments'][eid]
+                binding = runtime['trust_bindings'][eid]
+                self.assertEqual(environment_errors(environment, binding), [])
+                self.assertEqual(set(environment), {'id', 'status', 'toolchain', 'allowed_axioms',
+                                                    'source_ref', 'toolchain_record'})
+                self.assertEqual(environment['status'], 'registered')
+                self.assertEqual(environment['toolchain'], run['record']['identity'])
+                self.assertEqual(environment['allowed_axioms'], request['allowed_axioms'])
+                self.assertEqual(environment['toolchain_record'], request['toolchain_record'])
+                self.assertEqual(binding, request['binding'])
+                self.assertIn(environment['source_ref'], instance['governance_sources'])
+                self.assertNotIn('binding', environment, 'runtime binding is a separate stored object')
+                sim.restart()
+                self.assertEqual(sim.instance['trust_environments'][eid], environment)
+                self.assertEqual(sim.runtime['trust_bindings'][eid], binding)
+
+    def test_tracker_open_boundary_rule_response_and_execution_stop_survive_reload(self):
+        from support.engine_control import running_work
+        from support.observation_inputs import observation_rule, self_check_response, write_checkpoint
+        from do_math.state_contract import default_state_contract, validate_record
+        sim = Sim.activated()
+        rules = [observation_rule(required_evidence=['workspace:checkpoint.json'])]
+        with running_work(sim, rules=rules) as call:
+            call.observe({'type': 'item.started', 'item': {'id': 'C', 'type': 'command_execution'}})
+            write_checkpoint(call.workspace, counters={'attempts': 2})
+            call.observe({'type': 'tick'})
+            obligation, = call.tracker.obligations.values()
+            oid = obligation['id']
+            opened = call.engine.store.load()[2]['self_check_obligations'][oid]
+            self.assertEqual(opened['status'], 'open')
+            self.assertIn('deadline_held_offset_ms', opened)
+            call.submit('safety_boundary', {'inflight_calls': False, 'call_ids': ['C']}, 'boundary-storage')
+            call.receive()
+            boundary = call.receipt('boundary-storage')
+            self.assertEqual(boundary['state'], 'accepted')
+            self.assertNotIn('deadline_held_offset_ms', call.tracker.stored_obligations()[oid])
+            proposal = {'current_revision': 0, 'reason': 'repeat at the next attempts boundary',
+                        'rules': [observation_rule(id='renamed', repeat_interval=2,
+                                                 required_evidence=['workspace:checkpoint.json'])]}
+            response = {**self_check_response(obligation), 'rule_proposal': proposal}
+            sent = call.self_check(oid, response)
+            call.receive()
+            receipt = call.receipt(sent['request_id'])
+            self.assertEqual(receipt['state'], 'accepted')
+            record, = [row for row in call.engine.runtime['self_check_responses'].values()
+                       if row['obligation_id'] == oid]
+            self.assertEqual(record['receipt_ref'], receipt['publication_id'])
+            self.assertEqual(record['rule_update']['kind'], 'observation_rules_accepted')
+            self.assertEqual(record['rule_update']['rules'], proposal['rules'])
+            import json
+            self.assertEqual(json.loads(record['response_json']), response)
+            self.assertEqual(call.tracker.stored_obligations()[oid]['response_ref'], record['id'])
+            self.assertEqual(call.tracker.stored_obligations()[oid]['status'], 'answered')
+            # Current close boundary: a submitted result requests execution stop.
+            # No current tracker API produces the legacy obligation status 'closed'.
+            delivery = call.draft()
+            call.receive()
+            self.assertEqual(call.receipt(delivery['request_id'])['state'], 'accepted')
+            self.assertEqual(call.execution['status'], 'stopping')
+            expected = {family: deepcopy(call.engine.runtime[family]) for family in
+                        ('observation_facts', 'self_check_obligations', 'self_check_responses', 'control_receipts')}
+            expected_execution = deepcopy(call.execution)
+            contract = default_state_contract()
+            for family in ('observation_facts', 'self_check_obligations', 'self_check_responses'):
+                for value in expected[family].values():
+                    validate_record(contract.family('runtime', family).checker, value, family)
+                    self.assertNotIn('control_call_ids', value)
+            sim.restart()
+            for family, values in expected.items():
+                self.assertEqual(sim.runtime[family], values)
+            self.assertEqual(sim.runtime['executions'][call.execution_id], expected_execution)
+            self.assertEqual(sim.runtime['executions'][call.execution_id]['safe_boundary_report'],
+                             {'receipt_id': boundary['publication_id'], 'inflight_calls': False, 'call_ids': ['C']})
+
     def test_public_initialize_control_and_source_bound_grant_round_trip(self):
         from do_math.governance import validate_grant_source
         sim = Sim(self.root, goal='Preserve original request')

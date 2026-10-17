@@ -20,7 +20,7 @@ from do_math.control_transport import ControlTransport
 from support.provider_inputs import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
 from support.fakes.clock import FakeClock
 from support.provider_probes import ObservedCalls, settle
-from support.provider_runs import ProviderJobs, ScriptedCLI, model_runner
+from support.provider_runs import ProviderJobs, ScriptedCLI, collector_request, model_runner
 
 
 def sha256(raw):
@@ -31,22 +31,6 @@ class CollectorCase(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.clock = FakeClock()
-
-    def codex_request(self, **changes):
-        """A checked Codex worker request whose outputs lie in ``evidence`` outside the workspace ``ws``."""
-        evidence, workspace = self.root / 'evidence', self.root / 'ws'
-        evidence.mkdir(exist_ok=True)
-        workspace.mkdir(exist_ok=True)
-        prompt = evidence / 'prompt'
-        prompt.write_bytes(b'p')
-        request = {"codex_path": str(self.root / 'codex.exe'), "prompt_path": str(prompt), "cwd": str(workspace),
-                   "model": "m", "effort": "low", "sandbox": "read-only", "approval_policy": "never",
-                   "max_runtime_seconds": 1, **{key: str(evidence / name) for key, name in (
-                       ("stdout_path", "out"), ("stderr_path", "err"), ("final_path", "final"),
-                       ("status_path", "status"))}, **changes}
-        path = evidence / 'request.json'
-        path.write_text(json.dumps(request), encoding='utf-8')
-        return path
 
     def adapter(self, jobs):
         return CodexExecAdapter(str(self.root / 'codex.exe'), jobs=jobs, clock=self.clock)
@@ -68,7 +52,7 @@ class CodexCollectionTests(CollectorCase):
 
     def test_collect_reports_start_snapshot_bytes_without_rereading_them(self):
         adapter = self.adapter(ProviderJobs(clock=self.clock))
-        execution = adapter.start(self.codex_request(), cwd=self.root, env={})
+        execution = adapter.start(collector_request(self.root), cwd=self.root, env={})
         snapshot = Path(execution.worker_argv[-1])
         request_raw = snapshot.read_bytes()
         adapter.resume(execution)
@@ -87,7 +71,7 @@ class CodexCollectionTests(CollectorCase):
         # The CLI wrote output, then outlived the request's runtime limit; one process stays in the Job.
         jobs = ProviderJobs(ScriptedCLI(stdout=b'old', final=b'old', timeout=True), clock=self.clock, remaining=(99,))
         adapter = self.adapter(jobs)
-        execution = adapter.start(self.codex_request(), cwd=self.root, env={})
+        execution = adapter.start(collector_request(self.root), cwd=self.root, env={})
         adapter.resume(execution)
         status = json.loads(execution.status_path.read_bytes())
         self.assertEqual((status['state'], status['runner_stop_required']), ('timeout', True))
@@ -101,7 +85,7 @@ class CodexCollectionTests(CollectorCase):
 
     def test_start_rejects_preexisting_output_before_creating_a_job(self):
         jobs = ProviderJobs(clock=self.clock)
-        request = self.codex_request()
+        request = collector_request(self.root)
         (self.root / 'evidence' / 'final').write_bytes(b'old')
         with self.assertRaisesRegex(FileExistsError, 'output paths must be newly allocated'):
             self.adapter(jobs).start(request, cwd=self.root, env={})

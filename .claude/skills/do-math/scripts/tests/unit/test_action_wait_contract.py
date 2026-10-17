@@ -37,7 +37,7 @@ class ActionWaitRecordTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 update_waiting_action(record, kind=kind)
                 self.assertEqual(record, {**source, 'kind': kind, 'next_owner': rule['next_owner']})
-        for kind in ('unknown_wait', [], None, True):
+        for kind in ('unknown_wait', 'repetition_hold', [], None, True):
             with self.subTest(rejected=kind):
                 before = deepcopy(record)
                 with self.assertRaisesRegex(ValueError, '^unregistered action wait:'):

@@ -24,6 +24,8 @@ from support.knowledge_builders import knowledge_candidate
 from support.knowledge_verifier_jobs import OutputCompiler, worker_jobs
 from support.sim import Sim, warm_template
 from support.engine_tool_output import invoke_tool
+from support.engine_size_cases import assert_input_budget
+from support.role_input_requirements import assert_judgment_inputs
 
 
 setUpModule = warm_template
@@ -31,13 +33,14 @@ setUpModule = warm_template
 
 class BoundRecordingCompiler(OutputCompiler):
     """원천·선언·중앙 검사 파일이 녹화와 같은 요청일 때만 원문을 재생한다."""
-    def __init__(self, stdout, *, extract_evidence=True):
+    def __init__(self, stdout, *, extract_evidence=True, declarations=DECLARATIONS):
         super().__init__(stdout)
         self.extract_evidence = extract_evidence
+        self.declarations = declarations
 
     def __call__(self, command, **options):
         requested = Path(command[-1]).read_bytes()
-        expected = check_file(SOURCE.encode('utf-8'), list(DECLARATIONS), extract_evidence=self.extract_evidence)
+        expected = check_file(SOURCE.encode('utf-8'), list(self.declarations), extract_evidence=self.extract_evidence)
         if requested != expected:
             raise AssertionError('녹화와 다른 Lean 원천 또는 선언 요청')
         return super().__call__(command, **options)
@@ -62,6 +65,8 @@ class RecordedLeanScaleTests(unittest.TestCase):
             self.assertEqual((code, value['status'], value['authoritative']), (0, 'verified', False))
             self.assertEqual(value['declarations'], list(DECLARATIONS))
             self.assertEqual(value['source_sha256'], hashlib.sha256(SOURCE.encode()).hexdigest())
+            self.assertEqual(value['stdout'], preview_stdout)
+            self.assertEqual(value['stderr'], '')
             # identity_errors는 식별 불일치 결과에만 존재한다(formal.verify_lean).
             self.assertEqual(set(value), set(formal_preview.PREVIEW_FIELDS) - {'identity_errors'})
             # 조사 C-10의 1MB 잘림 경계보다 작아야 JSON 하나를 운전 도구가 회수한다.
@@ -149,7 +154,8 @@ class RecordedLeanScaleTests(unittest.TestCase):
                 self.assertNotIn('__DO_MATH_DEPENDENCY__', packaged['prompt'])
                 self.assertEqual({key: packaged['context'][key] for key in direct}, direct)
         # 실제 cycle 생산자·수신자로 모든 검토 단계를 만들고 자리별 입력을 포장한다.
-        cycle = review_cycle.start_review(proposal, 2, max_rounds=2)
+        cycle_id = sim.engine._start_identity_review(kid)
+        cycle = deepcopy(sim.runtime['review_cycles'][cycle_id])
         profile = next(p for p in stored['execution_profiles'].values() if p['role'] == 'identity_review')
         visited = []
         for number in range(20):
@@ -160,17 +166,20 @@ class RecordedLeanScaleTests(unittest.TestCase):
             stage = selected['stage']
             visited.append(stage)
             action = {'id': f'AC-review-size-{number}', 'role': 'identity_review',
-                      'target': kid, 'review_cycle_id': 'RC-size', **selected}
+                      'target': kid, 'review_cycle_id': cycle_id, **selected}
             direct = review_cycle.context_for(cycle, selected)
             with tempfile.TemporaryDirectory() as directory:
                 packaged = prepare_role_input({'action': action, 'role_review': direct},
-                    instance=stored, runtime={**runtime, 'review_cycles': {'RC-size': cycle}},
+                    instance=stored, runtime={**sim.runtime, 'review_cycles': {cycle_id: cycle}},
                     role='identity_review', profile=profile, snapshot=sim.engine.head,
                     workspace=Path(directory), activity_id=action['id'], clock=sim.clock)
                 self.assertIsNone(packaged['overflow'], packaged['overflow'])
                 self.assertLessEqual(packaged['actual_bytes'], profile['input']['max_input_bytes'])
                 self.assertEqual(packaged['manifest']['private_scope']['view_sha256'], exact_content_hash(direct))
                 self.assertEqual(packaged['validation_context']['role_review'], direct)
+                assert_input_budget(self, packaged, 'identity_review', profile)
+                assert_judgment_inputs(self, 'identity_review', packaged, Path(directory),
+                    producer_context={'action': action, 'role_review': direct})
             if stage == 'scope':
                 output = {'summary': '범위 검토', 'questions': [], 'used_sources': [],
                           **scope_response({'role_review': direct, 'execution_profile': profile})}
@@ -187,3 +196,51 @@ class RecordedLeanScaleTests(unittest.TestCase):
             cycle = review_cycle.accept_result(cycle, selected, output, f'EX-size-review-{number}')
         self.assertEqual(set(visited), {'scope', 'initial', 'organize', 'answer', 'judge'})
         self.assertEqual(review_cycle.next_actions(cycle), [])
+        # Keep the full five-declaration recording above. A derived one-declaration
+        # replay holds the shared 603-body closure fixed while changing declaration count.
+        # It is a projection of the recording, not a second external Lean measurement.
+        name = DECLARATIONS[-1]
+        selected = []
+        signature = None
+        for line in raw.decode('utf-8').splitlines(keepends=True):
+            if line.strip().startswith('"__DO_MATH_SIGNATURE_BEGIN_'):
+                signature = next(declaration for declaration in DECLARATIONS
+                    if line.strip() == '"__DO_MATH_SIGNATURE_BEGIN_' + declaration + '__"')
+            keep = signature is None or signature == name
+            if line.startswith('__DO_MATH_DEPENDENCIES__'):
+                keep = json.loads(line.removeprefix('__DO_MATH_DEPENDENCIES__'))['declaration'] == name
+            if any(line.startswith("'" + declaration + "'") for declaration in DECLARATIONS if declaration != name):
+                keep = False
+            if keep:
+                selected.append(line)
+            if signature and line.strip() == '"__DO_MATH_SIGNATURE_END_' + signature + '__"':
+                signature = None
+        one_stdout = ''.join(selected)
+        self.assertEqual(sum(line.startswith('__DO_MATH_DEPENDENCY__')
+            for line in one_stdout.splitlines()), 603)
+        compiler = BoundRecordingCompiler(one_stdout, declarations=(name,))
+        jobs = worker_jobs(compiler)
+        with tempfile.TemporaryDirectory() as directory:
+            one = formal.verify_lean(source=SOURCE, declarations=[name], workspace=Path(directory),
+                lean_command=sim.instance['config']['lean_command'], expected_toolchain=environment['toolchain'],
+                allowed_axioms=tuple(environment['allowed_axioms']), jobs=jobs, clock=sim.clock,
+                environment=sim.environment, git_backend=sim.ports.git_backend)
+        self.assertEqual((one['status'], one['reason']), ('verified', None))
+        self.assertEqual(one['dependency_evidence'], expected_hashes)
+        self.assertEqual(one['dependency_closure'], {name: result['dependency_closure'][name]})
+        self.assertEqual(len(compiler.commands), 1)
+        self.assertTrue(jobs.launched[0].closed)
+        candidate = knowledge_candidate(lean_code=SOURCE, declaration_names=[name])
+        instance, runtime, one_kid = knowledge_io.import_candidate(sim.instance, sim.runtime, candidate,
+            source_ref='engine:녹화의 1선언 투영', actor_ref='engine:규모 시험', clock=sim.clock)
+        sim.engine.instance = knowledge_records.record_formal_result(instance, one_kid, one, environment_id, runtime=runtime)
+        sim.engine.runtime = runtime
+        sim.engine._save()
+        _, stored_one, _ = sim.engine.store.load()
+        one_record = stored_one['formal_results'][stored_one['knowledge'][one_kid]['formal_result_id']]
+        self.assertEqual(one_record['verification'], one)
+        # Shared hashes are charged once; the remaining record grows with declarations.
+        shared_bytes = len(canonical_json(expected_hashes))
+        one_variable = len(canonical_json(one_record)) - shared_bytes - len(SOURCE.encode('utf-8'))
+        five_variable = len(logical) - shared_bytes - len(SOURCE.encode('utf-8'))
+        self.assertLessEqual(five_variable, len(DECLARATIONS) * one_variable + 4096)

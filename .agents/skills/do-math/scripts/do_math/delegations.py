@@ -59,11 +59,16 @@ def _basis(instance, runtime, delegation_id, case, now_iso):
     declared = {k:v for k,v in delegation.items() if k not in {"source_ref", "decision_id", "created_at"}}
     if approval.get("kind") != "delegation" or approved != declared or approval.get("source_ref") != delegation["source_ref"]:
         raise ValueError("approval does not bind the exact delegated scope")
+    if approval.get("original_decision_sha256") != exact_content_hash(original):
+        raise ValueError("original decision differs from delegated approval")
     source = instance.get("governance_sources", {}).get(delegation["source_ref"])
     from .governance import validate_source
     validate_source(source or {})
     original_source = instance.get("governance_sources", {}).get(original.get("source_ref"))
     validate_source(original_source or {})
+    if (original.get("source_sha256") != original_source["sha256"]
+            or approval.get("source_sha256") != source["sha256"]):
+        raise ValueError("decision source differs from its preserved approval")
     target = case.get("target_id")
     if case.get("decision_kind") != delegation["decision_kind"] or target not in delegation["included_targets"] or target in delegation["excluded_targets"]:
         raise ValueError("case outside delegation scope")
@@ -88,12 +93,20 @@ def _basis(instance, runtime, delegation_id, case, now_iso):
 
 def prepare_application(instance, runtime, delegation_id, case, *, now_iso):
     basis = _basis(instance, runtime, delegation_id, case, now_iso)
+    for existing in runtime.get("delegation_applications", {}).values():
+        if existing["delegation_id"] != delegation_id or existing["basis"]["case"]["id"] != case["id"]:
+            continue
+        if existing["basis"]["case"] != case:
+            raise ValueError("delegation case ID reused with different content")
+        expected = existing.get("application", {}).get("post_basis_sha256", existing["input_sha256"])
+        if (exact_content_hash(basis) != expected
+                or exact_content_hash(existing["basis"]) != existing["input_sha256"]):
+            raise ValueError("delegation application stale")
+        return deepcopy(existing)
     input_sha = exact_content_hash(basis)
     identifier = "DA-" + input_sha[:24]
     record = {"id": identifier, "delegation_id": delegation_id, "basis": basis, "input_sha256": input_sha, "judgments": {}}
-    existing = runtime.setdefault("delegation_applications", {}).get(identifier)
-    if existing is not None: return deepcopy(existing)
-    runtime["delegation_applications"][identifier] = record
+    runtime.setdefault("delegation_applications", {})[identifier] = record
     return deepcopy(record)
 
 

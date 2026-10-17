@@ -16,7 +16,7 @@ if __package__:
     from .control_protocol import (SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SUBMIT_INTENT, SUBMISSION_PREVIEW,
                                    REQUEST_KINDS, BINDING_FIELDS, SELF_CHECK_RESPONSE_SCHEMA)
     from .control_transport import FINAL_RECEIPTS, ControlTransport
-else:
+else:  # pragma: no cover - T4 boundary.test_provider_control_server runs mcp_server_config's file command with bare imports.
     from control_protocol import (SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SUBMIT_INTENT, SUBMISSION_PREVIEW,
                                   REQUEST_KINDS, BINDING_FIELDS, SELF_CHECK_RESPONSE_SCHEMA)
     from control_transport import FINAL_RECEIPTS, ControlTransport
@@ -86,7 +86,7 @@ def _mcp_server(binding: dict, *, clock) -> int:
                         raise ValueError("submission binding has no workspace")
                     if __package__:
                         from .submission_tool import request_control
-                    else:
+                    else:  # pragma: no cover - T4 boundary.test_submission_mcp_server checks submit_draft from the independent MCP interpreter.
                         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
                         from do_math.submission_tool import request_control
                     kind = SUBMISSION_PREVIEW if arguments.get("preview") else SUBMIT_INTENT
@@ -117,7 +117,7 @@ def _mcp_server(binding: dict, *, clock) -> int:
 
 def main(argv=None, *, ports=None, environment=None):
     import os
-    if not __package__:
+    if not __package__:  # pragma: no cover - T4 MCP file entrypoint needs its package path; callable main and request checks remain in T3.
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from do_math.wiring import real_ports
     environment = dict(os.environ) if environment is None else environment
@@ -136,5 +136,5 @@ def main(argv=None, *, ports=None, environment=None):
                         **({"self_check": True} if args.self_check else {})}, clock=clock)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - T4 boundary.test_provider_control_server owns the independent MCP Python entrypoint.
     raise SystemExit(main())

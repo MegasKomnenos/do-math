@@ -22,7 +22,7 @@ def read_fixture_context(prompt, workspace):
             contents = contents[int(token)] if isinstance(contents, list) else contents[token]
         return contents
     for key, entry in list(value.items()):
-        if isinstance(entry, dict) and isinstance(entry.get('source_ref'), dict) and entry['source_ref'].get('path'):
+        if isinstance(entry, dict) and isinstance(entry.get('source_ref'), dict):
             value[key] = read(entry['source_ref'])
     for index, task in enumerate(value.get('tasks', []) if isinstance(value.get('tasks'), list) else []):
         if isinstance(task.get('source_ref'), dict):

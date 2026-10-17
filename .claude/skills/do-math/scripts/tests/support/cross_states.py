@@ -325,21 +325,13 @@ def assert_event(sim, action, event, value):
     response = responder(sim)
     count = len(response.observed)
     response.arm(action, event, value)
-    try:
-        drive(sim, lambda s: len(response.observed) > count, bound=EVENT_BOUND)
-    except AssertionError:
-        from support.cross_diagnostics import preserve
-        preserve(sim, 'event-failure')
-        raise
+    drive(sim, lambda s: len(response.observed) > count, bound=EVENT_BOUND)
     observed = response.observed[count]
     assert observed['action']['id'] == action['id'], 'another action consumed the armed event'
     rows = [row for row in sim.runtime['executions'].values()
             if row['action']['id'] == action['id'] and row['status'] == 'ended']
     if not rows or rows[-1]['outcome'] != 'output_accepted':
-        from support.cross_diagnostics import preserve
-        location = preserve(sim, 'event-rejected')
-        raise AssertionError(('event not accepted', event, value, str(location),
-                              [(r['id'], r['outcome'], r.get('error')) for r in rows]))
+        raise AssertionError(('event not accepted', event, value, rows))
     assert observed['event'] == event and observed['value'] == value
     ContractOracle(sim).check(sim)
     return observed

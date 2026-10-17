@@ -550,13 +550,9 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             roles = spec.get("roles")
             if not isinstance(roles, list) or not roles or set(roles) - TASK_WORK_ROLES - OPERATING_ROLES:
                 raise ValueError("local grant requires supported roles")
-            if not isinstance(spec.get("task_ids", []), list):
-                raise ValueError("task_ids must be a list")
         else:
             if not spec.get("allowed_origins") or not spec.get("allowed_methods"):
                 raise ValueError("HTTP grant must specify origins and methods")
-            if not isinstance(spec.get("credential_env", {}), dict):
-                raise ValueError("credential_env contains names, not credential values")
         gid = spec.get("id") or clock.new_id("GR")
         if gid in instance["grants"]:
             raise ValueError("grant ID already exists; revoke it before replacing authority")
@@ -590,6 +586,26 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         instance["grants"][gid].update(status="revoked", revoked_at=when, revoked_by=decision_id)
         event["grant_id"] = gid
         _dispose_grant_consumers(runtime,gid,event,"grant_revoked")
+    elif kind == "review_replacement":
+        from .review_cycle import authorize_record_replacement
+        action = change.get("allowed_action", {})
+        cycle = runtime.get("review_cycles", {}).get(action.get("review_cycle_id"))
+        if (action.get("role") != "identity_review" or cycle is None
+                or cycle.get("knowledge_id") != action.get("target")):
+            raise ValueError("review replacement decision requires the exact current review action")
+        from .review_cycle import slot_key
+        if slot_key(action) in cycle.get("results", {}):
+            raise ValueError("review replacement decision requires an unsealed review slot")
+        outcome = authorize_record_replacement(cycle, action, instance, runtime=runtime,
+            grant_id=change.get("grant_id"), at=when, clock=clock)
+        if outcome["disposition"] != "replacement_ready":
+            raise ValueError("review replacement decision is not authorized: " +
+                             str(outcome.get("reason", outcome["disposition"])))
+        event["effect"] = {"review_cycle_id": action["review_cycle_id"], **{
+            key: outcome["action"][key] for key in (
+                "stage", "slot", "round", "replacement_for", "continuity_break_cause")}}
+        event["grant_id"] = outcome["authority"]["grant_id"]
+        event["affected"].append(action["target"])
     elif kind == "delegation":
         from .delegations import validate_delegation
         delegation = deepcopy(change.get("delegation"))
@@ -600,6 +616,11 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         original = instance["decisions"].get(delegation["original_decision_id"], {})
         if original.get("actor") != "user" or original.get("kind") != delegation["decision_kind"]:
             raise ValueError("delegation must bind an actual current user decision of the same kind")
+        original_source = instance["governance_sources"].get(original.get("source_ref"))
+        validate_source(original_source)
+        if original.get("source_sha256") != original_source["sha256"]:
+            raise ValueError("original decision source differs from its preserved approval")
+        event["original_decision_sha256"] = exact_content_hash(original)
         instance.setdefault("delegations", {})
         if delegation["id"] in instance["delegations"]:
             raise ValueError("delegation ID already exists")
@@ -1049,7 +1070,14 @@ def execution_lineage(runtime, execution_id, fields=("continuation_of", "context
 
 
 def validate_independent_execution(runtime, execution_id, author_ids):
-    """Logical execution independence, not OS isolation or same-user authentication."""
+    """Logical execution independence, not OS isolation or same-user authentication.
+
+    Each provider invocation starts a fresh CLI conversation (worker_request's
+    ephemeral Codex exec / nonpersistent Claude print). A continuation is an
+    explicit logical reuse; context_origin names supplied records, not a resumed
+    provider session. Native thread IDs remain in the captured provider stream,
+    rather than unproduced execution-level session aliases.
+    """
     execution=runtime.get("executions",{}).get(execution_id,{})
     if not execution or execution_id in author_ids: raise ValueError("independent checker execution required")
     for predecessor, row in execution_lineage(runtime, execution_id, ("continuation_of",),
@@ -1057,10 +1085,6 @@ def validate_independent_execution(runtime, execution_id, author_ids):
         if predecessor == execution_id: continue
         if predecessor in author_ids: raise ValueError("checker resumes an author lineage")
         if not row: raise ValueError("checker continuation lineage does not resolve")
-    for author_id in author_ids:
-        author=runtime.get("executions",{}).get(author_id,{})
-        for field in ("provider_session_id","conversation_id"):
-            if execution.get(field) and execution[field] == author.get(field): raise ValueError("checker shares author conversation")
 
 
 def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None, clock):

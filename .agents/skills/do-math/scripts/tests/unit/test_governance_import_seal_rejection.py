@@ -7,6 +7,20 @@ from do_math import governance as gov
 from support.governance_sim import checked_sim, checked_bundle
 
 class GovernanceImportSealRejectionTests(unittest.TestCase):
+    def test_exact_change_approval_still_requires_its_preserved_original(self):
+        from do_math.canonical import exact_content_hash
+        sim = checked_sim()
+        bundle = checked_bundle(sim)
+        approvals = {unit['unit_id']: {'actor': 'user', 'source_ref': 'GS-unavailable',
+            'source_sha256': 'a' * 64, 'change_sha256': exact_content_hash(unit['payload'])}
+            for unit in bundle['output']['import_units'] if unit['payload']}
+        before = deepcopy((sim.instance, sim.runtime, approvals))
+        with self.assertRaises(ValueError) as caught:
+            gov.apply_import(sim.instance, sim.runtime, bundle['id'], approvals=approvals,
+                owner_handlers=sim.engine.governance_owner_handlers(), clock=sim.clock)
+        self.assertEqual(str(caught.exception), 'change approval original is unavailable')
+        self.assertEqual((sim.instance, sim.runtime, approvals), before)
+
     def test_missing_import(self):
         sim = checked_sim()
         stored = sim.engine.store.load(sim.engine.head)[1:]

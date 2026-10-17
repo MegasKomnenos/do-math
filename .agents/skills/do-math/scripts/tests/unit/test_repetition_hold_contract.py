@@ -26,6 +26,20 @@ class RepetitionHoldContractTests(unittest.TestCase):
                 role = 'intent_interpretation' if lineage == 'import_rework' else 'research_preparation' \
                     if lineage == 'exhaustion_empty' else 'research_plan'
                 action = {'id': 'AC-held', 'role': role, 'repetition_bases': {lineage: basis}}
+                if lineage == 'contract_revision':
+                    basis = 'TK-held'
+                    runtime['tasks'][basis] = {'id': basis, 'revision': 2}
+                    action = {'id': 'AC-held', 'role': role,
+                              'observation_rule_targets': revisions.capture_targets(instance, runtime, [basis])}
+                    # Observation-rule targets use the task's contract coordinates.
+                    action['observation_rule_targets'][basis].pop('required')
+                elif lineage == 'proposal_version':
+                    basis = 'KN-held'
+                    instance['knowledge'] = {
+                        basis: {'id': basis, 'revision': 1},
+                        'KN-replacement': {'id': 'KN-replacement', 'revision': 2, 'supersedes': basis}}
+                    action = {'id': 'AC-held', 'role': role,
+                              'revision_targets': revisions.capture_targets(instance, runtime, ['KN-replacement'])}
                 if lineage == 'import_rework':
                     action['intent_repair'] = True
                 runtime['queue'].append(action)
@@ -63,6 +77,12 @@ class RepetitionHoldContractTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
                         governance.apply_decision(instance, runtime, invalid, source_ref='UI-hold', clock=clock)
                     self.assertEqual((instance, runtime), unchanged)
+                # A repetition continuation must not release another owner's
+                # registered input/authority wait for the same obligation.
+                from do_math.wait_rules import waiting_action
+                runtime.setdefault('waiting_actions', {})[action['id']] = waiting_action({
+                    'action': deepcopy(action), 'kind': 'action_authority', 'reason': 'Current grant is required'})
+                owned_wait = deepcopy(runtime['waiting_actions'][action['id']])
                 instance, runtime, decision = governance.apply_decision(instance, runtime, change,
                     source_ref='UI-hold', clock=clock)
                 self.assertIsNone(revisions.repetition_hold(runtime, lineage, basis))
@@ -70,5 +90,29 @@ class RepetitionHoldContractTests(unittest.TestCase):
                 self.assertEqual(revisions.action_repetition_waits(instance, runtime, action), [])
                 self.assertEqual(decision['affected'], [hold['event_ref'], action['id']])
                 resumed = next(row for row in runtime['queue'] if row['id'] == action['id'])
+                self.assertEqual(runtime['waiting_actions'][action['id']], owned_wait)
+                self.assertEqual(sum(row['id'] == action['id'] for row in runtime['queue']), 1)
                 self.assertEqual(revisions.action_scope(resumed), change['allowed_action'])
                 self.assertFalse([row for row in runtime['question_links'] if row['status'] == 'open'])
+                # The public baseline starts another sequence; semantic editions
+                # keep their actual version rather than becoming new lineage IDs.
+                first_history = deepcopy(runtime['history'])
+                for number in (3, 4):
+                    revisions.record_repetition(instance, runtime, lineage=lineage, lineage_id=basis,
+                        event_ref='EX-attempt-' + str(number), outcome=outcome, owner='ai',
+                        reason='Observed next repetition result', version=number if versioned else None, clock=clock)
+                    self.assertEqual(task_contracts.repetition_lineages(runtime)[lineage]['count'], number - 2)
+                    self.assertEqual(len(revisions.action_repetition_waits(instance, runtime, action)),
+                                     0 if number == 3 else 1)
+                self.assertEqual(runtime['history'][:len(first_history)], first_history)
+                next_hold = revisions.repetition_hold(runtime, lineage, basis)
+                self.assertEqual((next_hold['event_ref'], next_hold['count'], next_hold['limit']),
+                                 ('EX-attempt-4', 2, 2))
+                open_questions = [row for row in runtime['question_links'] if row['status'] == 'open']
+                self.assertEqual(len(open_questions), 1)
+                self.assertEqual(open_questions[0]['origin_execution_id'], 'EX-attempt-4')
+                unchanged = deepcopy((instance, runtime))
+                stale = {**deepcopy(change), 'decision_id': 'DC-stale'}
+                with self.assertRaisesRegex(ValueError, '^continuation must name the current repetition hold$'):
+                    governance.apply_decision(instance, runtime, stale, source_ref='UI-hold', clock=clock)
+                self.assertEqual((instance, runtime), unchanged)

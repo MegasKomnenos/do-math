@@ -79,7 +79,7 @@ def run_formal(sim, action):
         sim.engine._formal(action)
 
 
-def stop_with_control(sim, action, operation):
+def stop_with_control(sim, action, operation, **options):
     """Start the real verifier and worker, then stop its live Job by public control."""
     original = sim.lean.spawn
     started = []
@@ -103,7 +103,8 @@ def stop_with_control(sim, action, operation):
             calls.wait(0.05)
             if len(started) != 1:
                 raise AssertionError(f'expected one running compiler before control: {started!r}')
-            applied(sim, operation, config={})
+            options.setdefault('config', {})
+            applied(sim, operation, **options)
             calls.judge()
     finally:
         sim.lean.spawn = original

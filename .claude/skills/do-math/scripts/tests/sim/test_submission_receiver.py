@@ -290,13 +290,14 @@ class CentralSubmissionEvidence(unittest.TestCase):
 
     def test_retry_receives_prior_accepted_response_across_multiple_attempts(self):
         engine = Sim.activated().engine
-        engine.runtime["executions"].update({"EX-one": {"action": {}},
-                                             "EX-two": {"action": {"continuation_of": "EX-one"}}})
+        action = {"role": "research_work"}
+        engine.runtime["executions"].update({"EX-one": {"action": deepcopy(action)},
+            "EX-two": {"action": {**action, "continuation_of": "EX-one"}}})
         receipt = {"id": "IN-report", "execution_id": "EX-one", "response_sha256": "a" * 64}
         engine.runtime["integrations"] = {receipt["id"]: receipt}
         issue = integration.issue("integration.candidate", "output", "repair this")
         context = {}
-        engine._submission_repair_context(context, {"continuation_of": "EX-two", "repair": {"issues": [issue]}})
+        engine._submission_repair_context(context, {**action, "continuation_of": "EX-two", "repair": {"issues": [issue]}})
         self.assertEqual(context["accepted_response"], {"integration_id": "IN-report", "response_sha256": "a" * 64})
         self.assertEqual(context["submission_failures"], [issue])
         self.assertEqual(context["accepted_integration_ids"], ["IN-report"])

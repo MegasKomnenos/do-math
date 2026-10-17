@@ -17,6 +17,15 @@ INSTANCE = ('--repository', '.', '--instance', 'RI-test')
 
 
 class RequestModeTests(unittest.TestCase):
+    def test_run_manifest_path_has_the_same_cli_and_json_contract(self):
+        parser = build_parser()
+        cli = parser.parse_args(['run', *INSTANCE, '--installation-manifest', 'frozen/manifest.json'])
+        structured = _json_arguments(parser, {'schema_version': 5, 'command': 'run',
+            'payload': {'repository': '.', 'instance': 'RI-test', 'installation_manifest': 'frozen/manifest.json'}})
+        self.assertEqual(cli.installation_manifest, Path('frozen/manifest.json'))
+        self.assertEqual(structured.installation_manifest, cli.installation_manifest)
+        self.assertIsNone(parser.parse_args(['run', *INSTANCE]).installation_manifest)
+
     def test_query_json_arguments_preserve_valid_modes_and_refuse_incompatible_combinations(self):
         parser = build_parser()
         def arguments(**payload):

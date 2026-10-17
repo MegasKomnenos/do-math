@@ -1,4 +1,4 @@
-"""T5: own absent OS tasks, real pythonw freeze/start/time trigger and cleanup."""
+"""T5: owned OS tasks, held/startup evidence, real pythonw/time trigger and cleanup."""
 import unittest
 
 from support.scheduler_live import run_scheduler_smoke
@@ -11,3 +11,8 @@ class SchedulerLiveTests(unittest.TestCase):
         report = run_scheduler_smoke()
         self.assertTrue(report['passed'], {'checks': report['checks'],
             'error': report.get('error'), 'evidence': report['evidence_directory']})
+        self.assertEqual(set(report['held_outputs']), {'check', 'run-engine', 'wake'})
+        for mode, result in report['held_outputs'].items():
+            with self.subTest(mode=mode):
+                self.assertTrue(report['checks']['held_' + mode + '_startup'])
+                self.assertEqual(result, {'outcome': 'held', 'startup': report['held_startups'][mode]})

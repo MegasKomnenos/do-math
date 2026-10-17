@@ -74,12 +74,14 @@ def observe(tracker, event, **options):
     """``tracker.observe`` of ``event`` as the next one-byte stream row, received at the tracker's clock.
 
     A runner delivers every row with its stream coordinate (``ObservationBatch.source``);
-    this gives a unit test that same coordinate without a stream file.
+    this gives a unit test that same coordinate without a stream file. Both
+    receipt clocks come from the tracker's time port, including UTC rules and
+    explicit reviews that compare ``received_at``.
     """
     previous = tracker.observation_source
     start = previous["end_offset"] if previous is not None else 0
     source = {"stream": "stdout.jsonl", "start_offset": start, "end_offset": start + 1,
-              "received_at": datetime.now(timezone.utc).isoformat(), "received_monotonic": tracker.clock()}
+              "received_at": tracker.time_port.now(), "received_monotonic": tracker.clock()}
     return tracker.observe(event, source=source, **options)
 
 
@@ -117,3 +119,136 @@ def prepared_rule_conditions(task_ids):
     supply_observation_rules([{'title': tid} for tid in task_ids], extensions)
     return [{'task_id': row['task_title'], 'observation_rules': row['observation_rules']}
             for row in extensions.get('task_conditions', [])]
+
+
+def tracker_record_samples(root):
+    """Whole records from tracker exits, separate from the rule_ids fragment pair.
+
+    Include valid empty/one/many relations, delivered/undelivered obligations,
+    response/proposal outcomes and each observation mode. No record is padded
+    to satisfy a schema. The whole-record pairs check field coverage separately.
+    """
+    from copy import deepcopy
+    from do_math.observations import ObservationTracker, persistent_record
+    from support.fakes.clock import FakeClock
+    rows = []
+
+    def keep(branch, family, record):
+        rows.append((branch, family, deepcopy(record)))
+
+    def obligations(branch, tracker):
+        for record in tracker.stored_obligations().values():
+            keep(branch, 'self_check_obligations', record)
+
+    for count in (1, 2):
+        for proposal_kind in ('absent', 'changed', 'unchanged', 'rejected'):
+            branch = f'rules={count}, proposal={proposal_kind}'
+            workspace = Path(root) / f'{count}-{proposal_kind}'
+            workspace.mkdir(parents=True)
+            clock = FakeClock()
+            rules = [observation_rule(id=f'R-{i}', **({'repeat_interval': 2} if count == 2 else {}))
+                     for i in range(count)]
+            config = {'observation_rules': rules, 'research_self_checks': True}
+            if count == 2:
+                config.update(self_check_response_window_seconds=5, observation_interval_seconds=10,
+                              tool_review_window_seconds=1)
+            tracker = ObservationTracker('EX-sample', workspace, config, time_port=clock)
+            self_fact = tracker.fact('observation_fact', {'type': 'fixture'}, clock.monotonic())
+            keep(branch + ', no source', 'observation_facts', persistent_record(self_fact))
+            write_checkpoint(workspace, counters={'attempts': 2})
+            emitted = observe(tracker, {'type': 'item.started', 'item': {'id': 'C', 'type': 'command_execution'}})
+            due = next(row for row in emitted if row['kind'] == 'self_check_due')
+            obligations(branch + ', open', tracker)
+            for row in emitted:
+                if row['kind'] == 'observation_fact':
+                    keep(branch + ', source', 'observation_facts', persistent_record(row))
+            if count == 2:
+                acknowledge(tracker, due['id'])
+                obligations(branch + ', acknowledged', tracker)
+            tracker.record_safe_boundary('CT-boundary', call_ids=['C'])
+            obligations(branch + ', boundary', tracker)
+            response = self_check_response(due)
+            if proposal_kind != 'absent':
+                response['rule_proposal'] = {'current_revision': 99 if proposal_kind == 'rejected' else 0,
+                    'reason': 'fixture rule choice', 'rules': rules if proposal_kind == 'unchanged' else
+                        [observation_rule(id='renamed', repeat_interval=2)]}
+            received = tracker.record_self_check_response(response, available_evidence_refs={'EV-1'},
+                                                           receipt_id='CT-response' if count == 2 else None)
+            keep(branch + ', accepted', 'self_check_responses', received)
+            obligations(branch + ', answered', tracker)
+            rejected = tracker.record_self_check_response(response, available_evidence_refs={'EV-1'})
+            keep(branch + ', repeated response', 'self_check_responses', rejected)
+
+    for mode in ('deadline_only', 'event_driven', 'periodic'):
+        for windows in (False, True):
+            branch = f'{mode}, windows={windows}, rules=0'
+            workspace = Path(root) / f'{mode}-{windows}'
+            workspace.mkdir()
+            clock = FakeClock()
+            config = {'observation_mode': mode, 'research_self_checks': False, 'observation_rules': [],
+                      'checkpoint_expected': True}
+            if windows:
+                config.update(tool_review_window_seconds=1, observation_interval_seconds=2)
+            tracker = ObservationTracker('EX-sample', workspace, config, time_port=clock)
+            if mode != 'deadline_only':
+                tracker.schedule_review('review', at=clock.now(), reason='fixture review', basis_ref='DISP-one')
+            observe(tracker, {'type': 'item.started', 'item': {'id': 'C', 'type': 'command_execution'}}, evaluate=False)
+            clock.advance(2)
+            for row in observe(tracker, {'type': 'tick'}):
+                # core_engine._observe_running requests the checkpoint reminder
+                # without storing it. Non-review notices leave as fact envelopes.
+                if row['kind'] == 'checkpoint_reminder_due':
+                    continue
+                if row['kind'] == 'observation_capability_missing':
+                    keep(branch, 'observation_facts', persistent_record(
+                        tracker.fact('observation_fact', row, clock.monotonic())))
+                else:
+                    keep(branch, 'observations', persistent_record(row))
+            assert tracker.stored_obligations() == {}
+            keep(branch + ', unknown obligation', 'self_check_responses',
+                 tracker.record_self_check_response({}, available_evidence_refs=set()))
+
+    workspace = Path(root) / 'missed'
+    workspace.mkdir()
+    clock = FakeClock()
+    tracker = ObservationTracker('EX-sample', workspace, {'observation_rules': [observation_rule()],
+        'self_check_response_window_seconds': 1, 'observation_interval_seconds': 1}, time_port=clock)
+    write_checkpoint(workspace, counters={'attempts': 2})
+    due = next(row for row in observe(tracker, {'type': 'tick'}) if row['kind'] == 'self_check_due')
+    clock.advance(2)
+    for row in observe(tracker, {'type': 'tick'}):
+        if row['kind'] == 'self_check_missed':
+            keep('missed deadline', 'observations', persistent_record(row))
+    obligations('missed deadline', tracker)
+    # Separate tracker/empty checkpoint: unavailable rule IDs are real notices.
+    tracker = ObservationTracker('EX-sample', workspace, {'observation_rules': [observation_rule()],
+        'observation_interval_seconds': 1}, time_port=clock)
+    (workspace / 'checkpoint.json').unlink()
+    clock.advance(1)
+    for row in observe(tracker, {'type': 'tick'}):
+        if row['kind'] == 'observation_unavailable':
+            keep('unavailable measurement', 'observations', persistent_record(row))
+    for row in observe(tracker, {'type': 'fixture', 'execution_id': 'EX-other'}, evaluate=False):
+        keep('rejected execution input', 'observations' if row['kind'] == 'observation_input_rejected'
+             else 'observation_facts', persistent_record(row))
+    return rows
+
+
+def owner_observation_samples(root):
+    """Metadata actually published by the owner, including its observation_refs.
+
+    Use the existing real engine/store fixture; only external ports are doubles.
+    The rejected input also exercises the tracker's next_owner/followup notice.
+    """
+    from copy import deepcopy
+    from support.engine_control import running_work
+    from support.sim import Sim
+    sim = Sim.activated(root)
+    with running_work(sim, rules=[observation_rule()]) as call:
+        call.observe({'type': 'fixture', 'execution_id': 'EX-other'})
+        state = call.engine.store.load()[2]
+        observation = state['observations'][call.execution_id]
+        fact_id, = observation['observation_refs']
+        assert json.loads(state['observation_facts'][fact_id]['event_json']) == {
+            key: value for key, value in observation.items() if key != 'observation_refs'}
+        return [('owner rejected execution input', deepcopy(state['observations']))]

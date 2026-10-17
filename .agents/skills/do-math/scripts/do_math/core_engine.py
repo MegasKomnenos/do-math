@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import shutil
+import traceback
 from pathlib import Path
 from typing import Any
 import jsonschema
@@ -244,8 +245,14 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
         raise ValueError("request_id and idempotency_key are mutually exclusive")
     if action == "source":
         if "body_base64" not in config:
-            path = Path(config["path"]).resolve(strict=True)
-            config = normalized_source(config.get("name") or path.name, path.read_bytes())
+            if "path" not in config:
+                raise ValueError("source requires a file path or normalized bytes")
+            try:
+                path = Path(config["path"]).resolve(strict=True)
+                raw = path.read_bytes()
+            except (OSError, ValueError) as error:
+                raise ValueError("source path must identify a readable file") from error
+            config = normalized_source(config.get("name") or path.name, raw)
         # The inbox consumer applies this same rule to the admitted copy.
         normalized_source_bytes(config)
     payload = {"instance_id": instance_id, "action": action, "text": text, "config": config or {}, "origin": origin}
@@ -324,10 +331,9 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
         temporary = inbox / (request_id + "." + clock.new_id("TMP") + ".tmp")
         temporary.write_bytes(canonical_json(request))
         try:
-            # Publish a complete inbox record without overwriting a concurrent same-ID request.
+            # Every supported writer holds this lock and rechecks destination.
+            # The hardlink also refuses an unexpected external file without clobbering it.
             os.link(temporary, destination)
-        except FileExistsError:
-            return replay(json.loads(destination.read_bytes()))
         finally:
             temporary.unlink(missing_ok=True)
     return {"accepted": True, "request_id": request["id"], "effect": "pending engine processing"}
@@ -366,6 +372,11 @@ def query_records(repository: Path, instance_id: str, *, snapshot: str | None = 
     if cursor:
         try:
             decoded = json.loads(base64.urlsafe_b64decode(cursor).decode("utf-8"))
+            if (not isinstance(decoded, dict) or set(decoded) != {"parameters", "snapshot", "last"}
+                    or not isinstance(decoded["parameters"], dict)
+                    or not isinstance(decoded["snapshot"], str) or not decoded["snapshot"]
+                    or not isinstance(decoded["last"], str) or not decoded["last"]):
+                raise ValueError("invalid cursor")
             if decoded["parameters"] != parameters or (snapshot is not None and snapshot != decoded["snapshot"]):
                 raise ValueError("cursor query or snapshot changed")
             snapshot, last = decoded["snapshot"], decoded["last"]
@@ -552,19 +563,23 @@ class CoreEngineMixin:
                 "kind": wait_kind, "detail": admission, "next_owner": next_owner,
                 "reason": activity['waiting']['reason'] if held else admission['authority']['reason']})
             if not held:
+                # The review resolver releases the exact held action before a
+                # replacement attempts admission again; retain that coordinate.
                 activities.wait_for(self.runtime, activity["id"], kind=wait_kind, reason=wait_kind,
-                    condition=admission, next_owner=next_owner, at=self.ports.clock.now())
+                    condition={**admission, 'action_ids': [action['id']]},
+                    next_owner=next_owner, at=self.ports.clock.now())
             self._remove_action(action)
             return None
-        if activity["status"] == "waiting":
-            activities.resume_activity(self.runtime, activity["id"], condition=activity["waiting"]["condition"], at=self.ports.clock.now())
         machine_admission = profile["actor_kind"] == "machine" and requested_state in {"starting", "running"}
         if machine_admission:
             slots = self._session_slots()
             if not slots.acquire(execution["id"], profile=profile, execution=execution):
                 action["dispatch_wait"] = deepcopy(slots.admission_wait)
-                activities.wait_for(self.runtime, activity["id"], kind='machine_capacity', reason="machine capacity unavailable",
-                    condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
+                waiting = activity.get('waiting', {})
+                if (waiting.get('kind') != 'machine_capacity'
+                        or not same_json_value(waiting.get('condition'), action['dispatch_wait'])):
+                    activities.wait_for(self.runtime, activity["id"], kind='machine_capacity', reason="machine capacity unavailable",
+                        condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
                 return None
             action.pop("dispatch_wait", None)
             execution["action"] = deepcopy(action)
@@ -573,6 +588,8 @@ class CoreEngineMixin:
             execution_lifecycle.transition_execution(execution, "starting", at=self.ports.clock.now())
         if requested_state == "running" and not (machine_admission and profile.get("host_resources")):
             execution_lifecycle.transition_execution(execution, "running", at=self.ports.clock.now())
+        if activity["status"] == "waiting":
+            activities.resume_activity(self.runtime, activity["id"], condition=activity["waiting"]["condition"], at=self.ports.clock.now())
         activities.assign_execution(self.runtime, activity["id"], execution)
         revisions.record_import_rework(self.instance, self.runtime, action, execution['id'], clock=self.ports.clock)
         return execution
@@ -862,6 +879,19 @@ class CoreEngineMixin:
             except (ValueError, KeyError, TypeError) as error:
                 self._reject_control(request, str(error))
                 continue
+            except GitStateStoreError:
+                raise
+            except Exception as error:
+                # A control candidate has no execution authority. Roll back its
+                # unpublished changes and consume this exact request as failed.
+                self._reload()
+                # These handlers prepare candidates. The control result and
+                # processed ID are published by the _save below, outside this try.
+                self.runtime['history'].append({'kind': 'control_application_failed',
+                    'request': deepcopy(request), 'error_type': type(error).__name__, 'reason': str(error),
+                    'traceback': ''.join(traceback.format_exception(error))})
+                self._reject_control(request, f'{type(error).__name__}: {error}')
+                continue
             if handled:
                 if action == 'quiesce' and not (self._calls is not None and self._calls.futures):
                     settle(self.runtime, clock=self.ports.clock)
@@ -877,7 +907,8 @@ class CoreEngineMixin:
                 if self.runtime["status"] != "paused":
                     self.runtime["status"] = "ready"
                 self._enqueue("intent_interpretation", request["id"], reason="new user input")
-            elif action == "request":
+            else:
+                # validate_control_payload and the handlers above leave only request.
                 if self._instance_closed():
                     self._reject_control(request, "instance ended before the activity request was applied")
                     continue
@@ -906,15 +937,14 @@ class CoreEngineMixin:
                 self._enqueue(requested.pop("role"), requested.pop("target", None), **requested)
                 if self.runtime["status"] in {"waiting", "capacity_waiting"}:
                     self.runtime["status"] = "ready"
-            else:
-                raise ValueError("unsupported control action")
             self.runtime["processed_controls"].append(request["id"])
             self._record_control_result(request)
             self._save()
 
-    def _upkeep(self) -> None:
+    def _upkeep(self, *, schedule_reviews=True) -> None:
         """Periodic owner work that no single control triggers: due reviews and retried obligations."""
-        self._schedule_operational_reviews()
+        if schedule_reviews:
+            self._schedule_operational_reviews()
         self._retry_submission_publications()
         self._retry_impact_reviews()
         if self._reconcile_review_host_profiles() or self._settle_review_resource_dispositions():
@@ -951,20 +981,38 @@ class CoreEngineMixin:
                     context, schema = self._issued_input(execution)
                     self._receive_submission(action, {}, execution["id"], context, schema,
                         Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
+                    # Publish the receiver's outcome before local settlement can
+                    # fail; a committed acceptance must not become submission_failure.
+                    self._save()
                     self._settle_activity(execution['id'])
                     self._save()
-                except submission.SealedSubmissionError as error:
-                    live = self.runtime.setdefault("waiting_actions", {})[action["id"]]
-                    update_waiting_action(live, kind='submission_failure', reason=str(error), next_owner='engine')
-                    if self._settle_recovered_execution(execution['id'], at=self.ports.clock.now(),
-                            disposition={'kind': 'submission_failure', 'reason': str(error)}):
-                        execution.update(error_kind='submission_failure', error=str(error))
+                except GitStateStoreError:
+                    raise  # There is no safe per-submission publication while Git is unavailable.
+                except Exception as error:
+                    self._reload()  # Keep committed bundles; discard only an unpublished candidate.
+                    execution = self.runtime['executions'][waiting['execution_id']]
+                    reason = (str(error) if isinstance(error, submission.SealedSubmissionError)
+                              else f'{type(error).__name__}: {error}')
+                    self.runtime['history'].append({'kind': 'submission_publication_failed',
+                        'execution_id': execution['id'], 'action': deepcopy(action),
+                        'input_snapshot': execution['input_snapshot'], 'prior_wait': deepcopy(waiting),
+                        'error_type': type(error).__name__, 'reason': str(error),
+                        'traceback': ''.join(traceback.format_exception(error))})
+                    live = self.runtime.get('waiting_actions', {}).get(action['id'])
+                    if (live and live.get('kind') == 'submission_publication'
+                            and live.get('execution_id') == execution['id']):
+                        update_waiting_action(live, kind='submission_failure', reason=reason, next_owner='engine')
+                        # _receive_call passes release_or_hold before reception;
+                        # goal-audit restoration also requires confirmed local
+                        # termination. This wait already owns a released slot.
+                        self._settle_recovered_execution(execution['id'], at=self.ports.clock.now(),
+                            disposition={'kind': 'submission_failure', 'reason': reason})
+                        execution.update(error_kind='submission_failure', error=reason)
                         self._settle_activity(execution['id'])
-                    self.route_failed_action(action, execution["id"],
-                        reason="Diagnose unreadable sealed submission")
-                    self._save()
-                except (ValueError, OSError, GitStateStoreError) as error:
-                    self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({**waiting, "reason": str(error)})
+                        self.route_failed_action(action, execution['id'],
+                            reason='Diagnose the preserved sealed submission reception failure')
+                    elif execution.get('outcome') == 'output_accepted':
+                        self._settle_activity(execution['id'])
                     self._save()
         finally:
             self._retrying_publication = False
@@ -1037,9 +1085,10 @@ class CoreEngineMixin:
             "review_requests": {}, "review_execution_ids": {}, "next_owner": "impact_review",
             "reason": "The preserved bundle requires independent impact judgment"}))
         update_waiting_action(waiting, kind='impact_review', next_owner='impact_review')
+        # The receiver calls here only for an impact return. Mutations require
+        # declared revisions (or planning/preparation), all single-bundle roles;
+        # ordinary split research cannot contain a held mutation beside success.
         for row in received["bundles"]:
-            if row.get("next_owner") != "impact_review":
-                continue
             request = row["impact_review_request"]
             identifier = row["integration_id"]
             if identifier in waiting["review_requests"]:
@@ -1184,7 +1233,6 @@ class CoreEngineMixin:
             except (ValueError, KeyError, TypeError, OSError) as error:
                 return {"state": "rejected", "reason": str(error)}
         original_instance, original_runtime = deepcopy(self.instance), deepcopy(self.runtime)
-        original_head = self.head
         tracker = self._trackers.get(execution["id"])
         live_tracker = tracker
         tracker = tracker.publication_candidate() if tracker is not None else None
@@ -1212,7 +1260,7 @@ class CoreEngineMixin:
                         raise ValueError("safe boundary omits observed inflight research calls")
                     tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
                     self.runtime.setdefault("self_check_obligations", {}).update(tracker.stored_obligations())
-            elif request["kind"] == SELF_CHECK_RESPONSE:
+            else:  # The transport admitted a self-check; preview returned above.
                 if tracker is None:
                     raise ValueError("self-check has no current tracker")
                 payload = request["payload"]
@@ -1241,14 +1289,19 @@ class CoreEngineMixin:
         except Exception as error:
             # A publisher can commit and then lose its acknowledgment. Resolve
             # the receipt from durable state before deciding whether to retry.
-            persisted = None
             try:
                 self._reload()
-                persisted = next((row for row in self.runtime.get("control_receipts", {}).values()
-                    if row["request_id"] == request["request_id"] and row["request_sha256"] == digest), None)
             except Exception:
-                if self.head == original_head:
-                    self.instance, self.runtime = original_instance, original_runtime
+                # load adopts all three values together. After adoption,
+                # ModelCalls owns judgment exceptions, so a failed reload
+                # still has the original head and no confirmed receipt.
+                self.instance, self.runtime = original_instance, original_runtime
+                # A failed read cannot distinguish a failed CAS from a
+                # committed receipt whose acknowledgment was lost. Leave the
+                # delivery unanswered so its exact request can be retried.
+                raise
+            persisted = next((row for row in self.runtime.get("control_receipts", {}).values()
+                if row["request_id"] == request["request_id"] and row["request_sha256"] == digest), None)
             if not persisted:
                 return {"state": "rejected", "reason": str(error)}
             receipt = persisted
@@ -1316,13 +1369,20 @@ class CoreEngineMixin:
         self._save()
 
     def _review_recovery_control(self, request):
+        change = request.get("config", {}).get("change", {})
+        explicit = request["action"] == "decision" and change.get("kind") == "review_replacement"
         if request.get("config", {}).get("assessment_reassessment") is not None:
             if self._instance_closed():
                 raise ValueError("closed/completed instance cannot start an assessment reassessment")
             return bool(self._assessment_reassessment_control(request))
-        if request["action"] != "request" or not {"review_replacement", "review_restoration"}.intersection(request.get("config", {})):
+        if not explicit and (request["action"] != "request" or not {
+                "review_replacement", "review_restoration"}.intersection(request.get("config", {}))):
             return False
-        config = request["config"]
+        if self._instance_closed():
+            raise ValueError("closed/completed instance cannot apply review recovery")
+        config = ({"role": "maintenance", "review_replacement": {
+            "action": change.get("allowed_action", {}), "grant_id": change.get("grant_id")}}
+            if explicit else request["config"])
         if config.get("role") != "maintenance":
             raise ValueError("review recovery request requires maintenance role")
         if "review_restoration" in config:
@@ -1341,25 +1401,54 @@ class CoreEngineMixin:
         spec = config["review_replacement"]
         action = deepcopy(spec["action"])
         cycle = self._review_cycle(action)
-        if action.get("target") != cycle["knowledge_id"]:
-            raise ValueError("review recovery target differs from the frozen cycle")
         if spec.get("delegation_id"):
             case = deepcopy(spec["case"])
             effect = case.get("effect", {})
+            from .review_cycle import slot_key
+            index = cycle.get("blocked_actions", {}).get(slot_key(action))
+            if cycle["status"] != "working" or index is None:
+                raise ValueError("delegated recovery requires a current permanently failed review slot")
+            event = cycle["recovery_events"][index]
+            expected_effect = {**{key: action[key] for key in ("review_cycle_id", "stage", "round", "slot")},
+                               "replacement_for": index, "continuity_break_cause": event["reason"]}
             if (case.get("decision_kind") != "review_replacement" or case.get("target_id") != action["target"]
-                    or any(effect.get(key) != action.get(key) for key in ("review_cycle_id", "stage", "round", "slot"))):
+                    or effect != expected_effect):
                 raise ValueError("delegated recovery case differs from the actual review slot")
             application = delegations.prepare_application(self.instance, self.runtime, spec["delegation_id"], case, now_iso=self.ports.clock.now())
+            if application.get("application") or application["judgments"]:
+                return True
             # The original request is the recovery routing authority. The two
             # judgments receive the same case and neither receives the other verdict.
             for stage in ("delegation_interpret", "delegation_check"):
+                if any(a.get("delegation_application_id") == application["id"] and a.get("stage") == stage
+                       for a in [*self.runtime["queue"], *(w["action"] for w in self.runtime.get("waiting_actions", {}).values()),
+                                 *(e.get("action", {}) for e in self.runtime["executions"].values())]):
+                    continue
                 self._enqueue("intent_interpretation", action["target"], stage=stage,
                     delegation_application_id=application["id"], requested_by=request["id"],
                     reason="Independently compare this case with the exact original decision and approved delegation")
         else:
-            outcome = self._authorize_review_replacement(action, grant_id=spec.get("grant_id"), at=self.ports.clock.now())
-            if outcome["disposition"] != "replacement_ready":
-                raise ValueError("review replacement is not authorized: " + str(outcome.get("authority")))
+            if request.get("origin", "user") != "user":
+                raise ValueError("review replacement requires an explicit user decision")
+            source = governance.preserve_source(request["id"], request.get("text") or
+                canonical_json(request).decode("utf-8"), origin="user")
+            before_instance, before_runtime = self.instance, self.runtime
+            candidate = deepcopy(self.instance)
+            old = candidate["governance_sources"].get(source["id"])
+            if old is not None and old != source:
+                raise ValueError("preserved control source ID reused")
+            candidate["governance_sources"][source["id"]] = source
+            try:
+                self.instance, self.runtime, _ = governance.apply_decision(candidate, self.runtime,
+                    change if explicit else {"kind": "review_replacement", "decision_id": "DC-" + request["id"],
+                        "allowed_action": action, **({"grant_id": spec["grant_id"]} if spec.get("grant_id") else {})},
+                    source_ref=source["id"], clock=self.ports.clock)
+                outcome = self._authorize_review_replacement(action, grant_id=spec.get("grant_id"), at=self.ports.clock.now())
+                if outcome["disposition"] != "replacement_ready":
+                    raise ValueError("review replacement is not authorized: " + str(outcome.get("authority")))
+            except (ValueError, KeyError, TypeError):
+                self.instance, self.runtime = before_instance, before_runtime
+                raise
         return True
 
     def _apply_delegation_judgment(self, action, output, execution_id):
@@ -1375,8 +1464,8 @@ class CoreEngineMixin:
                 reason="Independent delegation judgments did not establish authority for this exact case", clock=self.ports.clock)
             return
         request = _user_control_request(self.runtime, action["requested_by"])
-        if request is None:
-            raise ValueError("delegated recovery must resolve its preserved request")
+        # _review_recovery_control queues both comparisons with requested_by;
+        # _apply_inbox publishes them together with this preserved user control.
         spec = request["config"]["review_replacement"]
         case = {**deepcopy(record["basis"]["case"]), "application_id": application_id}
         outcome = self._authorize_review_replacement(deepcopy(spec["action"]), grant_id=spec.get("grant_id"),
@@ -1396,9 +1485,8 @@ class CoreEngineMixin:
                 source_ref=request["id"], actor_ref=request["id"], clock=self.ports.clock)
             # An omitted source_refs declares no source dependency; it does not mean every imported source.
             self.instance["knowledge"][kid]["source_basis"] = capture_sources(self.instance, spec["candidate"].get("source_refs", []))
-            for execution in self.runtime["executions"].values():
-                if execution["status"] != "ended" and execution.get("action", {}).get("target") == kid:
-                    execution["stop_requested"] = "imported_knowledge_revision"
+            # import_candidate creates a new ID and rejects every existing one;
+            # it cannot revise a proposal any execution was already reading.
         elif operation == "register-kind":
             self._propose_kind(spec["definition"], request["id"])
         elif operation == "withdraw-kind":
@@ -1536,16 +1624,17 @@ class CoreEngineMixin:
                     "local_process": "terminated", "remote_state": "unknown", "artifact_ref": reference}):
                 self.runtime["recoveries"][recovery_id]["dispositions"].append({**disposition,
                     "local_termination_confirmed": False, "reason": "reservation settlement not confirmed"})
+                self._save(artifacts)
                 continue
-            action = execution.get("action", {})
+            # Every execution is registered with its owned action and ID before launch.
+            action = execution["action"]
             self._remove_action(action)
-            if action.get("id"):
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
-                    "action": deepcopy(action), "kind": "execution_failure", "execution_id": eid,
-                    "reason": "previous executor disappeared", "next_owner": "operational_review"})
-                self.route_failed_action(action, eid,
-                    reason="Assess this recovered execution's preserved work and remaining authority")
-            disposition["next_owner"] = self.runtime.get("waiting_actions", {}).get(action.get("id"), {}).get("next_owner", "operational_review")
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
+                "action": deepcopy(action), "kind": "execution_failure", "execution_id": eid,
+                "reason": "previous executor disappeared", "next_owner": "operational_review"})
+            self.route_failed_action(action, eid,
+                reason="Assess this recovered execution's preserved work and remaining authority")
+            disposition["next_owner"] = self.runtime["waiting_actions"][action["id"]]["next_owner"]
             self.runtime["recoveries"][recovery_id]["dispositions"].append(disposition)
             self._settle_activity(eid)
             self._save(artifacts)
@@ -1736,7 +1825,7 @@ class CoreEngineMixin:
         context["external_rejections"] = [{**row, "blocks_current_solution": row["id"] in blocking}
                                           for row in rejections]
         if action["role"] == "identity_review":
-            prepared = self._prepare_review_context(action, workspace, sources=sources)
+            prepared = self._prepare_review_context(action, workspace, sources=sources, execution_id=execution_id)
             if prepared["disposition"] != "ready":
                 raise ReviewPreparationDeferred(prepared)
             context["role_review"] = prepared["context"]
@@ -1756,9 +1845,9 @@ class CoreEngineMixin:
                                              for link in links]})
             context["tasks"] = [{k: v for k, v in t.items() if k not in {"reviews", "assessment"}} for t in task_views]
         if action["role"] == "operational_review":
-            reviewed_execution = deepcopy(self.runtime["executions"].get(target))
+            reviewed_execution = deepcopy(self.runtime["executions"][target])
             context["execution_to_review"] = reviewed_execution
-            task_id = (reviewed_execution or {}).get("action", {}).get("target")
+            task_id = reviewed_execution["action"].get("target")
             if task_id in self.runtime["tasks"]:
                 context["proposal"] = {"task": deepcopy(self.runtime["tasks"][task_id]),
                     "instruction": "A task_disposition must include one matching task_assessments entry with a disposition for every obligation. Fulfilment requires the designated independent judge; waivers and transfers require current source-bound user authority."}
@@ -1790,15 +1879,14 @@ class CoreEngineMixin:
                     materialize_inputs(workspace, {relative: raw})
                     evidence['checkpoint_files'].append({**source, 'snapshot': self.head, 'local_path': 'input/' + relative})
             context['operational_evidence'] = evidence
-            if reviewed_execution:
-                successor=activities.successor_state(self.runtime,reviewed_execution['id'])
-                evidence['activity_continuations']={
-                    'frontier':successor,
-                    'executions':[{key:self.runtime['executions'][eid].get(key)
-                                   for key in ('id','status','outcome','error','result_ref')}
-                                  for eid in successor['execution_ids']] if successor else [],
-                    'instruction':'An existing continuation owns retry/resume. A separate installation defect requires its own evidence; continuation success alone does not settle that defect.'}
-            if reviewed_execution and not context["live_review"] and reviewed_execution.get("artifact_bundle"):
+            successor=activities.successor_state(self.runtime,reviewed_execution['id'])
+            evidence['activity_continuations']={
+                'frontier':successor,
+                'executions':[{key:self.runtime['executions'][eid].get(key)
+                               for key in ('id','status','outcome','error','result_ref')}
+                              for eid in successor['execution_ids']] if successor else [],
+                'instruction':'An existing continuation owns retry/resume. A separate installation defect requires its own evidence; continuation success alone does not settle that defect.'}
+            if not context["live_review"] and reviewed_execution.get("artifact_bundle"):
                 source_snapshot = self.head
                 bundle = reviewed_execution["artifact_bundle"]
                 prefix = "operational-review/" + reviewed_execution["id"]
@@ -1842,8 +1930,7 @@ class CoreEngineMixin:
                     "checkpoint-recovery.json" if result_kind == "checkpoint_recovery" else "activity-result.json")
                 if selected_result_ref == checkpoint_ref:
                     checkpoint_source = result_source
-                elif (reviewed_execution.get("role") == "formal_check" or
-                      reviewed_execution.get("parent_execution_id")) and checkpoint_ref not in self.store.list_files(
+                elif reviewed_execution.get("role") == "formal_check" and checkpoint_ref not in self.store.list_files(
                           f"{ARTIFACT_ROOT}{bundle}/", source_snapshot):
                     # These producers do not create a recovery checkpoint on normal completion.
                     checkpoint_source = None
@@ -1869,7 +1956,7 @@ class CoreEngineMixin:
         if action.get("delegation_application_id"):
             context["delegation_case"] = delegations.judgment_input(self.runtime, action["delegation_application_id"])
             request = _user_control_request(self.runtime, action["requested_by"])
-            if request is None:
+            if request is None:  # pragma: no cover - _review_recovery_control queues these judgments; _apply_inbox preserves their request before dispatch and history is not pruned.
                 raise ValueError("delegated recovery must resolve its preserved request")
             context["user_request"] = {"request": deepcopy(request), "delegation_case": deepcopy(context["delegation_case"])}
             context["interpretation_stage"] = action["stage"]
@@ -2044,8 +2131,8 @@ class CoreEngineMixin:
                     scoped = governance.authorize(instance, {**action, "grant_id": reference}, runtime=runtime, at=self.ports.clock.now())
                     if not scoped["allowed"]:
                         raise ValueError("bundle authority is no longer current: " + reference)
-                elif reference not in instance.get("decisions", {}):
-                    raise ValueError("bundle authority disappeared: " + reference)
+                # inspect_bundles bound every other reference to an issued
+                # decision. Decisions are immutable history, not revocable grants.
         finally:
             self.instance, self.runtime = original_instance, original_runtime
 
@@ -2067,8 +2154,7 @@ class CoreEngineMixin:
         try:
             self.instance, self.runtime = instance, runtime
             if bundle["extensions"].get("knowledge_changes"):
-                if action["role"] not in {"research_preparation", "research_work", "supplemental_research"}:
-                    raise ValueError("this role may report a defect but cannot author a knowledge revision")
+                # extension_schema owns which roles may author knowledge_changes.
                 self.instance, self.runtime = integration.apply_reviewed_knowledge_changes(
                     self.instance, self.runtime, bundle, actor_ref=execution_id, producer_execution_id=execution_id,
                     input_snapshot=self.runtime["executions"][execution_id]["input_snapshot"],
@@ -2078,12 +2164,14 @@ class CoreEngineMixin:
             elif integration.mutation_members(bundle["output"], bundle["extensions"]):
                 request = integration.bundle_impact_request(self.instance, self.runtime, bundle,
                     producer_execution_id=execution_id, input_snapshot=self.runtime["executions"][execution_id]["input_snapshot"])
-                if request["plans"]:
-                    confirmations = self._validate_bundle_impacts(self.instance, self.runtime, bundle,
-                        action=action, execution_id=execution_id)
-                    self.instance, self.runtime = knowledge.apply_impact(self.instance, self.runtime,
-                        request["plans"]["bundle"], reason="Apply the validated impact of integration " + bundle["integration_id"],
-                        independent_confirmation=confirmations.get("bundle"), clock=self.ports.clock)
+                # The checked revision/withdrawal targets are existing tasks or
+                # knowledge, so every mutation here has a bundle plan. An empty
+                # dependent set still has that plan and needs no separate review.
+                confirmations = self._validate_bundle_impacts(self.instance, self.runtime, bundle,
+                    action=action, execution_id=execution_id)
+                self.instance, self.runtime = knowledge.apply_impact(self.instance, self.runtime,
+                    request["plans"]["bundle"], reason="Apply the validated impact of integration " + bundle["integration_id"],
+                    independent_confirmation=confirmations.get("bundle"), clock=self.ports.clock)
             execution = self.runtime["executions"][execution_id]
             execution["extensions"] = deepcopy(bundle["extensions"])
             execution["integration_id"] = bundle["integration_id"]
@@ -2151,8 +2239,11 @@ class CoreEngineMixin:
             execution_id = previous_action.get("continuation_of") or previous_action.get("repair", {}).get("execution_id")
         accepted = [receipt for receipt in self.runtime.get("integrations", {}).values()
                     if receipt["execution_id"] in ancestors and "response_sha256" in receipt]
-        if accepted:
-            if len({row["response_sha256"] for row in accepted}) != 1:
+        # Only split research can have an accepted base response and pending
+        # independent members. Single-bundle continuations can accept a new
+        # judgment; their earlier receipts remain history, not a frozen base.
+        if accepted and integration.split_research({"action": action}):
+            if len({row["response_sha256"] for row in accepted}) != 1:  # pragma: no cover - split retries preserve their action; inspect_bundles forbids changing or reassigning the first accepted response and apply_bundles reuses existing receipt IDs.
                 raise ValueError("one response lineage has conflicting accepted response hashes")
             context["accepted_response"] = {"integration_id": accepted[0]["id"],
                                             "response_sha256": accepted[0]["response_sha256"]}
@@ -2331,7 +2422,16 @@ class CoreEngineMixin:
             cleanup_history_start = len(self.runtime['history'])
             try:
                 self._maintenance_cleanup(action, execution_id)
-            except (ValueError, OSError) as error:
+            except (ValueError, OSError, GitStateStoreError) as error:
+                # The response is already accepted. Reload any committed
+                # archives, but retain local deletions whose final CAS failed.
+                cleanup_events = deepcopy(self.runtime['history'][cleanup_history_start:])
+                self._reload()
+                for event in cleanup_events:
+                    if (event.get('kind') == 'maintenance_cleanup'
+                            and event.get('execution_id') == execution_id
+                            and event not in self.runtime['history']):
+                        self.runtime['history'].append(event)
                 retention.record_cleanup_interruption(self.runtime, action['cleanup_execution_ids'],
                     execution_id, str(error), history_start=cleanup_history_start)
         if self.runtime["status"] == "running":
@@ -2377,9 +2477,9 @@ class CoreEngineMixin:
         if (activity.get('status') != 'waiting' or identifier not in condition.get('action_ids', [])
                 or predecessor.get('owner_activity_id') != activity_id):
             raise ValueError('initial retry requires its original waiting activity')
-        if any(self.runtime['executions'][eid]['status'] != 'ended'
-               for eid in activity.get('assigned_execution_ids', [])):
-            raise ValueError('initial retry cannot overlap a live predecessor')
+        # wait_for requires every assigned execution to have ended. A retry
+        # first uses resume_activity (waiting -> ready); assign_execution then
+        # moves ready -> working and rejects an activity that is still waiting.
         if not local_termination_confirmed(predecessor):
             raise ValueError('initial retry requires confirmed local termination and released reservations')
         if any(row.get('id') == identifier for row in self.runtime['queue']):
@@ -2433,7 +2533,7 @@ class CoreEngineMixin:
             return False
         result = json.loads(self.store.read(execution['result_ref'], self.head))
         if (execution.get('submission_intent') or result.get('collection') != 'provider_evidence_only'
-                or result.get('status') != 'completed'):
+                or result.get('provider_result_status', result.get('status')) != 'completed'):
             return False
         context, schema = self._issued_input(execution)
         raw = verified_native_final(result, execution, context)
@@ -2514,20 +2614,17 @@ class CoreEngineMixin:
         if not waiting or waiting.get("kind") != "input_overflow":
             raise ValueError("retry_action must name a current input_overflow action")
         original = waiting.get("action", {})
-        if original.get("id") != identifier:
-            raise ValueError("held input_overflow action identity differs")
+        # The stored waiting-action key is checked against action.id on load.
         if any(row.get("id") == identifier for row in self.runtime.get("queue", [])):
             raise ValueError("input_overflow action is already queued")
         activity_id = original.get("owner_activity_id")
         activity = self.runtime.get("activities", {}).get(activity_id)
         if activity is None or activity.get("status") == "finished":
             raise ValueError("input_overflow owner activity is absent or finished")
-        live = [eid for eid in activity.get("assigned_execution_ids", [])
-                if self.runtime.get("executions", {}).get(eid, {}).get("status") != "ended"]
-        if live:
-            raise ValueError("input_overflow retry cannot overlap a live execution")
         if activity.get("status") != "waiting" or activity.get("waiting", {}).get("kind") != "input_overflow":
             raise ValueError("input_overflow owner activity is not waiting on this failure")
+        # wait_for requires all assigned attempts ended; assign_execution
+        # refuses a waiting activity. The exact wait owns overlap prevention.
         condition = activity["waiting"]["condition"]
         if identifier not in condition.get("action_ids", []):
             raise ValueError("activity wait does not name the held input_overflow action")
@@ -2597,10 +2694,10 @@ class CoreEngineMixin:
         row = next((row for row in self.runtime.get("question_links", []) if row["id"] == identifier), None)
         if row is None:
             raise ValueError("input_overflow retry question is unknown")
-        if row.get("status") in {"resolved", "superseded"} and not questions.open_targets(row):
+        # questions.close closes only the last unresolved target; closed
+        # questions cannot retain targets for a second resolving transition.
+        if row["status"] != "open":
             return "already_resolved"
-        if row.get("status") != "open":
-            raise ValueError("input_overflow retry question is no longer open")
         questions.close(row, kind=kind, resolution_ref=execution_id,
                         affected_ids=questions.open_targets(row), evidence=evidence)
         return "resolved"
@@ -2616,8 +2713,8 @@ class CoreEngineMixin:
                 # A later input request keeps its own pending signal.
                 if task is not None and task.get("newinput") == event.get("request_id"):
                     del task["newinput"]
-        self.runtime["pending_events"] = [entry for entry in self.runtime.get("pending_events", [])
-                                           if isinstance(entry, dict) or entry not in consumed]
+        self.runtime["pending_events"] = [ref for ref in self.runtime.get("pending_events", [])
+                                           if ref not in consumed]
 
     def _review_observation_source(self, execution_id, batch, index, receipt_key):
         """The runner's own row bytes and row number; nothing is read or decoded again."""
@@ -2643,7 +2740,7 @@ class CoreEngineMixin:
             checkpoint = read_checkpoint(candidate.workspace, clock=self.ports.clock)
             if checkpoint["status"] == "valid" and checkpoint["sha256"] not in candidate.seen_checkpoints:
                 candidate.register_self_check_checkpoint(checkpoint["sha256"])
-        artifacts, self_checks, feedback = {}, [], []
+        artifacts, self_checks = {}, []
         remind = False
         observations, review_rows, stream = [], [], None
         receipts = dict(self.runtime['executions'][execution_id].get('observation_receipts', {}))
@@ -2734,8 +2831,6 @@ class CoreEngineMixin:
                         self._enqueue("operational_review", execution_id, live=True, observation=observation,
                             obligation_ids=observed.get("obligation_ids", [observed["obligation_id"]] if observed.get("obligation_id") else []),
                             observation_refs=[record["id"]])
-                    if observed.get("worker_feedback"):
-                        feedback.append(observed["worker_feedback"])
             self.runtime.setdefault("self_check_obligations", {}).update(candidate.stored_obligations())
             self._publish_observation(artifacts or None)
         except Exception:
@@ -2755,8 +2850,6 @@ class CoreEngineMixin:
             self._publish_observation()
         if remind:
             write_checkpoint_reminder(candidate.workspace / ".control")
-        for item in feedback:
-            publish_worker_feedback(candidate.workspace / ".control", item)
 
     def _collect_submitted_result(self, execution, result, context, schema, workspace):
         """Consume the sole central candidate, or capture a verified normal final."""
@@ -2782,7 +2875,7 @@ class CoreEngineMixin:
                 intent = execution['submission_intent']
             except (ValueError, KeyError, TypeError, OSError, GitStateStoreError) as error:
                 return {**result, 'status': 'failed', 'output': None, 'error_kind': 'execution_failure',
-                        'error': str(error)}
+                        'error': str(error), 'provider_result_status': result['status']}
         if (result.get('error_kind') == 'model_policy' or execution.get('currentness_changes')
                 or self._execution_stop_requested(execution['action'], execution)):
             return result
@@ -2864,14 +2957,18 @@ class CoreEngineMixin:
             artifacts = self._stage_submission_capture(execution, sealed, receipt, origin='native_final')
             self._save(artifacts)
         except Exception:
-            self._reload()
+            try:
+                self._reload()
+            finally:
+                # Failed recovery reads must not leave a staged native
+                # receipt attached to the old, unconfirmed head.
+                if self.head == original_head:
+                    self.instance, self.runtime = original_instance, original_runtime
             saved = next((event['basis']['receipt'] for event in self.runtime.get('events', [])
                 if event['kind'] == 'submission_checked' and event.get('basis', {}).get('origin') == 'native_final'
                 and event['basis']['receipt']['id'] == receipt['id']), None)
             if saved:
                 return saved
-            if self.head == original_head:
-                self.instance, self.runtime = original_instance, original_runtime
             raise
         return receipt
 
@@ -2913,7 +3010,9 @@ class CoreEngineMixin:
         return self._obsolete_review_reason(action)
 
     def _enqueue(self, role: str, target: str | None = None, **extra: Any) -> None:
-        action = {"role": role, **extra}
+        # Binding and later callers may mutate any nested action field. Own
+        # comparison/merge fields too, before revision binding changes them.
+        action = deepcopy({"role": role, **extra})
         if target is not None:
             action["target"] = target
         self._bind_revision_action(action)
@@ -2971,8 +3070,6 @@ class CoreEngineMixin:
                     queued["merged_action_ids"] = list(dict.fromkeys([*queued.get("merged_action_ids", []), action["id"]]))
                 self._cancel_selected_revision_targets(queued)
                 return
-        for key in payload_keys:
-            action[key] = deepcopy(action[key])
         action.setdefault("id", self.ports.clock.new_id("AC"))
         action.setdefault("lineage_id", action["id"])
         self.runtime["queue"].append(action)
@@ -2983,8 +3080,6 @@ class CoreEngineMixin:
         for definition in extension.get("kind_definitions", []):
             self._propose_kind(definition, execution_id)
         if extension.get("task_dispositions"):
-            if action["role"] not in execution_profiles.PLANNING_ROLES:
-                raise ValueError("only preparation and planning may withdraw AI-prepared tasks")
             execution = self.runtime["executions"][execution_id]
             _, _, input_runtime = self.store.view(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
@@ -2995,17 +3090,12 @@ class CoreEngineMixin:
             self.instance, _ = knowledge_io.import_relation(self.instance, relation, source_ref=execution_id, actor_ref=execution_id, clock=self.ports.clock)
         if extension.get("observation_rules"):
             rules = task_rules_from_execution(extension["observation_rules"], execution_id)
-            if action.get("target") not in self.runtime["tasks"]:
-                raise ValueError("persisted observation rules require a task target; live rules change only through a self-check rule_proposal")
             self.runtime.setdefault("task_observation_rules", {})[action["target"]] = deepcopy(rules)
         for index, request in enumerate(extension.get("external_requests", [])):
             task = self.runtime["tasks"].get(action.get("target"), {})
             academic_effect = request.get("academic_effect_id")
-            if academic_effect:
-                required = next((effect for effect in task.get("required_external_effects", []) if effect["id"] == academic_effect), None)
-                if required is None: raise ValueError("external request names no academic effect in this task")
-                if required.get("grant_id") and required["grant_id"] != request.get("grant_id"):
-                    raise ValueError("academic effect requires its specified grant")
+            # The submission receiver checked the assigned effect and its grant;
+            # acceptance checked this producer's unchanged task contract.
             if not request.get("grant_id"):
                 question = questions.link(self.runtime, execution_id=execution_id,
                     field="extensions/external_requests/" + str(index) + "/purpose", owner="user",
@@ -3044,8 +3134,8 @@ class CoreEngineMixin:
             except (ValueError, TypeError) as error:
                 if producer == execution_id:
                     raise
-                # A malformed item held by an older implementation belongs to
-                # its original author; it cannot reject another reviewer's work.
+                # A held kind or evidence reference can cease to be valid while
+                # its cycle runs. Keep the finding with its original author.
                 self.runtime["history"].append({"kind": "incidental_insight_not_published", "source_execution": producer,
                     "insight": deepcopy(insight), "reason": str(error)})
                 self.runtime["questions"].append("Correct the preserved incidental insight from " + producer + ": " + str(error))
@@ -3170,13 +3260,12 @@ class CoreEngineMixin:
                                                   {k: v for k, v in old.items() if k != "revision_history"}] if old else []}
                 if old and old.get("revision_request_action_id"):
                     self.runtime["tasks"][tid]["revision_request_action_id"] = old["revision_request_action_id"]
-                if proposal["title"] in titles:
-                    raise ValueError("task titles must be unique within a preparation result")
+                # submission.payload_issues checked title uniqueness before bundling.
                 titles[proposal["title"]] = tid
             for specification in self.runtime["executions"][execution_id].get("extensions", {}).get("task_conditions", []):
                 tid = titles.get(specification.get("task_title"), specification.get("task_id"))
-                if tid not in titles.values():
-                    raise ValueError("task condition must identify a prepared task")
+                # submission.payload_issues binds each condition to exactly one
+                # candidate title or revised ID before this bundle is applied.
                 condition = deepcopy(specification.get("occurrence_condition", {"op": "always"}))
                 def bind_names(node):
                     if isinstance(node, dict):
@@ -3242,10 +3331,8 @@ class CoreEngineMixin:
                     reason="Independently reconsider the unresolved kind using the newly prepared evidence")
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]
-            basis = action.get("contract_basis", {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
-                **self._governance_revisions()})
-            if basis["contract_sha256"] != planning.contract_hash(task):
-                raise ValueError("contract changed while being reviewed")
+            # _validate_decision_acceptance checked this execution's unchanged
+            # contract and full review task basis immediately before application.
             review = planning.seal_contract_review(task, output, self.instance, self.runtime, execution_id=execution_id)
             task["reviews"].append(review)
             decision = review["decision"]
@@ -3258,6 +3345,9 @@ class CoreEngineMixin:
                 if task.get("academic_requirement_id"):
                     self._ensure_model_assessments()
                     return
+                task['waiting'] = {'kind': 'contract_revision', 'target_refs': [task['id']],
+                    'next_owner': 'research_preparation', 'basis_ref': execution_id,
+                    'reason': task['revision_requested']['reason']}
                 # The unapproved contract's defects and open questions go back to preparation.
                 self._enqueue("research_preparation", target,
                               reason="Task contract review returned " + decision + "; revise the contract from its findings or preserve the obligation with the open questions",
@@ -3266,8 +3356,7 @@ class CoreEngineMixin:
             self._apply_plan(output, execution_id)
         elif role in execution_profiles.RESEARCH_PRODUCER_ROLES:
             if owns_response:
-                if not output["report"].strip():
-                    raise ValueError("work must report its actual scope, outcome and remaining work")
+                # The submission boundary requires a nonblank actual-scope report.
                 task = self.runtime["tasks"][target]
                 task["results"].append({"execution_id": execution_id,
                     **{key: deepcopy(value) for key, value in output.items()
@@ -3279,14 +3368,14 @@ class CoreEngineMixin:
             if owns_response or imported or output.get('relations'):
                 self._enqueue("research_plan", reason="Assess accepted research report and knowledge",
                               receipt_refs=[execution_id], evidence_refs=imported)
-        elif role == "identity_review" and action.get("review_cycle_id"):
+        elif role == "identity_review":
+            # _prepare_call turns an unscoped request into a cycle before any
+            # model call; its admitted execution always names that sealed cycle.
             self._apply_identity_review(action, output, execution_id)
             cycle = self.runtime["review_cycles"][action["review_cycle_id"]]
             if cycle.get("transition_id") and cycle["status"] in {"completed", "unresolved"}:
                 self._enqueue("trust_activate", transition_id=cycle["transition_id"],
                     reason="Consume the sealed staged review through the original authorized trust transition")
-        elif role == "identity_review":
-            raise ValueError("identity decisions require an independently scoped, sealed review cycle")
         elif role == "goal_audit":
             self._apply_governance_goal_audit(action, output, execution_id)
         elif role == "intent_interpretation" and action.get("delegation_application_id"):
@@ -3296,7 +3385,7 @@ class CoreEngineMixin:
         elif role == "operational_review":
             self.runtime["executions"][execution_id]["output"] = deepcopy(output)
             self._apply_operational_disposition(action, output["disposition"], execution_id)
-        elif role == "maintenance":
+        else:  # maintenance: action_schema/profile dispatch close the model roles; machine roles never submit here.
             if action.get('initial_submission_diagnosis'):
                 self.apply_initial_diagnosis(action, output, execution_id)
             elif action.get("stage") == "impact_review":
@@ -3304,8 +3393,6 @@ class CoreEngineMixin:
             elif action.get("kind_definition_id"):
                 self._apply_kind_definition_check(action, output["kind_definition_check"], execution_id)
             self.runtime["history"].append({"kind": "maintenance", "execution_id": execution_id, **output})
-        else:
-            raise ValueError(f"unsupported activity {role}")
 
     def _cleanup_scope(self, action, instance=None, runtime=None):
         instance, runtime = instance or self.instance, runtime or self.runtime
@@ -3400,8 +3487,7 @@ class CoreEngineMixin:
                 or self.runtime["executions"][execution_id].get("input_basis", {}).get("kind_definition") != expected):
             raise ValueError("kind checker did not read the current exact definition")
         verdict = output["decision"]
-        if verdict not in {"approved", "revision_required", "unresolved"}:
-            raise ValueError("unknown kind semantic verdict")
+        # The action's response schema owns the kind-check verdict enum.
         if verdict != "approved" and not output["findings"]:
             raise ValueError("kind rejection or uncertainty requires explicit findings")
         if verdict == "approved":
@@ -3421,13 +3507,11 @@ class CoreEngineMixin:
 
     def _apply_operational_disposition(self, action, proposal, execution_id):
         disposition = operational_dispositions.validate_disposition(proposal)
-        target = self.runtime["executions"].get(action.get("target"))
-        if target is None:
-            raise ValueError("operational disposition has no execution target")
         # Application rechecks the newest evidence. A citation that the review's
         # input admitted but a later checkpoint or result replaced is a changed
         # premise; it is reported only when the disposition has no other error.
         current_refs = operational_dispositions.admissible_basis_refs(self.instance, self.runtime, action)
+        target = self.runtime["executions"][action["target"]]
         issued, _ = self._issued_input(self.runtime["executions"][execution_id], with_schema=False)
         changes = operational_dispositions.basis_premise_changes(
             disposition, issued["admissible_basis_refs"], current_refs)
@@ -3527,12 +3611,14 @@ class CoreEngineMixin:
                     or assessments[0].get("decision") != disposition["task_state"]):
                 raise ValueError("operational task disposition requires one matching item assessment")
             _, _, input_runtime = self.store.view(reviewer["input_snapshot"])
+            fixed, _ = self._issued_input(reviewer, with_schema=False)
             self.instance, self.runtime = task_scope.apply_task_assessments(self.instance, self.runtime,
                 assessments, execution_id=record["execution_id"], input_tasks=input_runtime["tasks"],
+                input_sources=fixed.get('sources', []),
                 evaluation_context=self._evaluation_context(), clock=self.ports.clock)
             target = self.runtime["executions"][record["target_execution_id"]]
             record = self.runtime.get("operational_dispositions", {}).get(record["id"], record)
-        elif kind == "user_decision":
+        else:  # continue returns in _apply; the remaining schema kind is user_decision.
             link = questions.link(self.runtime, execution_id=record["execution_id"],
                 field="output/disposition/question", owner="user", targets=[previous.get("target") or self.instance["id"]],
                 reason=disposition["effect"], clock=self.ports.clock)
@@ -3565,6 +3651,7 @@ class CoreEngineMixin:
 
     def _goal_basis_key(self) -> str:
         from .governance import mathematical_goal_basis
+        from .knowledge_records import FAMILIES
         tasks = [{key: deepcopy(task.get(key)) for key in
                   ("id", "revision", "question", "scope", "completion_obligations", "expected", "results", "status")}
                  for task in self.runtime["tasks"].values()]
@@ -3573,11 +3660,11 @@ class CoreEngineMixin:
             # Installed role documents are fixed for this engine; a changed installation pauses it.
             self._goal_audit_contract = hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()
         return exact_content_hash({"goal": view["goal"], "goal_basis_sha256": mathematical_goal_basis(view['charter']),
-            "policy_revision": view.get("policy_revision", 1), "knowledge": self.instance["knowledge"],
-            "formal_results": self.instance.get("formal_results", {}), "expositions": self.instance.get("expositions", {}),
-            "identity_assessments": self.instance.get("identity_assessments", {}),
-            "assessment_uses": self.instance.get("assessment_uses", {}),
+            "policy_revision": view.get("policy_revision", 1),
+            **{family: {identifier: knowledge.basis_record(record) for identifier, record in
+                        self.instance.get(family, {}).items()} for family in FAMILIES},
             "trust_environments": self.instance.get("trust_environments", {}),
+            "active_trust_environment": self.instance.get("active_trust_environment"),
             "tasks": tasks, "sources": capture_sources(self.instance),
             "user_inputs": self.runtime["inputs"], "required": self.instance["config"]["goal_auditors"],
             "input_contract": self._goal_audit_contract})
@@ -3592,6 +3679,7 @@ class CoreEngineMixin:
         # tasks and transfer recipients are bound to this one population.
         input_tasks = {row["id"]: input_runtime["tasks"][row["id"]] for row in fixed["tasks"]}
         self._apply_task_plan(output, execution_id, input_tasks, fixed["ready_task_ids"],
+                              input_sources=fixed.get('sources', []),
                               evaluation_context=self._evaluation_context())
         self._apply_input_overflow_resolutions(execution.get('extensions', {}).get('input_overflow_resolutions', []),
                                                fixed, execution_id)

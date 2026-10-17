@@ -15,8 +15,11 @@ termination queries.
 """
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
+import tempfile
 import unittest
 
+from support.engine_cli_journey import Journey
 from support.scheduling_initial import GRANT, adopted_sim
 
 LAUNCH_FAILURE = 'fixture: the Job could not be created'
@@ -76,11 +79,20 @@ class InitialFailureRetryTests(unittest.TestCase):
                 self.assertIn(aid, engine.runtime['waiting_actions'])
                 engine.instance = saved_instance
         engine.runtime = deepcopy(failure_state)
-        request = sim.control('request', config={'retry_action': aid}, request_id='UC-initial-retry')
-        self.assertTrue(request['accepted'])
+        # Rejected domain inputs above never publish; the positive path uses the
+        # same public CLI and receipt that an operator can use after status/query.
+        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        journey = Journey(sim, directory)
+        before_calls = len(sim.model.calls)
+        request = journey.call('request', '--retry-action', aid, '--request-id', 'UC-initial-retry')
+        self.assertEqual(request['effect'], 'applied')
+        self.assertEqual(len(sim.model.calls), before_calls)
+        published = deepcopy(journey.state())
         sim.restart()
         restarted = sim.engine
-        restarted.process_controls()
+        replay = journey.call('request', '--retry-action', aid, '--request-id', request['request_id'])
+        self.assertEqual(replay, {**request, 'replayed': True})
+        self.assertEqual(journey.state(), published)
         self.assertNotIn(aid, restarted.runtime['waiting_actions'], restarted.runtime['history'][-3:])
         retry = next(a for a in restarted.runtime['queue'] if a['id'] == aid)
         self.assertEqual(retry['continuation_of'], predecessor['id'])
@@ -91,10 +103,24 @@ class InitialFailureRetryTests(unittest.TestCase):
         def continued(s):
             return any(e.get('continuation_of') == predecessor['id'] and e['status'] == 'ended'
                        for e in s.runtime['executions'].values())
-        sim.run_until(continued, max_steps=3)
-        successor = next(e for e in sim.runtime['executions'].values() if e.get('continuation_of') == predecessor['id'])
+        journey.call('run', '--max-steps', '1')
+        sim.restart()
+        self.assertTrue(continued(sim))
+        successors = [e for e in sim.runtime['executions'].values() if e.get('continuation_of') == predecessor['id']]
+        self.assertEqual(len(successors), 1)
+        successor, = successors
         self.assertEqual(successor['outcome'], 'output_accepted', successor)
         self.assertEqual(successor['owner_activity_id'], predecessor['owner_activity_id'])
+        self.assertEqual(len(sim.model.calls), before_calls + 1)
+        self.assertEqual(sim.runtime['executions'][predecessor['id']], predecessor)
+        self.assertEqual(sim.runtime['processed_controls'].count(request['request_id']), 1)
+        self.assertEqual(sim.engine.store.read(predecessor['result_ref']),
+                         restarted.store.read(predecessor['result_ref'], published[0]))
+        final = deepcopy(journey.state())
+        self.assertEqual(journey.call('request', '--retry-action', aid, '--request-id', request['request_id']),
+                         {**request, 'replayed': True})
+        self.assertEqual(journey.state(), final)
+        self.assertEqual(len(sim.model.calls), before_calls + 1)
         self.assertTrue(sim.runtime['intent_imports'])
         self.assertEqual(sim.instance['lifecycle']['immutable_input'], original)
 

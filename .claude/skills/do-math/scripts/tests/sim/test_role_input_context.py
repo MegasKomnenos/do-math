@@ -11,6 +11,7 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from uuid import uuid4
@@ -213,6 +214,12 @@ class OperationalInputTests(unittest.TestCase):
                 'reason': 'This accepted review settles the same observed target.'}]}
             self.assertEqual(submission.payload_issues(output, contracts.schema_for('operational_review'),
                                                        fitted['validation_context'], extensions, root, clock=_entry.ports.clock), [])
+            extensions['action_resolutions'][0]['evidence_execution_id'] = 'EX-unsupplied'
+            issues = submission.payload_issues(output, contracts.schema_for('operational_review'),
+                fitted['validation_context'], extensions, root, clock=_entry.ports.clock)
+            self.assertEqual([(row['path'], row['message']) for row in issues], [
+                ('activity-extensions.json/action_resolutions/0',
+                 'action resolution requires a supplied failed action and current or supplied execution evidence')])
 
     def test_changed_checkpoint_file_bytes_are_rejected_before_review(self):
         engine, action, _, _ = self.fixture(stored=b'changed bytes')
@@ -432,11 +439,12 @@ class PackagedInputTests(unittest.TestCase):
                                                  task_id=task['id'], borrowed_path=borrowed)
                     engine.runtime['executions']['EX-work'] = {'output_files': [{**result['output_files'][0],
                         'local_path': file['local_path']}]}
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaisesRegex(AssertionError, "^'local_path' unexpectedly found in "):
                         assert_result_documents(self, detail['results'], root, engine, owner='results', task_id=task['id'])
                     del engine.runtime['executions']['EX-work']
 
     def test_planning_keeps_completed_report_and_active_work_as_readable_context(self):
+        self.maxDiff = None
         selected, instance, runtime = approved_task()
         finished = deepcopy(selected)
         finished.update(id='TK-finished-context', title='Earlier failed approach', status='completed',
@@ -455,7 +463,7 @@ class PackagedInputTests(unittest.TestCase):
         # The legacy source path (source.txt) named no store path; its bytes live below the artifacts here.
         source = b'fixture source for task context\n'
         instance['sources'][0].update(path='runtime/artifacts/BA-source/source.txt',
-                                      sha256=hashlib.sha256(source).hexdigest())
+                                      sha256=hashlib.sha256(source).hexdigest(), bytes=len(source))
         engine = context_engine(instance, runtime, files={instance['sources'][0]['path']: source})
         approve_task(selected, engine.instance, engine.runtime)
         with tempfile.TemporaryDirectory() as directory:
@@ -479,8 +487,19 @@ class PackagedInputTests(unittest.TestCase):
                     changed[0][fault] = len(source) + 1
                 else:
                     changed[0]['local_path'] = fixed['task_catalog'][0]['source_ref']['path']
-                with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                with self.subTest(fault=fault), self.assertRaises(AssertionError) as rejected:
                     assert_result_documents(self, changed, root, engine, owner='research_sources')
+                reason = str(rejected.exception)
+                if fault == 'local_path':
+                    self.assertIn("('actual field', 'sources[].local_path')", reason)
+                elif fault == 'sha256':
+                    self.assertIn('0' * 64, reason)
+                    self.assertIn(sources[0]['sha256'], reason)
+                elif fault == 'bytes':
+                    self.assertIn("'bytes': " + str(len(source) + 1), reason)
+                    self.assertIn("'bytes': " + str(len(source)), reason)
+                else:
+                    self.assertIn('\n- ' + changed[0]['local_path'] + '\n+ ' + sources[0]['local_path'], reason)
             self.assertEqual(fixed['ready_task_ids'], [selected['id']])
             self.assertEqual({row['id'] for row in fixed['tasks']},
                              {selected['id'], finished['id'], active['id']})
@@ -680,6 +699,7 @@ class InputManifestConnections(unittest.TestCase):
 class PreparedInputTests(unittest.TestCase):
     def test_installed_tools_match_the_final_role_input_and_reject_damage(self):
         """About 3 s: direct, mapped and private inputs; actual installation, no worker call."""
+        self.maxDiff = None
         from support.engine_context import assert_tool_documents, tool_input_value
         sim = Sim.activated()
         engine = sim.engine
@@ -729,8 +749,10 @@ class PreparedInputTests(unittest.TestCase):
                     changed = json.loads(raw)
                     del changed['preview']['command']
                     source.write_bytes(canonical_json(changed))
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaises(AssertionError) as rejected:
                         assert_tool_documents(self, context, root, owner='preview')
+                    self.assertIn('\n- ' + hashlib.sha256(source.read_bytes()).hexdigest() + '\n+ ' + ref['sha256'],
+                                  str(rejected.exception))
                     source.write_bytes(raw)
                 self.assertEqual(tool_input_value(self, context, root, 'submission_contract')
                                  ['limits']['max_artifact_bytes'], 1000000)
@@ -745,23 +767,32 @@ class PreparedInputTests(unittest.TestCase):
                     damaged = deepcopy(fitted['validation_context'])
                     value = tool_input_value(self, damaged, root, owner)
                     del (value['limits'] if field.endswith('_bytes') else value)[field]
-                    with self.subTest(owner=owner, missing=field), self.assertRaises(AssertionError):
+                    declared = owner + ('.limits.' if field.endswith('_bytes') else '.') + field
+                    with self.subTest(owner=owner, missing=field), self.assertRaisesRegex(
+                            AssertionError, re.escape("('actual field', '" + declared + "')")):
                         assert_tool_documents(self, damaged, root, owner=owner)
                 for owner in ('preview', 'record_map.read_tool', 'submission_contract'):
                     damaged = deepcopy(fitted['validation_context'])
                     other = 'submission_contract' if owner != 'submission_contract' else 'preview'
                     tool_input_value(self, damaged, root, owner)['command'] = deepcopy(
                         tool_input_value(self, damaged, root, other)['command'])
-                    with self.subTest(owner=owner, fault='borrowed_command'), self.assertRaises(AssertionError):
+                    with self.subTest(owner=owner, fault='borrowed_command'), self.assertRaises(AssertionError) as rejected:
                         assert_tool_documents(self, damaged, root, owner=owner)
+                    self.assertIn('command', str(rejected.exception))
+                    for command_owner in (owner, other):
+                        command = tool_input_value(self, fitted['validation_context'], root, command_owner)['command']
+                        self.assertIn(command[2], str(rejected.exception))
                 damaged = deepcopy(fitted['validation_context'])
                 damaged['submission_contract']['tool_sha256'] = '0' * 64
-                with self.assertRaises(AssertionError):
+                with self.assertRaises(AssertionError) as rejected:
                     assert_tool_documents(self, damaged, root, owner='submission_contract')
+                self.assertIn('tool_sha256', str(rejected.exception))
+                self.assertIn('0' * 64, str(rejected.exception))
+                self.assertIn(fitted['validation_context']['submission_contract']['tool_sha256'], str(rejected.exception))
                 read_path = root / 'input/tools/read_input.py'
                 original = read_path.read_bytes()
                 read_path.write_bytes((root / 'input/tools/check_lean.py').read_bytes())
-                with self.assertRaises(AssertionError):
+                with self.assertRaisesRegex(AssertionError, re.escape('from do_math.input_tool import ')):
                     assert_tool_documents(self, context, root, owner='record_map.read_tool')
                 read_path.write_bytes(original)
                 # Borrow a file and its matching hash together. Validate the
@@ -778,8 +809,10 @@ class PreparedInputTests(unittest.TestCase):
                 machine_path = root / 'input/submission/context.json'
                 machine_raw = machine_path.read_bytes()
                 machine_path.write_bytes(canonical_json(damaged))
-                with self.assertRaises(AssertionError):
+                with self.assertRaises(AssertionError) as rejected:
                     assert_tool_documents(self, damaged, root, owner='submission_contract')
+                self.assertIn('Items in the second set but not the first:', str(rejected.exception))
+                self.assertIn("'do_math/submission_tool.py'", str(rejected.exception))
                 archive.write_bytes(original)
                 machine_path.write_bytes(machine_raw)
                 # An uninstalled role input has no positive preview sample.
@@ -790,8 +823,9 @@ class PreparedInputTests(unittest.TestCase):
                 self.assertNotIn('preview', tool_input_value(self, bare['context'], bare_root, 'formal_verifier'))
                 self.assertNotIn('submission_contract', bare['context'])
                 self.assertFalse((bare_root / 'input/tools').exists())
-                with self.assertRaises(KeyError):
+                with self.assertRaises(KeyError) as rejected:
                     assert_tool_documents(self, bare['context'], bare_root, owner='preview')
+                self.assertEqual(rejected.exception.args, ('preview',))
 
     def test_discard_records_cancelled_preparation_and_explicit_continuation(self):
         engine = Sim.activated().engine

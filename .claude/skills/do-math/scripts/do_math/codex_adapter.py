@@ -201,9 +201,6 @@ class LocalCLIAdapter:
                 "execution_id": request.get("execution_id"), "profile_ref": request.get("profile_ref"),
                 "provider_observation": _provider_observation(request, parsed, stdout)}
 
-    def parse_response(self, raw: bytes | None, request: dict) -> dict:
-        raise NotImplementedError
-
     @staticmethod
     def final_bytes(parsed: dict) -> bytes | None:
         """The exact final response bytes the stream selected, if any."""

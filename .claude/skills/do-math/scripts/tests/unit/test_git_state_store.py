@@ -13,7 +13,7 @@ import re
 import tempfile
 import unittest
 
-from do_math.git_store import GitStateStore, GitStateStoreConflict, StateSnapshot
+from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError, StateSnapshot
 from do_math.ids import oid_shape
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_repository
@@ -52,6 +52,38 @@ class StoreCase(unittest.TestCase):
 
 
 class GitStateStoreTests(StoreCase):
+    def test_ref_update_error_rereads_the_head_and_allows_the_next_publication(self):
+        from do_math.ports.git_backend import GitBackendError
+        initial = self.store.publish(None, self.initial_changes())
+        with self.store.writer_lock():
+            current = self.store.publish(initial.head, {'runtime/state.json': b'locked'})
+            for committed in (False, True):
+                with self.subTest(committed=committed):
+                    original = self.backend.update_ref
+                    moved = []
+
+                    def unavailable(repository, ref, new, old):
+                        if committed:
+                            self.assertTrue(original(repository, ref, new, old))
+                            moved.append(new)
+                        raise GitBackendError('ref update response unavailable')
+
+                    self.backend.update_ref = unavailable
+                    try:
+                        with self.assertRaisesRegex(GitStateStoreError, '^ref update response unavailable$') as caught:
+                            self.store.publish(current.head, {'runtime/state.json': b'candidate'})
+                    finally:
+                        del self.backend.update_ref
+                    self.assertIsInstance(caught.exception.__cause__, GitBackendError)
+                    authoritative = moved[0] if committed else current.head
+                    mark = len(self.backend.calls)
+                    self.assertEqual(self.store.read_snapshot().head, authoritative)
+                    self.assertIn('object_info', self.backend.operations(mark))
+                    self.assertEqual(self.store.read_bytes(authoritative, 'runtime/state.json'),
+                                     b'candidate' if committed else b'locked')
+                    current = self.store.publish(authoritative, {'runtime/state.json': b'locked'})
+                    self.assertEqual(commit_parents(self.backend, self.repository, current.head), [authoritative])
+
     def test_oid_shape_is_separate_from_instance_format(self):
         self.assertEqual(oid_shape("a" * 64), "sha256")
         with self.assertRaisesRegex(ValueError, 'OID must be a lowercase sha1 object ID'):

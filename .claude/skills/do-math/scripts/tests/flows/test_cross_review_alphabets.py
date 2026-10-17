@@ -9,6 +9,10 @@ from support.sim import warm_template
 setUpModule = warm_template
 
 class ReviewAlphabetTests(unittest.TestCase):
+    def test_delegation_alphabet(self):
+        from support.cross_research_machine import DelegationAlphabetMachine
+        assert_machine(DelegationAlphabetMachine, LONG)
+
     def test_review_alphabet(self):
         assert_machine(ReviewAlphabetMachine, LONG)
 

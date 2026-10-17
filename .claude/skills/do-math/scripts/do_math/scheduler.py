@@ -88,7 +88,6 @@ class SchedulerMixin:
     def _abort_parallel_calls(self):
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
         from .canonical import canonical_json
-        from .governance import timestamp
         returned = []
         for future, generator in self._calls.futures.items():
             execution_id = future.execution_id
@@ -96,13 +95,14 @@ class SchedulerMixin:
                 result = future.result()
             except BaseException as error:
                 result = failed_result(error)
-            if execution_id:
-                raw = canonical_json(json_safe(result))
-                # This local copy remains available even if publication itself failed.
-                path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(raw)
-                returned.append((execution_id, raw, str(path), result))
+            # Both scheduler producers start calls for a registered execution:
+            # _run_machine_steps and _call_steps carry that required identity.
+            raw = canonical_json(json_safe(result))
+            # This local copy remains available even if publication itself failed.
+            path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+            returned.append((execution_id, raw, str(path), result))
             generator.close()
         self._reload()
         artifacts = self._record_interrupted_calls(returned)
@@ -120,6 +120,11 @@ class SchedulerMixin:
         steps = 0
         try:
             while True:
+                # _controls, collection and input preparation can all pump.
+                # They share this entry allowance for the whole owner pass.
+                with self._calls.guard:
+                    self._calls._observation_limits = {
+                        future: len(future.observations) for future in self._calls.futures}
                 # Calculations only read stop flags, so the owner receives controls and
                 # transport requests every pass. Controls enter a published state, and a
                 # request received in this pass precedes the clock's stop reasons.
@@ -188,7 +193,7 @@ class SchedulerMixin:
                             pass
                         else:
                             self._calls.start_call(generator, self.runner.run, arguments,
-                                                   execution_id=arguments.get('execution_id'))
+                                                   execution_id=arguments['execution_id'])
                     if not action.get("live"):
                         steps += 1
                     continue

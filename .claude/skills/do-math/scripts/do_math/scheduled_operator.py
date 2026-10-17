@@ -20,7 +20,7 @@ from .model_runner import ModelRunner
 from .model_policy import selection
 from .provider_wait import epoch_seconds
 from .operation_trace import workspace_operation, child_environment
-from .supervision import (OPERATOR_SCHEMA, SUPERVISION_BLOCKS, blocked_check_outcome, collect_repair_verification,
+from .supervision import (OPERATOR_SCHEMA, SUPERVISION_BLOCKS, blocked_check_outcome, check_repair_version, collect_repair_verification,
                           engine_failure_recovery, engine_run_outcome, hold_pause_reason, repair_report_schema,
                           start_guard, supervision_block,
                           supervision_facts, task_names, wake_is_current, wake_need)
@@ -136,7 +136,13 @@ def release(workspace: Path, *, clock) -> dict[str, Any]:
 
 
 @workspace_operation('engine_launch')
-def run_engine(repository: Path, instance: str, workspace: Path, *, ports, installation_root: Path = SKILL_ROOT, environment, codex_home, host_id) -> dict[str, Any]:
+def run_engine(repository: Path, instance: str, workspace: Path, *, ports, installation_root: Path = SKILL_ROOT, environment, codex_home, host_id,
+               installation_manifest: Path | None = None) -> dict[str, Any]:
+    """Start the live engine with the caller's explicit frozen manifest, if any.
+
+    Only operator_bootstrap discovers a manifest beside its independent entrypoint.
+    Package callers without one start live, regardless of this module's location.
+    """
     try:
         guard = engine_start_guard(repository, instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     except Exception as error:
@@ -152,6 +158,12 @@ def run_engine(repository: Path, instance: str, workspace: Path, *, ports, insta
     _json(run_directory / "before.json", status)
     command = [sys.executable, str(Path(installation_root) / "scripts/do_math.py"),
                "run", "--repository", str(repository), "--instance", instance, "--watch"]
+    import operator_bootstrap as bootstrap
+    if installation_manifest is not None:
+        manifest = bootstrap.verify_snapshot(Path(installation_manifest))
+        if Path(manifest['installation_root']).resolve() != Path(installation_root).resolve():
+            raise ValueError('startup manifest identifies a different installation root')
+        command.extend(['--installation-manifest', str(Path(installation_manifest).resolve())])
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
@@ -309,7 +321,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
             blocked = recovery_block_outcome(block, failure)
             if blocked is not None:
                 return blocked
-            from .repair_execution import installation_sha256 as installed_skill_sha256
+            from .repair_execution import installation_evidence
             failure = failure_to_repair(runtime, failure)
             if failure is None:
                 return {"outcome": "recovery_waiting", "reason": "no installation repair is pending"}
@@ -324,7 +336,10 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
             except OSError:
                 return {"outcome": "recovery_waiting", "reason": "installation maintenance is already active"}
             try:
-                installation_sha256 = installed_skill_sha256(installation_root)
+                before_installation = installation_evidence(installation_root, backend=ports.git_backend)
+                installation_sha256 = before_installation['installation_version']
+                if installation_sha256 is None:
+                    raise ValueError('cannot identify repair installation: ' + before_installation['installation_error'])
                 failure_sha256 = failure_identity(failure, diagnosis)
                 if already_attempted(runtime, failure_sha256, installation_sha256):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
@@ -364,6 +379,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                 run_directory = _operator_dir(workspace) / "recovery" / eid
                 execution_workspace = run_directory / "workspace"
                 execution_workspace.mkdir(parents=True)
+                _json(execution_workspace / 'input/installation-before.json', before_installation)
                 failure_inputs = []
                 for index, artifact_ref in enumerate(failure.get('evidence_refs', [])):
                     raw = repo.read(artifact_ref, head)
@@ -381,6 +397,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                 (run_directory / "input.txt").write_bytes(prompt.encode("utf-8"))
                 execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=aid,
                     actor_kind="ai", input_manifest={"failure": failure, "prompt": sealed_input,
+                        'installation_before': before_installation,
                         'repair_identity': {'failure_sha256': failure_sha256, 'installation_sha256': installation_sha256},
                         "repair_authority": {"source": "adopted_operator_repair_scope", "boundary": "instructions"}},
                     profile_ref=reference, created_at=at,
@@ -398,6 +415,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                     slots.started(eid, identity, at=ports.clock.now())
                     head = repo.save_with_state(head, state, runtime)[0]
                 result = None
+                after_installation = None
                 try:
                     result = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id).run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
                         workspace=execution_workspace, evidence_dir=run_directory / "evidence",
@@ -424,6 +442,10 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                     outcome = runner_outcome(result)
                     if result.get("error_kind") == "model_policy":
                         record_model_policy_violation(state, runtime, eid, chosen["model"], result)
+                    after_installation = installation_evidence(installation_root, backend=ports.git_backend)
+                    _json(run_directory / 'installation-after.json', after_installation)
+                    if outcome == 'repaired':
+                        check_repair_version(result['output'], after_installation)
                     if outcome == 'repaired' and diagnosis:
                         regression = collect_repair_verification(result.get('output'), execution_workspace)
                         _json(run_directory / 'regression-evidence.json', {'files': regression})
@@ -458,7 +480,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                                                 diagnosis=diagnosis, execution_id=eid, at=ended_at)
                     head = repo.save_with_state(head, state, runtime)[0]
                 report = {"outcome": outcome, "execution_id": eid, "snapshot": head,
-                          "run_directory": str(run_directory)}
+                          "run_directory": str(run_directory),
+                          'installation_before': before_installation, 'installation_after': after_installation}
                 _json(run_directory / "result.json", report)
             finally:
                 maintenance.close()
@@ -472,7 +495,35 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
     return report
 
 
-def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None, installation_root: Path = SKILL_ROOT):
+def execute(action, repository, instance, workspace, *, ports, environment, host_id, codex_home,
+            installation_root: Path = SKILL_ROOT, installation_manifest: Path | None = None, probe=False):
+    """Publish startup evidence and pass the same explicit manifest to the engine.
+
+    The bootstrap verifies before importing this package; here the manifest also
+    supplies the live comparison. No caller-supplied comparison or path discovery
+    can silently select a different startup basis for the child.
+    """
+    import operator_bootstrap as bootstrap
+    from .repair_execution import installation_evidence
+    manifest = bootstrap.verify_snapshot(Path(installation_manifest)) if installation_manifest is not None else None
+    startup = {'bootstrap': bootstrap.startup_evidence(manifest),
+               'installation': installation_evidence(installation_root, backend=ports.git_backend),
+               'runtime_root': str(SKILL_ROOT), 'observed_at': ports.clock.now()}
+    _json(_operator_dir(workspace) / 'startup.json', startup)
+    if action == 'check':
+        result = check(repository, instance, workspace, probe=probe, ports=ports,
+                       installation_root=installation_root, codex_home=codex_home, environment=environment, host_id=host_id)
+    elif action == 'wake':
+        result = wake(repository, instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
+    else:  # run-engine: main's choices and cli.execute's fixed dispatch close this set.
+        result = run_engine(repository, instance, workspace, ports=ports, installation_root=installation_root,
+                            environment=environment, codex_home=codex_home, host_id=host_id,
+                            installation_manifest=installation_manifest)
+    return {**result, 'startup': startup}
+
+
+def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None, installation_root: Path = SKILL_ROOT,
+         installation_manifest: Path | None = None):
     """Stable scheduling surface without importing engine through the CLI."""
     import os
     import platform
@@ -481,7 +532,6 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
     host_id = platform.node() if host_id is None else host_id
     codex_home = (Path(environment["CODEX_HOME"]) if environment.get("CODEX_HOME") else Path.home() / ".codex") if codex_home is None else codex_home
     ports = real_ports(environment=environment) if ports is None else ports
-    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     import argparse
     parser = argparse.ArgumentParser(description="Model-free do-math supervisor and failure-only recovery")
     parser.add_argument("action", choices=("check", "run-engine", "wake"))
@@ -490,11 +540,8 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--probe", action="store_true")
     args = parser.parse_args(argv)
-    if args.action == "check":
-        result = check(args.repository, args.instance, args.workspace, probe=args.probe, ports=ports, installation_root=installation_root, codex_home=codex_home, environment=environment, host_id=host_id)
-    elif args.action == "wake":
-        result = wake(args.repository, args.instance, args.workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
-    else:
-        result = run_engine(args.repository, args.instance, args.workspace, ports=ports, installation_root=installation_root, environment=environment, codex_home=codex_home, host_id=host_id)
+    result = execute(args.action, args.repository, args.instance, args.workspace, ports=ports,
+                     installation_root=installation_root, codex_home=codex_home, environment=environment,
+                     host_id=host_id, installation_manifest=installation_manifest, probe=args.probe)
     print(json.dumps(result, ensure_ascii=False))
     return 0

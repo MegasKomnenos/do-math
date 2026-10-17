@@ -107,7 +107,7 @@ class ProviderSchemaTests(unittest.TestCase):
         for diagnosed in (False, True):
             schema = repair_report_schema(diagnosed=diagnosed)
             empty = {'summary': '', 'observed_status': '', 'actions': [], 'evidence_paths': [],
-                     'user_questions': [], 'next_step': ''}
+                     'user_questions': [], 'next_step': '', 'installation_version': '', 'source_commit': None}
             if diagnosed:
                 empty.update(repair_outcome='', verification_evidence=[])
             nonempty = {k: ['proof'] if isinstance(v, list) else 'done' for k, v in empty.items()}
@@ -117,6 +117,9 @@ class ProviderSchemaTests(unittest.TestCase):
                     self.assertEqual(result['status'], 'completed', result.get('error'))
                     self.assertEqual(result['output'], value)
             for value in ({k: v for k, v in empty.items() if k != 'next_step'},
+                          {k: v for k, v in empty.items() if k != 'installation_version'},
+                          {k: v for k, v in empty.items() if k != 'source_commit'},
+                          {**empty, 'installation_version': None}, {**empty, 'source_commit': 7},
                           {**empty, 'actions': [None]}, {**empty, 'next_step': None}, {**empty, 'extra': 1}):
                 with self.subTest(diagnosed=diagnosed, invalid=value):
                     result, _, _ = self.call(schema, value)

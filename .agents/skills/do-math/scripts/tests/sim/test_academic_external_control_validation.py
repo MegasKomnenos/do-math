@@ -161,6 +161,22 @@ class AcademicExternalControlValidationTests(unittest.TestCase):
         self.engine._save()
         self.assertEqual(self.engine.store.load()[2]['external_operations'][operation['id']], result)
 
+    def test_revocation_before_an_attempt_cannot_retry_without_its_original_authority(self):
+        """T3 2.8 s: public revocation is the real producer of an unattempted cancellation."""
+        from support.engine_lifecycle import applied
+        operation = deepcopy(self.prepare())
+        self.assertNotIn('execution_id', operation)
+        applied(self.sim, 'decision', config={'change': {'kind': 'revoke', 'grant_id': operation['grant_id']}})
+        cancelled = deepcopy(self.engine.runtime['external_operations'][operation['id']])
+        self.assertEqual((cancelled['status'], cancelled['transmitted']), ('cancelled', False))
+        self.assertNotIn('execution_id', cancelled)
+        before = deepcopy((self.engine.head, self.engine.instance, self.engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^grant is inactive$'):
+            self.engine._external_control({**self.config, 'operation': 'retry'}, self.source)
+        self.assertEqual((self.engine.head, self.engine.instance, self.engine.runtime), before)
+        self.assertEqual(self.engine.store.load()[2]['external_operations'][operation['id']], cancelled)
+        self.assertEqual(self.sim.ports.http.requests, [])
+
     def test_failed_retry_without_reconciliation_proof_is_rejected(self):
         unknown = self.unknown()
         failed = reconcile_operation(unknown, self.evidence(unknown, 'effect_absent'), 'failed', source='user', effect_absent=True)

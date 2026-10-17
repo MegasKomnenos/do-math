@@ -28,6 +28,25 @@ def size_query(arguments):
 
 
 class ReportingTests(unittest.TestCase):
+    def test_named_builtin_timezones_remain_available_without_a_timezone_database(self):
+        import sys
+        import zoneinfo
+        from unittest.mock import patch
+        previous = zoneinfo.TZPATH
+        try:
+            zoneinfo.reset_tzpath(())
+            zoneinfo.ZoneInfo.clear_cache()
+            # The standard library's two data sources are absent, as on a minimal host.
+            with patch.dict(sys.modules, {name: None for name in
+                    ('tzdata', 'tzdata.zoneinfo', 'tzdata.zoneinfo.Asia', 'tzdata.zoneinfo.Europe')}):
+                self.assertEqual(reporting.display_time('2026-01-01T00:00:00Z'), '2026-01-01T09:00:00+09:00')
+                self.assertEqual(reporting.display_time('2026-01-01T00:00:00Z', 'UTC'), '2026-01-01T00:00:00+00:00')
+                with self.assertRaisesRegex(ValueError, '^timezone database has no entry for Europe/Paris$'):
+                    reporting.display_time('2026-01-01T00:00:00Z', 'Europe/Paris')
+        finally:
+            zoneinfo.reset_tzpath(previous)
+            zoneinfo.ZoneInfo.clear_cache()
+
     def test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes(self):
         """About 0.4 s, over the 0.2 s unit budget: three publications and two full status projections of the stored state."""
         raw = b'preserved result'

@@ -7,7 +7,7 @@ import unittest
 
 from do_math.model_policy import MODELS
 from support.engine_lifecycle import applied
-from support.scheduling_exit_contracts import EXIT_CASES
+from support.scheduling_exit_contracts import EXIT_CASES, assert_no_dispatch
 from support.scheduling_return_observer import OwnerProbe
 from support.scheduling_parallel import ready_work_sim
 from support.sim import Sim, warm_template
@@ -24,18 +24,10 @@ class EarlyExitTests(unittest.TestCase):
         reservations = deepcopy(sim.runtime.get('reservations', {}))
         with OwnerProbe(sim) as probe:
             answer = sim.engine.run(max_steps=1, **options)
-        self.assertIsInstance(answer, dict)
+        assert_no_dispatch(self, sim, answer, before, reservations, probe)
         if status is not None:
             self.assertEqual(answer['status'], status)
-        self.assertEqual(set(sim.runtime['executions']) - set(before), set())
-        self.assertEqual(sim.runtime['executions'], before)
-        self.assertEqual(sim.runtime.get('reservations', {}), reservations)
         self.assertEqual(answer['active_executions'], [])
-        self.assertFalse(sim.engine._executor_running)
-        self.assertIsNone(sim.engine._calls)
-        self.assertEqual(probe.failures, [])
-        _, _, stored = sim.engine.store.load(sim.engine.head)
-        self.assertEqual(stored['executions'], before)
         return answer
 
     def test_declared_early_exits_use_public_run(self):
@@ -83,6 +75,7 @@ class EarlyExitTests(unittest.TestCase):
                     sim.engine.run(max_steps=limit)
                 self.assertEqual(sim.runtime, before)
                 self.assertFalse(sim.engine._executor_running)
+                self.assertIsNone(sim.engine._calls)
 
     def test_watch_idle_sleep_consumes_pause_without_dispatch(self):
         for initializing in (True, False):

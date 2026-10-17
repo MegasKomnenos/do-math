@@ -10,7 +10,7 @@ from do_math import submission
 from do_math.canonical import canonical_json
 from support.engine_lifecycle import applied, clear_work
 from support.sim import Sim, warm_template
-from support.submission_calls import submission_model, submitted
+from support.submission_calls import submission_model
 from support.submission_owner_obligations import OwnerIngressAssertions
 
 
@@ -19,7 +19,7 @@ def setUpModule():
 
 
 class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
-    def install_probe(self, sim, roles, *, negative_ready=False, negative_profiles=False):
+    def install_probe(self, sim, roles, *, negative_ready=False, negative_profiles=False, negative_returned=False):
         """정상 응답 생산자를 한 번만 부르고 고정 입력의 광고를 독립 비교한다."""
         model = submission_model(sim, responder=sim.model.responder)
         seen, failures = {}, []
@@ -47,6 +47,9 @@ class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
                     self.assertEqual(set(forms) - set(references), set(), (key, source))
                 draft = workspace / '.scratch/catalog-draft.json'
                 draft.parent.mkdir(exist_ok=True)
+                draft.write_bytes(canonical_json(output))
+                normal = submission.producer_check(workspace, draft, clock=sim.clock)
+                self.assertEqual((normal['passed'], normal['issues']), (True, []), key)
                 if negative_profiles and action['role'] == 'research_preparation':
                     candidates = output['candidates']
                     self.assertTrue(candidates)
@@ -56,6 +59,20 @@ class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
                     self.assertCountEqual(candidates[0]['profile_refs'], allowed)
                     registry = {row['id']: row for row in fixed['execution_profiles']}
                     self.assertTrue(allowed)
+                    work_profiles = [{name: row[name] for name in ('id', 'revision', 'sha256')}
+                        for row in fixed['profile_selection']['allowed_profiles'] if row['role'] == 'research_work']
+                    self.assertTrue(work_profiles)
+                    for number, reference in enumerate(work_profiles):
+                        single = deepcopy(output)
+                        single['candidates'][0]['profile_refs'] = [reference]
+                        selected_extensions = deepcopy(extensions)
+                        for rating in selected_extensions['model_assessments']:
+                            if rating['task_title'] == single['candidates'][0]['title']:
+                                rating.update(difficulty=registry[reference['id']]['ai']['tier'], importance='low',
+                                    reason='Explicit profile selection fixture at this required tier')
+                        self.assert_candidate_admitted(sim, workspace, fixed['control_binding'],
+                            single, selected_extensions, 'allowed-profile-' + str(number))
+                    sidecar.write_bytes(canonical_json(extensions))
                     for number, reference in enumerate(candidates[0]['profile_refs']):
                         self.assertEqual(registry[reference['id']]['role'], 'research_work')
                         for field, value in (('id', 'EP-outside'), ('revision', reference['revision'] + 1),
@@ -67,9 +84,26 @@ class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
                             expected = ('submission.output.candidates.*', 'output/candidates/0',
                                         'profile reference is absent or stale')
                             self.assertEqual([(row['rule_id'], row['path'], row['message'])
-                                for row in check['issues'] if row['path'] == expected[1]], [expected])
+                                for row in check['issues']], [expected])
                             self.reject_and_replay(sim, workspace, fixed['control_binding'], bad, extensions,
-                                expected, 'profile-' + str(number) + '-' + field)
+                                [expected], 'profile-' + str(number) + '-' + field)
+                    sidecar.write_bytes(canonical_json(extensions))
+                if negative_returned and action['role'] == 'research_plan':
+                    returned = fixed['returned_task_ids']
+                    rows = output['task_assessments']
+                    self.assertTrue(returned)
+                    self.assertCountEqual([row['task_id'] for row in rows], returned)
+                    unknown = {**rows[0], 'task_id': 'TK-outside'}
+                    cases = [(rows[1:], [rows[0]['task_id']], [], []),
+                             ([*rows, unknown], [], ['TK-outside'], []),
+                             ([*rows, rows[0]], [], [], [rows[0]['task_id']])]
+                    for number, (changed, missing, unexpected, duplicate) in enumerate(cases):
+                        bad = {**output, 'task_assessments': changed}
+                        reason = ('plan must assess every returned task exactly once: '
+                            f'missing={missing}; unexpected={unexpected}; duplicate={duplicate}')
+                        expected = [('submission.output', 'output', reason)]
+                        self.reject_and_replay(sim, workspace, fixed['control_binding'], bad, extensions,
+                            expected, 'returned-' + str(number))
                     sidecar.write_bytes(canonical_json(extensions))
                 if negative_ready and action['role'] == 'research_plan':
                     ready = fixed['ready_task_ids']
@@ -78,32 +112,52 @@ class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
                     self.assertEqual(sorted(actual), sorted(ready))
                     rows = output['dispositions']
                     unknown = {**rows[0], 'task_id': 'TK-outside'}
-                    cases = [(rows[1:], [rows[0]['task_id']], [], []),
-                        ([*rows, unknown], [], ['TK-outside'], []),
-                        ([*rows, rows[0]], [], [], [rows[0]['task_id']]),
-                        ([unknown, unknown], sorted(ready), ['TK-outside'], ['TK-outside'])]
-                    for index, (changed, missing, unexpected, duplicate) in enumerate(cases):
+                    cases = [(rows[1:], [rows[0]['task_id']], [], [], [], [rows[0]['task_id']]),
+                        ([*rows, unknown], [], ['TK-outside'], [], ['TK-outside'], []),
+                        ([*rows, rows[0]], [], [], [rows[0]['task_id']], [], []),
+                        ([unknown, unknown], sorted(ready), ['TK-outside'], ['TK-outside'],
+                         ['TK-outside'], sorted(ready))]
+                    for index, (changed, missing, unexpected, duplicate, unrated, extra_ratings) in enumerate(cases):
                         bad = {**output, 'dispositions': changed}
                         draft.write_bytes(canonical_json(bad))
                         check = submission.producer_check(workspace, draft, clock=sim.clock)
                         reason = ('plan must dispose every derived-ready task exactly once: '
                             f'missing={missing}; unexpected={unexpected}; duplicate={duplicate}')
+                        expected = [('submission.output', 'output', reason)]
+                        if unrated or extra_ratings:
+                            expected.append(('submission.activity-extensions.json.model_assessments',
+                                'activity-extensions.json/model_assessments', 'model assessment coverage: ' +
+                                json.dumps({'missing': unrated, 'unexpected': extra_ratings}, ensure_ascii=False)))
                         self.assertEqual([(row['rule_id'], row['path'], row['message'])
-                            for row in check['issues'] if row['rule_id'] == 'submission.output'],
-                            [('submission.output', 'output', reason)])
+                            for row in check['issues']], expected)
                         self.reject_and_replay(sim, workspace, fixed['control_binding'], bad, extensions,
-                            ('submission.output', 'output', reason), 'ready-' + str(index))
+                            expected, 'ready-' + str(index))
                     sidecar.write_bytes(canonical_json(extensions))
-                for reference in references:
+                bad = {**output, 'used_sources': ['unadvertised-evidence.txt']}
+                message = ('investigation evidence is outside its fixed source set'
+                    if action['role'] == 'supplemental_research' and action.get('review_cycle_id') else
+                    'reference must identify supplied input, a record of the input snapshot or a preserved '
+                    'workspace file: unadvertised-evidence.txt; use an exact reference_catalog value, '
+                    'a record_index ID or workspace:<preserved-file>')
+                self.reject_and_replay(sim, workspace, fixed['control_binding'], bad, extensions,
+                    [('submission.output.used_sources.*', 'output/used_sources/0', message)], 'catalog-outside')
+                for number, reference in enumerate(references):
                     current = deepcopy(output)
-                    current['used_sources'] = list(dict.fromkeys([*output['used_sources'], reference]))
-                    draft.write_bytes(canonical_json(current))
-                    check = submission.producer_check(workspace, draft, clock=sim.clock)
-                    self.assertEqual((check['passed'], check['issues']), (True, []), (key, reference))
+                    current['used_sources'] = [reference]
+                    if action['role'] == 'supplemental_research' and action.get('review_cycle_id'):
+                        # This singleton cites its supplied exact source only.
+                        # The final reply below also preserves the responder's
+                        # separate workspace comparison through real capture.
+                        current['evidence_refs'] = [reference]
+                    self.assert_candidate_admitted(sim, workspace, fixed['control_binding'],
+                        current, extensions, 'catalog-' + str(number))
                 output['used_sources'] = list(dict.fromkeys([*output['used_sources'], *references]))
-                seen[key] = {'execution_id': fixed['execution_id'], 'references': output['used_sources']}
-                model.on(action['role'], execution_id=fixed['execution_id']).reply(
-                    submitted(output, extensions=extensions))
+                draft.write_bytes(canonical_json(output))
+                check = submission.producer_check(workspace, draft, clock=sim.clock)
+                self.assertEqual((check['passed'], check['issues']), (True, []), key)
+                seen[key] = {'execution_id': fixed['execution_id'], 'references': output['used_sources'],
+                             'output': deepcopy(output), 'extensions': deepcopy(extensions)}
+                model.preserve_reply(action['role'], fixed['execution_id'], output, extensions)
             except Exception:
                 failures.append(traceback.format_exc())
                 raise
@@ -121,20 +175,39 @@ class CatalogPopulationTests(OwnerIngressAssertions, unittest.TestCase):
     def test_every_advertised_work_profile_edition_is_preserved_and_stale_fields_are_rejected(self):
         """입력이 허용한 작업 프로필 전건과 각 ID·판본·해시 경계를 양쪽에서 검사한다."""
         sim = Sim.activated()
+        from support.default_responder import DefaultResponder
+        sim.model.responder = DefaultResponder(model_rating={
+            'difficulty': 'low', 'importance': 'low', 'reason': 'One bounded addition identity in this profile selection case'})
         seen, failures = self.install_probe(sim, {'research_preparation'}, negative_profiles=True)
         self.assert_catalog_applied(sim, {'research_preparation'}, seen, failures)
+
+    def test_returned_population_missing_extra_and_duplicate_are_rejected_before_normal_application(self):
+        from do_math.task_contracts import returned_task_ids
+        from support.scheduling_parallel import ready_work_sim
+        sim = ready_work_sim(1, max_output_repairs=0)
+        sim.engine.runtime['queue'] = [row for row in sim.runtime['queue'] if row['role'] == 'research_work']
+        sim.engine._save()
+        sim.run_until(lambda s: bool(returned_task_ids(s.runtime['tasks'])), max_steps=8)
+        seen, failures = self.install_probe(sim, {'research_plan'}, negative_returned=True)
+        self.assert_catalog_applied(sim, {'research_plan'}, seen, failures)
 
     def assert_catalog_applied(self, sim, roles, seen, failures, *, stages=None):
         def done(state):
             self.assertEqual(failures, [], '\n'.join(failures))
             return (stages is None or stages <= {key[1] for key in seen}) and roles <= {key[0] for key in seen} and all(
                 state.runtime['executions'][row['execution_id']]['status'] == 'ended' for row in seen.values())
-        sim.run_until(done, max_steps=20)
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self):
+            sim.run_until(done, max_steps=20)
         for key, row in seen.items():
             execution = sim.runtime['executions'][row['execution_id']]
             self.assertEqual(execution['outcome'], 'output_accepted', (key, execution.get('integration_result')))
-            output = json.loads(sim.engine.store.read(execution['submission_intent']['output_ref'], sim.engine.head))
+            sealed = submission.read_sealed_submission(execution, sim.engine.head,
+                sim.engine.store.read, git_dir=sim.engine.store.git_dir)
+            output = sealed['output']
             self.assertEqual(output['used_sources'], row['references'])
+            self.assertEqual(output, row['output'], key)
+            self.assertEqual(sealed['extensions'], submission.load_extensions(canonical_json(row['extensions'])), key)
 
     def test_live_preparation_review_plan_work_and_maintenance_catalogs_are_applied(self):
         """공개 등록 source와 비빈 과제 상태를 실제 역할 호출에서 검사한다."""

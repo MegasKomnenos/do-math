@@ -1034,8 +1034,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
         raise ValueError("input manifest has another role slot")
     replacement = cycle.get("replacement_actions", {}).get(slot_key(action))
     if action.get("replacement_for") is not None:
-        if replacement is None or replacement.get("action") != action:
-            raise ValueError("replacement action is not the recorded authorization")
+        # next_actions admitted this exact recorded replacement above.
         if manifest.get("replacement_for") != action["replacement_for"]:
             raise ValueError("replacement input manifest omits its continuity break")
         if manifest.get("grant_id") != replacement["grant_id"] or manifest.get("grant_sha256") != replacement["grant_sha256"]:

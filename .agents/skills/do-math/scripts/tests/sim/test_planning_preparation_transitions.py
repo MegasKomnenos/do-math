@@ -29,6 +29,26 @@ class PreparationTransitions(unittest.TestCase):
         self.engine._apply_model_metadata(action, {'candidates': []}, 'EX-rating')
         return action
 
+    def test_targeted_preparation_reports_the_actual_running_task_coordinates(self):
+        from do_math.execution_lifecycle import transition_execution
+        from support.wait_reporting import assert_status_report
+        task = only_task(self.sim)
+        action = enqueue(self.engine, 'research_preparation', assessment_targets={task['id']: assessment_basis(task)})
+        execution = self.engine._register_execution(action,
+            {'id': 'EX-targeted-live', 'role': 'research_preparation', 'status': 'running'})
+        self.engine._save()
+        report, human = assert_status_report(self, self.engine)
+        row = next(row for row in report['tasks'] if row['id'] == task['id'])
+        self.assertEqual(row['active_execution_ids'], [execution['id']])
+        self.assertNotIn(action['id'], row['selected_actions'])
+        self.assertIsNone(row['readiness'])
+        self.assertIn('active_records=' + execution['id'], next(line for line in human.splitlines()
+            if line.startswith('  ' + task['id'] + ' revision=')))
+        for status in ('stopping', 'ended'):
+            transition_execution(self.sim.runtime['executions'][execution['id']], status, at=self.sim.clock.now(),
+                **({'outcome': 'execution_incomplete'} if status == 'ended' else {}))
+        self.engine._save()
+
     def test_nonplanning_role_cannot_author_model_assessments(self):
         _ended_execution(self.engine, 'EX-work-metadata', 'research_work')
         action = {'role': 'research_work', 'target': self.identifier}
@@ -188,6 +208,29 @@ class QueuePlanTransitions(unittest.TestCase):
 
 
 class AcademicPreparationPrefixTests(unittest.TestCase):
+    def test_rejected_unrated_contract_preserves_rules_without_inventing_an_old_rating(self):
+        """T3 observation: 64.5 s; the existing academic producer supplies an unrated contract."""
+        from support.academic_scenes import assessment_sim
+        from support.role_answers import review_items
+        sim = assessment_sim()
+        task = next(iter(sim.runtime['tasks'].values()))
+        self.assertNotIn('model_assessment', task)
+        previous_rules = deepcopy(task.get('initial_observation_rules', []))
+        _ended_execution(sim.engine, 'EX-unrated-review', 'task_contract_review')
+        sim.engine._apply({'role': 'task_contract_review', 'target': task['id']},
+            review_items([task['id']], decision='revision_required', findings=['Supply the missing rating.']),
+            'EX-unrated-review', owns_response=False)
+        task = sim.runtime['tasks'][task['id']]
+        sim.engine._ensure_model_assessments()
+        task = sim.runtime['tasks'][task['id']]
+        self.assertNotIn('model_assessment_history', task)
+        self.assertEqual(task['observation_rule_history'][-1]['rules'], previous_rules)
+        self.assertEqual(task['observation_rule_history'][-1]['contract_review_execution'], 'EX-unrated-review')
+        before = deepcopy(task['observation_rule_history'])
+        sim.engine._ensure_model_assessments()
+        self.assertEqual(task['observation_rule_history'], before)
+        sim.engine._save()
+
     def test_generated_academic_contract_is_rated_before_rejection_and_consumed_once(self):
         import ast
         import inspect
@@ -223,6 +266,17 @@ class AcademicPreparationPrefixTests(unittest.TestCase):
                 for t in scene.runtime['tasks'].values()), max_steps=12)
         self.assertEqual(len(observed), 1)
         task = sim.runtime['tasks'][observed[0]['id']]
+        self.assertNotIn('waiting', task)
+        from support.wait_reporting import assert_status_report
+        report, human = assert_status_report(self, sim.engine)
+        row = next(row for row in report['tasks'] if row['id'] == task['id'])
+        pending = [a for a in sim.runtime['queue'] if task['id'] in a.get('assessment_targets', {})
+            or task['id'] in a.get('observation_rule_targets', {})]
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(row['next_owner'], 'research_preparation')
+        self.assertIn(pending[0]['id'], row['selected_actions'])
+        self.assertIn('next=research_preparation', next(line for line in human.splitlines()
+            if line.startswith('  ' + task['id'] + ' revision=')))
         self.assertEqual(task['model_assessment_history'][-1]['assessment'], observed[0]['model_assessment'])
         self.assertEqual(task['observation_rule_history'][-1]['rules'], observed[0]['initial_observation_rules'])
         self.assertTrue(reached.crossed(first_line + guard.lineno - 1,

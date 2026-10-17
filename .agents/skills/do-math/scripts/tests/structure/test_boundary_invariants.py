@@ -273,7 +273,7 @@ def unrelated_call(handle, buffer, size):
                 if label == 'current':
                     self._assert_file_io_replacements(sites)
                 else:
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaisesRegex(AssertionError, 'do_math/relocated_file_boundary.py'):
                         self._assert_file_io_replacements(sites)
 
     def test_executable_identity_has_one_normalization(self):

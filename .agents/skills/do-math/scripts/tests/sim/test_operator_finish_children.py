@@ -26,6 +26,25 @@ setUpModule = warm_template
 
 
 class EngineChildTests(unittest.TestCase):
+    def test_startup_manifest_for_another_installation_is_rejected_before_spawn(self):
+        """About 8.8 s: restore one activated instance and verify a real frozen manifest before rejecting its target."""
+        import operator_bootstrap as bootstrap
+        scene = Scene()
+        source = scene.installation / 'scripts/do_math/scheduled_operator.py'
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b'# synthetic supervisor installation for manifest identity\n')
+        frozen = bootstrap.freeze(scene.installation, scene.workspace)
+        manifest = Path(frozen['manifest'])
+        raw = manifest.read_bytes()
+        before = scene.load()
+        with self.assertRaisesRegex(ValueError, '^startup manifest identifies a different installation root$'):
+            scene.call(operator.run_engine, installation_root=scene.installation / 'different',
+                       installation_manifest=manifest)
+        self.assertEqual(scene.load(), before)
+        self.assertEqual(manifest.read_bytes(), raw)
+        self.assertEqual(scene.jobs.launched, [])
+        self.assertEqual(scene.commands, [])
+
     def test_command_start_error_preserves_original_exception(self):
         """Both operator consumers must retain the former subprocess error contract."""
         self.maxDiff = None

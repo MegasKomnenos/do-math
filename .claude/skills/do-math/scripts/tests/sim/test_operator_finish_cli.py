@@ -137,6 +137,81 @@ class OperatorCommandTests(unittest.TestCase):
                             host_id=sim.host_id, codex_home=sim.codex_home)
         return code, json.loads(output.getvalue())
 
+    def test_admitted_control_waits_for_a_later_inbox_listing_then_applies_once(self):
+        """About 4.5 s: publish a real control, retain its pending bytes, and apply it on the next owner pass."""
+        original = Path.glob
+        inbox = self.scene.workspace / 'control' / self.scene.args[1]
+
+        def glob(path, pattern, *args, **kwargs):
+            if path == inbox and pattern == '*.json':
+                return iter(())  # The OS listing has not exposed this delivery to the owner yet.
+            return original(path, pattern, *args, **kwargs)
+
+        with patch.object(Path, 'glob', glob):
+            code, envelope = self.invoke('hold', '--reason', 'listing delayed')
+        self.assertEqual(code, 0)
+        pause = envelope['result']['pause']
+        self.assertEqual((pause['effect'], pause['next_owner']), ('pending engine processing', 'engine'))
+        path = inbox / (pause['request_id'] + '.json')
+        raw = path.read_bytes()
+        self.assertFalse(self.scene.load()[2].get('user_pause'))
+        self.scene.sim.engine.process_controls()
+        result = self.scene.sim.engine.control_result(pause['request_id'])
+        self.assertEqual(result['effect'], 'applied')
+        self.assertEqual(path.read_bytes(), raw)
+        self.assertTrue(self.scene.load()[2]['user_pause'])
+        self.assertEqual(sum(row.get('request', {}).get('id') == pause['request_id']
+                             for row in self.scene.load()[2]['history']), 1)
+
+    def test_publication_contract_fault_keeps_the_admitted_request_for_retry(self):
+        """About 5.4 s: actual admission, failed Git-port publication, and a successful owner retry share one request."""
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from support.fakes.git_backend import InProcessGit
+
+        class BrokenPublication(InProcessGit):
+            def update_ref(self, repository, ref, new, old):
+                raise ValueError('simulated Git port publication fault')
+
+        scene = self.scene
+        before = scene.load()
+        ports = replace(scene.ports, git_backend=BrokenPublication(scene.ports.git_backend.objects))
+        output = StringIO()
+        with redirect_stdout(output):
+            code = cli.main(['pause', '--repository', str(scene.args[0]), '--instance', scene.args[1],
+                             '--reason', 'pause after publication can proceed'], ports=ports,
+                            environment=scene.sim.environment, host_id=scene.sim.host_id,
+                            codex_home=scene.sim.codex_home)
+        envelope = json.loads(output.getvalue())
+        self.assertEqual(code, 5)
+        self.assertEqual(envelope['error'], {'kind': 'contract_error', 'next_owner': 'maintenance',
+            'retryable': False, 'message': f"accepted request {envelope['request_id']} could not be processed: simulated Git port publication fault"})
+        self.assertEqual(scene.load(), before)
+        path = scene.workspace / 'control' / scene.args[1] / (envelope['request_id'] + '.json')
+        raw = path.read_bytes()
+        self.assertEqual(json.loads(raw)['text'], 'pause after publication can proceed')
+        scene.sim.engine.process_controls()
+        self.assertEqual(scene.sim.engine.control_result(envelope['request_id'])['effect'], 'applied')
+        self.assertEqual(path.read_bytes(), raw)
+
+    def test_read_port_contract_fault_is_reported_to_maintenance(self):
+        """About 3.3 s: restore one activated instance to exercise the real CLI and repository boundary."""
+        from support.fakes.git_backend import InProcessGit
+
+        class BrokenDescription(InProcessGit):
+            def describe(self, repository):
+                raise TypeError('simulated invalid Git port descriptor')
+
+        before = self.scene.load()
+        ports = replace(self.scene.ports,
+            git_backend=BrokenDescription(self.scene.ports.git_backend.objects))
+        code, envelope = self.invoke('status', ports=ports)
+        self.assertEqual(code, 5)
+        self.assertEqual(envelope['error'], {'kind': 'contract_error', 'next_owner': 'maintenance',
+            'retryable': False, 'message': 'simulated invalid Git port descriptor'})
+        self.assertEqual(self.scene.load(), before)
+
+
     def test_supplied_workspace_must_match_the_instance_before_scheduler_access(self):
         before = self.scene.load()
         code, envelope = self.invoke('status', '--workspace', self.scene.workspace / '..' / self.scene.workspace.name)
@@ -179,11 +254,36 @@ class OperatorCommandTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 code, envelope = self.invoke(mode)
                 self.assertEqual(code, 0)
-                self.assertEqual(envelope['result'], {'outcome': 'held'})
+                result = dict(envelope['result'])
+                startup = result.pop('startup')
+                self.assertEqual(startup, json.loads((self.scene.workspace / 'operator/startup.json').read_bytes()))
+                self.assertEqual(result, {'outcome': 'held'})
                 self.assertEqual(self.scene.load(), before)
                 self.assertEqual(self.scene.ports.scheduler.calls, calls)
                 self.assertEqual(self.scene.jobs.launched, [])
                 self.assertEqual(self.scene.cli.calls, [])
+
+    def test_hold_remains_effective_when_the_scheduler_cannot_cancel_a_wake(self):
+        """About 13.9 s: publish HOLD and pause, then check the real public wake path over stored state."""
+        class UnavailableScheduler:
+            def run(self, action, arguments):
+                if action != 'cancel-wake':
+                    raise AssertionError('only cancellation is expected')
+                raise OSError('scheduler unavailable')
+
+        ports = replace(self.scene.ports, scheduler=UnavailableScheduler())
+        code, held = self.invoke('hold', '--reason', 'inspect safely', ports=ports)
+        self.assertEqual(code, 0)
+        self.assertEqual(held['result']['pause']['effect'], 'applied')
+        self.assertEqual(held['result']['wake_cleanup'], {'status': 'failed',
+            'error': 'scheduler unavailable', 'hold_still_blocks_wake': True})
+        before = self.scene.load()
+        code, envelope = self.invoke('wake')
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope['result']['outcome'], 'held')
+        self.assertEqual(self.scene.load(), before)
+        self.assertEqual(self.scene.jobs.launched, [])
+
 
     def test_normal_probe_observes_without_calling_a_model_or_starting_research(self):
         before = self.scene.load()

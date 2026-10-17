@@ -9,6 +9,7 @@ question's source artifact is published to the Sim's repository and read back
 by the product's ``ResearchRepository`` at the engine's head.
 """
 from copy import deepcopy
+import json
 import unittest
 
 from jsonschema import Draft202012Validator
@@ -22,6 +23,7 @@ from support.engine_context import context_engine, publish
 from support.engine_lifecycle import ObservedCalls, code_of
 from support.governance_sim import returned
 from support.sim import Sim, warm_template
+from support.wait_reporting import assert_status_report
 
 setUpModule = warm_template
 
@@ -74,6 +76,128 @@ class QuestionTextTests(unittest.TestCase):
 
 
 class RecordedQuestionTests(unittest.TestCase):
+    def test_sealed_questions_resolve_by_owner_with_partial_user_answer_and_restart(self):
+        """About 5.5 s: two worker submissions, scoped public answers and cold owner replay."""
+        from pathlib import Path
+        from support.engine_lifecycle import applied, clear_work
+        from support.model import ModelDouble
+
+        sim = Sim.activated()
+        clear_work(sim)
+        charter = next(row['id'] for row in sim.instance['governance'].values() if row['kind'] == 'charter')
+
+        class QuestionResponder:
+            def respond(self, role, context, workspace):
+                output = role_output(role)
+                if context['action']['reason'] == 'Publish scoped questions':
+                    output['questions'] = ['Choose the scope', 'Check the lemma', 'Inspect the operation']
+                    extensions = {'question_routes': [
+                        {'question_index': 0, 'owner': 'user', 'target_ids': [sim.instance_id, charter],
+                         'blocks': True, 'reason': 'These two scopes need a user choice'},
+                        {'question_index': 1, 'owner': 'research', 'target_ids': [],
+                         'reason': 'Research owns the lemma'}]}
+                else:
+                    extensions = {'question_resolutions': [
+                        {'question_id': row['id'], 'disposition': 'resolved' if row['owner'] == 'research' else 'superseded',
+                         'reason': 'The preserved first receipt supplies the answer',
+                         'evidence_refs': [row['origin_execution_id']]}
+                        for row in context['question_links'] if row['owner'] != 'user' and row['status'] == 'open']}
+                (Path(workspace) / 'activity-extensions.json').write_bytes(canonical_json(extensions))
+                return output
+
+        sim.model = ModelDouble(sim.clock, QuestionResponder())
+        applied(sim, 'request', text='Publish scoped questions', config={'role': 'maintenance'})
+        sim.run_until(lambda s: len(s.runtime['question_links']) == 3 and
+                      all(e['status'] == 'ended' for e in s.runtime['executions'].values()), max_steps=4)
+        original = deepcopy(sim.runtime['question_links'])
+        self.assertEqual({row['owner'] for row in original}, questions.QUESTION_OWNERS)
+        self.assertTrue(all(row['status'] == 'open' for row in original))
+        user = next(row for row in original if row['owner'] == 'user')
+        self.assertEqual(next(row for row in original if row['owner'] == 'operations')['target_ids'], [])
+        def reported_questions():
+            report, human = assert_status_report(self, sim.engine)
+            rows = {row['id']: row for row in report['question_links']}
+            for stored in sim.runtime['question_links']:
+                row = rows[stored['id']]
+                self.assertEqual({key: row[key] for key in stored}, stored)
+                header = 'question ' + row['id'] + ':'
+                if row['status'] != 'open':
+                    self.assertNotIn(header, human)
+                    continue
+                self.assertIn(header + ' status=open next=' + row['owner'], human)
+                self.assertIn('reason=' + str(row.get('routing_reason')), human)
+                self.assertIn('  text: ' + json.dumps(row['text'], ensure_ascii=False), human)
+                for field in ('origin_execution_id', 'origin_field', 'source_ref'):
+                    self.assertIn(json.dumps(row[field], ensure_ascii=False), human)
+                self.assertIn('  targets: ' + json.dumps({key: row[key] for key in
+                    ('target_ids', 'unresolved_target_ids')}, ensure_ascii=False, sort_keys=True), human)
+            return report, rows, human
+
+        report, rows, human = reported_questions()
+        self.assertEqual(report['tasks'], [])
+        self.assertEqual(report['questions'], ['Choose the scope'])
+        self.assertEqual({row['owner']: row['text'] for row in report['question_links']},
+                         {'user': 'Choose the scope', 'research': 'Check the lemma', 'operations': 'Inspect the operation'})
+        self.assertIn('Check the lemma', human)
+        self.assertIn('Inspect the operation', human)
+        # Returned mutable fields belong to the observer, not the stored question links.
+        rows[user['id']]['unresolved_target_ids'].clear()
+        self.assertEqual(sim.runtime['question_links'], original)
+        self.assertEqual(sim.engine.store.load()[2]['question_links'], original)
+        waiting = lambda target: questions.user_waits({'id': target, 'role': 'research_plan'}, sim.instance, sim.runtime)
+        self.assertEqual([row['question_id'] for row in waiting(sim.instance_id)], [user['id']])
+        calls = len(sim.model.calls)
+        applied(sim, 'input', text='Unrelated information does not answer a question')
+        self.assertEqual(sim.runtime['question_links'], original)
+        request = applied(sim, 'decision', request_id='UI-partial-question', config={'change': {
+            'kind': 'question_answer', 'text': 'Resolve the instance scope only',
+            'target_ids': [sim.instance_id], 'resolves_questions': [user['id']]}})
+        partial = deepcopy(sim.runtime['question_links'])
+        answered = next(row for row in partial if row['id'] == user['id'])
+        self.assertEqual((answered['status'], answered['unresolved_target_ids']), ('open', [charter]))
+        self.assertEqual(len(answered['resolution_history']), 1)
+        self.assertEqual(waiting(sim.instance_id), [])
+        self.assertEqual([row['question_id'] for row in waiting(charter)], [user['id']])
+        sim.restart()
+        sim.control('decision', request_id=request['request_id'], config={'change': {
+            'kind': 'question_answer', 'text': 'Resolve the instance scope only',
+            'target_ids': [sim.instance_id], 'resolves_questions': [user['id']]}},
+            text='lifecycle test control: decision')
+        sim.engine.process_controls()
+        self.assertEqual(sim.runtime['question_links'], partial)
+        self.assertEqual(len(sim.model.calls), calls)
+        report, rows, human = reported_questions()
+        self.assertEqual(rows[user['id']]['target_ids'], [sim.instance_id, charter])
+        self.assertEqual(rows[user['id']]['unresolved_target_ids'], [charter])
+        clear_work(sim)
+        applied(sim, 'request', text='Resolve AI questions', config={'role': 'maintenance'})
+        sim.run_until(lambda s: all(row['status'] != 'open' for row in s.runtime['question_links']
+                                   if row['owner'] != 'user'), max_steps=4)
+        resolved = deepcopy(sim.runtime['question_links'])
+        for row in resolved:
+            if row['owner'] == 'user':
+                self.assertEqual(row, answered)
+            else:
+                self.assertEqual(row['status'], 'resolved' if row['owner'] == 'research' else 'superseded')
+                self.assertEqual(len(row['resolution_history']), 1)
+                execution = sim.runtime['executions'][row['resolution_ref']]
+                self.assertEqual(execution['submission_receipt']['state'], 'accepted')
+        report, rows, human = reported_questions()
+        self.assertEqual({row['owner']: row['status'] for row in rows.values()},
+                         {'user': 'open', 'research': 'resolved', 'operations': 'superseded'})
+        applied(sim, 'decision', config={'change': {'kind': 'question_answer', 'text': 'Resolve the remaining scope',
+            'target_ids': [charter], 'resolves_questions': [user['id']]}})
+        self.assertEqual(waiting(charter), [])
+        final = deepcopy(sim.runtime['question_links'])
+        self.assertEqual(len(next(row for row in final if row['id'] == user['id'])['resolution_history']), 2)
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual(sim.runtime['question_links'], final)
+        self.assertEqual([call['role'] for call in sim.model.calls], ['maintenance', 'maintenance'])
+        report, rows, human = reported_questions()
+        self.assertEqual(report['questions'], [])
+        self.assertNotIn('question ', human)
+
     def test_review_questions_include_pending_research_without_a_result(self):
         # A limit closure can publish while another slot's fixed question is still pending.
         owner = Sim.activated().engine

@@ -53,9 +53,12 @@ class TaskEvidenceTests(OwnerIngressAssertions, unittest.TestCase):
                 path = 'output/task_assessments/0/item_dispositions/0/evidence_refs'
                 reason = ('completion evidence requires a supplied record ID; read the file and cite its producing '
                           "execution or source record; invalid_evidence_refs=['EX-unadvertised']")
-                expected = ('submission.assessment_reference', path, reason)
-                self.assertEqual([(row['rule_id'], row['path'], row['message']) for row in check['issues']
-                    if row['rule_id'] == 'submission.assessment_reference'], [expected])
+                expected = [('submission.explicit_reference', path + '/0',
+                    'reference must identify supplied input, a record of the input snapshot or a preserved workspace file: '
+                    'EX-unadvertised; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>'),
+                    ('submission.assessment_reference', path, reason)]
+                self.assertEqual([(row['rule_id'], row['path'], row['message'])
+                    for row in check['issues']], expected)
                 self.reject_and_replay(sim, workspace, fixed['control_binding'], bad, extensions, expected, 'unadvertised-evidence')
                 sidecar.write_bytes(canonical_json(extensions))
                 model.on('research_plan', execution_id=fixed['execution_id']).reply(submitted(changed, extensions=extensions))

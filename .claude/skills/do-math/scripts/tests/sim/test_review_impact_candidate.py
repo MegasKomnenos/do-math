@@ -10,11 +10,7 @@ import unittest
 
 from do_math import integration, knowledge, submission
 from do_math.canonical import canonical_json
-from support.review_sim import held_impact, impact_sim, observations, warm_impact
-
-
-def setUpModule():
-    warm_impact()
+from support.review_sim import held_impact, impact_sim, observations
 
 
 class SharedCandidateTests(unittest.TestCase):

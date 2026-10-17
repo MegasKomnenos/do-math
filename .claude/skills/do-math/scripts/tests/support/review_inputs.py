@@ -168,10 +168,14 @@ def reviewed_candidate(root, *, verified=False):
             output.update(decision="match" if verified else "unresolved", findings=[])
         cycle = rc.accept_result(cycle, action, output, eid,
             input_manifest={"proposal_digest": cycle["proposal_digest"], "role_slot_id": action["slot"]})
-    if cycle["status"] != ("completed" if verified else "unresolved"):
-        raise AssertionError("The synthetic review ended as " + repr(cycle["status"]))
+    expected_status = "completed" if verified else "unresolved"
+    expected_decision = "match" if verified else "unresolved"
+    if (cycle["status"], cycle["decision"]) != (expected_status, expected_decision):
+        raise AssertionError("The synthetic review ended as " + repr((cycle["status"], cycle["decision"])))
     runtime["review_cycles"] = {cycle["id"]: cycle}
     assessment = rc.identity_assessment(cycle, reason="Scope remains incomplete")
+    if assessment['decision'] != expected_decision:
+        raise AssertionError('The identity assessment lost the expected review decision')
     assessment["basis"] = kr.identity_basis(instance, kid)
     instance, aid = kr.record_identity_assessment(instance, kid, assessment, cycle["policy_ref"], runtime=runtime, clock=_entry.ports.clock)
     from support.storage_records import record_store

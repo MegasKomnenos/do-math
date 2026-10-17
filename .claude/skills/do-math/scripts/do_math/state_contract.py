@@ -13,7 +13,7 @@ from .canonical import same_json_value
 
 # The one stored contract identifier: the root manifest of each snapshot names
 # it, and loading accepts no other. Records carry no version marker of their own.
-STATE_CONTRACT_ID = "do-math-state/9"
+STATE_CONTRACT_ID = "do-math-state/10"
 # Archived artifacts live under this prefix; an existing bundle there never changes.
 ARTIFACT_ROOT = "runtime/artifacts/"
 # A record ID names its file research/<family>/<id>.json, so it excludes path

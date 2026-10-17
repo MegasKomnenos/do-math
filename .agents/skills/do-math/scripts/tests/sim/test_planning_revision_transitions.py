@@ -36,6 +36,98 @@ class RevisionTransitionTests(unittest.TestCase):
             'targets': [self.identifier], 'previous_targets': previous}])
         self.save_and_reload()
 
+    def test_invalidated_selection_wait_is_saved_until_exact_independent_review(self):
+        from support.role_answers import review_items
+        from support.wait_reporting import assert_task_wait_report
+        selected = deepcopy(select(self.sim))
+        enqueue(self.engine, 'research_preparation', self.identifier)
+        produce_task(self.sim, '새 계약', revises=self.identifier)
+        clear_work(self.sim)
+        self.assertFalse(self.engine._selected_action_current(selected,
+            evaluation_context=self.engine._evaluation_context()))
+        wait = deepcopy(self.sim.runtime['tasks'][self.identifier]['waiting'])
+        self.assertEqual((wait['kind'], wait['basis_ref']), ('contract_review', selected['id']))
+        self.save_and_reload()
+        self.engine = self.sim.engine
+        assert_task_wait_report(self, self.engine, self.identifier)
+        before = deepcopy(self.sim.runtime['tasks'][self.identifier])
+        self.engine._refresh_readiness()
+        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
+        other = produce_task(self.sim, '무관 검토')
+        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
+        _ended_execution(self.engine, 'EX-exact-review', 'task_contract_review')
+        self.engine._apply({'role': 'task_contract_review', 'target': self.identifier},
+            review_items([self.identifier]), 'EX-exact-review', owns_response=False)
+        current = self.sim.runtime['tasks'][self.identifier]
+        self.assertNotIn('waiting', current)
+        self.assertEqual(current['status'], 'planned')
+        self.assertEqual(current['revision'], before['revision'])
+        self.engine._save()
+        self.assertNotIn(wait, next(row for row in self.engine.status()['tasks'] if row['id'] == self.identifier)['waits'])
+        self.assertEqual(self.sim.runtime['tasks'][other]['status'], 'planned')
+
+    def test_actual_revision_owner_settles_after_exact_child_resolution_once(self):
+        from do_math.execution_lifecycle import transition_execution
+        from support.wait_reporting import assert_wait_report, assert_status_report
+        def defer(identifier, suffix):
+            action = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(
+                self.sim.instance, self.sim.runtime, [identifier]))
+            eid = 'EX-deferred-' + suffix
+            execution = self.engine._register_execution(action, {'id': eid,
+                'role': 'research_preparation', 'status': 'running'})
+            transition_execution(execution, 'stopping', at=self.sim.clock.now())
+            transition_execution(execution, 'ended', at=self.sim.clock.now(), outcome='execution_incomplete')
+            execution['extensions'] = {'revision_resolutions': [{'record_id': identifier,
+                'disposition': 'deferred', 'reason': '추가 자료를 기다린다.'}]}
+            self.assertEqual(revisions.submission_errors({'candidates': []}, execution['extensions'],
+                {'action': action, 'tasks': list(self.sim.runtime['tasks'].values())}), [])
+            self.engine._apply_revision_followup(action, {'summary': '개정 보류'}, eid)
+            self.engine._remove_action(action)
+            self.engine._settle_activity(eid)
+            return action['id'], action['owner_activity_id']
+        parent, owner = defer(self.identifier, 'main')
+        other_id = produce_task(self.sim, '다른 개정 의무')
+        clear_work(self.sim)
+        other_parent, other_owner = defer(other_id, 'other')
+        self.engine._save()
+        self.sim.restart()
+        self.engine = self.sim.engine
+        assert_wait_report(self, self.engine, parent)
+        before = deepcopy((self.sim.runtime['waiting_actions'][parent], self.sim.runtime['activities'][owner]))
+        self.engine._retire_closed_revision_targets()
+        self.assertEqual((self.sim.runtime['waiting_actions'][parent], self.sim.runtime['activities'][owner]), before)
+        other = deepcopy((self.sim.runtime['waiting_actions'][other_parent], self.sim.runtime['activities'][other_owner]))
+        child = enqueue(self.engine, 'research_preparation', revision_targets=revisions.capture_targets(
+            self.sim.instance, self.sim.runtime, [self.identifier]))
+        _ended_execution(self.engine, 'EX-exact-child', 'research_preparation')
+        self.sim.runtime['executions']['EX-exact-child']['extensions'] = {'revision_resolutions': [{
+            'record_id': self.identifier, 'disposition': 'unchanged', 'reason': '현재 계약을 유지한다.'}]}
+        self.engine._apply_revision_followup(child, {'summary': '개정 판단 수락'}, 'EX-exact-child')
+        self.assertNotIn(parent, self.sim.runtime['waiting_actions'])
+        self.assertEqual(self.sim.runtime['activities'][owner]['status'], 'finished')
+        self.assertNotIn('waiting', self.sim.runtime['activities'][owner])
+        self.assertEqual((self.sim.runtime['waiting_actions'][other_parent], self.sim.runtime['activities'][other_owner]), other)
+        history = deepcopy(self.sim.runtime['history'])
+        activity = deepcopy(self.sim.runtime['activities'][owner])
+        self.engine._apply_revision_followup(child, {'summary': '개정 판단 수락'}, 'EX-exact-child')
+        self.assertEqual(self.sim.runtime['history'], history)
+        self.assertEqual(self.sim.runtime['activities'][owner], activity)
+        self.engine._remove_action(child)
+        self.engine._save()
+        report, _ = assert_status_report(self, self.engine)
+        self.assertNotIn(owner, report['waiting_activities'])
+        self.assertIn(other_owner, report['waiting_activities'])
+        withdraw(self.sim, other_id)
+        self.engine._retire_closed_revision_targets()
+        self.assertNotIn(other_parent, self.sim.runtime['waiting_actions'])
+        self.assertEqual(self.sim.runtime['activities'][other_owner]['status'], 'finished')
+        after = deepcopy(self.sim.runtime)
+        self.engine._retire_closed_revision_targets()
+        self.assertEqual(self.sim.runtime, after)
+        self.engine._save()
+        self.sim.restart()
+        self.assertNotIn(other_owner, self.sim.engine.status()['waiting_activities'])
+
     def test_closed_target_leaves_other_revision_obligations_in_wait(self):
         other = produce_task(self.sim, '다른 과제')
         clear_work(self.sim)
@@ -148,13 +240,26 @@ class RevisionTransitionTests(unittest.TestCase):
         self.assertEqual(self.sim.runtime['queue'], [revision])
         self.assertEqual(task['status'], 'waiting')
         self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],
-            'next_owner': 'research_preparation', 'basis_ref': revision['id']})
+            'next_owner': 'research_preparation', 'basis_ref': revision['id'], 'reason': 'contract revision requested'})
         self.assertEqual(task['revision_requested'], {'revision': task['revision'], 'source': revision['id'],
                                                     'reason': 'contract revision requested'})
         self.assertNotIn('selected_by', task)
         self.assertEqual(self.sim.runtime['history'], [*history, {'kind': 'selection_cancelled_for_revision',
             'action': previous, 'revision_action_id': revision['id']}])
         self.save_and_reload()
+        self.engine = self.sim.engine
+        from support.wait_reporting import assert_task_wait_report
+        assert_task_wait_report(self, self.engine, self.identifier)
+        before = deepcopy(self.sim.runtime['tasks'][self.identifier])
+        enqueue(self.engine, 'research_preparation', self.identifier)
+        self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
+        produce_task(self.sim, '개정된 계약', revises=self.identifier)
+        current = self.sim.runtime['tasks'][self.identifier]
+        self.assertEqual(current['revision'], before['revision'] + 1)
+        self.assertNotIn('waiting', current)
+        self.assertNotIn('revision_requested', current)
+        self.assertEqual(current['revision_history'][-1]['waiting'], before['waiting'])
+        self.assertEqual(current['reviews'][-1]['decision'], 'approved')
 
     def test_preparation_only_cancels_selection_without_requesting_contract_revision(self):
         from do_math.model_policy import assessment_basis
@@ -256,7 +361,7 @@ class RevisionTransitionTests(unittest.TestCase):
         action = enqueue(self.engine, 'research_preparation', self.identifier)
         task = self.sim.runtime['tasks'][self.identifier]
         self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],
-            'next_owner': 'research_preparation', 'basis_ref': action['id']})
+            'next_owner': 'research_preparation', 'basis_ref': action['id'], 'reason': 'contract revision requested'})
         self.assertEqual(task['status'], 'waiting')
         self.assertEqual(self.sim.runtime['history'], history)
         self.save_and_reload()

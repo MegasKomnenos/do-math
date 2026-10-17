@@ -21,6 +21,125 @@ FAILURE = {'kind': 'engine_unavailable', 'error': 'operator 계약 시험의 기
 
 
 class RecoveryContractTests(unittest.TestCase):
+    def test_unavailable_post_call_installation_does_not_replace_provider_limit(self):
+        scene = Scene()
+        scene.claude()
+        scene.answer()
+        scene.limited()
+        def remove_target(call):
+            scene.installation.joinpath('SKILL.md').unlink()
+            scene.installation.rmdir()
+        scene.cli.on_input = remove_target
+        result = scene.call(operator.recovery, failure=FAILURE)
+        self.assertEqual(result['outcome'], 'recovery_provider_limited', result)
+        after = result['installation_after']
+        self.assertIsNone(after['installation_version'])
+        self.assertIsNone(after['source_commit'])
+        self.assertIn('installation_error', after)
+        execution = scene.load()[2]['executions'][result['execution_id']]
+        self.assertEqual(execution['status'], 'ended')
+        self.assertEqual(execution['result_disposition']['recovery'], 'recovery_provider_limited')
+        self.assertNotIn('submission_receipt', execution)
+        self.assertEqual(scene.commands, [])
+        self.assertEqual(scene.ports.scheduler.calls, [])
+
+    def test_observed_source_commit_and_dirty_diff_survive_real_recovery_storage(self):
+        from support.operator_finish_ports import SourceGit
+        scene = Scene()
+        relative = scene.installation.joinpath('SKILL.md').relative_to(scene.sim.root).as_posix()
+        diff = b'diff --git a/SKILL.md b/SKILL.md\nsource repair not committed\n'
+        backend = SourceGit(scene.sim.root, diff=diff, tracked_paths=[relative],
+                            objects=scene.ports.git_backend.objects)
+        scene.ports = replace(scene.ports, git_backend=backend)
+        scene.answer()
+        result = scene.call(operator.recovery, failure=FAILURE)
+        self.assertEqual(result['outcome'], 'repaired', result)
+        execution = scene.load()[2]['executions'][result['execution_id']]
+        self.assertEqual(execution['output']['source_commit'], 'a' * 40)
+        self.assertEqual(execution['input_manifest']['installation_before']['source_commit'], 'a' * 40)
+        self.assertEqual(result['installation_after']['source_commit'], 'a' * 40)
+        self.assertEqual(result['installation_after']['tracked_diff']['text'], diff.decode())
+        self.assertEqual(result['installation_after']['untracked_installation_paths'], [])
+        self.assertNotEqual(result['snapshot'], execution['output']['source_commit'])
+        self.assertEqual(execution['status'], 'ended')
+        self.assertEqual(scene.load()[2]['reservations'], {})
+
+    def test_changed_installed_bytes_reject_stale_report_before_receipt_or_restart(self):
+        scene = Scene()
+        scene.answer()
+        old = scene.installation.joinpath('SKILL.md').read_bytes()
+        def repair(call):
+            scene.installation.joinpath('SKILL.md').write_bytes(old + b'\nreal file change\n')
+        scene.cli.on_input = repair
+        before = scene.load()
+        result = scene.call(operator.recovery, failure=FAILURE)
+        self.assertEqual(result['outcome'], 'recovery_failed')
+        execution = scene.load()[2]['executions'][result['execution_id']]
+        self.assertEqual(execution['error']['message'],
+            'repair report installation_version differs from observed installation')
+        self.assertNotEqual(result['installation_before']['installation_version'],
+                            result['installation_after']['installation_version'])
+        self.assertEqual(execution['output'], scene.cli.answer)
+        self.assertNotIn('submission_receipt', execution)
+        self.assertEqual(execution['status'], 'ended')
+        self.assertEqual(execution['capacity']['local_termination'], 'confirmed')
+        self.assertEqual(scene.load()[2]['reservations'], before[2]['reservations'])
+        self.assertEqual(scene.commands, [])
+        self.assertEqual(scene.ports.scheduler.calls, [])
+        self.assertEqual(json.loads((Path(result['run_directory']) / 'installation-after.json').read_bytes()),
+                         result['installation_after'])
+
+    def test_post_repair_version_and_unavailable_source_are_bound_to_sealed_input_and_result(self):
+        import hashlib
+        from do_math.canonical import exact_content_hash
+        scene = Scene()
+        scene.answer()
+        old = scene.installation.joinpath('SKILL.md').read_bytes()
+        changed = old + b'\nactual repaired bytes\n'
+        expected_before = exact_content_hash({'SKILL.md': hashlib.sha256(old).hexdigest()})
+        expected_after = exact_content_hash({'SKILL.md': hashlib.sha256(changed).hexdigest()})
+        def repair(call):
+            path = Path(call['cwd']) / 'input/installation-before.json'
+            basis = json.loads(path.read_bytes())
+            self.assertEqual(basis['installation_version'], expected_before)
+            self.assertIsNone(basis['source_commit'])
+            self.assertIn('source_reason', basis)
+            self.assertIn('input/installation-before.json', call['prompt'])
+            self.assertIn('source_commit', call['prompt'])
+            scene.installation.joinpath('SKILL.md').write_bytes(changed)
+            # The external provider reports the version derived independently
+            # from the bytes it wrote, not the launcher's old expected hash.
+            scene.cli.final = json.dumps({**call['output'], 'installation_version': expected_after}).encode()
+        scene.cli.on_input = repair
+        result = scene.call(operator.recovery, failure=FAILURE)
+        self.assertEqual(result['outcome'], 'repaired', result)
+        execution = scene.load()[2]['executions'][result['execution_id']]
+        self.assertEqual(execution['input_manifest']['installation_before'], result['installation_before'])
+        self.assertEqual(execution['input_manifest']['repair_identity']['installation_sha256'], expected_before)
+        self.assertEqual(execution['output']['installation_version'], expected_after)
+        self.assertIsNone(execution['output']['source_commit'])
+        self.assertEqual(result['installation_after']['installation_version'], expected_after)
+        self.assertNotEqual(result['snapshot'], execution['output']['source_commit'])
+        self.assertIn('submission_receipt', execution)
+        self.assertEqual([action for action, _ in scene.ports.scheduler.calls], ['start-engine'])
+        self.assertEqual(json.loads((Path(result['run_directory']) / 'result.json').read_bytes()),
+                         {key: value for key, value in result.items() if key != 'restart'})
+
+    def test_fabricated_source_commit_is_not_accepted_when_source_git_is_unavailable(self):
+        scene = Scene()
+        scene.answer()
+        scene.cli.answer['source_commit'] = 'f' * 40
+        result = scene.call(operator.recovery, failure=FAILURE)
+        self.assertEqual(result['outcome'], 'recovery_failed')
+        self.assertIsNone(result['installation_after']['source_commit'])
+        execution = scene.load()[2]['executions'][result['execution_id']]
+        self.assertEqual(execution['error']['message'],
+            'repair report source_commit differs from observed installation')
+        self.assertEqual(execution['output']['source_commit'], 'f' * 40)
+        self.assertNotIn('submission_receipt', execution)
+        self.assertEqual(scene.commands, [])
+        self.assertEqual(scene.ports.scheduler.calls, [])
+
     def test_live_execution_blocks_repair_before_capacity_or_model_creation(self):
         scene = Scene()
         engine = scene.sim.engine

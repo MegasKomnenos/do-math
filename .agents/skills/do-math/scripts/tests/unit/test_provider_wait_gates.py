@@ -91,6 +91,16 @@ class ProviderTests(unittest.TestCase):
         loaded = self.another_owner().load()[2]
         self.assertEqual([item for item in loaded["queue"] if item["id"] == action["id"]], [queued])
         self.assertEqual(loaded["activities"]["AY-EX-original"], activity)
+        # Another owner can finish waiting before this result is requeued.
+        # A publicly paused instance retains the retry without inventing a
+        # new admission wait or changing the pause.
+        self.clock.set_wall(datetime.fromtimestamp(401, timezone.utc))
+        runtime['status'] = 'paused'
+        engine._requeue_provider_action(action, 'EX-original', gate)
+        retry, = [row for row in runtime['queue'] if row['id'] == action['id']]
+        self.assertNotIn('dispatch_wait', retry)
+        self.assertEqual(retry['recovery']['execution_id'], 'EX-original')
+        self.assertEqual(runtime['status'], 'paused')
 
     def test_restriction_blocks_work_and_operational_roles_and_survives_another_owner(self):
         """About 0.2 s, at the 0.2 s unit budget: six transactions each publish through the storage contract, the persistence under test."""

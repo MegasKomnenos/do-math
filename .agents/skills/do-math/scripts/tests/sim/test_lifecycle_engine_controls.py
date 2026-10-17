@@ -37,6 +37,75 @@ def initialized(test):
 
 
 class AuthorityTests(unittest.TestCase):
+    def test_document_grant_name_subsets_agree_with_actual_research_admission(self):
+        """3-C/C-19: every local research role, adopted name subset and pinned name.
+
+        The document's two scopes are approved by the current decision producer;
+        only its expiration placeholder is replaced with the fixture clock's next
+        day. Initial authority remains separate from research authority. Trust
+        transitions consume explicit transition authority instead of this gate.
+        """
+        import json
+        import re
+        from do_math.governance import authorize, OPERATING_ROLES, TASK_WORK_ROLES
+        sim = Sim.activated()
+        engine = sim.engine
+        document = (Path(__file__).resolve().parents[3] / 'references' / '초기화-운전.md').read_text(encoding='utf-8')
+        specs = []
+        for filename in ('02-initial-grant.json', '03-research-grant.json'):
+            block = re.search('`' + re.escape(filename) + r'`:\s*```json\s*(.*?)\s*```', document, re.S)
+            self.assertIsNotNone(block, filename)
+            spec = json.loads(block.group(1))['grant']
+            spec['expires_at'] = (sim.clock.wall() + timedelta(days=1)).isoformat()
+            specs.append(spec)
+        initial, research = specs
+        alternative = {**research, 'id': 'GR-alternative-document'}
+        for spec in (*specs, alternative):
+            grant(engine, spec['id'], spec=spec)
+            validate_grant_source(engine.instance, engine.instance['grants'][spec['id']])
+        names = (initial['id'], research['id'], alternative['id'])
+        roles = (TASK_WORK_ROLES | OPERATING_ROLES) - {'trust_check', 'trust_activate'}
+        self.assertEqual(set(research['roles']), roles)
+        engine.instance['lifecycle']['adoption']['initial_grant_ids'] = [initial['id']]
+        before = deepcopy((engine.instance, engine.runtime))
+        checked = 0
+        for mask in range(1 << len(names)):
+            adopted = [name for index, name in enumerate(names) if mask & (1 << index)]
+            engine.instance['lifecycle']['adoption']['research_grant_ids'] = adopted
+            for role in sorted(roles):
+                for pinned in (None, *names, 'GR-not-issued'):
+                    action = {'id': 'AC-document-authority', 'role': role}
+                    if pinned is not None:
+                        action['grant_id'] = pinned
+                    candidates = {name: engine.instance['grants'][name] for name in names
+                                  if name != initial['id'] and (pinned is not None or name in adopted)}
+                    expected_names = [name for name, value in candidates.items()
+                                      if role in value['roles'] and (pinned is None or pinned == name)]
+                    allowed = len(expected_names) == 1
+                    authority = authorize({**engine.instance, 'grants': candidates}, action,
+                                          sim.clock.now(), runtime=engine.runtime)
+                    with self.subTest(role=role, adopted=adopted, pinned=pinned):
+                        self.assertIs(authority['allowed'], allowed)
+                        original = deepcopy(action)
+                        if allowed:
+                            engine._action_lifecycle_gate(action)
+                            self.assertEqual(action['grant_id'], expected_names[0])
+                            # The running execution uses this pinned action, even
+                            # when the unbound request would now be ambiguous.
+                            self.assertIs(authorize(engine.instance, action, sim.clock.now(),
+                                                    runtime=engine.runtime)['allowed'], True)
+                            self.assertIs(engine._execution_stop_requested(action), False)
+                        else:
+                            reason = ('initialization authority cannot authorize research' if pinned == initial['id']
+                                      else 'research authority: ' + authority['reason'])
+                            with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+                                engine._action_lifecycle_gate(action)
+                            self.assertEqual(action.get('grant_id'), original.get('grant_id'))
+                        checked += 1
+        self.assertEqual(checked, len(roles) * 2 ** len(names) * (len(names) + 2))
+        engine.instance['lifecycle']['adoption']['research_grant_ids'] = before[0]['lifecycle']['adoption']['research_grant_ids']
+        self.assertEqual((engine.instance, engine.runtime), before)
+
     def test_controls_reach_active_and_separate_initial_authority(self):
         sim = Sim.activated()
         e = sim.engine
@@ -224,29 +293,118 @@ class ReadinessTests(unittest.TestCase):
         profile['ai']['effort'] = 'high' if profile['ai']['effort'] != 'high' else 'low'
         changed_key = planning.review_basis_key(t, e.instance, e.runtime)
         self.assertNotEqual(changed_key, sealed_action['review_basis_key'])
-        for _ in range(2):
-            e._refresh_readiness()
-            self.assertEqual(reviews(t['id']), [])
-            self.assertEqual(len(reviews(other['id'])), 1, 'another target remains eligible')
-            self.assertEqual(execution['action'], registered_action, 'the running input stays sealed')
+        # Keep the existing profile axis and exercise the actual policy decision,
+        # which changes contract_basis as well as the full review key.
+        e._refresh_readiness()
+        self.assertEqual(reviews(t['id']), [])
+        extended(e, 'decision', {'change': policy_change(e, 'Require current independent evidence')})
+        execution = e.runtime['executions']['EX-live-contract-review']
+        latest_basis = {**sealed_action['contract_basis'], **planning.governance_revisions(e.instance)}
+        self.assertEqual(t['revision'], sealed_action['contract_basis']['revision'])
+        self.assertEqual(planning.contract_hash(t), sealed_action['contract_basis']['contract_sha256'])
+        self.assertNotEqual(latest_basis['policy_revision'], sealed_action['contract_basis']['policy_revision'])
+        policy_key = planning.review_basis_key(t, e.instance, e.runtime)
+        self.assertNotEqual(policy_key, changed_key)
+        for status in ('running', 'stopping'):
+            if status == 'stopping':
+                execution_lifecycle.transition_execution(execution, status, at=e.ports.clock.now())
+            for _ in range(2):
+                e._refresh_readiness()
+                self.assertEqual(reviews(t['id']), [], status)
+                self.assertEqual(len(reviews(other['id'])), 1, 'another target remains eligible')
+                self.assertEqual(execution['action'], registered_action, 'the original input stays sealed')
 
-        execution_lifecycle.transition_execution(execution, 'stopping', at=e.ports.clock.now())
         execution_lifecycle.transition_execution(execution, 'ended', at=e.ports.clock.now(), outcome='execution_incomplete')
         e._refresh_readiness()
         reopened = reviews(t['id'])
         self.assertEqual(len(reopened), 1)
-        self.assertEqual(reopened[0]['contract_basis'], sealed_action['contract_basis'])
-        self.assertEqual(reopened[0]['review_basis_key'], changed_key)
+        self.assertEqual(reopened[0]['contract_basis'], latest_basis)
+        self.assertEqual(reopened[0]['review_basis_key'], policy_key)
         e._refresh_readiness()
         self.assertEqual(reviews(t['id']), reopened)
 
+    def test_live_review_does_not_suppress_a_different_contract_edition(self):
+        from do_math import planning
+        e = self.e
+        t = task(e, approved=False)
+        e._refresh_readiness()
+        action = next(a for a in e.runtime['queue'] if a['role'] == 'task_contract_review')
+        execution = e._register_execution(action, {'id': 'EX-old-edition', 'role': action['role'], 'status': 'running'})
+        original = deepcopy(execution['action'])
+        e._remove_action(action)
+        # Both coordinates matter: a content change and a revision-only change
+        # each permit their own review while the old edition is still running.
+        for field, value in (('question', t['question'] + ' Revised scope?'), ('revision', t['revision'] + 1)):
+            before = t[field]
+            t[field] = value
+            for _ in range(2):
+                e._refresh_readiness()
+                queued = [a for a in e.runtime['queue'] if a['role'] == 'task_contract_review']
+                self.assertEqual(len(queued), 1)
+                self.assertEqual(queued[0]['contract_basis']['revision'], t['revision'])
+                self.assertEqual(queued[0]['contract_basis']['contract_sha256'], planning.contract_hash(t))
+                self.assertEqual(execution['action'], original)
+            e.runtime['queue'].clear()
+            t[field] = before
+
     def test_missing_input_and_bad_condition_distinct(self):
+        """T3 about 14.4 s: three real contracts distinguish missing input and two independent evaluation errors."""
         e = self.e
         a = task(e, inputs=['absent'])
         b = task(e, 'TK-two', condition={'op': 'unsupported'})
+        c = task(e, 'TK-three', condition={'op': 'unsupported'})
         e._refresh_readiness()
         self.assertEqual(e._task_readiness[a['id']]['state'], 'not_ready')
         self.assertEqual(e._task_readiness[b['id']]['state'], 'evaluation_error')
+        self.assertEqual(e._task_readiness[c['id']]['state'], 'evaluation_error')
+        recorded = deepcopy([row for row in e.runtime['events'] if row['kind'] == 'task_condition_evaluation_error'])
+        self.assertEqual({row['target'] for row in recorded}, {b['id'], c['id']})
+        e._task_readiness.clear()  # A new owner recalculates this unpersisted projection.
+        e._refresh_readiness()
+        self.assertEqual([row for row in e.runtime['events'] if row['kind'] == 'task_condition_evaluation_error'], recorded)
+        self.assertEqual(e._task_readiness[b['id']]['state'], 'evaluation_error')
+
+    def test_due_reconsideration_waits_for_working_preparation_then_renews_its_time(self):
+        from do_math.execution_lifecycle import transition_execution
+        e = self.e
+        action = {'id': 'AC-working-preparation', 'role': 'research_preparation'}
+        execution = e._register_execution(action,
+            {'id': 'EX-working-preparation', 'role': action['role'], 'status': 'running'})
+        self.assertIsNotNone(execution)
+        event = e._lifecycle_event('research_reconsider_due')
+        e._refresh_readiness()
+        self.assertFalse(any(event['id'] in row.get('event_refs', []) for row in e.runtime['queue']))
+        self.assertIn(event['id'], e.runtime['pending_events'])
+        transition_execution(execution, 'stopping', at=e.ports.clock.now())
+        transition_execution(execution, 'ended', at=e.ports.clock.now(), outcome='execution_incomplete')
+        from do_math.activities import finish_activity
+        finish_activity(e.runtime, execution['owner_activity_id'], result_refs=[], unresolved=[], followups=[], at=e.ports.clock.now())
+        e._refresh_readiness()
+        queued, = [row for row in e.runtime['queue'] if event['id'] in row.get('event_refs', [])]
+        self.assertEqual(queued['role'], 'research_preparation')
+        self.assertTrue(queued['periodic_reconsideration'])
+        self.assertEqual(e.runtime['next_research_reconsider_at'],
+                         (self.sim.clock.wall() + timedelta(seconds=e.instance['config']['research_reconsider_seconds'])).isoformat())
+        e._save()
+        self.assertEqual(e.store.load(e.head)[2]['next_research_reconsider_at'], e.runtime['next_research_reconsider_at'])
+
+    def test_pending_reconsideration_after_solution_opens_its_preparation_time(self):
+        """T3 about 10.2 s: the existing solved academic consumer keeps research open for pending work."""
+        from support.academic_scenes import consumer_sim
+        sim = consumer_sim()
+        e = sim.engine
+        clear_work(sim)
+        self.assertEqual(e.instance['goal_status'], 'mathematically_solved')
+        # A preserved due event can outlive solving while academic work remains.
+        event = e._lifecycle_event('research_reconsider_due')
+        e._refresh_readiness()
+        queued, = [row for row in e.runtime['queue'] if event['id'] in row.get('event_refs', [])]
+        self.assertEqual(queued['role'], 'research_preparation')
+        self.assertEqual(queued['opened_at'], sim.clock.now())
+        self.assertEqual(e.runtime['next_research_reconsider_at'],
+                         (sim.clock.wall() + timedelta(seconds=e.instance['config']['research_reconsider_seconds'])).isoformat())
+        e._save()
+        self.assertEqual(e.store.load(e.head)[2]['next_research_reconsider_at'], e.runtime['next_research_reconsider_at'])
 
     def test_completed_removes_readiness_projection(self):
         e = self.e

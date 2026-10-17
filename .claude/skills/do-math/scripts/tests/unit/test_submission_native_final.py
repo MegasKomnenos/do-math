@@ -37,6 +37,19 @@ class NativeFinalProtocolTests(unittest.TestCase):
         for value in [self.result, json_safe(self.result)]:
             self.assertEqual(verified_native_final(value, self.execution, self.context), self.raw)
 
+    def test_central_failure_retains_normal_provider_evidence_without_accepting_bad_terminals(self):
+        failed = {**self.result, 'status': 'failed', 'provider_result_status': 'completed',
+                  'collection': 'provider_evidence_only', 'error_kind': 'execution_failure'}
+        self.assertEqual(verified_native_final(json_safe(failed), self.execution, self.context), self.raw)
+        for change in ({'status': 'stopped'}, {'provider_result_status': 'failed'},
+                       {'collection': 'sealed_submission'}, {'error_kind': 'model_policy'}):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, '^native execution did not complete normally$'):
+                verified_native_final({**failed, **change}, self.execution, self.context)
+        failed['execution'] = deepcopy(failed['execution'])
+        failed['execution']['collect']['worker_status']['cli_exit_code'] = 1
+        with self.assertRaisesRegex(ValueError, '^native request, input, or worker completion differs from the published execution$'):
+            verified_native_final(failed, self.execution, self.context)
+
     def test_collected_digests_are_compared_as_records_without_rehashing(self):
         serialized = json_safe(self.result)
         # The legacy test made hashlib.sha256 raise; this records every call of it from any code instead.

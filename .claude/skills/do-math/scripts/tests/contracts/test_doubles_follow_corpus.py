@@ -186,6 +186,49 @@ class LeanDoubleOutputTests(unittest.TestCase):
         self.assertEqual(self.run_check(lean, source, ['t'], extract_evidence=False)[0], 0)
         self.assertEqual(self.run_check(lean, source, ['t'], extract_evidence=True)[0], 1)
 
+    def test_registration_binds_utf8_bytes_and_the_ordered_declarations(self):
+        source, names = '-- e\N{COMBINING ACUTE ACCENT}\r\n-- synthetic compiler input', ['first', 'second']
+        lean = LeanDouble().allow(source, names,
+            signatures={name: name + ' : True' for name in names}, axioms={name: [] for name in names},
+            declaration_evidence={name: {'type': 'True', 'value': 'True.intro'} for name in names},
+            dependencies={name: {} for name in names})
+        code, stdout, error = self.run_check(lean, source, names, extract_evidence=True)
+        self.assertEqual((code, error), (0, ''))
+        self.assertLess(stdout.index('BEGIN_first'), stdout.index('BEGIN_second'))
+        for changed, declarations in ((source, list(reversed(names))), (source, names[:1]),
+                (source.replace('\r\n', '\n'), names), (source.replace('e\N{COMBINING ACUTE ACCENT}', 'é'), names)):
+            with self.subTest(source=changed, declarations=declarations):
+                code, output, error = self.run_check(lean, changed, declarations, extract_evidence=True)
+                self.assertEqual((code, output), (1, ''))
+                self.assertIn('unregistered synthetic Lean source/declarations', error)
+                self.assertEqual(lean.checks[-1], {'declarations': declarations, 'extract': True,
+                                                  'registered': False, 'synthetic': True})
+
+    def test_caller_and_parsed_result_mutations_do_not_change_registered_facts(self):
+        source, names = '-- explicit shared input facts', ['one', 'two']
+        body = {'type': 'Prop', 'value': None}
+        declaration = {'type': 'True', 'value': 'True.intro'}
+        axioms = []
+        facts = dict(signatures={name: name + ' : True' for name in names},
+            axioms={name: axioms for name in names}, declaration_evidence={name: declaration for name in names},
+            dependencies={name: {'True': body} for name in names})
+        lean = LeanDouble().allow(source, names, **facts)
+        code, original, _ = self.run_check(lean, source, names, extract_evidence=True)
+        self.assertEqual(code, 0)
+        body['type'], declaration['value'] = 'mutated', 'mutated'
+        axioms.append('sorryAx')
+        facts['signatures']['one'] = ''
+        result = parse_evidence({'stdout': original, 'dependency_closure': {}, 'declaration_evidence': {}}, names, [])
+        self.assertEqual(result['status'], 'verified')
+        result['declaration_evidence']['one']['value'] = 'result mutation'
+        self.assertEqual(result['declaration_evidence']['two']['value'], 'True.intro')
+        self.assertEqual(self.run_check(lean, source, names, extract_evidence=True), (0, original, ''))
+        lean.allow(source, names, **{**facts, 'axioms': {name: [] for name in names}})
+        code, stdout, _ = self.run_check(lean, source, names, extract_evidence=True)
+        self.assertEqual(code, 0)
+        rejected = parse_evidence({'stdout': stdout}, names, [])
+        self.assertEqual((rejected['status'], rejected['reason']), ('failed', 'signature output missing'))
+
 
 if __name__ == '__main__':
     unittest.main()

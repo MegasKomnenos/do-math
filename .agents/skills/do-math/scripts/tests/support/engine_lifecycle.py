@@ -126,6 +126,28 @@ def task(engine, task_id='TK-one', *, approved=True, condition=None, inputs=None
     return row
 
 
+def task_wait_report():
+    """A published status response with one actual task and a durable wait.
+
+    Initializing CLI responses have no tasks. Keep this second repository
+    response separate so they cannot invent the shape of an empty array.
+    """
+    from do_math import reporting
+    from support.sim import Sim
+    sim = Sim.activated()
+    clear_work(sim)
+    engine = sim.engine
+    row = task(engine, 'TK-status-wait')
+    row.update(status='waiting', waiting={
+        'kind': 'research_followup', 'target_refs': [row['id']],
+        'next_owner': 'research_plan', 'basis_ref': 'EX-review-' + row['id'],
+        'reason': 'Select the next research step'})
+    engine._save()
+    head, instance, runtime = engine.store.load()
+    return reporting.status_report(engine.store, head, instance, runtime,
+                                   evaluation_context=engine._evaluation_context())
+
+
 def approve(engine, row, decision='approved'):
     """Seal one contract review of ``row`` with ``decision`` by the returned reviewer ``EX-review-<task>``."""
     from do_math import planning

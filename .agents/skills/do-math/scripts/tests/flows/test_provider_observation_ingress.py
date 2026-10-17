@@ -28,8 +28,9 @@ class ObservationIngressTests(unittest.TestCase):
         return sim, eid, workspace, tracker
 
     def send(self, sim, eid, tracker, stream, events, *, terminated=False):
-        start = stream.stat().st_size if stream.exists() else 0
-        incoming = batch(sim, events, stream, start=start, terminated=terminated)
+        prior = stream.read_bytes() if stream.exists() else b''
+        incoming = batch(sim, events, stream, start=len(prior),
+            first_row=len([row for row in prior.splitlines() if row.strip()]), terminated=terminated)
         with stream.open('ab') as output:
             output.write(b''.join(incoming.rows))
         sim.engine._observe_running(eid, tracker, incoming)
@@ -93,9 +94,16 @@ class ObservationIngressTests(unittest.TestCase):
                         added = [json.loads(value['event_json']) for key, value in sim.runtime['observation_facts'].items() if key not in before]
                         reason = ('observed control arguments differ from received request' if first == 'receipt'
                                   else 'control call ID reused with different request')
-                        self.assertEqual([row['reason'] for row in added if row.get('kind') == 'observation_input_rejected'], [reason])
+                        self.assertEqual([row for row in added if row.get('kind') == 'observation_input_rejected'],
+                            [{'kind': 'observation_input_rejected', 'execution_id': eid, 'reason': reason,
+                              'next_owner': 'adapter', 'observed_at': sim.clock.now(),
+                              'followup': {'kind': 'operational_review_due', 'trigger': 'observation_error',
+                                           'next_owner': 'operational_review'}}])
                         self.assertEqual([row for row in added if 'type' in row], [bad, good])
                         state, head = deepcopy(sim.runtime), sim.engine.head
+                        sim.engine._observe_running(eid, tracker, incoming)
+                        self.assertEqual(sim.runtime, state)
+                        self.assertEqual(sim.engine.head, head)
                         sim.advance(1)
                         self.send(sim, eid, tracker, stream, [], terminated=True)
                         self.assertEqual(sim.runtime, state)
@@ -115,6 +123,14 @@ class ObservationIngressTests(unittest.TestCase):
                 facts = [json.loads(row['event_json']) for row in sim.runtime['observation_facts'].values() if row['execution_id'] == eid]
                 self.assertEqual(len(facts), 3)
                 self.assertEqual([row['execution_id'] for row in facts if row.get('kind') == 'observation_input_rejected'], [eid])
+                (rejected,) = [row for row in facts if row.get('kind') == 'observation_input_rejected']
+                self.assertEqual(rejected['reason'], 'observation belongs to a different execution')
+                self.assertEqual(rejected['next_owner'], 'adapter')
+                if mode == 'deadline_only':
+                    self.assertNotIn('followup', rejected)
+                else:
+                    self.assertEqual(rejected['followup'], {'kind': 'operational_review_due',
+                        'trigger': 'observation_error', 'next_owner': 'operational_review'})
                 self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
     def test_ended_execution_preserves_late_facts_and_another_running_execution_progresses(self):

@@ -128,16 +128,26 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
                          excluded_dependents=excluded), **plans}
         return {**header, "plans": plans}
 
-    excluded = possible_reviews
-    for _ in range(len(possible_reviews) + 2):
+    # A fixed point with any excluded review must equal that review's actual
+    # assignment. Check those finite candidates directly. Starting with every
+    # same-header review excluded can miss the current assignment when an older
+    # review belongs in its impact closure; that would make the new review
+    # invalidate its own input as soon as its evidence is recorded.
+    assignments = [runtime["executions"][identifier]["action"]["input_basis"]["impact_review"]
+                   for identifier in sorted(possible_reviews)]
+    checked = []
+    for assigned in assignments:
+        if assigned in checked:
+            continue
+        checked.append(assigned)
+        excluded = {identifier for identifier in possible_reviews
+                    if runtime["executions"][identifier]["action"]["input_basis"]["impact_review"] == assigned}
         current = request(excluded)
-        exact = {execution_id for execution_id in possible_reviews
-                 if runtime["executions"][execution_id].get("action", {}).get(
-                     "input_basis", {}).get("impact_review") == current}
-        if exact == excluded:
+        if current == assigned:
             return current
-        excluded = exact
-    raise ValueError("impact review assignment exclusion did not stabilize")
+    # No preserved assignment matches: all reviews are historical dependents
+    # of the newly computed request, which needs a fresh independent judgment.
+    return request(set())
 
 
 def impact_review_response_schema(request):
@@ -219,11 +229,10 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
         raise ValueError("impact review input is not the sealed designated assignment")
     output = read_sealed_submission(review, snapshot, read_artifact, git_dir=git_dir)["output"]
     rows = validate_impact_review_response(request, output)
-    bundles = list(split_bundles(output, {}, fixed))
-    if len(bundles) != 1 or bundles[0]["members"] != ["output"]:
-        raise ValueError("impact review must be one isolated response bundle")
-    receipt = runtime.get("integrations", {}).get(bundles[0]["integration_id"], {})
-    if (receipt.get("execution_id") != review_execution_id or receipt.get("payload_sha256") != bundles[0]["payload_sha256"] or
+    # The sealed central check admitted one maintenance response without extensions.
+    bundle = next(split_bundles(output, {}, fixed))
+    receipt = runtime.get("integrations", {}).get(bundle["integration_id"], {})
+    if (receipt.get("execution_id") != review_execution_id or receipt.get("payload_sha256") != bundle["payload_sha256"] or
             receipt.get("response_sha256") != exact_content_hash(member_values(output, {}, {"action": action})["output"])):
         raise ValueError("impact review has no matching published response receipt")
     if any(row["decision"] != "approve" for row in rows.values()):
@@ -404,6 +413,10 @@ def inspect_bundles(output, extensions, context, *, derived=None):
                 issues.append(issue("integration.new_identity", coordinate, "duplicate new identity: " + name))
             new_records[name] = coordinate
     for coordinate, family, target, value in mutation_members(output, extensions):
+        # Malformed IDs belong to the schema checker. Structural indexing must
+        # not hash an outside JSON value before that rejection can be reported.
+        if not isinstance(target, str):
+            continue
         if target in mutations and owners[mutations[target]] != owners[coordinate]:
             issues.append(issue("integration.mutation_conflict", coordinate,
                                 "mutations of one target must share a bundle", owners[coordinate]))

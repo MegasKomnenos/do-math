@@ -136,7 +136,7 @@ class DecisionEngineMixin:
         if changes:
             raise CurrentnessChanged(changes)
 
-    def _apply_task_plan(self, output, execution_id, input_tasks, ready_ids, *, evaluation_context=None):
+    def _apply_task_plan(self, output, execution_id, input_tasks, ready_ids, *, input_sources=(), evaluation_context=None):
         """Owner application for one indivisible planning response."""
         from .task_scope import apply_task_assessments
         planning.validate_plan_submission(output, input_tasks, ready_ids)
@@ -148,7 +148,8 @@ class DecisionEngineMixin:
             if row['kind']=='selected' and planning.task_ready(current,self.instance,self.runtime,evaluation_context=evaluation_context)['state']!='ready':
                 raise ValueError('selected task is no longer ready')
         instance,runtime=apply_task_assessments(self.instance,self.runtime,output.get('task_assessments',[]),
-            execution_id=execution_id,input_tasks=input_tasks,evaluation_context=evaluation_context, clock=self.ports.clock)
+            execution_id=execution_id,input_tasks=input_tasks,input_sources=input_sources,
+            evaluation_context=evaluation_context, clock=self.ports.clock)
         for row in output['dispositions']:
             task=runtime['tasks'][row['task_id']]
             if row['kind']=='selected' and planning.contract_hash(task)!=planning.contract_hash(input_tasks[task['id']]):

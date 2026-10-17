@@ -1048,8 +1048,8 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
                 for prefix, originals in families.items():
                     if path.startswith(prefix + "/"):
                         index, _, suffix = path[len(prefix) + 1:].partition("/")
-                        if index.isdigit() and int(index) < len(originals):
-                            path = originals[int(index)] + ("/" + suffix if suffix else "")
+                        # Schema/domain array issues use indices in this sliced family.
+                        path = originals[int(index)] + ("/" + suffix if suffix else "")
                         break
                 issues.append(integration.issue(row.get("rule_id", "submission." + path.replace("/", ".")),
                     path, row["message"], bundle["integration_id"]))

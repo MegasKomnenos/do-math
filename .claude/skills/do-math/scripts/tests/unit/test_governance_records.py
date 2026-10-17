@@ -21,6 +21,20 @@ SKILL = Path(__file__).resolve().parents[3]
 
 
 class DomainGovernanceTests(unittest.TestCase):
+    def test_proposed_policy_references_must_resolve_before_publication(self):
+        from support.entry import entry
+        instance = domain_governance()
+        runtime = {'tasks': {}, 'executions': {}, 'queue': [], 'status': 'ready'}
+        change = {'kind': 'policy', 'record': {'id': 'PO-unresolved', 'kind': 'policy',
+            'revision': 1, 'supersedes': [], 'content': {'rule_id': 'bounded',
+                'scope': ['P'], 'text': 'A policy with an unavailable reason.',
+                'reason_refs': ['DC-absent'], 'audit_refs': []}}}
+        before = deepcopy((instance, runtime, change))
+        with self.assertRaises(ValueError) as caught:
+            gov.apply_decision(instance, runtime, change, source_ref='S', clock=entry().ports.clock)
+        self.assertEqual(str(caught.exception), 'governance reference does not resolve')
+        self.assertEqual((instance, runtime, change), before)
+
     def test_initialized_charter_is_single_authority_and_binds_approved_original(self):
         i = domain_governance()
         self.assertNotIn("goal", i)
@@ -30,14 +44,16 @@ class DomainGovernanceTests(unittest.TestCase):
         assert_governance_documents(self, view, owner='governance', instance=i)
         for key in view:
             damaged = deepcopy(view); del damaged[key]
-            with self.subTest(missing=key), self.assertRaises((AssertionError, KeyError)):
+            with self.subTest(missing=key), self.assertRaisesRegex((AssertionError, KeyError), key):
                 assert_governance_documents(self, damaged, owner='governance', instance=i)
         for key, wrong in (('goal_revision', 2), ('policy_revision', '0' * 64),
                            ('charter', charter('OTHER', 'Unapproved Q')), ('goal', 'Prove Q')):
             damaged = {**deepcopy(view), key: wrong}
-            with self.subTest(changed=key), self.assertRaises((AssertionError, KeyError)):
+            reason = {'goal_revision': '2 != 1', 'policy_revision': '0' * 64,
+                      'charter': 'OTHER', 'goal': 'Prove Q'}[key]
+            with self.subTest(changed=key), self.assertRaisesRegex(AssertionError, reason):
                 assert_governance_documents(self, damaged, owner='governance', instance=i)
-        with self.assertRaises((AssertionError, KeyError)):
+        with self.assertRaisesRegex(AssertionError, 'governance.charter'):
             assert_governance_documents(self, {'status': 'completed'}, owner='governance', instance=i)
         for charters in ({}, {**deepcopy(i['governance']), 'CH2': {**deepcopy(i['governance']['CH1']), 'id': 'CH2'}}):
             with self.subTest(charters=list(charters)), self.assertRaisesRegex(ValueError, '^no unique approved charter$'):

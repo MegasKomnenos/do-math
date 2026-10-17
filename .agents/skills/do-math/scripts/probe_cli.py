@@ -176,5 +176,5 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
     return 0 if report["passed"] else 1
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - T4 boundary.test_operator_standalone checks the copied skill's direct Python probe.
     raise SystemExit(main())

@@ -58,11 +58,21 @@ class TemplateTests(unittest.TestCase):
                 self.assertIsNot(getattr(first, name), getattr(producer, name))
             self.assertIsNot(first.engine.store, producer.engine.store)
             self.assertIsNot(first.engine.runner, producer.engine.runner)
+            self.assertEqual(first.engine._task_readiness, {})
+            first._apply('configure', config={'call_timeout_seconds': 71})
+            self.assertNotEqual(first.engine.store.load()[1], instance)
             first.advance(123)
+            first.jobs._next_pid += 80
+            first.jobs.owner['pid'] += 80
+            first.ports.git_backend.worktrees[first.root] = {'consumer': ['private']}
+            first.ports.git_backend.objects['consumer-only'] = {'object': ('blob', b'private')}
+            first.engine._task_readiness['consumer-only'] = {'state': 'not_ready'}
             (first.root / 'consumer-only.txt').write_text('discard on next restore', encoding='utf-8')
             second = built('template-warm-first', _warm_initialized)
             self.assertEqual(restores.call_count, 2)
             self.assertEqual((second.instance, second.runtime, second.process_state()), (instance, runtime, state))
+            self.assertEqual(second.engine.store.load(), (second.engine.head, instance, runtime))
+            self.assertEqual(second.engine._task_readiness, {})
             self.assertFalse((second.root / 'consumer-only.txt').exists())
             self.assertIsNot(second.engine, first.engine)
             self.assertIsNot(second.engine.store, first.engine.store)
@@ -158,9 +168,11 @@ class TemplateTests(unittest.TestCase):
         before = len(_BUILDS)
         with self.assertRaisesRegex(ValueError, 'explicit template build failure'):
             built('template-failure-contract', _fails)
-        with self.assertRaisesRegex(AssertionError, 'failed to build earlier'):
+        with self.assertRaisesRegex(AssertionError, "template-failure-contract.*_fails.*failed.*failed to build earlier"):
             built('template-failure-contract', _fails, marker='failed')
         self.assertEqual(_BUILDS[before:], ['failed'])
+        independent = built('template-failure-contract', _initialized)
+        self.assertEqual(independent.instance['lifecycle']['state'], 'initializing')
 
     def test_failure_is_sticky_across_warming_and_consumption_in_both_orders(self):
         for first, second in ((warm_built, built), (built, warm_built)):
@@ -180,6 +192,8 @@ class TemplateTests(unittest.TestCase):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         sim = Sim(root)
         sim.runtime['waiting_actions'] = {'AC-parked': {'reason': 'explicit initialization wait'}}
+        sim.runtime['queue'] = [{'id': 'AC-future', 'role': 'maintenance'}]
+        sim.runtime['questions'] = [{'id': 'Q-unresolved'}]
         assert_template_quiescent(sim)
         sim.runtime['executions']['EX-pending'] = {'id': 'EX-pending', 'status': 'queued'}
         with self.assertRaisesRegex(AssertionError, 'pending_executions.*EX-pending'):

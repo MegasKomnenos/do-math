@@ -5,6 +5,7 @@ import unittest
 from do_math.repair_execution import pending_installation_repair
 from support.operator_finish_scene import Scene, diagnose
 from support.scheduling_return_observer import OwnerProbe
+from support.scheduling_exit_contracts import assert_no_dispatch
 from support.sim import warm_template
 from support.model import Answer, raw
 from support.scheduling_parallel import ready_work_sim
@@ -33,12 +34,13 @@ class RepairExitTests(unittest.TestCase):
         self.assertEqual(reviews[0]['submission_receipt']['state'], 'accepted')
         pending = deepcopy(pending_installation_repair(sim.runtime))
         before = deepcopy(sim.runtime['executions'])
+        reservations = deepcopy(sim.runtime['reservations'])
         with OwnerProbe(sim) as probe:
             answer = sim.engine.run(max_steps=1)
+        assert_no_dispatch(self, sim, answer, before, reservations, probe)
+        self.assertEqual(answer['active_executions'], [])
         self.assertEqual(answer['status'], 'waiting')
-        self.assertEqual(sim.runtime['executions'], before)
         self.assertEqual(pending_installation_repair(sim.runtime), pending)
-        self.assertEqual(probe.failures, [])
 
     def test_accepted_installation_diagnosis_stops_public_dispatch(self):
         scene = Scene()
@@ -48,14 +50,10 @@ class RepairExitTests(unittest.TestCase):
         self.assertIsNotNone(pending)
         self.assertEqual(pending['status'], 'installation_repair_pending')
         before = deepcopy(sim.runtime['executions'])
+        reservations = deepcopy(sim.runtime['reservations'])
         with OwnerProbe(sim) as probe:
             answer = sim.engine.run(max_steps=1)
+        assert_no_dispatch(self, sim, answer, before, reservations, probe)
+        self.assertEqual(answer['active_executions'], [])
         self.assertEqual(answer['status'], 'waiting')
-        self.assertEqual(sim.runtime['executions'], before)
-        self.assertEqual(set(sim.runtime['executions']) - set(before), set())
         self.assertEqual(pending_installation_repair(sim.runtime), pending)
-        self.assertEqual(probe.failures, [])
-        self.assertIsNone(sim.engine._calls)
-        self.assertFalse(sim.engine._executor_running)
-        _, _, stored = sim.engine.store.load(sim.engine.head)
-        self.assertEqual(stored['executions'], before)

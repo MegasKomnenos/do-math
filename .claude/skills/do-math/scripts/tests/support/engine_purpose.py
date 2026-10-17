@@ -21,7 +21,10 @@
   ``predicate(sim)`` (default: the goal is mathematically solved). The test
   fails at once when the responder failed, and when the instance pauses,
   closes or waits before the predicate holds, with the state summary; also
-  when the limit passes (preserved rule K-33).
+  when the limit passes (preserved rule K-33). It checks the current state
+  before taking another pass. The limit counts passes, not elapsed time.
+  An early predicate is valid only when all assertions and later responder
+  input checks have reached their final values (preserved rule K-25).
 """
 from __future__ import annotations
 
@@ -121,8 +124,7 @@ def purpose_sim(**config):
 def drive(test, sim, predicate=None, limit=45):
     predicate = predicate or (lambda s: s.instance['goal_status'] == 'mathematically_solved')
     responder = sim.model.responder
-    for _ in range(limit):
-        sim.step()
+    for passes in range(limit + 1):
         if getattr(responder, 'failures', None):
             test.fail('The purpose responder refused its input: ' + '; '.join(responder.failures))
         if predicate(sim):
@@ -132,4 +134,7 @@ def drive(test, sim, predicate=None, limit=45):
                 'status': sim.runtime['status'], 'questions': sim.runtime['questions'], 'queue': sim.runtime['queue'],
                 'executions': [{key: row.get(key) for key in ('role', 'outcome', 'error')}
                                for row in sim.runtime['executions'].values()]}, ensure_ascii=False, default=str))
+        if passes == limit:
+            break
+        sim.step()
     test.fail('Fixture did not finish within its bounded scenario: ' + json.dumps(sim.waiting(), default=str))

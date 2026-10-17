@@ -122,6 +122,120 @@ class DeterministicCallsTests(unittest.TestCase):
         _drain(calls)
         self.assertEqual(order, ['first', 'second'])
 
+    def test_completion_during_returned_observations_yields_before_the_next_callback(self):
+        calls = self.executor()
+        applied, order = [], []
+
+        def observe(index):
+            applied.append(index)
+            order.append(('observation', index))
+            if index == 0:
+                calls.wait(0)  # The other real calculation returns inside this callback.
+
+        def observed(on_observation):
+            for index in range(64):
+                on_observation(index)
+            return 'observed'
+
+        def receive(name):
+            result = yield
+            order.append(('received', name, result))
+
+        for name, run, arguments in (
+                ('observed', observed, {'on_observation': observe}),
+                ('other', lambda: 'other', {})):
+            generator = receive(name)
+            next(generator)
+            calls.start_call(generator, run, arguments)
+        calls.wait(0)  # Return the calculation with observation debt first.
+        self.assertEqual(calls.collect(), 0)
+        self.assertEqual(applied, [0], 'new completion must yield after the active callback')
+        self.assertEqual(order, [('observation', 0)])
+        order.append(('controls',))  # The owner receives controls before the next collect.
+        self.assertEqual(calls.collect(), 2)
+        self.assertEqual(order[2], ('received', 'other', 'other'))
+        self.assertEqual(applied, list(range(64)))
+        self.assertEqual(order[-1], ('received', 'observed', 'observed'))
+        self.assertFalse(calls.futures)
+
+    def test_owner_pump_yields_live_backlog_to_controls_after_one_callback(self):
+        from support.fakes.calls import owner_turn
+        calls = self.executor()
+        applied, results = [], []
+
+        def run(on_observation):
+            for index in range(4):
+                on_observation(index)
+            owner_turn()
+            return 'completed'
+
+        generator = _generator(results)
+        next(generator)
+        future = calls.start_call(generator, run, {'on_observation': applied.append})
+        calls.wait(0)
+        # The scheduler's real private seam: a shared owner-entry allowance.
+        with calls.guard:
+            calls._observation_limits = {future: len(future.observations)}
+        calls.pump()
+        self.assertEqual(applied, [0], 'live backlog must return to control ingress')
+        self.assertEqual(calls._observation_limits[future], 3)
+        self.assertEqual(len(future.observations), 3)
+        calls.wait(0)
+        self.assertEqual(calls.collect(), 1)
+        self.assertEqual(applied, [0, 1, 2, 3])
+        self.assertEqual(results, ['completed'])
+
+    def test_sole_returned_call_joins_only_entry_parts_and_preserves_read_boundaries(self):
+        from dataclasses import replace
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from do_math.model_call import frame_rows
+        from do_math.observation_transport import ObservationBatch
+
+        with TemporaryDirectory(prefix='owner-read-') as directory:
+            stream = Path(directory) / 'stdout.jsonl'
+            raw = b''.join(b'{"type":"row","index":' + str(i).encode() + b'}\n' for i in range(6))
+            stream.write_bytes(raw)
+            events, offsets, rows, remainder = frame_rows(raw, 0, final=False)
+            self.assertEqual(remainder, b'')
+            whole = ObservationBatch(events, offsets, rows, 0, 'received', 1000.0, len(raw), stream, lambda: True)
+            parts = [replace(whole, events=events[first:end], offsets=offsets[first:end], rows=rows[first:end],
+                first_row=first, end_offset=offsets[end - 1][1], ends_read=end in (4, 6))
+                for first, end in ((0, 2), (2, 4), (4, 6))]
+            # Identical timestamps do not join the two reads across ends_read.
+            for allowance in (1, 3):
+                with self.subTest(allowance=allowance):
+                    calls, deliveries, results = self.executor(), [], []
+
+                    def run(on_observation):
+                        for part in parts:
+                            on_observation(part)
+                        return 'completed'
+
+                    generator = _generator(results)
+                    next(generator)
+                    future = calls.start_call(generator, run, {'on_observation': deliveries.append})
+                    calls.wait(0)
+                    with calls.guard:
+                        calls._observation_limits = {future: allowance}
+                    self.assertEqual(calls.collect(), int(allowance == 3))
+                    if allowance == 1:
+                        self.assertEqual(deliveries, parts[:1])
+                        self.assertFalse(deliveries[0].caught_up())
+                        self.assertEqual(results, [])
+                        self.assertEqual(calls._observation_limits[future], 0)
+                        with calls.guard:
+                            calls._observation_limits = {future: len(future.observations)}
+                        self.assertEqual(calls.collect(), 1)
+                    self.assertEqual([part.first_row for part in deliveries], [0, 2, 4] if allowance == 1 else [0, 4])
+                    self.assertEqual([row for part in deliveries for row in part.rows], rows)
+                    self.assertEqual([event for part in deliveries for event in part.events], events)
+                    self.assertEqual([offset for part in deliveries for offset in part.offsets], offsets)
+                    self.assertEqual([part.caught_up() for part in deliveries],
+                                     [False, False, True] if allowance == 1 else [False, True])
+                    self.assertEqual(results, ['completed'])
+                    self.assertFalse(calls.futures)
+
     def test_closing_releases_a_call_still_waiting_for_the_owner(self):
         from support.fakes.calls import owner_turn
         released = []

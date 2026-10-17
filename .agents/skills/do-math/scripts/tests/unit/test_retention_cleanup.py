@@ -84,6 +84,14 @@ class CleanupEligibilityTests(unittest.TestCase):
         obliged = cleanup_candidates(self.root, **state, read_artifact=reader)[0]
         self.assertEqual(obliged['reasons'], ['activity_obligation_pending'])
 
+    def test_unrelated_and_settled_runtime_entries_do_not_hold_an_archived_run(self):
+        _, state, _, reader = archived_run(self.root)
+        state['runtime'].update(
+            reservations={'RS-other': {'owner_id': 'EX-other', 'state': 'held'},
+                          'RS-settled': {'owner_id': 'EX-1', 'state': 'settled'}},
+            waiting_actions={'AC-other': {'execution_id': 'EX-other', 'attempt': 1, 'optional': None}})
+        self.assertEqual(cleanup_candidates(self.root, **state, read_artifact=reader)[0]['reasons'], [])
+
     def test_retention_preserves_unpinned_receipt_and_unreadable_inventory(self):
         run, state, archive, read = archived_run(self.root)
         state['executions']['EX-1']['termination']['snapshot'] = 'HEAD'
@@ -272,6 +280,23 @@ class PhysicalPathTests(unittest.TestCase):
 
 
 class ReferenceClosureTests(unittest.TestCase):
+    def test_relation_endpoints_and_source_aliases_share_the_reference_closure(self):
+        from do_math.retention import record_references
+        row = {'id': 'RL-1', 'root': 'research', 'family': 'relations',
+               'record': {'id': 'RL-1', 'source': 'KN-1', 'target': 'KN-2'}}
+        rows = [row, {'id': 'SC-1', 'root': 'research', 'family': 'sources',
+                      'record': {'id': 'SC-1', 'path': 'runs/EX-1/source.txt'}}]
+        records, protected = retention_inputs({'sources': [{'id': 'SC-1', 'name': 'paper'},
+                                                          {'id': 'not-loaded', 'name': 'other'}]}, {}, rows)
+        self.assertEqual(records['RL-1'], {'references': ['KN-1', 'KN-2']})
+        self.assertEqual(records['paper'], {'references': ['SC-1']})
+        self.assertEqual(records['source:paper'], {'references': ['SC-1']})
+        self.assertNotIn('other', records)
+        self.assertEqual(protected, ['RL-1', 'SC-1'])
+        # Scalar metadata inside a reference array does not become a file/record reference.
+        self.assertEqual(record_references({'references': ['KN-1', 1, None, {'id': 'KN-2'}]}),
+                         ['KN-1', 'KN-2'])
+
     def test_reference_closure_follows_records_and_preserves_unknown_origins(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

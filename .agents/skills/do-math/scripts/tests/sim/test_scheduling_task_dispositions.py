@@ -16,6 +16,7 @@ import unittest
 from do_math import planning, task_scope
 from do_math.core_engine import _artifact_format_valid
 from support.engine_lifecycle import applied, approve, clear_work, task
+from support.engine_context import issue
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template
 
@@ -50,6 +51,11 @@ class OperationalTaskDispositionTests(unittest.TestCase):
             'EX-work': {'id': 'EX-work', 'role': 'research_work', 'status': 'ended', 'action': {'target': 'TK-1'}},
             'EX-review': {'id': 'EX-review', 'role': 'operational_review', 'input_snapshot': self.snapshot,
                           'output': {'task_assessments': [assessment]}}})
+        reviewer = self.engine.runtime['executions']['EX-review']
+        fixed = {'execution_id': reviewer['id'], 'snapshot': self.snapshot,
+                 'action': {'role': 'operational_review', 'target': 'EX-work'},
+                 'sources': deepcopy(self.engine.instance['sources'])}
+        issue(self.engine, reviewer, fixed, 'BA-review-task-input')
         record = {'id': 'OD-one', 'execution_id': 'EX-review', 'target_execution_id': 'EX-work',
                   'disposition': {'kind': 'task_disposition', 'task_id': 'TK-1', 'task_state': state}}
         self.engine.runtime['operational_dispositions'] = {record['id']: record}
@@ -61,6 +67,14 @@ class OperationalTaskDispositionTests(unittest.TestCase):
             'item_dispositions': [{'obligation_id': 'OB-proof', 'kind': 'fulfilled', 'evidence_refs': ['EV-1']},
                 {'obligation_id': 'OB-scope', 'kind': 'transferred', 'evidence_refs': [], 'authority_ref': self.decision,
                  'target_task_id': 'TK-2', 'target_obligation_id': 'OB-inherited'}], 'unresolved': []}, 'closed')
+        before_tasks = deepcopy(engine.runtime['tasks'])
+        with self.assertRaisesRegex(ValueError, "^operational task disposition differs from the target's task$"):
+            engine._complete_operational_disposition({**record,
+                'disposition': {**record['disposition'], 'task_id': 'TK-2'}})
+        with self.assertRaisesRegex(ValueError, '^operational task disposition requires one matching item assessment$'):
+            engine._complete_operational_disposition({**record,
+                'disposition': {**record['disposition'], 'task_state': 'completed'}})
+        self.assertEqual(engine.runtime['tasks'], before_tasks)
         before = deepcopy((engine.instance, engine.runtime))
         engine.instance['decisions'][self.decision]['source_sha256'] = 'b' * 64
         with self.assertRaisesRegex(ValueError, 'scope disposition requires a current source-bound user decision'):
@@ -90,6 +104,9 @@ class OperationalTaskDispositionTests(unittest.TestCase):
         self.assertEqual(call['assessments'], [assessment])
         self.assertEqual(call['execution_id'], 'EX-review')
         self.assertEqual(call['input_tasks'], stored['tasks'])
+        fixed, _ = engine._issued_input(engine.runtime['executions']['EX-review'], with_schema=False)
+        self.assertEqual(fixed['snapshot'], self.snapshot)
+        self.assertEqual(fixed['sources'], engine.instance['sources'])
         context = call['evaluation_context']
         self.assertEqual({key: context[key] for key in ('snapshot', 'git_dir', 'now', 'lean_available')},
                          {'snapshot': engine.head, 'git_dir': engine.store.git_dir, 'now': self.sim.clock.now(),

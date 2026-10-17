@@ -1,0 +1,12 @@
+{
+ "note": "Pseudo-tested functions (설계 6.3): the extreme mutant of each survived every test that runs the function. An entry closes a sub-stage only with a reason; a function whose None return equals its behaviour says so in the reason.",
+ "entries": [
+  {
+   "module": "do_math/codex_adapter.py",
+   "function": "LocalCLIAdapter.provider_failure",
+   "rule": "pass",
+   "base": "4dae85911f26f891fc3d79be9916bf4363e2d46f",
+   "reason": "이 기본 메서드는 parsed를 읽거나 상태를 변경하지 않고 항상 None을 반환한다. pass 변이도 암묵적으로 같은 None을 반환하며 공급자별 override 구현은 이 변이에 포함되지 않는다."
+  }
+ ]
+}

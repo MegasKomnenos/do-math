@@ -30,6 +30,7 @@ class ObservationOwnerContractTests(unittest.TestCase):
                           {'type': 'turn.started', 'execution_id': execution_id}]
                 incoming = batch(sim, events, stream, terminated=True)
                 stream.write_bytes(b''.join(incoming.rows))
+                sim.advance(1000)  # Backlogged terminated bytes keep their receipt clock and row coordinates.
                 before = set(sim.runtime.get('observation_facts', {}))
                 queue = deepcopy(sim.runtime['queue'])
                 sim.engine._observe_running(execution_id, tracker, incoming)
@@ -51,6 +52,10 @@ class ObservationOwnerContractTests(unittest.TestCase):
                      'received_at': incoming.received_at, 'received_offset_ms': 0}
                     for start, end in incoming.offsets])
                 self.assertEqual(sim.runtime['queue'], queue)
+                self.assertEqual({row['observed_at'] for row in added}, {sim.clock.now()})
+                applied = sim.runtime['executions'][execution_id]['observation_stream']
+                self.assertEqual((applied['received_at'], applied['applied_at']),
+                                 (incoming.received_at, sim.clock.now()))
                 self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
                 state, head = deepcopy(sim.runtime), sim.engine.head
                 sim.advance(1)

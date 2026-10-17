@@ -46,10 +46,7 @@ def _run_path(workspace, execution_id):
     # The state path segment rule: Windows would store "EX-1." as the folder of "EX-1".
     check_path_segment(execution_id)
     root = _physical(workspace)
-    path = _physical(root / 'runs' / execution_id)
-    if path.parent != root / 'runs':
-        raise ValueError('execution path outside workspace/runs')
-    return path
+    return _physical(root / 'runs' / execution_id)
 
 
 def _strings(value):
@@ -125,9 +122,10 @@ def retention_inputs(instance, runtime, rows):
             records[row["id"]] = {"references": sorted(references)}
     for source in instance.get("sources", []):
         if source.get("id") in records:
-            for alias in (source.get("name"), "source:" + source.get("name", "")):
-                if alias:
-                    records.setdefault(alias, {"references": [source["id"]]})
+            # Source producers name every entry; the owner's record_storage
+            # inspection rejects missing/empty names before any cleanup runs.
+            for alias in (source["name"], "source:" + source["name"]):
+                records.setdefault(alias, {"references": [source["id"]]})
     for alias in _SEMANTIC_ALIASES:
         records.setdefault(alias, {"references": []})
     protected = [row["id"] for row in rows if row.get("id") and

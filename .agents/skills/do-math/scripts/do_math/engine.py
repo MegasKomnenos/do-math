@@ -80,10 +80,8 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
     def _init_process_state(self, *, transport=None):
         """Process-local owner state that no repository holds.
 
-        Every engine starts here, including test engines built without a store.
+        Called by the constructor after the installation and store are set.
         """
-        if not hasattr(self, 'installation_root'):
-            self.installation_root = Path(__file__).resolve().parents[2]
         self._task_readiness = {}
         self._live_execution_ids = set()
         self._executor_running = False
@@ -113,6 +111,25 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
         """The installed edition this engine loaded, hashed on first use by ``run``."""
         return self._installation_manifest()
 
+    def _record_installation_startup(self, manifest_path):
+        """Record full installation provenance separately from the polling edition."""
+        import operator_bootstrap as bootstrap
+        from .repair_execution import installation_evidence
+        from .canonical import canonical_json
+        from .file_io import write_bytes_atomic
+        manifest = bootstrap.verify_snapshot(Path(manifest_path)) if manifest_path is not None else None
+        if manifest is not None and Path(manifest['installation_root']).resolve() != self.installation_root.resolve():
+            raise ValueError('startup manifest identifies a different installation root')
+        startup = {'bootstrap': bootstrap.startup_evidence(manifest),
+                   'manifest_path': str(Path(manifest_path).resolve()) if manifest_path is not None else None,
+                   'installation': installation_evidence(self.installation_root, backend=self.ports.git_backend),
+                   'runtime_root': str(Path(__file__).resolve().parents[2]),
+                   'polling_edition': self._installation,
+                   'observed_at': self.ports.clock.now()}
+        write_bytes_atomic(Path(self.instance['workspace']) / 'execution-control' / self.instance['id'] / 'startup.json',
+                           canonical_json(startup))
+        return startup
+
     def _controls(self) -> None:
         """One owner pass over controls: apply the inbox, then the periodic upkeep."""
         self._apply_inbox()
@@ -124,30 +141,43 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
         with self.store.writer_lock():
             self._reload()
             self._inspect_before_write()
-            self._controls()
+            self._apply_inbox()
+            # Only an executor can recover predecessors before judging a live due target.
+            self._upkeep(schedule_reviews=False)
             self._save()
     @engine_operation('run')
-    def run(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
+    def run(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False,
+            installation_manifest: Path | None = None) -> dict:
         # A host resource change is valid only while no executor loop can dispatch.
         self._executor_running = True
         try:
-            return self._run_executor(max_steps=max_steps, watch=watch, until_active=until_active)
+            return self._run_executor(max_steps=max_steps, watch=watch, until_active=until_active,
+                                      installation_manifest=installation_manifest)
         finally:
             self._executor_running = False
 
-    def _run_executor(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
+    def _run_executor(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False,
+                      installation_manifest: Path | None = None) -> dict:
         if max_steps is not None and max_steps < 1:
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
             self._reload()
             self._inspect_before_write()
             self._installation  # the edition later checks compare against, fixed at run start
-            self._controls()
+            startup = self._record_installation_startup(installation_manifest)
+            if startup['bootstrap']['comparison'] in {'different', 'unavailable'}:
+                if not self._instance_closed():
+                    self._pause_lifecycle('installation_startup_mismatch')
+                self._save()
+                return {**self.status(), 'startup': startup}
+            self._apply_inbox()
             self._recover_disappeared()
+            # A predecessor's running row is not a live target of this owner.
+            self._upkeep()
             if not self._prepare_executor_pass():
-                return self.status()
+                return {**self.status(), 'startup': startup}
             self._run_parallel(max_steps=max_steps, watch=watch, until_active=until_active)
-        return self.status()
+        return {**self.status(), 'startup': startup}
 
     def _call_steps(self, action: dict):
         """Prepare and run one AI action as a generator that yields the runner arguments.

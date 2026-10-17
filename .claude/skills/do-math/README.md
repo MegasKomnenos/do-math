@@ -12,7 +12,7 @@
 - [기존 연구 조회·제어](#existing-control): 지정된 인스턴스의 상태를 읽거나 입력·정지·재개 요청의 효과를 확인한다.
 - [직접 전진·수동 운전](#manual-run): 해당 절의 적용 조건을 확인한 뒤 허가된 범위를 직접 실행한다.
 
-역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/9`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
+역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/10`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
 
 역할 응답 계약은 후보 준비, 항목별 작업 계약 검토, 연구 계획의 전건 처분, 생산자 선언 편입 묶음과 독립 동일성 검토의 범위 계획을 정의한다. 각 기능이 무엇을 보증하는지는 서로 다르며, 명령 성공·스키마 통과·실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
@@ -490,7 +490,13 @@ python .agents/skills/do-math/scripts/do_math.py timeline --repository <repo> --
 
 `--include-operations`는 작업 공간 `operations/`의 로컬 운영 단계 기록도 별도 집계 단위로 포함한다. 각 행에는 원 파일의 해시와 관측 시각이 붙으며 그 내용이 해당 연구 snapshot에 포함됐다는 뜻은 아니다. 겹친 실행 시간의 합계를 실제 경과 시간으로 사용하지 않는다. 운영 계측의 범위는 [초기화 효율과 정비](references/초기화-효율과-정비.md)를 따른다.
 
-## 설치본 검사
+## 기동 판본과 설치본 검사
+
+`run`은 실제 설치 전체의 파일 판본·원천 Git 관측을 기동 결과의 `startup`과 `<workspace>/execution-control/<instance>/startup.json`에 남긴다. 기록된 독립 기대값이 있으면 `run --installation-manifest PATH`로 검증된 동결 bootstrap manifest를 전달한다. 파일별 추가·삭제·변경은 배정 전에 표시하고 pause한다. manifest가 없으면 `no_recorded_manifest`이며 현재 설치 자체를 독립 검증한 것으로 표시하지 않는다. source_commit은 관측한 source HEAD 또는 null/사유이며, 연구 snapshot이나 미커밋 수리의 반영 인증을 뜻하지 않는다. 상태 조회는 기동 해시를 지연하는 기존 동작을 유지한다.
+
+예약 bootstrap의 엔진 child는 검증된 manifest 경로를 live `run`에 전달한다. 운영자의 bootstrap 진입과 직접 `operator check|probe|wake|engine`은 같은 [`execute`](scripts/do_math/scheduled_operator.py)에서 `<workspace>/operator/startup.json`을 동작 전에 쓰고 결과에 포함한다. 운영자는 수리할 live 설치의 차이를 표시하여 수리를 허용하고, 엔진은 독립 manifest와 다른 설치의 연구 배정을 멈춘다. 수리 후에는 검증한 새 설치의 동결본을 예약에 반영하고 기존 resume 권한으로 재개한다.
+
+진행 중 `_check_installation`은 별도의 code/역할 문서 판본을 첫 run 기준과 비교하는 기존 bounded polling이다. 이 검사를 기동 전 설치 전체의 독립 manifest 대조와 같은 증거로 해석하지 않는다.
 
 스킬 폴더 전체를 설치한 뒤 다음 명령으로 역할별 필수 문서와 출력 스키마를 확인한다. 경로는 실제 설치 위치에 맞춘다.
 

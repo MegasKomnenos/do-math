@@ -98,6 +98,11 @@ class CandidateImportTests(unittest.TestCase):
         contract = default_state_contract()
         contract.validate(ins, run)
         self.assertTrue(knowledge.validate_basis(expected, ins, run)['valid'])
+        ins['knowledge'][endpoints[0]]['review_cycle_id'] = 'RC-administrative-schedule'
+        contract.validate(ins, run)
+        self.assertTrue(kr.record_premises_current(ins, ins['knowledge'][proof]))
+        ins['knowledge'][endpoints[0]]['title'] = 'Changed endpoint meaning'
+        self.assertFalse(kr.record_premises_current(ins, ins['knowledge'][proof]))
         schema = contract.family('research', 'knowledge').schema
         invalid = [
             ({}, r"^\{\} is not of type 'array'\n"),

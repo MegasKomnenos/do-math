@@ -592,7 +592,7 @@
    "legacy_id": "test_live_observation.ObservationCollectionTests.test_one_native_chunk_is_one_owner_transaction",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_delivery.StreamChunkTests.test_one_native_chunk_is_one_owner_transaction"
+    "sim.test_observation_delivery.StreamChunkTests.test_native_read_parts_keep_receipt_time_and_coordinates_during_delayed_replay"
    ]
   },
   {

@@ -68,6 +68,41 @@ class PendingDispositionTests(unittest.TestCase):
         self.host = repair_host(directory.name)
         self.sim = self.host.sim
 
+    def test_recovery_refuses_unconfirmed_termination_and_a_stale_checkpoint(self):
+        engine = self.sim.engine
+        from do_math import launch, operational_dispositions
+        action = {'id': 'AC-unconfirmed-recovery', 'role': 'maintenance'}
+        profile = engine._execution_profile(action)
+        target = engine._register_execution(action, {'id': 'EX-unconfirmed-recovery', 'role': 'maintenance'}, profile=profile)
+        slots = engine._session_slots()
+        self.assertTrue(slots.acquire(target['id'], profile=profile, execution=target))
+        # Logical failure and release of admitted local capacity are separate.
+        # Admission writes the whole capacity record; no fields are fabricated.
+        execution_lifecycle.transition_execution(target, 'stopping', at=self.sim.clock.now())
+        execution_lifecycle.transition_execution(target, 'ended', at=self.sim.clock.now(), outcome='start_failed')
+        record = engine.runtime['operational_dispositions']['OD-repair']
+        record.update(target_execution_id=target['id'], disposition=operational_dispositions.validate_disposition(
+            {**RETRY, 'basis_refs': [target['id']]}))
+        engine._save()
+        record = engine.runtime['operational_dispositions'][record['id']]
+        target = engine.runtime['executions'][target['id']]
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^recovery requires confirmed local termination$'):
+            engine._complete_operational_disposition(record)
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+        launch.mark_returned(target['launch_ticket'], {'launch_not_created': True})
+        self.assertTrue(engine._session_slots().release(target['id']))
+        # The reviewer cited a checkpoint which the current checkpoint slot no
+        # longer names. Reject before reading bytes or constructing a retry.
+        record['disposition'] = operational_dispositions.validate_disposition({'kind': 'resume',
+            'checkpoint_ref': 'runtime/artifacts/BA-old/checkpoint.json', 'basis_refs': [target['id']],
+            'reason': 'Resume from the previously cited checkpoint', 'scope': 'Same unfinished activity',
+            'next_owner': 'engine'})
+        before = deepcopy((engine.head, engine.instance, engine.runtime))
+        with self.assertRaisesRegex(ValueError, '^resume must name the preserved current checkpoint$'):
+            engine._complete_operational_disposition(record)
+        self.assertEqual((engine.head, engine.instance, engine.runtime), before)
+
     def test_restart_finishes_an_accepted_retry_after_target_termination_once(self):
         engine = self.sim.engine
         target = engine.runtime['executions']['EX-target']

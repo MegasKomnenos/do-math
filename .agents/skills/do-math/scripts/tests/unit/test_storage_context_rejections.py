@@ -160,5 +160,219 @@ class ContextRejections(unittest.TestCase):
             self.assertEqual(read_source(root, ref)['bytes'], raw)
 
 
+
+class PhysicalCollectionTests(unittest.TestCase):
+    def test_captured_limit_and_excluded_nested_files_keep_exact_omissions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'src' / '__pycache__').mkdir(parents=True)
+            (root / 'src' / '__pycache__' / 'skip.pyc').write_bytes(b'noise')
+            (root / 'input').write_bytes(b'excluded root file')
+            captured = {'large': b'1234', 'small': b'x'}
+            got = collect_outputs(root, captured_files=captured, required_paths=['large', 'small'], max_bytes=2)
+            self.assertEqual(got['files'], {'small': b'x'})
+            self.assertEqual(got['omitted'], [{'path': 'large', 'reason': 'max_bytes_exceeded', 'bytes': 4, 'required': True}])
+            self.assertFalse(got['complete'])
+
+    def test_directory_junction_is_omitted_and_cannot_be_read_as_evidence(self):
+        from support.provider_probes import junction
+        from do_math.context_store import read_stable
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'real').mkdir()
+            (root / 'real' / 'data').write_bytes(b'keep')
+            link = root / 'junction'
+            junction(link, root / 'real')
+            try:
+                got = collect_outputs(root)
+                self.assertEqual(got['files'], {'real/data': b'keep'})
+                self.assertEqual(got['omitted'], [{'path': 'junction', 'reason': 'reparse_directory'}])
+                self.assertFalse(got['complete'])
+                with self.assertRaisesRegex(ValueError, '^physical boundary rejected read: physical path crosses'):
+                    read_stable(link / 'data')
+            finally:
+                link.rmdir()
+
+    def test_collection_records_disappearance_and_permission_at_open(self):
+        import errno
+        import os
+        from support.engine_control import on_audit
+        for fault, reason in [('missing', 'disappeared'), ('denied', 'read_error')]:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                nested = root / 'nested'; nested.mkdir()
+                target = nested / 'value'; target.write_bytes(b'original')
+                seen = []
+                def at_open(arguments):
+                    if os.path.normcase(os.path.abspath(arguments[0])) != os.path.normcase(str(target)) or seen:
+                        return
+                    seen.append(str(arguments[0]))
+                    if fault == 'missing': target.unlink()
+                    else: raise PermissionError(errno.EACCES, 'fixture denied', str(target))
+                with on_audit('open', at_open):
+                    got = collect_outputs(root, required_paths=['nested/value'])
+                self.assertEqual(got['files'], {})
+                self.assertEqual([(x['path'], x['reason'], x['required']) for x in got['omitted']],
+                                 [('nested/value', reason, True)])
+                self.assertFalse(got['complete'])
+                if fault == 'denied':
+                    self.assertEqual(got['omitted'][0]['error_type'], 'PermissionError')
+
+class RoleInputBoundaryTests(unittest.TestCase):
+    def test_role_profile_snapshot_governance_and_archive_rejections_are_exact(self):
+        from copy import deepcopy
+        from do_math.context_store import prepare_role_input
+        from support.record_builders import surface_state
+        from support.fakes.clock import FakeClock
+        instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'maintenance')
+        for fault, message in [
+            ('profile', 'selected profile does not match the input role'),
+            ('snapshot', 'input snapshot must be a fixed Git commit'),
+            ('governance', 'role requires adopted governance'),
+            ('archive', 'role input archive must stay in runtime/artifacts/')]:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                options = dict(context={'action': {'id': 'AC-boundary', 'role': 'maintenance'}},
+                    instance=deepcopy(instance), runtime=runtime, role='maintenance', profile=profile,
+                    snapshot='a'*40, workspace=Path(directory), activity_id='AC-boundary', clock=FakeClock())
+                if fault == 'profile': options['role'] = 'research_work'
+                elif fault == 'snapshot': options['snapshot'] = 'HEAD'
+                elif fault == 'governance': options['instance'].pop('governance', None)
+                else: options['artifact_prefix'] = 'outside/archive'
+                with self.assertRaises(ValueError) as caught: prepare_role_input(**options)
+                self.assertEqual(str(caught.exception), message)
+
+    def test_resume_lineage_rejects_wrong_action_and_absent_owner_without_writing(self):
+        from do_math.context_store import restore_continuation
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            action = {'role': 'research_work', 'target': 'TK-one', 'continuation_of': 'EX-prior'}
+            valid = {'id': 'EX-prior', 'status': 'ended', 'role': 'research_work',
+                     'action': {'target': 'TK-one'}, 'owner_activity_id': 'AC-one'}
+            for execution, reason in [({**valid, 'action': {'target': 'TK-other'}}, "resume lineage does not identify this action's ended execution"),
+                                       ({**valid, 'status': 'running'}, "resume lineage does not identify this action's ended execution"),
+                                       ({**valid, 'owner_activity_id': None}, 'resume lineage requires an owner activity')]:
+                with self.subTest(reason=reason), self.assertRaises(ValueError) as caught:
+                    restore_continuation({'executions': {'EX-prior': execution}}, action, root,
+                        snapshot='a'*40, read_artifact=lambda path: self.fail('must not read artifacts'))
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual(list(root.iterdir()), [])
+
+    def test_manifest_rejects_mutable_snapshot_before_reading_components(self):
+        from do_math.context_store import validate_role_manifest
+        with self.assertRaisesRegex(ValueError, '^input manifest requires fixed snapshot$'):
+            validate_role_manifest({'role': 'maintenance', 'snapshot': 'HEAD'})
+
+
+
+class ReviewInputBoundaryTests(unittest.TestCase):
+    def test_review_input_rejects_missing_cycle_seat_and_unverified_transcript(self):
+        from copy import deepcopy
+        from do_math import review_cycle
+        from do_math.context_store import prepare_role_input
+        from support.record_builders import surface_state
+        from support.fakes.clock import FakeClock
+        instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'identity_review')
+        cycle = review_cycle.start_review({'id': 'KN-one', 'revision': 1}, reviewers=1)
+        seat, = review_cycle.next_actions(cycle)
+        expected = review_cycle.context_for(cycle, seat)
+        for fault, message in [('cycle', 'review input has no current cycle'),
+                ('seat', 'review requires seat-scoped role_review input'),
+                ('private', 'another review seat transcript is private'),
+                ('bytes', 'review transcript source bytes could not be verified')]:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                ref = materialize_inputs(root, {'transcript.txt': b'original transcript'})['manifest'][0]
+                supplied = deepcopy(expected)
+                if fault == 'seat': supplied = None
+                elif fault in {'private', 'bytes'}:
+                    supplied['source_refs'] = [{**ref, 'local_path': ref['path'],
+                        'sha256': '0'*64 if fault == 'bytes' else ref['sha256'],
+                        'slot': 'another' if fault == 'private' else seat['slot']}]
+                running = {**runtime, 'review_cycles': {} if fault == 'cycle' else {'RC-one': cycle}}
+                context = {'action': {'id': 'AC-review', 'role': 'identity_review', 'review_cycle_id': 'RC-one', **seat},
+                           'role_review': supplied}
+                with self.assertRaises(ValueError) as caught:
+                    prepare_role_input(context, instance=instance, runtime=running, role='identity_review',
+                        profile=profile, snapshot='a'*40, workspace=root, activity_id='AC-review', clock=FakeClock())
+                self.assertEqual(str(caught.exception), message)
+                self.assertEqual((root / ref['path']).read_bytes(), b'original transcript')
+
+    def test_repeated_live_overflow_keeps_one_unresolved_condition(self):
+        from do_math.context_store import defer_input_overflow
+        from support.record_builders import surface_state
+        _, runtime = surface_state()
+        overflow = {'activity_id': 'AC-1', 'kind': 'input_overflow', 'limit_bytes': 1}
+        first = defer_input_overflow(runtime, overflow, at='2026-09-20T00:00:01Z', question_ref='Q-one')
+        second = defer_input_overflow(runtime, overflow, at='2026-09-20T00:00:02Z', question_ref='Q-one')
+        self.assertEqual(first, second)
+        self.assertEqual(first['status'], 'working')
+        self.assertEqual(runtime['activities']['AC-1']['unresolved'], [first['condition']])
+        self.assertEqual(runtime['activities']['AC-1']['status'], 'working')
+
+    def test_collection_preserves_physical_refusal_after_directory_becomes_junction(self):
+        import os
+        from support.engine_control import on_audit
+        from support.provider_probes import junction
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            nested, displaced = root / 'nested', root / 'displaced'
+            nested.mkdir(); (nested / 'proof').write_bytes(b'exact')
+            seen = []
+            def replace_at_traversal(arguments):
+                if os.path.abspath(arguments[0]) == str(nested) and not seen:
+                    seen.append(True)
+                    nested.rename(displaced)
+                    junction(nested, displaced)
+            try:
+                with on_audit('os.scandir', replace_at_traversal):
+                    got = collect_outputs(root, required_paths=['nested/proof'])
+                self.assertEqual(seen, [True])
+                self.assertFalse(got['complete'])
+                row, = [row for row in got['omitted'] if row['path'] == 'nested/proof']
+                self.assertEqual((row['reason'], row['error_type'], row['required']),
+                                 ('physical_boundary', '_PhysicalBoundaryError', True))
+                self.assertIn('physical boundary rejected read: physical path crosses a reparse point', row['error'])
+            finally:
+                if nested.is_junction(): nested.rmdir()
+
+
+class OverflowProfileBoundaryTests(unittest.TestCase):
+    """Full role prompt/catalog rendering costs about 0.5 s for the three actual profile choices."""
+    def test_overflow_offers_only_a_current_distinct_profile_that_fits_the_actual_input(self):
+        from copy import deepcopy
+        from do_math import contracts, execution_profiles
+        from do_math.context_store import prepare_role_input
+        from support.record_builders import surface_state
+        from support.fakes.clock import FakeClock
+        instance, runtime = surface_state()
+        original = next(p for p in instance['execution_profiles'].values()
+                        if p['role'] == 'research_work' and p['ai']['tier'] == 'high')
+        fixed = len(execution_profiles.prepare_prompt(contracts.render_prompt('research_work', {}), original).encode('utf-8'))
+        body = deepcopy(original)
+        body['input']['max_input_bytes'] = fixed + 50000
+        profile = execution_profiles.seal_profile(body)
+        instance['execution_profiles'][profile['id']] = profile
+        reference = execution_profiles.profile_ref(profile)
+        alternate_body = deepcopy(profile)
+        alternate_body['input']['max_input_bytes'] += 1000
+        alternate = execution_profiles.seal_profile(alternate_body)
+        instance['execution_profiles'][alternate['id']] = alternate
+        for fault in ['same', 'stale', 'insufficient']:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                offered = reference if fault == 'same' else {**reference, 'sha256': '0'*64}
+                offers = [reference, execution_profiles.profile_ref(alternate)] if fault == 'insufficient' else [offered]
+                task = {'id': 'TK-overflow', 'profile_refs': offers, 'evidence': 'x'*70000}
+                runtime['tasks'] = {task['id']: task}
+                context = {'action': {'id': 'AC-overflow', 'role': 'research_work', 'target': task['id']}, 'task': task}
+                result = prepare_role_input(context, instance=instance, runtime=runtime, role='research_work',
+                    profile=profile, snapshot='a'*40, workspace=Path(directory), activity_id='AC-1', clock=FakeClock())
+                overflow = result['overflow']
+                self.assertEqual(overflow['cause'], 'required_role_input')
+                self.assertEqual(overflow['allowed_profile_candidates'], [])
+                self.assertEqual(overflow['resolution_question']['next_owner'], 'user')
+                self.assertEqual(result['validation_context']['task'], task)
+
 if __name__ == '__main__':
     unittest.main()

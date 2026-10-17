@@ -82,7 +82,8 @@ class BundlePublicationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             clock = FakeClock()
-            repo = ResearchRepository(make_repository(root), "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV", backend=make_fake(),
+            backend = make_fake()
+            repo = ResearchRepository(make_repository(root), "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV", backend=backend,
                                       clock=clock)
             profile_state = execution_profiles.build_profiles({
                 "session_limits": model_policy.LIMITS, "tier_models": model_policy.MODELS,
@@ -117,16 +118,20 @@ class BundlePublicationTests(unittest.TestCase):
 
             def validate(i, r, bundle):
                 return repo.validate_candidate(i, r, head)
+            # Direct apply_bundles may have no fixed snapshot; core always
+            # supplies its sealed input snapshot. Preserve explicit null here.
+            context = research_work_context()
+            context.pop('snapshot')
             before = deepcopy((instance, runtime))
             preview = integration.preview_bundles(instance, runtime, two_observation_output(), {},
-                research_work_context(), execution_id="EX-1",
+                context, execution_id="EX-1",
                 apply_bundle=apply, validate_current=lambda *a: None, validate_candidate=validate)
             self.assertEqual("accepted", preview["status"], preview)
             self.assertEqual(before, (instance, runtime))
             self.assertEqual(head, repo._store.read_snapshot().head)
             first = two_observation_output()
             first["knowledge"][1]["kind"] = "undefined_kind"
-            result = integration.apply_bundles(instance, runtime, first, {}, research_work_context(),
+            result = integration.apply_bundles(instance, runtime, first, {}, context,
                 execution_id="EX-1", apply_bundle=apply, validate_current=lambda *a: None,
                 validate_candidate=validate, publish=publish)
             self.assertEqual("partial", result["status"], result)
@@ -134,11 +139,19 @@ class BundlePublicationTests(unittest.TestCase):
             partial_head, partial_instance, partial_runtime = repo.load()
             self.assertEqual({"A"}, {row["title"] for row in partial_instance["knowledge"].values()})
             receipt = partial_runtime["integrations"]["IN-A"]
+            self.assertIsNone(receipt['input_snapshot'])
+            from support.storage_event_pairs import digest
+            base_response = {key: value for key, value in first.items()
+                             if key not in {'integration_bundles', 'repair_responses', 'knowledge', 'relations'}}
+            declaration = first['integration_bundles'][0]
+            self.assertEqual(receipt['response_sha256'], digest(base_response))
+            self.assertEqual(receipt['payload_sha256'], digest({'declaration': declaration, 'values': {
+                'output': base_response, 'output/knowledge/0': first['knowledge'][0]}}))
             retry = two_observation_output()
             retry["knowledge"] = [observation_knowledge("B")]
             retry["integration_bundles"] = [{"integration_id": "IN-B", "members": ["output/knowledge/0"],
                                              "impact_set": [], "authority_refs": []}]
-            retry_context = {**research_work_context(), "accepted_response": {
+            retry_context = {**context, "accepted_response": {
                 "integration_id": receipt["id"], "response_sha256": receipt["response_sha256"]}}
             result = integration.apply_bundles(partial_instance, partial_runtime, retry, {}, retry_context,
                 execution_id="EX-1", apply_bundle=apply, validate_current=lambda *a: None,
@@ -148,6 +161,11 @@ class BundlePublicationTests(unittest.TestCase):
             self.assertEqual(head, saved_head)
             self.assertEqual({"A", "B"}, {row["title"] for row in saved_instance["knowledge"].values()})
             self.assertEqual({"IN-A", "IN-B"}, set(saved_runtime["integrations"]))
+            from support.state_builders import installed_contract
+            cold = ResearchRepository(repo.repository, repo._store.instance_id,
+                contract=installed_contract(), backend=backend, clock=clock)
+            self.assertEqual(cold.load(head), (saved_head, saved_instance, saved_runtime))
+            self.assertTrue(all(row['input_snapshot'] is None for row in saved_runtime['integrations'].values()))
             # The legacy test read the parent with ``git rev-parse <head>^``: the final commit's only
             # parent is the partial publication, which holds A's record and receipt and nothing of B.
             self.assertEqual(head, repo._store.first_descendant(partial_head, head))
@@ -157,6 +175,49 @@ class BundlePublicationTests(unittest.TestCase):
 
 
 class BundleApplicationTests(unittest.TestCase):
+    def test_accepted_response_cannot_be_changed_or_assigned_again(self):
+        output = two_observation_output()
+        context = research_work_context()
+        response = integration.member_values(output, {}, context)['output']
+        context['accepted_response'] = {'response_sha256': exact_content_hash(response)}
+        issues = integration.inspect_bundles(output, {}, context)
+        self.assertEqual([r['rule_id'] for r in issues], ['integration.response_replay'])
+        for row in output['integration_bundles']:
+            row['members'] = [m for m in row['members'] if m != 'output']
+        self.assertEqual(integration.inspect_bundles(output, {}, context), [])
+        output['report'] += ' changed'
+        self.assertEqual([r['rule_id'] for r in integration.inspect_bundles(output, {}, context)],
+                         ['integration.response_replay', 'integration.members'])
+
+    def test_mutations_share_a_bundle_and_keep_the_fixed_previous_hash(self):
+        output = two_observation_output()
+        context = research_work_context()
+        context['knowledge_catalog'] = [{'id': 'KN-old', 'content_sha256': 'a' * 64}]
+        extensions = {'knowledge_changes': [{'id': 'KN-old'}, {'id': 'KN-old'}]}
+        for index, row in enumerate(output['integration_bundles']):
+            row['members'].append(f'activity-extensions.json/knowledge_changes/{index}')
+            row['previous_hashes'] = {'KN-old': 'a' * 64}
+        issues = integration.inspect_bundles(output, extensions, context)
+        self.assertEqual([(r['rule_id'], r['integration_id']) for r in issues],
+                         [('integration.mutation_conflict', 'IN-B')])
+        extensions['knowledge_changes'][1]['id'] = 'KN-other'
+        self.assertEqual(integration.inspect_bundles(output, extensions, context), [])
+        output['integration_bundles'][0]['previous_hashes'] = {}
+        issues = integration.inspect_bundles(output, extensions, context)
+        self.assertEqual([(r['rule_id'], r['path'], r['integration_id']) for r in issues],
+            [('integration.previous_hash', 'activity-extensions.json/knowledge_changes/0', 'IN-A')])
+
+    def test_replacement_identity_and_question_routing_cannot_cross_bundles(self):
+        output = two_observation_output()
+        extensions = {'knowledge_changes': [{'id': 'KN-old', 'replacement_id': output['knowledge'][0]['title']}],
+                      'question_routes': [{'question_id': 'QU-1'}]}
+        output['integration_bundles'][1]['members'] += ['activity-extensions.json/knowledge_changes/0',
+                                                       'activity-extensions.json/question_routes/0']
+        issues = integration.inspect_bundles(output, extensions, research_work_context())
+        self.assertEqual([(r['rule_id'], r['path']) for r in issues], [
+            ('integration.new_identity', 'activity-extensions.json/knowledge_changes/0'),
+            ('integration.reference_closure', 'activity-extensions.json/question_routes/0')])
+
     def test_local_schema_failure_does_not_block_valid_bundle(self):
         from support.entry import entry
         _entry = entry()

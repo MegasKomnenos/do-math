@@ -242,7 +242,9 @@ class ConditionEvaluationTests(unittest.TestCase):
 
     def test_shared_index_failure_is_reported_by_each_evaluation(self):
         task = contract()
-        runtime = {'tasks': {task['id']: task, 'duplicate': deepcopy(task)}}
+        runtime = {'tasks': {task['id']: task}}
+        self.assertEqual(planning._shared_index({}, runtime), {task['id']: ('task', task)})
+        runtime['tasks']['duplicate'] = deepcopy(task)
         self.assertIsNone(planning._shared_index({}, runtime))
         self.assertEqual(planning.evaluate_condition({'op': 'always'}, {}, runtime), {
             'state': 'evaluation_error', 'basis': [], 'errors': ['globally duplicate record ID: TK-planning']})

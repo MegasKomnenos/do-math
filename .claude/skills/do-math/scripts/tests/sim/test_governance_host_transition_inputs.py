@@ -103,3 +103,12 @@ class GovernanceHostTransitionInputTests(unittest.TestCase):
         second_i, second_r = sim.engine._configure_candidate(first_i, first_r, {'config': {}})
         self.assertEqual(second_r['queue'], first_r['queue'])
         self.assertEqual(second_i['host_capacity_ref'], first_i['host_capacity_ref'])
+        # Re-adopting the original host configuration also re-adopts the
+        # task's pinned host-free profiles. It needs no second preparation.
+        original_host = sim.instance['config'].get('host_resources')
+        restored_i, restored_r = sim.engine._configure_candidate(first_i, first_r,
+            {'config': {'host_resources': original_host}})
+        self.assertEqual(restored_r['queue'], first_r['queue'])
+        for identifier, task in sim.runtime['tasks'].items():
+            self.assertEqual(restored_r['tasks'][identifier]['profile_refs'], task['profile_refs'])
+        self.assertEqual(restored_i['config']['host_resources'], original_host)

@@ -33,6 +33,72 @@ class ImpactReviewCase(ImpactCase):
 
 
 class ImpactBundleTests(ImpactReviewCase):
+    def test_duplicate_historical_assignments_do_not_hide_the_new_impact_request(self):
+        original = self._request()
+        # Two retries can read the same assignment. A later ordinary consumer
+        # changes its closure, so neither preserved review is a fixed point.
+        for identifier in ('EX-review-a', 'EX-review-b'):
+            self.runtime['executions'][identifier] = {'id': identifier, 'role': 'maintenance',
+                'status': 'ended', 'action': {'role': 'maintenance', 'stage': 'impact_review',
+                    'input_basis': {'impact_review': deepcopy(original)}}}
+        self.assertEqual(self._request(), original)
+        self.runtime['executions']['EX-new-consumer'] = {'id': 'EX-new-consumer',
+            'role': 'research_work', 'status': 'ended',
+            'output': {'used_sources': [self.ids[0]], 'report': 'Read the changed premise'}}
+        before = deepcopy((self.instance, self.runtime))
+        current = self._request()
+        self.assertNotEqual(current, original)
+        self.assertIn('EX-new-consumer', current['plans']['bundle']['computed_impact'])
+        self.assertEqual({key: current[key] for key in original if key != 'plans'},
+                         {key: original[key] for key in original if key != 'plans'})
+        self.assertEqual((self.instance, self.runtime), before)
+
+    def test_impact_requires_original_execution_and_exact_change_coordinates(self):
+        for fault, reason in (
+                ('execution', 'impact request needs its original execution and fixed input snapshot'),
+                ('snapshot', 'impact request needs its original execution and fixed input snapshot'),
+                ('coordinates', 'impact changes need distinct targets and exact member coordinates'),
+                ('duplicate', 'impact changes need distinct targets and exact member coordinates'),
+                ('root', 'bundle declares impact without an existing mutation root')):
+            bundle = deepcopy(self.bundle)
+            producer, snapshot = 'EX-producer', 'fixed-input'
+            if fault == 'execution': producer = 'EX-missing'
+            elif fault == 'snapshot': snapshot = None
+            elif fault == 'coordinates': bundle['members'].pop()
+            elif fault == 'duplicate': bundle['extensions']['knowledge_changes'][1]['id'] = self.ids[0]
+            else:
+                bundle['extensions'] = {}
+                bundle['members'] = ['output']
+                bundle['previous_hashes'] = {}
+            before = deepcopy((self.instance, self.runtime, bundle))
+            with self.subTest(fault=fault), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                integration.bundle_impact_request(self.instance, self.runtime, bundle,
+                    producer_execution_id=producer, input_snapshot=snapshot)
+            self.assertEqual((self.instance, self.runtime, bundle), before)
+
+    def test_approved_impact_must_cover_both_computed_and_declared_records(self):
+        request = self._request()
+        output = self.review_output(request)
+        output['impact_review']['plan_decisions'][0]['affected_ids'] = []
+        with self.assertRaisesRegex(ValueError, '^approved impact scope must cover the computed and declared union$'):
+            integration.validate_impact_review_response(request, output)
+        output['impact_review']['plan_decisions'][0]['decision'] = 'unresolved'
+        rows = integration.validate_impact_review_response(request, output)
+        self.assertEqual(rows[output['impact_review']['plan_decisions'][0]['scope']]['decision'], 'unresolved')
+
+    def test_designated_review_requires_both_sealed_artifact_coordinates(self):
+        request = self._request()
+        output = self.review_output(request)
+        action = {'id': 'AC-review', 'role': 'maintenance', 'stage': 'impact_review',
+                  'input_basis': {'impact_review': request}}
+        self.runtime['executions']['EX-review'] = {'id': 'EX-review', 'role': 'maintenance',
+            'actor_kind': 'ai', 'status': 'ended', 'outcome': 'output_accepted', 'action': action}
+        before = deepcopy(self.runtime)
+        with self.assertRaisesRegex(ValueError, '^impact review requires sealed input and output artifacts$'):
+            integration.require_bundle_impact_review(self.instance, self.runtime, self.bundle,
+                producer_execution_id='EX-producer', input_snapshot='fixed-input', review_execution_id='EX-review')
+        self.assertEqual(self.runtime, before)
+
     def test_previous_hashes_cover_the_exact_current_mutation_targets(self):
         original = deepcopy(self.bundle)
         before = deepcopy((self.instance, self.runtime))
@@ -75,7 +141,7 @@ class ImpactBundleTests(ImpactReviewCase):
         return integration.bundle_impact_request(self.instance, self.runtime, self.bundle,
                                                  producer_execution_id='EX-producer', input_snapshot='fixed-input')
 
-    def _seal_review(self, request):
+    def _seal_review(self, request, *, fixed_changes=None):
         """Seal an approving review of ``request`` through the central capture and publish it.
 
         Returns the review consumers' keyword arguments for that snapshot.
@@ -84,7 +150,7 @@ class ImpactBundleTests(ImpactReviewCase):
         output = self.review_output(request)
         action = {'id': 'AC-review', 'role': 'maintenance', 'stage': 'impact_review',
                   'input_basis': {'impact_review': request}}
-        fixed = {'action': action, 'execution_id': 'EX-review'}
+        fixed = {'action': action, 'execution_id': 'EX-review', **(fixed_changes or {})}
         review_bundle = next(integration.split_bundles(output, {}, fixed))
         self.runtime['executions']['EX-review'] = {'id': 'EX-review', 'role': 'maintenance', 'actor_kind': 'ai',
             'status': 'running', 'action': action, 'input_bundle': 'BA-review-input'}
@@ -101,6 +167,37 @@ class ImpactBundleTests(ImpactReviewCase):
         return {'producer_execution_id': 'EX-producer', 'input_snapshot': 'fixed-input',
                 'review_execution_id': 'EX-review', 'snapshot': head,
                 'read_artifact': lambda path, snapshot: store.read_bytes(snapshot, path)}
+
+    def test_impact_receiving_execution_must_match_the_sealed_designated_input(self):
+        request = self._request()
+        fixed_action = {'id': 'AC-another-assignment', 'role': 'maintenance', 'stage': 'impact_review',
+                        'input_basis': {'impact_review': request}}
+        args = self._seal_review(request, fixed_changes={'action': fixed_action})
+        before = deepcopy((self.instance, self.runtime))
+        with self.assertRaisesRegex(ValueError, '^impact review input is not the sealed designated assignment$'):
+            integration.require_bundle_impact_review(self.instance, self.runtime, self.bundle, **args)
+        self.assertEqual((self.instance, self.runtime), before)
+
+    def test_impact_review_response_cannot_bundle_an_unrelated_insight(self):
+        extensions = {'research_insights': [{'kind': 'observation', 'title': 'Unrelated insight',
+                        'statement': 'Independent observation', 'summary': 'Not part of the impact judgment'}]}
+        request = self._request()
+        output = self.review_output(request)
+        output['integration_bundles'][0]['members'].append('activity-extensions.json/research_insights/0')
+        fixed = {'execution_id': 'EX-review', 'action': {'id': 'AC-review', 'role': 'maintenance',
+            'stage': 'impact_review', 'input_basis': {'impact_review': request}},
+            'kind_definitions': knowledge_io.catalog_definitions(self.instance)}
+        workspace = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        schema = contracts.action_schema(fixed['action'])
+        submission.install_tools(workspace, fixed, schema, None, clock=self.clock)
+        (workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
+        sealed = submission.seal_submission(workspace, execution_id='EX-review', context=fixed,
+            schema=schema, max_artifact_bytes=1024 * 1024, raw_output=canonical_json(output), clock=self.clock)
+        self.assertFalse(sealed['passed'])
+        self.assertFalse(sealed['capture_eligible'])
+        self.assertEqual([(r['rule_id'], r['path'], r['message']) for r in sealed['check']['issues']],
+            [('submission.impact_review', 'activity-extensions.json',
+              'a designated impact judgment cannot also author research mutations')])
 
     def test_coupled_changes_use_the_single_reviewed_s0_plan(self):
         """About 0.25 s, over the 0.2 s unit budget: the review is sealed by the product's central capture on a real engine and published to a repository."""
@@ -325,6 +422,26 @@ class ImpactReviewTests(ImpactReviewCase):
         self.runtime['executions']['EX-review'] = {'id': 'EX-review', 'role': 'maintenance', 'status': 'ended',
             'action': {'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': before}}, 'output': output}
         self.assertEqual(before, self.request(), 'Recording the review must not invalidate its own assigned impact plan')
+        # A changed dependency makes the first assignment historical. Its
+        # execution remains in the new impact; only the new exact review is
+        # excluded. Both requests come from the real dependency planner.
+        from support.record_builders import observation_knowledge
+        candidate = observation_knowledge('Later dependent')
+        candidate['dependencies'] = [self.ids[0]]
+        self.instance, self.runtime, _ = knowledge_io.import_candidate(
+            self.instance, self.runtime, candidate, source_ref='UC-dependent',
+            actor_ref='UC-dependent', clock=self.clock)
+        changed = self.request()
+        self.assertNotEqual(before, changed)
+        self.assertIn('EX-review', changed['plans']['bundle']['computed_impact'])
+        new_output = self.review_output(changed)
+        new_output['used_sources'] = [self.ids[0]]
+        self.runtime['executions']['EX-current-review'] = {
+            'id': 'EX-current-review', 'role': 'maintenance', 'status': 'ended',
+            'action': {'role': 'maintenance', 'stage': 'impact_review',
+                       'input_basis': {'impact_review': changed}}, 'output': new_output}
+        self.assertEqual(changed, self.request(),
+            'A stale review must not prevent exclusion of the exact current assignment')
 
     def test_review_resolver_uses_actual_git_bytes_and_scoped_receipt(self):
         """About 0.7 s, over the 0.2 s unit budget: three reviews are sealed by the central capture and published."""
@@ -372,7 +489,7 @@ class ImpactReviewTests(ImpactReviewCase):
             self.assertEqual(confirmations, self.api.require_bundle_impact_review(self.instance, cached, self.bundle, **args))
             reasons = {'same_producer': '^independent checker execution required$', 'other_bundle': '^impact review is not the accepted designated current assignment$', 'stale': 'current assignment',
                        'unsealed': '^impact review has no matching published response receipt$', 'tampered_output': 'sealed output_ref hash differs',
-                       'shared_conversation': '^checker shares author conversation$', 'machine': '^impact review is not the accepted designated current assignment$'}
+                       'author_continuation': '^checker resumes an author lineage$', 'machine': '^impact review is not the accepted designated current assignment$'}
             for case, reason in reasons.items():
                 with self.subTest(case=case):
                     i, r, b, a = deepcopy(self.instance), deepcopy(self.runtime), deepcopy(self.bundle), dict(args)
@@ -385,9 +502,8 @@ class ImpactReviewTests(ImpactReviewCase):
                         a['read_artifact'] = lambda path, selected, output_ref=output_ref: (
                             canonical_json({**output, 'summary': 'Altered'}) if path == output_ref else store.read_bytes(selected, path))
                     if case == 'machine': r['executions']['EX-review']['actor_kind'] = 'machine'
-                    if case == 'shared_conversation':
-                        for identifier in ('EX-producer', 'EX-review'):
-                            r['executions'][identifier]['conversation_id'] = 'same-conversation'
+                    if case == 'author_continuation':
+                        r['executions']['EX-review']['continuation_of'] = 'EX-producer'
                     before = canonical_json(r)
                     with self.assertRaisesRegex(ValueError, reason):
                         self.api.require_bundle_impact_review(i, r, b, **a)

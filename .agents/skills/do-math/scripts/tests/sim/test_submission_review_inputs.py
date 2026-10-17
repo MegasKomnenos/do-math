@@ -22,6 +22,7 @@ def setUpModule():
 
 class ReviewInputTests(unittest.TestCase):
     def test_review_stage_documents_reach_the_final_seat_input(self):
+        self.maxDiff = None
         from do_math.context_store import prepare_role_input
         from support.engine_context import assert_review_documents, review_input_value
         from support.review_sim import dispute
@@ -78,12 +79,16 @@ class ReviewInputTests(unittest.TestCase):
                         del changed[0]['ref']
                     else:
                         changed[0]['ref'][field] = 'another-owner'
-                    with self.subTest(fault=field), self.assertRaises(AssertionError):
+                    reason = (r'actual field.*pending_findings\[\]\.ref' if field == 'ref' else
+                              "'" + field + "': 'another-owner'")
+                    with self.subTest(fault=field), self.assertRaisesRegex(AssertionError, reason):
                         assert_review_documents(self, changed, owner='pending_findings', cycle=cycle, action=action)
             for field in ('proposal', 'identity_basis', 'policy_ref'):
                 changed = deepcopy(final)
                 del changed[field]
-                with self.subTest(stage=stage, missing=field), self.assertRaises(AssertionError):
+                reason = ('proposal' if field == 'proposal' else
+                          r': role_review\.' + field + r' presence$')
+                with self.subTest(stage=stage, missing=field), self.assertRaisesRegex(AssertionError, reason):
                     assert_review_documents(self, changed, owner='role_review', cycle=cycle, action=action)
             seen.append(stage)
             if stage == 'answer':

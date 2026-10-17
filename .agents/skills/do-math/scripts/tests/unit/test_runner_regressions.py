@@ -1,4 +1,4 @@
-"""Runner reporting, selection and deadlines use synthetic tests and injected clocks."""
+"""Runner reporting, selection and ownership decisions using small synthetic inputs."""
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
@@ -12,6 +12,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import run_tests
 from test_categories import isolation_for, test_group as category
+from support.runner_contracts import runner_tree
 
 
 class RunnerTests(unittest.TestCase):
@@ -117,17 +118,7 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(all(run_tests.folder_of(test) in run_tests.FOLDERS for test in discovered))
 
     def _tree(self):
-        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        for folder in run_tests.FOLDERS:
-            (root / folder).mkdir()
-            (root / folder / '__init__.py').write_text('', encoding='utf-8')
-        self.enterContext(mock.patch.object(run_tests, 'TESTS', root))
-        self.enterContext(mock.patch.object(sys, 'path', sys.path.copy()))
-        self.enterContext(mock.patch.dict(sys.modules))
-        for name in list(sys.modules):
-            if name.split('.')[0] in run_tests.FOLDERS:
-                del sys.modules[name]
-        return root
+        return runner_tree(self)
 
     def _module(self, root, name):
         path = root / name
@@ -157,6 +148,12 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(len(out.splitlines()), 2)
         code, out, err = self._listing(['--tier', 'T4'])
         self.assertEqual((code, out, err), (0, 'boundary\tboundary.test_same.Case.test_value\n', ''))
+        code, out, err = self._listing(['unit.test_same.Case.test_value', '--tier', 'T1',
+                                       '--tier', 'T2', '--match', '*test_value', '--match', '*absent'])
+        self.assertEqual((code, out, err), (0, 'unit\tunit.test_same.Case.test_value\n', ''))
+        code, out, err = self._listing(['sim', '--tier', 'T1'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('No tests selected; no pass was established.', err)
 
     def test_missing_folder_package_or_nested_package_refuses_even_a_valid_selection(self):
         root = self._tree()
@@ -199,6 +196,19 @@ class RunnerTests(unittest.TestCase):
         code, out, err = self._listing(['unit'])
         self.assertEqual((code, out), (2, ''))
         self.assertIn('Test population mismatch. Missing: sim.test_omitted', err)
+
+    def test_a_ghost_module_returned_by_load_tests_refuses_even_a_valid_selection(self):
+        root = self._tree()
+        self._module(root, 'unit/test_present.py')
+        path = self._module(root, 'sim/test_extra.py')
+        with path.open('a', encoding='utf-8') as stream:
+            stream.write("Ghost = type('Ghost', (Case,), {'__module__': 'sim.test_ghost'})\n"
+                         'def load_tests(loader, tests, pattern):\n'
+                         "    tests.addTest(Ghost('test_value'))\n"
+                         '    return tests\n')
+        code, out, err = self._listing(['unit.test_present'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Test population mismatch. Missing: ; unexpected: sim.test_ghost', err)
 
     def test_duplicate_ids_and_import_failures_refuse_selection(self):
         root = self._tree()
@@ -313,6 +323,68 @@ class RunnerTests(unittest.TestCase):
                 active_processes=1 if observed.checks < 3 else 0, process_ids=())
         self.assertIsNone(run_tests.wait_for_worker(Job(), pause=pause))
         self.assertEqual(observed.checks, 3)
+
+    def test_empty_requires_root_signal_zero_active_count_and_empty_pid_list(self):
+        for signaled, active, pids, empty in [
+                (False, 0, (), False), (True, 1, (), False),
+                (True, 0, (123,), False), (True, 0, (), True)]:
+            with self.subTest(signaled=signaled, active=active, pids=pids):
+                job = SimpleNamespace(inspect=lambda: SimpleNamespace(
+                    root_signaled=signaled, active_processes=active, process_ids=pids))
+                self.assertEqual(run_tests._empty(job), empty)
+
+    def test_main_groups_marked_methods_by_class_and_keeps_the_last_row(self):
+        root = self._tree()
+        (root / 'unit' / 'test_labels.py').write_text(
+            'import unittest\nfrom test_categories import test_group\n'
+            '@test_group("lean")\nclass Marked(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    @test_group("resource")\n'
+            '    def test_two(self): self.assertTrue(True)\n'
+            'class Plain(unittest.TestCase):\n'
+            '    def test_plain(self): self.assertTrue(True)\n'
+            '    @test_group("resource")\n'
+            '    def test_process(self): self.assertTrue(True)\n', encoding='utf-8')
+        calls = []
+        def isolate(tests, directory, **kwargs):
+            calls.append([test.id() for test in tests])
+            return run_tests._run_suite(tests, directory)
+        destination = root.parent / 'output'
+        with mock.patch.object(run_tests, '_isolated', side_effect=isolate), \
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            self.assertEqual(run_tests.main(['unit', '--jobs', '1', '--output', str(destination)]), 0)
+        self.assertEqual(calls, [['unit.test_labels.Marked.test_one', 'unit.test_labels.Marked.test_two'],
+                                 ['unit.test_labels.Plain.test_process']])
+        report = json.loads((destination / 'report.json').read_bytes())
+        self.assertEqual(report['counts'], {'passed': 4})
+        self.assertEqual({row['id'] for group in report['reports'] for row in group['rows']}, set(report['selected']))
+
+    def test_main_stops_after_an_interrupted_worker_and_accounts_for_later_groups(self):
+        root = self._tree()
+        (root / 'unit' / 'test_interrupt.py').write_text(
+            'import unittest\nfrom test_categories import test_group\n'
+            '@test_group("resource")\nclass Case(unittest.TestCase):\n'
+            '    def test_one(self): self.fail("must not run")\n'
+            '    def test_two(self): self.fail("must not run")\n', encoding='utf-8')
+        self._module(root, 'sim/test_later.py')
+        def interrupted(tests, directory, **kwargs):
+            return {'complete': False, 'successful': False, 'interrupted': True,
+                    'module_total_seconds': {}, 'rows': [
+                        {'id': test.id(), 'outcome': 'not_run', 'seconds': 0, 'details': ['interrupt specimen']}
+                        for test in tests]}
+        destination = root.parent / 'output'
+        with mock.patch.object(run_tests, '_isolated', side_effect=interrupted) as isolated, \
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            self.assertEqual(run_tests.main(['unit', 'sim', '--jobs', '1', '--output', str(destination)]), 1)
+        isolated.assert_called_once()
+        report = json.loads((destination / 'report.json').read_bytes())
+        self.assertFalse(report['complete'])
+        self.assertFalse(report['successful'])
+        self.assertEqual(report['counts'], {'not_run': 3})
+        rows = [row for group in report['reports'] for row in group['rows']]
+        self.assertEqual({row['id'] for row in rows}, set(report['selected']))
+        self.assertEqual(len(rows), len(report['selected']))
+        self.assertFalse((destination / 'sim').exists())
 
 
 

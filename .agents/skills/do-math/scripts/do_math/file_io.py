@@ -30,14 +30,17 @@ def executable_identity(executable, *, strict=False):
 
 def atomic_replace(source, destination):
     delays=(0,.01,.025,.05,.1,.2)
-    for index,delay in enumerate(delays):
+    for delay in delays[:-1]:
         if delay:time.sleep(delay)  # layer: retry after a Windows sharing violation; the file system is not a port (설계 2.2)
         try:
             _replace_once(source,destination)
             return
         except OSError as error:
-            if getattr(error,'winerror',None) not in {5,32,33} or index==len(delays)-1:
+            if getattr(error,'winerror',None) not in {5,32,33}:
                 raise
+    # Only the preceding attempts retry; the final attempt propagates failure.
+    time.sleep(delays[-1])  # layer: final bounded Windows sharing retry (설계 2.2)
+    _replace_once(source,destination)
 
 
 @lru_cache(maxsize=1)

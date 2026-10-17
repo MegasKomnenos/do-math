@@ -27,19 +27,7 @@ class DelegationJudgmentTests(unittest.TestCase):
     def test_delegation_requires_two_real_judgments_on_same_current_case(self):
         from support.entry import entry
         _entry = entry()
-        i = domain_governance()
-        i["decisions"]["ORIGINAL"] = {"id": "ORIGINAL", "actor": "user", "source_ref": "S", "kind": "review_replacement",
-                                      "status": "active"}
-        i["delegations"] = {"DG": {"id": "DG", "status": "active", "decision_kind": "review_replacement",
-              "original_decision_id": "ORIGINAL", "included_targets": ["T"], "excluded_targets": [],
-              "external_effects": [], "resource_limits": {}, "expires_at": None, "source_ref": "S", "decision_id": "D"}}
-        i["delegations"]["DG"]["decision_id"] = "DD"
-        i["decisions"]["DD"] = {"id": "DD", "kind": "delegation", "actor": "user", "source_ref": "S",
-            "change": {"delegation": {k: deepcopy(v) for k, v in i["delegations"]["DG"].items()
-                                      if k not in {"source_ref", "decision_id", "created_at"}}}}
-        rt = {"executions": {}, "tasks": {"T": {"id": "T", "status": "waiting"}}}
-        case = {"id": "CASE", "target_id": "T", "decision_kind": "review_replacement", "external_effects": [],
-                "resources": {}, "effect": {"replace_slot": "R"}}
+        i, rt, action, case = replacement_case()
         app = d.prepare_application(i, rt, "DG", case, now_iso=_entry.ports.clock.now())
         for eid, stage in (("E1", "interpret"), ("E2", "check")):
             rt["executions"][eid] = {"id": eid, "role": "intent_interpretation",
@@ -48,11 +36,10 @@ class DelegationJudgmentTests(unittest.TestCase):
                                               "input_sha256": app["input_sha256"]}, execution_id=eid, stage=stage)
 
         def effect(instance, runtime, value):
-            runtime["tasks"]["T"]["status"] = "ready"
             runtime["replacement"] = value
             return instance, runtime
         result, state, record = d.apply_application(i, rt, app["id"], apply_effect=effect, now_iso=_entry.ports.clock.now())
-        self.assertEqual(state["replacement"], {"replace_slot": "R"})
+        self.assertEqual(state["replacement"], case["effect"])
         self.assertNotIn(app["id"], result["decisions"])
         _, repeated, _ = d.apply_application(result, state, app["id"], apply_effect=lambda *_: self.fail("already applied"), now_iso=_entry.ports.clock.now())
         self.assertEqual(repeated, state)
@@ -64,15 +51,10 @@ class DelegationJudgmentTests(unittest.TestCase):
         # The delegation names the charter approval D, a user decision that is not this delegation's approval.
         from support.entry import entry
         _entry = entry()
-        i = domain_governance()
-        i["decisions"]["ORIG"] = {"id": "ORIG", "kind": "custom_case", "actor": "user", "source_ref": "S"}
-        i["delegations"] = {"DG": {"id": "DG", "status": "active", "decision_kind": "custom_case", "original_decision_id": "ORIG",
-             "included_targets": ["T"], "excluded_targets": [], "external_effects": [], "resource_limits": {},
-             "source_ref": "S", "decision_id": "D"}}
-        case = {"id": "C", "target_id": "T", "decision_kind": "custom_case", "external_effects": [], "resources": {},
-                "effect": {}}
+        i, rt, _, case = replacement_case()
+        i['delegations']['DG']['decision_id'] = 'D'
         with self.assertRaisesRegex(ValueError, '^approval does not bind the exact delegated scope$'):
-            d.prepare_application(i, {"tasks": {"T": {"id": "T"}}}, "DG", case, now_iso=_entry.ports.clock.now())
+            d.prepare_application(i, rt, "DG", case, now_iso=_entry.ports.clock.now())
 
     def test_case_delegation_requires_explicit_scope_and_independent_check(self):
         from support.entry import entry

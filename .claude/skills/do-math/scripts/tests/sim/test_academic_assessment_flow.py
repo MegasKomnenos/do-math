@@ -13,9 +13,7 @@ import unittest
 
 from do_math.canonical import canonical_json
 from do_math.model_policy import MODELS
-from support.academic_scenes import ACADEMIC_TASKS, assessment_sim, warm_assessment
-
-setUpModule = warm_assessment
+from support.academic_scenes import ACADEMIC_TASKS, assessment_sim
 
 
 def assessment_action(engine):

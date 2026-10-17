@@ -119,6 +119,18 @@ class ChangeTests(unittest.TestCase):
 class SelectionTests(unittest.TestCase):
     ENTRY = {'blob': 'b1', 'functions': {'f': [0, 1, 2], 'C.m': [1]}}
 
+    def test_jobs_rejects_counts_outside_the_three_child_budget(self):
+        for jobs in (0, 4, True, 1.5):
+            with self.subTest(jobs=jobs), self.assertRaisesRegex(ValueError, 'jobs must be an integer'):
+                mutation.run('HEAD', None, {}, Path('.'), Path('.'), jobs=jobs)
+
+    def test_explicit_tests_require_a_module_scope_and_exact_method_names(self):
+        with self.assertRaisesRegex(ValueError, 'explicit tests require an --only module scope'):
+            mutation.run('HEAD', None, {}, Path('.'), Path('.'), explicit_tests=['unit.probe.Case.test_value'])
+        with self.assertRaisesRegex(ValueError, 'exact qualified unittest method IDs'):
+            mutation.run('HEAD', None, {}, Path('.'), Path('.'), only=['do_math/x.py'],
+                         explicit_tests=['unit.probe.*'])
+
     def test_the_tests_that_entered_the_function_are_chosen_whatever_moved(self):
         self.assertEqual(tests_for(self.ENTRY, 'b1', 'f', '2'), ({0, 1, 2}, ()))
         self.assertEqual(tests_for(self.ENTRY, 'b2', 'f', '2'), ({0, 1, 2}, ()))
@@ -238,7 +250,8 @@ class MutationEvidenceTests(unittest.TestCase):
         return result
 
     def _run_with_payload(self, payload, *, source='def value():\n    return 2\n',
-                          selected=None, functions=None, fallback=False):
+                          selected=None, functions=None, fallback=False, explicit_tests=(), jobs=1,
+                          function_selectors=()):
         """Only the child process/file boundary is doubled; parent parsing and classification are real."""
         from subprocess import CompletedProcess
         from support import branch_gate
@@ -260,16 +273,62 @@ class MutationEvidenceTests(unittest.TestCase):
             if result is not None:
                 raw = result if isinstance(result, bytes) else json.dumps(result).encode('utf-8')
                 (spec_path.parent / 'result.json').write_bytes(raw)
-            options['stdout'].write('process boundary specimen\n')
-            return mock.Mock(pid=123, wait=mock.Mock(return_value=exit_code), poll=mock.Mock(return_value=exit_code))
+            (spec_path.parent / 'output.txt').write_text('process boundary specimen\n', encoding='utf-8')
+            job = mock.Mock(pid=123, returncode=exit_code)
+            job.__enter__ = mock.Mock(return_value=job)
+            job.__exit__ = mock.Mock(return_value=False)
+            return job
 
         self.enterContext(mock.patch.object(mutation, 'SCRIPTS', scripts))
         self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
             args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b''))))
         self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
-        self.enterContext(mock.patch.object(mutation.subprocess, 'Popen', spawn))
+        self.enterContext(mock.patch('do_math.windows_job.WindowsJob', spawn))
+        self.enterContext(mock.patch('run_tests.wait_for_worker'))
+        self.enterContext(mock.patch('run_tests.worker_exit_code', lambda job: job.returncode))
         return mutation.run('HEAD', None if fallback else index, {'do_math/sample.py': '1'}, root, root / 'mutants',
-                            listing_path=root / 'pseudo.json')
+                            listing_path=root / 'pseudo.json', only=['do_math/sample.py'],
+                            explicit_tests=explicit_tests, jobs=jobs, function_selectors=function_selectors)
+
+    def test_exact_function_selectors_reject_invalid_or_unresolved_inputs_before_children(self):
+        for selector in ('value', '', 'do_math/sample.py:', 'do_math/else.py:value',
+                         'do_math/sample.py:missing', 'do_math/sample.py:value:*', None):
+            with self.subTest(selector=selector), self.assertRaisesRegex(ValueError, 'function selector'):
+                self._run_with_payload(lambda spec: self.fail('invalid selector launched a child'),
+                                       function_selectors=[selector])
+            self.assertEqual(self.calls, [])
+
+    def test_explicit_ids_supplement_indexed_tests_and_supply_unentered_functions(self):
+        extra = 'sim.probe.Case.test_direct'
+        for entered in (True, False):
+            with self.subTest(entered=entered):
+                report = self._run_with_payload(lambda spec: (self._result(spec), 0),
+                    functions={'value': [0]} if entered else {}, explicit_tests=[extra, extra])
+                expected = sorted([self.TEST, extra]) if entered else [extra]
+                self.assertEqual(self.calls[0][0]['tests'], expected)
+                selection = report['outcomes'][0]['selection']
+                self.assertEqual(selection['indexed_ordinals'], [0] if entered else [])
+                self.assertEqual(selection['explicit_tests'], [extra])
+                self.assertEqual(selection['tests'], expected)
+                self.assertEqual(report['explicit_tests'], [extra])
+                self.assertEqual(report['counts'], {'survived': 1})
+        report = self._run_with_payload(lambda spec: (self._result(spec), 0),
+                                        fallback=True, explicit_tests=[extra])
+        self.assertEqual(self.calls[0][0]['tests'], [extra])
+        self.assertEqual(self.calls[0][0]['folders'], ['unit', 'contracts'])
+
+    def test_an_explicit_id_missing_from_successful_execution_is_evidence_error(self):
+        extra = 'sim.probe.Case.test_direct'
+        def payload(spec):
+            result = self._result(spec)
+            result['collected'] = [self.TEST]
+            result['rows'] = [row for row in result['rows'] if row['id'] == self.TEST]
+            result['tests_run'] = 1
+            return result, 0
+        report = self._run_with_payload(payload, explicit_tests=[extra])
+        self.assertEqual(report['counts'], {'execution_error': 1})
+        self.assertIn(extra, report['outcomes'][0]['detail'])
+        self.assertEqual(report['baselines'], [])
 
     def test_missing_corrupt_or_inconsistent_evidence_blocks_both_sides_of_a_kill(self):
         """About 0.8s: both sides of 15 evidence faults retain actual spec/result/attempt files."""
@@ -330,6 +389,18 @@ class MutationEvidenceTests(unittest.TestCase):
         self.assertEqual(report['counts'], {'survived': 1})
         self.assertEqual(report['baselines'], [])
         self.assertGreaterEqual(report['outcomes'][0]['seconds'], 10000)
+
+    def test_parallel_mutants_share_one_missing_normal_result_and_none_is_killed(self):
+        def payload(spec):
+            return (self._result(spec, 'failed'), 0) if spec['target'] else (None, 0)
+        report = self._run_with_payload(payload, jobs=3,
+            source='def value():\n    return 2\ndef second():\n    return 2\ndef third():\n    return 2\n',
+            functions={name: [0] for name in ('value', 'second', 'third')})
+        self.assertEqual(report['counts'], {'execution_error': 3})
+        self.assertFalse(mutation.passed(report))
+        self.assertEqual(len(report['baselines']), 1)
+        self.assertEqual(len([spec for spec, _ in self.calls if spec['target'] is None]), 1)
+        self.assertTrue(all(o['attempts'][0]['baselines'] == [0] for o in report['outcomes']))
 
     def test_only_actual_normal_pass_confirms_failure_error_or_unexpected_success(self):
         """About 0.3s for the 3 mutant outcomes x 4 normal outcomes through actual file parsing."""

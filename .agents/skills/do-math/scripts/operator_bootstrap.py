@@ -135,12 +135,30 @@ def freeze(installation_root: Path, workspace: Path):
         if staging.exists():
             # Only the fresh staging directory created above can be removed.
             file_io.no_reparse(staging)
-            if staging.resolve().parent != parent.resolve() or not staging.name.startswith(".building-"):
-                raise ValueError("invalid bootstrap staging cleanup target")
             shutil.rmtree(staging)
     verify_snapshot(destination / MANIFEST)
     return {"entrypoint": str(destination / "scripts/operator_bootstrap.py"),
             "manifest": str(destination / MANIFEST), "snapshot_sha256": identity}
+
+
+def startup_evidence(manifest):
+    """Report live target drift from the verified frozen manifest, without blocking repair."""
+    if manifest is None:
+        return {'mode': 'live', 'comparison': 'no_recorded_manifest'}
+    file_io = _file_io()
+    result = {'mode': 'frozen', 'snapshot_sha256': manifest['snapshot_sha256'],
+              'installation_root': manifest['installation_root']}
+    try:
+        actual = _source_files(Path(manifest['installation_root']).resolve(strict=True), file_io)
+        expected = manifest['files']
+        result.update(comparison='match' if actual == expected else 'different',
+                      differences=[{'path': name, 'expected_sha256': expected.get(name),
+                                    'observed_sha256': actual.get(name)}
+                                   for name in sorted(set(expected) | set(actual))
+                                   if expected.get(name) != actual.get(name)])
+    except (OSError, ValueError) as error:
+        result.update(comparison='unavailable', error=type(error).__name__ + ': ' + str(error))
+    return result
 
 
 def main(argv=None):
@@ -162,12 +180,13 @@ def main(argv=None):
         return 0
     # This is a dedicated CLI entrypoint. Its package must come from the verified
     # snapshot beside it, independent of the working directory or live target.
-    sys.dont_write_bytecode = True
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from do_math import scheduled_operator
-    installation_root = Path(manifest["installation_root"]) if manifest else snapshot_root
-    return scheduled_operator.main(args, installation_root=installation_root)
+    sys.dont_write_bytecode = True  # pragma: no cover - T4 boundary.test_operator_bootstrap checks fresh-interpreter dispatch.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))  # pragma: no cover - T4 dispatch must import this verified package in a fresh interpreter.
+    from do_math import scheduled_operator  # pragma: no cover - T4 frozen dispatch loads its own package despite live-target damage.
+    installation_root = Path(manifest["installation_root"]) if manifest else snapshot_root  # pragma: no cover - T4 live/frozen dispatch preserves the original installation identity.
+    return scheduled_operator.main(args, installation_root=installation_root,  # pragma: no cover - T4 dispatch passes the verified manifest; package main/execute remain in T3.
+                                   installation_manifest=manifest_path if manifest is not None else None)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - T4 boundary.test_operator_bootstrap owns the independent Python entrypoint.
     raise SystemExit(main())

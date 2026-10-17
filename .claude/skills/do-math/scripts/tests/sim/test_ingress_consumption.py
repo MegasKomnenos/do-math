@@ -41,16 +41,37 @@ class ControlInboxConsumptionTests(unittest.TestCase):
     """About 7 s and 12 s, over the 2 s Sim budget: each case is a real owner pass over the inbox."""
 
     def assert_consumed_once_and_the_loop_continues(self, sim, cases):
-        for name, raw in cases:
+        for name, raw, reason in cases:
             with self.subTest(case=name):
                 (_inbox(sim) / (name + '.json')).write_bytes(raw)
+                before_instance, before = deepcopy(sim.instance), deepcopy(sim.runtime)
                 sim.engine.process_controls()
+                first_head = sim.engine.head
                 sim.engine.process_controls()
-                self.assertIn(name, sim.runtime['processed_controls'])
-                self.assertEqual(len(_rejections(sim, name)), 1)
-        sim.control('pause', text='after the rejected items')
+                self.assertEqual(sim.engine.head, first_head)
+                _, instance, stored = sim.engine.store.load()
+                self.assertEqual(instance, before_instance)
+                self.assertEqual(stored['processed_controls'], [*before['processed_controls'], name])
+                delta = stored['history'][len(before['history']):]
+                self.assertEqual(len(delta), 1)
+                self.assertEqual((delta[0]['kind'], delta[0]['reason']), ('rejected_user_control', reason))
+                self.assertEqual(sim.engine.control_result(name)['reason'], reason)
+                for field in set(before) - {'history', 'processed_controls', 'updated_at', 'last_observed_utc'}:
+                    self.assertEqual(stored[field], before[field], field)
+                self.assertEqual((_inbox(sim) / (name + '.json')).read_bytes(), raw)
+        rejected_state = deepcopy((sim.instance, sim.runtime, sim.engine.head))
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual((sim.instance, sim.runtime, sim.engine.head), rejected_state)
+        normal = sim.control('pause', text='after the rejected items')
         sim.engine.process_controls()
         self.assertEqual(sim.runtime['status'], 'paused')
+        self.assertEqual(sim.engine.control_result(normal['request_id'])['effect'], 'applied')
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual(sim.runtime['status'], 'paused')
+        self.assertEqual(sim.runtime['processed_controls'].count(normal['request_id']), 1)
+        self.assertEqual(sim.model.calls, [])
 
     def test_each_action_rejects_a_malformed_payload_once(self):
         sim = Sim.activated()
@@ -61,7 +82,7 @@ class ControlInboxConsumptionTests(unittest.TestCase):
             name = f'RQ-ingress-{index:02d}'
             request = {**deepcopy(envelope), 'id': name, 'action': action, 'config': config,
                        'accepted_order': envelope['accepted_order'] + f'.{index:02d}'}
-            cases.append((name, json.dumps(request).encode()))
+            cases.append((name, json.dumps(request).encode(), 'config: invalid type (expected object)'))
         self.assert_consumed_once_and_the_loop_continues(sim, cases)
 
     def test_a_broken_envelope_is_rejected_once(self):
@@ -79,7 +100,17 @@ class ControlInboxConsumptionTests(unittest.TestCase):
             'RQ-ingress-no-action': json.dumps({key: value for key, value in {**envelope, 'id': 'RQ-ingress-no-action'}.items()
                                                 if key != 'action'}).encode(),
         }
-        self.assert_consumed_once_and_the_loop_continues(sim, list(broken.items()))
+        reasons = {
+            'RQ-ingress-json': 'Expecting property name enclosed in double quotes: line 1 column 2 (char 1)',
+            'RQ-ingress-encoding': "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte",
+            'RQ-ingress-list': 'control identity mismatch',
+            'RQ-ingress-other-id': 'control identity mismatch',
+            'RQ-ingress-other-instance': 'control identity mismatch',
+            'RQ-ingress-no-order': 'control ordering envelope is invalid',
+            'RQ-ingress-no-action': 'control action envelope is invalid',
+        }
+        self.assert_consumed_once_and_the_loop_continues(sim,
+            [(name, raw, reasons[name]) for name, raw in broken.items()])
         for name, raw in broken.items():
             row, = _rejections(sim, name)
             self.assertEqual(row['request']['origin'], 'untrusted_file')

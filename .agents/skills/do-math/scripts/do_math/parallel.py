@@ -12,10 +12,12 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import Future
 from contextvars import copy_context
+from dataclasses import replace
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
 
 from .model_call import failed_result, judged_result
+from .observation_transport import ObservationBatch
 
 
 class ModelCalls:
@@ -28,6 +30,9 @@ class ModelCalls:
         self.collecting = False
         self.judging = False
         self.stopping = False
+        # The scheduler pins a shared allowance at owner-pass entry. Standalone
+        # callers leave it unset and each pump takes its own entry snapshot.
+        self._observation_limits = None
         self.on_returned = on_returned
         self.on_observation_error = on_observation_error
         # Set by anything the owner must handle: a callback request, an
@@ -133,12 +138,59 @@ class ModelCalls:
         finally:
             self.judging = False
 
-    def _apply_observations(self, future):
-        # Apply only the rows queued on entry: a running call keeps appending, and
-        # an unbounded drain would starve the owner loop (dispatch, live reviews,
-        # controls). A returned call appends nothing more, so collect applies all.
-        for _ in range(len(future.observations)):
+    def _apply_observations(self, future, *, limit=None, yield_to_returns=False, returned_at_entry=None):
+        # A running call keeps appending: share the owner's entry allowance
+        # across pumps, or use this standalone invocation's snapshot. A result
+        # is collected only after all of its own rows have been applied.
+        count = len(future.observations) if limit is None else limit
+        if self._observation_limits is not None:
+            count = min(count, self._observation_limits.get(future, 0))
+        consumed = 0
+        while consumed < count:
+            # A completion arriving during a slow callback gets the next owner
+            # opportunity, before any more unrelated backlog is applied. Only
+            # collect resumes continuations, after the owner receives controls.
+            if yield_to_returns and any(call.done() for call in self.futures):
+                break
+            if returned_at_entry is not None and any(
+                    call.done() and call not in returned_at_entry for call in self.futures):
+                # A return arrived while collect was paying another result's
+                # observation debt. Finish the active publication, then return
+                # to the owner for controls and a fresh completion ordering.
+                break
             function, args = future.observations.popleft()
+            taken = 1
+            if (not future.observation_failed and future.done() and len(self.futures) == 1
+                    and len(args) == 1 and isinstance(args[0], ObservationBatch)):
+                # With only this returned call left, no competing calculation
+                # can complete during its publication. Join its entry parts of
+                # one read; preserve received coordinates and the read's tick.
+                batch = last = args[0]
+                events, offsets, rows = list(batch.events), list(batch.offsets), list(batch.rows)
+                while consumed + taken < count and not last.ends_read:
+                    _, next_args = future.observations[0]
+                    # start_call installs one callback for this future; every
+                    # queued observation uses that same function (_observed).
+                    if len(next_args) != 1:
+                        break
+                    part = next_args[0]
+                    if (not isinstance(part, ObservationBatch) or part.stream_path != batch.stream_path
+                            or part.is_terminated is not batch.is_terminated
+                            or (part.received_at, part.received_monotonic) !=
+                               (batch.received_at, batch.received_monotonic)
+                            or part.first_row != batch.first_row + len(rows)):
+                        break
+                    future.observations.popleft()
+                    events.extend(part.events)
+                    offsets.extend(part.offsets)
+                    rows.extend(part.rows)
+                    last, taken = part, taken + 1
+                if taken > 1:
+                    args = (replace(batch, events=events, offsets=offsets, rows=rows,
+                                    end_offset=last.end_offset, ends_read=last.ends_read),)
+            consumed += taken
+            if self._observation_limits is not None:
+                self._observation_limits[future] -= taken
             if future.observation_failed:
                 continue  # Later rows depend on the one that could not be applied.
             try:
@@ -155,7 +207,10 @@ class ModelCalls:
             return
         self.pumping = True
         try:
-            for _ in range(self.events.qsize()):
+            with self.guard:
+                observations = [(future, len(future.observations)) for future in self.futures]
+                events = self.events.qsize()
+            for _ in range(events):
                 try:
                     function, args, response = self.events.get_nowait()
                 except Empty:
@@ -164,8 +219,14 @@ class ModelCalls:
                     response.set_result(function(*args))
                 except BaseException as error:
                     response.set_exception(error)
-            for future in list(self.futures):
-                self._apply_observations(future)
+            for future, count in observations:
+                if self._observation_limits is not None:
+                    # Live observations precede transport/inbox controls in
+                    # the owner. Return after one bounded callback per call,
+                    # even when calculations are still waiting for receipts.
+                    # collect can pay a returned call's own entry debt later.
+                    count = min(count, 1)
+                self._apply_observations(future, limit=count, yield_to_returns=True)
         finally:
             self.pumping = False
 
@@ -175,12 +236,17 @@ class ModelCalls:
         self.collecting = True
         finished = 0
         try:
-            for future in list(self.futures):
-                if not future.done():
-                    continue
+            # Results without observation debt (including machine calls) must
+            # not wait behind another returned call's observation backlog.
+            returned = tuple(future for future in self.futures if future.done())
+            for future in sorted(returned, key=lambda call: len(call.observations)):
                 generator = self.futures[future]
                 # The calculation queued its observations before it returned.
-                self._apply_observations(future)
+                self._apply_observations(future, returned_at_entry=returned)
+                if future.observations:
+                    # Rows arriving after owner-pass entry belong to the next
+                    # pass. Keep their result until its own rows are applied.
+                    continue
                 try:
                     result = future.result()
                 except Exception as error:
@@ -195,6 +261,8 @@ class ModelCalls:
                 else:
                     raise RuntimeError("an execution yielded more than one call")
                 self.futures.pop(future)
+                if self._observation_limits is not None:
+                    self._observation_limits.pop(future, None)
                 finished += 1
         finally:
             self.collecting = False

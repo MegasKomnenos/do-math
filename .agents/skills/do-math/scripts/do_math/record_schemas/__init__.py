@@ -48,7 +48,8 @@ REFERENCES = {
     "observation_facts": refs(("execution_id", "executions")),
     "self_check_obligations": refs(("execution_id", "executions")),
     "self_check_responses": refs(("execution_id", "executions")),
-    "operational_dispositions": refs(("execution_id", "executions"), ("question_id", "question_links")),
+    "operational_dispositions": refs(("execution_id", "executions"), ("target_execution_id", "executions"),
+                                     ("question_id", "question_links")),
     "control_receipts": refs(("execution_id", "executions")),
     "recoveries": refs(lists=(("execution_ids", "executions"),)),
     "reservations": refs(("constraint_id", "capacity_constraints"), ("owner_id", "executions")),
@@ -71,8 +72,7 @@ def _role_profile_references(selection):
 
 
 def _lifecycle_references(row):
-    if row.get("input_id"):
-        yield row["input_id"], "inputs"
+    yield row["input_id"], "inputs"
     check = row.get("intent_check", {})
     for field in ("interpretation_execution_id", "check_execution_id"):
         if check.get(field):
@@ -233,10 +233,9 @@ def _academic_seal_rules(row):
 def _observation_fact_rules(row):
     import hashlib
     from ..values import strict_json_loads
-    if "event_json" in row:
-        strict_json_loads(row["event_json"])
-        if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
-            raise ValueError("observation event bytes hash mismatch")
+    strict_json_loads(row["event_json"])
+    if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
+        raise ValueError("observation event bytes hash mismatch")
 
 
 def _capability_evidence_rules(row):
@@ -627,8 +626,3 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             if (identifier not in wait.get("review_requests", {}) or not execution
                     or execution.get("action", {}).get("input_basis", {}).get("impact_review") != wait["review_requests"][identifier]):
                 raise ValueError("held impact review execution differs from its assigned request")
-        recovery = wait.get("recovery", {})
-        for field, family in (("owner_activity_id", "activities"), ("review_cycle_id", "review_cycles")):
-            reference = recovery.get(field)
-            if reference is not None and identifiers.get(reference, (None, None))[1] != family:
-                raise ValueError("review recovery reference does not resolve: " + field)

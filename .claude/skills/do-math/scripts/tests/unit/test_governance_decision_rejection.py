@@ -7,6 +7,48 @@ from do_math import governance as gov
 from support.governance_cases import delegated_sim
 
 class GovernanceDecisionRejectionTests(unittest.TestCase):
+    def test_delegation_rejects_a_changed_original_approval_source(self):
+        sim = delegated_sim()
+        i, r = deepcopy((sim.instance, sim.runtime))
+        change = deepcopy(i['decisions']['DC-close-delegation']['change'])
+        change['decision_id'] = 'DC-new-delegation'
+        change['delegation']['id'] = 'DG-new-delegation'
+        original = i['decisions']['DC-close-original']
+        source = i['governance_sources'][original['source_ref']]
+        i['governance_sources'][source['id']] = gov.preserve_source(
+            source['id'], source['text'] + ' changed instruction', origin='user')
+        before = deepcopy((i, r, change))
+        with self.assertRaises(ValueError) as caught:
+            gov.apply_decision(i, r, change, source_ref=source['id'], clock=sim.clock)
+        self.assertEqual(str(caught.exception), 'original decision source differs from its preserved approval')
+        self.assertEqual((i, r, change), before)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[1:], (sim.instance, sim.runtime))
+
+    def test_review_replacement_decision_requires_the_current_unsealed_slot(self):
+        import tempfile
+        from do_math.review_cycle import slot_key
+        from support.governance_cases import replacement_engine
+        with tempfile.TemporaryDirectory() as directory:
+            engine, action = replacement_engine(directory)
+            change = {'kind': 'review_replacement', 'grant_id': action['grant_id'],
+                      'allowed_action': deepcopy(action)}
+            source = engine.instance['grants'][action['grant_id']]['source_ref']
+            for kind, reason in (
+                ('target', 'review replacement decision requires the exact current review action'),
+                ('sealed', 'review replacement decision requires an unsealed review slot'),
+            ):
+                i, r, proposed = deepcopy((engine.instance, engine.runtime, change))
+                if kind == 'target':
+                    proposed['allowed_action']['target'] = 'KN-different'
+                else:
+                    r['review_cycles'][action['review_cycle_id']]['results'][slot_key(action)] = {
+                        'execution_id': 'EX-already-sealed'}
+                before = deepcopy((i, r, proposed))
+                with self.subTest(kind=kind), self.assertRaises(ValueError) as caught:
+                    gov.apply_decision(i, r, proposed, source_ref=source, clock=engine.ports.clock)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual((i, r, proposed), before)
+
     def test_grant_kind(self):
         sim = delegated_sim()
         stored = sim.engine.store.load(sim.engine.head)[1:]

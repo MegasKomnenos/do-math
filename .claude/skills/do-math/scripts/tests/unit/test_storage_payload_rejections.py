@@ -10,6 +10,85 @@ from do_math.payloads import LIMIT, decode, encode, seal_large
 
 
 class PayloadRejections(unittest.TestCase):
+    def test_snapshot_encoder_rejects_nontext_object_coordinates(self):
+        with self.assertRaises(ValueError) as caught:
+            encode({'contract_id': 'test', 'family': 'delegation_applications',
+                    'record': {'id': 'DA', 'basis': {1: 'invalid coordinate'}}})
+        self.assertEqual(str(caught.exception), 'snapshot object keys must be strings')
+
+    def test_hash_matched_snapshot_nodes_still_require_the_current_graph_grammar(self):
+        # These are hostile stored bytes, not substitutes for the decoder or
+        # its hash checks. Every node gets its actual canonical content hash.
+        blobs = {}
+
+        def node(value):
+            raw = canonical_json(value)
+            digest = hashlib.sha256(raw).hexdigest()
+            blobs['runtime/artifacts/snapshot-' + digest + '/value.json'] = raw
+            return digest
+
+        def leaf(key='one', cell=None):
+            return node({'kind': 'object', 'key': key,
+                         'value': ['value', True] if cell is None else cell})
+
+        def branch(zero, one):
+            return node({'kind': 'object', 'bit': 0, 'zero': zero, 'one': one})
+
+        first = leaf()
+        bad_cell = node({'kind': 'object', 'key': 'one', 'value': None})
+        cases = (
+            (node([]), 'invalid snapshot node'),
+            (node({'kind': 'unknown'}), 'invalid snapshot node'),
+            (bad_cell, 'invalid snapshot cell'),
+            (leaf(cell=['value', []]), 'invalid snapshot cell'),
+            (leaf(cell=['node', 'not-a-hash']), 'invalid snapshot node reference'),
+            (node({'kind': 'list', 'previous': 'not-a-hash', 'item': ['value', 1]}),
+             'invalid snapshot node reference'),
+            (branch(first, 'not-a-hash'), 'invalid snapshot node reference'),
+            (branch(first, first), 'overlapping snapshot object coordinates'),
+            (branch(first, leaf(cell=['value', False])), 'duplicate snapshot object key'),
+            (branch(first, node({'kind': 'list'})), 'snapshot object branch is not an object'),
+            (node({'kind': 'list', 'previous': first, 'item': ['value', 1]}),
+             'snapshot prefix is not a list'),
+            (leaf(cell=['text', 'a' * 64, LIMIT - 1]), 'invalid snapshot text reference'),
+        )
+        for digest, reason in cases:
+            path = 'runtime/artifacts/snapshot-' + digest + '/value.json'
+            envelope = {'contract_id': 'test', 'family': 'delegation_applications',
+                'record': {'id': 'DA', 'basis': None},
+                'payloads': [{'tokens': ['basis'], 'path': path,
+                              'sha256': digest, 'bytes': len(blobs[path])}]}
+            before = deepcopy((envelope, blobs))
+            with self.subTest(reason=reason), self.assertRaises(ValueError) as caught:
+                decode(envelope, blobs.__getitem__)
+            self.assertEqual(str(caught.exception), reason)
+            self.assertEqual((envelope, blobs), before)
+
+    def test_snapshot_missing_changed_nodes_and_noncanonical_coordinates_are_rejected(self):
+        envelope, blobs = encode({'contract_id': 'test', 'family': 'delegation_applications',
+                                  'record': {'id': 'DA', 'basis': {'target': {'rows': ['exact', 'input']}}}})
+        self.assertEqual(decode(envelope, blobs.__getitem__)['basis']['target']['rows'], ['exact', 'input'])
+        path = next(p for p, raw in blobs.items() if b'exact' in raw)
+        for kind in ('missing', 'hash'):
+            damaged = dict(blobs)
+            if kind == 'missing':
+                del damaged[path]
+                reason = 'immutable snapshot missing: ' + re.escape(path)
+            else:
+                damaged[path] = damaged[path].replace(b'exact', b'wrong')
+                reason = 'immutable snapshot bytes differ'
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                decode(envelope, damaged.__getitem__)
+        bad = deepcopy(envelope)
+        bad['payloads'].append(deepcopy(bad['payloads'][0]))
+        with self.assertRaisesRegex(ValueError, '^payload coordinate overlaps$'):
+            decode(bad, blobs.__getitem__)
+        bad = deepcopy(envelope)
+        bad['record']['basis'] = {'target': {'rows': ['exact', 'input']}}
+        bad.pop('payloads')
+        with self.assertRaisesRegex(ValueError, '^record differs from canonical payload encoding$'):
+            decode(bad, blobs.__getitem__)
+
     def source(self):
         return encode({'contract_id': 'test', 'family': 'test',
                        'record': seal_large({'outer': ['A' * LIMIT]})})

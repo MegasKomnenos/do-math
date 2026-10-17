@@ -117,6 +117,14 @@ class TaskScopeTests(unittest.TestCase):
                 seal_response(output, context, workspace)
                 return payload_issues(output, schema_for('research_preparation'), context, extensions, workspace, clock=_entry.ports.clock)
 
+        withdraw = [{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'x'}]
+        self.assertEqual(issues(withdraw), [])
+        context['ongoing_work'] = [
+            {'execution_id': 'EX-other', 'target': 'TK-AI', 'status': 'running'}]
+        self.assertEqual([(row['path'], row['message']) for row in issues(withdraw)], [
+            ('activity-extensions.json/task_dispositions', 'task has another live execution')])
+        context.pop('ongoing_work')
+
         revise = issues([{'task_id': 'TK-AI', 'disposition': 'revise', 'reason': 'x'}])
         self.assertTrue(any(row['path'] == 'activity-extensions.json/task_dispositions/0/disposition' for row in revise))
         duplicate = issues([{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'x'},

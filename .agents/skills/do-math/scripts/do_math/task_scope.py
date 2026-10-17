@@ -199,10 +199,12 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
     return authority
 
 
-def assessment_basis(task, assessment, instance, runtime, *, records=None):
+def assessment_basis(task, assessment, instance, runtime, *, records=None, input_sources=()):
     """Content hashes of everything an assessment's evidence reaches.
 
     records is planning.record_index(instance, runtime) when the caller already built it.
+    Issued local source locators retain their source ID in this basis. Refreshes
+    use that identity, never the current workspace order or a guessed filename.
     """
     from .planning import record_index,task_reference_basis,condition_refs,listed_reference_ids,READ_REFERENCE_ID_FIELDS
     from .relation_refs import relation_references, relation_evidence_references
@@ -263,6 +265,17 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
     from .input_basis import aliases
     result={}
     for ref in sorted(refs):
+        supplied = next((source for source in input_sources if source.get('local_path') == ref), None)
+        bound = assessment.get('basis', {}).get(ref)
+        source_id = supplied['id'] if supplied is not None else (
+            bound['source_id'] if isinstance(bound, dict) else None)
+        if source_id is not None:
+            source = ({key: value for key, value in supplied.items() if key != 'local_path'}
+                      if supplied is not None else next((source for source in instance.get('sources', [])
+                                                       if source['id'] == source_id), None))
+            result[ref] = {'source_id': source_id,
+                           'sha256': exact_content_hash(source) if source is not None else None}
+            continue
         found=records.get(ref)
         if found is None:
             source = next((source for source in instance.get('sources', [])
@@ -377,7 +390,7 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
     return None
 
 
-def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None, clock):
+def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, input_sources=(), evaluation_context=None, clock):
     """Apply the whole assessment set on copies, including recipient obligations."""
     from .task_contracts import assessor_is_judge, validate_item_dispositions, contract_obligations, judge_coverage_errors
     from .planning import record_index
@@ -468,7 +481,8 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             task.setdefault('assessment_history', []).append(deepcopy(task['assessment']))
         task['assessment'] = {**deepcopy(assessment), 'execution_id':execution_id, 'contract_sha256':contract_hash(task),
                               'results_sha256':exact_content_hash(task['results']), 'current':True,
-                              'basis':assessment_basis(task,assessment,new_instance,new_runtime,records=records)}
+                              'basis':assessment_basis(task,assessment,new_instance,new_runtime,records=records,
+                                                       input_sources=input_sources)}
         obligations = {o['id']: o for o in contract_obligations(task)}
         task['assessment']['specialist_support'] = {
             row['obligation_id']: designated_judgment(task, obligations[row['obligation_id']], row, new_instance, new_runtime)
@@ -481,7 +495,8 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             unresolved = assessment.get('unresolved', [])
             task['waiting'] = {'kind':'assessment_input' if unresolved else 'research_followup',
                 'target_refs':list(dict.fromkeys(ref for row in unresolved for ref in row['missing_inputs'])),
-                'next_owner':unresolved[0]['next_owner'] if unresolved else 'research_plan', 'basis_ref':execution_id}
+                'next_owner':unresolved[0]['next_owner'] if unresolved else 'research_plan', 'basis_ref':execution_id,
+                'reason':assessment['reason']}
             if not unresolved and not any(a.get('role')=='research_plan' for a in new_runtime.setdefault('queue',[])):
                 new_runtime['queue'].append({'id':clock.new_id('AC'),'role':'research_plan','reason':'Select continuation for assessed remaining obligations','requested_by':execution_id})
         new_runtime.setdefault('history', []).append({'kind':'task_assessed','task_id':task['id'],'execution_id':execution_id,'decision':assessment['decision']})

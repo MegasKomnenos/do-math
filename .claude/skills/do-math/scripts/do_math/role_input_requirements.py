@@ -12,7 +12,9 @@ ROLE_INPUT_REQUIREMENTS = {
         'keys': ('action', 'governance', 'tasks', 'task_catalog', 'ongoing_work',
                  'preparation_history', 'recent_history', 'knowledge_catalog',
                  'academic_phase', 'academic_requirements', 'resources',
-                 'profile_selection', 'pending_revisions', 'blocked_actions'),
+                 'profile_selection', 'pending_revisions', 'blocked_actions',
+                 'configuration_source', 'relations', 'sources', 'formal_verifier',
+                 'task_readiness', 'events'),
     },
     'research_plan': {
         'contract': '계약/연구-계획.md',
@@ -20,7 +22,9 @@ ROLE_INPUT_REQUIREMENTS = {
                  'ready_task_ids', 'returned_task_ids', 'ongoing_work',
                  'knowledge_catalog', 'recent_history', 'academic_phase',
                  'academic_requirements', 'academic_validation', 'resources',
-                 'profile_selection', 'input_overflow_requests', 'review_followups'),
+                 'profile_selection', 'input_overflow_requests', 'review_followups',
+                 'configuration_source', 'relations', 'sources', 'blocked_actions',
+                 'pending_revisions', 'queued_work', 'external_rejections', 'events'),
     },
     'research_work': {
         'contract': '계약/연구-수행.md',
@@ -30,7 +34,8 @@ ROLE_INPUT_REQUIREMENTS = {
     'task_contract_review': {
         'contract': '계약/작업-계약-검토.md',
         'keys': ('action', 'governance', 'task', 'available_input_refs',
-                 'knowledge_catalog', 'sources', 'model_policy', 'record_index', 'record_map'),
+                 'knowledge_catalog', 'sources', 'model_policy', 'record_index', 'record_map',
+                 'formal_verifier', 'grants'),
     },
     'identity_review': {
         'contract': '계약/동일성-검토.md',
@@ -84,7 +89,8 @@ def judgment_input_keys(role, action):
     keys = list(ROLE_INPUT_REQUIREMENTS[role]['keys'])
     keys.extend(('snapshot', 'execution_profile', 'record_map', 'record_index'))
     if role == 'supplemental_research':
-        keys.extend(('review_research', 'proposal') if action.get('review_cycle_id') else ('task',))
+        keys.extend(('review_research', 'proposal') if action.get('review_cycle_id') else
+                    ('task', 'knowledge_catalog', 'relations', 'sources', 'formal_verifier', 'grants'))
     elif role == 'intent_interpretation':
         if action.get('delegation_application_id'):
             keys.append('delegation_case')
@@ -154,6 +160,10 @@ def judgment_source_lists(role, action, *, context):
     if role == 'operational_review':
         return ('operational_evidence.checkpoint_files',) + (
             ('recovery_materials.output_files',) if recovery_materials_required(action, context) else ())
+    if role in ('research_preparation', 'research_plan', 'research_work', 'task_contract_review'):
+        return ('sources',)
+    if role == 'supplemental_research':
+        return ('sources',)
     return ()
 
 
@@ -164,6 +174,8 @@ def recovery_materials_required(action, context):
 
 def judgment_source_refs(role, action, *, context):
     """Single exact files, with explicit missing/failed evidence left distinguishable."""
+    if role in ('research_preparation', 'research_plan'):
+        return ('configuration_source', 'profile_selection.profiles_ref', 'task_catalog[].source_ref')
     if role != 'operational_review':
         return ()
     paths = []

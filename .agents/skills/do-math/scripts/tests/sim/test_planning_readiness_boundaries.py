@@ -4,10 +4,8 @@ import unittest
 
 from do_math import planning, task_contracts
 from support.engine_lifecycle import _ended_execution, approve, clear_work
-from support.planning_contract_inputs import prepared_sim, warm_prepared, only_task, returned, produce_task
+from support.planning_contract_inputs import prepared_sim, only_task, returned, produce_task
 from support.role_answers import review_items
-
-setUpModule = warm_prepared
 
 
 class ReadinessBoundaries(unittest.TestCase):

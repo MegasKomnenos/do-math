@@ -7,6 +7,7 @@ from __future__ import annotations
 from .wait_rules import waiting_action
 from copy import deepcopy
 import json
+import traceback
 from pathlib import Path
 from .contracts import prompt_metrics
 from . import governance, knowledge, planning, academic
@@ -20,6 +21,7 @@ from . import submission, execution_window
 from . import activities, execution_lifecycle, execution_profiles, launch
 from .provider_engine import record_model_policy_violation
 from .payloads import json_safe
+from .git_store import GitStateStoreError
 from .wait_rules import review_preparation_wait, observation_preparation_wait, action_authority_wait
 
 
@@ -34,6 +36,26 @@ class ReviewPreparationDeferred(Exception):
 
 
 class CallEngineMixin:
+    def _fail_input_preparation(self, base, execution_id, error):
+        """Park this unadmitted attempt; its snapshot and full diagnostic stay durable."""
+        self._reload()  # Discard only unpublished preparation changes.
+        execution = self.runtime['executions'][execution_id]
+        if execution['status'] != 'queued' or execution.get('capacity') or execution.get('input_bundle'):
+            raise error  # This boundary owns only private input before admission.
+        action = deepcopy(execution['action'])
+        reason = f'{type(error).__name__}: {error}'
+        self._remove_action(action)
+        self.runtime.setdefault('waiting_actions', {})[action['id']] = waiting_action({
+            'action': action, 'kind': 'execution_failure', 'failure_kind': 'input_preparation',
+            'execution_id': execution_id, 'input_snapshot': execution['input_snapshot'], 'reason': reason})
+        self.runtime['history'].append({'kind': 'input_preparation_failed', 'execution_id': execution_id,
+            'action': deepcopy(action), 'input_snapshot': execution['input_snapshot'],
+            'error_type': type(error).__name__, 'reason': str(error),
+            'traceback': ''.join(traceback.format_exception(error))})
+        self.route_failed_action(action, execution_id, reason='Diagnose the preserved input preparation failure')
+        self._discard_prepared_input(base, execution_id, reason=reason, cancelled=False)
+        return True
+
     def _prepare_call(self, action: dict):
         """Everything before the runner call: gates, input, execution record, tracker and deadline.
 
@@ -119,17 +141,8 @@ class CallEngineMixin:
             self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             self._save()
             return bool(self.runtime["queue"])
-        if execution_profiles.task_research(action):
-            check_task = deepcopy(self.runtime["tasks"][action["target"]])
-            ready = planning.task_ready(check_task, self.instance, self.runtime, action=action, include_scheduling_waits=False,
-                                        evaluation_context=self._evaluation_context())
-            if ready["state"] != "ready":
-                self.runtime["tasks"][action["target"]]["status"] = "waiting"
-                self.runtime["tasks"][action["target"]]["readiness_error"] = ready
-                self._remove_action(action)
-                self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
-                self._save()
-                return bool(self.runtime["queue"])
+        # _selected_action_current checked task readiness on this owner state;
+        # profile/activity/observation setup above changes none of its premises.
         activity_id = activity["id"]
         queued = self._register_execution(action, {"id": execution_id, "role": role, "status": "queued",
             "created_at": self.ports.clock.now(), "input_snapshot": self.head, "grant_id": authority["grant_id"]}, profile=profile)
@@ -164,11 +177,12 @@ class CallEngineMixin:
             if waiting is not None:
                 self._hold_unreadable_impact_submission(waiting, error, preparation=(base, execution_id))
                 return True
-            self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
+            return self._fail_input_preparation(base, execution_id, error)
+        except GitStateStoreError:
+            # Repository-wide read/publication failure cannot be isolated here.
             raise
-        except (ValueError, KeyError, TypeError, OSError) as error:
-            self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
-            raise
+        except Exception as error:
+            return self._fail_input_preparation(base, execution_id, error)
         finally:
             self._preparing_input = False
         # Only an execution the tracker opens self checks for is offered the self-check tool.
@@ -186,10 +200,9 @@ class CallEngineMixin:
                 snapshot=input_head, workspace=workspace, activity_id=activity_id, output_schema=schema,
                 documents=self._documents[role], artifact_prefix=f"{ARTIFACT_ROOT}{input_bundle}",
                 install_submission_tools=True, max_artifact_bytes=config["max_artifact_bytes"], clock=self.ports.clock)
-        except (ValueError, KeyError, TypeError, OSError) as error:
-            self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
-            raise
-        context = submission.load_json((workspace / "input/submission/context.json").read_bytes())
+            context = submission.load_json((workspace / "input/submission/context.json").read_bytes())
+        except Exception as error:
+            return self._fail_input_preparation(base, execution_id, error)
         prompt = fitted["prompt"]
         self._apply_inbox(pump=False)
         if (self._execution_stop_requested(action)
@@ -271,13 +284,10 @@ class CallEngineMixin:
             basis_ids = [k for k in proposal.get("dependencies", []) if k in self.instance["knowledge"]]
             source_refs = [row["name"] for row in proposal.get("source_basis", [])]
         elif role == "goal_audit":
-            if action["basis"] != self._goal_basis_key():
-                raise ValueError("goal audit inputs changed before acceptance")
+            # The group basis was checked before packing; the input_head
+            # comparison above already discards any intervening publication.
             basis_ids = [k["id"] for k in self.instance["knowledge"].values() if knowledge.assess_use(k, self.instance)["valid"]]
         chosen_model = action["model_selection"]
-        if self._revision_dispatch_waits(action):
-            self._discard_prepared_input(base, execution_id)
-            return False
         retry = self._pending_input_overflow_retry(action)
         if retry:
             evidence = {"action_id": action["id"], "request_id": retry["request_id"],
@@ -340,8 +350,7 @@ class CallEngineMixin:
                 condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
             self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
             return False
-        if execution["status"] == "queued":
-            execution_lifecycle.transition_execution(execution, "starting", at=self.ports.clock.now())
+        # Successful SessionSlots.acquire has already transitioned to starting.
         self._live_execution_ids.add(execution_id)
         if self.runtime["status"] != "paused":
             self.runtime["status"] = "running"
@@ -458,10 +467,11 @@ class CallEngineMixin:
         if not execution_lifecycle.release_or_hold(pending, self._session_slots(), at=self.ports.clock.now()):
             result_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/result.json"
             pending['result_ref'] = result_ref
+            preserved = json_safe(result)
             for key in ('error_kind', 'failure'):
-                if key in result:
-                    pending[key] = deepcopy(result[key])
-            self._publish_provider_result({result_ref: canonical_json(json_safe(result))})
+                if key in preserved:
+                    pending[key] = deepcopy(preserved[key])
+            self._publish_provider_result({result_ref: canonical_json(preserved)})
             return True
         result = self._collect_submitted_result(self.runtime["executions"][execution_id], result, context, schema, workspace)
         result = json_safe(result)
@@ -571,8 +581,9 @@ class CallEngineMixin:
                         reason="Diagnose the preserved failure before selecting recovery")
                 if self.runtime["status"] not in {"paused", "closed"}:
                     self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
-            elif self.runtime["status"] not in {"closed", "paused"}:
-                self.runtime["status"] = "paused"
+            # model_call.classify_run and the submission collector return only
+            # completed/failed/stopped. A stopped paused/closed request needs
+            # no extra status change here.
         self._settle_activity(execution_id)
         self._publish_provider_result(artifacts)
         self._controls()

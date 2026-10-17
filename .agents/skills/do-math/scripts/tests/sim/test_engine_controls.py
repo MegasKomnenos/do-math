@@ -76,6 +76,7 @@ class ControlTransitionTests(InitializedControlTest):
 
 class ActiveTransitionTests(unittest.TestCase):
     def test_stale_request_is_consumed_and_does_not_poison_later_controls(self):
+        from copy import deepcopy
         sim = Sim.activated()
         engine = sim.engine
         clear_work(sim)
@@ -85,9 +86,24 @@ class ActiveTransitionTests(unittest.TestCase):
         self.assertEqual(task_ready(engine.runtime['tasks']['TK-stale'], engine.instance, engine.runtime,
                                     evaluation_context=engine._evaluation_context())['state'], 'ready')
         request = sim.control('request', config={'role': 'supplemental_research', 'target': 'TK-stale'})
-        # Work on the task starts before the owner reads the request, which is stale when it does.
-        engine.runtime['tasks']['TK-stale']['status'] = 'active'
-        engine._save()
+        # Delay an admitted file while a public decision removes its readiness premise.
+        inbox = Path(sim.instance['workspace']) / 'control' / sim.instance_id
+        path = inbox / (request['request_id'] + '.json')
+        raw = path.read_bytes()
+        delayed = sim.root / 'delayed-supplement.json'
+        path.rename(delayed)
+        current = engine.runtime['tasks']['TK-stale']
+        from do_math.planning import contract_hash
+        revision = sim.control('decision', config={'change': {'kind': 'task_scope',
+            'task_id': current['id'], 'revision': current['revision'], 'contract_sha256': contract_hash(current),
+            'disposition': 'revise', 'reason': 'public readiness premise change'}})
+        engine.process_controls()
+        self.assertEqual(engine.control_result(revision['request_id'])['effect'], 'applied')
+        self.assertEqual(task_ready(engine.runtime['tasks']['TK-stale'], engine.instance, engine.runtime,
+            evaluation_context=engine._evaluation_context())['state'], 'not_ready')
+        delayed.rename(path)
+        self.assertEqual(path.read_bytes(), raw)
+        before = deepcopy((engine.runtime['tasks'], engine.runtime['executions'], engine.runtime['reservations']))
         sim.control('pause')
         engine.process_controls()
         status = engine.status()
@@ -95,10 +111,18 @@ class ActiveTransitionTests(unittest.TestCase):
         self.assertEqual(status['pending_controls'], 0)
         _, _, runtime = engine.store.load()
         self.assertIn(request['request_id'], runtime['processed_controls'])
-        self.assertEqual(runtime['tasks']['TK-stale']['status'], 'active')
+        self.assertEqual((runtime['tasks'], runtime['executions'], runtime['reservations']), before)
         rows = [row for row in runtime['history'] if row.get('request', {}).get('id') == request['request_id']]
         self.assertEqual([(row['kind'], row['reason']) for row in rows],
                          [('rejected_user_control', 'supplemental task is no longer ready')])
+        receipt = deepcopy(engine.control_result(request['request_id']))
+        rejected_state = deepcopy((engine.head, engine.instance, engine.runtime))
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual((sim.engine.head, sim.instance, sim.runtime), rejected_state)
+        self.assertEqual(sim.engine.control_result(request['request_id']), receipt)
+        self.assertEqual(sim.runtime['processed_controls'].count(request['request_id']), 1)
+        self.assertEqual(path.read_bytes(), raw)
 
     def test_crash_marks_owning_activity_unresolved(self):
         sim = Sim.activated()
@@ -309,6 +333,18 @@ class TerminalRequestTests(unittest.TestCase):
         self.assertEqual([sim.engine.control_result(e['request_id']) for e, _ in requests], receipts)
         self.assertEqual(sim.runtime['queue'], [])
         self.assertEqual(sim.model.calls, [])
+        # Operational configuration remains a valid control on an ended instance.
+        value = sim.instance['config']['plan_settle_seconds'] + 1
+        following = sim.control('configure', config={'plan_settle_seconds': value})
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(following['request_id'])['effect'], 'applied')
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual(sim.instance['config']['plan_settle_seconds'], value)
+        self.assertEqual(sim.runtime['status'], 'closed')
+        self.assertEqual(sim.runtime['processed_controls'].count(following['request_id']), 1)
+        self.assertEqual([sim.engine.control_result(e['request_id']) for e, _ in requests], receipts)
+        self.assertEqual((sim.runtime['executions'], sim.runtime['reservations']), before)
 
     def test_cleanup_request_binds_only_the_named_existing_execution(self):
         from copy import deepcopy

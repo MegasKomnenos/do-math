@@ -143,7 +143,14 @@ class PurposeAnswers:
         if role == 'goal_audit':
             eligible = context.get('eligible_knowledge', [])
             if not eligible: raise AssertionError('Goal audit was scheduled before effective formal evidence existed')
-            if not all(item['links'] and all(a['decision'] == 'match' for a in item['identity_assessments']) for item in eligible):
+            # The producer selects effective links; the answer must actually
+            # receive their sealed assessments, rather than approve an empty
+            # list or an unrelated matching judgment.
+            if not all(item['links'] and item['identity_assessments']
+                       and {a['id'] for a in item['identity_assessments']}
+                           == {link['assessment_id'] for link in item['links']}
+                       and all(a['decision'] == 'match' for a in item['identity_assessments'])
+                       for item in eligible):
                 raise AssertionError('Goal audit did not receive the effective final identity assessment')
             return {**common('The certified Nat zero-addition theorem meets the exact requested identity'),
                     'used_sources': [k['id'] for k in eligible], 'decision': 'satisfied', 'scope_complete': True,

@@ -17,6 +17,37 @@ def setUpModule():
 
 
 class FormalContinuationTests(unittest.TestCase):
+    def test_public_revision_stops_the_fixed_input_and_preserves_its_original_source(self):
+        from do_math.knowledge import plan_impact, revision_roots
+        from support.engine_lifecycle import clear_work
+        from support.knowledge_builders import knowledge_candidate
+        from support.sim import Sim
+        sim = Sim.activated()
+        clear_work(sim)
+        kid = sim.clock.new_id('KN')
+        candidate = knowledge_candidate(id=kid)
+        applied(sim, 'knowledge', config={'operation': 'import', 'candidate': candidate})
+        sim.lean.allow(candidate['lean_code'], ['truth'], signatures={'truth': 'truth : True'},
+            declaration_evidence={'truth': {'type': 'True', 'value': None}}, axioms={'truth': []}, dependencies={'truth': {}})
+        sim.engine._enqueue('formal_check', kid)
+        sim.engine._save()
+        action = next(a for a in sim.runtime['queue'] if a['role'] == 'formal_check' and a['target'] == kid)
+        old_source = candidate['lean_code']
+        plan = plan_impact(sim.instance, sim.runtime, revision_roots(sim.instance, kid), [])
+        stop_with_control(sim, action, 'knowledge', config={'operation': 'revise', 'id': kid,
+            'changes': {'statement': 'A revised mathematical statement'}, 'reason': 'reassess the fixed input',
+            'declared_impact': plan['computed_impact']})
+        execution, = attempts(sim)
+        self.assertEqual((execution['outcome'], execution['formal_status']), ('execution_incomplete', 'stopped'))
+        self.assertIn('input_changed', execution['result_disposition']['stop_reasons'])
+        self.assertNotIn('submission_receipt', execution)
+        self.assertEqual(sim.instance['knowledge'][kid]['lifecycle'], 'superseded')
+        raw = sim.engine.store.read(execution['result_ref'], sim.engine.head)
+        self.assertEqual(json.loads(raw)['status'], 'stopped')
+        self.assertEqual(sim.engine.store.read(execution['result_ref'].replace('formal.json', 'proposal.lean'),
+                                             sim.engine.head), old_source.encode())
+        self.assertEqual(sim.runtime['waiting_actions'][action['id']]['kind'], 'formal_stopped')
+
     def test_actual_identity_rejection_and_publication_gate_both_require_environment_recovery(self):
         """3-C/C-15: a changed owned executable, with actual identity checks and no compiler start."""
         from pathlib import Path
@@ -146,6 +177,46 @@ class FormalAuthority(unittest.TestCase):
 
 
 class FormalBindingConnections(unittest.TestCase):
+    def test_new_transition_before_publication_keeps_the_verified_return_and_rejects_the_seal(self):
+        """T3 4.3 s: a registered second environment, real worker return and owner control pass are the publication boundary."""
+        from support.engine_lifecycle import next_environment, only
+        sim, action = scene()
+        target = next_environment(sim, 'transition-before-seal', configure=False)
+        old = sim.instance['active_trust_environment']
+        formal_id = sim.instance['knowledge'][action['target']]['formal_result_id']
+        original_formal = deepcopy(sim.instance['formal_results'][formal_id])
+        spawn, requests = sim.lean.spawn, []
+        def request_transition(command, **options):
+            if not requests:
+                requests.append(sim.control('trust', text='move trust before admitting the compiler result',
+                    config={'operation': 'transition', 'env_id': target}))
+            return spawn(command, **options)
+        sim.lean.spawn = request_transition
+        only(sim, 'formal_check')
+        sim.engine._save()
+        try:
+            sim.step()
+        finally:
+            sim.lean.spawn = spawn
+        self.assertEqual(len(requests), 1)
+        execution, = attempts(sim)
+        raw = json.loads(sim.engine.store.read(execution['raw_result_ref'], sim.engine.head))
+        self.assertEqual(raw['status'], 'verified')
+        result = json.loads(sim.engine.store.read(execution['result_ref'], sim.engine.head))
+        self.assertEqual(result, {**raw, 'status': 'failed',
+                                 'reason': 'formal publication waits for the trust transition'})
+        self.assertEqual((execution['status'], execution['outcome'], execution['formal_status']),
+                         ('ended', 'execution_incomplete', 'failed'))
+        self.assertEqual(execution['capacity']['local_termination'], 'confirmed')
+        self.assertEqual(execution['result_disposition']['stop_reasons'], [])
+        self.assertNotIn('submission_receipt', execution)
+        self.assertEqual(sim.instance['formal_results'][formal_id], original_formal)
+        self.assertEqual(sim.instance['active_trust_environment'], old)
+        self.assertFalse(any(a['role'] == 'identity_review' and a.get('target') == action['target']
+                             for a in sim.runtime['queue']))
+        self.assertTrue(any(a['role'] == 'research_plan' and a.get('formal_target') == action['target']
+                            for a in sim.runtime['queue']))
+
     def test_verifier_uses_the_fixed_environment_command_and_fingerprint(self):
         sim, action = scene(source=SOURCE, declarations=('t',), python_command=True)
         environment = deepcopy(sim.engine._formal_environment())

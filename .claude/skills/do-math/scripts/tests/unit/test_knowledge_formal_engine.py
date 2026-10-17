@@ -1,5 +1,6 @@
 """Exact formal-result preservation and publication comparison on real storage."""
 from copy import deepcopy
+import hashlib
 import json
 import sys
 import unittest
@@ -43,11 +44,19 @@ class FormalBindingConnections(unittest.TestCase):
             steps.send(result)
         self.assertIsNone(completed.exception.value)
         execution, = attempts(sim)
-        raw = sim.engine.store.read(execution['result_ref'], sim.engine.head)
+        head = sim.engine.head
+        raw = sim.engine.store.read(execution['result_ref'], head)
         self.assertEqual(json.loads(raw), result)
-        source = sim.engine.store.read(execution['result_ref'].replace('formal.json', 'proposal.lean'), sim.engine.head)
-        self.assertEqual(source, arguments['source'].encode('utf-8'))
-        self.assertIn('e\N{COMBINING ACUTE ACCENT}\r\n'.encode('utf-8'), source)
+        source_ref = execution['result_ref'].replace('formal.json', 'proposal.lean')
+        source = sim.engine.store.read(source_ref, head)
+        self.assertEqual(arguments['source'], SOURCE)
+        self.assertEqual(source, SOURCE.encode('utf-8'))
+        self.assertEqual(hashlib.sha256(source).hexdigest(), hashlib.sha256(SOURCE.encode('utf-8')).hexdigest())
+        sim.restart()
+        loaded = sim.engine.store.load(head)[2]['executions'][execution['id']]
+        self.assertEqual(loaded['result_ref'], execution['result_ref'])
+        self.assertEqual(sim.engine.store.read(loaded['result_ref'], head), raw)
+        self.assertEqual(sim.engine.store.read(source_ref, head), SOURCE.encode('utf-8'))
 
     def test_publication_signature_distinguishes_exact_unicode_payload(self):
         """~0.45 s: a restored public state and two real publications distinguish exact Unicode bytes."""

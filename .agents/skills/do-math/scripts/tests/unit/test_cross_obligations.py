@@ -7,6 +7,39 @@ from support.cross_obligations import (assert_preserved_reasons, assert_single_o
 
 
 class CrossObligationTests(unittest.TestCase):
+    def test_event_driver_failure_keeps_the_original_invariant(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from support.cross_events import EventResponder
+        from support.cross_states import assert_event
+        sim = SimpleNamespace(model=SimpleNamespace(responder=EventResponder(None)))
+        error = AssertionError('independent cross invariant')
+        # Test the test-side driver boundary; no product function is replaced.
+        with patch('support.cross_states.drive', side_effect=error):
+            with self.assertRaisesRegex(AssertionError, '^independent cross invariant$') as caught:
+                assert_event(sim, {'id': 'AC-event'}, 'work', 'submitted')
+        self.assertIs(caught.exception, error)
+
+    def test_event_rejection_reports_the_actual_ended_execution(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from support.cross_events import EventResponder
+        from support.cross_states import assert_event
+        response = EventResponder(None)
+        action = {'id': 'AC-event'}
+        row = {'id': 'EX-event', 'action': action, 'status': 'ended',
+               'outcome': 'execution_incomplete', 'error': 'distinct receiver failure'}
+        sim = SimpleNamespace(model=SimpleNamespace(responder=response), runtime={'executions': {'EX-event': row}})
+
+        def consumed(sim, predicate, bound):
+            response.observed.append({'action': action, 'event': 'work', 'value': 'submitted'})
+            self.assertTrue(predicate(sim))
+
+        with patch('support.cross_states.drive', side_effect=consumed):
+            with self.assertRaisesRegex(AssertionError, 'event not accepted') as caught:
+                assert_event(sim, action, 'work', 'submitted')
+        self.assertEqual(caught.exception.args[0], ('event not accepted', 'work', 'submitted', [row]))
+
     def test_activation_text_and_notes_do_not_prove_the_initialization_failure_origin(self):
         from support.cross_failure_evidence import matches_recorded_failure
         error = ValueError('closed/completed instance cannot activate')

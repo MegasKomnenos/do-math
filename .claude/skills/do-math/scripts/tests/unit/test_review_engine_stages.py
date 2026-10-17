@@ -123,6 +123,8 @@ class InitialStageTests(ReviewSceneCase):
         kid = scene.revise()
         second_id = scene.start(kid, previous_cycle_id=first_id)
         second = engine.runtime['review_cycles'][second_id]
+        self.assertEqual(second['input_bindings'], {})
+        self.assertEqual(engine.runtime['review_cycles'][first_id]['input_bindings'], first['input_bindings'])
         self.assertNotEqual(second['revision'], first['revision'])
         self.assertEqual(second['reviewer_slots'], first['reviewer_slots'])
         self.assertEqual(second['turns'], first['turns'])

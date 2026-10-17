@@ -3,9 +3,7 @@ from copy import deepcopy
 import unittest
 
 from do_math import governance, revisions
-from support.planning_contract_inputs import empty_hold_sim, warm_empty_hold
-
-setUpModule = warm_empty_hold
+from support.planning_contract_inputs import empty_hold_sim
 
 
 class EmptyGenerationContinuationTests(unittest.TestCase):

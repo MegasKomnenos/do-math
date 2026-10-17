@@ -37,7 +37,7 @@ class CheckpointPersistenceTests(unittest.TestCase):
         engine = sim.engine
         action = {'id': 'AC-fixture', 'role': 'research_preparation'}
         execution = engine._register_execution(action, {'id': 'EX-fixture', 'role': action['role'],
-            'status': 'running', 'input_snapshot': engine.head, 'input_manifest': [], 'parent_execution_id': None})
+            'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})
         profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
         execution['launch_ticket'] = {**ticket(execution['id'], profile, jobs=sim.ports.jobs, clock=sim.clock),
                                       'phase': 'dispatched'}

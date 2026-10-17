@@ -53,13 +53,14 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
     try:
         from .review_cycle import stage_schema, research_schema
         from .governance import interpretation_schema
-        from .supervision import OPERATOR_SCHEMA
+        from .supervision import repair_report_schema
         from .submission import extension_schema
         from .canonical import exact_content_hash
         schemas = {role: schema_for(role) for role in ROLES}
         schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("scope", "initial", "organize", "answer", "judge")})
         schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})
-        schemas.update(review_research=research_schema(), recovery=OPERATOR_SCHEMA)
+        schemas.update(review_research=research_schema(), recovery=repair_report_schema(),
+                       recovery_diagnosed=repair_report_schema(diagnosed=True))
         schemas.update({role + ':bound_action': action_schema({'role': role}) for role in ROLES})
         schemas['assessment:main'] = action_schema({'role': 'research_preparation', 'assessment_targets': {}})
         schemas['live_operations:main'] = action_schema({'role': 'operational_review', 'live': True})

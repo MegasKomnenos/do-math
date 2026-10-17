@@ -143,10 +143,10 @@ class DelayedPublicationTests(unittest.TestCase):
                         self.assertEqual(activity['result_refs'], [row['result_ref'] for row in attempts])
                         self.assertIn(execution['result_ref'], activity['result_refs'])
                     self.assertEqual(activity['unresolved'], [])
-                    # One receipt, and one save of the retry itself (the receipt's own publication is inside it).
+                    # The retry publishes reception before settlement, then publishes settlement.
                     self.assertEqual([name for name, _ in calls.order if name == 'receive'], ['receive'])
                     self.assertEqual([row for row in calls.order if row[0] == 'save' and 'receive' not in row[1]],
-                                     [('save', ())])
+                                     [('save', ()), ('save', ())])
 
 
 if __name__ == '__main__':

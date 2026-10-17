@@ -297,16 +297,16 @@ class DocumentCodeTests(unittest.TestCase):
             'environment_check': ('unit/test_trust_environment.py', 'ToolchainRecordTests',
                                   'test_documented_environment_branches_keep_absence_and_exact_changes')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(TRUST_BOUNDARIES))
+            self.assertEqual(set(mapping), set(TRUST_BOUNDARIES), 'document owner population differs')
             for owner, (path, cls_name, method) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
                 methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method')
                 self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id == 'assert_trust_documents' and any(k.arg == 'owner'
                     and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
-                    for n in ast.walk(methods[0])))
+                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
         verify(owners)
         for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
             changed = dict(owners)
@@ -315,7 +315,10 @@ class DocumentCodeTests(unittest.TestCase):
             elif fault == 'missing_method': changed['project'] = (*changed['project'][:2], 'missing')
             else: changed['project'] = ('unit/test_trust_environment.py', 'ToolchainRecordTests',
                                       'test_current_environment_is_verified_from_record_identity_and_fingerprint')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'project needs assigned method' if fault == 'missing_method' else
+                      'project needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_wait_fields_require_actual_condition_input_and_dispatch_wait(self):
@@ -347,16 +350,16 @@ class DocumentCodeTests(unittest.TestCase):
             'plan_settle_wait': ('sim/test_scheduling_session_slots.py', 'PlanSettleTests',
                                 'test_documented_wait_is_the_actual_queue_value_until_the_exact_limit')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(WAIT_BOUNDARIES))
+            self.assertEqual(set(mapping), set(WAIT_BOUNDARIES), 'document owner population differs')
             for owner, (path, cls_name, method) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
                 methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method')
                 self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id == 'assert_wait_documents' and any(k.arg == 'owner'
                     and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
-                    for n in ast.walk(methods[0])))
+                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
         verify(owners)
         for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
             changed = dict(owners)
@@ -364,7 +367,10 @@ class DocumentCodeTests(unittest.TestCase):
             elif fault == 'wrong_owner': changed['changes'] = changed.pop('change')
             elif fault == 'missing_method': changed['change'] = (*changed['change'][:2], 'missing')
             else: changed['change'] = (*changed['change'][:2], 'test_readiness_document_tables_match_the_condition_grammar')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'change needs assigned method' if fault == 'missing_method' else
+                      'change needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_governance_fields_require_their_actual_boundary_owner(self):
@@ -406,16 +412,16 @@ class DocumentCodeTests(unittest.TestCase):
             'academic_validation': ('unit/test_academic_requirements.py', 'Tests',
                 'test_documented_status_keeps_each_current_query_branch')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(GOVERNANCE_BOUNDARIES))
+            self.assertEqual(set(mapping), set(GOVERNANCE_BOUNDARIES), 'document owner population differs')
             for owner, (path, class_name, method) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
                 methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == method]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method')
                 self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id == 'assert_governance_documents' and any(k.arg == 'owner'
                     and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
-                    for n in ast.walk(methods[0])))
+                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
         verify(owners)
         for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
             changed = dict(owners)
@@ -427,7 +433,10 @@ class DocumentCodeTests(unittest.TestCase):
                 changed['import_check'] = (*changed['import_check'][:2], 'missing')
             else:
                 changed['import_check'] = (*changed['import_check'][:2], 'test_import_reapplication_is_idempotent')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'import_check needs assigned method' if fault == 'missing_method' else
+                      'import_check needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_delivery_fields_require_their_actual_return_owner(self):
@@ -459,16 +468,16 @@ class DocumentCodeTests(unittest.TestCase):
             'repair': ('sim/test_repair_routing.py', 'SubmissionReturnTests',
                 'test_repeated_submission_return_stops_producer_and_opens_one_diagnosis')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(DELIVERY_INPUT_BOUNDARIES))
+            self.assertEqual(set(mapping), set(DELIVERY_INPUT_BOUNDARIES), 'document owner population differs')
             for owner, (path, class_name, name) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
                 methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method')
                 self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id == 'assert_delivery_documents' and any(k.arg == 'owner'
                     and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
-                    for n in ast.walk(methods[0])))
+                    for n in ast.walk(methods[0])), owner + ' needs its actual document check')
         verify(owners)
         for fault in ('missing_owner', 'wrong_owner', 'missing_method', 'wrong_method'):
             changed = dict(owners)
@@ -480,7 +489,10 @@ class DocumentCodeTests(unittest.TestCase):
                 changed['repair'] = (*changed['repair'][:2], 'missing')
             else:
                 changed['repair'] = (*changed['repair'][:2], 'test_a_rejected_submission_travels_with_the_repair')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'repair needs assigned method' if fault == 'missing_method' else
+                      'repair needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_review_fields_require_their_actual_input_owner(self):
@@ -517,12 +529,12 @@ class DocumentCodeTests(unittest.TestCase):
                   'review_research': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication'),
                   'review_sources': ('unit/test_review_research_owner_contract.py', 'ResearchOwnerContractTests', 'test_fixed_question_context_keeps_original_bytes_after_unrelated_publication')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(REVIEW_INPUT_BOUNDARIES))
+            self.assertEqual(set(mapping), set(REVIEW_INPUT_BOUNDARIES), 'document owner population differs')
             for owner, (path, class_name, name) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
                 methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name]
-                self.assertEqual(len(methods), 1)
+                self.assertEqual(len(methods), 1, owner + ' needs assigned method')
                 self.assertTrue(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                     and n.func.id == 'assert_review_documents' and any(k.arg == 'owner'
                     and isinstance(k.value, ast.Constant) and k.value.value == owner for k in n.keywords)
@@ -538,7 +550,10 @@ class DocumentCodeTests(unittest.TestCase):
                 changed['review_sources'] = (*changed['review_sources'][:2], 'missing')
             else:
                 changed['review_sources'] = (*changed['review_sources'][:2], 'test_research_schema_pins_question_and_digest')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'review_sources needs assigned method' if fault == 'missing_method' else
+                      'review_sources needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_tool_fields_require_their_actual_installed_input(self):
@@ -574,15 +589,15 @@ class DocumentCodeTests(unittest.TestCase):
                  and isinstance(n.func, ast.Name) and n.func.id == 'assert_tool_documents'
                  for k in n.keywords if k.arg == 'owner' and isinstance(k.value, ast.Constant)]
         def verify(owners):
-            self.assertEqual(set(owners), set(TOOL_INPUT_BOUNDARIES))
-            self.assertLessEqual(set(owners), set(calls))
+            self.assertEqual(set(owners), set(TOOL_INPUT_BOUNDARIES), 'tool owner population differs')
+            self.assertLessEqual(set(owners), set(calls), 'tool document consumer missing: ' + repr(set(owners) - set(calls)))
         verify(TOOL_INPUT_BOUNDARIES)
         for changed in (set(TOOL_INPUT_BOUNDARIES) - {'preview'},
                         (set(TOOL_INPUT_BOUNDARIES) - {'preview'}) | {'preveiw'}):
-            with self.assertRaises(AssertionError):
+            with self.assertRaisesRegex(AssertionError, 'tool owner population differs'):
                 verify(changed)
         calls.remove('scholarly')
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(AssertionError, "tool document consumer missing:.*scholarly"):
             verify(TOOL_INPUT_BOUNDARIES)
 
     def test_result_fields_require_their_actual_input_owner(self):
@@ -619,7 +634,7 @@ class DocumentCodeTests(unittest.TestCase):
             'results': ('flows/test_submission_acceptance.py', 'AcceptanceTests',
                            'test_large_accepted_report_survives_revision_review_and_resumed_work')}
         def verify(mapping):
-            self.assertEqual(set(mapping), set(RESULT_INPUT_BOUNDARIES), 'deferred result owners differ')
+            self.assertEqual(set(mapping), set(RESULT_INPUT_BOUNDARIES), 'document owner population differs')
             for owner, (path, class_name, method_name) in mapping.items():
                 tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
                 cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
@@ -642,7 +657,10 @@ class DocumentCodeTests(unittest.TestCase):
             else:
                 changed['research_sources'] = (*changed['research_sources'][:2],
                     'test_manifest_batch_read_keeps_exact_validation_and_missing_bindings')
-            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+            reason = ('document owner population differs' if fault in ('missing_owner', 'wrong_owner') else
+                      'results needs assigned method' if fault == 'missing_method' else
+                      'research_sources needs its actual document check')
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 verify(changed)
 
     def test_operational_fields_require_their_actual_input_owner(self):
@@ -995,6 +1013,20 @@ class DocumentCodeTests(unittest.TestCase):
                          'import_check', {'sha256': 'actual'}), [])
         self.assertEqual(governance_field_issues('`check.passed` <!-- do-math fields: check=import_check -->',
                          'import_check', {'sha256': 'actual'}), [('actual field', 'check.passed')])
+        # Explicit calls use the existing function checker; bare names stay fields.
+        self.assertEqual(governance_field_issues('`governance.apply_decision(...)`에서 생산한다.', 'governance', {}), [])
+        self.assertEqual(function_reference_issues('`governance.apply_decision(...)`에서 생산한다.'), [])
+        for token in ('governance.charter', 'governance.apply_decison', 'governance.apply_decision'):
+            self.assertEqual(governance_field_issues('`' + token + '`', 'governance', {}),
+                             [('actual field', token)])
+        for token in ('governance.apply_decision', 'governance.apply_decison'):
+            self.assertEqual(governance_field_issues('`' + token + '`에서 생산한다.', 'governance', {}),
+                             [('actual field', token)])
+        self.assertEqual(function_reference_issues('`governance.apply_decison(...)`에서 생산한다.'),
+                         [('function reference', 'governance.apply_decison(...)')])
+        self.assertEqual(governance_field_issues(
+            '`view.apply_decision` <!-- do-math fields: view=governance -->', 'governance', {}),
+            [('actual field', 'view.apply_decision')])
         from support.doc_code import delivery_field_issues
         self.assertEqual(delivery_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->',
                          'submission_check', {'passed': True}), [('actual field', 'check.sha256')])

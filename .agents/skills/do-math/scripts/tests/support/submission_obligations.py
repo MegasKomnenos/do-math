@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import re
 
 from do_math import contracts, integration, submission
-from support.ingress import malformed
+from support.ingress import malformed, NOT_TEXTS
 
 
 @dataclass(frozen=True)
@@ -113,6 +113,18 @@ def structural_envelope(action, extensions):
 def item_shapes():
     """공통 malformed의 객체가 아닌 원소 전건. 정상 배열 외곽에 넣는다."""
     return malformed({'type': 'object'})
+
+
+def mutation_target_inputs(family, schema):
+    """개정/철회 식별자에 해시 불가능한 비빈 JSON도 포함한다."""
+    field = {'knowledge_changes': 'id', 'task_dispositions': 'task_id',
+             'revision_resolutions': 'record_id'}.get(family)
+    if field is None:
+        return
+    for value in [*NOT_TEXTS, ['wrong-id'], {'id': 'wrong-id'}]:
+        item = schema_seed(schema['items'])
+        item[field] = value
+        yield field, [item]
 
 
 ROOT_REFERENCES = ('.', './', 'workspace:.', 'workspace:./')

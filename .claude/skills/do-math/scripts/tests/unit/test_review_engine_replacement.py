@@ -37,8 +37,8 @@ class ReviewSceneCase(unittest.TestCase):
         from support.entry import entry
         _entry = entry()
         engine = self.engine
-        engine.instance['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user',
-            'kind': 'review_replacement', 'source_ref': 'SOURCE-review'}
+        from support.governance_delegation import original_replacement
+        original_replacement(engine, action)
         engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
             {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {'id': 'DG', 'status': 'active',
              'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',
@@ -51,6 +51,46 @@ class ReviewSceneCase(unittest.TestCase):
 
 
 class UserGrantReplacementTests(ReviewSceneCase):
+    def test_grant_expiry_between_the_decision_and_local_replacement_keeps_the_original_cycle(self):
+        from dataclasses import replace
+        from datetime import timedelta
+        engine = self.engine
+        grant_replacement(engine)
+        cid = self.scene.start('K1')
+        action = deepcopy(self.scene.pending())
+        cycle = engine.runtime['review_cycles'][cid]
+        cycle.update(record_turn(cycle, action['slot'], [{'role': 'assistant', 'content': 'Original input'}]))
+        cycle['turns'][action['slot']][0]['content'] = 'changed input'
+        self.assertEqual(engine._prepare_review_context(action, self.scene.root / 'permanent-loss')['disposition'],
+                         'recovery_recorded')
+        original_clock = engine.ports.clock
+        spec = deepcopy(engine.instance['decisions']['DEC-review']['change']['grant'])
+        spec.update(id='GR-expiring', expires_at=(original_clock.wall() + timedelta(seconds=1)).isoformat())
+        engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
+            {'kind': 'grant', 'decision_id': 'DEC-expiring', 'grant': spec},
+            source_ref='SOURCE-review', clock=original_clock)
+        class ExpiringClock:
+            calls = 0
+            def __getattr__(self, name):
+                return getattr(original_clock, name)
+            def now(self):
+                self.calls += 1
+                return (original_clock.wall() + timedelta(seconds=0 if self.calls == 1 else 2)).isoformat()
+        clock = ExpiringClock()
+        original_ports = engine.ports
+        before = deepcopy((engine.instance, engine.runtime))
+        engine.ports = replace(original_ports, clock=clock)
+        try:
+            with self.assertRaisesRegex(ValueError, '^review replacement is not authorized: '):
+                engine._review_recovery_control({'id': 'UC-expiring-replacement', 'action': 'request',
+                    'origin': 'user', 'text': 'Replace only this exact failed slot',
+                    'config': {'role': 'maintenance', 'review_replacement': {
+                        'action': action, 'grant_id': 'GR-expiring'}}})
+        finally:
+            engine.ports = original_ports
+        self.assertGreaterEqual(clock.calls, 2)
+        self.assertEqual((engine.instance, engine.runtime), before)
+
     def test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input(self):
         grant_replacement(self.engine)
         cid = self.scene.start('K1')
@@ -110,13 +150,19 @@ class UserGrantReplacementTests(ReviewSceneCase):
                             condition={'kind': 'review_recovery', 'recovery': recovery}, next_owner='governance', at='now')
         engine.runtime['waiting_actions'] = {'AC-held': {'kind': 'review_input_restoration', 'action': action, 'recovery': recovery}}
         engine.runtime['queue'] = []
-        request = {'action': 'request', 'config': {'role': 'maintenance', 'review_replacement': {'action': action, 'grant_id': 'GR-review'}}}
+        request = {'id': 'UC-explicit-replacement', 'text': 'Replace this exact held review slot.', 'action': 'request', 'config': {'role': 'maintenance', 'review_replacement': {'action': action, 'grant_id': 'GR-review'}}}
         self.assertTrue(engine._review_recovery_control(request))
         self.assertNotIn('AC-held', engine.runtime['waiting_actions'])
         self.assertEqual(engine.runtime['activities']['AY-held']['status'], 'ready')
         replacement = self.replacement()
         self.assertEqual(replacement['owner_activity_id'], 'AY-held')
         self.assertEqual(engine._prepare_review_context(replacement, scene.root / 'next')['disposition'], 'ready')
+        decision_request = {'id': 'UC-explicit-decision', 'text': 'I explicitly approve this same current replacement.',
+            'action': 'decision', 'config': {'change': {'kind': 'review_replacement',
+                'decision_id': 'DC-explicit-decision', 'allowed_action': action, 'grant_id': 'GR-review'}}}
+        self.assertTrue(engine._review_recovery_control(decision_request))
+        self.assertEqual(engine.instance['decisions']['DC-explicit-decision']['source_ref'], 'UC-explicit-decision')
+        self.assertEqual(self.replacement()['id'], replacement['id'])
 
     def test_corrupt_slot_can_be_replaced_from_verified_records_under_real_user_grant(self):
         engine, scene = self.engine, self.scene

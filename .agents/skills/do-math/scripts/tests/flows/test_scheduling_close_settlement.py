@@ -1,10 +1,13 @@
 """8-B: 실제 실행 전·중·반환 뒤 정산. 여러 공개 역할 호출이어서 flows에 둔다."""
 from copy import deepcopy
+import hashlib
+from pathlib import Path
 import unittest
 
 from do_math.execution_profiles import LEAN_ROLES
 from support.engine_lifecycle import warm_lifecycle
 from support.live_finish_model import execution, install
+from support.provider_probes import ObservedCalls
 from support.scheduling_return_observer import OwnerProbe, assert_settled
 from support.scheduling_return_ports import defer_first_calculation
 from support.scheduling_machine import formal_scene, trust_scene, hold_lean
@@ -20,6 +23,59 @@ def setUpModule():
 
 
 class ReturnSettlementTests(unittest.TestCase):
+
+    def test_return_drains_completion_deferred_by_its_new_observations(self):
+        sim = ready_work_sim(1)
+        before = set(sim.runtime['executions'])
+        completed, exhausted = [], []
+
+        def hook(cli, context):
+            for index in range(3):
+                cli.event({'type': 'item.completed', 'item': {'type': 'agent_message',
+                           'id': f'return-debt-{index}', 'text': 'preserve this row'}})
+            return False  # An external CLI failure still has a result to apply once.
+
+        def finish_during_observation(arguments):
+            if completed:
+                return
+            calls = sim.engine._calls
+            future, = calls.futures
+            for _ in range(64):
+                if future.done():
+                    completed.append(future.execution_id)
+                    return
+                calls.wait(0)
+            exhausted.append('CLI did not return at the scheduled observation')
+
+        install(sim, hook)
+        with OwnerProbe(sim) as probe, ObservedCalls(
+                observation=sim.engine._observe_running, receive=sim.engine._receive_call,
+                capture={'observation': finish_during_observation}) as observed:
+            sim.engine.run(max_steps=1)
+        added = assert_settled(self, sim, before, probe)
+        self.assertEqual(exhausted, [])
+        self.assertEqual(set(completed), added)
+        eid, = added
+        self.assertTrue(any(eid in pending for _, _, pending, _ in probe.collections),
+                        'the completed call must actually yield its new observation debt')
+        self.assertEqual(observed.count('receive'), 1)
+        row = sim.runtime['executions'][eid]
+        self.assertEqual(row['outcome'], 'execution_incomplete')
+        source = Path(sim.instance['workspace']) / 'runs' / eid
+        evidence = sim.runtime['checkpoints'][eid]['observation_sources']
+        stdout, = [entry for entry in evidence if entry['path'] == 'stdout.jsonl']
+        raw = (source / 'evidence' / 'stdout.jsonl').read_bytes()
+        self.assertIn(b'return-debt-2', raw)
+        self.assertEqual(sim.engine.store.read(stdout['artifact_ref'], sim.engine.head), raw)
+        self.assertEqual((stdout['bytes'], stdout['sha256']), (len(raw), hashlib.sha256(raw).hexdigest()))
+        settled = deepcopy(sim.runtime['reservations'])
+        sim.restart()
+        with ObservedCalls(receive=sim.engine._receive_call) as replay:
+            sim.engine.run(until_active=True)
+        self.assertEqual(replay.count('receive'), 0)
+        self.assertEqual(sim.runtime['executions'][eid], row)
+        self.assertEqual(sim.runtime['reservations'], settled)
+        self.assertEqual(sim.engine.store.read(stdout['artifact_ref'], sim.engine.head), raw)
 
     def test_ai_running_stop_and_fence_drain_every_execution(self):
         for action in ('pause', 'quiesce', 'close'):

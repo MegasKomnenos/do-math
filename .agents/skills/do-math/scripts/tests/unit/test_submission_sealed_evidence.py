@@ -16,6 +16,40 @@ from support.submission_protocol import ProtocolScene, INSTANCE_ID
 
 
 class SealedEvidenceTests(unittest.TestCase):
+    def test_sealed_reader_refuses_a_nonbyte_artifact_port_result(self):
+        path = self.execution['submission_intent']['output_ref']
+        before = deepcopy(self.execution)
+        with self.assertRaisesRegex(submission.SealedSubmissionError,
+                '^' + re.escape(f'execution EX-worker: output_ref at {path} is not bytes') + '$'):
+            submission.read_sealed_submission(self.execution, 'fixed', lambda path, snapshot: '{}')
+        self.assertEqual(self.execution, before)
+
+    def test_sealed_check_needs_capture_eligibility_and_its_exact_fixed_input(self):
+        for fault in ('ineligible', 'partial'):
+            execution, files, check = deepcopy(self.execution), dict(self.files), deepcopy(self.sealed['check'])
+            check.update(passed=False, capture_eligible=fault == 'partial',
+                issues=[{'rule_id': 'schema.required', 'path': 'output/report',
+                         'issue_id': 'SI-failed', 'integration_id': 'IN-local', 'message': 'Missing report'}])
+            if fault == 'partial':
+                check['check_subject']['role'] = 'research_work'
+                execution['input_bundle'] = 'BA-fixed'
+                files['runtime/artifacts/BA-fixed/input/submission/context.json'] = canonical_json(self.scene.context)
+                files['runtime/artifacts/BA-fixed/schema.json'] = canonical_json(self.scene.schema)
+                check['input_hashes']['context'] = '0' * 64
+            check['id'] = 'MC-' + exact_content_hash({k: v for k, v in check.items() if k != 'id'})[:24]
+            path = execution['submission_intent']['check_ref']
+            files[path] = canonical_json(check)
+            entry = next(row for row in execution['submission_receipt']['payload']['submission_check']['artifacts']
+                         if row['path'] == path)
+            entry.update(sha256=hashlib.sha256(files[path]).hexdigest(), bytes=len(files[path]))
+            reason = (f'sealed check_ref at {path} is not capture eligible' if fault == 'ineligible' else
+                      'partial candidate differs from its fixed input or independent bundle structure')
+            before = deepcopy((execution, files))
+            with self.subTest(fault=fault), self.assertRaisesRegex(submission.SealedSubmissionError,
+                    '^' + re.escape('execution EX-worker: ' + reason) + '$'):
+                self.read(execution, files)
+            self.assertEqual((execution, files), before)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

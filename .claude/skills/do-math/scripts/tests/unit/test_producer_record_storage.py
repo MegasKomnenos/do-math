@@ -107,6 +107,11 @@ class TaskRecordTests(ProducerCase):
                 changed['tasks'][task['id']][field] = ['context:goal']
                 with self.assertRaisesRegex(ValueError, field):
                     self.repository.validate_candidate(instance, changed, head)
+        changed = deepcopy(runtime)
+        changed['tasks'][task['id']]['profile_refs'][0]['id'] = 'GR-reference'
+        with self.assertRaisesRegex(ValueError, '^task profile reference does not identify an execution profile$'):
+            self.repository.validate_candidate(instance, changed, head)
+        self.assertEqual(self.repository.load(head)[2], runtime)
 
     def test_task_dependencies_resolve_tasks_or_existing_knowledge(self):
         from support.entry import entry
@@ -227,6 +232,20 @@ class QueueRecordTests(ProducerCase):
         loaded['queue'][0]['input_basis']['impact_review']['plans']['bundle']['digest'] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'plan hash'):
             self.repository.validate_candidate(instance, loaded)
+        from do_math.knowledge import plan_digest
+        for case, reason in (('producer', 'impact review original execution is missing'),
+                              ('basis', 'impact review frozen plan references do not resolve')):
+            broken = deepcopy(runtime)
+            request = broken['queue'][0]['input_basis']['impact_review']
+            if case == 'producer':
+                request['producer_execution_id'] = 'EX-missing'
+            else:
+                plan = request['plans']['bundle']
+                plan['basis']['KN-missing'] = '0' * 64
+                plan['digest'] = plan_digest(plan)
+            with self.subTest(case=case), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                self.repository.validate_candidate(instance, broken)
+            self.assertEqual(self.repository.load(head)[2]['queue'], [action])
         action['input_basis']['impact_review']['plans']['bundle']['unregistered'] = True
         with self.assertRaisesRegex(ValidationError, r"^Additional properties are not allowed \('unregistered' was unexpected\)"):
             validator.validate(action)
@@ -278,6 +297,64 @@ class QueueRecordTests(ProducerCase):
 
 
 class ExecutionRecordTests(ProducerCase):
+    def test_unbounded_activity_and_execution_nulls_keep_their_meaning_after_storage(self):
+        from do_math import activities, execution_window, reporting
+        from do_math.execution_lifecycle import transition_execution
+        from do_math.repair_execution import recovery_attempt_counts
+        import csv
+        import io
+        import json
+
+        instance, runtime = execution_state('research_work')
+        work = self.root / 'window'
+        work.mkdir()
+        window = execution_window.publish(work, 'EX-1', None, instance['config'],
+            clock=self.clock.monotonic, wall_clock=self.clock.wall())
+        self.assertEqual(json.loads((work / '.control' / 'execution-window.json').read_bytes()), window)
+        execution = runtime['executions']['EX-1']
+        execution['execution_window'] = window
+        transition_execution(execution, 'ended', at=self.clock.now(), outcome='cancelled')
+        head = self.repository.initialize(instance, runtime)
+        _, saved, loaded = self.repository.load(head)
+        activity, execution = loaded['activities']['AT-1'], loaded['executions']['EX-1']
+        for field in ('stage', 'execution_limit'):
+            self.assertIn(field, activity)
+            self.assertIsNone(activity[field])
+        for field in ('continuation_of', 'result_disposition'):
+            self.assertIn(field, execution)
+            self.assertIsNone(execution[field])
+        self.assertIn('reason', execution['transitions'][0])
+        self.assertIsNone(execution['transitions'][0]['reason'])
+        for field in ('effective_deadline_at', 'remaining_ms_at_start', 'finish_notice_at'):
+            self.assertIn(field, execution['execution_window'])
+            self.assertIsNone(execution['execution_window'][field])
+        self.assertEqual(execution['execution_window']['deadline_source'], 'none')
+        self.assertEqual(execution['execution_window']['effective_notice_ms'], 0)
+        self.assertFalse(execution_window.deadline_passed(None, clock=self.clock.monotonic))
+        self.assertFalse(execution_window.request_finish(work, None, instance['config'],
+            clock=self.clock.monotonic, now_iso=self.clock.now()))
+        self.assertFalse((work / '.control' / 'finish-request.json').exists())
+        self.assertIsNone(activities.successor_state(loaded, 'EX-1'))
+        self.assertTrue(recovery_attempt_counts(execution))
+        # A null activity limit admits a second real attempt, rather than being zero.
+        from do_math.execution_lifecycle import create_execution
+        second = create_execution(execution_id='EX-2', owner_activity_id='AT-1', actor_kind=execution['actor_kind'],
+            input_manifest={}, profile_ref=execution['execution_profile_ref'], created_at=self.clock.now())
+        second['role'] = execution['role']
+        activities.assign_execution(loaded, 'AT-1', second)
+        self.assertEqual(activity['assigned_execution_ids'], ['EX-1', 'EX-2'])
+        self.repository.validate_candidate(saved, loaded, head)
+        value = reporting.timeline(self.repository_path, INSTANCE_ID, snapshot=head,
+            backend=self.backend, clock=self.clock)
+        row, = value['rows']
+        self.assertIsNone(row['continuation_of'])
+        self.assertIsNone(row['effective_deadline_at'])
+        self.assertIsNone(row['started_at_local'])
+        rendered, = csv.DictReader(io.StringIO(reporting.timeline_csv(value)))
+        self.assertEqual(rendered['continuation_of'], '')
+        self.assertEqual(rendered['effective_deadline_at'], '')
+        self.assertEqual(self.repository.load(head)[2]['executions']['EX-1'], execution)
+
     def test_actual_host_profile_reservation_round_trip_and_authority_refs(self):
         """About 0.2-0.45 s, over the 0.2 s unit budget: host-resource profile sealing, a slot reservation and four storage-contract validations on the in-process Git fake."""
         from support.entry import entry
@@ -541,6 +618,16 @@ class ExecutionRecordTests(ProducerCase):
                                              transport=lambda *_: {'http_status': 503, 'body': b'uncertain'},
                                              runtime=runtime, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(unknown['status'], 'unknown')
+        self.assertIn('credential_env', unknown)
+        self.assertIsNone(unknown['credential_env'])
+        self.assertIn('succeeded', unknown)
+        self.assertIsNone(unknown['succeeded'])
+        self.assertNotIn('effect_absent', unknown)
+        self.assertTrue(external.request_binding_current(unknown))
+        with self.assertRaises(ValueError) as rejected:
+            external.validate_operation(unknown, instance['grants']['GR-http'], _entry.ports.clock.now(), runtime=runtime)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception), 'operation is not startable')
 
         _, saved_instance, saved_runtime = self.repository.load(head)
         for changes, reason in (
@@ -563,6 +650,12 @@ class ExecutionRecordTests(ProducerCase):
                  'observed_at': '2026-09-20T00:00:00Z', 'fact': 'effect_absent'}
         absent = external.reconcile_operation(unknown, proof, 'failed', source='user', effect_absent=True)
         persist(absent)
+        self.assertIs(absent['succeeded'], False)
+        self.assertIs(absent['effect_absent'], True)
+        self.assertIn('external_id', absent)
+        self.assertIsNone(absent['external_id'])
+        self.assertIn('idempotency_evidence', absent['reconciliation'])
+        self.assertIsNone(absent['reconciliation']['idempotency_evidence'])
         retry = external.prepare_retry(absent, {'kind': 'effect_absent', 'request_sha256': operation['request_sha256'],
                                                 'idempotency_key': operation['idempotency_key'],
                                                 'evidence_ref': proof['evidence_ref']}, source='user', now_iso=_entry.ports.clock.now())
@@ -655,7 +748,26 @@ class GovernanceRecordTests(ProducerCase):
                                   owner='user', targets=['EX-1'], reason='External action requires a user grant', clock=_entry.ports.clock)
         question['question_kind'] = 'grant'
         head = self.repository.initialize(instance, runtime)
-        self.assertEqual(self.repository.load(head)[2]['question_links'][0]['question_kind'], 'grant')
+        _, saved, loaded = self.repository.load(head)
+        row, = loaded['question_links']
+        self.assertEqual(row['question_kind'], 'grant')
+        for field in ('resolution_ref', 'checked_by'):
+            self.assertIn(field, row)
+            self.assertIsNone(row[field])
+        self.assertEqual(questions.open_links(loaded, 'user'), [row])
+        from do_math.question_engine import question_view, user_questions
+        view = question_view(saved, loaded, lambda paths: self.repository.read_many(paths, head))
+        self.assertIn('text', view[0])
+        self.assertIsNone(view[0]['text'])
+        self.assertEqual(view[0]['source_status'], 'unavailable')
+        self.assertEqual(user_questions(view), [])
+        questions.resolve_user(loaded, [row['id']], resolution_ref='EX-1', affected_ids=['EX-1'])
+        next_head = self.repository.save_with_state(head, saved, loaded)[0]
+        _, saved, resolved = self.repository.load(next_head)
+        self.assertEqual(questions.open_links(resolved, 'user'), [])
+        self.assertEqual(resolved['question_links'][0]['resolution_ref'], 'EX-1')
+        self.assertEqual(resolved['question_links'][0]['unresolved_target_ids'], [])
+        self.assertIsNone(resolved['question_links'][0]['checked_by'])
 
 
 class KnowledgeRecordTests(ProducerCase):
@@ -747,6 +859,8 @@ class KnowledgeRecordTests(ProducerCase):
     def test_actual_review_cycle_and_identity_producer_round_trip(self):
         instance, runtime, kid, aid = reviewed_candidate(self.repository_path)
         cycle = runtime['review_cycles']['RC-1']
+        self.assertEqual((cycle['status'], cycle['decision']), ('unresolved', 'unresolved'))
+        self.assertEqual(instance['identity_assessments'][aid]['decision'], 'unresolved')
         head = self.repository.initialize(instance, runtime)
         _, saved, loaded = self.repository.load(head)
         self.assertEqual(saved['identity_assessments'][aid]['review_cycle_id'], 'RC-1')
@@ -755,6 +869,28 @@ class KnowledgeRecordTests(ProducerCase):
         broken['review_cycles'] = {}
         with self.assertRaisesRegex(ValueError, 'unknown record'):
             self.repository.validate_candidate(saved, broken)
+        for field, value, reason in (
+                ('basis', {**saved['identity_assessments'][aid]['basis'], 'formal': '0' * 64}, 'identity assessment premise hash differs from immutable inputs'),
+                ('decision', 'mismatch', 'identity assessment differs from its sealed review'),
+                ('scope_complete', not saved['identity_assessments'][aid]['scope_complete'], 'identity assessment does not reproduce the sealed review result')):
+            with self.subTest(field=field):
+                damaged = deepcopy(saved)
+                damaged['identity_assessments'][aid][field] = value
+                with self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                    self.repository.validate_candidate(damaged, loaded)
+        # Nonmatching historical assessments can be independently recorded;
+        # a positive identity claim must bind the actual sealed review.
+        standalone = deepcopy(saved)
+        standalone['identity_assessments'][aid].pop('review_cycle_id')
+        self.repository.validate_candidate(standalone, loaded)
+        standalone['identity_assessments'][aid]['decision'] = 'match'
+        with self.assertRaisesRegex(ValueError, '^identity match requires a sealed review cycle$'):
+            self.repository.validate_candidate(standalone, loaded)
+        damaged = deepcopy(loaded)
+        next(iter(damaged['review_cycles']['RC-1']['results'].values()))['execution_id'] = 'EX-missing'
+        with self.assertRaisesRegex(ValueError, '^review result requires its actual identity-review execution$'):
+            self.repository.validate_candidate(saved, damaged)
+        self.assertEqual(self.repository.load(head), (head, saved, loaded))
 
     def test_staged_review_producer_keeps_transient_candidate_and_real_transition(self):
         """About 0.3-0.35 s, over the 0.2 s unit budget: two synthetic trust toolchains are hashed and the real engine loads, saves and is validated on the in-process Git fake."""
@@ -787,6 +923,14 @@ class KnowledgeRecordTests(ProducerCase):
         broken['review_cycles'][cid]['staged_candidate']['transition_basis'] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'staged review'):
             self.repository.validate_candidate(saved, broken)
+        for field in ('target_environment', 'proposal'):
+            broken = deepcopy(loaded)
+            staged = broken['review_cycles'][cid]['staged_candidate']
+            if field == 'target_environment': staged[field]['id'] = 'TE-absent'
+            else: staged[field]['statement'] = 'substituted proposition'
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError,
+                    '^staged review does not bind its actual transition target/environment$'):
+                self.repository.validate_candidate(saved, broken)
 
     def test_verified_identity_and_environment_continuity_round_trip(self):
         """About 0.35-0.4 s, over the 0.2 s unit budget: two synthetic trust toolchains are hashed and the state passes the storage contract four times."""
@@ -796,8 +940,32 @@ class KnowledgeRecordTests(ProducerCase):
         from support.knowledge_builders import formal_evidence
         from do_math import knowledge as k
         instance, runtime, kid, aid = reviewed_candidate(self.repository_path, verified=True)
+        self.assertEqual((runtime['review_cycles']['RC-1']['status'], runtime['review_cycles']['RC-1']['decision']),
+                         ('completed', 'match'))
+        self.assertEqual(instance['identity_assessments'][aid]['decision'], 'match')
         head = self.repository.initialize(instance, runtime)
         _, instance, runtime = self.repository.load(head)
+        formal_id = instance['knowledge'][kid]['formal_result_id']
+        for field, value, reason in (
+                ('trust_environment_id', None, 'sealed formal result requires trust environment'),
+                ('publication_state', 'candidate', 'formal publication state contradicts verification')):
+            with self.subTest(field=field):
+                broken = deepcopy(instance)
+                if field == 'trust_environment_id':
+                    broken['formal_results'][formal_id].pop(field)
+                else:
+                    broken['formal_results'][formal_id][field] = value
+                with self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                    self.repository.validate_candidate(broken, runtime)
+        broken = deepcopy(instance)
+        broken['formal_results'][formal_id]['lean_code'] += '\n-- changed after sealing\n'
+        with self.assertRaisesRegex(ValueError, '^sealed formal result changed: ' + formal_id + '$'):
+            self.repository.validate_candidate(broken, runtime, head)
+        self.assertEqual(self.repository.load(), (head, instance, runtime))
+        inactive = deepcopy(instance)
+        inactive['trust_environments'][inactive['active_trust_environment']]['status'] = 'registered'
+        with self.assertRaisesRegex(ValueError, '^active trust environment reference is not active$'):
+            self.repository.validate_candidate(inactive, runtime)
         use = k.assess_use(instance['knowledge'][kid], instance)
         self.assertTrue(use['valid'], use)
         # The legacy engine double registers the next synthetic trust environment; only its records are used.

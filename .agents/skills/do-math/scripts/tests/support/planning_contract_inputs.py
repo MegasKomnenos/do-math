@@ -4,7 +4,8 @@ from do_math import contracts, planning
 from support.role_answers import candidate, disposition, review_items
 
 
-def produce_task(sim, title='계획 과제', *, revises=None, inputs=(), revision_targets=(), obligations=None):
+def produce_task(sim, title='계획 과제', *, revises=None, inputs=(), revision_targets=(), obligations=None,
+                 question=None, profiles=None):
     """수신자가 식별자·판본·의무·승인 봉인을 생산하고 저장한다."""
     from support.engine_lifecycle import _ended_execution, research_grant
     from support.observation_inputs import prepared_rule_conditions
@@ -14,7 +15,9 @@ def produce_task(sim, title='계획 과제', *, revises=None, inputs=(), revisio
     wire = candidate(title, revises=revises, refs=inputs)
     if obligations is not None:
         wire['completion_obligations'] = deepcopy(obligations)
-    wire['profile_refs'] = deepcopy(engine.instance['role_profile_refs']['research_work'])
+    if question is not None:
+        wire['question'] = question
+    wire['profile_refs'] = deepcopy(engine.instance['role_profile_refs']['research_work'] if profiles is None else profiles)
     wire['authority_refs'] = [research_grant(engine)]
     execution = engine.runtime['executions'][eid]
     execution.update(input_snapshot=engine.head,

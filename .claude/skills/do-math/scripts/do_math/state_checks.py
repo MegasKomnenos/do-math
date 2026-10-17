@@ -110,12 +110,7 @@ def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] |
                                      next_owner="operator"))
             areas.append({"name": area, "status": "incomplete", "checked": False, "findings": 1})
             continue
-        try:
-            local, checked, missing = _inspect_area(area, instance, runtime, read_artifact, read_artifacts, artifact_sizes)
-        except (ValueError, TypeError, KeyError, AttributeError) as error:
-            local = [_finding(area, status='blocked', message='malformed domain records: ' + str(error),
-                              blocked_scope=[area], next_owner='maintenance')]
-            checked, missing = [], ['remaining invariants after malformed records']
+        local, checked, missing = _inspect_area(area, instance, runtime, read_artifact, read_artifacts, artifact_sizes)
         findings.extend(local)
         if missing:
             not_checked.append(area)
@@ -285,12 +280,10 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                 omitted('current academic resolution artifact bytes')
             else:
                 def completed_academic():
-                    def resolve_evidence(ref):
-                        if read_artifact is not None and ref.startswith(ARTIFACT_ROOT):
-                            return read_artifact(ref)
-                        return None
+                    # Loading resolves nonartifact evidence IDs; only immutable
+                    # artifact paths reach the optional reader (academic.evidence_record).
                     status = academic_status(instance, runtime, current_solution_basis(instance, runtime),
-                                             resolve_evidence=resolve_evidence)
+                                             resolve_evidence=read_artifact)
                     if status['status'] not in {'completed', 'not_applicable'}:
                         raise ValueError('completed runtime has incomplete current academic requirements')
                 run('completed academic requirements and external receipts', completed_academic, 'goal')
@@ -333,7 +326,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
         for identifier, execution in runtime.get('executions', {}).items():
             if 'observation_rules' in execution:
                 run('observation rules', lambda e=execution: (validate_rules(e['observation_rules']), None)[1], identifier)
-    elif area == 'repair_iteration':
+    else:  # inspect_state admitted exactly CHECK_AREAS; this is repair_iteration.
         from .task_contracts import repetition_lineages
         run('five repetition lineages', lambda: (repetition_lineages(runtime), None)[1])
     # One name per invariant, however many records or references it covered.

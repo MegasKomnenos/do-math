@@ -154,6 +154,8 @@ class CheckpointPersistenceTests(unittest.TestCase):
         review = next(a for a in sim.runtime['queue'] if a['role'] == 'operational_review')
         workspace = sim.root / 'review'
         context = sim.engine._context(review, workspace)
+        from do_math.role_input_requirements import recovery_materials_required
+        self.assertIs(recovery_materials_required(review, context), True)
         from do_math.context_store import prepare_role_input
         from support.role_input_requirements import assert_judgment_inputs
         profile = resolve_profile(sim.instance['execution_profiles'], sim.instance['role_profile_refs']['operational_review'][0])

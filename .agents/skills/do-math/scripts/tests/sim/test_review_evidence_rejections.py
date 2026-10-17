@@ -3,12 +3,8 @@ from copy import deepcopy
 import unittest
 
 from do_math import review_cycle as rc
-from support.review_sim import reviewed_sim, cycle_of, warm_reviewed
+from support.review_sim import reviewed_sim, cycle_of
 from support.review_transition_inputs import replace_path
-
-
-def setUpModule():
-    warm_reviewed()
 
 
 class StoredEvidenceTests(unittest.TestCase):

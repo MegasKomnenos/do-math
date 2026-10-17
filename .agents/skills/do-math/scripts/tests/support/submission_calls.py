@@ -91,6 +91,13 @@ class SubmissionModel(ModelDouble):
         super().__init__(clock, responder)
         self._hooks = []
 
+    def preserve_reply(self, role, execution_id, output, extensions):
+        """Replay this checked answer ahead of any stateful role/stage rule."""
+        rule = self.on(role, execution_id=execution_id).reply(
+            submitted(deepcopy(output), extensions=deepcopy(extensions)))
+        self.rules.remove(rule)
+        self.rules.insert(0, rule)
+
     def before(self, role, hook):
         self._hooks.append(('before', role, hook))
         return self

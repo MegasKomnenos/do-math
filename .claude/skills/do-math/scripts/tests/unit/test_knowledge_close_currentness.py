@@ -39,6 +39,52 @@ class CurrentnessGuards(KnowledgeRoundtripHarness):
         self.assertEqual(k._field_refs({'id': self.kid, 'path': 'ignored'}, strict=True, known_ids=known), {self.kid})
         self.assertEqual(k._explicit_refs({'history': [{'dependencies': ['old']}], 'nested': [{'dependencies': [self.kid]}]}, known), {self.kid})
 
+    def test_basis_ignores_scheduling_and_history_but_preserves_content_and_effect(self):
+        """~0.44s: keep real schema publication/reload and synthetic sealed review provenance."""
+        record = self.state['knowledge'][self.kid]
+        fid, xid = record['formal_result_id'], record['exposition_id']
+        uid = next(iter(self.state['assessment_uses']))
+        ids = [self.kid, fid, xid, self.aid, uid]
+        basis = k.capture_basis(self.state, self.runtime, ids)
+        # A real review-cycle producer supplies the scheduling coordinate. Its
+        # executions and cycle also go through the existing storage harness.
+        cycle = self.cycle()
+        record['review_cycle_id'] = cycle['id']
+        exact_before = {rid: k._hash(row) for rid, row in kr.all_records(self.state).items() if rid in ids}
+        # Scheduling belongs to knowledge; authored exposition and sealed
+        # identity judgments have no mutable administrative history.
+        record['previous_review_cycle_id'] = cycle['id']
+        self.state['assessment_uses'][uid]['history'].append({'reason': 'administrative annotation'})
+        for family, identifier in (('formal_results', fid), ('assessment_uses', uid)):
+            self.state[family][identifier].setdefault('use_history', []).append({'reason': 'administrative annotation'})
+        self.roundtrip()
+        self.assertEqual(k.validate_basis(basis, self.state, self.runtime), {'valid': True, 'reasons': []})
+        self.assertTrue(all(k._hash(kr.all_records(self.state)[rid]) != exact_before[rid]
+                            for rid in (self.kid, fid, uid)),
+                        'exact record identity still includes the administrative bytes')
+        for rid in (xid, self.aid):
+            self.assertEqual(k._hash(kr.all_records(self.state)[rid]), exact_before[rid])
+        mutations = [('knowledge', self.kid, 'title', 'Corrected title'),
+                     ('knowledge', self.kid, 'revision', 2),
+                     ('knowledge', self.kid, 'origin_refs', ['changed provenance']),
+                     ('knowledge', self.kid, 'use_suspended', True),
+                     ('formal_results', fid, 'publication_state', 'rejected'),
+                     ('formal_results', fid, 'formal_use', 'suspended'),
+                     ('formal_results', fid, 'verification', {}),
+                     ('formal_results', fid, 'trust_environment_id', 'TE-other'),
+                     ('expositions', xid, 'items', []),
+                     ('identity_assessments', self.aid, 'decision', 'unresolved'),
+                     ('identity_assessments', self.aid, 'review_cycle_id', cycle['id']),
+                     ('assessment_uses', uid, 'status', 'suspended')]
+        for family, identifier, field, value in mutations:
+            changed = deepcopy(self.state)
+            changed[family][identifier][field] = value
+            with self.subTest(family=family, field=field):
+                self.assertIn('hash_changed:' + identifier, k.validate_basis(basis, changed, self.runtime)['reasons'])
+        changed = deepcopy(self.state)
+        del changed['knowledge'][self.kid]
+        self.assertIn('missing:' + self.kid, k.validate_basis(basis, changed, self.runtime)['reasons'])
+
     def test_research_use_rejects_missing_identifier_and_suspended_record(self):
         for field, value, reasons in (('id', '', ['missing_or_cyclic_research_dependency']),
                                      ('use_suspended', True, ['research_record_not_active']),

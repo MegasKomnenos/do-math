@@ -245,5 +245,39 @@ class CallManagerTests(unittest.TestCase):
         calls.close()
 
 
+
+class ObservationBatchBoundaries(unittest.TestCase):
+    def test_returned_call_never_coalesces_distinct_callbacks_or_receipts(self):
+        from dataclasses import replace
+        from do_math.observation_transport import ObservationBatch
+        from pathlib import Path
+        for mismatch in ['arguments', 'stream', 'barrier', 'received', 'row']:
+            with self.subTest(mismatch=mismatch):
+                calls, seen, returned = ModelCalls(), [], []
+                barrier = lambda: True
+                first = ObservationBatch([{'n': 0}], [(0, 2)], [b'0\n'], 0, '2026-10-16T00:00:00Z',
+                    1., 2, Path('stdout.jsonl'), barrier, ends_read=False)
+                second = replace(first, events=[{'n': 1}], rows=[b'1\n'], offsets=[(2, 4)], first_row=1,
+                                 end_offset=4, ends_read=True)
+                if mismatch == 'stream': second = replace(second, stream_path=Path('other.jsonl'))
+                elif mismatch == 'barrier': second = replace(second, is_terminated=lambda: True)
+                elif mismatch == 'received': second = replace(second, received_monotonic=2.)
+                elif mismatch == 'row': second = replace(second, first_row=3)
+                def receive(*items): seen.append(items)
+                def produce(on_observation):
+                    on_observation(first)
+                    if mismatch == 'arguments': on_observation(second, 'extra')
+                    else: on_observation(second)
+                    return {'status': 'completed'}
+                future = calls.start_call(continuation(returned), produce, {'on_observation': receive}, execution_id='EX-batches')
+                future.result(timeout=5)
+                try:
+                    self.assertEqual(calls.collect(), 1)
+                    self.assertEqual([row[0].events for row in seen], [[{'n': 0}], [{'n': 1}]])
+                    self.assertEqual(len(seen[1]), 2 if mismatch == 'arguments' else 1)
+                    self.assertEqual(returned, [{'status': 'completed'}])
+                finally: calls.close()
+
+
 if __name__ == '__main__':
     unittest.main()

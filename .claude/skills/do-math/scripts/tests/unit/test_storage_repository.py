@@ -21,6 +21,7 @@ import uuid
 
 from do_math import initialization, repository
 from do_math.canonical import canonical_json
+from do_math.payloads import json_safe
 from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError
 from do_math.repository import RepositoryCursorError
 from do_math.state_checks import inspect_state
@@ -32,6 +33,7 @@ from support.provider_probes import ObservedCalls
 from support.storage_files import junction, remove_link
 from support.storage_probes import BuiltinCalls
 from support.storage_records import INSTANCE_ID, engine_on, fake_ports, record_store
+from support.provider_native_inputs import EXTERNAL_JSON_VALUES
 
 FLOAT_REFUSED = 'JSON floating-point numbers are not permitted'
 STALE = 'expected head no longer matches the instance ref'
@@ -65,6 +67,34 @@ class RepositoryCase(unittest.TestCase):
 
 
 class ResearchRepositoryTests(RepositoryCase):
+    def test_checkpoint_evidence_cannot_escape_the_immutable_namespace(self):
+        head, instance, runtime = self.repository.load()
+        runtime['checkpoints'] = {'EX-evidence': {'evidence_files': [{'path': 'notes.txt',
+            'artifact_ref': 'runtime/history/state.json', 'sha256': hashlib.sha256(b'notes').hexdigest(), 'bytes': 5}]}}
+        before = deepcopy((instance, runtime))
+        with self.assertRaisesRegex(ValueError, '^artifact evidence must use the immutable artifact namespace$'):
+            self.repository.save_with_state(head, instance, runtime)
+        self.assertEqual((instance, runtime), before)
+        self.assertEqual(self.repository.load()[0], head)
+
+    def test_artifact_cache_bounds_forget_facts_without_changing_their_bytes(self):
+        """Exercise the real 1024-link and 64 MiB cache limits without publishing unrelated records."""
+        git_dir = str(self.repository.git_dir)
+        path = 'runtime/artifacts/AB-cache/large.bin'
+        first = 'cache-head-0'
+        repository._learn_artifact(git_dir, path, first, 5, b'first')
+        self.assertEqual(repository._known_artifact(git_dir, path, first), [first, 5, b'first'])
+        for index in range(1, repository._LINEAGE_LIMIT + 1):
+            repository._learn_publication(git_dir, 'cache-head-' + str(index - 1), 'cache-head-' + str(index), {})
+        # A bounded ancestry miss asks the store again; it never asserts absence.
+        self.assertIsNone(repository._known_artifact(git_dir, path, 'cache-head-' + str(repository._LINEAGE_LIMIT)))
+        self.assertEqual(repository._known_artifact(git_dir, path, first)[2], b'first')
+        raw = b'x' * (repository._ARTIFACT_BYTES_LIMIT + 1)
+        repository._learn_artifact(git_dir, path, first, len(raw), raw)
+        self.assertEqual(repository._known_artifact(git_dir, path, first), [first, len(raw), None])
+        self.assertEqual(raw[:3], b'xxx')
+        self.assertLessEqual(repository._held_bytes, repository._ARTIFACT_BYTES_LIMIT)
+
     def test_export_reads_bounded_batches_and_preserves_binary_contents(self):
         """About 1 s, over the 0.2 s unit budget: 150 artifacts are published and exported file by file, the batching under test."""
         head, instance, runtime = self.repository.load()
@@ -423,6 +453,45 @@ class CandidateCopyTests(unittest.TestCase):
 
 
 class StorageValueTests(unittest.TestCase):
+    def test_external_value_axes_have_exact_bytes_or_reject_without_publication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = record_store(Path(directory))
+            head = store.initialize(*current_state())
+            _, instance, runtime = store.load(head)
+            before = deepcopy((instance, runtime))
+            for label, value, wire in EXTERNAL_JSON_VALUES:
+                with self.subTest(label=label):
+                    reason = ('JSON floating-point numbers are not permitted' if label == 'decimal' else
+                              'JSON integers must be safe integers' if label.startswith('unsafe-') else None)
+                    if reason:
+                        proposed = {**runtime, 'provider_wake': {'value': value}}
+                        original = deepcopy(proposed)
+                        with self.assertRaisesRegex(ValueError, exact(reason)):
+                            store.save_with_state(head, instance, proposed)
+                        self.assertEqual(proposed, original)
+                        self.assertEqual(store.load(head)[1:], before)
+                        self.assertEqual(store.load()[0], head)
+                    else:
+                        self.assertEqual(canonical_json(value), wire + b'\n')
+                        saved = store.save_with_state(head, instance, {**runtime, 'provider_wake': {'value': value}})
+                        self.assertEqual(store.load(saved[0])[2]['provider_wake'], {'value': value})
+                        head, instance, runtime = saved
+                        before = deepcopy((instance, runtime))
+            proposed = {**runtime, 'provider_wake': {'value': b'raw'}}
+            original = deepcopy(proposed)
+            with self.assertRaisesRegex(ValueError, exact('value is not JSON-serializable')):
+                store.save_with_state(head, instance, proposed)
+            self.assertEqual(proposed, original)
+            self.assertEqual(store.load(), (head, *before))
+            raw = b'\xff\x00'
+            projected = {'sha256': hashlib.sha256(raw).hexdigest(), 'text': '\ufffd\x00', 'base64': '/wA='}
+            self.assertEqual(json_safe(raw), projected)
+            path = 'runtime/artifacts/BA-external-bytes/raw.bin'
+            saved = store.save_with_state(head, instance, {**runtime, 'provider_wake': {'value': json_safe(raw)}},
+                artifacts={path: raw})
+            self.assertEqual(store.read(path, saved[0]), raw)
+            self.assertEqual(store.load(saved[0])[2]['provider_wake'], {'value': projected})
+
     def test_value_validation_and_serialization_keep_the_same_domain(self):
         for value in (None, True, False, 0, -(2**53 - 1), 2**53 - 1,
                       {'e\N{COMBINING ACUTE ACCENT}': ['한글', '😀', 1], '\N{LATIN SMALL LETTER E WITH ACUTE}': None}):

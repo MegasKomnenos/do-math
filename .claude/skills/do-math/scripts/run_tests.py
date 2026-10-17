@@ -353,7 +353,8 @@ def _empty(job):
     return state.root_signaled and not state.active_processes and not state.process_ids
 
 
-def _exit_code(job):
+def worker_exit_code(job):
+    """Read the owned Windows worker's actual process exit code."""
     import ctypes
     from ctypes import wintypes
     function = ctypes.WinDLL('kernel32', use_last_error=True).GetExitCodeProcess
@@ -365,10 +366,13 @@ def _exit_code(job):
     return code.value
 
 
-def wait_for_worker(job, *, pause=None):
-    """Wait for the root and owned children; elapsed time never terminates a test."""
+def wait_for_worker(job, *, pause=None, cancelled=None):
+    """Wait for the owned tree; only explicit cancellation interrupts the wait."""
     pause = pause or time.sleep
     while not (job.wait(0) and _empty(job)):
+        if cancelled is not None and cancelled.is_set():
+            from concurrent.futures import CancelledError
+            raise CancelledError('mutation run interrupted')
         pause(.05)
 
 
@@ -387,14 +391,23 @@ def _isolated(tests, directory, *, measure=False):
         with WindowsJob([sys.executable, '-B', str(Path(__file__).resolve()), '--worker', str(directory)],
                         cwd=directory, env=environment, name='do-math-tests-' + uuid.uuid4().hex) as job:
             job.resume()
-            wait_for_worker(job)
-            returncode = _exit_code(job)
+            try:
+                wait_for_worker(job)
+            except (Exception, KeyboardInterrupt):
+                # Explicit interruption/error ends only this owned tree. Confirm
+                # termination before releasing handles or reporting unfinished rows.
+                job.terminate()
+                wait_for_worker(job)
+                raise
+            returncode = worker_exit_code(job)
         report = _read_json(directory / 'result.json') or {'complete': False, 'successful': False, 'rows': [], 'module_total_seconds': {}}
         report['returncode'] = returncode
         report['successful'] = report['successful'] and returncode == 0
-    except Exception as error:
+    except (Exception, KeyboardInterrupt) as error:
         report = _read_json(directory / 'result.json') or {'rows': [], 'module_total_seconds': {}}
         report.update(complete=False, successful=False, worker_error=f'{type(error).__name__}: {error}')
+        if isinstance(error, KeyboardInterrupt):
+            report['interrupted'] = True
     report.update(worker_seconds=time.monotonic() - started, directory=str(directory), requested=identifiers)
     # A class-level skip is different from unfinished tests after a worker error.
     fixtures = [row for row in report['rows'] if row.get('fixture')]
@@ -443,7 +456,7 @@ def _worker(directory):
             measurement.begin([test.id() for test in tests])
         try:
             report = _run_suite(tests, directory, checkpoint=True, measurement=measurement)
-        except Exception:
+        except BaseException:
             # Preserve runner failures before unwinding the worker's redirected stderr.
             traceback.print_exc(file=err)
             err.flush()
@@ -469,7 +482,7 @@ def main(argv=None):
     parser.add_argument('--jobs', type=int, default=1,
                         help='run in-process tests in this many worker processes, modules balanced by '
                              'their last recorded time (default: 1); with T3 each worker measures and the runner '
-                             'combines their data')
+                             'combines their data; --mutation-base then uses the same count (at most 3)')
     parser.add_argument('--full', action='store_true',
                         help='with --tier T3: measure every selected module, reusing nothing from the T3 store '
                              '(a closing run, 설계 A29)')
@@ -493,6 +506,12 @@ def main(argv=None):
     if 'T3' in tiers:
         if str(TESTS) not in sys.path:
             sys.path.insert(0, str(TESTS))
+        if args.mutation_base:
+            from support.mutation import validate_jobs
+            try:
+                validate_jobs(args.jobs)
+            except ValueError as error:
+                parser.error(str(error))
         from support.branch_gate import Measurement, repository_root
         if args.jobs == 1:
             # On disk, so a T3 store can join its reused data and keep this run's (A29).
@@ -596,6 +615,7 @@ def main(argv=None):
         if measurement is not None:
             measurement.missing_workers = [str(path) for path in
                                            measurement.merge([report['directory'] for report in workers])]
+    interrupted = False
     for group in FOLDERS:
         tests = [test for test in selected if folder_of(test) == group]
         if not tests:
@@ -630,8 +650,20 @@ def main(argv=None):
                                    measure=adapter.request if is_adapter else False)
             print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
             reports.append({'group': group, **report})
+            if report.get('interrupted'):
+                interrupted = True
+                break
         group_seconds[group] = round(time.monotonic() - started, 1)
         _write_json(directory / 'report.json', {'complete': False, 'group_seconds': group_seconds, 'reports': reports})
+        if interrupted:
+            break
+    if interrupted:
+        reported = {row['id'] for report in reports for row in report['rows']}
+        reports.append({'group': 'interrupted', 'complete': False, 'successful': False,
+            'module_total_seconds': {}, 'rows': [
+                {'id': test.id(), 'outcome': 'not_run', 'seconds': 0,
+                 'details': ['Run interrupted before this test could run.']}
+                for test in selected if test.id() not in reported]})
     if adapter is not None and adapter.started:
         adapter.abandon()
     after = _edition()
@@ -865,7 +897,7 @@ def _finish_t3(measurement, directory, selected, args, clean, store=None, rows=(
         # The index this run wrote, or a usable older one: a partial run writes none (결함 D13).
         current, _ = selection.usable(*selection.read_index(), selection.is_ancestor_of_head(measurement.root))
         mutation = mutation_tool.run(args.mutation_base, current, LAYERS, measurement.root,
-                                     directory / 'mutation')
+                                     directory / 'mutation', jobs=args.jobs)
         summary.append(mutation_tool.summary(mutation))
         summary += [f'  survived: {name}' for name in mutation['survived']]
     written = False

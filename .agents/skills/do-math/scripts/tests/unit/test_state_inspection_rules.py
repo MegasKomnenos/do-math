@@ -84,6 +84,145 @@ class StateCheckTests(unittest.TestCase):
         errors = self.area(instance, runtime, area)['findings']
         self.assertTrue(any(text in row['message'] for row in errors), errors)
 
+    def test_active_environment_uniqueness_is_an_inspection_condition(self):
+        """T3 about 0.25 s: two actual synthetic toolchain records and the installed state contract."""
+        from support.trust_inputs import trust_environment, trust_fixture
+        instance, runtime = surface_state()
+        with tempfile.TemporaryDirectory() as directory:
+            for identifier in ('TE-one', 'TE-two'):
+                environment, binding = trust_environment(trust_fixture(Path(directory), [identifier]),
+                    environment_id=identifier, status='active')
+                instance['trust_environments'][identifier] = environment
+                runtime.setdefault('trust_bindings', {})[identifier] = binding
+            instance['active_trust_environment'] = 'TE-one'
+            default_state_contract().validate(*at_load(instance, runtime))
+            report = self.area(instance, runtime, 'governance_trust')
+            self.assertEqual(report['status'], 'blocked')
+            self.assertIn('active trust environment is not unique or does not match pointer',
+                          [row['message'] for row in report['findings']])
+
+    def test_terminal_task_worker_and_transferred_obligation_are_inspected(self):
+        """T3 about 14.1 s including the existing transfer Sim; inspection needs a real closed assessment."""
+        from support.governance_cases import transfer_sim, transfer_output
+        sim = transfer_sim()
+        engine = sim.engine
+        from do_math.task_scope import apply_task_assessments
+        engine.instance, engine.runtime = apply_task_assessments(sim.instance, sim.runtime,
+            transfer_output(sim)['task_assessments'], execution_id='EX-close-transfer-plan',
+            input_tasks=deepcopy(sim.runtime['tasks']), clock=sim.clock)
+        live = engine._register_execution({'id': 'AC-terminal-worker', 'role': 'research_work',
+            'target': 'TK-close-source'}, {'id': 'EX-terminal-worker', 'role': 'research_work', 'status': 'running'})
+        self.assertIsNotNone(live)
+        instance, runtime = deepcopy((sim.instance, sim.runtime))
+        runtime['tasks']['TK-close-target']['completion_obligations'] = [row for row in
+            runtime['tasks']['TK-close-target']['completion_obligations'] if not row['id'].startswith('INHERITED-')]
+        engine.store.validate_candidate(instance, runtime)
+        report = self.area(instance, runtime, 'tasks_activities_executions')
+        self.assertEqual(report['status'], 'blocked')
+        messages = [row['message'] for row in report['findings']]
+        self.assertIn('terminal task has a live worker', messages)
+        self.assertIn('transferred obligation target is absent', messages)
+
+    def test_completed_academic_resolution_requires_bytes_and_current_evidence(self):
+        """T3 about 46.3 s including the existing solved academic consumer and actual resolution producer."""
+        from support.academic_resolution_cases import rejection_case
+        sim, eid, resolution = rejection_case()
+        engine = sim.engine
+        path, raw = 'runtime/artifacts/AB-academic/response.txt', b'External response e\xcc\x81\r\n'
+        engine._save({path: raw})
+        engine._apply_academic_resolutions({'role': 'research_plan'}, eid,
+            [{**resolution, 'evidence_refs': [path, *resolution['evidence_refs']]}])
+        engine._save()
+        instance, runtime = deepcopy((sim.instance, sim.runtime))
+        runtime['status'] = 'completed'
+        before = deepcopy((instance, runtime))
+        omitted = inspect_state(instance, runtime, requested_areas=['mathematical_effect'])
+        self.assertEqual(omitted['status'], 'incomplete')
+        self.assertIn('current academic resolution artifact bytes', omitted['areas'][0]['not_checked'])
+        reads = []
+        def read(ref):
+            reads.append(ref)
+            return engine.store.read(ref, engine.head)
+        report = inspect_state(instance, runtime, requested_areas=['mathematical_effect'], read_artifact=read)
+        self.assertEqual(report['status'], 'blocked')
+        self.assertEqual(reads, [path])
+        self.assertIn('goal: completed runtime has incomplete current academic requirements',
+                      [row['message'] for row in report['findings']])
+        self.assertEqual((instance, runtime), before)
+
+    def test_duplicate_source_names_and_paths_are_separate_persisted_findings(self):
+        instance, runtime = surface_state()
+        source = {'id': 'SO-one', 'name': 'same.txt', 'path': 'runtime/artifacts/BA-one/source.txt',
+                  'sha256': 'a' * 64, 'bytes': 1}
+        instance['sources'] = [source, {**source, 'id': 'SO-two'}]
+        default_state_contract().validate(*at_load(instance, runtime))
+        result = self.area(instance, runtime, 'record_storage')
+        self.assertEqual(result['status'], 'blocked')
+        messages = [row['message'] for row in result['findings']]
+        self.assertIn('source[1]: duplicate name', messages)
+        self.assertIn('source[1]: duplicate path', messages)
+
+    def test_solved_goal_without_an_audit_group_is_blocked(self):
+        instance, runtime = surface_state()
+        instance['goal_status'] = 'mathematically_solved'
+        default_state_contract().validate(*at_load(instance, runtime))
+        self.assertError(instance, runtime, 'completed runtime lacks current audit group', 'mathematical_effect')
+
+    def test_duplicate_live_planning_roles_and_missing_selected_task_are_blocked(self):
+        from support.record_builders import execution_state
+        from do_math import activities, execution_lifecycle
+        for role in ('research_preparation', 'research_plan'):
+            with self.subTest(role=role):
+                instance, runtime = execution_state(role)
+                first = runtime['executions']['EX-1']
+                second = execution_lifecycle.create_execution(execution_id='EX-two', owner_activity_id='AT-1',
+                    actor_kind=first['actor_kind'], input_manifest={}, profile_ref=first['execution_profile_ref'],
+                    created_at=first['created_at'])
+                second['role'] = role
+                activities.assign_execution(runtime, 'AT-1', second)
+                runtime['queue'] = [{'id': 'AC-absent', 'role': 'research_work', 'target': 'TK-absent'}]
+                default_state_contract().validate({**instance, 'object_format': 'sha1'}, runtime)
+                self.assertError(instance, runtime, 'multiple live ' + role + ' executions', 'preparation_selection')
+                self.assertError(instance, runtime, 'selected work references absent task', 'preparation_selection')
+
+    def test_capacity_inspection_distinguishes_host_constraints_and_overcommitted_model_slots(self):
+        from support.provider_inputs import host_capacity_fixture, PROFILE_CONFIG
+        from support.record_builders import execution_state
+        instance, _, host = host_capacity_fixture()
+        instance = current_state(instance)[0]
+        runtime = execution_state('research_work', config=PROFILE_CONFIG)[1]
+        from do_math.budget import plan_reservations
+        profile = instance['execution_profiles'][runtime['executions']['EX-1']['execution_profile_ref']['id']]
+        reservation, = plan_reservations([], instance['capacity_constraints'], profile, owner_id='EX-1')
+        constraint = instance['capacity_constraints'][reservation['constraint_id']]
+        # The accounting inputs obey each row's balance; aggregate capacity is
+        # the inspection's responsibility rather than a row schema condition.
+        runtime['reservations'] = {reservation['id']: {**reservation, 'reserved': constraint['work_slots'] + 1}}
+        default_state_contract().validate({**instance, 'object_format': 'sha1'}, runtime)
+        before = deepcopy((instance, runtime))
+        self.assertError(instance, runtime, 'reservation ledger exceeds work capacity', 'tasks_activities_executions')
+        self.assertEqual((instance, runtime), before)
+        self.assertEqual(instance['capacity_constraints'][host['id']], host)
+
+    def test_external_mapping_requires_the_exact_execution_role_and_ledger_fields(self):
+        from support.entry import entry
+        operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/', 'body': ''},
+            'GR-one', 'GS-one', 'OP-one')
+        operation.update(execution_id='EX-1')
+        instance, runtime = surface_state()
+        runtime['external_operations'] = {operation['id']: operation}
+        self.assertError(instance, runtime, 'external operation has missing EX execution mapping', 'tasks_activities_executions')
+        execution = runtime['executions']['EX-1']
+        execution.update(role='external_action', operation_id=operation['id'])
+        for field in ('grant_id', 'request_sha256', 'source_ref'):
+            execution[field] = operation[field]
+        self.assertEqual(self.area(instance, runtime, 'tasks_activities_executions')['status'], 'healthy')
+        for field in ('grant_id', 'request_sha256', 'source_ref'):
+            old = execution[field]
+            execution[field] = 'different'
+            self.assertError(instance, runtime, 'external execution ' + field + ' differs from ledger', 'tasks_activities_executions')
+            execution[field] = old
+
     def test_valid_rule_payload_is_not_an_error_list(self):
         from support.observation_inputs import supply_observation_rules
         instance, runtime = surface_state()

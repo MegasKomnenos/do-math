@@ -26,6 +26,23 @@ missing or stale index, adds the module's layer folders
 is ``not_executed``; the branch gate reports it, and it does not enter the
 pseudo-tested list.
 
+``--test ID`` (repeatable; API ``explicit_tests``) adds exact unittest method
+IDs to the automatic selection for every targeted function of the ``--only``
+modules. It requires a nonempty ``--only`` scope and never replaces indexed
+tests or the layer-folder fallback. IDs are deduplicated; they are supplied
+inputs, not measured entry ordinals. Each outcome's ``selection`` records the
+indexed ordinals, explicit IDs and effective tests/folders. Collection and
+execution use the same child evidence and unmutated-baseline rules below.
+
+``--function module:key`` (repeatable; API ``function_selectors``) restricts
+plans to exact scripts-relative modules and the keys returned by ``functions``
+(including nested and repeated names). Every selector must resolve within the
+layer 1-3 / ``--only`` / changed-function scope before any child starts. Use
+``--every`` to include unchanged functions. Invalid or unresolved selectors
+raise ValueError (CLI usage error); they never fall back to a whole module.
+The report records the deduplicated selectors. List updates affect only actual
+outcomes; other entries and their reasons remain intact.
+
 Each child writes one result: ``selection`` (tests/folders/exclude), actual
 ``collected`` IDs, ``rows`` (id/outcome/fixture), ``tests_run`` and ``load_error``
 (null or the failing batch's selection and diagnostic strings). ``validate_result``
@@ -54,6 +71,18 @@ that also fails unmutated is set aside
 and the mutant runs again without it. Otherwise the mutant survived. Elapsed
 time is reported, never used to terminate a child or certify a killed mutant.
 
+``--jobs 1..3`` (API ``jobs``, default 1) runs that many function plans in
+threads, each owning at most one mutant or normal child at a time. Concurrent
+requests for the same normal selection share one Future. All children use the
+runner's Windows Job ownership and separate scratch directories. There is no
+cross-command baseline cache. Source and selection inputs must stay unchanged
+during the command; other test commands count against the same three slots.
+Only the parent updates the list after joining the plans. The output directory
+must be new or empty. Each completed plan also retains ``outcome.json``. An
+explicit interrupt joins owned trees, retains attempts, returns ``interrupted``
+and does not update the list. Restart with a new output directory; there is no
+automatic resume or promotion of an unfinished attempt to a completed result.
+
 List: ``tests/pseudo_tested.json`` holds ``{"entries": [{module, function, rule,
 base, reason}]}``. A survivor without an entry gains one with an empty reason;
 the entry of a killed function is removed. The report counts entries whose
@@ -68,6 +97,8 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter, defaultdict
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 import fnmatch
 import json
@@ -76,6 +107,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from threading import Event, Lock
 import time
 import traceback
 
@@ -84,11 +116,16 @@ TESTS = SCRIPTS / 'tests'
 PSEUDO_TESTED = TESTS / 'pseudo_tested.json'
 TIMINGS = TESTS / '.timings.json'  # the runner's unmeasured module seconds; a mutant child runs unmeasured
 UNKNOWN_TEST_SECONDS = 0.5  # a module the record does not know, per test (as run_tests)
+MAX_JOBS = 3
 FAILURES = frozenset({'failed', 'error', 'unexpected_success'})
 NOTE = ('Pseudo-tested functions (설계 6.3): the extreme mutant of each survived every test that runs the '
         'function. An entry closes a sub-stage only with a reason; a function whose None return equals '
         'its behaviour says so in the reason.')
 _SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+
+
+class _FunctionSelectionError(ValueError):
+    """Selector usage errors; other run failures keep their existing CLI exit meaning."""
 
 
 def functions(tree):
@@ -322,8 +359,18 @@ def _evidence_error(result):
     return None
 
 
-def _child_run(spec, directory):
+def validate_jobs(jobs):
+    """The mutation command owns at most three simultaneous mutant/normal children."""
+    if type(jobs) is not int or not 1 <= jobs <= MAX_JOBS:
+        raise ValueError(f'jobs must be an integer between 1 and {MAX_JOBS}')
+    return jobs
+
+
+def _child_run(spec, directory, *, cancelled=None):
     """Run one real child without a timeout; retain process, raw result and validation errors."""
+    from do_math.windows_job import WindowsJob
+    from run_tests import wait_for_worker, worker_exit_code
+
     directory = Path(directory)
     directory.mkdir(parents=True)  # a retry must use a new path, never stale result bytes
     (directory / 'spec.json').write_text(json.dumps(spec), encoding='utf-8')
@@ -333,21 +380,32 @@ def _child_run(spec, directory):
                            str(directory / 'spec.json')], 'pid': None, 'exit_code': None,
                'result': None, 'error': None}
     errors = []
+    scratch = directory / 'scratch'
+    scratch.mkdir()
+    (directory / 'output.txt').touch()
+    environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1',
+                   'TEMP': str(scratch), 'TMP': str(scratch), 'TMPDIR': str(scratch)}
     try:
-        with (directory / 'output.txt').open('w', encoding='utf-8') as output:
-            process = subprocess.Popen(attempt['command'], cwd=SCRIPTS, stdout=output,
-                                       stderr=subprocess.STDOUT, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
-            attempt['pid'] = process.pid
+        if cancelled is not None and cancelled.is_set():
+            raise CancelledError('mutation run interrupted before child start')
+        with WindowsJob(attempt['command'], cwd=SCRIPTS, env=environment) as job:
+            attempt['pid'] = job.pid
             try:
-                attempt['exit_code'] = process.wait()
-            finally:
-                if process.poll() is None:
-                    process.kill()
-                    process.wait()
+                (directory / 'attempt.json').write_text(json.dumps(attempt, indent=1), encoding='utf-8')
+                job.resume()
+                wait_for_worker(job, cancelled=cancelled)
+            except BaseException:
+                job.terminate()
+                wait_for_worker(job)
+                attempt['exit_code'] = worker_exit_code(job)
+                raise
+            attempt['exit_code'] = worker_exit_code(job)
         if attempt['exit_code'] != 0:
             errors.append(f"child exit {attempt['exit_code']}")
-    except OSError as error:
+    except (OSError, CancelledError, KeyboardInterrupt) as error:
         errors.append(f'child process error: {type(error).__name__}: {error}')
+        if isinstance(error, KeyboardInterrupt) and cancelled is not None:
+            cancelled.set()
     try:
         result = json.loads((directory / 'result.json').read_text(encoding='utf-8'))
         validate_result(result, spec)
@@ -360,33 +418,61 @@ def _child_run(spec, directory):
     return attempt
 
 
-def run(base, index, layers, root, directory, *, only=(), every=False, listing_path=PSEUDO_TESTED):
+def run(base, index, layers, root, directory, *, only=(), every=False, listing_path=PSEUDO_TESTED,
+        explicit_tests=(), jobs=1, function_selectors=()):
     """Mutate the functions changed since ``base`` and report; see the module docstring.
 
     ``every`` targets every function of the chosen modules, as if ``base`` lacked
     them: stage 1f moves tests without changing the product, so the check that
     moved tests look at results mutates the functions those tests reach.
+
+    ``explicit_tests`` supplements the automatic selection in the required
+    ``only`` module scope; it does not assert measured function entry.
+    ``jobs`` limits mutant and normal children together, within this command.
     """
     from support.branch_gate import git_blobs
+    validate_jobs(jobs)
+    explicit_tests = sorted(set(explicit_tests))
+    if explicit_tests and not only:
+        raise ValueError('explicit tests require an --only module scope')
+    if any(len(name.split('.')) < 3 or not all(part.isidentifier() for part in name.split('.'))
+           for name in explicit_tests):
+        raise ValueError('explicit tests must be exact qualified unittest method IDs')
     started = time.monotonic()
     resolved = _git(root, 'rev-parse', '--verify', '--quiet', f'{base}^{{commit}}')
     if resolved.returncode:
         raise ValueError(f'base {base!r} is not a commit')
     base = resolved.stdout.decode().strip()
     directory = Path(directory).resolve()
+    if directory.exists() and any(directory.iterdir()):
+        raise ValueError('mutation output directory must be new or empty')
     directory.mkdir(parents=True, exist_ok=True)
     prefix = SCRIPTS.relative_to(root).as_posix()
     tests = index['tests'] if index else []
     modules = sorted(m for m, layer in layers.items() if layer in ('1', '2', '3')
                      and (not only or any(fnmatch.fnmatchcase(m, pattern) for pattern in only)))
+    requested = set()
+    for selector in function_selectors:
+        if not isinstance(selector, str) or selector.count(':') != 1:
+            raise _FunctionSelectionError(f'invalid function selector {selector!r}; expected scripts-relative-module:key')
+        module, key = selector.split(':')
+        if not module or not key or module not in modules:
+            raise _FunctionSelectionError(f'function selector outside selected layer 1-3 modules: {selector!r}')
+        requested.add((module, key))
+    if requested:
+        modules = [module for module in modules if any(m == module for m, _ in requested)]
     blobs = git_blobs(root, [f'{prefix}/{m}' for m in modules])
     outcomes, plans = [], []
+    resolved_functions = set()
     for module in modules:
         path = f'{prefix}/{module}'
         text = (SCRIPTS / module).read_text(encoding='utf-8')
         shown = _git(root, 'show', f'{base}:{path}')
         base_text = shown.stdout.decode('utf-8') if shown.returncode == 0 and not every else ''
         for key, node in changed_functions(base_text, text):
+            if requested and (module, key) not in requested:
+                continue
+            resolved_functions.add((module, key))
             rule, mutant = mutate(text, node)
             outcome = {'module': module, 'function': key, 'rule': rule, 'line': node.lineno}
             outcomes.append(outcome)
@@ -400,33 +486,56 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
                 continue
             entry = index['files'].get(path) if index else None
             ordinals, folders = tests_for(entry, blobs[path], key, layers[module])
-            if not ordinals and not folders:
+            chosen_tests = sorted({tests[o] for o in ordinals} | set(explicit_tests))
+            outcome['selection'] = {'indexed_ordinals': sorted(ordinals),
+                                    'explicit_tests': explicit_tests,
+                                    'tests': chosen_tests, 'folders': list(folders)}
+            if not chosen_tests and not folders:
                 outcome['status'] = 'not_executed'
                 continue
-            outcome['tests'] = len(ordinals)
+            outcome['tests'] = len(chosen_tests)
             outcome['folders'] = list(folders)
-            plans.append((outcome, mutant, {'tests': sorted(tests[o] for o in ordinals), 'folders': list(folders)}))
+            plans.append((outcome, mutant, {'tests': chosen_tests, 'folders': list(folders)}))
+    unresolved = requested - resolved_functions
+    if unresolved:
+        raise _FunctionSelectionError('unresolved function selectors in changed-function scope (use --every for unchanged functions): '
+                                      + ', '.join(f'{module}:{key}' for module, key in sorted(unresolved)))
     seconds = recorded_seconds()
-    unmutated = {}  # selection -> retained baseline; reuse only this run's identical selection
+    unmutated = {}  # selection -> one Future; a concurrent request shares the same normal child
+    baseline_lock, cancelled = Lock(), Event()
 
     def baseline(chosen):
         key = tuple(tuple(chosen[field]) for field in ('tests', 'folders', 'exclude'))
-        if key not in unmutated:
-            number = len(unmutated)
+        with baseline_lock:
+            owner = key not in unmutated
+            if owner:
+                unmutated[key] = Future()
+            future = unmutated[key]
+            number = list(unmutated).index(key)
+        if not owner:
+            return future.result()
+        try:
             attempt = _child_run({**chosen, 'target': None, 'mutant': None},
-                                 directory / f'unmutated-{number:04}')
+                                 directory / f'unmutated-{number:04}', cancelled=cancelled)
             result = attempt['result']
             error = attempt['error'] or _evidence_error(result)
             if not error and result['load_error'] is not None:
                 error = 'normal selection failed to load: ' + '; '.join(result['load_error']['details'])
             failing = [row['id'] for row in result['rows']
                        if not row['fixture'] and row['outcome'] in FAILURES] if result else []
-            unmutated[key] = {'id': number, 'selection': chosen, 'attempt': attempt,
-                              'status': 'evidence_error' if error else 'failing' if failing else 'passed',
-                              'failing': failing, 'detail': error}
-        return unmutated[key]
+            normal = {'id': number, 'selection': chosen, 'attempt': attempt,
+                      'status': 'evidence_error' if error else 'failing' if failing else 'passed',
+                      'failing': failing, 'detail': error}
+            future.set_result(normal)
+        except BaseException as error:
+            future.set_exception(error)
+            raise
+        return normal
 
-    for number, (outcome, mutant, chosen) in enumerate(plans):
+    def execute(number, plan):
+        if cancelled.is_set():
+            return
+        outcome, mutant, chosen = plan
         outcome['estimated_seconds'] = expected_seconds(chosen, seconds)
         work = Path(directory) / f'mutant-{number:04}'
         work.mkdir(parents=True, exist_ok=True)
@@ -442,7 +551,7 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
                 break
             attempt = _child_run({**remaining, 'target': str(SCRIPTS / outcome['module']),
                                    'mutant': str(work / 'mutant.py')},
-                                  work / f'attempt-{len(outcome["attempts"]):04}')
+                                  work / f'attempt-{len(outcome["attempts"]):04}', cancelled=cancelled)
             record = {'execution': attempt, 'baselines': []}
             outcome['attempts'].append(record)
             took += attempt['seconds']
@@ -485,13 +594,38 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
             record['decision'] = 'exclude normal failures and retry'
             excluded |= broken
         outcome['seconds'] = round(took, 2)
-    baseline_failing = {test for item in unmutated.values() for test in item['failing']}
+        (work / 'outcome.json').write_text(json.dumps(outcome, ensure_ascii=False, indent=1), encoding='utf-8')
+
+    pool = ThreadPoolExecutor(max_workers=jobs)
+    pending = []
+    try:
+        pending = [pool.submit(execute, number, plan) for number, plan in enumerate(plans)]
+        for future in as_completed(pending):
+            future.result()
+    except KeyboardInterrupt:
+        cancelled.set()
+    except BaseException:
+        cancelled.set()
+        raise
+    finally:
+        if cancelled.is_set():
+            for future in pending:
+                future.cancel()
+        pool.shutdown(wait=True, cancel_futures=True)
+    for outcome, _, _ in plans:
+        if 'status' not in outcome:
+            outcome.update(status='execution_error', detail='mutation run interrupted before completion')
+    baselines = [future.result() for future in unmutated.values()]
+    baseline_failing = {test for item in baselines for test in item['failing']}
     listing = read_list(listing_path)
-    if update_list(listing, outcomes, base):
+    if not cancelled.is_set() and update_list(listing, outcomes, base):
         Path(listing_path).write_text(json.dumps(listing, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     counts = Counter(o['status'] for o in outcomes)
-    return {'base': base, 'every': every, 'functions': len(outcomes), 'counts': dict(counts),
-            'baseline_failing': sorted(baseline_failing), 'baselines': list(unmutated.values()),
+    return {'base': base, 'every': every, 'explicit_tests': explicit_tests, 'jobs': jobs,
+            'function_selectors': [f'{module}:{key}' for module, key in sorted(requested)],
+            'interrupted': cancelled.is_set(),
+            'functions': len(outcomes), 'counts': dict(counts),
+            'baseline_failing': sorted(baseline_failing), 'baselines': baselines,
             'unreasoned_entries': unreasoned(listing),
             'list': str(listing_path), 'seconds': round(time.monotonic() - started, 1),
             'survived': [f"{o['module']}:{o['function']}" for o in outcomes if o['status'] == 'survived'],
@@ -501,6 +635,8 @@ def run(base, index, layers, root, directory, *, only=(), every=False, listing_p
 def summary(report):
     counts = report['counts']
     scope = 'every function of the chosen modules' if report.get('every') else f"since {report['base'][:12]}"
+    if report.get('function_selectors'):
+        scope = 'exact selected functions'
     return (f"Extreme mutation, {scope}: {report['functions']} functions; "
             + ', '.join(f'{name} {counts[name]}' for name in sorted(counts))
             + f"; unreasoned pseudo-tested entries: {report['unreasoned_entries']} ({report['seconds']}s)")
@@ -508,7 +644,7 @@ def summary(report):
 
 def passed(report):
     """A zero survivor count cannot cover failed measurement or untested functions."""
-    return (report['unreasoned_entries'] == 0 and not report['baseline_failing']
+    return (not report.get('interrupted', False) and report['unreasoned_entries'] == 0 and not report['baseline_failing']
             and not any(report['counts'].get(name, 0)
                         for name in ('execution_error', 'mutation_error', 'not_executed', 'baseline_failing')))
 
@@ -640,15 +776,36 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--base', help='commit the changed functions are compared with')
     parser.add_argument('--only', action='append', default=[], help='scripts-relative module glob; repeat')
+    parser.add_argument('--function', action='append', default=[],
+                        help='exact scripts-relative module:qualified-function-key within scope; repeat')
+    parser.add_argument('--test', action='append', default=[],
+                        help='exact unittest method ID added to automatic selection; requires --only; repeat')
     parser.add_argument('--every', action='store_true',
                         help='mutate every function of the chosen modules, not only those changed since --base')
+    parser.add_argument('--jobs', type=int, default=1, help='simultaneous mutant/normal children, 1..3 (default: 1)')
     parser.add_argument('--output', type=Path, help='work directory; default: a new temporary directory')
     parser.add_argument('--child', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.child:
-        return _child(args.child)
+        with (args.child.parent / 'output.txt').open('w', encoding='utf-8') as output:
+            # This private child owns its process streams, including native writes
+            # and subprocess output that Python's redirect_stdout cannot capture.
+            os.dup2(output.fileno(), 1)
+            os.dup2(output.fileno(), 2)
+            with redirect_stdout(output), redirect_stderr(output):
+                try:
+                    return _child(args.child)
+                except BaseException:
+                    traceback.print_exc()
+                    raise
     if not args.base:
         parser.error('--base is required')
+    try:
+        validate_jobs(args.jobs)
+    except ValueError as error:
+        parser.error(str(error))
+    if args.test and not args.only:
+        parser.error('--test requires --only')
     sys.path[:0] = [str(SCRIPTS), str(TESTS)]
     from do_math.layers import LAYERS
     from support.branch_gate import repository_root
@@ -658,7 +815,11 @@ def main(argv=None):
     if index is None:
         print(f'Selection index unusable ({reason}); every mutant runs its layer folders.', flush=True)
     directory = args.output or Path(tempfile.mkdtemp(prefix='do-math-mutation-'))
-    report = run(args.base, index, LAYERS, root, directory, only=args.only, every=args.every)
+    try:
+        report = run(args.base, index, LAYERS, root, directory, only=args.only, every=args.every,
+                     explicit_tests=args.test, jobs=args.jobs, function_selectors=args.function)
+    except _FunctionSelectionError as error:
+        parser.error(str(error))
     (Path(directory) / 'mutation.json').write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding='utf-8')
     print(summary(report))
     for name in report['survived']:

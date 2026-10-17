@@ -123,11 +123,14 @@ class AssessmentReceiverTests(unittest.TestCase):
         instance, runtime = self.apply()
         identifier = self.task['id']
         self.assertEqual(runtime['tasks'][identifier]['waiting'], {
-            'kind': 'research_followup', 'target_refs': [], 'next_owner': 'research_plan', 'basis_ref': 'EX-planning-plan'})
+            'kind': 'research_followup', 'target_refs': [], 'next_owner': 'research_plan', 'basis_ref': 'EX-planning-plan',
+            'reason': self.assessment['reason']})
         first = deepcopy(runtime['tasks'][identifier]['assessment'])
         queue = deepcopy(runtime['queue'])
         self.engine.instance, self.engine.runtime = instance, runtime
         self.engine._save()
+        from support.wait_reporting import assert_task_wait_report
+        assert_task_wait_report(self, self.engine, identifier)
         self.snapshot = deepcopy(self.sim.runtime['tasks'])
         instance, runtime = self.apply()
         self.assertEqual(runtime['queue'], queue)
@@ -136,6 +139,25 @@ class AssessmentReceiverTests(unittest.TestCase):
         self.engine._save()
         self.sim.restart()
         self.assertEqual(self.sim.runtime['tasks'][identifier]['assessment_history'], [first])
+        self.engine = self.sim.engine
+        from support.planning_contract_inputs import selected_plan
+        self.assertEqual(planning.task_ready(self.sim.runtime['tasks'][identifier], self.sim.instance,
+            self.sim.runtime, evaluation_context=self.engine._evaluation_context())['state'], 'ready')
+        _ended_execution(self.engine, 'EX-continuation-plan', 'research_plan')
+        self.engine._apply_task_plan(selected_plan(self.sim.runtime['tasks'][identifier]), 'EX-continuation-plan',
+            deepcopy(self.sim.runtime['tasks']), [identifier], evaluation_context=self.engine._evaluation_context())
+        self.assertNotIn('waiting', self.sim.runtime['tasks'][identifier])
+        followups = [a for a in self.sim.runtime['queue'] if a['role'] == 'research_work' and a.get('target') == identifier]
+        self.assertEqual(len(followups), 1)
+        self.assertEqual(self.sim.runtime['tasks'][identifier]['assessment'], first)
+        before = deepcopy(self.sim.runtime)
+        with self.assertRaisesRegex(ValueError, '^selected task is no longer ready$'):
+            self.engine._apply_task_plan(selected_plan(self.sim.runtime['tasks'][identifier]), 'EX-continuation-plan',
+                deepcopy(self.sim.runtime['tasks']), [identifier], evaluation_context=self.engine._evaluation_context())
+        self.assertEqual(self.sim.runtime, before)
+        self.engine._save()
+        self.sim.restart()
+        self.assertNotIn('waiting', self.sim.runtime['tasks'][identifier])
 
     def test_current_assessment_rejects_changed_contract_and_refresh_is_idempotent(self):
         instance, runtime = self.apply()

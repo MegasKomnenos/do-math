@@ -105,7 +105,7 @@ class AcademicConsumerTests(unittest.TestCase):
             self.assertEqual(fixed['governance'], fitted['context']['governance'])
             damaged = deepcopy(fitted['context']['academic_validation'])
             damaged['status'] = 'pending'
-            with self.assertRaises(AssertionError):
+            with self.assertRaisesRegex(AssertionError, "'status': 'pending'"):
                 assert_governance_documents(self, damaged, owner='academic_validation',
                     status='completed', reason='all current requirements satisfied')
         engine._record_academic_assessment(task, assessment, 'EX-plan')

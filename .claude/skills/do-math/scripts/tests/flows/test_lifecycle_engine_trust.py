@@ -229,6 +229,26 @@ class TransitionTests(unittest.TestCase):
         run_machine(sim, 'trust_activate')
         self.assertEqual(sim.instance['active_trust_environment'], self.new)
 
+    def test_pause_during_trust_check_preserves_the_unfinished_target(self):
+        """T3 about 18.5 s: stored transition targets, actual admission and pause/continuation publication."""
+        from support.storage_finish_installation import at_return
+        sim = self.sim
+        self.start()
+        action = deepcopy(next(row for row in sim.runtime['queue'] if row['role'] == 'trust_check'))
+        # Deliver the owner's pause after actual admission, before its first
+        # save/stop judgment. Monitoring observes the return; no method is replaced.
+        with at_return(sim.engine._register_execution,
+                       lambda: extended(sim.engine, 'pause', {}, request_id='UI-trust-pause')) as admitted:
+            run_machine(sim, 'trust_check')
+        self.assertEqual(len(admitted), 1)
+        self.assertEqual(sim.runtime['status'], 'paused')
+        self.assertNotIn(action['target'], self.results())
+        queued, = [row for row in sim.runtime['queue'] if row.get('target') == action['target']
+                   and row.get('transition_id') == self.tid and row['role'] == 'trust_check']
+        self.assertEqual(queued['continuation_of'], next(row['id'] for row in sim.runtime['executions'].values()
+            if row['role'] == 'trust_check' and row['action']['target'] == action['target']))
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['queue'], sim.runtime['queue'])
+
     def test_changed_olean_blocks_trust_check_before_compiling(self):
         """About 2.5 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim

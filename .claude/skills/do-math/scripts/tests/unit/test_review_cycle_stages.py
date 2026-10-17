@@ -79,6 +79,7 @@ class ReviewCycleTests(unittest.TestCase):
         self.assertEqual(next_actions(cycle), [])
 
     def test_organizer_omission_forgery_and_owner_checks(self):
+        self.maxDiff = None
         cycle = self.start()
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding one', evidence=['proposal:1'])])
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding two same local ID', evidence=['proposal:2'])])
@@ -88,8 +89,9 @@ class ReviewCycleTests(unittest.TestCase):
         assert_review_documents(self, actual, owner='pending_findings', cycle=cycle, action=action)
         other = copy.deepcopy(actual)
         other[0]['ref'] = copy.deepcopy(actual[1]['ref'])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(AssertionError) as borrowed:
             assert_review_documents(self, other, owner='pending_findings', cycle=cycle, action=action)
+        self.assertIn("'slot': " + repr(other[0]['ref']['slot']), str(borrowed.exception))
         valid = review_stage_output(cycle, 'organize')
         reasons = {'omit': 'organizer omitted original findings',
                    'forge': 'organizer forged or reused an original finding',

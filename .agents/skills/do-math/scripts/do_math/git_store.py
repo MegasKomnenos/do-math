@@ -81,8 +81,6 @@ class GitStateStore:
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
         self.repository = Path(repository).absolute()
         self._repository_boundary = PhysicalBoundary(self.repository)
-        if not self.repository.is_dir():
-            raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
         self._backend, self._clock = backend, clock
@@ -253,12 +251,14 @@ class GitStateStore:
 
     def _compare_and_swap(self, new: str, old: str | None, operation: str) -> None:
         """Move the ref by Git's expected-old-OID update, the only ref move."""
-        if not self._backend.update_ref(self.repository, self.ref, new, old):
+        # An error can lose the acknowledgment of a successful ref move. Until
+        # success is known, the next snapshot must resolve the authoritative ref.
+        self._held_head = None
+        if not self._call("update_ref", self.ref, new, old):
             # A moved or remounted repository surfaces as a failed update; report
             # the changed boundary rather than only a conflict.
             self._repository_boundary.check()
             self._git_boundary.check()
-            self._held_head = None
             raise GitStateStoreConflict(f"state ref changed before the {operation} compare-and-swap")
         self._held_head = new if self.holds_writer_lock else None
 

@@ -21,6 +21,29 @@ from support.provider_probes import ObservedCalls, settle
 
 
 class BootstrapContractTests(unittest.TestCase):
+    def test_frozen_start_reports_live_target_drift_against_preserved_manifest(self):
+        source = self.root / 'small-installation'
+        source.joinpath('scripts/do_math').mkdir(parents=True)
+        source.joinpath('scripts/do_math/scheduled_operator.py').write_bytes(b'original supervisor\n')
+        source.joinpath('SKILL.md').write_bytes(b'original document\n')
+        receipt = bootstrap.freeze(source, self.root / 'small-workspace')
+        manifest = bootstrap.verify_snapshot(Path(receipt['manifest']))
+        self.assertEqual(bootstrap.startup_evidence(manifest)['comparison'], 'match')
+        source.joinpath('SKILL.md').write_bytes(b'repaired document\n')
+        source.joinpath('added.txt').write_bytes(b'new\n')
+        source.joinpath('scripts/do_math/scheduled_operator.py').unlink()
+        result = bootstrap.startup_evidence(manifest)
+        self.assertEqual(result['comparison'], 'different')
+        self.assertEqual(result['snapshot_sha256'], receipt['snapshot_sha256'])
+        self.assertEqual(result['differences'], [
+            {'path': 'SKILL.md', 'expected_sha256': hashlib.sha256(b'original document\n').hexdigest(),
+             'observed_sha256': hashlib.sha256(b'repaired document\n').hexdigest()},
+            {'path': 'added.txt', 'expected_sha256': None, 'observed_sha256': hashlib.sha256(b'new\n').hexdigest()},
+            {'path': 'scripts/do_math/scheduled_operator.py',
+             'expected_sha256': hashlib.sha256(b'original supervisor\n').hexdigest(), 'observed_sha256': None}])
+        self.assertEqual(bootstrap.verify_snapshot(Path(receipt['manifest'])), manifest)
+        self.assertEqual(bootstrap.startup_evidence(None), {'mode': 'live', 'comparison': 'no_recorded_manifest'})
+
     @classmethod
     def setUpClass(cls):
         old_path, old_flag = list(sys.path), sys.dont_write_bytecode

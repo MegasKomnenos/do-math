@@ -21,6 +21,26 @@ NO_JUDGMENT = '^fulfilled obligation needs its designated judge or a current spe
 
 
 class AssessmentApplicationTests(unittest.TestCase):
+    def test_external_source_revalidation_can_invalidate_an_unchanged_scope_assessment(self):
+        from do_math.task_scope import assessment_basis, assessment_current
+        instance, runtime, assessment = transfer_assessment()
+        instance, runtime = apply_assessment(instance, runtime, assessment)
+        task = runtime['tasks']['TK-1']
+        # decision_is_current explicitly supports externally validated sources.
+        # The validator's current verdict is not a stored record hash.
+        decision = instance['decisions']['DC-1']
+        from do_math.input_basis import aliases
+        instance['sources'] = [source for source in instance.get('sources', [])
+                               if decision['source_ref'] not in aliases(source)]
+        instance['governance_sources'].pop(decision['source_ref'], None)
+        task['assessment']['basis'] = assessment_basis(task, task['assessment'], instance, runtime)
+        self.assertTrue(assessment_current(task, instance, runtime,
+            evaluation_context={'validate_decision_source': lambda record: record == decision}))
+        before = deepcopy((instance, runtime))
+        self.assertFalse(assessment_current(task, instance, runtime,
+            evaluation_context={'validate_decision_source': lambda record: False}))
+        self.assertEqual((instance, runtime), before)
+
     def test_open_assessment_requests_followup_only_without_an_existing_plan(self):
         for decision in ('open', 'missing', 'closed'):
             for pending_role in (None, 'research_plan', 'research_preparation'):

@@ -56,14 +56,27 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.assertNotIn('source_status', public_question)
         original_ref = first_question['source_ref']
         original_bytes = sim.engine.store.read(original_ref)
+        from support.wait_reporting import assert_wait_report
+        self.assertEqual(waiting['action'].get('target'), None)
+        original_wait = deepcopy(sim.runtime['waiting_actions'][action_id])
+        original_activity = deepcopy(sim.runtime['activities'][waiting['action']['owner_activity_id']])
+        assert_wait_report(self, sim.engine, action_id)
+        sim.restart()
+        model = scenario_model(sim, DefaultResponder())
+        self.assertEqual(sim.runtime['waiting_actions'][action_id], original_wait)
+        self.assertEqual(sim.runtime['activities'][original_activity['id']], original_activity)
         applied(sim, 'pause', text='Keep the unresolved input question while paused')
         applied(sim, 'resume', text='Resume other eligible work')
         self.assertEqual(question(sim, first_question_id)['status'], 'open')
+        self.assertEqual(sim.runtime['waiting_actions'][action_id], original_wait)
+        self.assertEqual(sim.runtime['activities'][original_activity['id']], original_activity)
 
         first_retry = retry(sim, action_id, 'UC-retry-same-limit')
         replay = retry(sim, action_id, 'UC-retry-same-limit')
         self.assertTrue(first_retry['accepted'])
         self.assertTrue(replay['replayed'])
+        self.assertNotIn('waiting', sim.runtime['activities'][original_activity['id']])
+        self.assertEqual(sum(a['id'] == action_id for a in sim.runtime['queue']), 1)
         self.assertEqual(question(sim, first_question_id)['status'], 'open',
                          'Accepting a retry is not evidence that repackaging fits')
         sim.step()

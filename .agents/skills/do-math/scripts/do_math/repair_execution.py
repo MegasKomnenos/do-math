@@ -51,6 +51,54 @@ def installation_sha256(root):
     return exact_content_hash({name: cached_sha256(path) for name, path in installation_files(root).items()})
 
 
+def installation_evidence(root, *, backend):
+    """Observe installed bytes and source Git independently of research storage.
+
+    The project port's diff is preserved as observed stdout; an empty diff is
+    not a certification of a clean checkout. No repository is initialized and
+    no source commit is synthesized when source Git cannot be read.
+    """
+    from .file_io import installation_files
+    from .values import bytes_evidence
+    root = Path(root).resolve()
+    evidence = {'installation_root': str(root), 'installation_version': None,
+                'source_commit': None, 'source_status': 'unavailable'}
+    try:
+        root = root.resolve(strict=True)
+        evidence['installation_version'] = installation_sha256(root)
+    except (OSError, RuntimeError, ValueError) as error:
+        evidence['installation_error'] = type(error).__name__ + ': ' + str(error)
+        evidence['source_reason'] = 'installation bytes unavailable'
+        return evidence
+    try:
+        repository = backend.project_repository_root(root)
+        if repository is None:
+            evidence['source_reason'] = 'installation has no source Git worktree'
+            return evidence
+        evidence['source_repository'] = str(repository)
+        commit = backend.object_info(repository, ['HEAD'])[0]
+        if commit is None or commit[1] != 'commit':
+            evidence['source_reason'] = 'source HEAD is not an available commit'
+            return evidence
+        project = backend.project_snapshot(root, repository)
+        evidence.update(source_tree=project.tree_oid,
+                        tracked_diff=bytes_evidence(project.raw_diff),
+                        untracked_installation_paths=sorted(
+                            path.relative_to(repository).as_posix()
+                            for path in installation_files(root).values()
+                            if path.relative_to(repository).as_posix() not in project.tracked_paths))
+        if project.tree_oid is None:
+            evidence['source_reason'] = 'installation has no subtree in source HEAD'
+        elif backend.object_info(repository, ['HEAD'])[0] != commit:
+            evidence['source_reason'] = 'source HEAD changed during observation'
+        else:
+            evidence.update(source_status='observed', source_commit=commit[0])
+    except (OSError, RuntimeError, ValueError) as error:
+        evidence.update(source_status='unavailable', source_commit=None,
+                        source_reason=type(error).__name__ + ': ' + str(error))
+    return evidence
+
+
 def pending_installation_repair(runtime):
     rows = runtime.get('operational_dispositions', {}).values()
     for status in ('installation_repair_pending', 'installation_repair_waiting'):
@@ -129,6 +177,9 @@ def resume_installation_repair(runtime, record, *, repaired_by, at):
     record['status'] = 'applied'
     record.setdefault('result', {})['installation_repair'].update(
         status='repaired', repaired_by=repaired_by, continuation_action_id=action['id'])
+    activity = runtime['activities'][target['owner_activity_id']]
+    if activity['status'] == 'waiting':
+        activities.resume_activity(runtime, activity['id'], condition=activity['waiting']['condition'], at=at)
     target.pop('pending_operational_disposition', None)
     runtime['status'] = 'ready'
     return action
@@ -342,6 +393,13 @@ def repair_prompt(failure: dict, failure_inputs: list, *, diagnosed: bool, insta
          if diagnosed else "Repair only the do-math installation defect that prevents this engine from starting. ")
         + "Reproduce the recorded failure, make the smallest code repair, and run relevant checks. "
         "Preserve failure evidence, verification commands and changed file paths in your report. "
+        "Read input/installation-before.json for the launcher-observed installation and source Git basis. "
+        "Report installation_version as the post-repair installation_sha256 of the target skill, "
+        "and source_commit as its actual source Git HEAD (null if unavailable). "
+        "Use do_math.repair_execution.installation_evidence with the Git backend to observe these values after repair. "
+        "A source HEAD does not prove the installed bytes are committed; preserve uncommitted changes and verification evidence. "
+        "Never invent a commit or initialize a repository merely to fill source_commit; "
+        "do not substitute the research snapshot for source_commit. "
         "For a diagnosed submission defect, report repair_outcome=repaired only after reproducing and fixing it; "
         "otherwise report unresolved. Write regression logs inside this workspace and list their relative paths in verification_evidence. "
         "Do not change research records, goals, budgets, grants, user configuration or scheduled tasks. "

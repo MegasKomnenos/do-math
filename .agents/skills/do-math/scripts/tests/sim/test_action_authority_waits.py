@@ -4,6 +4,7 @@ from datetime import timedelta
 import unittest
 from support.engine_lifecycle import applied, clear_work
 from support.sim import Sim, warm_template
+from support.wait_reporting import assert_wait_report
 
 setUpModule = warm_template
 
@@ -22,10 +23,20 @@ class ActionAuthorityWaitTests(unittest.TestCase):
         self.assertEqual((wait['kind'], wait['next_owner']), ('action_authority', 'user'))
         activity_id = wait['action']['owner_activity_id']
         self.assertEqual(sim.runtime['activities'][activity_id]['status'], 'waiting')
+        assert_wait_report(self, sim.engine, action['id'])
+        sim.restart()
+        self.assertEqual(sim.runtime['waiting_actions'][action['id']], wait)
+        assert_wait_report(self, sim.engine, action['id'])
         held = deepcopy((sim.instance, sim.runtime))
         for _ in range(2):
             sim.engine._resume_action_authority_waits()
             self.assertEqual((sim.instance, sim.runtime), held)
+        applied(sim, 'decision', config={'change': {'kind': 'grant', 'grant': {
+            'id': 'GR-unrelated-role', 'kind': 'local', 'roles': ['research_plan'],
+            'reuse': 'reusable', 'expires_at': (sim.ports.clock.wall() + timedelta(days=1)).isoformat()}}})
+        self.assertEqual(sim.runtime['waiting_actions'][action['id']], wait)
+        self.assertEqual(sim.runtime['activities'][activity_id], held[1]['activities'][activity_id])
+        self.assertEqual(sim.runtime['executions'], before)
         applied(sim, 'decision', config={'change': {'kind': 'grant', 'grant': {
             'id': 'GR-maintenance-restored', 'kind': 'local', 'roles': ['maintenance'],
             'reuse': 'reusable', 'expires_at': (sim.ports.clock.wall() + timedelta(days=1)).isoformat()}}})
@@ -43,3 +54,6 @@ class ActionAuthorityWaitTests(unittest.TestCase):
         sim.engine._resume_action_authority_waits()
         self.assertEqual((sim.instance, sim.runtime), released)
         self.assertEqual(sim.engine.store.load()[2]['queue'], sim.runtime['queue'])
+        report = sim.engine.status()
+        self.assertNotIn(action['id'], report['waiting_actions'])
+        self.assertNotIn(activity_id, report['waiting_activities'])

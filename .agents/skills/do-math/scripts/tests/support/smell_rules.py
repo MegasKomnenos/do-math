@@ -8,11 +8,14 @@ They apply to new-system test files (tests/<tier folder>/test_*.py):
 * product_patch: patch/patch.object aimed at a do_math name anywhere in the file
   (setUp, helpers, decorators too); put doubles in a port. ``patch_issues``
   applies this rule alone to test-side helper modules;
-* fixed_sleep: time.sleep; poll a condition with a bound or advance virtual time;
+* fixed_sleep: direct time.sleep inside a test; wait for a condition or advance
+  virtual time (official workers have no elapsed-time failure limit);
 * unreasoned_skip: skip/skipIf/skipUnless/skipTest without a reason text;
 * broad_except: a bare except or except Exception/BaseException in a test.
 ``normalization_issues`` applies to test files and helper modules: no line changes under NFC.
 ``pragma_issues`` checks product code: a coverage exclusion states its reason.
+These are syntactic signals: assertion presence does not prove a test's name
+or single property, and accessing an exception does not prove the right reason.
 """
 import ast
 import unicodedata

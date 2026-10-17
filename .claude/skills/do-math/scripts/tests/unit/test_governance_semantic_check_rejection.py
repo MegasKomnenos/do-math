@@ -7,6 +7,19 @@ from do_math import governance as gov
 from support.governance_sim import checked_sim, checked_bundle
 
 class GovernanceSemanticCheckRejectionTests(unittest.TestCase):
+    def test_a_sealed_check_cannot_be_replaced_in_place(self):
+        sim = checked_sim()
+        bundle = checked_bundle(sim)
+        output = {key: deepcopy(value) for key, value in bundle['check'].items()
+                  if key not in {'sha256', 'execution_id'}}
+        before = deepcopy((sim.instance, sim.runtime, output))
+        with self.assertRaises(ValueError) as caught:
+            gov.check_import(sim.instance, sim.runtime, bundle['id'], output,
+                execution_id=bundle['check']['execution_id'],
+                owner_handlers=sim.engine.governance_owner_handlers(), clock=sim.clock)
+        self.assertEqual(str(caught.exception), 'check is sealed; reauthor instead')
+        self.assertEqual((sim.instance, sim.runtime, output), before)
+
     def test_checker_role(self):
         sim = checked_sim()
         stored = sim.engine.store.load(sim.engine.head)[1:]

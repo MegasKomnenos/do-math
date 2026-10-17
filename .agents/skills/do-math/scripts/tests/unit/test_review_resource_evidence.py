@@ -2,13 +2,12 @@
 from copy import deepcopy
 
 from do_math import execution_lifecycle as lifecycle, review_cycle as rc
+from do_math import knowledge
+from do_math.reporting import status_report, render_human_report
 from support.review_owner_inputs import ReviewOwnerCase
 from support.review_inputs import scope_assessment
-from support.review_scene import warm
-
-
-def setUpModule():
-    warm()
+from support.storage_records import INSTANCE_ID
+from support.wait_reporting import assert_activity_wait_row
 
 
 class ResourceEvidenceTests(ReviewOwnerCase):
@@ -120,8 +119,41 @@ class ResourceEvidenceTests(ReviewOwnerCase):
         self.assertEqual(engine._obsolete_review_reason(action), 'The review is preserving an incomplete resource disposition for planning')
 
     def test_deferred_review_closes_on_actual_proposal_supersession_once(self):
-        cid, _, _, _ = self.resource(deferred=True)
-        self.engine.instance['knowledge']['K1']['lifecycle'] = 'superseded'
+        cid, action, cycle, record = self.resource(deferred=True)
+        engine = self.engine
+        engine.instance['id'] = INSTANCE_ID
+        owner = cycle['owner_activity_id']
+        self.assertEqual(record['state'], 'deferred')
+        self.assertEqual(engine.runtime['activities'][owner]['waiting']['condition'],
+                         {'cycle_id': cid, 'proposal_digest': cycle['proposal_digest']})
+        # Another actual unaffordable review retains its own deferred owner.
+        peer_id = engine._start_identity_review(self.scene.revise())
+        peer_action = deepcopy(next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == peer_id))
+        self.assertIsNone(engine._register_execution(peer_action,
+            {'id': 'EX-peer-denied', 'role': 'identity_review', 'status': 'queued'}))
+        peer_owner = engine.runtime['review_cycles'][peer_id]['owner_activity_id']
+        peer_activity = deepcopy(engine.runtime['activities'][peer_owner])
+        peer_cycle = deepcopy(engine.runtime['review_cycles'][peer_id])
+        held_cycle = deepcopy(cycle)
+        held_activity = deepcopy(engine.runtime['activities'][owner])
+        engine._save()
+        engine.head, engine.instance, engine.runtime = engine.store.load()
+        report = status_report(engine.store, engine.head, engine.instance, engine.runtime,
+            requested_areas=['record_storage'],
+            evaluation_context={'now': engine.ports.clock.now(), 'host_id': engine.host_id})
+        assert_activity_wait_row(self, report, owner, held_activity)
+        engine.ports.clock.advance(60)
+        self.assertEqual(engine._settle_review_resource_dispositions(), [])
+        self.assertIsNone(engine._register_execution(action,
+            {'id': 'EX-still-deferred', 'role': 'identity_review', 'status': 'queued'}))
+        self.assertEqual(engine.runtime['review_cycles'][cid], held_cycle)
+        self.assertEqual(engine.runtime['activities'][owner], held_activity)
+        self.assertNotIn('EX-still-deferred', engine.runtime['executions'])
+        self.assertEqual(len(held_cycle['followup']), 1)
+        # Use the domain replacement producer, rather than editing lifecycle.
+        engine.instance, engine.runtime = knowledge.replace_knowledge(engine.instance, engine.runtime, 'K1',
+            {'title': 'Revised sample theorem', 'explanation': 'The new proposal has a revised explanation'},
+            reason='Replace the fixed proposal', actor_ref='author', clock=engine.ports.clock)
         before_queue = deepcopy(self.engine.runtime['queue'])
         self.assertEqual(self.engine._settle_review_resource_dispositions(), [cid])
         cycle = self.engine.runtime['review_cycles'][cid]
@@ -130,6 +162,20 @@ class ResourceEvidenceTests(ReviewOwnerCase):
         self.assertEqual(record['resolution']['kind'], 'proposal_superseded')
         self.assertEqual(self.engine.runtime['queue'], before_queue)
         self.assertEqual(self.engine._settle_review_resource_dispositions(), [])
+        self.assertEqual(engine.runtime['activities'][owner]['status'], 'finished')
+        self.assertNotIn('waiting', engine.runtime['activities'][owner])
+        self.assertEqual(engine.runtime['review_cycles'][peer_id], peer_cycle)
+        self.assertEqual(engine.runtime['activities'][peer_owner], peer_activity)
+        self.assertEqual(len(cycle['followup']), 1)
+        engine._save()
+        engine.head, engine.instance, engine.runtime = engine.store.load()
+        report = status_report(engine.store, engine.head, engine.instance, engine.runtime,
+            requested_areas=['record_storage'],
+            evaluation_context={'now': engine.ports.clock.now(), 'host_id': engine.host_id})
+        self.assertNotIn(owner, report['waiting_activities'])
+        assert_activity_wait_row(self, report, peer_owner, peer_activity)
+        self.assertFalse(any(line.startswith('activity ' + owner + ':')
+                             for line in render_human_report(report).splitlines()))
 
     def test_ended_review_reserves_no_execution_slots(self):
         _, _, cycle, _ = self.resource()

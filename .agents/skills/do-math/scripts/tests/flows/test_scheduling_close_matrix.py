@@ -1,9 +1,12 @@
 """2-C·8-B의 남은 실행 종류·반환 시점 교차 입력. 한 역할 여정당 수 초가 든다."""
 from copy import deepcopy
+import json
 import unittest
 
 from do_math.execution_profiles import MACHINE_ROLES
 from do_math.parallel import ModelCalls
+from do_math.payloads import json_safe
+from support.provider_probes import ObservedCalls
 from support.engine_lifecycle import applied, warm_lifecycle, warm_external
 from support.scheduling_return_matrix import scene, AfterReturn, assert_returned
 from support.scheduling_return_observer import OwnerProbe
@@ -48,14 +51,40 @@ class ReturnMatrixTests(unittest.TestCase):
             with self.subTest(role=role):
                 sim = scene(role)
                 before = set(sim.runtime['executions'])
-                with OwnerProbe(sim) as probe:
+                with OwnerProbe(sim) as probe, ObservedCalls(returned=sim.engine._local_call_returned,
+                        capture={'returned': lambda args: (args['execution_id'], deepcopy(args['result']))}) as calls:
                     sim.engine.run(max_steps=1)
                 row = assert_returned(self, sim, before, probe, role)
                 self.assertIn(row['outcome'], ('verified', 'output_accepted'))
+                eid = row['id']
+                self.assertEqual(sum(t['to'] == 'ended' for t in row['transitions']), 1)
+                if role != 'external_action':
+                    (returned_id, result), = calls.captured('returned')
+                    self.assertEqual(returned_id, eid)
+                    self.assertEqual(result['status'], 'verified')
+                    if role in ('formal_check', 'trust_check'):
+                        self.assertEqual(json.loads(sim.engine.store.read(row['raw_result_ref'], sim.engine.head)),
+                                         json_safe(result))
+                    else:
+                        self.assertEqual(json.loads(sim.engine.store.read(row['result_ref'], sim.engine.head)), {
+                            'transition_id': row['action']['transition_id'], 'status': 'active',
+                            'trust_environment_id': row['submission_receipt']['trust_environment_id'], 'reason': None})
+                        environment_id = row['submission_receipt']['trust_environment_id']
+                        stored_instance = sim.engine.store.load(sim.engine.head)[1]
+                        self.assertEqual(stored_instance['trust_environments'][environment_id]['validation_receipt'], result)
+                refs = {row[key]: sim.engine.store.read(row[key], sim.engine.head)
+                        for key in ('result_ref', 'raw_result_ref') if row.get(key)}
                 executions, reservations = deepcopy(sim.runtime['executions']), deepcopy(sim.runtime['reservations'])
-                sim.engine.run(max_steps=1, until_active=True)
+                sim.restart()
+                with ObservedCalls(returned=sim.engine._local_call_returned) as replay:
+                    sim.engine.run(max_steps=1, until_active=True)
+                self.assertEqual(replay.count('returned'), 0)
                 self.assertEqual(sim.runtime['executions'], executions)
                 self.assertEqual(sim.runtime['reservations'], reservations)
+                for ref, raw in refs.items():
+                    self.assertEqual(sim.engine.store.read(ref, sim.engine.head), raw)
+                if role == 'trust_activate':
+                    self.assertEqual(sim.instance['trust_environments'][environment_id]['validation_receipt'], result)
 
     def test_machine_fence_and_close_during_calculation_drain_before_return(self):
         for role in ('formal_check', 'trust_check', 'trust_activate'):
@@ -108,11 +137,20 @@ class ReturnMatrixTests(unittest.TestCase):
         sim = scene('trust_activate')
         before = set(sim.runtime['executions'])
         defer_first_calculation(sim, lambda: sim.control('pause', text='환경 계산 첫 차례 전 정지'))
-        with OwnerProbe(sim) as probe:
+        with OwnerProbe(sim) as probe, ObservedCalls(returned=sim.engine._local_call_returned,
+                capture={'returned': lambda args: (args['execution_id'], deepcopy(args['result']))}) as calls:
             sim.engine.run(max_steps=1)
         row = assert_returned(self, sim, before, probe, 'trust_activate')
         self.assertEqual(row['outcome'], 'execution_incomplete')
         self.assertEqual(sim.runtime['status'], 'paused')
+        (returned_id, verification), = calls.captured('returned')
+        self.assertEqual(returned_id, row['id'])
+        ref = 'runtime/artifacts/' + row['id'] + '/environment.json'
+        raw = sim.engine.store.read(ref, sim.engine.head)
+        self.assertEqual(json.loads(raw), verification)
+        sim.restart()
+        self.assertEqual(sim.runtime['executions'][row['id']], row)
+        self.assertEqual(sim.engine.store.read(ref, sim.engine.head), raw)
 
     def test_failed_host_identity_check_cannot_activate_the_pending_environment(self):
         import json

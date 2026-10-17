@@ -69,17 +69,24 @@ class CliJourneyTests(unittest.TestCase):
             _, instance, runtime = journey.state()
             source = instance['governance_sources'][governance['request_id']]
             self.assertEqual((source['origin'], source['text']), ('user', governance_raw))
+            self.assertEqual((source['sha256'], source['bytes']),
+                             (hashlib.sha256(governance_raw.encode('utf-8')).hexdigest(), len(governance_raw.encode('utf-8'))))
             expiry = (sim.clock.wall() + timedelta(days=1)).isoformat()
             grant_ids, grant_decisions = [], []
             for label, roles in [('initial', ['intent_interpretation', 'maintenance']),
                                  ('research', [*ROLES, 'formal_check'])]:
                 grant_id = 'GR-journey-' + label
                 decision_id = 'DC-journey-' + label
-                journey.decision(label, {'kind': 'grant', 'decision_id': decision_id, 'grant': {'id': grant_id, 'kind': 'local',
+                receipt, grant_raw = journey.decision(label, {'kind': 'grant', 'decision_id': decision_id, 'grant': {'id': grant_id, 'kind': 'local',
                     'roles': roles, 'task_ids': [], 'reuse': 'reusable', 'expires_at': expiry}}, step=label + '_grant')
                 grant_ids.append(grant_id)
                 grant_decisions.append(decision_id)
-                self.assertEqual(journey.state()[2]['executions'], {})
+                _, granted, grant_runtime = journey.state()
+                approval = granted['governance_sources'][receipt['request_id']]
+                self.assertEqual((approval['origin'], approval['text'], approval['sha256'], approval['bytes']),
+                    ('user', grant_raw, hashlib.sha256(grant_raw.encode('utf-8')).hexdigest(), len(grant_raw.encode('utf-8'))))
+                self.assertEqual(granted['grants'][grant_id]['source_ref'], receipt['request_id'])
+                self.assertEqual(grant_runtime['executions'], {})
             grants = journey.call('query', '--kind', 'grant', '--limit', '1000', step='grant_query')
             # kind 조회는 가족 또는 kind 일치다. grant 결정 기록도 전체 결과에 포함된다.
             self.assertEqual(sorted(row['record']['id'] for row in grants['items']),
@@ -229,6 +236,11 @@ class CliSnapshotAndControlTests(unittest.TestCase):
                          (head, len(raw), hashlib.sha256(raw).hexdigest()))
         self.assertEqual(downloaded['provenance'], {'snapshot': head, 'path': record['path'],
             'sha256': hashlib.sha256(raw).hexdigest(), 'range': {'start': 0, 'end': len(raw), 'total': len(raw)}})
+        import base64
+        encoded = self.journey.call('read', '--path', record['path'], '--snapshot', head)
+        self.assertEqual(encoded, {key: value for key, value in downloaded.items() if key != 'output'} |
+                         {'base64': base64.b64encode(raw).decode('ascii')})
+        self.assertEqual(base64.b64decode(encoded['base64']), raw)
         # Each exported file is checked against the same pinned Repository snapshot.
         for all_files in (False, True):
             with self.subTest(all_files=all_files):

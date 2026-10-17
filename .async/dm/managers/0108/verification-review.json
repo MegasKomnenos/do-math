@@ -1,0 +1,48 @@
+{
+  "manager": "0108",
+  "review_task": "g8-review",
+  "integration": {
+    "task": "g8-review",
+    "files": [],
+    "changes": {}
+  },
+  "direct_static_reads": [
+    ".claude/skills/do-math/scripts/tests/support/mutation.py:run/main",
+    ".claude/skills/do-math/scripts/tests/support/sim.py:Sim.activate/warm_template/_template",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md:39,43,96",
+    ".claude/skills/do-math/scripts/이음새-정본.md:344-346",
+    "tasks/g8-review/evidence/judgment.md; gate-verdicts.json; delivery-state.json",
+    "sources/user-decisions.md and latest storage/T3/exact-recheck directions"
+  ],
+  "worker_report_check_reused": {
+    "command": [
+      "python",
+      "C:/math/services/async-development/check.py",
+      "report",
+      "C:/math/.async/dm",
+      "g8-review"
+    ],
+    "cwd": "C:\\math\\.async\\dm\\tasks\\g8-review\\workspace",
+    "started_at_utc": "2026-10-17T18:28:41.946636+00:00",
+    "finished_at_utc": "2026-10-17T18:28:44.210363+00:00",
+    "exit_code": 0,
+    "stdout": "PASS report\n",
+    "stderr": ""
+  },
+  "current_source_and_staged_blob_check": "delivery-manifest.json",
+  "memory_index_check": {
+    "command": "python 기억/scripts/validate_memory_index.py",
+    "exit_code": 0,
+    "stdout": "[validate_memory_index] 정합: 파일 603개 = 색인 243 + 아카이브 360줄"
+  },
+  "memory_index_staging": "HEAD plus M-0584 only; pre-existing untracked M-0579 and its working index line left untouched",
+  "product_tests_imports_live_calls_probes": 0,
+  "reused": [
+    "manager0105 integrated-byte/mirror verification",
+    "g6-finish official mirror check",
+    "accepted G1/G23 semantic connections and original/targeted gate runs",
+    "G8 remaining static consumer review"
+  ],
+  "queue_before_sha256": "573c92200c08c6cd71fe9977d7c8f44d97207fb5b50829557a0648bb483d82b1",
+  "limitations": "No new full-run certification; Git text normalization separately recorded; remaining external/authority conditions preserved."
+}

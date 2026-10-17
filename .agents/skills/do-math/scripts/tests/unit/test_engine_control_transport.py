@@ -297,6 +297,9 @@ class WorkerInputBoundaryTests(unittest.TestCase):
                 ('RQ-kind', 'not-a-control-kind', {}, 'unsupported control kind'),
                 ('RQ-payload', SUBMIT_INTENT, [], 'control payload must be an object'),
             ]
+            from support.ingress import NOT_TEXTS
+            cases += [(f'RQ-kind-{index}', kind, {}, 'unsupported control kind')
+                      for index, kind in enumerate(NOT_TEXTS)]
             for request_id, kind, payload, reason in cases:
                 with self.subTest(request_id=request_id):
                     with self.assertRaises(ValueError) as caught:
@@ -387,6 +390,31 @@ class WorkerInputBoundaryTests(unittest.TestCase):
 
 
 class DeliveryRecoveryTests(unittest.TestCase):
+    def test_bad_delivery_filename_is_rejected_without_blocking_the_next_file(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as directory:
+            transport = ControlTransport(directory, clock=FakeClock())
+            binding = transport.issue('EX-filename', 'GR-filename')
+            endpoint = Path(binding['endpoint'])
+            path = endpoint / 'inbox' / 'RQ-[broken].json'
+            raw = b'[]'
+            path.write_bytes(raw)
+            ControlTransport.worker_submit(binding, request_id='RQ-following', kind='submit_intent', payload={})
+            rows = {row['request_id']: row for row in transport.pump()}
+            rejected = rows[path.stem]
+            self.assertEqual(rejected, {'request_id': path.stem, 'state': 'rejected',
+                'stage': 'delivery_validation', 'reason': f'transport file {path} is not an object',
+                'source': 'inbox/' + path.name, 'source_sha256': hashlib.sha256(raw).hexdigest(),
+                'source_bytes': len(raw)})
+            self.assertEqual(rows['RQ-following']['state'], 'received')
+            self.assertEqual(json.loads((endpoint / 'outbox' / path.name).read_bytes()), rejected)
+            self.assertEqual(path.read_bytes(), raw)
+            # The malformed filename is a file coordinate, never a valid worker request ID.
+            with self.assertRaisesRegex(ValueError, '^request_id must be a safe file name component$'):
+                ControlTransport.worker_receipt(binding, path.stem)
+            fresh = ControlTransport(directory, clock=transport.clock)
+            self.assertEqual({row['request_id']: row for row in fresh.pump()}, rows)
+
     def test_rewritten_rejection_after_restart_does_not_starve_a_later_worker_delivery(self):
         """An immutable rejection and a later valid worker both survive receiver restart."""
         from do_math.control_protocol import SUBMIT_INTENT

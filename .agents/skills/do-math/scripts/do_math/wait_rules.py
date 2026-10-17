@@ -283,7 +283,7 @@ ACTIVITY_EXTRA_WAIT_RULES = {
     'external_followup': {'resolvers': ('external_engine.ExternalEngineMixin._external_control', 'external_engine.ExternalEngineMixin._external_execution_record'),
         'condition': 'A public external decision resolves the failed or cancelled effect obligation.'},
     'review_resource_deferred': {'resolvers': ('review_engine.ReviewEngineMixin._settle_review_resource_dispositions',),
-        'condition': 'The fixed proposal is superseded or ended, or a current resource decision resumes its scope.'},
+        'condition': 'The fixed proposal is superseded or withdrawn, or the instance ends; the deferred scope is retired with its unresolved obligation preserved.'},
     'installation_repair_retry': {'resolvers': ('scheduled_operator.recovery',),
         'condition': 'The current installation and failure evidence permit another authorized recovery attempt.'},
     'user_resume': {'resolvers': ('activities.resume_activity',),

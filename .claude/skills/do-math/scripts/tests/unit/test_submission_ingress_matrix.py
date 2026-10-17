@@ -17,10 +17,29 @@ from support.fakes.clock import FakeClock
 from support.ingress import malformed
 from support.submission_obligations import (
     action_rows, extension_ingresses, item_shapes, structural_envelope, required_and_enum_inputs, schema_seed,
+    mutation_target_inputs,
 )
 
 
 class ExtensionIngressTests(unittest.TestCase):
+    def test_nontext_mutation_targets_return_schema_issues_without_hashing_the_target(self):
+        """정상 외곽 안의 개정/철회 대상 형 오류를 구조화 반려한다."""
+        clock = FakeClock()
+        with tempfile.TemporaryDirectory() as directory:
+            for row in extension_ingresses():
+                for field, value in mutation_target_inputs(row.family, row.schema):
+                    with self.subTest(ingress=row.name, field=field, value=value):
+                        extensions = {row.family: value}
+                        output, schema, context = structural_envelope(row.action, extensions)
+                        original = deepcopy((output, extensions, context))
+                        error, = jsonschema.Draft202012Validator(row.schema).iter_errors(value)
+                        issues = submission.payload_issues(output, schema, context, extensions,
+                            Path(directory), clock=clock)
+                        self.assertEqual([(i['rule_id'], i['path'], i['message']) for i in issues],
+                            [('schema.type', 'activity-extensions.json/' + row.family + '/0/' + field,
+                              error.message)])
+                        self.assertEqual((output, extensions, context), original)
+
     def test_every_family_required_and_nested_enum_rejections_keep_original_coordinates(self):
         """역할·국면 전건의 필수/열거 오류를 정상 외곽 안에서 대조한다."""
         clock = FakeClock()

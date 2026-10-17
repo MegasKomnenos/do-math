@@ -227,10 +227,14 @@ class PlanSettleTests(unittest.TestCase):
         for bad in ({}, {'kind': 'capacity'}, {**actual, 'kind': 'capacity'},
                     {**actual, 'since': 'old'}, {**actual, 'limit_seconds': 301},
                     {k: v for k, v in actual.items() if k != 'since'}):
-            with self.subTest(bad=bad), self.assertRaises(AssertionError):
+            # The document field traversal runs before the whole-value check.
+            field = next((key for key in expected if key not in bad),
+                         next(key for key in expected if bad.get(key) != expected[key]))
+            with self.subTest(bad=bad), self.assertRaisesRegex(AssertionError, field):
                 assert_wait_documents(self, bad, owner='plan_settle_wait', expected=expected)
         for text in ('', '`dispatch_wait.nonexistent` <!-- do-math fields: dispatch_wait=plan_settle_wait -->'):
-            with self.subTest(text=text), self.assertRaises(AssertionError):
+            reason = 'actual document consumer' if not text else 'dispatch_wait.nonexistent'
+            with self.subTest(text=text), self.assertRaisesRegex(AssertionError, reason):
                 assert_wait_documents(self, actual, owner='plan_settle_wait', expected=expected, texts=[text])
 
 

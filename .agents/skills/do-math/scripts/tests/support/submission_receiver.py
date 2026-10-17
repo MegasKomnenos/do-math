@@ -8,12 +8,14 @@ over the Git port fake, and nothing is replaced. Where the legacy scene put
 records on the engine, the scene makes them with the engine's own registration
 and saves them, so every later step reads published state.
 
-- ``history()``: the legacy ``start_submission_history``: a running maintenance
+- ``history(sim=None)``: the legacy ``start_submission_history``: a running maintenance
   execution ``EX-history`` whose sealed input bundle ``BA-history-input`` is
   published, with the submission tools installed in its workspace and a control
   binding on its own transport. Returns a ``Scene`` (``sim``, ``engine``,
   ``action``, ``workspace``, ``context``, ``schema``, ``transport``, ``binding``
   and a valid sealed ``output``); ``scene.engine`` follows ``sim.engine``.
+  A supplied Sim retains its publicly registered source/grant editions before
+  this execution's input snapshot is fixed; otherwise the activated template is used.
 - ``research()``: the legacy ``PartialCaptureGitTests`` start: a running research
   work execution ``EX-partial`` on the planned task ``TK-partial`` whose contract
   review approved it, with its decision basis, issued input and tools.
@@ -61,7 +63,7 @@ class Scene:
         return self.sim.engine
 
 
-def _issue_input(engine, execution, context, schema, bundle, prompt=None):
+def issue_input(engine, execution, context, schema, bundle, prompt=None):
     """Publish ``context`` and ``schema`` as ``execution``'s sealed input bundle, with the engine's save."""
     prefix = 'runtime/artifacts/' + bundle + '/'
     files = {prefix + 'input/submission/context.json': canonical_json(context),
@@ -71,12 +73,12 @@ def _issue_input(engine, execution, context, schema, bundle, prompt=None):
     engine._save(files)
 
 
-def history(*, bound=False):
+def history(*, bound=False, sim=None):
     """``bound`` puts the control binding into the issued and installed context, as the engine does for a
     worker, so the installed tool itself can send the draft (the legacy scene sent it for the worker)."""
     from do_math.planning import governance_revisions
     from support.role_answers import seal_response
-    sim = Sim.activated()
+    sim = Sim.activated() if sim is None else sim
     engine = sim.engine
     action = {'id': 'AC-history', 'role': 'maintenance'}
     engine._action_lifecycle_gate(action)
@@ -98,7 +100,7 @@ def history(*, bound=False):
         context['control_binding'] = binding
     schema = contracts.schema_for('maintenance')
     submission.install_tools(workspace, context, schema, 1024 * 1024, clock=sim.clock)
-    _issue_input(engine, execution, context, schema, 'BA-history-input', prompt)
+    issue_input(engine, execution, context, schema, 'BA-history-input', prompt)
     output = {'summary': 'Exact é diagnostic', 'used_sources': [], 'questions': [],
               'report': 'Actual central receipt test; no mathematical approval.', 'remaining_work': []}
     seal_response(output, context, workspace)
@@ -143,7 +145,7 @@ def research():
                'grants': [deepcopy(engine.instance['grants'][action['grant_id']])]}
     schema = contracts.action_schema(action)
     submission.install_tools(workspace, context, schema, None, clock=sim.clock)
-    _issue_input(engine, execution, context, schema, 'BA-partial-input')
+    issue_input(engine, execution, context, schema, 'BA-partial-input')
     transport = ControlTransport(sim.root / 'delivery', clock=sim.clock)
     binding = transport.issue('EX-partial', action['grant_id'], workspace=workspace)
     output = two_observation_output()

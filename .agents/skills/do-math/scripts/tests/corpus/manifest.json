@@ -1509,6 +1509,116 @@
         }
       ],
       "scope": "Complete native stdout/stderr and safe original request/schema/prompt/final/status; registry summary snapshot is a dated observation, not a second source contract. No environment/authentication dump. No search/fetch evidence."
+    },
+    {
+      "id": "claude-rate-before-init-21276",
+      "kind": "claude_stream",
+      "path": "claude/claude-rate-before-init-21276.jsonl",
+      "tool_version": "2.1.276 (Claude Code)",
+      "recorded_at": "2026-09-18",
+      "command": "probe_cli.run_case(files): original real ModelRunner/WindowsJob/worker",
+      "role": "protocol_probe",
+      "source": "C:\\math\\.skill-workspace\\do-math-implementation-20260919\\live-opus-01\\files\\evidence\\stdout.jsonl",
+      "source_sha256": "868ae2816fa78785f852322e9676bdc56f230ee756a4a24d8a7f0c2a3673679b",
+      "live_passed": true,
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": true,
+        "preserved_file": true,
+        "checkpoint": true,
+        "scholarly_actual_tool": true,
+        "reported_models": true
+      },
+      "scope": "Historical raw read by the current parser; supported_stream_versions is unchanged. Native allowed event before init and completed probe output.",
+      "recording": {
+        "source_report": "C:\\math\\.skill-workspace\\do-math-implementation-20260919\\live-opus-01\\files\\report.json",
+        "source_report_sha256": "6fc8a0d9185bbbc8e3213c91de3f2fe47c7fd39e452be0d3aa0fa2d055924dca",
+        "bytes": 55073,
+        "transformation": "none; complete original stdout bytes",
+        "version_evidence": "native system/init.claude_code_version",
+        "verdict_basis": "native result fields, assigned nonce and historical probe checks; current parser was not used to author the verdict"
+      },
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "status": "CLI_OK",
+          "nonce": "26da17d2794742d3a255d764865da3bf",
+          "phase": "finished"
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed"
+        ],
+        "background_event_types": [],
+        "post_result_event_types": []
+      }
+    },
+    {
+      "id": "claude-terminal-cleanup-21276",
+      "kind": "claude_stream",
+      "path": "claude/claude-terminal-cleanup-21276.jsonl",
+      "tool_version": "2.1.276 (Claude Code)",
+      "recorded_at": "2026-09-18",
+      "command": "probe_cli.run_case(background): original real ModelRunner/WindowsJob/worker",
+      "role": "protocol_probe",
+      "source": "C:\\math\\.skill-workspace\\do-math-implementation-20260919\\live-opus-01\\background\\evidence\\stdout.jsonl",
+      "source_sha256": "343d3946028fcf4a73c4e74857dbae31a7cc5c4f7c3e15354ec8c6533d3c864d",
+      "live_passed": false,
+      "live_checks": {
+        "local_termination": true,
+        "structured_result": false,
+        "notification_continuation": false,
+        "completed_file": false,
+        "reported_models": true
+      },
+      "scope": "Historical raw read by the current parser; supported_stream_versions is unchanged. Native pending submission followed by killed/stopped cleanup. Original background smoke failed; parser completion does not mean the background work completed.",
+      "recording": {
+        "source_report": "C:\\math\\.skill-workspace\\do-math-implementation-20260919\\live-opus-01\\background\\report.json",
+        "source_report_sha256": "158bba917217dfc271818e45f850fafb8a705d53ce11375369b80c3cc13c0ded",
+        "bytes": 9708,
+        "transformation": "none; complete original stdout bytes",
+        "version_evidence": "native system/init.claude_code_version",
+        "verdict_basis": "native result fields, assigned nonce and historical probe checks; current parser was not used to author the verdict"
+      },
+      "verdict": {
+        "turn_completed": true,
+        "turn_failed": false,
+        "parse_complete": true,
+        "unknown_events": [],
+        "structured_output": {
+          "status": "CLI_OK",
+          "nonce": "0b4561d3bc4f411cb1e473261ed02aac",
+          "phase": "pending"
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "result_segments": 1,
+        "usage_segments": 1,
+        "rate_limit_statuses": [
+          "allowed",
+          "allowed"
+        ],
+        "background_event_types": [
+          "background_tasks_changed",
+          "task_started",
+          "background_tasks_changed",
+          "task_updated",
+          "task_notification"
+        ],
+        "post_result_event_types": [
+          "background_tasks_changed",
+          "task_updated",
+          "task_notification"
+        ]
+      }
     }
   ],
   "supported_stream_versions": {

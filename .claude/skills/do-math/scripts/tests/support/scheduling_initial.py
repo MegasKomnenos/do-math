@@ -75,6 +75,35 @@ def adopted_sim():
     return built('scheduling-adopted-initialization', lambda root, shared: _adopt(Sim(root, shared=shared)))
 
 
+def native_failure_sim(*, invalid=False):
+    """One real native interpretation whose first central capture lost Git publication.
+
+    Reuse the existing external CAS failure and the public initialization;
+    the provider result and output files are produced by the real call path.
+    """
+    def build(root, shared, invalid):
+        from support.engine_cli_conditions import native_capture_refused
+        from support.model import Answer
+        from support.submission_calls import submission_model
+        sim = _adopt(Sim(root, shared=shared))
+        model = submission_model(sim)
+        model.before('intent_interpretation', lambda context, workspace:
+                     (workspace / 'native-notes.txt').write_bytes(b'original interpretation notes\n'))
+        def final(output, context):
+            if invalid:
+                output.pop('summary')
+            return output
+        model.on('intent_interpretation', stage='interpret').reply(
+            Answer(final, mode='standalone', expected_receipt=None))
+        sim.step()
+        with native_capture_refused(sim) as refused:
+            sim.step()
+        if len(refused) != 1:
+            raise AssertionError('the real native capture was not attempted exactly once')
+        return sim
+    return built('initial-native-capture-failed', build, invalid=invalid)
+
+
 def initial_failure(sim, kind='execution_failure', stage='interpret'):
     from do_math import activities, execution_lifecycle, execution_profiles
     from support.execution_inputs import dispatched_launch

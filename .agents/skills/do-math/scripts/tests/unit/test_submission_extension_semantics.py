@@ -103,6 +103,16 @@ class ExtensionMeaningTests(unittest.TestCase):
         self.assert_rejection(extension, 'activity-extensions.json/external_requests/0',
                               'time-bounded grant preview requires a fixed input basis_time', context=context)
 
+    def test_external_request_without_a_grant_is_a_valid_request_for_user_authority(self):
+        extension = {'external_requests': [{'request': {'method': 'GET', 'url': 'https://example.test/read'},
+            'grant_id': None, 'purpose': 'Request approval before fetching external evidence'}]}
+        self.assertEqual(self.check(extension), [])
+
+    def test_blank_work_report_is_rejected_at_the_submission_boundary(self):
+        output = two_observation_output()
+        output['report'] = ' \t\n'
+        self.assert_rejection({}, 'output/report', 'report must state the actual scope and outcome', output=output)
+
     def test_queued_request_is_checked_against_the_advertised_queue(self):
         context = {**self.context, 'action': {'role': 'research_plan'}, 'ready_task_ids': [],
                    'queued_work': [{'id': 'AC-visible', 'role': 'maintenance'}]}

@@ -7,6 +7,51 @@ from support.governance_sim import checked_sim, checked_bundle
 
 
 class GovernanceEngineTransitionTests(unittest.TestCase):
+    def test_authority_wait_cannot_overlap_a_live_attempt_or_duplicate_its_queued_action(self):
+        from do_math import governance as gov
+        from do_math.execution_lifecycle import transition_execution
+        from do_math.wait_rules import action_authority_wait
+        from support.engine_lifecycle import clear_work
+        from support.sim import Sim
+        sim = Sim.activated()
+        clear_work(sim)
+        sim.engine._enqueue('maintenance', reason='Preserve one action across an authority change')
+        action = deepcopy(sim.runtime['queue'][0])
+        execution = sim.engine._register_execution(action,
+            {'id': 'EX-authority-in-flight', 'role': 'maintenance', 'status': 'running'})
+        authority = gov.authorize(sim.instance, action, runtime=sim.runtime, at=sim.clock.now())
+        source = sim.instance['grants'][authority['grant_id']]['source_ref']
+        sim.engine.instance, sim.engine.runtime, _ = gov.apply_decision(sim.instance, sim.runtime,
+            {'kind': 'revoke', 'grant_id': authority['grant_id']}, source_ref=source, clock=sim.clock)
+        denied = gov.authorize(sim.instance, action, runtime=sim.runtime, at=sim.clock.now())
+        self.assertFalse(denied['allowed'])
+        # The registered boundary accepts preserved waits; an old wait must
+        # remain harmless if the same logical action already has a live attempt.
+        sim.runtime.setdefault('waiting_actions', {})[action['id']] = action_authority_wait(action, denied)
+        sim.engine.instance, sim.engine.runtime, _ = gov.apply_decision(sim.instance, sim.runtime,
+            {'kind': 'grant', 'grant': {'id': 'GR-restored-maintenance', 'kind': 'local',
+                'roles': ['maintenance'], 'reuse': 'reusable'}}, source_ref=source, clock=sim.clock)
+        self.assertTrue(gov.authorize(sim.instance, action, runtime=sim.runtime, at=sim.clock.now())['allowed'])
+        before = deepcopy((sim.instance, sim.runtime))
+        sim.engine._resume_action_authority_waits()
+        self.assertEqual((sim.instance, sim.runtime), before)
+        execution = sim.runtime['executions'][execution['id']]
+        transition_execution(execution, 'stopping', at=sim.clock.now())
+        transition_execution(execution, 'ended', at=sim.clock.now(), outcome='execution_incomplete')
+        activity = deepcopy(sim.runtime['activities'][execution['owner_activity_id']])
+        queue = deepcopy(sim.runtime['queue'])
+        sim.engine._resume_action_authority_waits()
+        self.assertNotIn(action['id'], sim.runtime['waiting_actions'])
+        self.assertEqual(sim.runtime['queue'], queue)
+        self.assertEqual(sim.runtime['activities'][activity['id']], activity)
+        self.assertEqual(sum(row['id'] == action['id'] for row in queue), 1)
+        released = deepcopy(sim.runtime)
+        sim.engine._resume_action_authority_waits()
+        self.assertEqual(sim.runtime, released)
+        sim.engine._settle_activity(execution['id'])
+        sim.engine._save()
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_applied_secondary_import_during_initialization_does_not_open_research(self):
         from do_math import governance as gov
         sim = checked_sim()
@@ -157,8 +202,12 @@ class GovernanceEngineTransitionTests(unittest.TestCase):
         self.assertEqual((queued['role'], queued['stage'], queued['target']),
                          ('intent_interpretation', 'interpret', bundle['input_ref']))
         self.assertNotIn('previous_import_id', queued)
-        self.assertEqual(queued['intent_repair']['findings'], ['original source changed before independent check'])
+        self.assertEqual(queued['intent_repair'], {
+            'import_id': bundle['id'], 'previous_sha256': bundle['sha256'],
+            'check_execution_id': check['execution_id'],
+            'findings': ['original source changed before independent check']})
         self.assertEqual(bundle['check'], check)
+        sim.engine.store.validate_candidate(sim.instance, sim.runtime)
 
     def test_audit_schema_adds_required_field_without_changing_argument(self):
         sim = auditor_sim()

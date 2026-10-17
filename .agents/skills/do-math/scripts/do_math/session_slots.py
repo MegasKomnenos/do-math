@@ -85,7 +85,7 @@ class SessionSlots:
         """
         from .execution_profiles import (match_profile_ref, profile_ref, job_resource_limits,
                                          validate_host_constraint, UNCAPPED_ROLES)
-        from .budget import plan_reservations, BudgetConflict, BudgetInputError
+        from .budget import plan_reservations, BudgetConflict
         self.admission_wait = None
         profile = match_profile_ref(self.instance["execution_profiles"], profile_ref(profile))
         approved_host = self.instance.get("host_capacity_ref")
@@ -150,8 +150,7 @@ class SessionSlots:
         try:
             records = plan_reservations(held, constraints, accounting_profile, owner_id=execution_id)
         except BudgetConflict as error:
-            if error.constraint_kind not in wait_rules.BUDGET_WAIT_KINDS:
-                raise BudgetInputError('unregistered admission constraint kind: ' + repr(error.constraint_kind)) from error
+            # plan_reservations emits only the registered host/concurrency conflicts.
             kind = wait_rules.BUDGET_WAIT_KINDS[error.constraint_kind]
             owner = 'scheduler' if error.constraint_kind == 'concurrency' else 'operations'
             constraint = constraints.get(error.constraint_id, {})

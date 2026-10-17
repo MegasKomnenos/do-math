@@ -1,6 +1,7 @@
 """조사 소유자의 실제 등록·원천 보존·실패 인계 경로."""
 from copy import deepcopy
 import hashlib
+import re
 
 from do_math import review_cycle as rc
 from support.review_owner_inputs import ReviewOwnerCase
@@ -49,7 +50,11 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         self.assertFalse(schema['additionalProperties'])
 
     def test_acceptance_requires_matching_execution_before_consumption(self):
-        _, action, answer, execution = self.registered_investigation()
+        from do_math.review_engine import _independence_seat
+        cid, action, answer, execution = self.registered_investigation()
+        request = self.engine.runtime['review_cycles'][cid]['research'][action['research_request_id']]
+        self.assertEqual(_independence_seat(action),
+                         {'role': execution['role'], 'research_request_id': request['id']})
         execution['action']['research_request_id'] = 'other'
         self.assert_engine_rejected('research result has no matching assigned execution',
             lambda: self.engine._apply_review_research(action, answer, execution['id']))
@@ -126,6 +131,11 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         self.engine.runtime['review_cycles'][cid] = cycle
         context = self.engine._prepare_review_context(action, self.root / 'source-context')['context']
         reference = context['source_refs'][0]['ref']
+        from do_math.submission import validate_research_reference
+        checker_context = {'role_review': context}
+        validate_research_reference(reference, checker_context)
+        with self.assertRaisesRegex(ValueError, '^research source must be a proposal coordinate'):
+            validate_research_reference('source:not-supplied', checker_context)
         own = self.engine._research_source_spec(cycle, action, reference)
         self.assertEqual(own, rc.inline_source_row(reference, cycle['turns'][action['slot']][0]))
         from do_math import knowledge_records as kr
@@ -162,7 +172,8 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         for field in ('question', 'id', 'request_digest', 'proposal_digest', 'sources'):
             changed = deepcopy(final)
             del changed[field]
-            with self.subTest(missing=field), self.assertRaises(AssertionError):
+            reason = cycle['proposal_digest'] if field == 'proposal_digest' else field
+            with self.subTest(missing=field), self.assertRaisesRegex(AssertionError, re.escape(reason)):
                 assert_review_documents(self, changed, owner='review_research', cycle=cycle, request=request,
                                         engine=self.engine, workspace=workspace)
         borrowed = workspace / 'input' / 'borrowed.json'
@@ -170,7 +181,10 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         for field in ('ref', 'local_path', 'sha256', 'bytes'):
             changed = deepcopy(final['sources'])
             del changed[0][field]
-            with self.subTest(source_missing=field), self.assertRaises(AssertionError):
+            # assertEqual abbreviates the long expected path in a None/string
+            # mismatch; its fixed source directory and row still identify it.
+            reason = "None != 'input/review-research/0000-" if field == 'local_path' else field
+            with self.subTest(source_missing=field), self.assertRaisesRegex(AssertionError, re.escape(reason)):
                 assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
                                         engine=self.engine, workspace=workspace)
         for fault in ('borrowed_path', 'general_sources', 'other_ref'):
@@ -182,19 +196,21 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
                               'sha256': changed[0]['sha256'], 'bytes': changed[0]['bytes']}
             else:
                 changed[0]['ref'] = changed[1]['ref']
-            with self.subTest(source_fault=fault), self.assertRaises(AssertionError):
+            reason = {'borrowed_path': 'input/borrowed.json', 'general_sources': 'ref', 'other_ref': 'ref'}[fault]
+            with self.subTest(source_fault=fault), self.assertRaisesRegex(AssertionError, re.escape(reason)):
                 assert_review_documents(self, changed, owner='review_sources', sources=request['source_records'],
                                         engine=self.engine, workspace=workspace)
         local = workspace / final['sources'][0]['local_path']
         original = local.read_bytes()
         local.write_bytes(b'damaged delivered source')
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(AssertionError, hashlib.sha256(b'damaged delivered source').hexdigest()):
             assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
                                     engine=self.engine, workspace=workspace)
         local.unlink()
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError) as missing:
             assert_review_documents(self, final['sources'], owner='review_sources', sources=request['source_records'],
                                     engine=self.engine, workspace=workspace)
+        self.assertEqual(missing.exception.filename, str(local))
         local.write_bytes(original)
         self.assertEqual(context['review_research']['question'], request['question'])
         self.assertEqual(context['review_research']['request_digest'], request['request_digest'])
@@ -267,6 +283,7 @@ class ResearchOwnerContractTests(ReviewOwnerCase):
         for field in ('snapshot', 'artifact_ref', 'ref'):
             changed = deepcopy(visible)
             changed[0][field] = 'another-source-coordinate'
-            with self.subTest(artifact_coordinate=field), self.assertRaises(AssertionError):
+            reason = "'" + field + "': 'another-source-coordinate'"
+            with self.subTest(artifact_coordinate=field), self.assertRaisesRegex(AssertionError, reason):
                 assert_review_documents(self, changed, owner='review_sources', sources=[row], engine=self.engine,
                                         workspace=self.root / 'restored-frozen')

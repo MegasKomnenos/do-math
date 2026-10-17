@@ -7,6 +7,16 @@ from do_math import delegations
 from support.governance_cases import delegated_sim
 
 class GovernanceDelegationRejectionTests(unittest.TestCase):
+    def test_original_content_is_bound_when_delegation_is_approved(self):
+        from support.governance_delegation import replacement_case
+        from support.entry import entry
+        i, r, _, case = replacement_case()
+        i['decisions']['ORIGINAL']['effect']['slot'] = 'another-seat'
+        before = deepcopy((i, r))
+        with self.assertRaisesRegex(ValueError, '^original decision differs from delegated approval$'):
+            delegations.prepare_application(i, r, 'DG', case, now_iso=entry().ports.clock.now())
+        self.assertEqual((i, r), before)
+
     def test_inactive(self):
         sim = delegated_sim()
         stored = sim.engine.store.load(sim.engine.head)[1:]

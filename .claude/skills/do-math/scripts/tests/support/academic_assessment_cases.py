@@ -6,7 +6,7 @@ from support.academic_scenes import consumer_sim, ended
 from support.role_answers import assessment
 
 
-def assessed_case(*, criterion=None, unresolved=False):
+def assessed_case(*, criterion=None, unresolved=False, decision='completed'):
     sim = consumer_sim()
     engine = sim.engine
     task, = [row for row in engine.runtime['tasks'].values() if row.get('academic_requirement_id')]
@@ -16,6 +16,7 @@ def assessed_case(*, criterion=None, unresolved=False):
     planner = ended(engine, 'EX-academic-assessor', 'research_plan', input_solution_basis=engine._solution_basis())
     task['results'] = [{'execution_id': work['id'], 'report': '합성 원고 보고서'}]
     value = assessment(task)
+    value['decision'] = decision
     if unresolved:
         value['decision'] = 'incomplete'
         value['item_dispositions'].pop(0)

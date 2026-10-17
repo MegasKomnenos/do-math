@@ -102,7 +102,18 @@ class ExternalEngineMixin:
             for key in ('http_status', 'body_base64', 'body_sha256', 'error', 'credential_env', 'reconciliation', 'handling', 'succeeded', 'effect_absent'):
                 entry.pop(key, None)
             self.runtime['external_operations'][entry['id']] = entry
-            self._enqueue('external_action', entry['id'], grant_id=grant_id, source_ref=source_ref)
+            # Every attempted operation is registered before execution. The only
+            # producer of an unattempted cancellation revokes its pinned grant,
+            # which _validate_external above refuses before preparing a retry.
+            predecessor = self.runtime['executions'][previous['execution_id']]
+            continuation = {'continuation_of': predecessor['id'], 'owner_activity_id': predecessor['owner_activity_id']}
+            self._enqueue('external_action', entry['id'], grant_id=grant_id, source_ref=source_ref, **continuation)
+            activity = self.runtime['activities'][predecessor['owner_activity_id']]
+            waiting = activity.get('waiting', {})
+            if (activity['status'] == 'waiting' and waiting.get('kind') in {'external_reconciliation', 'external_followup'}
+                    and waiting.get('condition') == {'operation_id': entry['id'], 'status': previous['status']}):
+                from .activities import resume_activity
+                resume_activity(self.runtime, activity['id'], condition=waiting['condition'], at=self.ports.clock.now())
             self._lifecycle_event('external_operation_retry_prepared', target=entry['id'], source_ref=source_ref,
                                   previous_status=previous['status'])
         else:
@@ -186,9 +197,9 @@ class ExternalEngineMixin:
             return
         self._external_execution_record(operation, settle=False)
         def persist(update):
-            current = self.runtime['external_operations'][operation_id]
-            if current['request_sha256'] != update['request_sha256'] or current['execution_id'] != update.get('execution_id'):
-                return False
+            # execute_operation calls this synchronously with the same request
+            # and execution identity. Inbox controls cannot replace a prepared
+            # attempt; retry/reconcile require a terminal/unknown ledger first.
             if update['status'] == 'prepared':
                 if should_stop():
                     raise ValueError('external transmission stopped before authorization')

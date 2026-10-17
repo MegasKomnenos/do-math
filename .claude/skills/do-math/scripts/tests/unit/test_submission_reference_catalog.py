@@ -8,6 +8,16 @@ from do_math.submission import reference_catalog, reported_references, validate_
 
 
 class CatalogTests(unittest.TestCase):
+    def test_optional_source_locators_and_nonreference_metadata_add_no_aliases(self):
+        from do_math import submission
+        self.assertEqual(submission.reference_aliases({'sources': [{'name': 'paper'}]}),
+                         {'paper': 'paper', 'source:paper': 'paper'})
+        value = {'evidence_refs': ['KN-1', None, 2],
+                 'nested': {'basis_refs': ['KN-2']},
+                 'integration_bundles': [{'authority_refs': ['not-payload-evidence']}]}
+        self.assertEqual(list(submission._explicit_reference_fields(value)),
+                         [('output/evidence_refs/0', 'KN-1'), ('output/nested/basis_refs/0', 'KN-2')])
+
     def test_large_manifest_is_indexed_once_without_authorizing_the_projection(self):
         from do_math import submission
         with tempfile.TemporaryDirectory() as directory:

@@ -10,10 +10,71 @@ import tempfile
 import unittest
 
 from contracts.pairs import (PAIRS, TEXT_RULE_ID_SAMPLES, accepted_condition, accepted_rule_ids, enumerated_pointers,
-                             stored_rule_id_errors, worker_request_run, worker_request_runs)
+                             assert_pair, observation_pairs, stored_rule_id_errors, worker_request_run, worker_request_runs)
 
 
 class ContractPairTests(unittest.TestCase):
+    def test_setup_requests_bind_the_actual_new_reused_and_rerecorded_baselines(self):
+        from do_math import trust_inventory as records
+        from do_math.lean_evidence import AXIOMS
+        from do_math.trust_validation import register_request_errors
+        from support.trust_inputs import setup_request_runs
+        with tempfile.TemporaryDirectory() as directory:
+            branches = []
+            for branch, run in setup_request_runs(Path(directory)):
+                with self.subTest(branch=branch):
+                    branches.append(branch)
+                    fixture, record, request = run['fixture'], run['record'], run['request']
+                    result, operation = run['result'], run['operation']
+                    self.assertEqual(result['status'], 'recorded')
+                    self.assertEqual(run['compile_count'], 2 if operation == 'rerecorded' else 1)
+                    if operation == 'rerecorded':
+                        self.assertNotIn('created', result)
+                    else:
+                        self.assertIs(result['created'], operation == 'new')
+                    index = 1 if operation == 'rerecorded' else 0
+                    self.assertEqual(len(record['baselines']), index + 1)
+                    self.assertEqual(records.record_errors(record), [])
+                    self.assertEqual(records.usable_errors(record), [])
+                    self.assertEqual(register_request_errors(request), [])
+                    self.assertEqual(set(request), {'operation', 'toolchain', 'allowed_axioms',
+                                                    'toolchain_record', 'binding'})
+                    self.assertEqual(request['operation'], 'register')
+                    self.assertEqual(request['toolchain'], record['identity'])
+                    self.assertEqual(request['toolchain']['configured_command'], fixture['command'])
+                    project = request['toolchain']['project']
+                    if project is None:
+                        self.assertEqual(fixture['search_paths'], [])
+                        source, scope = records.CORE_SMOKE, 'lean_core_representative_proofs'
+                    else:
+                        self.assertEqual(project['search_paths'], fixture['search_paths'])
+                        self.assertEqual(set(project['manifest_hashes']), {'lean-toolchain', 'lakefile.toml'})
+                        self.assertEqual(project['source_identity']['root'],
+                                         str(run['request_path'].parent / 'project'))
+                        source, scope = records.SMOKE, 'mathlib_import_and_representative_proofs'
+                    validation = record['baselines'][index]['validation']
+                    self.assertEqual(validation['status'], 'verified')
+                    self.assertEqual(validation['exit_code'], 0)
+                    self.assertEqual((validation['source_text'], validation['scope']), (source, scope))
+                    self.assertEqual(Path(validation['source']).read_bytes(), source.encode('utf-8'))
+                    self.assertEqual(validation['source_sha256'], hashlib.sha256(source.encode()).hexdigest())
+                    self.assertEqual(validation['command'], [*fixture['command'], validation['source']])
+                    self.assertNotIn('error', validation)
+                    self.assertEqual(request['allowed_axioms'], sorted(AXIOMS))
+                    self.assertEqual(request['toolchain_record'],
+                                     {'path': result['record_path'], 'id': record['id']})
+                    baseline = record['baselines'][index]
+                    self.assertEqual(request['binding'], {'baseline': index,
+                        'fingerprint_sha256': baseline['fingerprint']['sha256'],
+                        'content_sha256': baseline['content']['sha256'],
+                        'validation_sha256': baseline['validation_sha256']})
+                    self.assertEqual(run['published'], {'path': str(run['request_path']),
+                        'toolchain_record': request['toolchain_record'], 'binding': request['binding']})
+                    self.assertTrue(all(job.done and job.closed for job in fixture['jobs'].launched))
+            self.assertEqual(branches, [f'{kind}, paths={count}, {operation}'
+                for kind, count in (('core', 0), ('project', 0), ('project', 1), ('project', 2))
+                for operation in ('new', 'reused', 'rerecorded')])
+
     def test_runner_samples_cover_success_bound_incomplete_and_stopped(self):
         """Eight real results also retain their receipts through both JSON consumers.
 
@@ -131,18 +192,54 @@ class ContractPairTests(unittest.TestCase):
         for pair in PAIRS:
             with self.subTest(pair=pair.name), tempfile.TemporaryDirectory() as directory:
                 samples = pair.samples(Path(directory))
-                self.assertGreater(len(samples), 0, 'a pair needs producer samples')
-                rejected = []
-                for branch, value in samples:
-                    try:
-                        pair.receive(deepcopy(value))
-                    except ValueError as error:
-                        rejected.append((branch, str(error)))
-                self.assertEqual(rejected, [], 'producer branches the receiving check rejects')
-                if pair.fields is not None:
-                    written = set().union(*(pair.written(value) for _, value in samples))
-                    self.assertEqual(sorted(pair.fields - written), [],
-                                     'fields the receiving check names that no producer branch writes')
+                self.assert_pair(pair, samples)
+
+    def assert_pair(self, pair, samples):
+        """The same forward/reverse walk for registered pairs and the drift counterexample."""
+        self.assertGreater(len(samples), 0, 'a pair needs producer samples')
+        for branch, value in samples:
+            if branch == 'owner rejected execution input':
+                observation, = value.values()
+                self.assertEqual(observation['kind'], 'observation_input_rejected')
+                self.assertEqual(observation['reason'], 'observation belongs to a different execution')
+                self.assertEqual(observation['next_owner'], 'adapter')
+                self.assertEqual(observation['followup'], {'kind': 'operational_review_due',
+                    'trigger': 'observation_error', 'next_owner': 'operational_review'})
+                self.assertEqual(len(observation['observation_refs']), 1)
+            if pair.name == 'trust registration request':
+                # Setup must have written this compile's source and evidence.
+                from do_math import trust_inventory as records
+                record = records.read_record(value['toolchain_record']['path'])
+                validation = record['baselines'][value['binding']['baseline']]['validation']
+                expected = records.SMOKE if value['toolchain']['project'] is not None else records.CORE_SMOKE
+                self.assertEqual(Path(validation['source']).read_bytes(), expected.encode('utf-8'))
+                self.assertEqual(json.loads(Path(validation['source']).with_name('validation.json').read_bytes()),
+                                 validation)
+        assert_pair(self, pair, samples)
+
+    def test_whole_observation_pairs_detect_an_unproduced_optional_schema_field(self):
+        from do_math.state_contract import StateContract, default_state_contract
+        pairs = {pair.name: pair for pair in PAIRS if pair.name.startswith('observation record (')}
+        self.assertEqual(set(pairs), {f'observation record ({family})' for family in
+            ('observation_facts', 'self_check_obligations', 'self_check_responses', 'observations')})
+        self.assertTrue(all(pair.fields is not None for pair in pairs.values()))
+        contract = StateContract()
+        for name in ('observation_facts', 'self_check_obligations', 'self_check_responses', 'observations'):
+            family = default_state_contract().family('runtime', name)
+            schema = deepcopy(family.schema)
+            if name == 'observation_facts':
+                schema['properties']['unproduced_optional'] = {'type': 'string'}
+            contract.register_family('runtime', name, shape=family.shape, schema=schema,
+                                     validator=family.validator, identity=family.identity)
+        changed = observation_pairs(contract)[0]
+        original = pairs[changed.name]
+        with tempfile.TemporaryDirectory() as directory:
+            samples = original.samples(Path(directory))
+        self.assert_pair(original, samples)
+        self.assertIn('unproduced_optional', changed.fields)
+        # Forward reception still succeeds; the same general walk fails in reverse.
+        with self.assertRaisesRegex(AssertionError, 'unproduced_optional'):
+            self.assert_pair(changed, samples)
 
 
     def test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment(self):

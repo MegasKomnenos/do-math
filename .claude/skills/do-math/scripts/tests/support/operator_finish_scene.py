@@ -110,9 +110,13 @@ class Scene:
         return self.sim.engine.store.load()
 
     def answer(self, outcome='repaired', *, diagnosed=False):
+        from do_math.repair_execution import installation_evidence
+        installed = installation_evidence(self.installation, backend=self.ports.git_backend)
         output = {'summary': 'synthetic repair', 'observed_status': outcome,
                   'actions': ['fixture inspection'], 'evidence_paths': ['regression.txt'],
-                  'user_questions': [], 'next_step': 'launcher continuation'}
+                  'user_questions': [], 'next_step': 'launcher continuation',
+                  'installation_version': installed['installation_version'],
+                  'source_commit': installed['source_commit']}
         if diagnosed:
             output.update(repair_outcome=outcome, verification_evidence=['regression.txt'])
         self.cli.answer = output

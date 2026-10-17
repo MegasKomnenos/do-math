@@ -76,7 +76,8 @@ def record_submissions(sim, responder=None):
         def receipt_received(self, context, delivery, receipt):
             super().receipt_received(context, delivery, receipt)
             self.model.submissions.append({"role": context["action"]["role"],
-                "binding": context["control_binding"], "delivery": delivery["state"], "receipt": receipt["state"]})
+                "binding": context["control_binding"], "delivery": delivery["state"], "receipt": receipt["state"],
+                "schema_bytes": (self.workspace / 'input/submission/schema.json').read_bytes()})
 
     class RecordingModel(ModelDouble):
         def __init__(self, clock, responder=None):

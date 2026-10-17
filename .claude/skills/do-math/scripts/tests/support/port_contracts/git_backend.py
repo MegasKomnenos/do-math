@@ -83,10 +83,12 @@ class GitBackendContract:
         path.parent.mkdir(parents=True, exist_ok=True)
         width = 64 if self.object_format == 'sha256' else 40
         for raw in (b'not-an-object-id\n', b'a' * (width - 1) + b'\n'):
-            path.write_bytes(raw)
-            with self.subTest(raw=raw), self.assertRaises(GitBackendError) as caught:
-                self.backend.ref_oid(self.repo, REF)
-            self.assertTrue(str(caught.exception))
+            with self.subTest(raw=raw):
+                path.write_bytes(raw)
+                with self.assertRaises(GitBackendError) as caught:
+                    self.backend.ref_oid(self.repo, REF)
+                # Each side declares its own diagnostic for the same damaged ref.
+                self.assertEqual(str(caught.exception), self.broken_ref_message.format(ref=REF))
         oid = 'a' * width
         path.write_text(oid + '\n', encoding='ascii')
         self.assertEqual(self.backend.ref_oid(self.repo, REF), oid)
@@ -185,8 +187,11 @@ class GitBackendContract:
             facts = self.backend.project_snapshot(outside, None)
             self.assertEqual((facts.repository_root, facts.tree_oid, facts.raw_diff, facts.tracked_paths),
                              (None, None, b'', frozenset()))
-            with self.assertRaises(ValueError):
-                self.backend.project_snapshot(outside, self.repo.resolve())
+            repository = self.repo.resolve()
+            with self.assertRaises(ValueError) as caught:
+                self.backend.project_snapshot(outside, repository)
+            self.assertEqual(str(caught.exception),
+                             f'{str(outside)!r} is not in the subpath of {str(repository)!r}')
 
     def test_project_stop_before_and_after_each_read(self):
         self.configure_project()

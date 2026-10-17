@@ -179,8 +179,11 @@ class ReviewScene:
         engine.instance, _ = kr.create_candidate(engine.instance, candidate, source_ref='test-revision', actor_ref='author', clock=self.engine.ports.clock)
         return new_id
 
-    def execute(self, changes=None, *, record_first=False):
-        """Answer the pending identity review action as a reviewer and apply the answer; see the module docstring."""
+    def execute(self, changes=None, *, record_first=False, registered=False):
+        """Apply a synthetic reviewer reply. registered=True also prepares the actual
+        execution/activity/termination records for consumers that publish extensions;
+        the reply receipt is explicitly synthetic, with no model or central submission.
+        """
         engine = self.engine
         action = self.pending()
         self.sequence += 1
@@ -214,18 +217,35 @@ class ReviewScene:
             output.update(new_findings=[], answers=[dict(issue_id=i, disposition='withdraw', statement='I misread the domain',
                                                          evidence=['proposal:1']) for i in context['answer_requests']])
         output.update(changes or {})
-        engine.runtime['executions'][execution_id] = dict(
-            id=execution_id, role='identity_review', action=deepcopy(action), status='running', input_snapshot=engine.head,
-            input_manifest={'prompt': {'sha256': 'actual-prompt-hash'}}, actor_kind='ai',
-            owner_activity_id=action.get('owner_activity_id') or 'AY-fixture', execution_profile_ref=deepcopy(self.profile))
-        admitted = engine._admit_review_execution(action, engine.runtime['executions'][execution_id])
-        if admitted['disposition'] != 'admitted':
-            raise ValueError(admitted['disposition'])
+        if registered:
+            if cycle.get('owner_activity_id'):
+                action['owner_activity_id'] = cycle['owner_activity_id']
+            execution = engine._register_execution(action, dict(id=execution_id, role='identity_review',
+                status='running', input_manifest={'prompt': {'sha256': 'a' * 64}}),
+                profile=engine.instance['execution_profiles'][self.profile['id']])
+            if execution is None:
+                raise AssertionError('the review execution was not admitted')
+            execution['input_snapshot'] = engine.head
+        else:
+            engine.runtime['executions'][execution_id] = dict(
+                id=execution_id, role='identity_review', action=deepcopy(action), status='running', input_snapshot=engine.head,
+                input_manifest={'prompt': {'sha256': 'actual-prompt-hash'}}, actor_kind='ai',
+                owner_activity_id=action.get('owner_activity_id') or 'AY-fixture', execution_profile_ref=deepcopy(self.profile))
+            admitted = engine._admit_review_execution(action, engine.runtime['executions'][execution_id])
+            if admitted['disposition'] != 'admitted':
+                raise ValueError(admitted['disposition'])
         if record_first:
             engine._record_review_input(action, execution_id)
             engine._record_review_input(action, execution_id)
         engine.runtime['queue'].remove(action)
         engine._apply_identity_review(action, output, execution_id)
         execution = engine.runtime['executions'][execution_id]
-        execution.update(status='ended', outcome='output_accepted', output=deepcopy(output))
+        if registered:
+            from do_math.execution_lifecycle import transition_execution
+            execution.update(output=deepcopy(output), submission_receipt={
+                'state': 'accepted', 'evidence_ref': 'synthetic:review-scene-reply'})
+            transition_execution(execution, 'stopping', at=engine.ports.clock.now())
+            transition_execution(execution, 'ended', at=engine.ports.clock.now(), outcome='output_accepted')
+        else:
+            execution.update(status='ended', outcome='output_accepted', output=deepcopy(output))
         return context, output, execution_id

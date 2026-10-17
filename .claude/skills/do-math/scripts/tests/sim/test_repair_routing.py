@@ -25,6 +25,25 @@ class OperationalDispositionTests(unittest.TestCase):
         self.host = repair_host(directory.name)
         self.engine = self.host.engine
 
+    def test_repair_waits_for_the_actual_review_to_end_before_local_effects(self):
+        """Real registration and the existing repair host establish the local effect barrier."""
+        engine = self.engine
+        reviewer = engine._register_execution({'id': 'AC-live-repair-review', 'role': 'operational_review', 'target': 'EX-target'},
+            {'id': 'EX-live-repair-review', 'role': 'operational_review'})
+        record = engine.runtime['operational_dispositions']['OD-repair']
+        record.update(execution_id=reviewer['id'], disposition={'kind': 'repair', 'basis_refs': ['EX-target'],
+            'next_owner': 'installation_recovery', 'reason': 'Retain the review termination barrier',
+            'repair_target': 'installation:scripts/do_math/engine.py', 'meaning_preserving': True,
+            'verification': 'Inspect the actual receiver failure'})
+        stored = engine.store.load()
+        queue = deepcopy(engine.runtime['queue'])
+        self.assertIs(engine._complete_operational_disposition(record), record)
+        self.assertEqual(record['status'], 'repair_required')
+        self.assertEqual(reviewer['status'], 'queued')
+        self.assertEqual(engine.runtime['queue'], queue)
+        self.assertEqual(engine.store.load(), stored)
+        self.assertEqual(self.host.destination.read_bytes(), b'damaged')
+
     def test_operational_retry_of_an_ended_attempt_keeps_its_registered_successor(self):
         runtime = self.engine.runtime
         parent = runtime['executions']['EX-target']
@@ -35,13 +54,30 @@ class OperationalDispositionTests(unittest.TestCase):
         self.engine._save()
         runtime = self.engine.runtime  # a save may replace the runtime object with the published one
         queue = list(runtime['queue'])
-        result = self.engine._complete_operational_disposition(runtime['operational_dispositions']['OD-repair'])
+        self.engine._run_pending_operational_repairs()
+        result = self.engine.runtime['operational_dispositions']['OD-repair']
         self.assertEqual(result['status'], 'superseded')
+        self.assertEqual(self.engine.runtime['queue'], queue)
+        self.assertIs(self.engine._complete_operational_disposition(result), result)
+        from support.engine_context import issue
+        reviewer = self.engine.runtime['executions']['EX-review']
+        issue(self.engine, reviewer, {'admissible_basis_refs': ['EX-target']}, 'BA-superseded-review')
+        before_ids = set(self.engine.runtime['operational_dispositions'])
+        self.engine._apply_operational_disposition({'target': 'EX-target'}, {
+            'kind': 'retry', 'reason': 'The original review arrives after a successor was registered',
+            'basis_refs': ['EX-target'], 'scope': 'Same unfinished work',
+            'replay_safety': 'Keep the existing successor', 'next_owner': 'engine'}, reviewer['id'])
+        new_id, = set(self.engine.runtime['operational_dispositions']) - before_ids
+        self.assertEqual(self.engine.runtime['operational_dispositions'][new_id]['status'], 'superseded')
         self.assertEqual(self.engine.runtime['queue'], queue)
         self.engine._save()
         _, _, stored = self.engine.store.load()
         self.assertEqual(stored['operational_dispositions']['OD-repair']['status'], 'superseded')
         self.assertEqual(stored['executions']['EX-next']['continuation_of'], 'EX-target')
+        before = self.engine.head
+        self.engine._run_pending_operational_repairs()
+        self.assertEqual(self.engine.head, before)
+        self.assertEqual(self.engine.runtime['queue'], queue)
 
     def test_installation_repair_handoff_preserves_failure_and_is_idempotent(self):
         runtime = self.engine.runtime
@@ -179,7 +215,11 @@ class SubmissionReturnTests(unittest.TestCase):
                 changed['execution_id'] = 'EX-other'
             else:
                 changed['retry_bundle_ids'] = ['IN-other']
-            with self.subTest(fault=fault), self.assertRaises((AssertionError, KeyError)):
+            reason = {'missing_output': 'repair.previous_output',
+                      'other_output': 'another candidate',
+                      'other_execution': "'EX-other' != 'EX-first'",
+                      'wrong_scope': 'IN-other'}[fault]
+            with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, reason):
                 assert_delivery_documents(self, changed, owner='repair', output=output,
                     received=received, execution_id='EX-first')
         runtime['queue'].pop()

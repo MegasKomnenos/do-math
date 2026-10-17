@@ -263,6 +263,42 @@ class SourceCurrentnessTests(unittest.TestCase):
 
 
 class TrustTransitionTests(unittest.TestCase):
+    def test_invalidation_marks_only_the_uses_dependent_on_that_environment(self):
+        from support.entry import entry
+        from support.trust_inputs import trust_environment, trust_fixture
+        from pathlib import Path
+        import tempfile
+        values = entry()
+        with tempfile.TemporaryDirectory() as directory:
+            environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
+                                                      environment_id='TE-test')
+            ins, run, first, _ = verified_knowledge(environment, binding=binding)
+            other = deepcopy(environment)
+            other.update(id='TE-independent', status='registered')
+            ins['trust_environments'][other['id']] = other
+            # A real transition keeps old sealed assessments and produces a new
+            # active use in the new environment. Both use records remain active.
+            tr = k.begin_transition(ins, other['id'], clock=values.ports.clock)
+            original = ins['formal_results'][ins['knowledge'][first]['formal_result_id']]['verification']
+            tr = k.record_transition_result(ins, tr, {'id': first, **deepcopy(original)})
+            ins = k.activate_transition(ins, tr, runtime=run, at=values.ports.clock.now(), clock=values.ports.clock)
+            uses = {uid: deepcopy(use) for uid, use in ins['assessment_uses'].items()}
+            changed, _ = k.invalidate_environment(ins, run, 'TE-test', 'owned environment defect', clock=values.ports.clock)
+            dependent = set()
+            for uid, use in uses.items():
+                formal_id = ins['identity_assessments'][use['assessment_id']]['formal_result_id']
+                if ins['formal_results'][formal_id]['trust_environment_id'] == 'TE-test':
+                    dependent.add(uid)
+                    self.assertEqual(changed['assessment_uses'][uid]['status'], 'suspended')
+                    self.assertEqual(changed['assessment_uses'][uid]['environment_revalidation'],
+                        {'environment_id': 'TE-test', 'reason': 'owned environment defect'})
+                else:
+                    self.assertEqual(changed['assessment_uses'][uid], use)
+                    self.assertEqual(use['status'], 'active')
+            self.assertEqual(len(dependent), 1)
+            self.assertEqual(len(uses) - len(dependent), 1)
+            self.assertEqual(ins['assessment_uses'], uses)
+
     def test_partial_failure_keeps_old_environment(self):
         from support.entry import entry
         _entry = entry()

@@ -346,8 +346,11 @@ class CliTests(CliInstanceTest):
         texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
                  for document in documents(skill)]
         schemas = field_schemas()
+        from support.engine_lifecycle import task_wait_report
+        task_report = task_wait_report()
+        self.assertTrue(task_report['tasks'][0]['waits'])
         for result in (stored, body(live)):
-            schemas['status'] = status_field_schema(result)
+            schemas['status'] = status_field_schema(result, task_report=task_report)
             self.assertEqual([(name, *issue) for name, text in texts
                 for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
                     defer_query_record=True, defer_query_result=True,

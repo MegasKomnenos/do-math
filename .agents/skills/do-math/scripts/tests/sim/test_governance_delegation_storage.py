@@ -25,40 +25,12 @@ class DelegationStorageTests(unittest.TestCase):
         review-only fixture is expanded with invented context defaults.
         """
         from do_math.context_store import prepare_role_input
-        from do_math.delegations import judgment_input
-        from support.review_sim import opened_sim
         from support.role_input_requirements import assert_judgment_inputs
-        sim = opened_sim()
-        sim.step()  # the real scope worker opens the initial review seats
+        from support.execution_inputs import delegated_judgment_scene
+        sim, judges, shared = delegated_judgment_scene()
         engine = sim.engine
-        action = deepcopy(next(a for a in sim.runtime['queue']
-                               if a['role'] == 'identity_review' and a['stage'] == 'initial'))
-        engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
-        source = governance.preserve_source('GS-delegated-input', 'Authorize the exact review replacement.', origin='user')
-        engine.instance['governance_sources'][source['id']] = source
-        effect = {**{key: action[key] for key in ('review_cycle_id', 'stage', 'slot', 'round')},
-                  'replacement_for': 0, 'continuity_break_cause': 'permanent_loss'}
-        engine.instance['decisions']['DC-original-replacement'] = {
-            'id': 'DC-original-replacement', 'actor': 'user', 'kind': 'review_replacement',
-            'change': {'kind': 'review_replacement', 'target_id': action['target'], 'effect': deepcopy(effect)},
-            'source_ref': source['id'], 'source_sha256': source['sha256'], 'created_at': sim.clock.now()}
-        engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
-            {'kind': 'delegation', 'decision_id': 'DC-delegate-replacement', 'delegation': {
-                'id': 'DG-replacement-input', 'status': 'active', 'decision_kind': 'review_replacement',
-                'original_decision_id': 'DC-original-replacement', 'included_targets': [action['target']],
-                'excluded_targets': [], 'external_effects': [], 'resource_limits': {}, 'expires_at': None}},
-            source_ref=source['id'], clock=sim.clock)
-        request = {'id': 'REQUEST-delegated-input', 'action': 'request', 'config': {
-            'role': 'maintenance', 'review_replacement': {'action': action, 'delegation_id': 'DG-replacement-input',
-                'case': {'id': 'CASE-delegated-input', 'decision_kind': 'review_replacement',
-                         'target_id': action['target'], 'external_effects': [], 'resources': {},
-                         'effect': effect, 'basis_refs': [action['review_cycle_id']]}}}}
-        engine.runtime['history'].append({'kind': 'user_control', 'request': request})
-        self.assertTrue(engine._review_recovery_control(request))
-        judges = [a for a in sim.runtime['queue'] if a.get('requested_by') == request['id']]
-        self.assertEqual([a['stage'] for a in judges], ['delegation_interpret', 'delegation_check'])
-        engine._save()
-        shared = judgment_input(sim.runtime, judges[0]['delegation_application_id'])
+        request = next(row['request'] for row in sim.runtime['history']
+                       if row.get('request', {}).get('id') == 'REQUEST-delegated-input')
         for index, judge in enumerate(judges):
             workspace = sim.root / ('delegated-input-' + str(index))
             context = engine._context(judge, workspace)

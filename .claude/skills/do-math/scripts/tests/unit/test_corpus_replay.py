@@ -146,6 +146,33 @@ class CorpusReplayTests(unittest.TestCase):
                 self.assertEqual(worker['argv_sha256'], hashlib.sha256('\0'.join(argv).encode('utf-8')).hexdigest())
                 self.assertEqual(worker['schema_sha256'], hashlib.sha256((CORPUS / entry['transport_schema_path']).read_bytes()).hexdigest())
                 self.assertEqual((worker['state'], worker['cli_exit_code']), ('exited', 0))
+                # Replay the captured inputs through the collector's judgment and
+                # the runner's semantic receiver, without starting a process.
+                from do_math.claude_adapter import ADAPTERS
+                from do_math.cli_execution import collection_reasons
+                from do_math.codex_stream import provider_observation
+                from do_math.model_call import classify_run
+                adapter = ADAPTERS['codex']('unused', jobs=None, clock=None)
+                raw = (CORPUS / entry['path']).read_bytes()
+                parsed = adapter.parse_response(raw, request)
+                prompt = (CORPUS / entry['prompt_path']).read_bytes()
+                reasons = collection_reasons(worker, parsed, final, request,
+                    prompt_sha256=hashlib.sha256(prompt).hexdigest(),
+                    request_sha256=hashlib.sha256(request_raw).hexdigest(),
+                    schema_sha256=hashlib.sha256((CORPUS / entry['transport_schema_path']).read_bytes()).hexdigest(),
+                    final_check=adapter.validate_final)
+                self.assertEqual(reasons, [])
+                collected = {'result': 'output_collected', 'jsonl': parsed,
+                             'provider_observation': provider_observation(request, parsed, raw),
+                             'source_request': {'raw': request_raw}, 'final': {'raw': final}}
+                result = classify_run(collected, started={}, stopped=False, cli_model=request['model'],
+                    claude_only_assigned_model=False, control_binding=None, output_schema=schema,
+                    evidence_dir=CORPUS, execution_id=None, reference=None,
+                    provider_failure=adapter.provider_failure, now=lambda: entry['recorded_at'])
+                self.assertEqual((result['status'], result['output']), ('completed', output))
+                self.assertNotIn('error_kind', result)
+                self.assertEqual(result['provider_observation']['evidence_sha256'], entry['source_sha256'])
+                self.assertEqual(adapter.validate_final(parsed, b'{}'), ['final_response_mismatch'])
 
     def test_scholarly_started_failed_missing_or_incomplete_response_is_rejected(self):
         from copy import deepcopy
@@ -222,6 +249,108 @@ class CorpusReplayTests(unittest.TestCase):
                 self.assertIn(entry['kind'], READERS, 'a corpus kind needs a reader')
                 self.assertEqual(READERS[entry['kind']](entry), entry['verdict'])
 
+    def test_recorded_schema_rejection_is_an_execution_failure_without_a_final(self):
+        from do_math.claude_adapter import ADAPTERS
+        from do_math.codex_stream import provider_observation
+        from do_math.model_call import classify_run
+        from do_math.provider_final import final_bytes
+        entries = json.loads((CORPUS / 'manifest.json').read_bytes())['entries']
+        # These independent historical verdicts name HTTP 400 invalid_json_schema.
+        failures = [entry for entry in entries if entry['kind'] == 'codex_stream'
+                    and entry.get('verdict', {}).get('turn_failed')]
+        self.assertTrue(failures)
+        for entry in failures:
+            with self.subTest(entry=entry['id']):
+                raw = (CORPUS / entry['path']).read_bytes()
+                events = [json.loads(line) for line in raw.splitlines() if line.strip()]
+                self.assertTrue(any('invalid_json_schema' in json.dumps(event)
+                                    for event in events if event['type'] in ('error', 'turn.failed')))
+                adapter = ADAPTERS['codex']('unused', jobs=None, clock=None)
+                parsed = adapter.parse_response(raw, {})
+                self.assertTrue(parsed['parse_complete'])
+                self.assertFalse(parsed['turn_completed'])
+                self.assertTrue(parsed['turn_failed'])
+                self.assertIsNone(final_bytes(parsed))
+                # A layer-2 input with the recorded native failure. This is not
+                # a replay of an unrecorded request or a new Job termination.
+                collected = {'result': 'incomplete', 'reasons': ['turn_failed'], 'jsonl': parsed,
+                             'provider_observation': provider_observation({}, parsed, raw)}
+                result = classify_run(collected, started={}, stopped=False, cli_model='unused',
+                    claude_only_assigned_model=False, control_binding=None, output_schema={},
+                    evidence_dir=CORPUS, execution_id=None, reference=None,
+                    provider_failure=adapter.provider_failure, now=lambda: entry['recorded_at'])
+                self.assertEqual((result['status'], result['error_kind'], result['error']),
+                                 ('failed', 'execution_failure', 'turn_failed'))
+                self.assertIsNone(result['output'])
+                self.assertNotIn('failure', result)
+
+    def test_historical_preinit_and_cleanup_select_the_native_submission(self):
+        from do_math.claude_adapter import ClaudePrintAdapter
+        from do_math.provider_final import final_bytes, semantic_output
+        entries = {entry['id']: entry for entry in json.loads((CORPUS / 'manifest.json').read_bytes())['entries']}
+        adapter = ClaudePrintAdapter('unused', jobs=None, clock=None)
+        for identifier in ('claude-rate-before-init-21276', 'claude-terminal-cleanup-21276'):
+            with self.subTest(entry=identifier):
+                entry = entries[identifier]
+                raw = (CORPUS / entry['path']).read_bytes()
+                native = [json.loads(line) for line in raw.splitlines() if line.strip()]
+                parsed = adapter.parse_response(raw, {'output_schema_path': 'recorded-probe-schema'})
+                self.assertTrue(parsed['parse_complete'])
+                self.assertTrue(parsed['turn_completed'])
+                self.assertFalse(parsed['turn_failed'])
+                self.assertIsNone(adapter.provider_failure(parsed))
+                final = json.dumps(entry['verdict']['structured_output'], ensure_ascii=False).encode('utf-8')
+                self.assertEqual(final_bytes(parsed), final)
+                self.assertEqual(adapter.validate_final(parsed, final), [])
+                self.assertEqual(semantic_output('claude', final), entry['verdict']['structured_output'])
+                if identifier == 'claude-rate-before-init-21276':
+                    self.assertEqual(native[0]['type'], 'rate_limit_event')
+                    self.assertEqual(native[1]['subtype'], 'init')
+                    self.assertEqual(parsed['rate_limits'][0]['line'], 1)
+                else:
+                    self.assertFalse(entry['live_passed'])
+                    self.assertEqual(semantic_output('claude', final)['phase'], 'pending')
+                    self.assertEqual(parsed['selected_result']['result_line'], 10)
+                    self.assertEqual([row['event']['subtype'] for row in parsed['post_result_events']],
+                                     ['background_tasks_changed', 'task_updated', 'task_notification'])
+                    self.assertEqual(parsed['post_result_events'][-1]['event']['status'], 'stopped')
+                # Synthetic truncation of a positive raw control is a refusal
+                # test; it is not a separately recorded external incident.
+                truncated = adapter.parse_response(raw[:-1], {'output_schema_path': 'recorded-probe-schema'})
+                self.assertFalse(truncated['parse_complete'])
+                self.assertFalse(truncated['turn_completed'])
+                self.assertIn('incomplete_jsonl_line', truncated['unknown_events'])
+                self.assertIsNone(final_bytes(truncated))
+
+    def test_recorded_scholarly_client_timeouts_are_not_inherited_by_the_worker(self):
+        import tempfile
+        import tomllib
+        from do_math.codex_worker import build_argv
+        from do_math.scholarly_config import resolve_scholarly_server
+        entries = json.loads((CORPUS / 'manifest.json').read_bytes())['entries']
+        recordings = [entry for entry in entries if entry['kind'] == 'scholarly_config']
+        self.assertTrue(recordings)
+        for entry in recordings:
+            with self.subTest(entry=entry['id']), tempfile.TemporaryDirectory() as directory:
+                raw = (CORPUS / entry['path']).read_bytes()
+                table = tomllib.loads(raw.decode('utf-8'))['mcp_servers']['scholarly']
+                self.assertEqual((table['startup_timeout_sec'], table['tool_timeout_sec']), (30, 1800))
+                root = Path(directory)
+                (root / '.codex').mkdir()
+                (root / '.codex/config.toml').write_bytes(raw)
+                server = resolve_scholarly_server(None, start=root, codex_home=root / 'unused-home')
+                self.assertEqual(server, entry['verdict'])
+                # Reuse the actual recorded worker request as the consumer input;
+                # only replace its scholarly command/args with the resolved pair.
+                for stream in self.scholarly_recording():
+                    request = json.loads((CORPUS / stream['request_path']).read_bytes())
+                    argv = build_argv({**request, 'scholarly_server': server})
+                    data_dir = str(Path(request['cwd']).resolve() / 'scholarly-data')
+                    self.assertIn('mcp_servers.scholarly.command=' + json.dumps(server['command']), argv)
+                    self.assertIn('mcp_servers.scholarly.args=' + json.dumps(
+                        [*server['args'], '--data-dir', data_dir], ensure_ascii=False), argv)
+                    self.assertFalse(any('startup_timeout_sec' in arg or 'tool_timeout_sec' in arg for arg in argv))
+
     def test_maintenance_recordings_keep_the_role_schema_and_exact_selected_final(self):
         from jsonschema import Draft202012Validator
         from do_math.claude_adapter import ADAPTERS
@@ -244,6 +373,25 @@ class CorpusReplayTests(unittest.TestCase):
                     self.assertEqual(final, (CORPUS / entry['final_path']).read_bytes())
                     output = semantic_output(entry['kind'].removesuffix('_stream'), final)
                     self.assertEqual(list(Draft202012Validator(schema).iter_errors(output)), [])
+                    if entry['kind'] == 'claude_stream':
+                        from do_math.claude_stream import provider_limit
+                        from do_math.codex_stream import provider_observation
+                        from do_math.model_call import classify_run
+                        # The semantic receiver's layer-2 input, built from the
+                        # recorded stdout/final. No new worker/Job is asserted.
+                        raw = (CORPUS / entry['path']).read_bytes()
+                        collected = {'result': 'output_collected', 'jsonl': parsed,
+                                     'provider_observation': provider_observation({}, parsed, raw),
+                                     'source_request': {'raw': b'{"claude_path":"unused"}'},
+                                     'final': {'raw': final}}
+                        result = classify_run(collected, started={}, stopped=False, cli_model=entry['model'],
+                            claude_only_assigned_model=False, control_binding=None, output_schema=schema,
+                            evidence_dir=CORPUS, execution_id=None, reference=None,
+                            provider_failure=provider_limit, now=lambda: entry['recorded_at'])
+                        self.assertIsNone(provider_limit(parsed))
+                        self.assertEqual((result['status'], result['output']), ('completed', output))
+                        self.assertEqual(result['selected_result'], parsed['selected_result'])
+                        self.assertEqual(result['usage'], parsed['usage_total'])
                     if 'transport_schema_path' in entry:
                         transport = json.loads((CORPUS / entry['transport_schema_path']).read_bytes())
                         self.assertEqual(transport, output_contract('codex', schema))

@@ -22,7 +22,7 @@ from support.sim import Sim, warm_template
 from support.storage_files import unlistable
 from support.storage_records import apply_control
 from support.engine_lifecycle import applied, clear_work
-from support.wait_reporting import assert_wait_report
+from support.wait_reporting import assert_wait_report, assert_activity_wait_row
 
 setUpModule = warm_template
 
@@ -59,8 +59,7 @@ class StatusSnapshotTests(unittest.TestCase):
             self.assertIn('wait=' + activity['waiting']['kind'] + ' next=user', lines[matches[0]])
             self.assertIn(activity['waiting']['reason'], lines[matches[0]])
             self.assertEqual(json.loads(lines[matches[0]+1].removeprefix('  coordinates: ')), row['coordinates'])
-            row['condition'].clear()
-            row['coordinates']['execution_ids'].append('not persisted')
+            assert_activity_wait_row(self, report, identifier, activity)
         self.assertEqual((instance, runtime), before)
         self.assertEqual(engine.store.load(), (head, *before))
 

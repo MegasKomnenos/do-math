@@ -456,25 +456,9 @@ class PlanDispositionValidationTests(unittest.TestCase):
 
 class AssessmentPopulationPrefixTests(unittest.TestCase):
     def test_unknown_assessment_is_rejected_before_task_lookup(self):
-        import ast
-        import inspect
-        import textwrap
         from do_math.task_contracts import validate_plan_dispositions
-        from support.planning_paths import ExecutedLines
         plan = {'dispositions': [], 'task_assessments': [{'task_id': 'TK-unknown'}]}
-        source, first_line = inspect.getsourcelines(validate_plan_dispositions)
-        nodes = list(ast.walk(ast.parse(textwrap.dedent(''.join(source)))))
-        guard = next(node for node in nodes if isinstance(node, ast.Raise) and
-            any(isinstance(value, ast.Constant) and isinstance(value.value, str) and
-                value.value.startswith('plan must assess every returned task exactly once:')
-                for value in ast.walk(node)))
-        lookup = next(node for node in nodes if isinstance(node, ast.Assign) and
-            any(isinstance(value, ast.Call) and isinstance(value.func, ast.Attribute) and
-                isinstance(value.func.value, ast.Name) and value.func.value.id == 'tasks' and value.func.attr == 'get'
-                for value in ast.walk(node)))
         reason = "plan must assess every returned task exactly once: missing=[]; unexpected=['TK-unknown']; duplicate=[]"
-        with ExecutedLines(validate_plan_dispositions) as reached:
-            with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
-                validate_plan_dispositions(plan, {}, [])
-        self.assertIn(first_line + guard.lineno - 1, reached.lines)
-        self.assertNotIn(first_line + lookup.lineno - 1, reached.lines)
+        # A task lookup would raise KeyError; the exact ValueError pins the earlier population rejection.
+        with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+            validate_plan_dispositions(plan, {}, [])

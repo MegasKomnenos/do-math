@@ -1,6 +1,8 @@
 """The template key binds all declared JSON inputs before building any state."""
 import unittest
+from unittest.mock import patch
 
+from support import sim as simulation
 from support.sim import template_inputs
 
 
@@ -9,6 +11,17 @@ def configured(root, shared, *, config=None, criteria=('one', 'two')):
 
 
 class TemplateInputTests(unittest.TestCase):
+    def test_warming_preserves_a_failed_build_for_the_actual_consumers_without_retry(self):
+        error = ValueError('explicit template build failure')
+        with patch.object(simulation, '_TEMPLATE', []), \
+             patch.object(simulation, '_Template', side_effect=error) as build:
+            simulation.warm_template()
+            for _ in range(2):
+                with self.assertRaisesRegex(ValueError, '^explicit template build failure$') as caught:
+                    simulation._template()
+                self.assertIs(caught.exception, error)
+            self.assertEqual(build.call_count, 1)
+
     def test_omitted_defaults_and_equivalent_json_forms_have_one_key(self):
         key, values = template_inputs(configured, {})
         self.assertEqual(template_inputs(configured, {'config': None, 'criteria': ['one', 'two']}), (key, values))
@@ -37,3 +50,17 @@ class TemplateInputTests(unittest.TestCase):
             return secret
         with self.assertRaisesRegex(ValueError, 'must not capture inputs'):
             template_inputs(captured, {})
+
+    def test_variadic_builders_and_nested_non_string_object_keys_are_refused(self):
+        def keywords(root, shared, **options):
+            return options
+        def positional(root, shared, *options):
+            return options
+        for build in (keywords, positional):
+            with self.subTest(build=build.__name__):
+                with self.assertRaisesRegex(ValueError, '^template builders require named JSON inputs$'):
+                    template_inputs(build, {})
+        value = {'rows': [{'valid': {1: 'not a string key'}}]}
+        with self.assertRaisesRegex(TypeError, '^template JSON object keys must be strings$'):
+            template_inputs(configured, {'config': value})
+        self.assertEqual(value, {'rows': [{'valid': {1: 'not a string key'}}]})

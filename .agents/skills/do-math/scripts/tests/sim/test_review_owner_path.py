@@ -15,6 +15,8 @@ from unittest.mock import patch
 
 from do_math.canonical import exact_content_hash
 from do_math.engine import ResearchEngine
+from do_math.reporting import status_report, render_human_report
+from support.wait_reporting import assert_wait_report
 from support.review_sim import cycle_of, opened_sim, review_executions, reviewed_sim, theorem_id, warm_opened, warm_reviewed
 
 
@@ -73,6 +75,7 @@ class PreparationFailureTests(unittest.TestCase):
         self.assertEqual(wait['next_owner'], 'review_recovery')
         reloaded = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         self.assertEqual(reloaded.runtime['waiting_actions'][action['id']], wait)
+        assert_wait_report(self, reloaded, action['id'])
         from support.engine_lifecycle import ObservedCalls, code_of
         activity = sim.runtime['activities'][attempts[0]['owner_activity_id']]
         self.assertEqual(activity['waiting']['kind'], 'review_input_restoration')
@@ -88,12 +91,43 @@ class PreparationFailureTests(unittest.TestCase):
         self.assertEqual(cycle_of(sim)['execution_accounting'], admissions)
         self.assertEqual(activity['waiting']['kind'], 'review_input_restoration')
         self.assertEqual(activity['waiting'], waiting_condition, 'a blocked registration preserves the release coordinates')
+        # The same real filesystem refusal keeps the exact action and activity
+        # held when the recovery owner retries before the condition is met.
+        before_wait = deepcopy(sim.runtime['waiting_actions'][action['id']])
+        with tempfile.TemporaryDirectory() as directory, patch.object(Path, 'mkdir', unavailable):
+            held = sim.engine._retry_review_restoration(wait['action'], Path(directory) / 'still-busy')
+        self.assertEqual(held['disposition'], 'recovery_recorded')
+        self.assertEqual(sim.runtime['waiting_actions'][action['id']], before_wait)
+        self.assertEqual(activity['waiting'], waiting_condition)
+        self.assertEqual(cycle_of(sim)['execution_accounting'], admissions)
+        sim.engine._save()
+        assert_wait_report(self, sim.engine, action['id'])
         with tempfile.TemporaryDirectory() as directory:
             outcome = sim.engine._retry_review_restoration(wait['action'], Path(directory) / 'restored', at=sim.clock.now())
         self.assertEqual(outcome['disposition'], 'review_resumed')
         self.assertNotIn(action['id'], sim.runtime['waiting_actions'])
+        activity = sim.runtime['activities'][attempts[0]['owner_activity_id']]
+        self.assertEqual(activity['status'], 'ready')
+        self.assertNotIn('waiting', activity)
+        self.assertEqual(cycle_of(sim)['execution_accounting'], admissions)
+        queued = [row for row in sim.runtime['queue'] if row.get('review_cycle_id') == action['review_cycle_id']
+                  and all(row.get(key) == action.get(key) for key in ('stage', 'round', 'slot'))]
+        self.assertEqual(len(queued), 1)
+        queue = deepcopy(sim.runtime['queue'])
+        with tempfile.TemporaryDirectory() as directory:
+            repeated = sim.engine._retry_review_restoration(wait['action'], Path(directory) / 'again')
+        self.assertEqual(repeated['disposition'], 'review_resumed')
+        self.assertEqual(sim.runtime['queue'], queue)
         self.assertEqual(cycle_of(sim)['knowledge_id'], kid)
         sim.engine._save()  # the outer control owner publishes the released wait
+        head, instance, runtime = sim.engine.store.load()
+        report = status_report(sim.engine.store, head, instance, runtime, requested_areas=['record_storage'],
+            evaluation_context={'now': sim.clock.now(), 'host_id': sim.host_id})
+        self.assertNotIn(action['id'], report['waiting_actions'])
+        self.assertNotIn(activity['id'], report['waiting_activities'])
+        self.assertFalse(any(line.startswith('activity ' + activity['id'] + ':') or
+                             line.startswith('action ' + action['id'] + ':')
+                             for line in render_human_report(report).splitlines()))
         from support.role_input_requirements import observe_judgment_inputs
         with observe_judgment_inputs(self) as prepared:
             sim.run_until(lambda s: any(row['role'] == 'identity_review'

@@ -18,7 +18,7 @@ from support.fakes.host import FakeHost
 class ObservationAdmissionTests(unittest.TestCase):
     def test_profile_role_mode_selection_and_tracker_binding_agree_for_every_produced_profile(self):
         """3-C/B-33: every configured mode and registered role/tier on real producers."""
-        from do_math.execution_profiles import OBSERVATION_MODES, PROFILE_ROLES, WORK_ROLES, profile_ref
+        from do_math.execution_profiles import OBSERVATION_MODES, PROFILE_ROLES, WORK_ROLES, profile_ref, select_profile
         from do_math.observations import bind_task_rules, observation_settings_used, task_rules_from_execution
         from support.observation_inputs import observation_rule
         from support.entry import entry
@@ -49,6 +49,21 @@ class ObservationAdmissionTests(unittest.TestCase):
                     self.assertEqual(config['observation_rules'], bound)
                     if research: self.assertEqual(task_rules_from_execution(bound, 'EX-finite-role'), rules)
                     profiles_seen.add(role)
+                    # Every role/profile pair consumes the produced registry, including
+                    # wrong-role AI and machine profiles, rather than just matching rows.
+                    selection = ({'model': profile['ai']['model'], 'tier': profile['ai']['tier']}
+                                 if profile['actor_kind'] == 'ai' else {})
+                    for requested_role in sorted(PROFILE_ROLES):
+                        action = {'role': requested_role, 'profile_ref': profile_ref(profile)}
+                        with self.subTest(requested_role=requested_role):
+                            if requested_role == role:
+                                self.assertIs(select_profile(produced['execution_profiles'], action, selection,
+                                    allowed_refs=produced['role_profile_refs'][requested_role]), profile)
+                            else:
+                                with self.assertRaisesRegex(ValueError,
+                                        '^profile selection must resolve to exactly one permitted role/model edition$'):
+                                    select_profile(produced['execution_profiles'], action, selection,
+                                        allowed_refs=produced['role_profile_refs'][requested_role])
         self.assertEqual(profiles_seen, PROFILE_ROLES)
 
     def test_default_bootstrap_reports_exact_missing_settings_before_activation(self):

@@ -42,7 +42,7 @@ class BootstrapTests(unittest.TestCase):
             self.assertIn('run-engine', supervisor.stdout)
 
     def test_frozen_supervisor_survives_damage_to_live_shared_modules(self):
-        """About 6 s: two freezes of a whole skill copy and three child interpreters."""
+        """About 10 s: whole-skill freezes and fresh interpreters check frozen dispatch under HOLD."""
         with tempfile.TemporaryDirectory() as directory:
             live = copy_skill(Path(directory) / 'installation')
             bootstrap = live / 'scripts/operator_bootstrap.py'
@@ -59,6 +59,27 @@ class BootstrapTests(unittest.TestCase):
             info = subprocess.run([sys.executable, frozen['entrypoint'], '--bootstrap-info'], cwd=directory,
                                   capture_output=True, text=True, check=True, creationflags=NO_WINDOW)
             self.assertEqual(json.loads(info.stdout)['manifest']['installation_root'], str(live.resolve()))
+            workspace = Path(directory) / 'workspace'
+            hold = workspace / 'operator/HOLD.json'
+            hold.write_bytes(b'{"reason":"local boundary"}\n')
+            repository = Path(directory) / 'empty-repository'
+            repository.mkdir()
+            dispatched = subprocess.run([sys.executable, frozen['entrypoint'], 'check',
+                '--repository', str(repository), '--instance', INSTANCE, '--workspace', str(workspace)],
+                cwd=directory, capture_output=True, text=True, encoding='utf-8', creationflags=NO_WINDOW)
+            self.assertEqual(dispatched.returncode, 0, dispatched.stderr)
+            outcome = json.loads(dispatched.stdout)
+            self.assertEqual(outcome['outcome'], 'held')
+            startup = outcome['startup']
+            self.assertEqual(startup, json.loads((workspace / 'operator/startup.json').read_bytes()))
+            self.assertEqual(startup['runtime_root'], str(Path(frozen['manifest']).parent))
+            self.assertEqual(startup['installation']['installation_root'], str(live.resolve()))
+            self.assertEqual(startup['bootstrap']['snapshot_sha256'], frozen['snapshot_sha256'])
+            self.assertEqual(startup['bootstrap']['comparison'], 'different')
+            self.assertEqual([row['path'] for row in startup['bootstrap']['differences']],
+                             ['scripts/do_math/repository.py'])
+            self.assertEqual(hold.read_bytes(), b'{"reason":"local boundary"}\n')
+            self.assertEqual(list(repository.iterdir()), [])
 
     def test_changed_frozen_code_is_rejected_before_import(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -94,8 +115,12 @@ class BrokenEngineProbeTests(unittest.TestCase):
             failure = json.loads(result.stdout)
             self.assertEqual(failure['error_type'], 'SyntaxError')
             self.assertEqual(failure['outcome'], 'recovery_required')
-            self.assertEqual(json.loads((workspace / 'operator/engine-failure.json').read_text(encoding='utf-8')),
-                             failure)
+            preserved = json.loads((workspace / 'operator/engine-failure.json').read_bytes())
+            startup = json.loads((workspace / 'operator/startup.json').read_bytes())
+            self.assertEqual(failure, {**preserved, 'startup': startup})
+            self.assertEqual(startup['bootstrap'], {'mode': 'live', 'comparison': 'no_recorded_manifest'})
+            self.assertEqual(startup['runtime_root'], str(isolated.resolve()))
+            self.assertEqual(startup['installation']['installation_root'], str(isolated.resolve()))
 
 
 if __name__ == '__main__':

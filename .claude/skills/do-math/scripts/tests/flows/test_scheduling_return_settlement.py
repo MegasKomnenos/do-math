@@ -1,9 +1,10 @@
 """Actual runner return evidence and first-calculation pause settlement."""
 import json
+from copy import deepcopy
 import unittest
 from do_math.payloads import json_safe
 from support.provider_probes import ObservedCalls
-from support.scheduling_return_observer import OwnerProbe, assert_settled
+from support.scheduling_return_observer import OwnerProbe, assert_drained, assert_owned, assert_settled
 from support.scheduling_return_ports import defer_first_calculation
 from support.scheduling_parallel import ready_work_sim
 
@@ -23,19 +24,22 @@ class ReturnSettlementTests(unittest.TestCase):
             return None if any(job.name == name and job.done for job in sim.jobs.launched) else named_job_empty(name)
 
         sim.jobs.named_job_empty = unknown
-        with OwnerProbe(sim) as probe, ObservedCalls(receive=sim.engine._receive_call) as received:
+        with OwnerProbe(sim) as probe, ObservedCalls(receive=sim.engine._receive_call,
+                capture={'receive': lambda args: {'execution_id': args['prepared']['execution_id'],
+                                                  'result': deepcopy(args['result'])}}) as received:
             answer = sim.engine.run(max_steps=1)
         self.assertEqual(probe.failures, [])
         added = set(sim.runtime['executions']) - before
         self.assertEqual(len(added), 1)
         eid, = added
         self.assertEqual(received.count('receive'), 1)
-        self.assertEqual(received.captured('receive')[0]['prepared']['execution_id'], eid)
+        self.assertEqual(received.captured('receive')[0]['execution_id'], eid)
         row = sim.runtime['executions'][eid]
         self.assertIn(row['launch_ticket']['job_name'], queried)
         self.assertEqual(row['capacity']['local_termination'], 'unknown')
         self.assertNotEqual(row['status'], 'ended')
-        self.assertTrue(row['owner_activity_id'])
+        assert_owned(self, sim.runtime, eid)
+        assert_drained(self, sim, probe)
         self.assertTrue(row['result_ref'])
         preserved = json.loads(sim.engine.store.read(row['result_ref'], sim.engine.head))
         self.assertEqual(preserved, json_safe(received.captured('receive')[0]['result']))
@@ -47,6 +51,31 @@ class ReturnSettlementTests(unittest.TestCase):
             self.assertEqual(stored['reservations'][rid]['state'], 'held')
             self.assertEqual(stored['reservations'][rid]['returned'], 0)
         self.assertIsInstance(answer, dict)
+        held = deepcopy(stored['reservations'])
+        evidence = sim.engine.store.read(row['result_ref'], sim.engine.head)
+        sim.restart()
+        self.assertEqual(sim.runtime['executions'][eid], row)
+        with ObservedCalls(receive=sim.engine._receive_call) as replay:
+            sim.engine.run(until_active=True)
+        self.assertEqual(replay.count('receive'), 0)
+        self.assertEqual(sim.runtime['reservations'], held)
+        assert_owned(self, sim.runtime, eid)
+        self.assertEqual(sim.runtime['executions'][eid]['capacity']['local_termination'], 'unknown')
+        self.assertEqual(sim.engine.store.read(row['result_ref'], sim.engine.head), evidence)
+        sim.jobs.named_job_empty = named_job_empty
+        sim.restart()
+        sim.engine.run(until_active=True)
+        ended = sim.runtime['executions'][eid]
+        self.assertEqual((ended['status'], ended['capacity']['local_termination']), ('ended', 'confirmed'))
+        self.assertEqual(ended['outcome'], 'execution_incomplete')
+        self.assertEqual(ended['result_disposition'], {
+            'local_process': 'terminated', 'remote_state': 'unknown', 'artifact_ref': ended['result_ref']})
+        checkpoint = json.loads(sim.engine.store.read(ended['result_ref'], sim.engine.head))
+        self.assertEqual(checkpoint, sim.runtime['checkpoints'][eid])
+        for rid in ended['capacity']['reservation_ids']:
+            reservation = sim.runtime['reservations'][rid]
+            self.assertEqual((reservation['state'], reservation['returned']), ('settled', reservation['reserved']))
+        self.assertEqual(sim.engine.store.read(row['result_ref'], sim.engine.head), evidence)
 
 
     def test_ai_before_calculation_pause_preserves_owner_and_returns_capacity(self):

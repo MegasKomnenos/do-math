@@ -86,8 +86,6 @@ class GovernanceEngineMixin:
                                 if without_host(profile) == without_host(original)]
                 if len(replacements) == 1:
                     pending['profile_ref'] = execution_profiles.profile_ref(replacements[0])
-                    if pending.get('model_selection'):
-                        pending['model_selection']['profile_ref'] = deepcopy(pending['profile_ref'])
             affected = []
             for tid, task in state.get('tasks', {}).items():
                 if task.get('status') in TERMINAL_TASK_STATUSES:
@@ -164,8 +162,11 @@ class GovernanceEngineMixin:
         current_source = self._governance_input_source(input_id)
         if current_source == bundle['source']:
             fields['previous_import_id'] = bundle['id']
-        fields['intent_repair'] = {'import_id': bundle['id'], 'previous_sha256': bundle['sha256'],
-            'check_execution_id': bundle.get('check', {}).get('execution_id'), 'findings': [reason]}
+        # A changed original can need a fresh interpretation before any check
+        # exists. Only a checked import supplies a semantic repair basis.
+        if 'check' in bundle:
+            fields['intent_repair'] = {'import_id': bundle['id'], 'previous_sha256': bundle['sha256'],
+                'check_execution_id': bundle['check']['execution_id'], 'findings': [reason]}
         self._enqueue('intent_interpretation', input_id, stage='interpret',
                       reason=reason, lineage_id=author.get('lineage_id', bundle['execution_id']), **fields)
 
@@ -256,7 +257,10 @@ class GovernanceEngineMixin:
         change = request.get('config', {}).get('change', {})
         if request.get('action') == 'decision' and change.get('kind') == 'import_approval':
             bundle = self.runtime.get('intent_imports', {}).get(change.get('import_id'))
-            if bundle and not bundle.get('superseded_by') and bundle.get('application', {}).get('status') != 'applied':
+            # Premature approval does not invalidate an interpretation still
+            # awaiting its independent check. Keep that check's existing route.
+            if (bundle and 'check' in bundle and not bundle.get('superseded_by')
+                    and bundle.get('application', {}).get('status') != 'applied'):
                 self._queue_intent_rework(bundle, reason)
 
     def _apply_governance_intent(self, action, output, execution_id):

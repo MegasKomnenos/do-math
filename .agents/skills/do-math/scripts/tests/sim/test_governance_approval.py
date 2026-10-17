@@ -19,12 +19,6 @@ from support.engine_lifecycle import ObservedCalls, applied, code_of
 from support.governance_sim import (CONFIGURATION, INPUT, approval, checked_bundle, checked_sim, initial_checked_sim)
 
 
-def setUpModule():
-    checked_sim()
-    checked_sim('configuration')
-    initial_checked_sim()
-
-
 def request(bundle, identifier='LATER', **changes):
     """The user's later approval request as the owner hands it to ``_governance_control``."""
     return {'id': identifier, 'action': 'decision', 'origin': 'user', 'text': 'Approve this exact checked change',

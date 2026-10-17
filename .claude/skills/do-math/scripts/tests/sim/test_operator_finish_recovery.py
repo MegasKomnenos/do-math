@@ -7,22 +7,40 @@ from pathlib import Path
 import unittest
 
 from do_math import formal, scheduled_operator as operator
-from do_math import execution_profiles, repair_execution
+from do_math import execution_lifecycle, execution_profiles, repair_execution
+from do_math.canonical import canonical_json
+from do_math.control_protocol import SUBMIT_INTENT
 from do_math.file_io import os_lock
 from do_math.git_store import GitStateStoreLockError
 from do_math.model_runner import ModelRunner
 from do_math.session_slots import SessionSlots
 from support.operator_finish_observers import construction, outside_status
+from support.engine_context import issue
 from support.operator_finish_scene import Scene, diagnose
 from support.provider_probes import ObservedCalls
 from support.sim import warm_template
 from support.storage_probes import Returns
+from support.wait_reporting import assert_activity_wait_row
 
 setUpModule = warm_template
 FAILURE = {'kind': 'engine_unavailable', 'error': 'Synthetic launcher failure'}
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_unreadable_installation_stops_recovery_before_any_model_call(self):
+        """About 6.8 s: the real initialized recovery owner acquires and releases both publication locks."""
+        scene = Scene()
+        missing = scene.installation / 'missing'
+        before = scene.load()
+        with self.assertRaisesRegex(ValueError, '^cannot identify repair installation: '):
+            scene.call(operator.recovery, failure=FAILURE, installation_root=missing)
+        self.assertEqual(scene.load(), before)
+        self.assertEqual(scene.cli.calls, [])
+        self.assertEqual(scene.jobs.launched, [])
+        # Failure also releases the maintenance lock, so a later owner can retry.
+        with os_lock(scene.sim.engine.store.git_dir / 'do-math-installation-maintenance.lock', blocking=False):
+            self.assertEqual(scene.load(), before)
+
     def test_recovery_publishes_under_locks_and_restarts_after_collection_and_unlock(self):
         direct = self.enterContext(ObservedCalls(run=ModelRunner.run, wake=operator.wake))
         scene = Scene()
@@ -39,8 +57,14 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(prior['status'], 'ended')
         self.assertEqual(prior['error'], "output/next_step: None is not of type 'string'")
         self.assertEqual((direct.count('run'), direct.count('wake')), (1, 0))
+        failed_state = scene.load()
+        waiting = deepcopy(failed_state[2]['activities'][prior['owner_activity_id']])
+        self.assertEqual(waiting['waiting']['kind'], 'installation_repair_retry')
+        self.assertEqual(waiting['waiting']['next_owner'], 'recovery')
+        assert_activity_wait_row(self, scene.sim.engine.status(), waiting['id'], waiting)
         self.assertEqual(scene.call(operator.recovery, failure=FAILURE)['reason'],
                          'same failure and installation already attempted')
+        self.assertEqual(scene.load(), failed_state)
         self.assertEqual(len(scene.cli.calls), 1)
         self.assertEqual((direct.count('run'), direct.count('wake')), (1, 0))
         # A real installation edition change permits a later attempt of the same failure.
@@ -52,6 +76,10 @@ class RecoveryTests(unittest.TestCase):
             execution = next(e for e in runtime['executions'].values() if e.get('role') == 'recovery' and e['status'] == 'running')
             self.assertEqual(execution['status'], 'running')
             self.assertEqual(execution['capacity']['process']['pid'], scene.jobs.launched[-1].pid)
+            activity = runtime['activities'][prior['owner_activity_id']]
+            self.assertEqual(activity['status'], 'working')
+            self.assertNotIn('waiting', activity)
+            self.assertEqual(activity['assigned_execution_ids'], [prior['id'], execution['id']])
             self.assertIn('Do not change research records, goals, budgets, grants', call['prompt'])
             with self.assertRaisesRegex(GitStateStoreLockError, '^another local writer owns this instance lock$'), scene.sim.engine.store.writer_lock():
                 self.fail('recovery did not exclude engine writer')
@@ -84,6 +112,8 @@ class RecoveryTests(unittest.TestCase):
         activity = runtime['activities'][prior['owner_activity_id']]
         self.assertEqual(len(activity['assigned_execution_ids']), 2)
         self.assertEqual(activity['status'], 'finished')
+        self.assertNotIn(activity['id'], scene.sim.engine.status()['waiting_activities'])
+        self.assertEqual(runtime['executions'][prior['id']], prior)
         self.assertEqual((execution['role'], execution['status'], execution['outcome']),
                          ('recovery', 'ended', 'output_accepted'))
         self.assertEqual(execution['capacity']['reservation_ids'], [])
@@ -96,6 +126,81 @@ class RecoveryTests(unittest.TestCase):
         with scene.sim.engine.store.writer_lock(), os_lock(
                 scene.sim.engine.store.git_dir / 'do-math-installation-maintenance.lock', blocking=False):
             pass
+
+    def test_diagnosed_repair_keeps_operational_wait_until_verified_then_resumes_once(self):
+        """About 2.3 s, over the 2 s budget: one verified worker repair plus exact owner/store/report transitions."""
+        scene = Scene()
+        engine = scene.sim.engine
+        at = scene.ports.clock.now()
+        target = engine._register_execution({'id': 'AC-live-failure', 'role': 'maintenance'},
+            {'id': 'EX-live-failure', 'role': 'maintenance', 'status': 'running'})
+        source = 'runtime/artifacts/BA-live-failure/result.json'
+        target.update(error='Installed receiver failed during the admitted call', result_ref=source)
+        execution_lifecycle.transition_execution(target, 'stopping', at=at)
+        execution_lifecycle.transition_execution(target, 'ended', at=at, outcome='execution_incomplete')
+        engine._save({source: canonical_json({'error': target['error']})})
+        review_action = {'id': 'AC-live-review', 'role': 'operational_review', 'target': target['id']}
+        reviewer = engine._register_execution(review_action,
+            {'id': 'EX-live-review', 'role': 'operational_review', 'status': 'running'})
+        work = scene.workspace / 'live-review'
+        work.mkdir()
+        context = engine._context(review_action, work)
+        issue(engine, reviewer, context, 'BA-live-review')
+        disposition = {'kind': 'repair', 'basis_refs': [target['id']], 'next_owner': 'installation_recovery',
+            'reason': 'Repair the independently diagnosed receiver',
+            'repair_target': 'installation:scripts/do_math/engine.py', 'meaning_preserving': True,
+            'verification': 'Run the receiver regression'}
+        engine._apply_operational_disposition(review_action, disposition, reviewer['id'])
+        record = next(row for row in engine.runtime['operational_dispositions'].values()
+                      if row['execution_id'] == reviewer['id'])
+        self.assertEqual(record['status'], 'repair_required')
+        engine._save()
+        before = scene.load()
+        self.assertEqual(scene.call(operator.recovery)['reason'], 'no installation repair is pending')
+        engine._run_pending_operational_repairs()
+        self.assertEqual(scene.load(), before)
+        self.assertEqual(scene.cli.calls, [])
+        reviewer = engine.runtime['executions'][reviewer['id']]
+        output_ref = 'runtime/artifacts/BA-live-review-output/output.json'
+        execution_lifecycle.record_submission_intent(reviewer,
+            {'candidate_id': 'CS-live-review', 'output_ref': output_ref, 'manifest': []},
+            {'id': 'UC-live-review', 'kind': SUBMIT_INTENT, 'state': 'accepted',
+             'execution_id': reviewer['id'], 'received_at': at})
+        execution_lifecycle.transition_execution(reviewer, 'ended', at=at, outcome='output_accepted')
+        engine._save({output_ref: canonical_json({'disposition': disposition})})
+        # The accepted diagnosis lets the real settlement producer create this
+        # kind; no activity wait or condition is injected by the test.
+        target = engine.runtime['executions'][target['id']]
+        engine._settle_activity(target['id'])
+        aid = target['owner_activity_id']
+        waiting = deepcopy(engine.runtime['activities'][aid])
+        self.assertEqual(waiting['waiting']['kind'], 'operational_repair')
+        self.assertEqual(waiting['waiting']['condition'], {'operational_disposition_ids': [record['id']]})
+        engine._run_pending_operational_repairs()
+        self.assertEqual(scene.load()[2]['operational_dispositions'][record['id']]['status'], 'installation_repair_pending')
+        assert_activity_wait_row(self, engine.status(), aid, waiting)
+        engine._settle_activity(reviewer['id'])
+        engine._settle_activity(target['id'])
+        engine._save()
+        self.assertEqual(scene.load()[2]['activities'][aid], waiting)
+        preserved = deepcopy(scene.load()[2]['executions'][target['id']])
+        preserved.pop('pending_operational_disposition', None)
+        others = deepcopy({key: value for key, value in scene.load()[2]['activities'].items() if key != aid})
+        scene.answer(diagnosed=True)
+        result = scene.call(operator.recovery)
+        self.assertEqual(result['outcome'], 'repaired', result)
+        after = scene.load()
+        activity = after[2]['activities'][aid]
+        self.assertEqual(activity['status'], 'ready')
+        self.assertNotIn('waiting', activity)
+        successor, = [row for row in after[2]['queue'] if row.get('continuation_of') == target['id']]
+        self.assertEqual(successor['owner_activity_id'], aid)
+        self.assertEqual(after[2]['executions'][target['id']], preserved)
+        self.assertEqual({key: after[2]['activities'][key] for key in others}, others)
+        self.assertNotIn(aid, engine.status()['waiting_activities'])
+        self.assertEqual(scene.call(operator.recovery)['reason'], 'no installation repair is pending')
+        self.assertEqual(scene.load(), after)
+        self.assertEqual(len(scene.cli.calls), 1)
 
     def test_diagnosed_repair_restores_failed_request_and_preserves_regression_proof(self):
         direct = self.enterContext(ObservedCalls(run=ModelRunner.run, wake=operator.wake))
@@ -111,6 +216,10 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(runtime['operational_dispositions'][record['id']]['status'], 'applied')
         successor = next(a for a in runtime['queue'] if a.get('continuation_of') == 'EX-failed')
         self.assertEqual(successor['repair_attempt'], 2)
+        aid = runtime['executions']['EX-failed']['owner_activity_id']
+        self.assertEqual(runtime['activities'][aid]['status'], 'ready')
+        self.assertNotIn('waiting', runtime['activities'][aid])
+        self.assertNotIn(aid, scene.sim.engine.status()['waiting_activities'])
         run = Path(result['run_directory'])
         self.assertTrue((run / 'regression-evidence.json').is_file())
         self.assertIn('actual rejected response', (run / 'workspace/input/failure-0.json').read_text())
@@ -218,9 +327,7 @@ class RecoveryTests(unittest.TestCase):
         original_knowledge = deepcopy(scene.load()[1]['knowledge'])
         # Preserve every original report field; change only next_step to make
         # the real runner produce output_validation instead of a canned failure.
-        original_output = {'summary': 'Observed current status.', 'observed_status': 'ready',
-            'actions': [], 'evidence_paths': [], 'user_questions': [],
-            'next_step': 'Return the recorded observation.'}
+        original_output = scene.answer()
         output = {**deepcopy(original_output), 'next_step': None}
         self.assertEqual({key for key in output if output[key] != original_output[key]}, {'next_step'})
         scene.cli.answer = output
@@ -332,16 +439,27 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(scene.commands, [])
         self.assertEqual(scene.ports.scheduler.calls, [])
         self.assertEqual((direct.count('run'), direct.count('wake')), (1, 0))
+        before = scene.load()
+        original = deepcopy(before[2]['executions'][result['execution_id']])
+        aid = original['owner_activity_id']
+        waiting = deepcopy(before[2]['activities'][aid])
+        self.assertEqual(waiting['waiting']['kind'], 'installation_repair_retry')
+        assert_activity_wait_row(self, scene.sim.engine.status(), aid, waiting)
         self.assertEqual(scene.call(operator.recovery)['reason'], 'provider_limit')
+        self.assertEqual(scene.load(), before)
         self.assertEqual(len(scene.cli.calls), 1)
         self.assertEqual((direct.count('run'), direct.count('wake')), (1, 0))
         # Real admission requires the published provider gate to reopen; the old
         # slots double silently permitted an immediate retry.
         gate = scene.load()[2]['provider_waits']['PW-claude']
         scene.sim.advance(gate['retry_at'] - scene.ports.clock.wall().timestamp())
-        scene.call(operator.recovery)
+        next_attempt = scene.call(operator.recovery)
         self.assertEqual(len(scene.cli.calls), 2)
         self.assertEqual((direct.count('run'), direct.count('wake')), (2, 0))
+        runtime = scene.load()[2]
+        self.assertEqual(runtime['executions'][next_attempt['execution_id']]['owner_activity_id'], aid)
+        self.assertEqual(runtime['activities'][aid]['assigned_execution_ids'], [original['id'], next_attempt['execution_id']])
+        self.assertEqual(runtime['executions'][original['id']], original)
 
     def test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt(self):
         direct = self.enterContext(ObservedCalls(run=ModelRunner.run, wake=operator.wake))

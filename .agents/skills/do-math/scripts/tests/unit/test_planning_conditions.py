@@ -336,10 +336,13 @@ class ReadinessConditionTests(unittest.TestCase):
         instance['decisions'][decision['id']] = decision
         assert_wait_documents(self, decision['change'], owner='change', expected={'value': True})
         for bad in ({}, {'kind': 'plan_settle'}, {'value': 1}, {'value': None}):
-            with self.subTest(bad=bad), self.assertRaises(AssertionError):
+            reason = ('int.*bool' if bad.get('value') == 1 else
+                      'None' if 'value' in bad else 'change.value')
+            with self.subTest(bad=bad), self.assertRaisesRegex(AssertionError, reason):
                 assert_wait_documents(self, bad, owner='change', expected={'value': True})
         for text in ('', '`change.nonexistent`'):
-            with self.subTest(text=text), self.assertRaises(AssertionError):
+            reason = 'actual document consumer' if not text else 'change.nonexistent'
+            with self.subTest(text=text), self.assertRaisesRegex(AssertionError, reason):
                 assert_wait_documents(self, decision['change'], owner='change', expected={'value': True}, texts=[text])
         # This is an input field, not a mandatory evaluator output.
         samples = [({'value': True}, True, 'ready'), ({'value': True}, 1, 'not_ready'),

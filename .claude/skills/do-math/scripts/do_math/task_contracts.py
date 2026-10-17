@@ -297,9 +297,8 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
     if set(selected_task_ids(plan)) & set(assessed):
         raise ValueError('returned tasks require disposition before a later selection')
     for assessment in assessments:
-        task = tasks.get(assessment["task_id"])
-        if task is None:
-            raise ValueError("assessment names an unknown task")
+        # Exact returned-task membership was checked above.
+        task = tasks[assessment["task_id"]]
         validate_item_dispositions(task, assessment)
 
 

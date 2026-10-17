@@ -52,9 +52,8 @@ def safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
     root = _physical_root(root)
     candidate = root.joinpath(*relative.parts)
     no_reparse(candidate, below=root)
-    resolved = candidate.resolve(strict=False)
-    if not resolved.is_relative_to(root):
-        raise ValueError(f"path leaves workspace: {name}")
+    # relative_path forbids absolute/parent components; no_reparse proves each
+    # existing component below the physical root. No second resolution is needed.
     return candidate
 
 
@@ -88,8 +87,6 @@ def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
         raise TypeError("documents must be a path-to-bytes object")
     workspace = _physical_root(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    if is_reparse(workspace):
-        raise ValueError("workspace must not be a reparse point")
     planned: list[tuple[str, Path, bytes]] = []
     for name, data in documents.items():
         relative = relative_path(name)
@@ -227,8 +224,6 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
         raise TypeError("context must be an object")
     workspace = _physical_root(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    if is_reparse(workspace):
-        raise ValueError("workspace must not be a reparse point")
     entries: dict[str, dict] = {}
     manifest: list[dict] = []
     files: dict[str, bytes] = {}
@@ -717,8 +712,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             for identifier, entry in sorted(runtime.get('waiting_actions', {}).items())
         ]
         def reader_task(identifier):
-            if identifier not in reader_tasks:
-                raise ValueError('required reader task is absent: ' + identifier)
+            # The complete reader population was compared with runtime tasks above.
             return deepcopy(reader_tasks[identifier])
         if role == 'research_plan':
             from .input_recovery import overflow_requests

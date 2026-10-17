@@ -126,3 +126,42 @@ class ParallelBranchTests(unittest.TestCase):
         self.assertEqual(calls.on_observation_error, failed.append)
         calls.close()
         self.assertTrue(calls.stopping)
+
+
+class InterruptedCallEvidenceTests(unittest.TestCase):
+    """Real engine activation and validated recovery storage cost about 13 s; no engine/authority double."""
+    def test_aborted_owner_preserves_the_actual_exception_result_and_clears_live_ids(self):
+        import json
+        from pathlib import Path
+        from support.sim import Sim
+        from support.engine_lifecycle import clear_work
+        sim = Sim.activated()
+        clear_work(sim)
+        engine = sim.engine
+        eid = 'EX-interrupted'
+        engine._register_execution({'id': 'AC-interrupted', 'role': 'maintenance'},
+            {'id': eid, 'role': 'maintenance', 'status': 'running'})
+        engine._save()
+        calls = ModelCalls()
+        engine._calls = calls
+        def calculate(): raise KeyboardInterrupt('calculation interrupted')
+        future = calls.start_call(continuation([]), calculate, {}, execution_id=eid)
+        with self.assertRaisesRegex(KeyboardInterrupt, '^calculation interrupted$'):
+            future.result(timeout=5)
+        engine._live_execution_ids.add(eid)
+        try:
+            calls.close()
+            engine._abort_parallel_calls()
+            local = Path(sim.instance['workspace']) / 'execution-recovery' / eid / 'returned-result.json'
+            actual = json.loads(local.read_bytes())
+            self.assertEqual(actual['status'], 'failed')
+            self.assertEqual(actual['error'], 'KeyboardInterrupt: calculation interrupted')
+            stored = engine.store.load(engine.head)[2]
+            reference = stored['executions'][eid]['result_ref']
+            self.assertEqual(engine.store.read(reference, snapshot=engine.head), local.read_bytes())
+            self.assertEqual(engine._live_execution_ids, set())
+            self.assertEqual(engine._transport_bindings, {})
+            self.assertIsNone(calls.futures[future].gi_frame)
+        finally:
+            calls.close()
+            engine._calls = None

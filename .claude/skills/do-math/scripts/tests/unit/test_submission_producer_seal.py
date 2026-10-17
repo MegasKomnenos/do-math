@@ -14,15 +14,22 @@ from support.submission_protocol import ProtocolScene, producer_workspace
 class FixtureMutationSealTests(unittest.TestCase):
     """K-30: a producer may revise only a hashed record in its fixed input."""
     def test_candidate_revision_cannot_target_an_absent_or_unhashed_input_record(self):
+        from support.fakes.clock import FakeClock
+        from support.model import Answer, ModelDouble
         for records in ([], [{'id': 'TK-fixed'}]):
             with self.subTest(records=records), tempfile.TemporaryDirectory() as directory:
-                workspace, context = producer_workspace(directory, context_values={'tasks': records})
+                workspace, context = producer_workspace(directory, context_values={
+                    'tasks': records, 'execution_profiles': [], 'grants': []})
                 before = deepcopy(context)
                 output = {**common('Revise only the supplied record.'),
                           'candidates': [{'revises_task_id': 'TK-fixed'}]}
                 with self.assertRaisesRegex(AssertionError,
                         '^The fixture cannot revise a record absent from its fixed input: TK-fixed$'):
                     seal_response(output, context, workspace)
+                model = ModelDouble(FakeClock())
+                with self.assertRaisesRegex(AssertionError,
+                        '^The fixture cannot revise a record absent from its fixed input: TK-fixed$'):
+                    model.render(Answer(lambda out, ctx: output), 'research_preparation', context, workspace)
                 self.assertNotIn('integration_bundles', output)
                 self.assertEqual(context, before)
 

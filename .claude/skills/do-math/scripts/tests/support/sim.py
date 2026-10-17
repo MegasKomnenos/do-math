@@ -34,6 +34,7 @@ the content hashes and Git object IDs built on it differ between runs.
 """
 from __future__ import annotations
 from copy import deepcopy
+from concurrent.futures import Future
 
 import atexit
 from datetime import datetime, timezone
@@ -103,7 +104,13 @@ class Sim:
         return sim
 
     def process_state(self):
-        """What the fakes hold outside the files: the clock, the Job fake's process identities and the Git objects."""
+        """External port state: clock, Job identities and Git objects, never engine caches.
+
+        The Git fake keeps immutable object bytes in memory rather than writing
+        every loose object to disk. Copying its maps preserves actual repository
+        publications; ResearchEngine still loads and validates them normally.
+        This is a process-local test template, not a persistent result cache.
+        """
         return {'clock': self.clock.state(), 'next_pid': self.jobs._next_pid, 'owner': dict(self.jobs.owner),
                 'git_objects': _copy_objects(self.ports.git_backend.objects),
                 'git_worktrees': deepcopy(self.ports.git_backend.worktrees),
@@ -232,10 +239,10 @@ class Sim:
                     'roles': list(ROLES) + ['formal_check'], 'reuse': 'reusable', 'expires_at': expiry}}}),
                 ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_sha256}}),
                 ('trust', trust_fixture(self.shared, self.instance['config']['lean_command'], directory=self.shared / 'trust'))]
-            for action, config in controls:
-                self.control(action, text=text, config=config)
+            requests = [self.control(action, text=text, config=config)['request_id']
+                        for action, config in controls]
             self.engine.process_controls()
-            self._check_applied()
+            self._check_applied(requests)
             environment = next(iter(self.instance['trust_environments']))
             self._apply('trust', config={'operation': 'transition', 'env_id': environment})
             self._apply('decision', config={'change': {'kind': 'initialization', 'config_sha256': config_sha256,
@@ -244,7 +251,10 @@ class Sim:
                 **({'review_policy': review_policy} if review_policy is not None else {'adopt_default_review_policy': True}),
                 'initial_profile_ref': initial_ref,
                 'initial_grant_ids': ['GR-initial-sim'], 'research_grant_ids': ['GR-research-sim']}})
-            self.engine.run(until_active=True)
+            # This fixture has a finite scripted initialization. Bound dispatched
+            # actions so a missing completion transition cannot requeue forever;
+            # the original active/no-formal-work assertions below still decide it.
+            self.engine.run(max_steps=32, until_active=True)
         if calls.count('verifier') or calls.count('worker'):
             raise AssertionError('public activation must not call the formal verifier or worker')
         formal_jobs = [job for job in self.jobs.launched[formal_before:]
@@ -255,11 +265,25 @@ class Sim:
             raise AssertionError('public activation did not reach active: ' + json.dumps(self.waiting(), default=str))
 
     def _apply(self, action, **options):
-        self.control(action, **options)
+        """Publish and apply one control, checking its durable receipt, including replays."""
+        request = self.control(action, **options)
         self.engine.process_controls()
-        self._check_applied()
+        self._check_applied([request['request_id']])
 
-    def _check_applied(self):
+    def _check_applied(self, request_ids=None):
+        """Check selected receipts; without IDs, check the caller's whole preparation history.
+
+        Raw ``control`` only transports a request and permits negative tests.
+        A selected control must have an applied receipt. Prior deliberate
+        rejections do not invalidate a later successful application.
+        """
+        if request_ids is not None:
+            results = [(identifier, self.engine.control_result(identifier)) for identifier in request_ids]
+            unsuccessful = [(identifier, result) for identifier, result in results
+                            if result is None or result.get('effect') != 'applied']
+            if unsuccessful:
+                raise AssertionError('Sim controls not applied: ' + repr(unsuccessful))
+            return
         rejected = [row for row in self.runtime['history'] if row.get('kind') == 'rejected_user_control']
         if rejected:
             raise AssertionError('Sim controls rejected: ' + repr(rejected))
@@ -328,18 +352,24 @@ _TEMPLATE = []
 
 
 def warm_template():
-    """Build this process's template now; a test module's ``setUpModule`` so no test pays the build."""
-    _template()
+    """Precompute once, retaining a build error for the tests that consume this template.
+
+    Warming is only a cost optimization. Product failures belong to the actual
+    Sim consumer, rather than preventing every test in a module from starting.
+    """
+    if not _TEMPLATE:
+        result = Future()
+        _TEMPLATE.append(result)
+        try:
+            result.set_result(_Template())
+        except Exception as error:
+            result.set_exception(error)
 
 
 def _template():
     """This process's template; a failed build is not retried, since every later test would repeat its cost."""
-    if not _TEMPLATE:
-        _TEMPLATE.append('failed')
-        _TEMPLATE[0] = _Template()
-    elif _TEMPLATE[0] == 'failed':
-        raise AssertionError('the Sim template failed to build earlier in this process')
-    return _TEMPLATE[0]
+    warm_template()
+    return _TEMPLATE[0].result()
 
 
 _BUILT = {}

@@ -313,6 +313,48 @@ class AssessmentReassessmentTests(ReassessmentCase):
 class DomainReassessmentTests(KnowledgeRoundtripHarness):
     """Domain reassessment over round trips of split knowledge state."""
 
+    def test_reassessment_preserves_original_policy_and_all_author_exclusions(self):
+        aid = self.assessment()
+        proposal = knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime)
+        self.assertTrue(proposal['producer_execution_ids'])
+        cycle = self.cycle('match', proposal)
+        original = copy.deepcopy(cycle)
+        for fault, reason in (('policy', 'reassessment must retain the original review policy'),
+                              ('authors', 'reassessment omits original author exclusions')):
+            changed = copy.deepcopy(original)
+            if fault == 'policy':
+                changed['review_policy']['round_limit'] += 1
+            else:
+                changed['proposal']['producer_execution_ids'] = []
+                changed['proposal_digest'] = exact_content_hash(changed['proposal'])
+            self.runtime['review_cycles'][cycle['id']] = changed
+            before = copy.deepcopy((self.state, self.runtime))
+            with self.subTest(fault=fault), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'],
+                    reason='Reassess exact judgment', actor_ref='authorized:review',
+                    at=self.clock.now(), clock=self.clock)
+            self.assertEqual((self.state, self.runtime), before)
+
+    def test_semantic_impact_preserves_checked_formal_and_withdrawn_use(self):
+        aid = self.assessment()
+        fid = self.state['knowledge'][self.kid]['formal_result_id']
+        uid = next(uid for uid, row in self.state['assessment_uses'].items() if row['assessment_id'] == aid)
+        self.state['assessment_uses'][uid]['status'] = 'withdrawn'
+        before = copy.deepcopy((self.state, self.runtime))
+        changed, runtime = knowledge._apply_impact_effects(self.state, self.runtime, {fid, uid}, [aid],
+            reason='Semantic judgment defect', impact_digest='semantic-impact', clock=self.clock)
+        self.assertEqual(changed['formal_results'][fid], self.state['formal_results'][fid])
+        self.assertEqual(changed['assessment_uses'][uid]['status'], 'withdrawn')
+        self.assertEqual(changed['assessment_uses'][uid]['use_history'][-1],
+                         {'reason': 'Semantic judgment defect', 'impact_digest': 'semantic-impact'})
+        self.assertEqual(runtime['history'][-1]['affected_ids'], sorted([fid, uid]))
+        self.assertEqual((self.state, self.runtime), before)
+
+    def test_review_admission_requires_an_adopted_policy(self):
+        self.state['review_policy'] = None
+        with self.assertRaisesRegex(ValueError, '^adopted review policy is required before review admission$'):
+            kr.review_publication_premises(self.state, self.kid)
+
     def test_qualified_reassessment_restores_negative_and_preserves_sealed_judgment(self):
         """About 0.4 s, over the 0.2 s unit budget: every round trip publishes and reloads the split state through the storage contract."""
         from support.entry import entry
@@ -488,8 +530,7 @@ class ReassessmentStorageTests(KnowledgeRoundtripHarness):
             execution.update(output=output, submission_receipt={'state': 'accepted', 'evidence_ref': 'synthetic:review'})
             execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z')
             execution_lifecycle.transition_execution(execution, 'ended', at='2026-09-20T00:00:00Z', outcome='output_accepted')
-        self.assertEqual(engine._settle_assessment_reassessments(), [result['review_cycle_id']])
-        engine._save()
+        engine._upkeep(schedule_reviews=False)
         engine = self.engine()
         use = next(u for u in engine.instance['assessment_uses'].values() if u['assessment_id'] == aid)
         self.assertEqual(use['status'], 'active')

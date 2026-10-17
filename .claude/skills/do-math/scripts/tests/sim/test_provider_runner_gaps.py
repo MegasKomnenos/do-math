@@ -77,3 +77,63 @@ class RunnerGapTests(unittest.TestCase):
         self.assertRegex(result['error'], '^output JSON: ValueError:')
         self.assertEqual(len(cli.calls), 1)
         self.assertTrue(jobs.launched[0].closed)
+
+
+class RunnerPinnedBoundaryTests(unittest.TestCase):
+    def test_host_limit_drift_fails_before_resume_and_closes_the_job(self):
+        from support.provider_inputs import host_capacity_fixture
+        from do_math.execution_profiles import prepare_prompt, job_resource_limits
+        _, selected, _ = host_capacity_fixture()
+        profile = selected['research_work']
+        clock = FakeClock()
+        class DriftJobs(ProviderJobs):
+            def launch(self, *args, **kwargs):
+                # This Jobs port reports the local limits it actually used.
+                kwargs['resource_limits'] = {**kwargs['resource_limits'], 'memory_bytes': 2 * kwargs['resource_limits']['memory_bytes']}
+                return super().launch(*args, **kwargs)
+        jobs = DriftJobs(clock=clock)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prompt = prepare_prompt('bounded', profile)
+            with self.assertRaisesRegex(RuntimeError, '^local Job settings differ from pinned profile before resume$'):
+                model_runner(root, jobs, clock).run(prompt=prompt, output_schema={}, workspace=root / 'workspace',
+                    evidence_dir=root / 'evidence', model=profile['ai']['model'], effort=profile['ai']['effort'],
+                    timeout_seconds=None, execution_id='EX-drift', profile=profile, input_seal=prompt_seal(prompt),
+                    launch_ticket=dispatched('EX-drift', profile, jobs, clock), on_started=lambda identity: None)
+            job, = jobs.launched
+            self.assertTrue(job.closed and job.done)
+            self.assertFalse(job.resumed)
+            self.assertEqual(jobs.cli.calls, [])
+            self.assertNotEqual(job.resource_usage()['limits'], job_resource_limits(profile, host_id=entry().host_id))
+
+
+    def test_live_observation_before_stdout_exists_keeps_later_native_rows(self):
+        from types import MethodType
+        class DelayedStreamJobs(ProviderJobs):
+            def launch(self, *args, **kwargs):
+                job = super().launch(*args, **kwargs)
+                original = job.inspect
+                stdout = Path(job.cwd) / 'stdout.jsonl'
+                held = stdout.with_suffix('.held')
+                def inspect(current):
+                    if current.resumed and current.inspections == 0 and stdout.exists(): stdout.rename(held)
+                    elif held.exists(): held.rename(stdout)
+                    return original()
+                job.inspect = MethodType(inspect, job)
+                return job
+        clock = FakeClock()
+        jobs = DelayedStreamJobs(clock=clock, polls=3)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            batches = []
+            result = model_runner(root, jobs, clock).run(prompt='native rows', output_schema={},
+                workspace=root / 'workspace', evidence_dir=root / 'evidence', model='test-model', effort='high',
+                timeout_seconds=None, on_observation=batches.append)
+            self.assertEqual(result['status'], 'completed')
+            self.assertGreaterEqual(len(batches), 2)
+            self.assertEqual(batches[0].rows, [])
+            self.assertEqual(batches[0].end_offset, 0)
+            self.assertEqual(b''.join(row for batch in batches for row in batch.rows),
+                             (root / 'evidence' / 'stdout.jsonl').read_bytes())
+            self.assertFalse((root / 'evidence' / 'stdout.held').exists())
+            self.assertTrue(jobs.launched[0].closed)

@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+import re
 
 import do_math.context_store as store
 from do_math.canonical import canonical_json
@@ -135,7 +136,9 @@ class ContextStoreTests(unittest.TestCase):
                         changed['sha256'] = '0' * 64
                     else:
                         changed['bytes'] += 1
-                    with self.subTest(key=key, fault=fault), self.assertRaises(AssertionError):
+                    reason = (f"{len(data)} != {changed['bytes']}" if fault == 'bytes' else
+                              hashlib.sha256((root / changed['path']).read_bytes()).hexdigest())
+                    with self.subTest(key=key, fault=fault), self.assertRaisesRegex(AssertionError, re.escape(reason)):
                         assert_result_documents(self, changed, root, owner='source_ref', expected=value)
             self.assertEqual(catalog['total'], len(context))
             # Existing catalog files are still compared before reuse.

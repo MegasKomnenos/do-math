@@ -83,6 +83,51 @@ class ControlShapeBoundaryTests(unittest.TestCase):
 
 
 class ControlAdmissionTests(unittest.TestCase):
+    def test_receiver_refuses_damaged_normalized_source_bytes_and_keeps_the_next_request(self):
+        from do_math.control_contracts import normalized_source
+        sim = initialized_sim()
+        identifier = 'UC-damaged-source'
+        sim.control('source', config=normalized_source('bad.txt', b'original'), request_id=identifier)
+        path = inbox(sim) / (identifier + '.json')
+        request = json.loads(path.read_bytes())
+        request['config']['bytes'] += 1
+        path.write_bytes(canonical_json(request))
+        good = sim.control('source', config=normalized_source('good.txt', b'after rejection'))
+        sim.engine._apply_inbox(pump=False)
+        rejected = sim.engine.control_result(identifier)
+        self.assertEqual((rejected['effect'], rejected['reason']),
+                         ('rejected', 'source bytes differ from their declared hash or size'))
+        self.assertEqual(sim.runtime['processed_controls'].count(identifier), 1)
+        self.assertEqual(sim.engine.control_result(good['request_id'])['effect'], 'applied')
+        source, = sim.instance['sources']
+        self.assertEqual(source['name'], 'good.txt')
+        self.assertEqual(sim.engine.store.read(source['path'], sim.engine.head), b'after rejection')
+        sim.engine._apply_inbox(pump=False)
+        self.assertEqual(sim.runtime['processed_controls'].count(identifier), 1)
+
+    def test_source_path_errors_leave_no_inbox_and_a_valid_source_still_imports(self):
+        import hashlib
+        from do_math.control_contracts import normalized_source
+        sim = initialized_sim()
+        before = deepcopy((sim.engine.head, sim.instance, sim.runtime))
+        cases = [({}, 'source requires a file path or normalized bytes'),
+                 ({'path': str(sim.root / 'absent.txt')}, 'source path must identify a readable file'),
+                 ({'path': str(sim.root)}, 'source path must identify a readable file')]
+        for config, reason in cases:
+            with self.subTest(config=config):
+                with self.assertRaisesRegex(ValueError, exactly(reason)):
+                    sim.control('source', config=config)
+                self.assertEqual(list(inbox(sim).glob('*.json')), [])
+                self.assertEqual((sim.engine.head, sim.instance, sim.runtime), before)
+        raw = b'valid source after path errors\n'
+        sent = sim.control('source', config=normalized_source('valid.txt', raw))
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(sent['request_id'])['effect'], 'applied')
+        sim.restart()
+        source, = sim.instance['sources']
+        self.assertEqual((source['sha256'], source['bytes']), (hashlib.sha256(raw).hexdigest(), len(raw)))
+        self.assertEqual(sim.engine.store.read(source['path'], sim.engine.head), raw)
+
     def test_semantic_request_rejections_leave_no_inbox_or_execution(self):
         sim = initialized_sim()
         before = deepcopy((sim.engine.head, sim.instance, sim.runtime))

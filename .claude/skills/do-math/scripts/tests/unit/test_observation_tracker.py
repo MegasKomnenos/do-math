@@ -10,7 +10,8 @@ Events arrive as the runner delivers them, one stream row at a time
 """
 from support.observation_clock import scripted_clock
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -45,6 +46,127 @@ class PublicationCandidateTests(unittest.TestCase):
             clock.advance(3)
             self.assertEqual(candidate.time_port.now(), clock.now())
             self.assertEqual(candidate.clock(), clock.monotonic())
+
+
+class TrackerRecordContractTests(unittest.TestCase):
+    def test_whole_tracker_records_pass_the_storage_checker_without_field_padding(self):
+        from support.observation_inputs import tracker_record_samples
+        with tempfile.TemporaryDirectory() as directory:
+            rows = tracker_record_samples(Path(directory))
+        contract = default_state_contract()
+        received, rejected, notices = [], [], set()
+        for branch, family, record in rows:
+            with self.subTest(branch=branch, family=family):
+                stored = {record['execution_id']: record} if family == 'observations' else record
+                validate_record(contract.family('runtime', family).checker, stored, family)
+                self.assertEqual(json.loads(canonical_json(record)), record)
+                self.assertNotIn('control_call_ids', record)
+                self.assertEqual(record['execution_id'], 'EX-sample')
+                if family == 'self_check_obligations':
+                    count = int(branch.split(',')[0].split('=')[1]) if branch.startswith('rules=') else None
+                    if count is not None:
+                        self.assertEqual([row['rule_id'] for row in record['due']],
+                                         [f'R-{index}' for index in range(count)])
+                        self.assertEqual(record['deadline_offset_ms'], 5000 if count == 2 else None)
+                        # Both rule names measure the same counter/basis; the
+                        # consumed occurrence is shared independently of IDs.
+                        self.assertEqual(list(record['consumed_boundaries'].values()), [2])
+                        if branch.endswith('open'):
+                            self.assertEqual(record['status'], 'open')
+                            self.assertNotIn('response_ref', record)
+                            self.assertNotIn('delivered_at', record)
+                            self.assertEqual('deadline_held_offset_ms' in record, count == 2)
+                        if branch.endswith('boundary') or branch.endswith('answered'):
+                            self.assertNotIn('deadline_held_offset_ms', record)
+                        if branch.endswith('acknowledged'):
+                            self.assertEqual(record['acknowledged_call_id'], 'poll-' + record['id'])
+                            self.assertEqual(record['delivered_source_offset'], 1)
+                        if branch.endswith('answered'):
+                            self.assertEqual(record['status'], 'answered')
+                            self.assertEqual(record['response_ref'], 'SR-EX-sample-1')
+                    else:
+                        if 'missed_reason' in record:
+                            self.assertEqual(record['missed_reason'], 'response_deadline_passed')
+                        else:
+                            self.assertEqual(record['due'][0]['rule_id'], '@maximum_interval')
+                            self.assertEqual(record['status'], 'open')
+                elif family == 'self_check_responses':
+                    if record['kind'] == 'self_check_received':
+                        received.append(record)
+                        response = json.loads(record['response_json'])
+                        count = int(branch.split(',')[0].split('=')[1])
+                        self.assertEqual(len(response['rule_results']), count)
+                        self.assertEqual(record['receipt_ref'], 'CT-response' if count == 2 else None)
+                        self.assertEqual(record['no_progress_count'], 0)
+                        self.assertEqual(record['next_self_check_offset_ms'], 10000 if count == 2 else None)
+                        proposal = branch.split('proposal=')[1].split(',')[0]
+                        if proposal == 'absent':
+                            self.assertNotIn('rule_update', record)
+                        else:
+                            expected = {'changed': ('observation_rules_accepted', 1),
+                                'unchanged': ('observation_rules_unchanged', 0),
+                                'rejected': ('observation_rules_rejected', 0)}[proposal]
+                            self.assertEqual((record['rule_update']['kind'], record['rule_update']['active_revision']), expected)
+                    else:
+                        rejected.append(record)
+                        self.assertEqual(record['followup']['kind'], 'operational_review_due')
+                        self.assertNotIn('rule_update', record)
+                        self.assertIn('unknown_obligation' if 'unknown obligation' in branch else 'obligation_not_open',
+                                      record['errors'])
+                elif family == 'observations':
+                    notices.add(record['kind'])
+                    if branch.startswith('deadline_only'):
+                        self.fail('deadline_only must emit no recursive review notice')
+                else:
+                    raw = record['event_json'].encode('utf-8')
+                    self.assertEqual(record['event_sha256'], hashlib.sha256(raw).hexdigest())
+                    self.assertEqual('source' in record, not branch.endswith('no source'))
+        self.assertEqual((len(received), len(rejected)), (8, 14))
+        self.assertEqual(notices, {'tool_review_due', 'periodic_review_due', 'explicit_review_due',
+                                  'self_check_missed', 'observation_unavailable', 'observation_input_rejected'})
+
+    def test_current_records_reject_obsolete_fields_closed_and_damaged_fact_content(self):
+        from support.observation_inputs import tracker_record_samples
+        with tempfile.TemporaryDirectory() as directory:
+            rows = tracker_record_samples(Path(directory))
+        contract = default_state_contract()
+        samples = {family: next(record for _, own, record in rows if own == family) for family in
+                   ('observation_facts', 'self_check_obligations', 'self_check_responses', 'observations')}
+
+        def receive(family, value):
+            registered = contract.family('runtime', family)
+            validate_record(registered.checker,
+                            {value['execution_id']: value} if family == 'observations' else value, family)
+            if registered.validator:
+                registered.validator(value)
+
+        removed = {'observation_facts': ('event', 'elapsed_ms'),
+                   'self_check_obligations': ('opened_at',),
+                   'self_check_responses': ('response', 'reason'),
+                   'observations': ('active_revision', 'active_rules_sha256', 'checkpoint_status',
+                       'evidence_refs', 'obligation_ids', 'previous_rules_sha256', 'proposal_sha256',
+                       'review_window_ms', 'rule_revision', 'rules', 'trigger')}
+        for family, record in samples.items():
+            receive(family, record)  # actual production is the normal control
+            for field in removed[family]:
+                with self.subTest(family=family, field=field), self.assertRaisesRegex(ValueError,
+                        'Additional properties.*' + field):
+                    receive(family, {**record, field: None})
+        with self.assertRaisesRegex(ValueError, "'closed' is not one of"):
+            receive('self_check_obligations', {**samples['self_check_obligations'], 'status': 'closed'})
+        fact = samples['observation_facts']
+        for field in ('event_json', 'event_sha256', 'monotonic_offset_ms'):
+            damaged = deepcopy(fact)
+            del damaged[field]
+            with self.subTest(missing=field), self.assertRaisesRegex(ValueError, field + "' is a required property"):
+                receive('observation_facts', damaged)
+        for raw, reason in (('{"type":"changed"}', 'event bytes hash mismatch'),
+                            ('{', 'Expecting property name enclosed')):
+            damaged = {**fact, 'event_json': raw}
+            if raw == '{':
+                damaged['event_sha256'] = hashlib.sha256(raw.encode()).hexdigest()
+            with self.subTest(event_json=raw), self.assertRaisesRegex(ValueError, reason):
+                receive('observation_facts', damaged)
 
 
 def profile(bindings):
@@ -87,6 +209,39 @@ class TrackerCase(unittest.TestCase):
 
 
 class TimingPhaseTests(unittest.TestCase):
+    def test_delayed_utc_rules_and_scheduled_reviews_wait_for_the_received_timestamp(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for mode in ('event_driven', 'periodic'):
+            with self.subTest(mode=mode):
+                workspace = root / mode
+                workspace.mkdir()
+                clock = FakeClock()
+                received_at = clock.now()
+                received_monotonic = clock.monotonic()
+                due_at = (clock.wall() + timedelta(seconds=2)).isoformat()
+                tracker = ObservationTracker('EX-utc', workspace, {
+                    'observation_mode': mode, 'research_self_checks': True,
+                    'observation_rules': [observation_rule('wall_time_reached', 'clock', 'UTC', due_at)],
+                    'observation_interval_seconds': 300, 'self_check_response_window_seconds': 5,
+                    'tool_review_window_seconds': 60}, time_port=clock)
+                tracker.schedule_review('RECHECK', at=due_at, reason='inspect recovery', basis_ref='DISP-1')
+                clock.advance(1000)  # Owner delay must not move this batch across either UTC boundary.
+                source = {'stream': 'stdout.jsonl', 'start_offset': 0, 'end_offset': 0,
+                          'received_at': received_at, 'received_monotonic': received_monotonic}
+                self.assertEqual(tracker.observe({'type': 'tick'}, source=source), [])
+                self.assertFalse(tracker.obligations)
+                self.assertFalse(tracker.explicit_reviews['RECHECK']['fired'])
+                rows = tracker.observe({'type': 'tick'}, source={**source, 'received_at': due_at,
+                    'received_monotonic': received_monotonic + 2})
+                self.assertEqual(kinds(rows), ['self_check_due', 'explicit_review_due'])
+                obligation = rows[0]
+                self.assertEqual(obligation['snapshot']['observed_at'], due_at)
+                self.assertEqual(obligation['opened_offset_ms'], 2000)
+                self.assertEqual(obligation['deadline_offset_ms'], 7000)
+                self.assertEqual([row['observed_at'] for row in rows], [clock.now(), clock.now()])
+                self.assertEqual(tracker.observe({'type': 'tick'}, source={**source, 'received_at': due_at,
+                    'received_monotonic': received_monotonic + 2}), [])
+
     def test_delayed_stream_rows_use_receipt_time_and_replay_cannot_start_live_timers(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         for phase in observations.OBSERVATION_PHASE_RULES:
@@ -195,16 +350,32 @@ class ReviewTests(TrackerCase):
                 self.assertFalse(any("review" in r["kind"] or r["kind"] == "self_check_due" for r in rows), rows)
 
     def test_frozen_window_ignores_worker_timeout_and_mutated_input_config(self):
-        self.config.update(tool_review_window_seconds=1, observation_mode="periodic")
-        observe(self.t, {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "C", "name": "Bash",
-            "input": {"timeout": 1, "observation_review_window_seconds": 1}}]}})
-        self.clock.value = 2
-        self.assertEqual(observe(self.t, {"type": "tick"}), [])
-        self.clock.value = 60
-        reviews = [r for r in observe(self.t, {"type": "tick"}) if r["kind"] == "tool_review_due"]
-        self.assertEqual([r["window_ms"] for r in reviews], [60000])
-        self.assert_persisted_notice(reviews[0])
-        self.assertEqual(observe(self.t, {"type": "tick"}), [])
+        for timeout in (1, 3600, None):
+            with self.subTest(timeout=timeout):
+                clock = FakeClock()
+                config = {'tool_review_window_seconds': 60, 'observation_mode': 'event_driven',
+                          'research_self_checks': False, 'observation_rules': []}
+                tracker = ObservationTracker('E', self.ws, config, time_port=clock)
+                config.update(tool_review_window_seconds=1, observation_mode='periodic')
+                tool_input = {'observation_review_window_seconds': 1}
+                if timeout is not None:
+                    tool_input['timeout'] = timeout
+                observe(tracker, {'type': 'assistant', 'message': {'content': [
+                    {'type': 'tool_use', 'id': 'C', 'name': 'Bash', 'input': tool_input}]}})
+                clock.advance(30)
+                self.assertEqual(kinds(observe(tracker, {'type': 'item.updated', 'text': 'still transmitting'})),
+                                 ['observation_fact'])
+                clock.advance(29.999)
+                self.assertEqual(observe(tracker, {'type': 'tick'}), [])
+                clock.advance(0.001)
+                reviews = observe(tracker, {'type': 'tick'})
+                self.assertEqual(kinds(reviews), ['tool_review_due'])
+                self.assertEqual((reviews[0]['call_id'], reviews[0]['window_ms'], reviews[0]['elapsed_ms']),
+                                 ('C', 60000, 60000))
+                self.assert_persisted_notice(reviews[0])
+                clock.advance(1140)  # The original 20-minute case, still inside timeout=3600.
+                self.assertEqual(observe(tracker, {'type': 'tick'}), [])
+                self.assertIn('C', tracker.pending_tools)
 
     def test_adapter_completion_matches_exact_call_and_duplicate_start_cannot_delay(self):
         observe(self.t, {"type": "item.started", "item": {"type": "command_execution", "id": "C"}})
@@ -518,6 +689,36 @@ class CheckpointSignalTests(TrackerCase):
 
 
 class DeadlineHoldTests(TrackerCase):
+    def test_buffered_tools_before_request_delivery_cannot_shorten_or_extend_its_response_window(self):
+        for already_running in (False, True):
+            with self.subTest(already_running=already_running):
+                clock = FakeClock()
+                tracker = ObservationTracker('E', self.ws, self.config, time_port=clock)
+                origin = clock.monotonic()
+                origin_wall = clock.wall()
+                clock.advance(11)
+                def source(offset):
+                    return {'stream': 'stdout.jsonl', 'start_offset': int(offset), 'end_offset': int(offset) + 1,
+                            'received_at': (origin_wall + timedelta(seconds=offset)).isoformat(),
+                            'received_monotonic': origin + offset}
+                start = {'type': 'item.started', 'item': {'type': 'command_execution', 'id': 'C'}}
+                if already_running:
+                    tracker.observe(start, source=source(0), evaluate=False)
+                write_checkpoint(self.ws, counters={'attempts': 2})
+                rows = tracker.observe({'type': 'tick'}, source=source(1))
+                obligation = next(row for row in rows if row['kind'] == 'self_check_due')
+                tracker.issue_self_check(obligation['id'])
+                if not already_running:
+                    tracker.observe(start, source=source(2), evaluate=False)
+                tracker.observe({'type': 'item.completed', 'item': {'type': 'command_execution', 'id': 'C'}},
+                                source=source(3), evaluate=False)
+                held = tracker.obligations[obligation['id']]
+                self.assertNotIn('deadline_held_offset_ms', held)
+                self.assertEqual(held['deadline_offset_ms'], 16000)
+                result = tracker.record_self_check_response(self_check_response(obligation),
+                                                            available_evidence_refs={'EV-1'})
+                self.assertEqual(result['kind'], 'self_check_received', result.get('errors'))
+
     def test_obligation_opened_during_a_research_call_is_held_until_the_call_ends(self):
         observe(self.t, {"type": "item.started", "item": {"type": "command_execution", "id": "C"}})
         obligation = self.due()

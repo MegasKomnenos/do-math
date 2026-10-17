@@ -15,7 +15,7 @@ try:  # This module is also the direct ``python codex_worker.py`` Job root.
     from do_math.values import strict_json_loads
     from do_math.cli_worker import allowed_environment, argv_inputs, run_cli
     from do_math.worker_request import check_codex_request, codex_argv
-except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
+except ModuleNotFoundError:  # pragma: no cover - T4 boundary.test_provider_worker_roots owns bare imports in LocalCLIAdapter's direct Python root.
     from values import strict_json_loads
     from cli_worker import allowed_environment, argv_inputs, run_cli
     from worker_request import check_codex_request, codex_argv
@@ -49,5 +49,5 @@ def main(argv: list[str] | None = None) -> int:
     return run(Path(arguments[0]))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - T4 boundary.test_provider_worker_roots owns the direct root; callable main remains in T3.
     raise SystemExit(main())

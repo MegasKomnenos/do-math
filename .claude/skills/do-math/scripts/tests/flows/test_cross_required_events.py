@@ -1,6 +1,6 @@
 """7-A/2-D finite long exploration and explicit alphabet reachability witnesses.
 
-The twelve LONG alphabets already live in the three current role-family modules; these are the remaining seeds.
+Role-family modules own LONG alphabets, including the public delegation prefix; these are fixed reachability seeds.
 LONG stays six examples of twenty events; per-event detection is at most twelve
 owner passes and each public start producer at most sixty. No sleeps/retries.
 """
@@ -23,6 +23,47 @@ setUpModule = warm_template
 
 
 class RequiredEventSeedTests(unittest.TestCase):
+    def assert_delegation_seed(self, first, second):
+        from do_math.review_cycle import slot_key
+        from support.cross_research_machine import DelegationAlphabetMachine
+        machine = DelegationAlphabetMachine()
+        self.addCleanup(machine.teardown)
+        sim = machine.sim
+        app, = sim.runtime['delegation_applications'].values()
+        case = deepcopy(app['basis']['case'])
+        self.assertTrue(machine.ready('intent_interpretation', 'delegation_interpret'))
+        machine.delegation_decision(first)
+        machine.contracts_after_every_event()
+        self.assertTrue(machine.ready('intent_interpretation', 'delegation_check'))
+        machine.delegation_decision(second)
+        machine.contracts_after_every_event()
+        result = deepcopy(sim.runtime['delegation_applications'][app['id']])
+        self.assertEqual([result['judgments'][stage]['output']['decision'] for stage in ('interpret', 'check')],
+                         [first, second])
+        cycle = sim.runtime['review_cycles'][case['effect']['review_cycle_id']]
+        if first == second == 'within_scope':
+            self.assertEqual(result['application']['effect'], case['effect'])
+            self.assertEqual(cycle['replacement_actions'][slot_key(case['effect'])]['case']['application_id'], app['id'])
+        else:
+            self.assertNotIn('application', result)
+            self.assertNotIn(slot_key(case['effect']), cycle.get('replacement_actions', {}))
+            question, = [q for q in sim.runtime['question_links'] if q['origin_field'] == 'delegation_judgment']
+            self.assertEqual((question['owner'], question['target_ids'], question['status']),
+                             ('user', [case['target_id']], 'open'))
+            self.assertEqual(question['origin_execution_id'], result['judgments']['check']['execution_id'])
+        machine.restart()
+        machine.contracts_after_every_event()
+        self.assertEqual(sim.runtime['delegation_applications'][app['id']], result)
+
+    def test_delegation_within_scope_seed(self):
+        self.assert_delegation_seed('within_scope', 'within_scope')
+
+    def test_delegation_outside_scope_seed(self):
+        self.assert_delegation_seed('outside_scope', 'within_scope')
+
+    def test_delegation_unresolved_seed(self):
+        self.assert_delegation_seed('within_scope', 'unresolved')
+
     def test_closed_initialization_absorbs_real_restart_and_owner_events(self):
         machine = InitialDiagnosisAlphabetMachine()
         self.addCleanup(machine.teardown)
@@ -130,8 +171,8 @@ class RequiredEventSeedTests(unittest.TestCase):
         self.assertIsNotNone(action)
         before = deepcopy(sim.instance['decisions'])
         for change, reason in (
-            ({'kind': 'review_replacement', 'action': action},
-             'unsupported governance decision: review_replacement'),
+            ({'kind': 'review_replacement', 'allowed_action': action},
+             'review replacement decision is not authorized: not_waiting_for_replacement'),
             ({'kind': 'delegation', 'delegation': {
                 'id': 'DG-cross-missing-original', 'status': 'active',
                 'decision_kind': 'review_replacement', 'original_decision_id': 'DC-cross-not-produced',

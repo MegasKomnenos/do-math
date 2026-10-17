@@ -81,18 +81,37 @@ class RawIngressTests(unittest.TestCase):
             cli = ScriptedCLI(stdout=stream, final=final)
             jobs = ProviderJobs(cli, clock=self.sim.clock)
             before = set(self.sim.runtime['observation_facts'])
+            deliveries = []
+
+            def deliver(incoming):
+                deliveries.append(incoming)
+                self.sim.engine._observe_running(eid, tracker, incoming)
+
             try:
                 result = model_runner(workspace.parent, jobs, self.sim.clock).run(prompt='원시 입력 계약 검산',
                     output_schema={}, workspace=workspace, evidence_dir=workspace.parent / 'raw-evidence',
                     model='claude:claude-sonnet-5' if provider == 'claude' else 'test-model',
                     effort='high', timeout_seconds=10,
-                    on_observation=lambda incoming: self.sim.engine._observe_running(eid, tracker, incoming))
+                    on_observation=deliver)
                 added = [json.loads(value['event_json']) for key, value in self.sim.runtime['observation_facts'].items() if key not in before]
                 self.assertEqual([event for event in added if event == good], [good])
                 rejected = [event for event in added if isinstance(event, dict) and event.get('kind') == 'observation_input_rejected']
                 self.assertEqual(len(rejected), 1)
                 self.assertEqual(rejected[0]['next_owner'], 'adapter')
-                self.assertTrue(rejected[0]['reason'])
+                self.assertEqual(rejected[0]['reason'], 'provider observation row is not a strict JSON object')
+                mode = label.split(':', 1)[0]
+                if mode == 'deadline_only':
+                    self.assertNotIn('followup', rejected[0])
+                else:
+                    self.assertEqual(rejected[0]['followup'], {'kind': 'operational_review_due',
+                        'trigger': 'observation_error', 'next_owner': 'operational_review'})
+                decoded = [event for incoming in deliveries for event in incoming.events]
+                self.assertEqual([event for event in decoded if event.get('type') == 'unparsed_observation'],
+                                 [{'type': 'unparsed_observation', 'bytes': len(raw.rstrip(b'\n'))}])
+                self.assertEqual(b''.join(row for incoming in deliveries for row in incoming.rows), stream)
+                execution = self.sim.runtime['executions'][eid]
+                self.assertEqual(execution['observation_stream']['end_offset'], len(stream))
+                self.assertEqual(len(execution['observation_receipts']), len(decoded))
                 self.assertEqual(result['status'], 'failed')  # strict collector는 같은 오형태 원 바이트를 반려한다.
                 self.assertEqual(result['error_kind'], 'execution_failure')
                 # Claude stops parsing at every invalid row; Codex stops at
@@ -112,6 +131,14 @@ class RawIngressTests(unittest.TestCase):
                 self.assertIsNone(result['output'])
                 self.assertEqual(self.sim.engine.store.load(self.sim.engine.head)[2], self.sim.runtime)
                 state, head = deepcopy(self.sim.runtime), self.sim.engine.head
+                # Redelivery uses the actual runner batches, including rejected rows.
+                # A fresh tracker must also consult the durable receipt identities.
+                fresh = ObservationTracker(eid, workspace,
+                    {'observation_mode': mode, 'research_self_checks': False}, time_port=self.sim.clock)
+                for incoming in deliveries:
+                    self.sim.engine._observe_running(eid, fresh, incoming)
+                self.assertEqual(self.sim.runtime, state)
+                self.assertEqual(self.sim.engine.head, head)
                 self.sim.engine._observe_running(eid, tracker, batch(self.sim, [], workspace.parent / 'raw-evidence/stdout.jsonl',
                     start=len(stream), terminated=True))
                 self.assertEqual(self.sim.runtime, state)

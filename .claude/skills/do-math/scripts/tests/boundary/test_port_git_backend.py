@@ -8,6 +8,9 @@ from do_math.wiring import real_ports
 
 
 class GitProcessBackendContract(GitBackendContract, unittest.TestCase):
+    broken_ref_message = ('git rev-parse --verify --quiet {ref} failed: '
+                          'warning: ignoring broken ref {ref}')
+
     def make(self):
         from support.entry import entry
         _entry = entry()

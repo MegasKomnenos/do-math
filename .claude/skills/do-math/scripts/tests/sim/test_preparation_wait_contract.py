@@ -9,61 +9,15 @@ import unittest
 
 from do_math import execution_profiles
 from do_math.model_policy import assessment_basis
-from do_math.observations import OPERATORS
 from do_math.wait_rules import PREPARATION_WAIT_RULES
 from support.engine_lifecycle import _ended_execution, applied
-from support.observation_inputs import observation_rule, prepared_rule_conditions
-from support.planning_contract_inputs import prepared_sim, only_task, warm_prepared
+from support.observation_inputs import prepared_rule_conditions
+from support.planning_contract_inputs import warm_prepared
 from support.planning_owner import enqueue
-from support.academic_scenes import rule_prepared, ended
-from support.default_responder import rating
-from support.scheduling_parallel import ready_work_sim
+from support.storage_action_pairs import preparation_case
 from support.wait_reporting import assert_wait_report
 
 setUpModule = warm_prepared
-
-
-def preparation_case(kind):
-    if kind == 'observation_rules':
-        sim = ready_work_sim(1)
-        action = deepcopy(sim.runtime['queue'][0])
-        rule = observation_rule('iteration_gte', OPERATORS['iteration_gte']['subject_kind'], '$execution')
-        rule['subject']['id'] = 'EX-previous'
-        sim.runtime.setdefault('task_observation_rules', {})[action['target']] = [rule]
-        sim.engine._save()
-        sim.engine._prepare_call(action)
-        return sim, action, None
-    if kind == 'observation_configuration':
-        sim = prepared_sim()
-        normal = deepcopy(sim.instance['config'])
-        invalid = deepcopy(normal)
-        del invalid['tool_review_window_seconds']
-        execution_profiles.apply_editions(sim.instance, execution_profiles.build_profiles(invalid, host=sim.ports.host))
-        action = enqueue(sim.engine, 'task_contract_review', only_task(sim)['id'])
-        sim.engine._prepare_call(action)
-        return sim, action, normal
-    sim = rule_prepared() if kind == 'observation_rule_input' else prepared_sim()
-    engine = sim.engine
-    if kind == 'observation_rule_input':
-        for task in sim.runtime['tasks'].values():
-            task['model_assessment'] = {key: value for key, value in rating(task_id=task['id']).items() if key != 'task_id'}
-        sim.runtime['queue'] = []
-        engine._ensure_model_assessments()
-        action = next(row for row in sim.runtime['queue'] if row.get('observation_rule_targets'))
-        extensions = {'observation_rule_deferrals': [{'task_id': identifier, 'reason': 'Missing source',
-            'missing_inputs': ['user_input'], 'next_owner': 'user'}
-            for identifier in action['observation_rule_targets']]}
-    else:
-        task = only_task(sim)
-        task.pop('model_assessment', None)
-        action = enqueue(engine, 'research_preparation', assessment_targets={task['id']: assessment_basis(task)})
-        extensions = {'model_assessment_deferrals': [{'task_id': task['id'], 'reason': 'Missing assessment input'}]}
-    ended(engine, 'EX-prep-deferred', 'research_preparation')
-    engine.runtime['executions']['EX-prep-deferred'].update(action=action, extensions=extensions)
-    engine._apply_model_metadata(action, {'candidates': []}, 'EX-prep-deferred')
-    engine._finish_assessment_preparation(action, 'EX-prep-deferred')
-    engine._remove_action(action)
-    return sim, action, None
 
 
 class PreparationWaitContractTests(unittest.TestCase):

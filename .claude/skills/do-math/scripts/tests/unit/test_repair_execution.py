@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from do_math import repair_execution
+from do_math import activities, repair_execution
 from do_math.repair_execution import installation_failure, pending_installation_repair, resume_installation_repair
 from do_math.supervision import collect_repair_verification, start_guard
 from support.record_builders import installation_repair_state
@@ -14,6 +14,35 @@ REFUSED = 'installation repair requires a preserved accepted diagnosis of an end
 
 
 class InstallationIdentityTests(unittest.TestCase):
+    def test_unavailable_or_moving_source_head_never_certifies_an_installed_commit(self):
+        from support.operator_finish_ports import SourceGit
+        from do_math.repair_execution import installation_evidence
+        from do_math.canonical import exact_content_hash
+        import hashlib
+        class MovingHead(SourceGit):
+            def project_snapshot(self, project_root, repository_root, *, should_stop=None):
+                self.source_commit = 'c' * 40
+                return super().project_snapshot(project_root, repository_root, should_stop=should_stop)
+        class UnreadableHead(SourceGit):
+            def object_info(self, repository, specs):
+                raise OSError('source is offline')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            raw = b'installed document\n'
+            (root / 'SKILL.md').write_bytes(raw)
+            version = exact_content_hash({'SKILL.md': hashlib.sha256(raw).hexdigest()})
+            for backend, reason in ((SourceGit(root, commit=None), 'source HEAD is not an available commit'),
+                    (MovingHead(root), 'source HEAD changed during observation'),
+                    (UnreadableHead(root), 'OSError: source is offline')):
+                with self.subTest(reason=reason):
+                    found = installation_evidence(root, backend=backend)
+                    self.assertEqual(found['source_status'], 'unavailable')
+                    self.assertIsNone(found['source_commit'])
+                    self.assertEqual(found['source_reason'], reason)
+                    self.assertEqual(found['installation_version'], version)
+                    self.assertEqual((root / 'SKILL.md').read_bytes(), raw)
+                    self.assertEqual(backend.objects, {})
+
     def test_identity_covers_the_installed_skill_but_not_its_tests(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -57,6 +86,10 @@ class InstallationRepairTests(unittest.TestCase):
 
     def test_installation_repair_continues_latest_rejected_bundles_without_resetting_count(self):
         runtime, record = installation_repair_state()
+        previous = deepcopy(runtime['waiting_actions']['AC-work']['action'])
+        target = deepcopy(runtime['executions']['EX-failed'])
+        waiting = deepcopy(runtime['activities']['AY-work']['waiting'])
+        self.assertIsNone(activities.successor_state(runtime, 'EX-failed'))
         action = resume_installation_repair(runtime, record, repaired_by='EX-repair', at='2026-09-22T01:00:00Z')
         self.assertEqual(action['repair']['execution_id'], 'EX-failed')
         self.assertEqual(action['repair_attempt'], 2)
@@ -64,7 +97,20 @@ class InstallationRepairTests(unittest.TestCase):
         self.assertEqual(runtime['waiting_actions'], {})
         self.assertEqual(record['status'], 'applied')
         self.assertEqual(record['result']['installation_repair']['continuation_action_id'], action['id'])
-        self.assertEqual(runtime['activities']['AY-work']['status'], 'waiting')
+        self.assertEqual(action, {**previous, 'continuation_of': 'EX-failed',
+                                  'owner_activity_id': target['owner_activity_id'], 'context_origin': []})
+        activity = runtime['activities']['AY-work']
+        self.assertEqual(activity['status'], 'ready')
+        self.assertNotIn('waiting', activity)
+        self.assertEqual(activity['resumed_at'], '2026-09-22T01:00:00Z')
+        self.assertEqual(activity['followups'], [{'action_id': 'AC-work', 'execution_id': 'EX-failed',
+            'reason': 'verified_installation_repair:OD-repair', 'next_owner': 'engine'}])
+        self.assertEqual(waiting['condition'], {'error': 'receiver'})
+        self.assertEqual(runtime['executions']['EX-failed'], target)
+        self.assertEqual(activities.successor_state(runtime, 'EX-failed'), {
+            'state': 'in_progress', 'execution_ids': [], 'live_execution_ids': [], 'action_ids': ['AC-work']})
+        self.assertEqual(record['result']['installation_repair']['status'], 'repaired')
+        self.assertEqual(record['result']['installation_repair']['repaired_by'], 'EX-repair')
         self.assertEqual(runtime['queue'], [action])
         self.assertEqual(runtime['status'], 'ready')
 
@@ -93,11 +139,15 @@ class InstallationTargetTests(unittest.TestCase):
     def test_a_repair_without_a_held_request_continues_the_failed_action_itself(self):
         runtime, record = installation_repair_state()
         del runtime['waiting_actions']['AC-work']
+        owner = runtime['activities']['AY-work']
+        activities.resume_activity(runtime, owner['id'], condition=owner['waiting']['condition'],
+                                   at='2026-09-22T00:30:00Z')
         action = resume_installation_repair(runtime, record, repaired_by='EX-repair', at='2026-09-22T01:00:00Z')
         self.assertEqual((action['continuation_of'], action['role']), ('EX-failed', 'research_plan'))
         self.assertNotIn('repair_attempt', action)
         self.assertEqual(runtime['queue'], [action])
         self.assertEqual(record['result']['installation_repair']['continuation_action_id'], action['id'])
+        self.assertEqual((owner['status'], owner['resumed_at']), ('ready', '2026-09-22T00:30:00Z'))
 
     def test_a_repair_already_continued_by_a_successor_settles_on_it(self):
         runtime, record = installation_repair_state()
@@ -309,6 +359,63 @@ class RepairVerificationTests(unittest.TestCase):
             rows = collect_repair_verification({'repair_outcome': 'repaired', 'verification_evidence': ['regression.txt']},
                                                workspace)
             self.assertEqual([(row['path'], row['bytes']) for row in rows], [('regression.txt', 25)])
+
+
+class InitialRetryContinuationTests(unittest.TestCase):
+    def test_clock_failure_keeps_a_remaining_wait_but_does_not_recreate_a_continued_one(self):
+        """T3 about 3.5 s: real adopted initial state and diagnosis; only the clock fails around continuation."""
+        from do_math.execution_lifecycle import transition_execution
+        from support.scheduling_clock import with_clock
+        from support.scheduling_initial import adopted_sim, initial_failure
+
+        for after_removal in (False, True):
+            with self.subTest(after_removal=after_removal):
+                sim = adopted_sim()
+                action, _ = initial_failure(sim)
+                engine = sim.engine
+                engine.route_failed_action(action, 'EX-bad', reason='Diagnose initial failure')
+                diagnostic = engine.runtime['queue'].pop()
+                reviewer = engine._register_execution(diagnostic,
+                    {'id': 'EX-retry-diagnosis', 'role': 'maintenance', 'status': 'running'})
+                self.assertIsNotNone(reviewer)
+                engine.apply_initial_diagnosis(diagnostic, {'initial_submission_diagnosis': {
+                    'decision': 'retry', 'guidance': 'Continue the unchanged initial obligation'}}, reviewer['id'])
+                reviewer['submission_receipt'] = {'state': 'accepted', 'evidence_ref': 'synthetic:diagnosis'}
+                transition_execution(reviewer, 'stopping', at=sim.clock.now())
+                transition_execution(reviewer, 'ended', at=sim.clock.now(), outcome='output_accepted')
+                engine._save()
+                identifier = action['id']
+
+                class FailingClock:
+                    def __init__(self):
+                        self.errors = []
+                    def now(self):
+                        removed = identifier not in engine.runtime['waiting_actions']
+                        if not self.errors and removed == after_removal:
+                            self.errors.append('clock unavailable during initial continuation')
+                            raise OSError(self.errors[-1])
+                        return sim.clock.now()
+                    def __getattr__(self, name):
+                        return getattr(sim.clock, name)
+
+                clock = FailingClock()
+                engine.ports = with_clock(sim, clock)
+                engine.continue_initial_retries()
+                self.assertEqual(clock.errors, ['clock unavailable during initial continuation'])
+                if after_removal:
+                    self.assertNotIn(identifier, engine.runtime['waiting_actions'])
+                    retry, = engine.runtime['queue']
+                    self.assertEqual((retry['id'], retry['continuation_of'], retry['diagnosis_attempt']),
+                                     (identifier, 'EX-bad', 1))
+                else:
+                    wait = engine.runtime['waiting_actions'][identifier]
+                    self.assertEqual((wait['diagnosis']['retry_error'], wait['reason'], wait['next_owner']),
+                                     (clock.errors[0], clock.errors[0], 'maintenance'))
+                    self.assertEqual(engine.runtime['queue'], [])
+                self.assertEqual(engine.store.load(engine.head)[2], engine.runtime)
+                before = deepcopy(engine.runtime)
+                engine.continue_initial_retries()
+                self.assertEqual(engine.runtime, before)
 
 
 if __name__ == '__main__':

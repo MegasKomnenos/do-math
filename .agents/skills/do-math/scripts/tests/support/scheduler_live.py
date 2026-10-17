@@ -16,6 +16,7 @@ import tempfile
 import threading
 
 from do_math.file_io import read_bytes_shared, sha256_file
+from do_math.repair_execution import installation_evidence
 from do_math.scheduled_operator import cancel_wake, hold, schedule
 from do_math.supervision import task_names
 from do_math.wiring import real_ports
@@ -225,6 +226,11 @@ def run_scheduler_smoke():
         manifest = json.loads(read_bytes_shared(manifests[0]))
         frozen_bootstrap = manifests[0].parent / 'scripts/operator_bootstrap.py'
         report['manifest'] = manifest
+        report['checks']['manifest_installation_root'] = manifest['installation_root'] == str(scripts.parent)
+        # Observe the original installation independently of the frozen child.
+        expected_installation = installation_evidence(scripts.parent, backend=ports.git_backend)
+        report['expected_installation'] = expected_installation
+        report['checks']['installation_bytes_available'] = expected_installation['installation_version'] is not None
         report['checks']['snapshot_files'] = all(sha256_file(manifests[0].parent / p) == digest
                                                 and sha256_file(scripts.parent / p) == digest
                                                 for p, digest in manifest['files'].items())
@@ -235,11 +241,29 @@ def run_scheduler_smoke():
             and freeze['manifest'] == str(manifests[0]) and freeze['snapshot_sha256'] == manifest['snapshot_sha256'])
         # Actual GUI executable stdout on the verified held path, independently of OS scheduling.
         report['held_outputs'] = {}
+        report['held_startups'] = {}
         for mode in ('check', 'run-engine', 'wake'):
             result = capture('held-' + mode, [str(pythonw), str(frozen_bootstrap), mode,
                 '--repository', str(repository), '--instance', instance, '--workspace', str(workspace)])
             report['held_outputs'][mode] = result
-        report['checks']['held_bootstrap_json'] = all(r == {'outcome': 'held'} for r in report['held_outputs'].values())
+            published = read_bytes_shared(workspace / 'operator/startup.json')
+            (root / ('held-' + mode + '.startup.json')).write_bytes(published)
+            startup = json.loads(published)
+            report['held_startups'][mode] = startup
+            command = report['commands'][-1]
+            observed_at = datetime.fromisoformat(startup['observed_at'])
+            report['checks']['held_' + mode + '_startup'] = (
+                result == {'outcome': 'held', 'startup': startup}
+                and set(startup) == {'bootstrap', 'installation', 'runtime_root', 'observed_at'}
+                and startup['bootstrap'] == {'mode': 'frozen', 'snapshot_sha256': manifest['snapshot_sha256'],
+                    'installation_root': str(scripts.parent), 'comparison': 'match', 'differences': []}
+                and startup['installation'] == expected_installation
+                and startup['runtime_root'] == str(manifests[0].parent)
+                and observed_at.utcoffset() == timedelta(0)
+                and datetime.fromisoformat(command['started_at']) <= observed_at
+                    <= datetime.fromisoformat(command['ended_at']))
+        report['checks']['held_bootstrap_json'] = all(
+            report['checks']['held_' + mode + '_startup'] for mode in report['held_outputs'])
         registered = inspect('installed')
         report['checks']['install_ownership'] = all(registered['tasks'][r] is not None
                                                    and owned(r, registered['tasks'][r]) for r in ('operator', 'engine'))

@@ -246,9 +246,9 @@ def assert_review_documents(case, value, *, owner, cycle=None, action=None,
                     'pending_findings', 'answer_requests'):
             case.assertEqual(value.get(key), expected[key], key)
         for key in ('identity_basis', 'policy_ref'):
-            case.assertEqual(key in value, key in expected)
+            case.assertEqual(key in value, key in expected, f'role_review.{key} presence')
             if key in expected:
-                case.assertEqual(value[key], expected[key])
+                case.assertEqual(value[key], expected[key], f'role_review.{key}')
         return
     if owner == 'pending_findings':
         case.assertTrue(value, 'a populated open finding must establish ref fields')

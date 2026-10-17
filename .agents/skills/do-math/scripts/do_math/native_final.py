@@ -24,7 +24,13 @@ def verified_native_final(result, execution, context):
     This consumes adapter evidence after the real local termination barrier.
     A completed runner status or an arbitrary final file is not sufficient.
     """
-    if result.get('status') != 'completed':
+    # Central reception can fail after a normal provider return. The original
+    # status records that boundary; all provider evidence is still checked below.
+    central_failure = (result.get('status') == 'failed'
+        and result.get('error_kind') == 'execution_failure'
+        and result.get('collection') == 'provider_evidence_only'
+        and result.get('provider_result_status') == 'completed')
+    if result.get('status') != 'completed' and not central_failure:
         raise ValueError('native execution did not complete normally')
     try:
         evidence = result['execution']; collected = evidence['collect']; started = evidence['started']

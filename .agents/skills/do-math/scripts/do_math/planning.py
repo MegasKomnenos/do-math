@@ -582,15 +582,14 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
             if record is None: basis.append({"absencequery": {"op": op, "record_id": node.get("record_id")}}); return "not_ready"
             basis.append(_basis(record[1]))
             if op == "record_lifecycle_is": return "ready" if record[1].get("lifecycle", record[1].get("status")) == node.get("value") else "not_ready"
-            if op == "record_field_equals":
-                if record[0] == 'knowledge' and node['pointer'] == '/usable_as_k':
-                    from .knowledge import assess_use
-                    actual = assess_use(record[1], instance)['valid']
-                else:
-                    actual = _pointer(record[1], node["pointer"])
-                expected = node.get("value")
-                return "ready" if type(actual) is type(expected) and actual==expected else "not_ready"
-            raise ValueError(f"unsupported condition op: {op}")
+            # The grammar check and preceding cases leave record_field_equals.
+            if record[0] == 'knowledge' and node['pointer'] == '/usable_as_k':
+                from .knowledge import assess_use
+                actual = assess_use(record[1], instance)['valid']
+            else:
+                actual = _pointer(record[1], node["pointer"])
+            expected = node.get("value")
+            return "ready" if type(actual) is type(expected) and actual==expected else "not_ready"
         except (KeyError, TypeError, ValueError, OSError) as error:
             errors.append(str(error)); return "evaluation_error"
     state = visit(condition)

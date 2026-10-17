@@ -22,6 +22,7 @@ class OwnerProbe:
         self.limits = passes, observations, seconds
         self.passes = self.observations = 0
         self.collections, self.pumps, self.failures = [], [], []
+        self.calls = None
         self.pass_batches = []
         self.control_passes = []
         self._pass_entry = None
@@ -58,6 +59,7 @@ class OwnerProbe:
             if not self.active:
                 return
             if name == 'pass' and obj is self.sim.engine and arguments['clock'] is False:
+                self.calls = obj._calls
                 if self._pass_entry is not None:
                     before, queued = self._pass_entry
                     self.pass_batches.append((self.passes, queued, self.observations - before))
@@ -110,20 +112,49 @@ class OwnerProbe:
 
 
 
+def assert_owned(test, runtime, execution_id):
+    """A real, unique activity assignment survives even an unconfirmed return."""
+    row = runtime['executions'][execution_id]
+    owner_id = row['owner_activity_id']
+    owner = runtime['activities'][owner_id]
+    test.assertEqual(owner['id'], owner_id)
+    test.assertEqual(owner['assigned_execution_ids'].count(execution_id), 1)
+    test.assertEqual([aid for aid, activity in runtime['activities'].items()
+                      if execution_id in activity['assigned_execution_ids']], [owner_id])
+    if row['status'] != 'ended':
+        test.assertEqual(owner['status'], 'working')
+    return owner
+
+
+def assert_drained(test, sim, probe):
+    """Inspect the retained collector at public return, after any intermediate yields."""
+    test.assertEqual(probe.failures, [])
+    test.assertIsNotNone(probe.calls)
+    test.assertEqual(probe.calls.futures, {})
+    test.assertTrue(probe.calls.events.empty())
+    test.assertTrue(probe.calls.stopping)
+    test.assertFalse(any(thread.is_alive() for thread in probe.calls.threads))
+    test.assertEqual(sim.engine._live_execution_ids, set())
+    test.assertIsNone(sim.engine._calls)
+    test.assertFalse(sim.engine._executor_running)
+
+
 def assert_settled(test, sim, before, probe):
     """future 수 외에 실제 저장·종료 장벽·예약·완료 증거를 전건 확인한다."""
     test.assertEqual(probe.failures, [])
     test.assertGreater(probe.passes, 0)
-    test.assertEqual([pending for _, _, pending, _ in probe.collections if pending], [])
+    assert_drained(test, sim, probe)
     added = set(sim.runtime['executions']) - before
     test.assertTrue(added)
     _, _, stored = sim.engine.store.load(sim.engine.head)
     test.assertEqual(stored['executions'], sim.runtime['executions'])
+    test.assertEqual(stored['activities'], sim.runtime['activities'])
+    test.assertEqual(stored['reservations'], sim.runtime['reservations'])
     for eid in sorted(added):
         row = stored['executions'][eid]
         test.assertEqual(row['status'], 'ended', eid)
         test.assertEqual(row['capacity']['local_termination'], 'confirmed', eid)
-        test.assertTrue(row['owner_activity_id'])
+        assert_owned(test, stored, eid)
         test.assertEqual(row['launch_ticket']['execution_id'], eid)
         for rid in row['capacity']['reservation_ids']:
             reservation = stored['reservations'][rid]

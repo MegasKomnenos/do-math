@@ -1,9 +1,10 @@
 """3-C current canonical rules and their complete direct call-site population.
 
 Finite behavioral spaces are checked in their existing domain test modules.
-The table covers ten canonical original pairs plus the separate input-supply
-rule. Environment rejection has a distinct producer/consumer check and real
-domain differential test. Neither proves every future semantic copy absent.
+The thirteen rows cover ten original pairs (observation has two rows), plus
+the separate input-supply and preparation-basis rules. The eleventh original
+pair, C-15, has a distinct producer/consumer check and real domain differential
+test. Neither proves every future semantic copy absent.
 """
 import ast
 from pathlib import Path

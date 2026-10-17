@@ -20,6 +20,8 @@ from support.fakes.git_backend import make_fake, make_repository, ProjectWorktre
 from support.port_contracts.git_backend import GitBackendContract
 
 class FakeGitBackendContract(GitBackendContract, unittest.TestCase):
+    broken_ref_message = 'broken reference: {ref}'
+
     def make(self):
         return make_fake()
 

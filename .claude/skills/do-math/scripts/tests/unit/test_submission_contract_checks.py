@@ -59,6 +59,12 @@ class ContractCheckTests(unittest.TestCase):
                 self.assertEqual(self.rules(issues), [("contract_check.coverage",
                     "contract self-check coverage: every candidate needs exactly one entry; missing []")])
 
+    def test_duplicate_candidate_titles_are_rejected_before_internal_application(self):
+        from copy import deepcopy
+        issues = json.loads(self.issues(contract_check(), candidates=[self.item, deepcopy(self.item)]))
+        self.assertIn(('output/candidates', 'titles must be unique within one output'),
+                      [(row['path'], row['message']) for row in issues])
+
     def test_self_check_declares_only_sibling_boundaries(self):
         # A symbol used with two meanings and a dependency named by no outcome are
         # judged by the author and the contract review; no declaration is compared.

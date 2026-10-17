@@ -48,6 +48,56 @@ def role_profile(instance, role):
 
 
 class RoleInputTests(unittest.TestCase):
+    def test_produced_display_copies_keep_their_optional_classification_when_refitted(self):
+        """P2/B-32 uses the current producer's mandatory population, including its profile.
+
+        The original two 800-byte copies have 1200 bytes beyond the actual
+        mandatory context. A full current input also contains the immutable
+        profile and snapshot; a flat 1200-byte whole-input limit cannot discard
+        those required values to satisfy the historical four-key example.
+        """
+        from support.entry import entry
+        from do_math.canonical import canonical_json
+        from do_math.context_store import read_source, role_direct_keys
+        instance, runtime = surface_state()
+        context = {'action': {'id': 'AC-display', 'role': 'maintenance'},
+                   'goal': 'g' * 800, 'policies': 'p' * 800}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            produced = prepare_role_input(context, instance=instance, runtime=runtime, role='maintenance',
+                profile=role_profile(instance, 'maintenance'), snapshot='a' * 40,
+                workspace=root / 'produced', activity_id='AC-1', clock=entry().ports.clock)
+            self.assertIsNone(produced['overflow'])
+            value = produced['validation_context']
+            required = produced['manifest']['required_direct_keys']
+            self.assertEqual(required, role_direct_keys('maintenance', value))
+            self.assertEqual(set(required), {'snapshot', 'action', 'governance', 'execution_profile'})
+            self.assertFalse({'goal', 'policies'} & set(required))
+            for key in ('goal', 'policies'):
+                self.assertEqual(value[key], context[key])
+                self.assertIn(key, {row['key'] for row in produced['manifest']['references']})
+            mandatory = {key: value[key] for key in required}
+            budget = len(canonical_json(mandatory)) + 1200
+            fitted = fit_context(value, max_bytes=budget, workspace=root / 'fitted',
+                                 mandatory_keys=required, role='maintenance')
+            self.assertIsNone(fitted['overflow'])
+            self.assertLessEqual(fitted['actual_bytes'], budget)
+            self.assertTrue({'goal', 'policies'} & {row['key'] for row in fitted['reductions']})
+            for key in required:
+                self.assertEqual(fitted['context'][key], value[key])
+            for row in fitted['reductions']:
+                result = read_source(root / 'fitted', row['source_ref'], limit=row['source_ref']['bytes'])
+                self.assertEqual((result['status'], result['truncated']), ('ok', False))
+                self.assertEqual(json.loads(result['bytes']), value[row['key']])
+            # An explicit requirement remains a requirement, even for a display key.
+            required_goal = [*required, 'goal']
+            too_small = len(canonical_json({key: value[key] for key in required_goal})) - 1
+            refused = fit_context(value, max_bytes=too_small, workspace=root / 'required-goal',
+                                  mandatory_keys=required_goal, role='maintenance')
+            self.assertEqual(refused['overflow']['reason'], 'mandatory_context_exceeds_limit')
+            self.assertEqual(refused['context']['goal'], context['goal'])
+            self.assertEqual(refused['overflow']['required_direct_keys'], required_goal)
+
     def test_optional_display_copies_are_referenced_instead_of_reclassified_as_mandatory(self):
         """Original 3-C/B-32 counterexample, across every current role."""
         from do_math import contracts, governance

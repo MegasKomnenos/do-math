@@ -310,12 +310,8 @@ def continue_repetition(instance, runtime, change, decision, *, clock):
         action['reason'] = 'User continued the held empty preparation'
         action['receipt_refs'] = [hold['event_ref']]
         runtime.setdefault('queue', []).append(action)
-    wait = runtime.get('waiting_actions', {}).get(action['id'])
-    # Release only repetition waits; input, authority and publication waits retain their owners.
-    if wait and wait.get('kind') == 'repetition_hold':
-        del runtime['waiting_actions'][action['id']]
-        if not any(a.get('id') == action['id'] for a in runtime.setdefault('queue', [])):
-            runtime['queue'].append(deepcopy(action))
+    # Repetition holds are history/dispatch conditions. Registered input,
+    # authority and publication waiting_actions keep their own release owner.
     from .questions import open_links, resolve_user
     question_field = f"{runtime['history'].index(hold)}/question"
     questions = [q['id'] for q in open_links(runtime, 'user') if q.get('origin_execution_id') == hold['event_ref']

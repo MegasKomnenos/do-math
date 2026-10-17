@@ -204,5 +204,40 @@ class CheckpointReminderTests(CheckpointCase):
         self.assertIn("current_claim", value["reason"])
 
 
+
+class ConcurrentCheckpointTests(CheckpointCase):
+    def test_live_read_reports_replacement_as_being_written(self):
+        from support.engine_control import on_audit
+        import os
+        self.write(current_claim='before')
+        path = self.ws / 'checkpoint.json'
+        observed = []
+        def replace_before_open(arguments):
+            if not observed:
+                observed.append(True)
+                self.write(current_claim='a longer concurrent version')
+        with on_audit('msvcrt.open_osfhandle', replace_before_open):
+            self.assertEqual(self.read(), {'status': 'being_written'})
+        current = self.read()
+        self.assertEqual(current['status'], 'valid')
+        self.assertEqual(current['value']['current_claim'], 'a longer concurrent version')
+
+    def test_evidence_growth_after_stat_is_omitted_by_actual_bytes(self):
+        from support.engine_control import on_audit
+        import os
+        evidence = self.ws / 'proof.bin'
+        evidence.write_bytes(b'x')
+        observed = []
+        def grow_before_open(arguments):
+            if os.path.abspath(arguments[0]) == str(evidence) and not observed:
+                observed.append(True)
+                evidence.write_bytes(b'grown evidence')
+        with on_audit('open', grow_before_open):
+            files, omitted = observations.capture_checkpoint_files(self.ws, {'evidence_paths': ['proof.bin']}, max_bytes=2)
+        self.assertEqual(files, {})
+        self.assertEqual(omitted, [{'path': 'proof.bin', 'reason': 'checkpoint evidence exceeds artifact byte limit'}])
+        self.assertEqual(evidence.read_bytes(), b'grown evidence')
+
+
 if __name__ == "__main__":
     unittest.main()

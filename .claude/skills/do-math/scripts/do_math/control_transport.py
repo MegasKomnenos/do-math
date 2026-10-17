@@ -19,7 +19,7 @@ if __package__:
     from .control_protocol import (CONTROL_SERVER, SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SAFETY_BOUNDARY, SUBMIT_INTENT, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, REQUEST_KINDS, SUBMISSION_KINDS, BINDING_FIELDS, SELF_CHECK_RESPONSE_SCHEMA, self_check_request_id, self_check_response_errors)
     from .file_io import read_bytes_shared, file_fingerprint, fingerprint_settled, write_bytes_atomic
     from .values import compact_json_bytes, check_path_segment, json_digest, require_text
-else:
+else:  # pragma: no cover - T4 boundary.test_provider_control_server imports this transport through the actual MCP file entrypoint.
     from control_protocol import (CONTROL_SERVER, SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SAFETY_BOUNDARY, SUBMIT_INTENT, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, REQUEST_KINDS, SUBMISSION_KINDS, BINDING_FIELDS, SELF_CHECK_RESPONSE_SCHEMA, self_check_request_id, self_check_response_errors)
     from file_io import read_bytes_shared, file_fingerprint, fingerprint_settled, write_bytes_atomic
     from values import compact_json_bytes, check_path_segment, json_digest, require_text
@@ -283,7 +283,7 @@ class ControlTransport:
     @staticmethod
     def worker_submit(binding: dict, *, request_id: str, kind: str, payload: dict | None = None) -> dict:
         _require_file_name(request_id, "request_id")
-        if kind not in REQUEST_KINDS:
+        if not isinstance(kind, str) or kind not in REQUEST_KINDS:
             raise ValueError("unsupported control kind")
         if payload is not None and not isinstance(payload, dict):
             raise ValueError("control payload must be an object")
@@ -332,8 +332,7 @@ class ControlTransport:
                                                payload={"self_check_id": self_check_id, "response": response})
 
     def _validate_request(self, request: dict) -> dict:
-        if not isinstance(request, dict):
-            raise ValueError("control request must be an object")
+        # receive() already checked the public input shape before reading its identity.
         result = deepcopy(request)
         for key in ("request_id", "transport_id"):
             _require_file_name(result.get(key), key)
@@ -387,7 +386,9 @@ class ControlTransport:
         return receipt
 
     def _reject_delivery_file(self, path: Path, error: ValueError) -> dict:
-        request_id = _require_file_name(path.stem, "request_id")
+        # A discovered filename is already confined to this inbox. It is the
+        # rejection coordinate even when it cannot be a worker request ID.
+        request_id = path.stem
         raw = path.read_bytes()
         receipt = {"request_id": request_id, "state": "rejected", "stage": "delivery_validation",
                    "reason": str(error), "source": "inbox/" + path.name,

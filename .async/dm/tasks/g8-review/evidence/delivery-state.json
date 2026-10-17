@@ -1,0 +1,188 @@
+{
+  "observed_at_utc": "2026-10-17T18:28:33.942141+00:00",
+  "scope": "G6 accepted result -> review baseline manifest comparison, finite changed-file bytes, read-only product Git state. No historical diff or whole mirror rerun.",
+  "reviewed_workspace": "C:\\math\\.async\\dm\\tasks\\g8-review\\workspace",
+  "source_repo": "C:\\math",
+  "branch": "main",
+  "HEAD": "54ff3e0e7fa5af9d3f7ff463044a43b07a52047d",
+  "workspace_has_git_directory": false,
+  "accepted_edition": {
+    "task": "g6-finish",
+    "acceptance": "C:\\math\\.async\\dm\\managers\\0105\\review.md",
+    "integration": "C:\\math\\.async\\dm\\tasks\\g6-finish\\integration.json",
+    "result_manifest": "C:\\math\\.async\\dm\\tasks\\g6-finish\\result.json",
+    "review_baseline": "C:\\math\\.async\\dm\\tasks\\g8-review\\baseline.json",
+    "product_files_in_baseline": 2436,
+    "by_tree": {
+      ".claude": 1218,
+      ".agents": 1218
+    },
+    "result_to_review_baseline_delta": {},
+    "accepted_72_expected_result_mismatches": [],
+    "accepted_72_current_byte_mismatches": [],
+    "g1_g23_no_product_changes": {
+      "g1-close": {
+        "report_status": "complete",
+        "integration_files": []
+      },
+      "g23-close": {
+        "report_status": "complete",
+        "integration_files": []
+      }
+    }
+  },
+  "direct_file_checks": {
+    "count": 121,
+    "mismatches": {},
+    "details": "edition-file-checks.json",
+    "purpose": "Read only changed/current contract files and generator/rules inputs; reuse original full mirror and source checks."
+  },
+  "mirror": {
+    "reused_full_check": "g6-finish: official build_skill_mirrors.py --check, 1388 files; manager0105 reused worker check and directly checked 36 changed pairs / 72 integrated bytes.",
+    "no_post_acceptance_product_manifest_delta": true,
+    "generator_and_rules_match_review_baseline": true,
+    "new_full_mirror_checks": 0
+  },
+  "contract_alignment_static": [
+    {
+      "definition": ".claude/skills/do-math/scripts/tests/support/mutation.py:131 functions; :421 run; :775 main",
+      "documentation": "tests/시험-지침.md:96; scripts/이음새-정본.md:344; mutation.py:37",
+      "consumer": "unit.test_mutation.MutationEvidenceTests.test_exact_function_selectors_reject_invalid_or_unresolved_inputs_before_children; boundary.test_mutation_baseline.ParallelMutationTests.test_exact_nested_function_runs_only_its_plan_and_keeps_other_list_entries",
+      "finding": "Same nested/#n keys; all selectors resolved before children; dedicated ValueError subtype becomes CLI usage exit2. Base failures retain exit1. Existing index+explicit selection and update_list outside-entry preservation remain. Static alignment; final two executed tests and CLI probes reused from 0105."
+    },
+    {
+      "definition": ".claude/skills/do-math/scripts/tests/support/sim.py:354 warm_template; :369 _template",
+      "documentation": "tests/시험-지침.md:39",
+      "consumer": "unit.test_template_inputs.TemplateInputTests.test_warming_preserves_a_failed_build_for_the_actual_consumers_without_retry",
+      "finding": "Future retains result/original Exception once; consumer .result() rethrows same object. Test asserts same exception and one build; no fallback synthetic success."
+    },
+    {
+      "definition": ".claude/skills/do-math/scripts/tests/support/sim.py:200 Sim.activate; do_math/scheduler.py:115 SchedulerMixin._run_parallel",
+      "documentation": "tests/시험-지침.md:43",
+      "consumer": "Existing Sim consumers; G6 accepted normal children and g1-close preserved LONG edition distinguished.",
+      "finding": "run(max_steps=32, until_active=True) bounds dispatched non-live actions; active, verifier/worker noncall, Lean/job noncall assertions remain. It is not a wall-clock timeout or proof of every possible owner-loop termination."
+    },
+    {
+      "definition": ".claude/skills/do-math/scripts/tests/contracts/test_storage_academic_pairs.py:21 AcademicStoragePairs; tests/contracts/test_storage_event_pairs.py:14 EventStoragePairs",
+      "documentation": "tests/시험-지침.md:39; 0105/0106 accepted producer-preservation review",
+      "consumer": "AcademicStoragePairs._prepared / EventStoragePairs._prepare called in actual test bodies",
+      "finding": "Real producer order and content/reverse assertions remain, class fixture prepares resources. Existing A22 codec/publication and business guarantees reused; no new family quota."
+    },
+    {
+      "definition": ".claude/skills/do-math/scripts/tests/support/port_contracts/jobs.py:45 JobsContract._cleanup_job; run_tests.py:369 wait_for_worker",
+      "documentation": "tests/시험-지침.md:37-41; scripts/이음새-정본.md:346",
+      "consumer": "unit.test_cli_termination.TerminationTests.test_barrier_requires_the_root_and_both_empty_process_observations; sim.test_provider_job_lifecycle.JobLifecycleTests",
+      "finding": "Cleanup terminates/waits/closes independently of mutated product predicate; predicate directly asserts true and three false states. Adapter start/resume/wait/stop uses Jobs port double, not new OS/provider evidence."
+    },
+    {
+      "definition": ".claude/skills/do-math/scripts/run_tests.py:812 _t3_plan; :844 closing_eligible; :849 _finish_t3",
+      "documentation": "tests/시험-지침.md T3; sources/t3-targeted-direction-2026-10-16.md",
+      "consumer": "g5-target/g5-remainder accepted partial measurements",
+      "finding": "Partial selection cannot write whole index or become closing_eligible. Only plan.reuse data are combined. This accounts for an evidence/tool limit; it is not a newly demonstrated product defect."
+    }
+  ],
+  "git_product_scope_counts": {
+    "worktree_vs_index": {
+      "files": 654,
+      "by_tree": {
+        ".agents": 327,
+        ".claude": 327
+      }
+    },
+    "index_vs_HEAD": {
+      "files": 0,
+      "by_tree": {}
+    },
+    "worktree_vs_HEAD": {
+      "files": 654,
+      "by_tree": {
+        ".agents": 327,
+        ".claude": 327
+      }
+    },
+    "untracked_product": {
+      "files": 108,
+      "by_tree": {
+        ".agents": 54,
+        ".claude": 54
+      }
+    }
+  },
+  "git_product_status_counts": {
+    " M": 658,
+    "??": 108
+  },
+  "git_count_interpretation": "Porcelain records 658 worktree-modified paths; git diff --name-only records 654. Preserve both diagnostics without equating stat/line-ending reporting with semantic changes. Product index_vs_HEAD has zero paths; no claim about unrelated index entries.",
+  "representative_delivery_paths": {
+    ".claude/skills/do-math/scripts/tests/support/mutation.py": {
+      "HEAD_raw_sha256": "440d558169fa3f47951126df42d0564c654011dfba4003305580644e88c23cc2",
+      "index_raw_sha256": "440d558169fa3f47951126df42d0564c654011dfba4003305580644e88c23cc2",
+      "reviewed_worktree_sha256": "0a02d39e385db1c936f60b36da28f3ebd6b4fc3c74616b3a3116df49178bf1eb",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/tests/support/sim.py": {
+      "HEAD_raw_sha256": "b43dcfefff2970ecd9b92df91c4d729c8ad211895a78ef1a4c96dac34db685f7",
+      "index_raw_sha256": "b43dcfefff2970ecd9b92df91c4d729c8ad211895a78ef1a4c96dac34db685f7",
+      "reviewed_worktree_sha256": "3d18151f267f2c25430438a3fca74cea9e42a75fe53e4a3d8af7929d3e6502ee",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/tests/시험-지침.md": {
+      "HEAD_raw_sha256": "7b05f7b3ea921328692df702040eccc3a06e5d7ce594527e62f71f757e5a4cd8",
+      "index_raw_sha256": "7b05f7b3ea921328692df702040eccc3a06e5d7ce594527e62f71f757e5a4cd8",
+      "reviewed_worktree_sha256": "8a6675ad11cc88e106660c60508ac41c84b27b64871ed3573764c76f99bd2b11",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/이음새-정본.md": {
+      "HEAD_raw_sha256": "b47d45b732aacf560710be7d9b51ef9055e0b15ce9298c23f3d919b10cc3ad64",
+      "index_raw_sha256": "b47d45b732aacf560710be7d9b51ef9055e0b15ce9298c23f3d919b10cc3ad64",
+      "reviewed_worktree_sha256": "fffdeaae432f5ca6e49b84ae342ebd6f85cbcb7fda03f7bafe3d9b198f53b1d8",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/do_math/core_engine.py": {
+      "HEAD_raw_sha256": "f2a30e0be2488076492411a89d82705b3a27f6649e359f448d4c9dcee975f1f7",
+      "index_raw_sha256": "f2a30e0be2488076492411a89d82705b3a27f6649e359f448d4c9dcee975f1f7",
+      "reviewed_worktree_sha256": "71d7d2a2f105ad9dd7dd8c816c49b09387de3f77fc58543db22463ae83623c0c",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/do_math/git_store.py": {
+      "HEAD_raw_sha256": "be72e24cf06a74ff26786d47ab91370ff313365d6a2c279cc84ceaa3140785e7",
+      "index_raw_sha256": "be72e24cf06a74ff26786d47ab91370ff313365d6a2c279cc84ceaa3140785e7",
+      "reviewed_worktree_sha256": "8dfc9a3b11af23e072947b695e71a44c962fa7b1f8bde980af0bc99c88c56fec",
+      "porcelain_status": " M"
+    },
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_job_lifecycle.py": {
+      "HEAD_raw_sha256": null,
+      "index_raw_sha256": null,
+      "reviewed_worktree_sha256": "44df97716d3bdec99ebd2a6f43760352f990511675f6098314b5741387db40ae",
+      "porcelain_status": "??"
+    },
+    ".claude/skills/do-math/scripts/tests/unit/test_cli_termination.py": {
+      "HEAD_raw_sha256": null,
+      "index_raw_sha256": null,
+      "reviewed_worktree_sha256": "bbd9b1a7bfa99c52cd8a8bb373cb8806e2cc021cf57801d4907db46335f0be3e",
+      "porcelain_status": "??"
+    },
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_owner_binding.py": {
+      "HEAD_raw_sha256": null,
+      "index_raw_sha256": null,
+      "reviewed_worktree_sha256": "8dc1f781a1fc9165ced1cb02279c2046e21e9240c4ed215811f9c0ead1632505",
+      "porcelain_status": "??"
+    },
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_event_pairs.py": {
+      "HEAD_raw_sha256": null,
+      "index_raw_sha256": null,
+      "reviewed_worktree_sha256": "209e40145d7b99a3e913f76b46f0d73cfb9d7bfd8aea262c500986374777c6b2",
+      "porcelain_status": "??"
+    },
+    ".claude/skills/do-math/scripts/tests/pseudo_tested.json": {
+      "HEAD_raw_sha256": null,
+      "index_raw_sha256": null,
+      "reviewed_worktree_sha256": "9985936e46ab130198ffa14ba246f86ba7059e13c82c2398f272fe282b4eae03",
+      "porcelain_status": "??"
+    }
+  },
+  "git_hash_limit": "HEAD/index raw Git blob hashes distinguish missing/stale content; line-ending conversion is not a functional defect. No claim to audit all 654 historical diffs or unrelated changes.",
+  "delivery_verdict": "Reviewed accepted files are available in the main worktree, but the index and HEAD do not represent that edition. A commit/checkout of current HEAD omits accepted work and new tests/helpers.",
+  "next_local_action": "Manager should preserve unrelated/user staged changes, select accepted do-math canonical+official mirror paths from accepted manifests, include required new files, and reconcile staged content with reviewed bytes before any authorized commit. Then record final commit and material-byte correspondence; no push. This review stages/commits nothing.",
+  "executed_product_imports_tests_mutations_live_calls_probes": 0
+}

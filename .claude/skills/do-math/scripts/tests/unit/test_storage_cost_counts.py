@@ -24,21 +24,23 @@ class StorageCostCounts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             files = {f'runtime/artifacts/BA-needle/{i}.txt': str(i).encode() for i in range(3)}
             repo, backend, head = self.prepared(Path(directory), files)
+            expected = [{'path': path, 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                        for path, raw in sorted(files.items())]
             with BuiltinCalls(hashlib.sha256) as hashes:
                 first = repo.query(snapshot=head, prefix='runtime/artifacts/BA-needle/', limit=2)
             self.assertEqual(hashes.arguments, list(files.values())[:2])
-            self.assertEqual([row['path'] for row in first['items']], list(files)[:2])
+            self.assertEqual(first['items'], expected[:2])
             self.assertEqual((first['total'], first['truncated']), (3, True))
             with BuiltinCalls(hashlib.sha256) as hashes:
                 last = repo.query(prefix='runtime/artifacts/BA-needle/', limit=2, cursor=first['next_cursor'])
             self.assertEqual(hashes.arguments, list(files.values())[2:])
-            self.assertEqual([row['path'] for row in last['items']], list(files)[2:])
+            self.assertEqual(last['items'], expected[2:])
             self.assertEqual((last['snapshot'], last['total'], last['next_cursor'], last['truncated']),
                              (head, 3, None, False))
             with BuiltinCalls(hashlib.sha256) as hashes:
                 matched = repo.query(snapshot=head, prefix='runtime/artifacts/BA-needle/', text='needle')
             self.assertEqual(hashes.arguments, list(files.values()))
-            self.assertEqual([row['path'] for row in matched['items']], list(files))
+            self.assertEqual(matched['items'], expected)
             start = len(backend.calls)
             with BuiltinCalls(hashlib.sha256) as hashes:
                 empty = repo.query(snapshot=head, prefix='runtime/artifacts/BA-absent/')

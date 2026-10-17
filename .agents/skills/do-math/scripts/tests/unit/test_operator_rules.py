@@ -31,6 +31,57 @@ class TaskNameTests(unittest.TestCase):
         self.assertIn('Engine', first['engine'])
 
 
+class InstallationEvidenceTests(unittest.TestCase):
+    def test_repair_reports_require_both_version_and_source_commit_even_when_git_is_unavailable(self):
+        from jsonschema import validate, ValidationError
+        from do_math.supervision import repair_report_schema
+        report = {'summary': 'repair', 'observed_status': 'repaired', 'actions': [],
+                  'evidence_paths': [], 'user_questions': [], 'next_step': 'verify',
+                  'installation_version': 'a' * 64, 'source_commit': None}
+        for diagnosed in (False, True):
+            value = {**report, **({'repair_outcome': 'repaired', 'verification_evidence': ['log.txt']}
+                                  if diagnosed else {})}
+            schema = repair_report_schema(diagnosed=diagnosed)
+            for field in ('installation_version', 'source_commit'):
+                with self.subTest(diagnosed=diagnosed, missing=field):
+                    # All other current report fields remain present.
+                    self.assertIn(field, schema['required'])
+                    with self.assertRaises(ValidationError) as caught:
+                        validate({key: item for key, item in value.items() if key != field}, schema)
+                    self.assertEqual(caught.exception.validator, 'required')
+                    self.assertEqual(list(caught.exception.absolute_path), [])
+                    self.assertEqual(caught.exception.message, f"'{field}' is a required property")
+            validate(value, schema)
+
+    def test_source_head_and_uncommitted_evidence_do_not_replace_installed_bytes(self):
+        import hashlib
+        from do_math.repair_execution import installation_evidence
+        from do_math.canonical import exact_content_hash
+        from support.operator_finish_ports import SourceGit
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory).resolve()
+            skill = repository / 'skill'
+            skill.mkdir()
+            skill.joinpath('SKILL.md').write_bytes(b'dirty installed document\n')
+            skill.joinpath('new.txt').write_bytes(b'untracked file\n')
+            diff = b'diff --git a/skill/SKILL.md b/skill/SKILL.md\nactual dirty diff\n'
+            backend = SourceGit(repository, diff=diff, tracked_paths=['skill/SKILL.md'])
+            observed = installation_evidence(skill, backend=backend)
+            self.assertEqual(observed['installation_version'], exact_content_hash({
+                'SKILL.md': hashlib.sha256(b'dirty installed document\n').hexdigest(),
+                'new.txt': hashlib.sha256(b'untracked file\n').hexdigest()}))
+            self.assertEqual(observed['source_commit'], 'a' * 40)
+            self.assertEqual(observed['source_tree'], 'b' * 40)
+            self.assertEqual(observed['source_status'], 'observed')
+            self.assertEqual(observed['tracked_diff']['sha256'], hashlib.sha256(diff).hexdigest())
+            self.assertEqual(observed['untracked_installation_paths'], ['skill/new.txt'])
+            self.assertEqual(backend.objects, {}, 'read-only evidence must not write a Git object')
+            untracked = installation_evidence(skill, backend=SourceGit(repository, tree=None))
+            self.assertIsNone(untracked['source_commit'])
+            self.assertEqual(untracked['source_status'], 'unavailable')
+            self.assertEqual(untracked['source_reason'], 'installation has no subtree in source HEAD')
+
+
 class WakeReasonTests(unittest.TestCase):
     def test_due_research_reconsideration_is_a_wake_reason_without_mutating_state(self):
         instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}

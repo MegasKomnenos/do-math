@@ -143,7 +143,8 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
         def read_output(path):
             return path.read_text(encoding='utf-8',errors=decode_errors) if path.exists() else ''
         stdout,stderr=read_output(out),read_output(err)
-        if stopped: return None,stdout,stderr,True
+        if stopped:
+            return None,stdout,stderr,True
         if not status.exists():
             raise RuntimeError('formal worker completion status missing' + (': '+stderr if stderr else ''))
         try:

@@ -619,11 +619,13 @@ def field_schemas():
     return schemas
 
 
-def status_field_schema(report):
+def status_field_schema(report, *, task_report=None):
     """Bind status fields from a final repository response, never its producers.
 
     Keep the fixed nested objects previously covered by the document binding;
     a sample does not establish blocker variants or items in empty arrays.
+    An optional second repository response can supply nonempty task rows;
+    it never supplies top-level fields missing from the primary response.
     """
     schema = {'type': 'object', 'properties': {name: {} for name in report},
               'additionalProperties': False}
@@ -636,6 +638,11 @@ def status_field_schema(report):
         schema['properties']['operating_summary']['properties']['supervision'] = {
             'type': 'object', 'properties': {name: {} for name in summary['supervision']},
             'additionalProperties': False}
+    task_rows = (task_report if task_report is not None else report).get('tasks', [])
+    if 'tasks' in report and task_rows:
+        schema['properties']['tasks'] = {'type': 'array', 'items': {
+            'type': 'object', 'properties': {name: {} for row in task_rows for name in row},
+            'additionalProperties': False}}
     return schema
 
 
@@ -1143,22 +1150,25 @@ def documented_policies(text):
             for name in re.findall(r'\b[a-z][a-z0-9_]*policy\b', span)}
 
 
+def _is_callable_reference(name):
+    root, *attributes = name.split('.')
+    try:
+        value = importlib.import_module(root if root == 'os' else 'do_math.' + root)
+        for attribute in attributes:
+            value = getattr(value, attribute)
+    except (ImportError, AttributeError):
+        return False
+    return callable(value)
+
+
 def function_reference_issues(text):
     """Explicit module.function(...) notation names a callable, never a state field."""
     issues = []
     for token in SPAN.findall(text):
         if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\(\.\.\.\)', token):
             continue
-        root, *attributes = token[:-5].split('.')
-        try:
-            value = importlib.import_module(root if root == 'os' else 'do_math.' + root)
-            for attribute in attributes:
-                value = getattr(value, attribute)
-        except (ImportError, AttributeError):
+        if not _is_callable_reference(token[:-5]):
             issues.append(('function reference', token))
-        else:
-            if not callable(value):
-                issues.append(('function reference', token))
     return sorted(set(issues))
 
 

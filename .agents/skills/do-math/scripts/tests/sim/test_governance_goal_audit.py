@@ -55,6 +55,105 @@ class AuditInputTests(unittest.TestCase):
 
 
 class GoalConsumerTests(unittest.TestCase):
+    def test_review_scheduling_preserves_goal_acceptance_and_stored_currentness(self):
+        """~4.8s: acceptance, stored goal/restart and content/use demotion share one valid scene."""
+        from do_math import knowledge_io, knowledge_records as kr
+        from support.knowledge_builders import knowledge_candidate
+        sim = theorem_sim()
+        adopt_audit(sim)
+        engine = sim.engine
+        kid = next(iter(engine.instance['knowledge']))
+        # An imported exposition reuses the checked formal result and has not
+        # started identity review yet. The existing theorem remains usable.
+        engine.instance, engine.runtime, pending = knowledge_io.import_candidate(engine.instance, engine.runtime,
+            knowledge_candidate(title='Another exposition', lean_code='', declaration_names=[],
+                formal_result_ref=engine.instance['knowledge'][kid]['formal_result_id']),
+            source_ref='user:exposition', actor_ref='user', clock=sim.clock)
+        action, output = goal_auditor(engine, verdict='pass')
+        # This helper also supplies identity-review findings. Goal auditors use
+        # the issued goal response contract, whose explanation is reason.
+        output.pop('findings')
+        jsonschema.Draft202012Validator(engine._response_schema(action)).validate(output)
+        record = engine.instance['knowledge'][pending]
+        self.assertNotIn('review_cycle_id', record)
+        cycle = engine._start_identity_review(pending)
+        self.assertEqual(record['review_cycle_id'], cycle)
+        self.assertTrue(kr.usable_links(engine.instance, kid))
+        self.assertEqual(engine._goal_basis_key(), action['basis'])
+        judgment = engine._apply_governance_goal_audit(action, output, 'AUDITOR')
+        self.assertIs(judgment['current'], True)
+        self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
+        engine._save()
+        sim.restart()
+        engine = sim.engine
+        engine._invalidate_goal_currentness()
+        self.assertIs(engine.instance['goal_judgments'][-1]['current'], True)
+        self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
+        self.assertFalse(any(e['kind'] == 'goal_basis_invalidated' for e in engine.runtime['events']))
+        with self.assertRaisesRegex(ValueError, '^goal audit slot already sealed$'):
+            engine._apply_governance_goal_audit(action, output, 'AUDITOR')
+        # The same dependency's actual content still invalidates the stored
+        # judgment, reopens the goal and queues the existing reassessment owner.
+        stored = deepcopy((engine.instance, engine.runtime))
+        current_key = engine._goal_basis_key()
+        for change in ('content', 'use'):
+            with self.subTest(change=change):
+                engine.instance, engine.runtime = deepcopy(stored)
+                if change == 'content':
+                    engine.instance['knowledge'][kid]['title'] = 'Corrected mathematical evidence'
+                else:
+                    aid = kr.usable_links(engine.instance, kid)[0]['assessment_id']
+                    engine.instance = kr.set_assessment_use(engine.instance, aid, 'suspended', 'Concrete defect', 'user')
+                self.assertNotEqual(engine._goal_basis_key(), current_key)
+                engine._invalidate_goal_currentness()
+                self.assertIs(engine.instance['goal_judgments'][-1]['current'], False)
+                self.assertEqual(engine.instance['goal_status'], 'unsolved')
+                self.assertEqual(len([e for e in engine.runtime['events'] if e['kind'] == 'goal_basis_invalidated']), 1)
+                self.assertTrue(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+
+    def test_negative_goal_verdicts_emit_one_exact_followup_and_survive_restart(self):
+        from support.engine_lifecycle import clear_work
+        from support.wait_reporting import assert_status_report
+        for decision in ('not_satisfied', 'unresolved'):
+            with self.subTest(decision=decision):
+                sim = theorem_sim()
+                adopt_audit(sim)
+                clear_work(sim)
+                engine = sim.engine
+                action, output = goal_auditor(engine)
+                output.pop('findings')
+                output.update(decision=decision, reason='현재 증거로 목표 보증을 확정할 수 없다.')
+                judgment = engine._apply_governance_goal_audit(action, output, 'AUDITOR')
+                self.assertEqual(judgment['decision'], decision)
+                events = [e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed']
+                self.assertEqual(len(events), 1)
+                event = events[0]
+                self.assertEqual((event['basis_sha256'], event['judgment_ids'], event['next_owner']),
+                    (action['basis'], [judgment['id']], 'research_plan'))
+                self.assertNotEqual(sim.runtime['status'], 'completed')
+                engine._save()
+                sim.restart()
+                engine = sim.engine
+                events = deepcopy([e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed'])
+                before = deepcopy((sim.instance, sim.runtime))
+                with self.assertRaisesRegex(ValueError, '^goal audit slot already sealed$'):
+                    engine._apply_governance_goal_audit(action, output, 'AUDITOR')
+                self.assertEqual((sim.instance, sim.runtime), before)
+                engine._refresh_readiness()
+                plans = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan' and event['id'] in a.get('event_refs', [])]
+                self.assertEqual(len(plans), 1)
+                for queued in sim.runtime['queue']:
+                    engine._bind_revision_action(queued)
+                queue = deepcopy(sim.runtime['queue'])
+                engine._refresh_readiness()
+                self.assertEqual(sim.runtime['queue'], queue)
+                self.assertEqual(engine._record_goal_audit_followup(action['basis'], [judgment]), event['id'])
+                self.assertEqual([e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed'], events)
+                engine._save()
+                report, human = assert_status_report(self, engine)
+                self.assertIn('goal_status:', human)
+                self.assertEqual(report['pending_actions'], len(queue))
+
     def test_actual_goal_consumer_stores_mapping_not_generic_satisfied(self):
         sim = theorem_sim()
         adopt_audit(sim)

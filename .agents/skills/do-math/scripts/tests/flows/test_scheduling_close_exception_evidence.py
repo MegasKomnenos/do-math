@@ -11,7 +11,7 @@ from do_math.payloads import json_safe
 from support.engine_lifecycle import warm_lifecycle, warm_external
 from support.live_finish_model import install
 from support.scheduling_return_matrix import scene
-from support.scheduling_return_observer import OwnerProbe
+from support.scheduling_return_observer import OwnerProbe, assert_owned
 from support.scheduling_machine import hold_lean
 from support.storage_records import held_ref_lock
 from support.provider_probes import ObservedCalls
@@ -64,7 +64,7 @@ class ExceptionalReturnTests(unittest.TestCase):
                 row = stored['executions'][eid]
                 self.assertEqual(row['role'], role)
                 self.assertNotEqual(row['status'], 'ended')
-                self.assertTrue(row['owner_activity_id'])
+                assert_owned(self, stored, eid)
                 local = Path(sim.instance['workspace']) / 'execution-recovery' / eid / 'returned-result.json'
                 raw = json.loads(local.read_bytes())
                 self.assertEqual(set(returned), {eid})
@@ -88,7 +88,7 @@ class ExceptionalReturnTests(unittest.TestCase):
         added = set(stored['executions']) - before
         self.assertEqual(len(added), 1)
         eid, = added
-        self.assertTrue(stored['executions'][eid]['owner_activity_id'])
+        assert_owned(self, stored, eid)
         self.assertNotEqual(stored['executions'][eid]['status'], 'ended')
         operation = stored['external_operations']['OP-audit']
         self.assertEqual((operation['status'], operation['transmitted'], operation['transmission_phase']),

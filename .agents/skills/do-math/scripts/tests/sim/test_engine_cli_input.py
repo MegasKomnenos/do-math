@@ -107,6 +107,34 @@ class RequestFileTests(unittest.TestCase):
 
 
 class PublicInputBoundaryTests(unittest.TestCase):
+    def test_unreadable_input_files_report_input_errors_without_repository_effects(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        identity = ['--repository', str(root / 'repository'), '--instance', 'RI-test']
+        for raw in (None, b'\xff', b'{', b'{"duplicate":1,"duplicate":2}'):
+            document = root / 'request.json'
+            if raw is not None:
+                document.write_bytes(raw)
+            with self.subTest(raw=raw), ObservedCalls(repository=ResearchRepository.__init__) as calls:
+                code, envelope = main(['configure', *identity, '--config-file', str(document)])
+            self.assertEqual(code, 2)
+            self.assertEqual({key: envelope['error'][key] for key in ('kind', 'next_owner', 'retryable')},
+                             {'kind': 'input_error', 'next_owner': 'user', 'retryable': False})
+            self.assertTrue(envelope['error']['message'].startswith(f'cannot read JSON file {document}: '), envelope)
+            self.assertEqual(calls.count('repository'), 0)
+            if raw is not None:
+                self.assertEqual(document.read_bytes(), raw)
+        for raw in (None, b'\xff'):
+            document = root / 'input.txt'
+            if raw is not None:
+                document.write_bytes(raw)
+            with self.subTest(text=raw), ObservedCalls(repository=ResearchRepository.__init__) as calls:
+                code, envelope = main(['input', *identity, '--file', str(document)])
+            self.assertEqual(code, 2)
+            self.assertEqual(envelope['error']['kind'], 'input_error')
+            self.assertTrue(envelope['error']['message'].startswith(f'cannot read text file {document}: '), envelope)
+            self.assertEqual(calls.count('repository'), 0)
+        self.assertFalse((root / 'repository').exists())
+
     def test_describe_publishes_the_parser_contract_and_rejects_extra_arguments(self):
         from do_math.cli_contract import describe_commands
         from do_math.canonical import exact_content_hash

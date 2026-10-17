@@ -2,7 +2,8 @@
 
 ``test_group('lean')`` and ``test_group('resource')`` mark tests that call the
 real Lean toolchain or manage real process lifetimes and resources; the runner
-runs them per class in an owned Windows Job with a deadline. A label goes on
+runs them per class in an owned Windows Job, waiting for the root and all owned
+children without an elapsed deadline. A label goes on
 the class when every test in it needs isolation, otherwise on each such method;
 a method's label overrides its class's.
 """
