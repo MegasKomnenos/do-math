@@ -138,7 +138,8 @@ class CallEngineMixin:
             self._remove_action(action)
             if action.get("target") in self.runtime["tasks"]:
                 self.runtime["tasks"][action["target"]]["status"] = "waiting"
-            self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
+            if self.runtime["status"] != "paused":
+                self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             self._save()
             return bool(self.runtime["queue"])
         # _selected_action_current checked task readiness on this owner state;
@@ -260,7 +261,8 @@ class CallEngineMixin:
                 "kind": "input_overflow", "reason": "input_overflow", "detail": detail, "question_id": question["id"],
                 "next_owner": resolution["next_owner"]})
             defer_input_overflow(self.runtime, detail, at=self.ports.clock.now(), question_ref=question["id"])
-            self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
+            if self.runtime["status"] != "paused":
+                self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             if resolution["next_owner"] == "research_plan":
                 self._enqueue("research_plan", reason="Select an already authorized profile for the preserved input overflow",
                               input_overflow=deepcopy(detail), overflow_activity_id=activity_id)

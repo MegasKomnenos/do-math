@@ -558,7 +558,8 @@ def _validate_reference(reference, context, workspace, *, known, locators, candi
     if relative.parts[0] != "input" and is_excluded(relative):
         raise ValueError("reference must identify supplied input, a record of the input snapshot or a preserved workspace file: " + reference +
                          "; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>")
-    exists = path.is_file() if relative.parts[0] == "input" or candidate_files is None else name in candidate_files
+    exists = ((name in locators and path.is_file()) if relative.parts[0] == "input"
+              else path.is_file() if candidate_files is None else name in candidate_files)
     if not exists:
         raise ValueError("reference must identify supplied input, a record of the input snapshot or a preserved workspace file: " + reference +
                          "; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>")
@@ -712,6 +713,10 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             for message in judge_coverage_errors(action["role"], context.get("execution_id"), task, assessment, families):
                 issues.append(_issue(f"output/task_assessments/{index}/item_dispositions", message,
                                      "submission.judge_coverage"))
+            from .academic import criteria_evidence_errors
+            for message in criteria_evidence_errors(task, assessment):
+                issues.append(_issue(f"output/task_assessments/{index}/item_dispositions", message,
+                                     "submission.academic_criteria_evidence"))
     for index, row in enumerate(extensions.get("academic_resolutions", [])):
         for number, reference in enumerate(row["evidence_refs"]):
             check(f"activity-extensions.json/academic_resolutions/{index}/evidence_refs/{number}",

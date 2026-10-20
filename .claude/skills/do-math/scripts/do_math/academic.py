@@ -99,6 +99,22 @@ def criterion_obligations(task_id, requirement):
             for index, claim in enumerate(requirement["criteria"], 1)]
 
 
+def criteria_evidence_errors(task, assessment):
+    """Why a completed TASKS assessment of an academic task cannot become a satisfied record.
+
+    assess rejects a satisfied record whose criterion cites no evidence. The
+    producer's submission check and _record_academic_assessment share this rule."""
+    if not task.get("academic_requirement_id") or assessment.get("decision") != "completed":
+        return []
+    rows = {row.get("obligation_id"): row for row in assessment.get("item_dispositions", [])}
+    criteria = [row["id"] for row in task.get("completion_obligations", [])
+                if row["id"].startswith(task["id"] + ":criterion:")]
+    if not criteria or any(rows.get(identifier, {}).get("kind") != "fulfilled" for identifier in criteria):
+        return []
+    return ["fulfilled academic criterion " + identifier + " needs cited evidence_refs"
+            for identifier in criteria if not rows[identifier].get("evidence_refs")]
+
+
 def assessment_current(instance, runtime, record):
     task = runtime.get("tasks", {}).get(record.get("task_id"), {})
     from .task_scope import assessment_current as task_assessment_current

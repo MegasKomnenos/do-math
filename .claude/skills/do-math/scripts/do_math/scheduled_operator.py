@@ -326,10 +326,38 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
             if failure is None:
                 return {"outcome": "recovery_waiting", "reason": "no installation repair is pending"}
             diagnosis = matching_diagnosis(runtime, failure)
+            failure_sha256 = failure_identity(failure, diagnosis)
+            owner = {"kind": "installation_recovery", "failure_sha256": failure_sha256}
+
+            def recovery_activity():
+                activity = next((a for a in runtime.get("activities", {}).values()
+                    if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
+                if activity is None:
+                    activity = activities.open_activity(runtime, activity_id=ports.clock.new_id("AY"),
+                        activity_kind="recovery", owner_ref=owner, input_refs=[failure], opened_at=ports.clock.now())
+                return activity
+
+            def admission_wait(reason, *, next_owner="recovery", **details):
+                nonlocal head
+                activity = recovery_activity()
+                # An earlier unconfirmed recovery retains its live attempt and its
+                # durable termination evidence; a live activity cannot become waiting.
+                live = any(runtime['executions'][eid]['status'] != 'ended'
+                           for eid in activity['assigned_execution_ids'])
+                condition = {"kind": "installation_repair_retry", "failure": owner}
+                waiting = activity.get('waiting', {})
+                if not live and not (activity['status'] == 'waiting'
+                        and all(waiting.get(key) == value for key, value in {
+                            'kind': 'installation_repair_retry', 'reason': reason,
+                            'condition': condition, 'next_owner': next_owner}.items())):
+                    activities.wait_for(runtime, activity['id'], kind='installation_repair_retry',
+                        reason=reason, condition=condition, next_owner=next_owner, at=ports.clock.now())
+                    head = repo.save_with_state(head, state, runtime)[0]
+                return {"outcome": "recovery_waiting", "reason": reason, **details}
+
             unconfirmed = unconfirmed_termination(runtime, jobs=ports.jobs)
             if unconfirmed is not None:
-                return {"outcome": "recovery_waiting", "reason": "existing execution termination is unconfirmed",
-                        "execution_id": unconfirmed}
+                return admission_wait("existing execution termination is unconfirmed", execution_id=unconfirmed)
             maintenance = ExitStack()
             try:
                 maintenance.enter_context(os_lock(repo.git_dir / "do-math-installation-maintenance.lock", blocking=False))
@@ -340,7 +368,6 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                 installation_sha256 = before_installation['installation_version']
                 if installation_sha256 is None:
                     raise ValueError('cannot identify repair installation: ' + before_installation['installation_error'])
-                failure_sha256 = failure_identity(failure, diagnosis)
                 if already_attempted(runtime, failure_sha256, installation_sha256):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
                 # The one role selection rule; it picks the adopted recovery edition.
@@ -361,20 +388,12 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                     capability = capability_requirements(state, reference,
                         current_identity=host.cli_identity(profile), at=ports.clock.now(), host=ports.host)
                 if not capability["satisfied"]:
-                    return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
-                            "capability": capability}
+                    return admission_wait("profile_capability_unavailable", next_owner="user", capability=capability)
                 eid = ports.clock.new_id("EX")
                 # The activity of one failure is keyed like its attempts, so a later
                 # observation of the same failure continues the same activity.
-                owner = {"kind": "installation_recovery", "failure_sha256": failure_sha256}
-                activity = next((a for a in runtime.get("activities", {}).values()
-                                 if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
+                activity = recovery_activity()
                 at = ports.clock.now()
-                if activity is None:
-                    activity = activities.open_activity(runtime, activity_id=ports.clock.new_id("AY"), activity_kind="recovery",
-                        owner_ref=owner, input_refs=[failure], opened_at=at)
-                elif activity["status"] == "waiting":
-                    activities.resume_activity(runtime, activity["id"], condition=activity["waiting"]["condition"], at=at)
                 aid = activity["id"]
                 run_directory = _operator_dir(workspace) / "recovery" / eid
                 execution_workspace = run_directory / "workspace"
@@ -393,7 +412,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                     execution_id=eid, reference=reference), profile)
                 sealed_input = prompt_seal(prompt)
                 if sealed_input["bytes"] > profile["input"]["max_input_bytes"]:
-                    return {"outcome": "recovery_waiting", "reason": "input_overflow", "prompt": sealed_input}
+                    return admission_wait("input_overflow", next_owner="user", prompt=sealed_input)
                 (run_directory / "input.txt").write_bytes(prompt.encode("utf-8"))
                 execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=aid,
                     actor_kind="ai", input_manifest={"failure": failure, "prompt": sealed_input,
@@ -405,8 +424,9 @@ def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure
                 execution["role"] = "recovery"
                 slots = SessionSlots(runtime, state, clock=ports.clock, jobs=ports.jobs, host_id=host_id)
                 if not slots.acquire(eid, profile=profile, execution=execution):
-                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
-                            "wait": deepcopy(slots.admission_wait)}
+                    return admission_wait(slots.admission_reason, wait=deepcopy(slots.admission_wait))
+                if activity["status"] == "waiting":
+                    activities.resume_activity(runtime, aid, condition=activity["waiting"]["condition"], at=at)
                 activities.assign_execution(runtime, aid, execution)
                 mark_dispatched(execution['launch_ticket'])
                 head = repo.save_with_state(head, state, runtime)[0]

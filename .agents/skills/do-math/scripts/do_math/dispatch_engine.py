@@ -138,6 +138,22 @@ class DispatchEngineMixin:
         return True
 
     def _dispatchable(self, action):
+        authored = {key: deepcopy(action[key]) for key in ('grant_id', 'profile_ref') if key in action}
+        admitted = False
+        try:
+            admitted = self._dispatch_candidate(action)
+            return admitted
+        finally:
+            if not admitted:
+                # A scan's derived selection is not an authored authority binding.
+                # Keep model/wait diagnostics while leaving an unstarted request mergeable.
+                for key in ('grant_id', 'profile_ref'):
+                    if key in authored:
+                        action[key] = authored[key]
+                    else:
+                        action.pop(key, None)
+
+    def _dispatch_candidate(self, action):
         action.pop("dispatch_wait", None)
         try:
             profile = self._action_lifecycle_gate(action)

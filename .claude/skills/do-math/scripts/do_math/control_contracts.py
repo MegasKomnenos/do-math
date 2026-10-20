@@ -12,7 +12,7 @@ from functools import cache
 
 from jsonschema import Draft202012Validator
 from .record_schemas.schemas import PROFILE_REF, RECORDS
-from .values import json_copy
+from .values import check_path_segment, json_copy
 
 # A caller-chosen control request ID; the CLI request schema and ENGINE share it.
 REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
@@ -72,8 +72,14 @@ def normalized_source_bytes(spec):
     if not isinstance(spec, dict) or set(spec) != SOURCE_FIELDS:
         raise ValueError('normalized source requires exact name, body, hash and size')
     name = spec['name']
-    if not isinstance(name, str) or name in {'', '.', '..'} or '/' in name or '\\' in name:
+    if not isinstance(name, str):
         raise ValueError('source name must be a file name')
+    try:
+        # The name becomes a workspace file name (input/sources/<n>-<name>), so
+        # it obeys the one Windows path segment rule (values.check_path_segment).
+        check_path_segment(name)
+    except ValueError:
+        raise ValueError('source name must be a file name') from None
     try:
         raw = base64.b64decode(spec['body_base64'], validate=True)
     except (binascii.Error, TypeError) as error:

@@ -652,12 +652,15 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
                                      {*available, *records}, admit_named_sources=False)
     if missing: return {"state": "not_ready", "basis": [], "errors": ["missing inputs: " + ",".join(missing)],
         'waits':[{'kind':'external_event','target_refs':missing,'next_owner':'research_preparation'}]}
+    # A reuse entry may name an admitted non-record input (READ_REFERENCE_FIELDS
+    # "lenient"); the availability check above owns it. Dependencies name records.
     blocked = [dep for dep in {*task.get("dependencies", []), *task.get("reuse", [])}
-               if dep not in records or records[dep][1].get("use_suspended")
-               or records[dep][1].get("status") in {"blocked", "withdrawn", "invalid", "use_suspended"}
-               or (records[dep][0] == "task" and dep in task.get("dependencies", []) and
-                   (records[dep][1].get("status") != "completed" or
-                    records[dep][1].get("assessment", {}).get("current") is False))]
+               if (dep not in records and dep in task.get("dependencies", []))
+               or (dep in records and (records[dep][1].get("use_suspended")
+                   or records[dep][1].get("status") in {"blocked", "withdrawn", "invalid", "use_suspended"}
+                   or (records[dep][0] == "task" and dep in task.get("dependencies", []) and
+                       (records[dep][1].get("status") != "completed" or
+                        records[dep][1].get("assessment", {}).get("current") is False))))]
     if blocked: return {"state": "not_ready", "basis": [], "errors": ["blocked dependencies: " + ",".join(blocked)]}
     from .task_scope import assessment_current
     for dep in task.get('dependencies',[]):
@@ -665,7 +668,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
             return {'state':'not_ready','basis':[],'errors':['dependency lacks a current completion assessment: '+dep]}
     from .knowledge import assess_research_use
     for ref in task.get("reuse", []):
-        if records[ref][0] == "knowledge" and not assess_research_use(records[ref][1], instance).get("valid"):
+        if ref in records and records[ref][0] == "knowledge" and not assess_research_use(records[ref][1], instance).get("valid"):
             return {"state": "not_ready", "basis": [], "errors": ["unusable knowledge: " + ref]}
     from .governance import authorize
     authority_action={**action,'id':action.get('id') or 'readiness:'+task['id']}

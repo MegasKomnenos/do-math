@@ -36,15 +36,9 @@ class KnowledgeEngineMixin:
         item = self.instance['knowledge'].get(knowledge_id)
         if item is None: raise ValueError('knowledge item does not exist')
         previous_cycle = item.get('review_cycle_id')
-        if previous_cycle in self.runtime['review_cycles']:
-            cycle = self.runtime['review_cycles'][previous_cycle]
-            if cycle['status'] == 'working':
-                cycle.update(status='unresolved', decision='unresolved', phase='ended')
-                cycle.setdefault('history', []).append({'event': 'user_knowledge_change', 'source_ref': source_ref, 'reason': reason})
-                for investigation in cycle.get('research', {}).values():
-                    if investigation.get('status') == 'pending':
-                        investigation.update(status='cancelled', cancellation={'source_ref': source_ref, 'reason': reason})
-                cycle['deferred_actions'] = {}
+        from .review_cycle import close_knowledge_review
+        close_knowledge_review(self.runtime['review_cycles'].get(previous_cycle),
+            event='user_knowledge_change', source_ref=source_ref, reason=reason)
         for execution in self.runtime['executions'].values():
             if execution.get('status') != 'ended' and execution.get('action', {}).get('target') == knowledge_id:
                 execution['stop_requested'] = 'knowledge_' + str(operation)

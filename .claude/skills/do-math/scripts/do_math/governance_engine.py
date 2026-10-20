@@ -451,8 +451,10 @@ class GovernanceEngineMixin:
             raise ValueError('goal audit group has inconsistent slots or counts')
         self.instance['goal_judgments'].append(judgment)
         if len(judgments) != action['required']: return judgment
+        # A satisfied verdict whose cited basis reaches no formal result cannot establish the
+        # mathematical goal (academic.apply_goal_assurance); the group then returns as not established.
         satisfied = bool(usable) and all(j['decision'] == 'satisfied' and j['scope_complete'] and j.get('current', True)
-            and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
+            and j['formal_result_refs'] and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
         if satisfied:
             from .trust_validation import require_active_environment
             require_active_environment(self.instance, self.runtime, current_identity=True, host=self.ports.host)

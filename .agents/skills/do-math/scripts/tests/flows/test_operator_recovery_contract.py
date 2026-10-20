@@ -21,6 +21,15 @@ FAILURE = {'kind': 'engine_unavailable', 'error': 'operator 계약 시험의 기
 
 
 class RecoveryContractTests(unittest.TestCase):
+    def assert_admission_wait(self, scene, reason, next_owner):
+        rows = [a for a in scene.load()[2]['activities'].values()
+                if isinstance(a.get('owner_ref'), dict) and a['owner_ref'].get('kind') == 'installation_recovery']
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['status'], 'waiting')
+        self.assertEqual(rows[0]['waiting']['reason'], reason)
+        self.assertEqual(rows[0]['waiting']['next_owner'], next_owner)
+        return rows[0]
+
     def test_unavailable_post_call_installation_does_not_replace_provider_limit(self):
         scene = Scene()
         scene.claude()
@@ -151,11 +160,16 @@ class RecoveryContractTests(unittest.TestCase):
         result = scene.call(operator.recovery, failure=FAILURE)
         self.assertEqual(result, {'outcome': 'recovery_waiting',
             'reason': 'existing execution termination is unconfirmed', 'execution_id': execution['id']})
-        self.assertEqual(scene.load(), before)
+        activity = self.assert_admission_wait(scene, result['reason'], 'recovery')
+        self.assertEqual(scene.load()[1], before[1])
+        self.assertEqual(scene.load()[2]['executions'], before[2]['executions'])
         self.assertEqual(scene.jobs.launched, [])
         self.assertEqual(scene.ports.scheduler.calls, [])
+        saved = scene.load()
+        self.assertEqual(scene.call(operator.recovery, failure=FAILURE), result)
+        self.assertEqual(scene.load(), saved)
         with scene.sim.engine.store.writer_lock():
-            self.assertEqual(scene.load()[0], before[0])
+            self.assertEqual(scene.load()[0], saved[0])
 
     def test_failed_verification_preserves_diagnosis_and_blocks_restart_and_repeat(self):
         scene = Scene()
@@ -259,10 +273,13 @@ class RecoveryContractTests(unittest.TestCase):
         self.assertEqual(len(result['prompt']['sha256']), 64)
         self.assertEqual(calls.count('run'), 0)
         self.assertEqual(scene.load()[2]['executions'], before[2]['executions'])
-        self.assertEqual(scene.load()[2]['activities'], before[2]['activities'])
+        self.assert_admission_wait(scene, result['reason'], 'user')
         self.assertEqual(scene.load()[2]['reservations'], before[2]['reservations'])
         self.assertEqual(scene.jobs.launched, [])
         self.assertEqual(scene.ports.scheduler.calls, [])
+        saved = scene.load()
+        self.assertEqual(scene.call(operator.recovery, failure=FAILURE)['reason'], 'input_overflow')
+        self.assertEqual(scene.load(), saved)
 
     def test_unsupported_job_records_runner_capability_evidence_without_model_or_restart(self):
         scene = Scene()

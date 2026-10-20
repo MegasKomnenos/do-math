@@ -155,6 +155,9 @@ class AcademicEngineMixin:
         actual = {row["id"]: row for row in task["completion_obligations"]}
         if any(actual.get(row["id"]) != row for row in expected):
             raise ValueError("academic criteria differ from the approved requirement obligations")
+        errors = academic.criteria_evidence_errors(task, assessment)
+        if errors:
+            raise ValueError(errors[0])
         dispositions = {row["obligation_id"]: row for row in assessment["item_dispositions"]}
         evidence = [{"criterion": row["claim"],
                      "satisfied": dispositions.get(row["id"], {}).get("kind") == "fulfilled",

@@ -102,8 +102,9 @@ def edition_current(task: dict | None, basis: dict) -> bool:
 
 def validate_policy(config: dict) -> None:
     models = config["tier_models"]
+    # A ``claude:`` name routes to the Claude CLI, which receives only the name after the prefix.
     if not isinstance(models, dict) or set(models) != set(TIERS) or any(
-            not isinstance(m, str) or not m.strip() for m in models.values()):
+            not isinstance(m, str) or not m.removeprefix("claude:").strip() for m in models.values()):
         raise ValueError("tier_models must name a model for low, medium and high")
     roles = config["role_tiers"]
     if not isinstance(roles, dict) or set(roles) - set(ROLE_TIERS) or any(t not in TIERS for t in roles.values()):

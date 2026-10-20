@@ -847,6 +847,22 @@ def _add_findings(cycle, action, output):
         cycle["pending_findings"].append(key)
 
 
+def close_knowledge_review(cycle, *, event, source_ref, reason, replacement_id=None):
+    """Retire a working proposal once when its knowledge is replaced or withdrawn."""
+    if cycle is None or cycle.get('status') != 'working':
+        return False
+    cycle.update(status='unresolved', decision='unresolved', phase='ended')
+    record = {'event': event, 'source_ref': source_ref, 'reason': reason}
+    if replacement_id is not None:
+        record['replacement_id'] = replacement_id
+    cycle.setdefault('history', []).append(record)
+    for investigation in cycle.get('research', {}).values():
+        if investigation.get('status') == 'pending':
+            investigation.update(status='cancelled', cancellation={'source_ref': source_ref, 'reason': reason})
+    cycle['deferred_actions'] = {}
+    return True
+
+
 def _finish(cycle, decision, reason):
     cycle.update(status="unresolved" if decision == "unresolved" else "completed",
                  phase="ended", decision=decision)

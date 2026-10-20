@@ -5,7 +5,7 @@ from typing import Protocol
 
 class Clock(Protocol):
     def now(self) -> str:
-        """The current UTC time as an ISO string, the form ``file_io.parse_utc`` reads."""
+        """The current UTC time as an ISO string, the form ``values.parse_utc`` reads."""
 
     def wall(self) -> datetime:
         """The current UTC time as an aware datetime."""

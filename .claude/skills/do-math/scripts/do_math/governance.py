@@ -15,7 +15,7 @@ from typing import Any
 from .values import SHA256_SCHEMA, distinct_texts, is_sha256, json_copy, parse_utc, require_text
 from .canonical import exact_content_hash
 from .academic import requirement_record
-from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES
+from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES, task_research
 from .external import recover_operation
 from .task_contracts import TERMINAL_TASK_STATUSES
 
@@ -505,7 +505,18 @@ def _dispose_grant_consumers(runtime, gid, event, reason):
             execution["stop_requested"] = reason
             event["affected"].append(eid)
     # Pinned requests cannot fall through to another overlapping authority.
+    removed = [a for a in runtime.get("queue", []) if a.get("grant_id") == gid]
     runtime["queue"] = [a for a in runtime.get("queue", []) if a.get("grant_id") != gid]
+    live_targets = {row.get("action", {}).get("target") for row in runtime.get("executions", {}).values()
+                    if row.get("status") != "ended"}
+    for action in removed:
+        # Removing a request withdraws that attempt, not the task obligation: a selected
+        # task without live work returns to planning, as a cancelled selection does.
+        task = runtime.get("tasks", {}).get(action.get("target"))
+        if (task is not None and task_research(action) and task.get("status") == "active"
+                and task["id"] not in live_targets):
+            task.update(status="planned", deferred_reason=reason)
+            event["affected"].append(task["id"])
     for operation in runtime.get("external_operations", {}).values():
         if operation.get("grant_id") == gid and operation.get("status") == "prepared":
             if not operation.get("transmitted") and operation.get("transmission_phase") != "recorded":

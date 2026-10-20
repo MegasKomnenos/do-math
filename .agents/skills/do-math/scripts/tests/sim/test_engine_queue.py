@@ -44,6 +44,22 @@ def charter_change(engine, **content_changes):
 
 
 class ObservationMerge(unittest.TestCase):
+    def test_waiting_dispatch_does_not_pin_derived_authority_or_split_requests(self):
+        engine = Sim.activated().engine
+        engine.runtime['queue'] = []
+        engine._enqueue('research_plan', reason='first', requested_by='UC-first')
+        action = engine.runtime['queue'][0]
+        execution = engine._register_execution({'id': 'AC-current-plan', 'role': 'research_plan'},
+            {'id': 'EX-current-plan', 'role': 'research_plan', 'status': 'running'})
+        self.assertIsNotNone(execution)
+        self.assertFalse(engine._dispatchable(action))
+        self.assertNotIn('grant_id', action)
+        self.assertNotIn('profile_ref', action)
+        self.assertIn('model_selection', action)
+        engine._enqueue('research_plan', reason='second', requested_by='UC-second')
+        self.assertEqual(len(engine.runtime['queue']), 1)
+        self.assertEqual(action['requested_by_refs'], ['UC-first', 'UC-second'])
+
     def test_plan_merge_preserves_trigger_payload_and_keeps_conflicting_targets_separate(self):
         cases = [('identity_review', {'review_cycle_id': 'RC-one'}, {'review_cycle_id': 'RC-two'}),
                  ('formal_target', 'K-one', 'K-two'), ('rejection_id', 'RJ-one', 'RJ-two')]

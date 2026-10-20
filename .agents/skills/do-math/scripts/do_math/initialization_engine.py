@@ -25,7 +25,11 @@ class InitializationEngineMixin:
         from .review_policy import build_review_policy
         lifecycle = self.instance['lifecycle']
         operation = change.get('operation', 'adopt')
-        if lifecycle['state'] == 'active' and operation != 'probe':
+        # A pause keeps the contract it interrupts: only an initialization, running or paused,
+        # may still adopt (governance.apply_decision tells the two pauses apart the same way).
+        initializing = lifecycle['state'] == 'initializing' or (
+            lifecycle['state'] == 'paused' and self.runtime.get('resume_lifecycle') == 'initializing')
+        if not initializing and operation != 'probe':
             raise ValueError('initialization adoption cannot replace an active contract')
         if operation == 'governance':
             from .governance import initialize_governance, preserve_source

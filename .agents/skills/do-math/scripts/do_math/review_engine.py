@@ -339,9 +339,10 @@ class ReviewEngineMixin:
             # A deferred review stays frozen until its proposal really changes or
             # is withdrawn. Elapsed time and newly free slots cannot reset it.
             item = self.instance['knowledge'].get(cycle['knowledge_id'], {})
+            ordinary = not cycle.get('transition_id') and cycle['proposal'].get('assessment_reassessment') is None
             superseded = (item.get('lifecycle') in {'withdrawn', 'superseded'}
-                or item.get('exposition_id') != cycle['proposal'].get('exposition_id')
-                or item.get('review_cycle_id') not in {None, cid})
+                or ordinary and (item.get('exposition_id') != cycle['proposal'].get('exposition_id')
+                                 or item.get('review_cycle_id') not in {None, cid}))
             closed = self._instance_closed()
             if record['state'] == 'deferred' and not superseded and not closed:
                 continue
@@ -391,7 +392,10 @@ class ReviewEngineMixin:
                     or formal.get('verification', {}).get('execution_id') != waiting['execution_id']
                     or formal.get('trust_environment_id') != self.instance.get('active_trust_environment')):
                 continue
-            cycle_id = self._start_identity_review(knowledge_id)
+            try:
+                cycle_id = self._start_identity_review(knowledge_id)
+            except ValueError:
+                continue
             self.runtime['history'].append({'kind': 'review_initialization_resumed', 'action_id': identifier,
                 'cycle_id': cycle_id, 'previous': deepcopy(waiting)})
             del self.runtime['waiting_actions'][identifier]
@@ -408,6 +412,8 @@ class ReviewEngineMixin:
             self._review_cycle({'role': 'identity_review', 'target': knowledge_id, 'review_cycle_id': current_id})
             self._queue_identity_actions(knowledge_id, current_id)
             return current_id
+        if previous_cycle_id is None:
+            previous_cycle_id = self.instance['knowledge'].get(item.get('supersedes'), {}).get('review_cycle_id')
         previous = cycles.get(previous_cycle_id) if previous_cycle_id else None
         if previous_cycle_id and previous is None:
             raise ValueError('previous review cycle does not exist')

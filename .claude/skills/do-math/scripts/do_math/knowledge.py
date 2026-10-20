@@ -564,6 +564,10 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     # Completed executions and unrelated work remain available as history.
     new_runtime["queue"] = [action for action in _without_checks(new_runtime.get("queue", []), knowledge_id)
                             if action.get("target") != actual_replacement_id]
+    from .review_cycle import close_knowledge_review
+    close_knowledge_review(new_runtime.get('review_cycles', {}).get(old.get('review_cycle_id')),
+        event='knowledge_superseded', source_ref=actor_ref, reason=reason,
+        replacement_id=actual_replacement_id)
     next_role = "identity_review" if reuse_formal else "formal_check"
     if not replacement.get("formal_result_id"):
         next_role = "research_plan"

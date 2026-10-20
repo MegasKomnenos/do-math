@@ -11,6 +11,19 @@ from support.wait_reporting import assert_activity_wait_row
 
 
 class ResourceEvidenceTests(ReviewOwnerCase):
+    def test_staged_resource_defer_does_not_use_the_ordinary_cycle_pointer(self):
+        engine = self.engine
+        engine.instance['review_policy'].update(overflow_disposition='defer', activity_execution_limit=1)
+        engine._start_identity_review('K1')
+        transition = self.staged()
+        cid = engine._start_staged_identity_review(transition, 'K1')
+        action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
+        self.assertIsNone(engine._register_execution(action,
+            {'id': 'EX-staged-denied', 'role': 'identity_review', 'status': 'queued'}))
+        cycle = engine.runtime['review_cycles'][cid]
+        self.assertEqual(rc.resource_disposition(cycle)['state'], 'deferred')
+        self.assertNotIn('resolution', rc.resource_disposition(cycle))
+
     def resource(self, *, deferred=False, exhausted=False, held=False, prepared=False):
         engine = self.engine
         engine.instance['review_policy']['overflow_disposition'] = 'defer' if deferred else 'unresolved'
@@ -127,7 +140,13 @@ class ResourceEvidenceTests(ReviewOwnerCase):
         self.assertEqual(engine.runtime['activities'][owner]['waiting']['condition'],
                          {'cycle_id': cid, 'proposal_digest': cycle['proposal_digest']})
         # Another actual unaffordable review retains its own deferred owner.
-        peer_id = engine._start_identity_review(self.scene.revise())
+        from do_math import knowledge_records as kr
+        proposal = kr.proposal_view(engine.instance, 'K1')
+        candidate = {key: deepcopy(value) for key, value in proposal.items() if key in knowledge.AUTHORED_FIELDS}
+        candidate.update(id='K-peer', formal_result_ref=proposal['formal_result_id'])
+        engine.instance, _ = kr.create_candidate(engine.instance, candidate,
+            source_ref='test-peer', actor_ref='author', clock=engine.ports.clock)
+        peer_id = engine._start_identity_review('K-peer')
         peer_action = deepcopy(next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == peer_id))
         self.assertIsNone(engine._register_execution(peer_action,
             {'id': 'EX-peer-denied', 'role': 'identity_review', 'status': 'queued'}))

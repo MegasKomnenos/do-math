@@ -97,7 +97,7 @@ def judgment_input_keys(role, action):
         else:
             keys.extend(('original_source', 'import_consumers', 'governance_records',
                          'decisions', 'grants', 'delegations', 'tasks', 'question_links',
-                         'sources', 'reference_catalog', 'record_index'))
+                         'sources', 'reference_catalog', 'record_index', 'configuration_source'))
             if action.get('stage') == 'check':
                 keys.append('interpretation_to_check')
     elif role == 'maintenance':
@@ -176,6 +176,8 @@ def judgment_source_refs(role, action, *, context):
     """Single exact files, with explicit missing/failed evidence left distinguishable."""
     if role in ('research_preparation', 'research_plan'):
         return ('configuration_source', 'profile_selection.profiles_ref', 'task_catalog[].source_ref')
+    if role == 'intent_interpretation' and not action.get('delegation_application_id'):
+        return ('configuration_source',)
     if role != 'operational_review':
         return ()
     paths = []

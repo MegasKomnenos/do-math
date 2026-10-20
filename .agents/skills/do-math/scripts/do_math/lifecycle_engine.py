@@ -649,8 +649,20 @@ class LifecycleEngineMixin:
                           {'state': 'not_ready', 'basis': [], 'errors': [CONTRACT_REVIEW_MISSING]})
             previous = self._task_readiness.get(task_id)
             self._record_readiness(task_id, {**evaluation, 'contract_basis': required}, now.isoformat())
+            recorded = {}
+            if previous is None and evaluation['state'] in {'ready', 'evaluation_error'}:
+                # Readiness is recalculated after restart; only the recorded
+                # cause of a planning event survives the owner process.
+                if previous_readiness_events is None:
+                    previous_readiness_events = {event.get('target'): event for event in self.runtime['events']
+                        if event['kind'] in {'task_became_ready', 'task_readiness_lost', 'task_condition_evaluation_error'}}
+                recorded = previous_readiness_events.get(task_id, {})
             if evaluation['state'] == 'ready':
-                if not previous or previous['state'] != 'ready' and not previous.get('dispatch_occupied'):
+                # A cold owner does not announce the same readiness on the same basis again.
+                announced = ((previous['state'] == 'ready' or previous.get('dispatch_occupied')) if previous
+                             else recorded.get('kind') == 'task_became_ready'
+                             and recorded.get('basis') == {'records': evaluation['basis']})
+                if not announced:
                     self._lifecycle_event('task_became_ready', target=task_id,
                                           basis={'records': evaluation['basis']})
             elif previous and (previous['state'] == 'ready' or
@@ -661,12 +673,6 @@ class LifecycleEngineMixin:
             if evaluation['state'] == 'evaluation_error':
                 error_basis = {'contract': required, 'records': evaluation['basis']}
                 if previous is None:
-                    # Readiness is recalculated after restart; only the recorded
-                    # cause of a planning event survives the owner process.
-                    if previous_readiness_events is None:
-                        previous_readiness_events = {event.get('target'): event for event in self.runtime['events']
-                            if event['kind'] in {'task_became_ready', 'task_readiness_lost', 'task_condition_evaluation_error'}}
-                    recorded = previous_readiness_events.get(task_id, {})
                     unchanged = (recorded.get('kind') == 'task_condition_evaluation_error'
                         and recorded.get('errors') == evaluation['errors'] and recorded.get('basis') == error_basis)
                 else:

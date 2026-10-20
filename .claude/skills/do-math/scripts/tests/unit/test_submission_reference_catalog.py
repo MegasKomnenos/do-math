@@ -8,6 +8,22 @@ from do_math.submission import reference_catalog, reported_references, validate_
 
 
 class CatalogTests(unittest.TestCase):
+    def test_workspace_input_reference_requires_a_supplied_existing_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            supplied = root / 'input/supplied.txt'
+            supplied.parent.mkdir()
+            supplied.write_text('supplied bytes')
+            (root / 'input/unprovided.txt').write_text('not issued')
+            context = {'manifest': {'files': [{'path': 'input/supplied.txt'}]}}
+            validate_reference('workspace:input/supplied.txt', context, root)
+            for files in (None, {}):
+                with self.subTest(candidate_files=files), self.assertRaisesRegex(ValueError, 'reference must identify supplied input'):
+                    validate_reference('workspace:input/unprovided.txt', context, root, candidate_files=files)
+            supplied.unlink()
+            with self.assertRaisesRegex(ValueError, 'reference must identify supplied input'):
+                validate_reference('workspace:input/supplied.txt', context, root)
+
     def test_optional_source_locators_and_nonreference_metadata_add_no_aliases(self):
         from do_math import submission
         self.assertEqual(submission.reference_aliases({'sources': [{'name': 'paper'}]}),

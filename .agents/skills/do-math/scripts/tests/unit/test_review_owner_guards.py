@@ -14,6 +14,27 @@ def setUpModule():
 
 
 class OwnerGuardTests(ReviewOwnerCase):
+    def test_domain_replacement_closes_the_superseded_working_review(self):
+        from do_math import knowledge
+        cid, _ = self.opened()
+        self.engine.instance, self.engine.runtime = knowledge.replace_knowledge(
+            self.engine.instance, self.engine.runtime, 'K1', {'title': 'Revised theorem'},
+            reason='Replace proposal', actor_ref='author', clock=self.engine.ports.clock)
+        cycle = self.engine.runtime['review_cycles'][cid]
+        self.assertEqual((cycle['status'], cycle['decision'], cycle['phase']),
+                         ('unresolved', 'unresolved', 'ended'))
+
+    def test_implicit_revision_review_keeps_predecessor_history_and_slots(self):
+        cid, _ = self.opened()
+        self.scene.execute()
+        self.scene.execute()
+        previous = deepcopy(self.engine.runtime['review_cycles'][cid])
+        kid = self.scene.revise()
+        current = self.engine.runtime['review_cycles'][self.engine._start_identity_review(kid)]
+        self.assertEqual(current['review_lineage_id'], previous['review_lineage_id'])
+        self.assertEqual(current['retained_reviewer_slots'], previous['reviewer_slots'])
+        self.assertEqual(current['previous_reviews'][-1]['proposal'], previous['proposal'])
+
     def test_fixed_source_io_failure_records_original_coordinate_without_materializing(self):
         from do_math.git_store import GitStateStoreError
         source = {'ref': 'source:missing', 'artifact_ref': 'research/sources/not-published.txt',
