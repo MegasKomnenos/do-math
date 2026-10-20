@@ -1,0 +1,38 @@
+{
+  "kind": "work",
+  "purpose": "확정된 S1을 기준으로 핵심 처리와 CLI를 구현한다.",
+  "tasks": [
+    {
+      "id": "core",
+      "inputs": [
+        "repo:pyproject.toml",
+        "repo:src/linecount/contracts.py",
+        "repo:contract_checks/s1.py"
+      ],
+      "writes": [
+        "src/linecount/core.py",
+        "tests/test_core.py"
+      ],
+      "provides": [
+        "S1"
+      ],
+      "uses": []
+    },
+    {
+      "id": "cli",
+      "inputs": [
+        "repo:pyproject.toml",
+        "repo:src/linecount/contracts.py",
+        "repo:contract_checks/s1.py"
+      ],
+      "writes": [
+        "src/linecount/__main__.py",
+        "tests/test_cli.py"
+      ],
+      "provides": [],
+      "uses": [
+        "S1"
+      ]
+    }
+  ]
+}
