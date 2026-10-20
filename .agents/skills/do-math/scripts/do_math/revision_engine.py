@@ -47,6 +47,7 @@ class RevisionEngineMixin:
                         retired_entries.append(entry)
                     else:
                         self._remove_action(action)
+                        retired_entries.append({'action': action})
                     continue
             if (action.get('target') in closed and action.get('role') in TASK_TARGET_ROLES
                     and (not entry or entry.get('kind') != 'revision_dependency')):
@@ -57,6 +58,7 @@ class RevisionEngineMixin:
                     retired_entries.append(entry)
                 else:
                     self._remove_action(action)
+                    retired_entries.append({'action': action})
                 continue
             targets = action.get('revision_targets', {})
             retired = set(targets) & closed
@@ -75,8 +77,10 @@ class RevisionEngineMixin:
                     retired_entries.append(entry)
             elif not remaining and not action.get('unbound_request'):
                 self._remove_action(action)
+                retired_entries.append({'action': action})
         for entry in retired_entries:
             self._settle_revision_owner(entry)
+            self._settle_request_owner(entry['action'])
 
     def _selected_action_current(self, action, *, evaluation_context=None):
         if not task_research(action):

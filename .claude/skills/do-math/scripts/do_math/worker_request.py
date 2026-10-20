@@ -176,6 +176,12 @@ def codex_argv(request: Mapping[str, Any], *, control: dict | None, data_dir: st
 CLAUDE_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 
 
+def check_claude_model_lock(model: str, locked: bool) -> None:
+    """The configuration and worker require a full provider ID under the same lock."""
+    if locked and not model.startswith("claude-"):
+        raise ValueError("claude_only_assigned_model requires a full Claude model ID")
+
+
 def check_claude_request(value: Any) -> dict:
     """A Claude worker request: the shared fields, then Claude's schema, effort and model-lock fields."""
     request = check_common_request(value, required=CLAUDE_REQUIRED, optional=CLAUDE_OPTIONAL)
@@ -185,8 +191,7 @@ def check_claude_request(value: Any) -> dict:
         raise ValueError("Claude effort must be low, medium, high, xhigh or max")
     if not isinstance(request.get("claude_only_assigned_model", False), bool):
         raise ValueError("claude_only_assigned_model must be a boolean")
-    if request.get("claude_only_assigned_model") and not request["model"].startswith("claude-"):
-        raise ValueError("claude_only_assigned_model requires a full Claude model ID")
+    check_claude_model_lock(request["model"], request.get("claude_only_assigned_model", False))
     return request
 
 

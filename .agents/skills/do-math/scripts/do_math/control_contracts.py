@@ -19,6 +19,14 @@ REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
 # The roles a public ``request --role`` queues; the CLI choices and ENGINE admission share it.
 REQUESTABLE_ROLES = ("research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance")
 SOURCE_FIELDS = frozenset({'name', 'body_base64', 'sha256', 'bytes'})
+
+
+def require_cleanup_origin(origin):
+    """Cleanup scope is an explicit user decision at admission and execution."""
+    if origin != 'user':
+        raise ValueError('maintenance cleanup requires user origin')
+
+
 # Resource capacity and model allocation settings. Only a user decision changes
 # them: public configure admission and inbox application both refuse the operator.
 USER_DECISION_SETTINGS = ('session_limits', 'tier_models', 'role_tiers', 'claude_only_assigned_model',

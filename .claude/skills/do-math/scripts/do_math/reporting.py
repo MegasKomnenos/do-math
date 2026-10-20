@@ -347,7 +347,10 @@ def render_human_report(report: dict) -> str:
                      f"count={row['count']}/{row['limit']} next={row['next_owner']} reason={row['reason']}")
         lines.append('  event_ref: ' + row['event_ref'])
         lines.append('  release_condition: ' + row['release_condition'])
-    for name, gate in (report.get('provider_waits') or {}).get('providers', {}).items():
+    provider_waits = report.get('provider_waits')
+    if provider_waits is None:
+        lines.append('providers: not observed')
+    for name, gate in (provider_waits or {}).get('providers', {}).items():
         lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} "
                      f"generation={gate['generation']}")
     lines.extend(render_dispatch_waits(report))

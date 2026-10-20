@@ -446,7 +446,13 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(waiting['waiting']['kind'], 'installation_repair_retry')
         assert_activity_wait_row(self, scene.sim.engine.status(), aid, waiting)
         self.assertEqual(scene.call(operator.recovery)['reason'], 'provider_limit')
-        self.assertEqual(scene.load(), before)
+        after = scene.load()
+        current_wait = deepcopy(waiting)
+        current_wait['waiting']['reason'] = 'provider_limit'
+        self.assertEqual(after[1], before[1])
+        self.assertEqual(after[2], {**before[2], 'activities': {**before[2]['activities'], aid: current_wait}})
+        self.assertEqual(scene.call(operator.recovery)['reason'], 'provider_limit')
+        self.assertEqual(scene.load(), after)
         self.assertEqual(len(scene.cli.calls), 1)
         self.assertEqual((direct.count('run'), direct.count('wake')), (1, 0))
         # Real admission requires the published provider gate to reopen; the old

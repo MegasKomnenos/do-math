@@ -206,10 +206,18 @@ EVIDENCE_FAMILIES = ("knowledge", "formal-result", "exposition", "external-opera
 def evidence_record(instance, runtime, identifier, resolve_evidence=None):
     """Resolve academic evidence in EVIDENCE_FAMILIES of planning.RECORD_FAMILIES, else by resolve_evidence."""
     from .planning import RECORD_FAMILIES
-    found = []
+    records = {}
     for family in EVIDENCE_FAMILIES:
         space, key = RECORD_FAMILIES[family]
-        container = (instance if space == "research" else runtime).get(key)
+        records[family] = (instance if space == "research" else runtime).get(key)
+    return resolve_evidence_reference(identifier, records, resolve_evidence)
+
+
+def resolve_evidence_reference(identifier, records, resolve_evidence=None):
+    """Resolve one allowed record family or artifact; visible indexes use the same rule."""
+    found = []
+    for family in EVIDENCE_FAMILIES:
+        container = records.get(family)
         if isinstance(container, dict) and identifier in container:
             found.append(container[identifier])
     if not found and resolve_evidence:

@@ -94,10 +94,12 @@ class CheckInvariantTests(unittest.TestCase):
             lock = scene.workspace / 'checks/.producer-lock'
             lock.parent.mkdir(exist_ok=True)
             lock.write_bytes(b'owner')
-            with self.assertRaisesRegex(ValueError, '^another producer check owns this workspace$'):
-                submission.producer_check(scene.workspace, scene.draft, clock=scene.clock)
+            from do_math.file_io import os_lock
+            with os_lock(lock, blocking=False):
+                with self.assertRaisesRegex(ValueError, '^another producer check owns this workspace$'):
+                    submission.producer_check(scene.workspace, scene.draft, clock=scene.clock)
             self.assertEqual(lock.read_bytes(), b'owner')
-            lock.unlink()
+            self.assertTrue(submission.producer_check(scene.workspace, scene.draft, clock=scene.clock)['passed'])
             outside = Path(directory) / 'outside.json'
             outside.write_bytes(canonical_json(scene.output))
             check = submission.producer_check(scene.workspace, outside, clock=scene.clock)

@@ -366,9 +366,14 @@ def validate_jobs(jobs):
     return jobs
 
 
+def _child_job(command, **options):
+    """Process boundary owned by this test tool; doubles replace its factory, not product names."""
+    from do_math.windows_job import WindowsJob
+    return WindowsJob(command, **options)
+
+
 def _child_run(spec, directory, *, cancelled=None):
     """Run one real child without a timeout; retain process, raw result and validation errors."""
-    from do_math.windows_job import WindowsJob
     from run_tests import wait_for_worker, worker_exit_code
 
     directory = Path(directory)
@@ -388,7 +393,7 @@ def _child_run(spec, directory, *, cancelled=None):
     try:
         if cancelled is not None and cancelled.is_set():
             raise CancelledError('mutation run interrupted before child start')
-        with WindowsJob(attempt['command'], cwd=SCRIPTS, env=environment) as job:
+        with _child_job(attempt['command'], cwd=SCRIPTS, env=environment) as job:
             attempt['pid'] = job.pid
             try:
                 (directory / 'attempt.json').write_text(json.dumps(attempt, indent=1), encoding='utf-8')

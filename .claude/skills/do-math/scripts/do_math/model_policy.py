@@ -106,6 +106,10 @@ def validate_policy(config: dict) -> None:
     if not isinstance(models, dict) or set(models) != set(TIERS) or any(
             not isinstance(m, str) or not m.removeprefix("claude:").strip() for m in models.values()):
         raise ValueError("tier_models must name a model for low, medium and high")
+    from .worker_request import check_claude_model_lock
+    for model in models.values():
+        if model.startswith("claude:"):
+            check_claude_model_lock(model.removeprefix("claude:"), config["claude_only_assigned_model"])
     roles = config["role_tiers"]
     if not isinstance(roles, dict) or set(roles) - set(ROLE_TIERS) or any(t not in TIERS for t in roles.values()):
         raise ValueError("role_tiers contains an unknown role or tier")

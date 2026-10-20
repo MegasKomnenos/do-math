@@ -148,6 +148,13 @@ class PlanSettleTests(unittest.TestCase):
                                                if review else [])]
         return plan
 
+    def request_plan(self):
+        request = self.sim.control('request', config={'role': 'research_plan'})
+        self.engine.process_controls()
+        self.assertEqual(self.engine.control_result(request['request_id'])['effect'], 'applied')
+        return next(action for action in self.engine.runtime['queue']
+                    if action.get('requested_by') == request['request_id'])
+
     def test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision(self):
         plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
         self.assertFalse(self.engine._dispatchable(plan))
@@ -162,8 +169,12 @@ class PlanSettleTests(unittest.TestCase):
         self.assertTrue(self.engine._dispatchable(plan), 'a slow review must not hold the first ready task for long')
 
     def test_an_explicitly_requested_plan_does_not_settle(self):
-        plan = self.queue({'id': 'AC-plan', 'role': 'research_plan', 'requested_by': 'UC-user'})
+        plan = self.queue(self.request_plan())
         self.assertTrue(self.engine._dispatchable(plan))
+        engine_requested = self.queue({'id': 'AC-engine-plan', 'role': 'research_plan',
+                                      'requested_by': next(iter(self.engine.runtime['executions']))})
+        self.assertFalse(self.engine._plan_settle_waits(plan))
+        self.assertTrue(self.engine._plan_settle_waits(engine_requested))
 
     def test_documented_wait_is_the_actual_queue_value_until_the_exact_limit(self):
         from support.engine_context import assert_wait_documents
@@ -188,6 +199,7 @@ class PlanSettleTests(unittest.TestCase):
 
     def test_wait_clearance_bypasses_and_running_review_keep_their_queue_meaning(self):
         engine = self.engine
+        requested = self.request_plan()['requested_by']
         plan = self.queue({'id': 'AC-plan', 'role': 'research_plan'})
         review = engine.runtime['queue'][1]
         # Real registration leaves a running review's request in the queue.
@@ -205,7 +217,7 @@ class PlanSettleTests(unittest.TestCase):
         self.assertTrue(engine._dispatchable(plan))
         self.assertNotIn('dispatch_wait', plan)
         engine.runtime['executions'] = {}
-        for key, value in (('requested_by', 'UC-user'), ('recovery', {'execution_id': 'EX-old'})):
+        for key, value in (('requested_by', requested), ('recovery', {'execution_id': 'EX-old'})):
             with self.subTest(key=key):
                 bypass = self.queue({'id': 'AC-bypass', 'role': 'research_plan', key: value,
                                      'dispatch_wait': {'kind': 'plan_settle', 'since': 'old', 'limit_seconds': 300}})

@@ -8,6 +8,32 @@ from do_math.submission import reference_catalog, reported_references, validate_
 
 
 class CatalogTests(unittest.TestCase):
+    def test_academic_resolution_rejects_supplied_nonacademic_records(self):
+        from do_math import contracts, submission
+        from support.entry import entry
+        with tempfile.TemporaryDirectory() as directory:
+            context = {'action': {'id': 'AC-plan', 'role': 'research_plan'},
+                       'execution_id': 'EX-plan', 'snapshot': 'fixed',
+                       'external_rejections': [{'id': 'ER-visible'}],
+                       'record_index': {'runtime/tasks': ['TK-visible'], 'research/knowledge': ['KN-visible']}}
+            output = {'summary': 'Plan', 'used_sources': [], 'questions': [], 'dispositions': [],
+                      'preparation_requests': [], 'goal_audit': False, 'task_assessments': []}
+            for reference, rejected in (('TK-visible', True), ('KN-visible', False)):
+                extensions = {'academic_resolutions': [{'id': 'ER-visible', 'decision': 'resolved',
+                    'evidence': 'Review the supplied evidence', 'evidence_refs': [reference]}]}
+                issues = submission.payload_issues(output, contracts.schema_for('research_plan'), context,
+                    extensions, Path(directory), clock=entry().ports.clock)
+                evidence_issues = [row for row in issues if '/evidence_refs/' in row['path']]
+                self.assertEqual(bool(evidence_issues), rejected, issues)
+                if not rejected:
+                    self.assertEqual(issues, [])
+
+            context['record_index']['runtime/executions'] = ['KN-visible']
+            extensions['academic_resolutions'][0]['evidence_refs'] = ['KN-visible']
+            issues = submission.payload_issues(output, contracts.schema_for('research_plan'), context,
+                extensions, Path(directory), clock=entry().ports.clock)
+            self.assertTrue(any('resolve uniquely' in row['message'] for row in issues), issues)
+
     def test_workspace_input_reference_requires_a_supplied_existing_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -19,7 +19,9 @@ def parse_project_paths(returncode, raw: bytes):
 
 
 def parse_object_info(specs, raw: bytes):
-    rows = raw.decode("utf-8").splitlines()
+    rows = raw.decode("utf-8").split("\n")
+    if rows[-1] == "":
+        rows.pop()
     if len(rows) != len(specs):
         raise GitBackendError("batch object check response count differs")
     result = []

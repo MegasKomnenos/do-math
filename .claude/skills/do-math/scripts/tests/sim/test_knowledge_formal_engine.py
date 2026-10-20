@@ -47,6 +47,23 @@ class FormalContinuationTests(unittest.TestCase):
         self.assertEqual(sim.engine.store.read(execution['result_ref'].replace('formal.json', 'proposal.lean'),
                                              sim.engine.head), old_source.encode())
         self.assertEqual(sim.runtime['waiting_actions'][action['id']]['kind'], 'formal_stopped')
+        owner = sim.runtime['executions'][execution['id']]['owner_activity_id']
+        sim.engine._resume_formal_waits()
+        self.assertNotIn(action['id'], sim.runtime['waiting_actions'])
+        self.assertFalse(any(a.get('target') == kid and a['role'] == 'formal_check' for a in sim.runtime['queue']))
+        self.assertEqual(sim.runtime['activities'][owner]['status'], 'finished')
+
+    def test_withdrawn_authority_wait_finishes_its_owner_without_starting_a_compiler(self):
+        from do_math.knowledge import invalidate_knowledge
+        sim, action, environment, binding, owner = parked()
+        sim.engine.instance, sim.engine.runtime = invalidate_knowledge(sim.instance, sim.runtime, 'K1',
+            reason='Withdraw the obsolete proposal', actor_ref=sim.instance['lifecycle']['input_id'],
+            declared_impact=[], clock=sim.clock)
+        sim.engine._save()
+        sim.engine._resume_formal_waits()
+        self.assertNotIn(action['id'], sim.runtime['waiting_actions'])
+        self.assertEqual(sim.runtime['activities'][owner]['status'], 'finished')
+        self.assertEqual(attempts(sim), [])
 
     def test_actual_identity_rejection_and_publication_gate_both_require_environment_recovery(self):
         """3-C/C-15: a changed owned executable, with actual identity checks and no compiler start."""

@@ -180,9 +180,17 @@ def import_rework(runtime, action):
         return False
     if action.get('intent_repair') or action.get('previous_import_id'):
         return True
-    predecessor = runtime.get('executions', {}).get(action.get('continuation_of'), {})
-    return (predecessor.get('role') == 'intent_interpretation'
-            and predecessor.get('action', {}).get('stage', 'interpret') == 'interpret')
+    # A reauthoring follows an admitted interpretation. Attempts that ended before
+    # admission (interrupted input, deferred provider) never interpreted the input.
+    executions, seen = runtime.get('executions', {}), set()
+    predecessor = executions.get(action.get('continuation_of'), {})
+    while (predecessor.get('role') == 'intent_interpretation' and predecessor.get('id') not in seen
+           and predecessor.get('action', {}).get('stage', 'interpret') == 'interpret'):
+        if any(row.get('to') == 'starting' for row in predecessor.get('transitions', [])):
+            return True
+        seen.add(predecessor.get('id'))
+        predecessor = executions.get(predecessor.get('continuation_of'), {})
+    return False
 
 
 def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outcome, owner, reason,

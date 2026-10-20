@@ -56,7 +56,12 @@ class SurfaceTests(unittest.TestCase):
             executables[provider] = str(executable)
         executables['lean'] = str(root / 'lean.exe')
         with patch('shutil.which', side_effect=executables.get):
-            self.assertEqual(host.discover_lean(), [executables['lean']])
+            from do_math import formal
+            from support.provider_probes import ObservedCalls
+            expected_lean = formal.discover_lean()  # A complete portable Mathlib takes precedence over PATH.
+            with ObservedCalls(discover=formal.discover_lean) as observed:
+                self.assertEqual(host.discover_lean(), expected_lean)
+                self.assertEqual(observed.count('discover'), 1)
             for provider, adapter_type in ADAPTERS.items():
                 calls = []
                 outputs = {arguments: b' '.join(flags) for arguments, flags in adapter_type.help_commands}

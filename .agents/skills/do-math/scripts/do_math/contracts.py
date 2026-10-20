@@ -218,6 +218,13 @@ SCHEMAS = {
     "operational_review": _schema({"disposition": disposition_schema()}),
     "maintenance": _schema({"report": STRING, "remaining_work": STRINGS}),
 }
+# A task_disposition carries the matching assessment of that task in the same response
+# (계약/운영-점검.md 「task_disposition」). Runtime, preflight and checker read this one schema.
+SCHEMAS["operational_review"]["properties"]["task_assessments"] = json_copy(
+    SCHEMAS["research_plan"]["properties"]["task_assessments"])
+SCHEMAS["operational_review"]["allOf"] = [{"if": {"properties": {"disposition": {"properties": {"kind": {"const": "task_disposition"}}}}},
+    "then": {"required": ["task_assessments"], "properties": {"task_assessments": {"minItems": 1, "maxItems": 1}}}}]
+SCHEMAS["operational_review"] = identify_schema(SCHEMAS["operational_review"])
 
 
 def schema_for(role: str) -> dict[str, Any]:

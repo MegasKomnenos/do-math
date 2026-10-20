@@ -717,10 +717,20 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             for message in criteria_evidence_errors(task, assessment):
                 issues.append(_issue(f"output/task_assessments/{index}/item_dispositions", message,
                                      "submission.academic_criteria_evidence"))
+    from .academic import EVIDENCE_FAMILIES, resolve_evidence_reference
+    evidence_records = {family: {identifier: identifier for identifier in
+        context.get("record_index", {}).get("/".join(planning.RECORD_FAMILIES[family]), [])}
+        for family in EVIDENCE_FAMILIES}
+
+    def academic_evidence(reference):
+        supplied(reference)
+        resolve_evidence_reference(reference, evidence_records,
+            lambda ref: True if ref.startswith(ARTIFACT_ROOT) and ref in reference_locators else None)
+
     for index, row in enumerate(extensions.get("academic_resolutions", [])):
         for number, reference in enumerate(row["evidence_refs"]):
             check(f"activity-extensions.json/academic_resolutions/{index}/evidence_refs/{number}",
-                  lambda reference=reference: supplied(reference), "submission.explicit_reference")
+                  lambda reference=reference: academic_evidence(reference), "submission.academic_evidence")
     if action["role"] == "intent_interpretation" and action.get("stage", "interpret") == "interpret":
         issues.extend(_intent_import_issues(output, context, clock=clock))
 
@@ -1501,31 +1511,33 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
 
 
 def producer_check(workspace, draft, *, clock):
-    """Serialize local checks; immutable predecessors, not timestamps, own order."""
+    """Serialize local checks; immutable predecessors, not timestamps, own order.
+
+    The OS lock (file_io.os_lock) ends with its holder, so a check killed by a
+    shell timeout leaves no owner behind for the next check of this workspace.
+    """
+    from contextlib import ExitStack
+    from .file_io import PhysicalBoundary, os_lock
     workspace = Path(workspace).resolve()
     directory = safe_path(workspace, "checks")
     directory.mkdir(parents=True, exist_ok=True)
     lock = safe_path(workspace, "checks/.producer-lock")
-    try:
-        handle = lock.open("x")
-    except FileExistsError as error:
-        raise ValueError("another producer check owns this workspace") from error
-    try:
-        with handle:
-            from .file_io import PhysicalBoundary
-            boundary = PhysicalBoundary(workspace)  # one root proof for this check's reads
-            head = safe_path(workspace, "checks/.producer-head")
-            history = (read_producer_checks(workspace, load_json(read_stable(head, boundary=boundary))["check_id"],
-                                            boundary=boundary) if head.exists() else [])
-            result = _producer_check(workspace, draft, history, clock=clock)
-            _validated_check(read_stable(safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
-                             result["id"])
-            pending = safe_path(workspace, "checks/.producer-head.pending")
-            pending.write_bytes(canonical_json({"check_id": result["id"]}))
-            atomic_replace(pending, head)
-            return result
-    finally:
-        lock.unlink()
+    with ExitStack() as held:
+        try:
+            held.enter_context(os_lock(lock, blocking=False))
+        except OSError as error:
+            raise ValueError("another producer check owns this workspace") from error
+        boundary = PhysicalBoundary(workspace)  # one root proof for this check's reads
+        head = safe_path(workspace, "checks/.producer-head")
+        history = (read_producer_checks(workspace, load_json(read_stable(head, boundary=boundary))["check_id"],
+                                        boundary=boundary) if head.exists() else [])
+        result = _producer_check(workspace, draft, history, clock=clock)
+        _validated_check(read_stable(safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
+                         result["id"])
+        pending = safe_path(workspace, "checks/.producer-head.pending")
+        pending.write_bytes(canonical_json({"check_id": result["id"]}))
+        atomic_replace(pending, head)
+        return result
 
 
 def _producer_check(workspace, draft, history, *, clock):

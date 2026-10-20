@@ -10,6 +10,18 @@ from support.role_answers import candidate
 
 
 class ModelPolicyValidationTests(unittest.TestCase):
+    def test_model_lock_rejects_aliases_at_configuration_before_worker_start(self):
+        for model in ('opus', 'sonnet', 'claude-opus-5-5'):
+            config = deepcopy(DEFAULT_CONFIG)
+            config['claude_only_assigned_model'] = True
+            config['tier_models']['high'] = 'claude:' + model
+            config['session_limits']['work']['claude:' + model] = 1
+            if model.startswith('claude-'):
+                policy.validate_policy(config)
+            else:
+                with self.subTest(model=model), self.assertRaisesRegex(ValueError, 'requires a full Claude model ID'):
+                    policy.validate_policy(config)
+
     def test_assessment_tier_requires_substantive_reason(self):
         assessment = rating()
         assessment['reason'] = ' \t\n'

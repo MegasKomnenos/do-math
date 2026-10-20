@@ -55,10 +55,27 @@ class ProducerToolTests(unittest.TestCase):
             "goal": "g", "large_optional_evidence": {"text": "x" * 30000}})
         fitted = fit_context(context, max_bytes=20000, workspace=workspace, mandatory_keys=["goal", "action"])
         catalog = next(row["path"] for row in fitted["manifest"] if row["key"] == "kind_definitions")
-        for reference in (previous, catalog):
-            with self.subTest(reference=reference):
-                output = {**common("Read the supplied evidence."), "candidates": [], "used_sources": [reference]}
-                self.assertTrue(check_output(self, workspace, context, output)["passed"])
+        output = {**common("Read the supplied evidence."), "candidates": [], "used_sources": [previous]}
+        self.assertTrue(check_output(self, workspace, context, output)['passed'])
+        output['used_sources'] = [catalog]
+        self.assertFalse(check_output(self, workspace, context, output)['passed'])
+        from do_math import submission
+        from do_math.context_store import prepare_role_input
+        from support.engine_context import context_engine
+        issued = workspace / 'issued'
+        issued.mkdir()
+        engine = context_engine()
+        action = {'id': 'AC-issued', 'role': 'research_preparation'}
+        prepared = prepare_role_input(engine._context(action, issued, execution_id='EX-issued'),
+            instance=engine.instance, runtime=engine.runtime, role=action['role'],
+            profile=engine._execution_profile(action), output_schema=engine._response_schema(action),
+            snapshot=engine.head, workspace=issued, activity_id=action['id'],
+            install_submission_tools=True, clock=engine.ports.clock)
+        fixed = submission.load_json((issued / 'input/submission/context.json').read_bytes())
+        catalog = next(path for path in prepared['catalog_files'] if path.endswith('/kind_definitions.json'))
+        output = {'summary': 'Read the issued catalog', 'used_sources': [catalog], 'questions': [], 'candidates': []}
+        checked = check_output(self, issued, fixed, output)
+        self.assertTrue(checked['passed'], checked)
 
     def test_producer_checks_checkpoint_evidence_paths(self):
         from do_math.canonical import canonical_json

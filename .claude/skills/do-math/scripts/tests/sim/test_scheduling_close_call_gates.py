@@ -23,8 +23,10 @@ class CallGateTests(unittest.TestCase):
             request = sim.control('pause', text='Pause while the input is being prepared')
             pending = engine._inbox()
             self.assertEqual([row['id'] for row in pending], [request['request_id']])
-            with self.assertRaises(InputPreparationInterrupted):
+            with self.assertRaises(InputPreparationInterrupted) as interrupted:
                 engine._preparation_checkpoint()
+            self.assertIs(type(interrupted.exception), InputPreparationInterrupted)
+            self.assertEqual(interrupted.exception.args, ())
             self.assertEqual(engine._inbox(), pending)
         finally:
             engine._preparing_input = False

@@ -59,8 +59,10 @@ class AcademicEngineMixin:
     def _ensure_academic_followup(self):
         basis = self._solution_basis()
         requirements = academic.current_requirements(self.instance)
-        if basis is None or self.runtime["status"] in {"paused", "closed"}: return
+        if self.runtime["status"] in {"paused", "closed"}: return
         current_hash = requirements["sha256"]
+        # A basis that stops being current never returns (re-solving seals new judgments),
+        # so its tasks are superseded even while no basis is current.
         for task in self.runtime["tasks"].values():
             if task.get("academic_requirement_id") and (task.get("solution_basis") != basis or task.get("requirements_sha256") != current_hash):
                 if task["status"] == "closed":
@@ -73,6 +75,8 @@ class AcademicEngineMixin:
                 task["status"] = "closed"
                 task["scope_disposition"] = {"kind": "superseded_requirements", "reason": "Approved academic requirements or solution basis changed"}
                 self.runtime["queue"] = [a for a in self.runtime["queue"] if a.get("target") != task["id"]]
+        if basis is None:
+            return
         created = False
         for requirement in requirements["items"]:
             if any(t.get("academic_requirement_id") == requirement["id"] and t.get("solution_basis") == basis and

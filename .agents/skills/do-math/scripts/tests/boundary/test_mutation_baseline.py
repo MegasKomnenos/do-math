@@ -147,6 +147,7 @@ class ParallelMutationTests(unittest.TestCase):
 
     def test_interrupt_joins_all_active_child_trees_and_preserves_listing_and_attempts(self):
         import run_tests
+        from concurrent.futures import wait as wait_futures, FIRST_COMPLETED
         root, module, _, index = self.fixture(
             '        process = subprocess.Popen([sys.executable, "-c", "import threading; threading.Event().wait()"], '
             'creationflags=subprocess.CREATE_NO_WINDOW)\n'
@@ -167,7 +168,9 @@ class ParallelMutationTests(unittest.TestCase):
             while len(list((root / 'interrupt').glob('mutant-*/attempt-*/scratch/ready.json'))) != 3:
                 if time.monotonic() > deadline:
                     self.fail('three mutant children did not reach their explicit interruption point')
-                time.sleep(.01)
+                finished, _ = wait_futures(futures, timeout=.01, return_when=FIRST_COMPLETED)
+                if finished:
+                    self.fail('mutation children ended before their explicit interruption point')
             raise KeyboardInterrupt('explicit fixture interruption')
 
         with mock.patch.object(mutation, 'as_completed', interrupt), mock.patch.object(run_tests, 'wait_for_worker', wait):

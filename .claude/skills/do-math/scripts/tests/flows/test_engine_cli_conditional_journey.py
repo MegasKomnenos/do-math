@@ -276,9 +276,10 @@ class ConditionalCliJourneyTests(unittest.TestCase):
                     additions = {'event_refs': [*action['event_refs'], periodic[0]['id']],
                                  'periodic_reconsideration': True}
                 self.assertEqual(waiting, {**action, **additions,
-                    'actor_kind': selected['profile']['actor_kind'], 'profile_ref': selected['selection']['profile_ref'],
+                    'actor_kind': selected['profile']['actor_kind'],
                     'model_selection': selected['selection'], 'dispatch_wait': {
                         'kind': 'lifecycle', 'reason': 'research authority: no current grant permits this action'}})
+                self.assertNotIn('profile_ref', waiting)
                 self.assertEqual(runtime['activities'], before[2]['activities'])
                 status = journey.call('status', '--json')
                 self.assertEqual(status['operating_summary']['grants'], [

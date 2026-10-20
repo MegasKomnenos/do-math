@@ -283,7 +283,7 @@ class MutationEvidenceTests(unittest.TestCase):
         self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
             args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b''))))
         self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
-        self.enterContext(mock.patch('do_math.windows_job.WindowsJob', spawn))
+        self.enterContext(mock.patch.object(mutation, '_child_job', spawn))
         self.enterContext(mock.patch('run_tests.wait_for_worker'))
         self.enterContext(mock.patch('run_tests.worker_exit_code', lambda job: job.returncode))
         return mutation.run('HEAD', None if fallback else index, {'do_math/sample.py': '1'}, root, root / 'mutants',

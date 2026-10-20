@@ -63,7 +63,8 @@ class ActionWaitDeclarationTests(unittest.TestCase):
             ('core_engine.py', '_settle_activity'), ('external_engine.py', '_external_execution_record'),
             ('formal_engine.py', '_trust_activation_steps'), ('formal_engine.py', '_trust_check_steps'),
             ('formal_engine.py', '_formal_steps'), ('provider_engine.py', '_requeue_provider_action'),
-            ('repair_execution.py', 'record_recovery_attempt'), ('review_engine.py', '_settle_review_resource_dispositions')})
+            ('repair_execution.py', 'record_recovery_attempt'), ('review_engine.py', '_settle_review_resource_dispositions'),
+            ('scheduled_operator.py', 'recovery'), ('scheduled_operator.py', 'admission_wait')})
         self.assertEqual(observed, set(ACTIVITY_WAIT_RULES) - {'required_input', 'user_resume'})
         self.assertFalse(set(WAITING_ACTION_RULES) & set(ACTIVITY_EXTRA_WAIT_RULES))
         schema = RECORDS['activities']['properties']['waiting']

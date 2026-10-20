@@ -76,13 +76,15 @@ class ContractTests(unittest.TestCase):
                          ["'evidence_refs' is a required property"])
 
     def test_every_role_has_closed_schema(self):
-        """Every object with declared properties, at any depth, rejects fields it does not declare.
+        """Every complete object definition rejects fields it does not declare.
+
+        Conditional predicates only constrain an object already closed by its owner.
 
         About 0.35 s, over the 0.2 s unit budget: it builds and meta-validates every role's full schema.
         """
         def objects(node, path):
             if isinstance(node, dict):
-                if "properties" in node:
+                if "properties" in node and node.get('type') == 'object':
                     yield path, node
                 for key, value in node.items():
                     yield from objects(value, path + "/" + key)

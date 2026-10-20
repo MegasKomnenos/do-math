@@ -352,6 +352,9 @@ class TerminalRequestTests(unittest.TestCase):
         ended = next(row for row in sim.runtime['executions'].values() if row['status'] == 'ended')
         clear_work(sim)
         before = deepcopy(sim.runtime['executions'])
+        with self.assertRaisesRegex(ValueError, 'cleanup.*user'):
+            sim.control('request', origin='operator', config={
+                'role': 'maintenance', 'cleanup_execution_ids': [ended['id']]})
         request = sim.control('request', config={
             'role': 'maintenance', 'cleanup_execution_ids': [ended['id']]})
         sim.engine.process_controls()

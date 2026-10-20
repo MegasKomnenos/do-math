@@ -96,6 +96,16 @@ class FormalEngineMixin:
                    'previous': deepcopy(rebind['previous']), 'current': deepcopy(rebind['current']),
                    'recorded_at': rebind['recorded_at']})
 
+    def _retire_obsolete_formal_action(self, action):
+        if self.instance['knowledge'][action['target']].get('lifecycle') == 'active':
+            return False
+        self._remove_action(action)
+        self.runtime.get('waiting_actions', {}).pop(action['id'], None)
+        self.runtime['history'].append({'kind': 'obsolete_action', 'action': deepcopy(action),
+            'reason': 'The formal check target was superseded or withdrawn'})
+        self._settle_request_owner(action)
+        return True
+
     def _resume_formal_waits(self):
         """Requeue parked formal checks once the condition that parked them is gone.
 
@@ -113,6 +123,8 @@ class FormalEngineMixin:
             kind, detail = waiting.get('kind'), waiting.get('detail', {})
             rule = FORMAL_WAIT_RULES.get(kind)
             if rule is None:
+                continue
+            if self._retire_obsolete_formal_action(waiting['action']):
                 continue
             if rule['resume'] == 'environment_changed':
                 if not environment_changed(self.instance, detail):
@@ -346,6 +358,9 @@ class FormalEngineMixin:
         action.setdefault('id', self.ports.clock.new_id('AC'))
         action.setdefault('lineage_id', action['id'])
         kid = action['target']
+        if self._retire_obsolete_formal_action(action):
+            self._save()
+            return
         proposal = proposal_view(self.instance, kid)
         profile = self._execution_profile(action)
         execution_id = self.ports.clock.new_id('EX')

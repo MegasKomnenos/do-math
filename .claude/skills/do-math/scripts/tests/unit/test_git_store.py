@@ -12,6 +12,16 @@ INSTANCE = 'RI-01M3HM0X0000000000000000AB'
 
 
 class StoreClockTests(unittest.TestCase):
+    def test_batch_metadata_preserves_unicode_path_boundaries_and_rejects_trailing_output(self):
+        from do_math.storage_finish_git_output import parse_object_info
+        from do_math.ports.git_backend import GitBackendError
+        for separator in ('\u0085', '\u2028', '\u2029'):
+            spec = 'head:missing' + separator + 'name'
+            self.assertEqual(parse_object_info([spec], (spec + ' missing\n').encode()), [None])
+        for raw in (b'hash blob 3\nextra', b'hash blob 3\nextra\n'):
+            with self.subTest(raw=raw), self.assertRaisesRegex(GitBackendError, '^batch object check response count differs$'):
+                parse_object_info(['head:path'], raw)
+
     def test_a_publication_stamps_its_commit_with_the_clock_port_time(self):
         wall = datetime(2026, 3, 4, 5, 6, 7, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:

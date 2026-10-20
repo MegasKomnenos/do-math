@@ -48,7 +48,7 @@ from . import task_contracts, operational_dispositions, retention, repair_execut
 from .control_protocol import SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
 from .file_io import cached_sha256, fingerprint_settled, os_lock, stat_fingerprint, write_bytes_atomic
 from .configuration import DEFAULT_CONFIG, validate_config
-from .control_contracts import OPERATOR_ACTIONS, REQUESTABLE_ROLES, user_decision_changed, control_request_id, normalized_source, normalized_source_bytes, validate_control_payload, validate_request_id
+from .control_contracts import OPERATOR_ACTIONS, REQUESTABLE_ROLES, user_decision_changed, control_request_id, normalized_source, normalized_source_bytes, validate_control_payload, validate_request_id, require_cleanup_origin
 from .input_recovery import overflow_requests, validate_resolutions
 from .maintenance_gate import apply_control, settle
 from .review_cycle import resource_disposition
@@ -310,6 +310,7 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
         elif role not in REQUESTABLE_ROLES:
             raise ValueError("unsupported requested role")
         if "cleanup_execution_ids" in (config or {}):
+            require_cleanup_origin(origin)
             ids = config["cleanup_execution_ids"]
             if role != "maintenance" or not isinstance(ids, list) or not ids or any(not isinstance(eid, str) for eid in ids) or len(set(ids)) != len(ids) or set(ids) - runtime["executions"].keys():
                 raise ValueError("maintenance cleanup requires distinct existing execution IDs")
@@ -649,6 +650,19 @@ class CoreEngineMixin:
                   else [{"execution_id": execution_id, "reason": execution.get("error") or execution["outcome"]}])
         activities.finish_activity(self.runtime, aid, result_refs=activity["result_refs"],
             unresolved=[*preserved, *failed], followups=followups, at=self.ports.clock.now())
+
+    def _settle_request_owner(self, action):
+        """Close a retired request's idle owner, retaining failures and other obligations."""
+        activity = self.runtime['activities'].get(action.get('owner_activity_id'))
+        if not activity or activity['status'] == 'finished':
+            return
+        if activity['assigned_execution_ids']:
+            self._settle_activity(activity['assigned_execution_ids'][-1])
+        elif not (any(row.get('owner_activity_id') == activity['id'] for row in self.runtime['queue'])
+                  or any(row.get('action', {}).get('owner_activity_id') == activity['id']
+                         for row in self.runtime.get('waiting_actions', {}).values())):
+            activities.finish_activity(self.runtime, activity['id'], result_refs=activity['result_refs'],
+                unresolved=activity['unresolved'], followups=activity['followups'], at=self.ports.clock.now())
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
@@ -2073,12 +2087,6 @@ class CoreEngineMixin:
             schema = governance.interpretation_schema(action.get("stage", "interpret"))
         else:
             schema = action_schema(action)
-        if action["role"] == "operational_review":
-            schema = deepcopy(schema)
-            schema["properties"]["task_assessments"] = deepcopy(action_schema(
-                {"role": "research_plan"})["properties"]["task_assessments"])
-            schema.setdefault("allOf", []).append({"if": {"properties": {"disposition": {"properties": {"kind": {"const": "task_disposition"}}}}},
-                "then": {"required": ["task_assessments"], "properties": {"task_assessments": {"minItems": 1, "maxItems": 1}}}})
         if action["role"] == "maintenance" and action.get("kind_definition_id"):
             schema = deepcopy(schema)
             schema["properties"]["kind_definition_check"] = {"type": "object", "additionalProperties": False,
@@ -3084,6 +3092,11 @@ class CoreEngineMixin:
             _, _, input_runtime = self.store.view(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
                 extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"], clock=self.ports.clock)
+            for row in extension['task_dispositions']:
+                withdrawn = self.runtime['tasks'][row['task_id']]['scope_disposition']
+                for cancelled in [*withdrawn['cancelled_queue_actions'],
+                                  *(item['entry']['action'] for item in withdrawn['cancelled_waiting_actions'])]:
+                    self._settle_request_owner(cancelled)
         self._apply_queue_plan(execution_id)
         self._apply_academic_resolutions(action, execution_id, extension.get("academic_resolutions", []))
         for relation in extension.get("relations", []):
@@ -3398,7 +3411,9 @@ class CoreEngineMixin:
         instance, runtime = instance or self.instance, runtime or self.runtime
         requested = action.get("cleanup_execution_ids", [])
         request = _user_control_request(runtime, action.get("requested_by"))
-        if (not request or request.get("origin", "user") != "user" or request.get("action") != "request"
+        if request:
+            require_cleanup_origin(request.get("origin", "user"))
+        if (not request or request.get("action") != "request"
                 or request.get("config", {}).get("role") != "maintenance"
                 or request["config"].get("cleanup_execution_ids") != requested):
             raise ValueError("cleanup has no preserved exact user-approved execution scope")

@@ -219,6 +219,10 @@ def _catalog_name(key: str) -> str:
     return key + ".json"
 
 
+def _catalog_path(key: str) -> str:
+    return "input/catalog/" + _catalog_name(key)
+
+
 def write_source_catalog(context: dict, workspace: Path) -> dict:
     if not isinstance(context, dict):
         raise TypeError("context must be an object")
@@ -229,7 +233,7 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
     files: dict[str, bytes] = {}
     boundary = None
     for key in sorted(context):
-        logical = "input/catalog/" + _catalog_name(key)
+        logical = _catalog_path(key)
         target = safe_path(workspace, logical, require_input=True)
         data = canonical_json(context[key])
         if target.exists():
@@ -480,7 +484,7 @@ BLOCKED_KEYS = {
     'task_contract_review': (),
 }
 # Keys only the installed checker and read tool consume; the prompt never carries them.
-CHECKER_ONLY_KEYS = ('control_binding', 'record_store')
+CHECKER_ONLY_KEYS = ('control_binding', 'record_store', 'input_catalog')
 # Roles whose task inputs and completion evidence name records: context['supplied_record_ids'].
 CITED_RECORD_ROLES = ('research_preparation', 'research_plan', 'operational_review')
 
@@ -822,6 +826,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         validation_context['relation_validation_source'] = ref
     if install_submission_tools:
         from .submission import install_tools
+        # This role's authorized keys define the catalog; the same path rule writes it below.
+        validation_context['input_catalog'] = [{'path': _catalog_path(key)}
+            for key in sorted({*value, 'submission_contract', 'reference_catalog'})]
         install_tools(workspace, validation_context, schema, max_artifact_bytes, clock=clock)
         for key in ('submission_contract', 'reference_catalog', 'formal_verifier', 'record_map'):
             if key in validation_context:

@@ -44,6 +44,33 @@ def charter_change(engine, **content_changes):
 
 
 class ObservationMerge(unittest.TestCase):
+    def test_planner_cancellation_finishes_the_waiting_owner_and_preserves_failure(self):
+        from do_math import activities, execution_lifecycle
+        from support.engine_lifecycle import clear_work
+        sim = Sim.activated()
+        clear_work(sim)
+        engine = sim.engine
+        action = {'id': 'AC-waiting', 'role': 'research_preparation'}
+        engine._action_lifecycle_gate(action)
+        execution = engine._register_execution(action,
+            {'id': 'EX-waiting', 'role': action['role'], 'status': 'starting'})
+        execution_lifecycle.transition_execution(execution, 'stopping', at=sim.clock.now())
+        execution_lifecycle.transition_execution(execution, 'ended', at=sim.clock.now(), outcome='start_failed',
+            reason='Provider refused admission')
+        continued = activities.continue_activity(engine.runtime, execution['id'], at=sim.clock.now(),
+            reason='Wait for provider admission', condition={'kind': 'provider_admission'},
+            wait_kind='provider_admission', next_owner='engine')
+        engine.runtime['queue'].append(continued)
+        planner = engine._register_execution({'id': 'AC-planner', 'role': 'research_plan'},
+            {'id': 'EX-planner', 'role': 'research_plan', 'status': 'running'})
+        planner['extensions'] = {'queued_requests': [{'request_id': continued['id'], 'decision': 'cancel',
+            'reason': 'The pending request is no longer needed'}]}
+        engine._apply_queue_plan(planner['id'])
+        owner = engine.runtime['activities'][execution['owner_activity_id']]
+        self.assertEqual(owner['status'], 'finished')
+        self.assertNotIn('waiting', owner)
+        self.assertEqual(owner['unresolved'], [{'execution_id': execution['id'], 'reason': 'start_failed'}])
+
     def test_waiting_dispatch_does_not_pin_derived_authority_or_split_requests(self):
         engine = Sim.activated().engine
         engine.runtime['queue'] = []

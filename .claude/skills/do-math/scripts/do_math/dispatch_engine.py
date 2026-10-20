@@ -127,7 +127,9 @@ class DispatchEngineMixin:
         """Approvals arriving minutes apart are decided by one plan; a slow review delays it only up to the limit."""
         from .governance import timestamp
         limit = self.instance["config"]["plan_settle_seconds"]
-        if action.get("requested_by") or action.get("recovery"):
+        # Only a plan a user or operator control requested starts at once; a plan an
+        # execution requested (task_scope's continuation plan) settles like the others.
+        if action.get("requested_by") in self.runtime["processed_controls"] or action.get("recovery"):
             return False
         if not any(a["role"] == "task_contract_review" for a in self.runtime["queue"]):
             return False

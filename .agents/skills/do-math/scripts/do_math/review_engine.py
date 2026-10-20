@@ -387,6 +387,12 @@ class ReviewEngineMixin:
                 continue
             knowledge_id = waiting['action']['target']
             item = self.instance['knowledge'].get(knowledge_id)
+            if item and item.get('lifecycle') != 'active':
+                self.runtime['history'].append({'kind': 'review_initialization_retired', 'action_id': identifier,
+                    'previous': deepcopy(waiting), 'reason': 'The review target was superseded or withdrawn'})
+                del self.runtime['waiting_actions'][identifier]
+                self._settle_request_owner(waiting['action'])
+                continue
             formal = self.instance['formal_results'].get(item.get('formal_result_id')) if item else None
             if (not formal or formal.get('publication_state') != 'accepted' or formal.get('formal_use') != 'active'
                     or formal.get('verification', {}).get('execution_id') != waiting['execution_id']

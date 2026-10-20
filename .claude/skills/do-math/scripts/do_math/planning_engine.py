@@ -153,6 +153,7 @@ class PlanningEngineMixin:
                 self.runtime["history"].append({"kind": "assessment_inputs_changed", "action_id": aid})
                 self.runtime["questions"] = [q for q in self.runtime["questions"] if q != entry.get("question")]
                 del self.runtime["waiting_actions"][aid]
+                self._settle_request_owner(entry['action'])
         self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
             a["role"] == "task_contract_review" and a.get("target") in missing.keys() | missing_rules.keys() and a.get("id") not in live)]
         pending = (self.runtime['queue'] + [e['action'] for e in self.runtime.get('waiting_actions', {}).values()]
@@ -244,6 +245,7 @@ class PlanningEngineMixin:
                 task = self.runtime["tasks"].get(request.get("target"))
                 if task and task_research(request) and task["status"] == "active":
                     task.update(status="planned", deferred_reason=row["reason"])
+                self._settle_request_owner(request)
             else:
                 ordered.append(request)
             self.runtime["history"].append({"kind": "queue_plan_applied", "execution_id": execution_id, **row})
