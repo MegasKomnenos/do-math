@@ -250,7 +250,7 @@ class WritingFlow:
             return "합의 대조 결과가 다른 독해 실행에 관한 것임"
         return None
 
-    def read(self, *, scope="whole", model="gpt-5.6-sol", effort="high", timeout=600, codex=None):
+    def read(self, *, scope="whole", model="gpt-6.1-sol", effort="high", timeout=600, codex=None):
         if scope not in {"sample", "whole"} or not math.isfinite(timeout) or timeout <= 0:
             raise WorkflowError("독해 범위와 제한 시간이 잘못됨")
         executable = shutil.which(str(codex or "codex"))
@@ -452,7 +452,7 @@ def main(argv=None):
         begin.add_argument("--" + name, type=Path, required=True)
     read = sub.add_parser("read", help="작성 대화가 없는 별도 Codex로 원고 독해")
     read.add_argument("--scope", choices=("sample", "whole"), default="whole")
-    read.add_argument("--model", default="gpt-5.6-sol")
+    read.add_argument("--model", default="gpt-6.1-sol")
     read.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default="high")
     read.add_argument("--timeout", type=float, default=600)
     read.add_argument("--codex")
