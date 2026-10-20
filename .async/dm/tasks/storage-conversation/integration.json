@@ -1,0 +1,9 @@
+{
+  "task": "storage-conversation",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py"
+  ]
+}

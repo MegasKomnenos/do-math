@@ -1,0 +1,13 @@
+{
+  "task": "r19-r20",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-terminal-cleanup-21276.jsonl",
+    ".claude/skills/do-math/scripts/tests/corpus/manifest.json",
+    ".claude/skills/do-math/scripts/tests/corpus/claude/claude-rate-before-init-21276.jsonl",
+    ".claude/skills/do-math/scripts/tests/unit/test_corpus_replay.py",
+    ".agents/skills/do-math/scripts/tests/corpus/manifest.json",
+    ".agents/skills/do-math/scripts/tests/corpus/claude/claude-terminal-cleanup-21276.jsonl",
+    ".agents/skills/do-math/scripts/tests/corpus/claude/claude-rate-before-init-21276.jsonl"
+  ]
+}

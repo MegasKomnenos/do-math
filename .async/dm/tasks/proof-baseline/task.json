@@ -1,0 +1,32 @@
+{
+  "id": "proof-baseline",
+  "kind": "work",
+  "depends_on": [
+    "keep-proof"
+  ],
+  "writes": [],
+  "inputs": [
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/requirements-index.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/model-policy-2026-10-14.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/document-batching-2026-10-14.md",
+    "C:/math/.async/dm/managers/0045/review.md",
+    "C:/math/.async/dm/managers/0045/verification-review.json",
+    "C:/math/.async/dm/tasks/keep-proof/report.json",
+    "C:/math/.async/dm/tasks/keep-proof/evidence/judgment.md",
+    "C:/math/.async/dm/tasks/keep-proof/evidence/historical-source-comparison.json",
+    "C:/math/.async/dm/tasks/keep-proof/evidence/report-rows.json",
+    "C:/math/.async/dm/tasks/keep-proof/evidence/mutation-fixtures.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/report.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/phases/002/tasks/mutation-baseline/evidence/",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/support/branch_gate.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "C:/math/.async/dm/state.json (read-only execution capacity)"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

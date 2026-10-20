@@ -1,0 +1,9 @@
+{
+  "task": "storage-execution",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py"
+  ]
+}

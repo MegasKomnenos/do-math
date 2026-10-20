@@ -1,0 +1,33 @@
+{
+  "status": "complete",
+  "summary": "R08/2-A의 현행 공개 제어·수송 유한 경계를 판단하고 실제 세 반려 결함을 수리했다. worker_submit의 비문자열 kind는 ValueError로, 공개 source의 locator 부재/읽기 오류는 정확 ValueError로 반려하며, 손상 전달 파일명의 재검사로 pump가 중단되던 전제를 제거해 파일명 좌표의 반려를 저장하고 다음 파일을 처리한다. action별 대표·중첩 payload의 정확 반려/원 bytes/도메인 불변/restart, 공개 task_scope revise와 close 뒤의 전제 소실, 두 실제 control transport의 동일 ID 충돌을 양순서로 강제하고 뒤 정상 요청의 실제 owner/CAS/store 진행을 보완했다. 정본8·공식 미러8파일의 수리 완료이며 최종 통합판 증거와 명시한 역사적 종료/삭제 의미 축은 남는다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/control_transport.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_nested_control_consumption.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_control_shapes.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_controls.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_ingress_consumption.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_control_transport.py",
+    ".claude/skills/do-math/scripts/do_math/control_transport.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_nested_control_consumption.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_control_shapes.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_controls.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_ingress_consumption.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_control_transport.py"
+  ],
+  "verification": "자기 workspace의 공식 run_tests.py/jobs1을 사용했다. red는3선택/3error/exit1로 실제 결함을 보존했다. 수리 후 focused는8passed/exit0, related는26passed/1error/exit1이다. related의 새 stale fixture에서 deepcopy import가 누락된 오류를 고친 해당 ID만 stale-final에서1passed/exit0으로 확인했다. 모든 실행 changed_during_run=[]; 마지막876 Python SHA는 제출판과 일치한다. focused/related 이후 Python 차이는 test_engine_controls.py 하나이며 다른 시험/소비 경로의 성공은 그 범위로 재사용한다. 서로 다른 판본을 단일 전체 성공으로 합산하지 않는다. verification.json에 명령·선택·실제 row·exit·SHA·한계가 있다. 기존 B129 원보고의 정확 row/현재 및 base SHA와 PR07 실제 hunk를 대조했고 없는 Temp 원보고 수치는 합산하지 않았다. 공식 mirror builder 실행 후 --check exit0/1337파일 드리프트0, 변경8쌍 byte 일치; build 종료 출력 미회수는 별도 명시했다. 비용 캐시는 증거 보존 후 base로 복원했다. 실제 validator/transport/owner/ResearchRepository와 기존 외부 Job/CLI/Git 포트 대역을 사용했으며 전체 일반/T3/변이/T4/T5 및 새 외부 실호출은 실행하지 않았다.",
+  "findings": [
+    "F1/F2/F3 수리: control_transport.py:worker_submit의 kind=[]/{} TypeError, core_engine.py:submit_control source {}·없는/디렉터리 path의 KeyError/OSError, control_transport.py:_reject_delivery_file의 RQ-[broken].json ValueError/pump 중단을 공식 red로 관측했다. 지정 runtime 세 함수만 수리했고 정상 대조군·재전달/재시작을 확인했다. 상세 입력·사유·정책 경계는 evidence/boundary-review.md와 changes.diff다.",
+    "입구 모집단: PAYLOADS13+configure의 현재14action을 정본에서 소비한다. 기존 unit의418 생성 모양+action별 NOT_TEXTS5를 현재 validator/helper/시험 SHA 및 B129 정확 passed row로 유지하며 등록 수를 새 실행 수로 세지 않는다. public config=None 기본값과 손상 inbox None, host source path와 workspace draft_path를 구별한다. population.json·historical-review.json이 근거다.",
+    "owner 반려 단언: sim ingress의 action별 대표14입력/손상 envelope7입력과 flows nested16입력에 정확 사유·history/processed 추가1·원 bytes·도메인/예약/실행 불변·restart·뒤 정상 pause/resume의 실제 저장을 보완했다. 두 번째 순회/restart에서 head와 저장 내용 불변을 확인했다. 모든 action의 업무 의미를 새로 인증한 것은 아니다.",
+    "현재성: 기존 내부 status 주입 stale 시험을 공개 task_scope revise decision으로 바꿔 ready task의 supplemental request 적용 전제 소실을 도달시켰다. 공개 close 뒤 input/지연 maintenance의 정확 반려와 후속 configure의 durable 적용도 확인했다. 원래 A-02의 review-cycle 직접 대상은 현 public supplemental_research의 task_ready target과 다르다. 특정 review-cycle 종결 전이 및 public record 삭제 생산자는 새로 확인하지 못했고 임의 del 반례를 만들지 않았다. 후속이 이 축을 유지하려면 실제 생산자·대상 의미를 먼저 지정해야 한다.",
+    "수송 양순서: sim.test_engine_control_receipts.BoundRequestRejectionTests.test_two_transports_collide_in_both_orders_without_reapplying_or_blocking_publication이 A-first/B-first를 실제 receive로 강제한다. 정확 owner 반려·각 sender의 원 receipt/bytes·fresh receiver pump의 정확 충돌 SHA/bytes·runtime/head 불변과 publish1/save0, 뒤 정상 draft의 publish2/save1/receipt1/execution stopping을 확인했다. 단일 endpoint의 동시 os.link writer 시험 및 R10 tracker native/receipt 양순서와 구별한다.",
+    "PR07 한정 재검토: B15 07604a32·B23 f67c56c9·B59 실제 도입cd9625d2 hunk를 현재 _apply_inbox/_pump_paths/close/worker 및 원보고에 연결했다. Temp 원보고는 직접 확인해 부재이며 성공 counts를 합산하지 않았다. B129는 전체 successful=false이고 정확 관련 row와 불변 validator/helper 및 변경 세 함수 외 경계만 유지한다. historical-review.json과 B15/B23/B59.diff 참조.",
+    "검증 처분: 최초 --quiet 호출은 exit2/미실행이며 관련 NameError는 fixture 오류로 유지한다. focused8passed·related26passed/1error·stale-final1passed를 별도 판본으로 기록했다. 마지막876 Python SHA 일치, 미러8쌍 일치/공식check0, 비용 캐시 복원을 source-review.json·verification.json·timings-restoration.json에 보존했다. 최종 통합판 전체 성공 대기는 남는다.",
+    "K-51 정본 소비·K-76 외부 대역과 실제 파일/owner/store 구분·K-78 실제 저장 및 P2 C-03의 boundary CAS/자기점검 관련 slice만 보존했다. A-02/C-27은2-A의 역사 반례이며 원래P2 12개 ID에 추가하지 않는다. R09 제출 확장/참조·R10 관찰/provider·R14 진행성·전체2-A/PR07/K/P2, G4~G8, L01 Q1/Q2·원문 UTF-8 byte, Windows1314 symlink 실반려 미검사는 유지한다."
+  ]
+}

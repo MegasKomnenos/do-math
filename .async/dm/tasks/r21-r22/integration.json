@@ -1,0 +1,13 @@
+{
+  "task": "r21-r22",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_role_input_scale.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_recorded_lean_scale.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_size_cases.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_recorded_lean_scale.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_role_input_scale.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_stored_input_scale.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_stored_input_scale.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_size_cases.py"
+  ]
+}

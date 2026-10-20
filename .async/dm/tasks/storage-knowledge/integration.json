@@ -1,0 +1,19 @@
+{
+  "task": "storage-knowledge",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_knowledge_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_knowledge_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_knowledge_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/knowledge.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_knowledge_pairs.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py"
+  ]
+}

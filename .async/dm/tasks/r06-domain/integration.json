@@ -1,0 +1,9 @@
+{
+  "task": "r06-domain",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_null_domain_consumers.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_null_domain_consumers.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "task": "storage-events",
+  "files": [
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_event_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_event_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_event_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_event_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md"
+  ]
+}

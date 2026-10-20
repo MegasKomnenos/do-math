@@ -1,0 +1,21 @@
+{
+  "status": "partial",
+  "summary": "8-A/R14의 실제 모델·관찰·제어 수송·기계/외부 실행 경계를 현재 생산자와 정확 단언에 연결했다. 두 runtime 결함을 수리했다: scheduler가 owner 바퀴 진입 관찰량을 생산자와 같은 lock에서 고정하고 모든 pump/collect가 그 허용량을 공유하며, ModelCalls가 완료된 결과 앞의 경쟁 관찰 backlog를 양보한다. 실제 formal worker와 native 1/64/1024 입력의 기계 완료 회수 및 적용 중 새 관찰 도착 회귀를 기존 fixture로 추가했고 정본3·미러3을 제출한다. 이미 실행 중인 큰 관찰 함수 안에서 완료가 도착하는 일정은 1초 기준 대비 32/512초 지연으로 여전히 실패한다. 배정 밖 core_engine.py의 관찰/owner 경계 수리가 필요하므로 전체8-A/R14는 부분완료로 유지한다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/parallel.py",
+    ".agents/skills/do-math/scripts/do_math/scheduler.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_progress.py",
+    ".claude/skills/do-math/scripts/do_math/parallel.py",
+    ".claude/skills/do-math/scripts/do_math/scheduler.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_progress.py"
+  ],
+  "verification": "evidence/verification.json에 공식 선택·실제 row·exit·판본 SHA·최초 실패·한계를 보존했다. red-machine은64/1024 입력의32/512초로1failed/exit1, red-pass3은 owner entry1/applied2로1failed/exit1이었다. 준비가 미흡한 red-pass 및 native 미도착 red-pass2를 제품 결과와 구별하고 실제 arrival/오류 단언으로 교정했다. green-fixes는2passed/exit0. 수리 후 atomic-counterexample은 같은 비용·입력·1초 기준에서32/512초로1failed/exit1이며 실제 실행 원문/SHA도 보존했다. 관련 공식16ID는 기능15passed/기존 구조1failed·exit1이고44개 구조 지적은 같은 검사기의 base/workspace 정적 비교에서 전건 동일했다. 마지막 snapshot lock 관련 공식4ID는4passed/exit0, 제출판875 Python SHA 전건 일치·실행 중 변경 없음이다. 서로 다른 판본을 전체 성공으로 합산하지 않는다. 공식 미러 --check는1336파일 드리프트0·exit0,3쌍 바이트 일치이며 비용 캐시2개를 evidence 보존 후 base로 복원했다. 실제 외부 모델/Lean/Job/설치/예약 및 전체 일반/T3/변이/T4/T5를 새로 실행하지 않았다. 상세 원천·입력·정확 단언·남김은 evidence/review.md, 정확6변경/해시는 evidence/source-review.json·changes.diff를 참조한다.",
+  "findings": [
+    "8-A/R14 F1 해결: core_engine._apply_inbox가 controls에서 pump하고 collect 뒤 다시 pump하는 실제 순서 때문에 함수별 len 제한만으로 owner 바퀴 전체 제한이 성립하지 않았다. evidence/red-pass3/report.json의(entry1,applied2)를 scheduler._run_parallel의 공유 _observation_limits와 ModelCalls._apply_observations의 차감으로 수리했다. 두 포트 모두 ModelCalls를 소비하고 마지막4ID에서 직접 확인했다. manager는 이 수리와 private owner/calls seam을 현재 공용 설명에 반영할 수 있다.",
+    "8-A/R14 F2 해결: 완료된 formal future를 controls 내부 pump의 경쟁 native 관찰이 앞질러32/512초 지연시켰다(evidence/red-machine/report.json). pump의 done 양보와 collect의 관찰 부채 순서로 수리했고 test_machine_completion_precedes_competing_slow_observation_backlog가 같은1/64/1024 입력·사건당0.25초·완료→실제기계수신≤1초/owner≤1 및 durable/confirmed/예약 정산을 검사한다. formal_check/trust_check/trust_activate는 공통 future 완료 회수 경계로만 묶고 동기 HTTP는 별도로 유지한다.",
+    "8-A/R14 F3 미결: evidence/atomic-counterexample/report.json·log·exit와 progress-atomic-diagnostic.py는 관찰 함수 진입에서 held Lean worker가 완료되는 동일 경로의32/512초 실패를 보존한다. 검사 원문 SHA는 원보고와 같다. 마지막 lock 추가 전 실행이며 lock은 callback 밖만 바꾸고 core_engine._observe_running은 불변이다. 현재 callback 전체를 마쳐야 collector가 다시 진행할 수 있어 제출한 parallel/scheduler 범위만으로 이 반례를 수리하지 못했다. 다음 배정은 core_engine.py의 관찰 적용/게시와 owner 진행 경계 및 직접 소비 시험의 쓰기 범위를 확보하고 이 입력/1초 단언을 유지해야 한다. 사건 비용·입력량 축소나 N 비례 상한으로 완료 처리하지 않는다.",
+    "검증 남김: related-final/report.json은15passed/1failed·exit1이며 구조 실패의 unpinned_rejection44건은 smell-baseline-comparison.json에서 base와 workspace가 정확히 같고 새 progress 지적0이다. scope 밖 구조 수리를 하지 않았다. final-snapshots의4passed/exit0만 제출판875SHA 전건 일치 증거다. 두 판본을 동일 전체 통과로 합산하지 않으며 전체 최종 검증은 별도다.",
+    "PR11 B50/B34의 진행성/회수 slice: original-inputs.json·historical-reports.json·B50-progress-diff.txt·B34-related-diff.txt로 현재 코드/정확 시험/원보고를 대조했다. Temp 원보고12개 부재를 유지하고 B129의 지정5passed행만 그 판본/성질로 재사용했다(B129 전체 successful=false). R11/2-C 종료 수용을 다시 열지 않았고 R15/R16 전체 정산·B33/B63·다른K/P2·G4~G8·L01 Q1/Q2/UTF-8 byte·Windows1314 symlink 실반려 미검사는 유지한다.",
+    "판본/범위: source-review.json의 실제 변경6경로는 모두 task writes 안이고 정본/미러3쌍이 같다. 이관 스킬2675파일과 r14 base의 교집합2675 중 기존 수용 작업22차이는 r14 변경과 별도로 기록했다. canonical source_repo·다른 task·공용 문서/queue/state·engine·Git index·graphify는 수정하지 않았다."
+  ]
+}

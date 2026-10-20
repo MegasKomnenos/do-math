@@ -1,0 +1,13 @@
+{
+  "task": "keep-storage",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_producer_record_storage.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_storage_publication.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_producer_record_storage.py",
+    ".agents/skills/do-math/scripts/tests/support/review_inputs.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/review_inputs.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_storage_publication.py"
+  ]
+}

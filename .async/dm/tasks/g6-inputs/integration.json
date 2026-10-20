@@ -1,0 +1,67 @@
+{
+  "task": "g6-inputs",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py",
+    ".agents/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py"
+  ],
+  "changes": {
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py": [
+      "587682bc9a64272565e7805be71ac436eac558363beb80eaefe6509d882c0fce",
+      "766cf151062d1fb345d6a35fb1e8ecb86abd3ab8c0c19280358d193553f1f756"
+    ],
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py": [
+      "b70589c0b820b0cbc5dd8fb2242e01c5e04063736a1331b751f06ad30ed63ab5",
+      "ec5e296437c812b95b33c39b7194162458c8750882df46ca8528e1b22b98bfa9"
+    ],
+    ".agents/skills/do-math/scripts/tests/support/mutation.py": [
+      "440d558169fa3f47951126df42d0564c654011dfba4003305580644e88c23cc2",
+      "8c84f80d9ac84cf361b70707044edb880cbc60aecc0829cea8451ad114c97814"
+    ],
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py": [
+      "7d1da4f8b43fbee22c664953a934333533f5db3679197f1c7d037b2f8615934f",
+      "7da8f96f941dd55706c46e9cdee101a3c8a2f4fd096f6184604485a7a0af5f67"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_mutation.py": [
+      "574156181638d6fbc1fd0bdd1a52ba1cc1485a94ec65a2b71b5ec3ba466506a4",
+      "c201d3b05ad76314fb4bf779f311624526fc58613fdd73ed4414f058c735c2ee"
+    ],
+    ".claude/skills/do-math/scripts/tests/support/mutation.py": [
+      "440d558169fa3f47951126df42d0564c654011dfba4003305580644e88c23cc2",
+      "8c84f80d9ac84cf361b70707044edb880cbc60aecc0829cea8451ad114c97814"
+    ],
+    ".agents/skills/do-math/scripts/tests/시험-지침.md": [
+      "073972720f1a85ea4d6f1a5fbe44adac3932953c8da852bc75b624dbd79e5036",
+      "86eda175c3930dca38357d64d095e904b981c5e80c35731c248cdf350a2c4abb"
+    ],
+    ".claude/skills/do-math/scripts/tests/시험-지침.md": [
+      "073972720f1a85ea4d6f1a5fbe44adac3932953c8da852bc75b624dbd79e5036",
+      "86eda175c3930dca38357d64d095e904b981c5e80c35731c248cdf350a2c4abb"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py": [
+      "574156181638d6fbc1fd0bdd1a52ba1cc1485a94ec65a2b71b5ec3ba466506a4",
+      "c201d3b05ad76314fb4bf779f311624526fc58613fdd73ed4414f058c735c2ee"
+    ],
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py": [
+      "587682bc9a64272565e7805be71ac436eac558363beb80eaefe6509d882c0fce",
+      "766cf151062d1fb345d6a35fb1e8ecb86abd3ab8c0c19280358d193553f1f756"
+    ],
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py": [
+      "7d1da4f8b43fbee22c664953a934333533f5db3679197f1c7d037b2f8615934f",
+      "7da8f96f941dd55706c46e9cdee101a3c8a2f4fd096f6184604485a7a0af5f67"
+    ],
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py": [
+      "b70589c0b820b0cbc5dd8fb2242e01c5e04063736a1331b751f06ad30ed63ab5",
+      "ec5e296437c812b95b33c39b7194162458c8750882df46ca8528e1b22b98bfa9"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "complete": true,
+  "successful": true,
+  "counts": {
+    "passed": 3771,
+    "expected_failure": 48,
+    "skipped": 1
+  },
+  "total_seconds": 8205.7,
+  "changed_during_run": [],
+  "open_known_defects": 45,
+  "passed": false,
+  "closing_eligible": true,
+  "measurement_missing": [],
+  "report_path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-full-after-contracts-e2b57e566ead41d188e054405019a585\\report.json",
+  "report_sha256": "7417f27a874bd9167208b0ad01400e52f51b547993d86097913df026e9733089",
+  "branch_gate": {
+    "passed": false,
+    "judged_modules": 121,
+    "modules_with_gaps": 53,
+    "missing_branches": 537,
+    "missing_lines": 728,
+    "unmeasured_modules": [],
+    "excluded_lines": 24
+  },
+  "budget_tier": {
+    "tiers": [
+      "T3_full"
+    ],
+    "budget_seconds": 3300,
+    "seconds": 8205.7,
+    "over": true
+  },
+  "measurement_scope": {
+    "measured_modules": 475,
+    "reused_modules": 0
+  },
+  "scope_limit": "Pre-integration full run only; verified obligation candidates have since changed the tree. No stage closure."
+}

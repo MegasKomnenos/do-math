@@ -1,0 +1,14 @@
+{
+  "status": "complete",
+  "summary": "B01/B02/B04/B05/B65/B88/B57의 지정 역사 hunk·현재 직접 소비/정확 단언·보존 원보고를 읽어 7개 처분을 완료했다. 문서/실패 기준선은 실제 한계대로 보존하고 trace좌표·영향 철회·학술/수학 기초·빈 준비·지역 누락·환경 fixture/Git 대역·최초 문서검사의 교정은 유지 판정했다. PR05의1931→1932는1c 특성시험1개의 추가와1f의 정확 은퇴로 해명했다. 새 제품 결함은 확인하지 않았으며 Temp 원보고 부재의 실행 미인증 범위는 별도로 기록했다. 제품 변경 없는 유한 review 완료이며 G2/G3전체 또는 G8 최종 인증이 아니다.",
+  "changes": [],
+  "verification": "evidence/history-decisions.json에 7개 원 ID별 실제 commit/path/symbol·hunk, 현행 처분과 근거·한계를 기록하고 evidence/judgment.md에 판단을 설명했다. 정적 자료 처리 inspect_materials.py/build_decisions.py/verify_review.py로 7개 ID 누락/중복0, 현재42개 고유 정의의 AST/소스 참조, 보존 raw report12개의 selected/actual/집계·fixture/완결/실행 중 변경, 주요 원보고 SHA 및 보존 교정 patch SHA·원실패판 관련6파일 SHA를 대조했다. B88 red/green exact5선택 일치와 시험/fixture4파일만의 판본 차이를 확인했다. stage0 고유1931과 최초/현재 legacy1932의 차이는 정확 추가1/제거0이며 은퇴 row와 현재 대체 단언을 읽었다. 고유 부재 원보고8경로와 과거 outer exit/부분 green 판본의 미인증 범위는 static-review.json에 남겼다. 제품 import/시험/실호출/환경 변경/graphify 갱신은0회다. 지정 check.py report의 직접 실행 결과는 evidence/report-check.json에 기록한다.",
+  "findings": [
+    "새 제품 결함/최소 수리 배정은 없다. 7개 역사 판정과 PR05 원수 차이 해명은 완료했으며, 이번 읽기를 같은 매핑만 반복하는 후속 review로 넘기지 않는다.",
+    "B02는3878 actual(3869passed/8failed/1skip), B65는3882 actual(3880passed/1failed/1skip)의 실패 기준선이다. 병렬 수3877/3881에 각각 격리1이 포함되지 않았음을 해명했다. B65 원장누락은 실제 통합diff와 현재 engine지역 단일귀속·별도 통합판 inventory passed row로 교정됐다. 후보96/80.7초와 보존 통합판96/59.9초는 다른 실행이다.",
+    "B88 full-before3928의4failed/1error/1skip, exact 재현5실패와교정5passed, 중간95의1failed·paired 실제Git/대역red·마지막97passed를 각각 보존했다. 정상 상위Git/config탐색을 약화하지 않고 부정fixture와폐기timeout호출을 고친 것으로 판정했다. 부분97을전체성공으로합산하지 않았다.",
+    "B04/B05/B57의 원 Temp green/red와 B65 후보 후속을 포함한 부재8경로는 정확 selected/rows/outer exit/당시 판본의 독립 재인증 한계다. B02 원 Temp는 없어도 같은 SHA의 tracked 원보고를 읽었다. B05 board core 후보와 나중 patch 후보 SHA도 달라 보존 patch를 원 green 전체 판본으로 대체하지 않았다. 현재 hunk의 정적 유지 판정은 완료했으며 이 한계만으로 새 전수 실행/장기감사를 요구하지 않는다.",
+    "PR05의 유일 추가는 test_call_steps_characterization.CallStepsCharacterization.test_every_step_publishes_the_recorded_state다. 1600457d 도입 → a52ffd61 목록1932/진행 설명 → 719640e2 은퇴 → 현재 engine.1 retired/대체 단언을 연결했다. 이 한 건의 해명은1932행 전체 단언 강도나 비B 기반 전체 완료를 뜻하지 않는다.",
+    "사용자 저장범위/A22에 따라 공통 codec·검증게시·기존 업무 보장을 재사용했다. P01~P11/명명/반환결속·기존72개 한정 역사검토·K61/P2의 수용 판정을 새 반례 없이 재개방하지 않았다. 진행 중 core의 미완성 자료는 소비하지 않았다. 최종 G4/freshG5·G6·T4/나머지G7·G8·최종판 연결과 기존 외부조건은 별도 소유에 남으며 이 review를 포괄 선행장벽으로 만들지 않는다."
+  ]
+}

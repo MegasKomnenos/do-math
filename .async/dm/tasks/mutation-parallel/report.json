@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "summary": "변이 도구에 --jobs 1..3/API jobs(기본1)의 함수 계획 병렬 실행을 구현했다. 각 계획은 변이/정상 child 하나만 소유하고 같은 정상 선택은 Future 하나로 실제 실행을 공유한다. 기존 선택 합집합·cheap-first/failfast·실패후보만 정상 확인·정상실패/오류 의미·동등 사유 보존을 유지했다. Windows Job 및 runner의 공통 종료/exit 관측을 사용해 명시 중단 시 후손까지 종료 확인하고 listing을 보존한다. 독립 attempt/scratch/native 출력·완료 outcome·jobs/interrupted 보고, T3 호출부·직접시험·설명·공식 미러를 함께 마쳤다. 정본6/미러6 총12파일이며 전체 G6는 재개하지 않았다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/run_tests.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/support/mutation.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "evidence/judgment.md, verification-summary.json, verification-execution.json, final-boundary-execution.json 및 runs/final/에 원명령/환경/소스SHA/exit/원보고와 실제 child를 보존했다. 초기 공식 unit.test_mutation+boundary.test_mutation_baseline은41passed/exit0. native stream capture와 실제 본문 timestamp/PID/CLI jobs3 관측 보완 후 영향 경계13개 및 기존 무시간제한/후손대기2개를 공식 도구로 실행해15passed/exit0이다(반복13개를 독립 합산하지 않음). 최종 작은4함수 fixture는 순차/병렬 모두 killed3/survived1, 정상passed1개를 공유하고5개 독립 attempt를 남겼다. 실제 child 본문 동시수1/3, 보고시간2.9/2.0초, child 누적2.625/2.953초를 관측했다. 세 실제 child/후손의 명시중단 뒤 모든 Job의 root_signal/active0/PID공집합·미완료 execution_error·listing 보존을 확인했다. native stdout/stderr, 기존 동등/무관 항목, 결과부재 정상 공유 오류, output 재사용 거절도 확인했다. 최종미러1384파일 check exit0, 공식engine 실제12경로 writes내, 최종Python SHA는 최종실행 시작판과 같다. 생성timings/index/pseudo 원bytes를 복원했다. 초기 기존unit2개 소프트예산 초과는 원보고에 남겼다. 전체일반/T3/T4/T5/G6나 실공급자/설치/예약은 실행하지 않았다. 지정 check.py report 결과는 evidence/report-check.txt에 기록한다.",
+  "findings": [
+    "후속 새G6 task는 기존 population의20 argv에서 모든 --base/--every/--only/--test를 유지하고 각 명령에 --jobs 3을 더하며 --output을 C:/g6p-NEWID/b01..b20 같은 새 task 전용 경로로 바꾼다. 총 시험3슬롯 배정 아래 명령은 하나씩, 명령 내부 변이+정상 child는 최대3개다. 다른 시험이 병행되면 jobs를 남은 슬롯으로 낮춘다. 한 실행자가 listing과 마지막 미러를 단독 소유한다. 구체적 준비·명령·재개는 evidence/judgment.md 후속 절에 있다.",
+    "정상 기준은 고정 source/시험/index/timings의 한 명령 안에서만 공유한다. 명령간 캐시·별도 서비스·자동 결과병합·함수별 재개는 없다. baseline ID는 보고 안 최초 요청 순서이며 outcomes는 함수 계획 순서다. 새/빈 output만 받는다. 중단 뒤 원output을 보존하고 미완료 묶음을 새output으로 다시 실행하며, 다른 완결batch의 source/선택/정상기준 유효 범위는 별도 판단한다.",
+    "원 b01은8 attempt 기록 및 다음 미완료attempt가 있고 최종mutation.json은 없다. 119.344초 정상exit와149.359초 비정상exit/결과부재를 확인했지만 완료/포착으로 승격하지 않았다(evidence/interrupted-b01-cost.json). 이번2.9→2.0초는 작은 고정fixture 관측이며 전체1645함수 속도나 완료시간을 예측하지 않는다.",
+    "Windows Job 수명/후손대기·실제exit 정본을 재사용했고 native 출력도 보존했다. 명시중단은 interrupted=true와 실패판정/listing불변이다. 예기치못한 내부예외 또는 부모강제종료에는 최종보고가 없을 수 있어 원attempt/PID/output을 보존한다. 시간경과에 따른 강제종료는 추가하지 않았다.",
+    "공용소스/다른task/queue/graphify를 수정하지 않았다. 수용 후 새ID 전체G6가 필요하며 기존123모듈/20묶음·4515시험 원index와 g5-remainder 수용delta를 재사용한다. 전체T3 반복금지·지정5모듈 관련추가·G5환경잔여 및 다른 최종관문은 이번 실행도구 완료와 별개로 남는다."
+  ]
+}

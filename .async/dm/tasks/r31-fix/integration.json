@@ -1,0 +1,19 @@
+{
+  "task": "r31-fix",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_planning_assessment_refs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/do_math/task_scope.py",
+    ".agents/skills/do-math/scripts/do_math/task_scope.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/decision_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_planning_assessment_refs.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_missing_input_aliases.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_missing_input_aliases.py"
+  ]
+}

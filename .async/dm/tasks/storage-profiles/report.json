@@ -1,0 +1,17 @@
+{
+  "status": "complete",
+  "summary": "설정·capacity_constraints·execution_profiles·host_capacity_ref·role_profile_refs·reservations 여섯 가족의 실제 생산→StateContract/ResearchRepository 수신과 필수·선택 필드 역방향 질문을 완료했다. 공개 초기화의 네 독립 설정과 실제 acquire/정산의 0·1·3·4·7예약, configure 뒤 옛 실행의 프로필 고정과 현재 한도에 따른 실제 재입장 저장을 새 전용 계약시험으로 연결했다. 기존 host/권한/판본/정산 반려와 규모·역할 선택 근거는 정확 원보고와 현재 코드의 해당 성질만 재사용했다. 새 런타임 결함·미생산 선택 필드는 발견하지 않아 runtime124Python과 중앙schema/일반PAIRS/공용저장helper를 유지했다. 변경은 전용 helper/계약시험과 공식 미러의4파일이다. 가족별 축·정확 단언·제공/소비·판본·처분은 evidence/judgment.md와 families.json에 있다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_profile_pairs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_profile_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_profile_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_profile_pairs.py"
+  ],
+  "verification": "workspace 공식 run_tests.py --jobs 1: focused-1은5선택=5고유실제row·5passed·관측exit0·2.1초, 실제 옛프로필 재입장 단언을 강화하고 공통 admission helper를 추출한 뒤 관련2ID만 adoption-2에서2선택=2고유실제row·2passed·관측exit0·1.6초를 확인했다. 두 실행 모두complete/successful=true·fixture_counts={}·changed_during_run=[]이며 초기실패는없다. 최종894Python SHA는adoption-2와전건일치한다. 앞실행과는새2Python파일만다르며 나머지3passed를단일최종판5재실행으로합산하지않는다. 소프트초과는앞3개/뒤2개이며 실제row·budget·원보고SHA·소스판본을evidence/verification.json에보존했다. B129의host/profile반려4row, r21-r22의실제37프로필저장1row, r34-r36의1665역할선택1row, r15-r16의unknown종료/held유지1row를원보고/현재코드의한정근거로읽었다. B129전체실패/skip과r21-r22원focused-1다른2실패를유지했다. 공식mirror생성/check exit0·1357파일drift0·새2쌍bytes동일, 정적AST/smell/normalization문제0·runtime124Python own base불변·실제변경4경로모두writes내를확인했다. 비용캐시2개는관측바이트를evidence에보존한뒤own base로복원했다. 실제저장/참조/검증은유지하고Git/host/clock/Jobs만포트대역이다. 전체일반/fresh T3/변이/T4/T5·실Lean/공급자/HTTP/nativeJob/OS예약/설치는실행하지않았다. check.py report C:/math/.async/dm storage-profiles를직접실행해PASS report·관측exit0으로보고형식/실제변경경로를확인했다.",
+  "findings": [
+    "여섯가족의1-A/K-78 slice충족: profile_pairs는기존Pair와설치family.checker/validator를소비하며실제공개initialize→저장/reload출력으로네object가족의전체required+optional필드를확인한다. host_capacity_ref는선택scalar, role_profile_refs는역할별목록singleton으로각형상대로검사한다. Codex/Claude 각각세설정boolean의양값·host없음/null/채택·Lean없음/발견/설정·scholarly없음/명시·AIwork/운영과기계Lean/비Lean을연결했다. 임의Cartesian product나출력필드보충·우회schema·새registry는없다. 정상초기화의제약map0은validate_policy가막고존재하는역할ref빈목록은schema.minItems=1이막는다. field/축/정확testID는families.json에있다.",
+    "실제예약/판본: admission_check동안runtime불변과acquire의실제게시를구별한다. 0/1/3/4/7row의owner·unit·amount·authority·held→settled와선택reobserve제거·옛head보존을확인했다. configure는옛실행의profile_ref/window600·기존예약을보존하면서현재선택window731/새capacity1을채택한다. 옛held가새한도를소비해추가입장이거부되고release뒤옛profile로실제재입장하면예약constraint는현재판본·authority는옛profile_ref로저장된다. hostscope/authority는독립원요청·보존user원문/SHA와연결된다.",
+    "재사용/판본: 기존producer저장시험의정확host/authority/stale/좌표실패사유와head불변, r21-r22의100x10/37공개읽기, r34-r36의1665role/profile선택, r15-r16의unknown종료와held/restart정산성질은현재소스와정확historical-row로한정재사용했다. historical-rows.json은각reportSHA·전체counts·개별row·test파일판본을기록한다. B129전체successful=false·r21-r22원다른2실패와별도판본을현재성공으로승격하지않았다. 새release는논리Jobs의never_resumed관측이며native/remote종료인증은아니다.",
+    "인계/남김: 배정된여섯가족의양방향저장질문은완료·최종통합판증거대기다. 1-B의모든쓰기분기미도달0은측정하지않았으며write-sites.json의현재생산/채택/입장/정산심볼·행·SHA와새testID를최종fresh T3의실제쓰기지점/분기측정에연결해야한다. 다른저장가족·전체R01/1-A/1-B/K-78·다른K/P2·G4~G8·L01/Windows1314·최종review를종결하지않는다. 공용source_repo/다른task/공용문서·queue/state/engine/Gitindex/graphify/기존연구를수정하지않았고미수용작업판도소비하지않았다. manager가통합·수용과공용설명을갱신한다."
+  ]
+}

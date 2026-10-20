@@ -1,0 +1,18 @@
+{
+  "status": "complete",
+  "summary": "runtime의 status/cycles/updated_at/recovery_checked/last_observed_utc/resume_lifecycle/stop_requested/next_research_reconsider_at 8 metadata 가족의 실제 생산값·독립 기대값·설치 checker·검증 Repository 게시·새 contract reader decode를 연결했다. 기존 scalar/공개 lifecycle 직접시험 두 파일을 보완했으며 런타임 결함은 확인되지 않아 runtime/중앙schema는 수정하지 않았다. 실제 초기화·활성화·두 phase pause/resume와 marker 제거·counter/복구 검사·서로 다른 게시/관측 시각·재고 만기/갱신과 옛 head 보존, 각 scalar 정확 반려/head불변/write0을 확인했다. enum 전값의 생산/기존 단언과 boolean/null 허용의 미생산 대안은 정적 판단과 실행을 구분했다. 상세는 evidence/judgment.md·families.json·write-sites.json이다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py"
+  ],
+  "verification": "자기 workspace 공식 run_tests.py --jobs 1을 사용했다. focused-1은 6선택/6고유 row의 5passed+1failed/exit1이며 nullable 반려의 기대 문구 오류를 보존했다. checker/입력을 바꾸지 않고 anyOf의 정확 원문으로 교정한 corrected-2는 1passed/exit0이다. 단일 모듈 helper를 소비 모듈로 옮기고 실제 비용 docstring을 적은 최종 final-3은 6선택/6고유passed·complete/successful=true·fixture_counts={}·changed_during_run=[]·관측exit0·12.5초다. 901Python SHA가 제출판과 전건 일치하며 서로 다른 판본의 성공을 합산하지 않는다. final 소프트초과3개(0.422/0.2,2.531/2,2.672/2초)는 실제 controls/새contract decode/옛head와 restart 비용이다. 원보고·최초 시험bytes·교정/이동diff·정확선택/row/SHA/exit는 evidence에 보존했다. 선행 수용 원보고의 정확 관련row/SHA와 현행 source를 대조했으며 긴 승인/권한·lease/기동 운전을 재실행하지 않았다. 공식 mirror build/check exit0·1364파일drift0·변경2쌍byte동일·변경Python4개 AST parse, runtime124Python own base불변, 실제4변경 모두writes안을 확인했다. 두 비용캐시 관측bytes를 보존하고own base로복원했다. 전체일반/freshT3/전체변이/T4/T5·유료모델/native Git/Lean/Job/HTTP·설치/OS예약은실행하지않았다. evidence/verification.json·historical-reuse.json·source-review.json·cache-restoration.json이 실제 범위와 판본 한계를 기록한다.",
+  "findings": [
+    "8가족 지정질문 완료·최종통합판 대기 | scalar의 /value는 빈 object fields/written 동치가 아니다. runtime/_state/metadata.json#/record/<name>에 독립기대값·설치checker·metadata manifest·실제 검증게시/별도decode와 옛head를 연결했다. 수용된research5 scalar 단언은 유지했다. 새wrapper/registry/자동변환/형식정책/검증우회는 추가하지 않았다.",
+    "생산 의미 | cycles는 일반 research_preparation 결과 적용 때 증가하며 assessment-only와 다른 counter를 구별한다. recovery_checked는 활성화 quiescence 결과다. updated_at은 저장 clock.now이고 last_observed_utc는 승인관측 high-water라서 clock 회귀 게시에서 앞자가 뒤자보다 이른 경우를 그대로 검증한다. _clock_guard 읽기만으로 저장하지 않는다. 재고 예약은 실제 활성화/만기/planning의 쓰기와 restart를 확인하며 OS예약을 인증하지 않는다.",
+    "생산되지 않은 허용 대안과 상태 | root stop_requested의 실제 writer는 reason/closed 문자열이며 허용 boolean writer는 찾지 못했다. next_research_reconsider_at는 초기 부재와 시각 문자열 producer를 확인했고 null writer는 찾지 못했다. 저장enum8값의 writer/기존단언을 코드와 연결하되 temporary planning active는 finally 복원 view로 구별한다. running/wait/capacity/completed의 이번 신규실행과 중첩 execution/task status를 혼동하지 않는다. 자세한 정적/기존근거는 judgment.md에 있다.",
+    "원보고 재사용/최초실패 | r39-r42 clock중복pause/r39-report 명시user pause·재개/r49-startup lease·restart/r47-r48 수신시각의 충분한 원근거를 재사용했다. 역사SHA와 현재파일 차이 및 과거 실패/교정판본은 historical-reuse.json에서 유지하며 현재실행 성공으로 세지 않는다. 이번 최초nullable 메시지 오류는 제품결함이 아니며 정확 오류로 고쳤다. 최종6passed는 이동/비용설명을 마친 별도 최종판 실행이다.",
+    "남김 | 모든쓰기분기 전건도달은 측정하지 않았다. 최종통합판/freshT3와 모든쓰기지점의 검증도달은 후속관문이다. quiescence 예약 arm·이번 미실행 enum 생산경로는 정적/기존근거로 구별했다. availability/clock_guard/user_pause 객체·events/event_cursor/pending_events·research.lifecycle 전체역방향·실행/학술의 별도가족·다른가족/전체R01/K-78·다른원요구/K/P2·G4~G8/L01/Windows1314/최종review는 닫지 않는다. canonical source_repo·다른task·공용문서/queue/state·engine·Git index/commit·graphify·기존연구는수정하지않았다. manager가통합·수용과공용설명을맡는다."
+  ]
+}

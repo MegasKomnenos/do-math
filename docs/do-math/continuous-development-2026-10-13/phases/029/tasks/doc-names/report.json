@@ -1,0 +1,422 @@
+{
+  "status": "complete",
+  "narrative": "029/doc-names의 A1~A5를 완료했다. 028 manager와시작2675소스가전건같음을확인하고지정여덟finding·원반례14개·기존단언을사용했다. 끝난288절이름조사를반복하거나조사표를제품schema로복제하지않았다. 모듈/knowledge/external/kind의네문구묶음을현재코드에맞추고, setup/probe의실제parser와기존입력관계검사를부수효과없이소비하는출구로추출했다. main과문서검사가같은정의를호출한다. 기존옵션선언은AST동일이며도메인schema·권한·어댑터식별목록은변경하지않았다.\n\n공유helper의좁은문서좌표에설정/grant·모듈집합·runtime표/config기본값/enum·query선택지·완전knowledge요청·네stage/checkpoint를결속했다. 필드/절/표/선언/fence부재와오타·타owner차용을반려하며일반자연어소유추론기를추가하지않았다. 개방control shape가candidate의미를대체하지않으며placeholder·부분객체·실제권한을구별한다. 기존38문서메서드와다른기존시험단언을삭제/이동없이보존했고새10문서시험·setup2/probe1/query1을추가했다. 현재순수helper검산은원14반례와모듈2반례의정확반려를보존한다. 원반례의수리전빈진단은028의같은시작판순수관찰을재사용한것이며새red실행이아니다.\n\n집중실행의2실패는새문구의무소유dotted표기와barefilename/pipeline의새parser해석을정확수리해52passed로해소했다. 첫양쪽183passed뒤코드대조에서형식결과없는개정후보의다음단계문구를보완했으므로같은필수선택을최종고정판c2/m2에서다시확인했다. 최종양쪽183선택/183고유row/183passed·exit0,각875PythonSHA·changed_during_run=[]와전후2675소스의비캐시불변을검산했다. 원38문서ID도양쪽전부passed다. 공식미러1336파일 --check와양쪽skill-only가통과했다. 실제22변경은정본10·생성미러10·비용캐시2이고writes밖변경0이다. README는정상설정예제그대로결속되어문구수정이필요하지않았다.\n\n8finding각각의해소·정확실행ID는finding-closure.json에있다. 과거report/evidence·공용계약·engine·graphify/Gitindex와기존dirty파일은수정하지않았으며commit/push는수행하지않았다. 보조검산의Git개행/manifest개행/AST관찰자오류와원출력은보존했고제품성공수에혼합하지않았다. 이번complete는029배정범위의완료다. 문서와parser판본이바뀌었으므로역사전설치판동등성·모델독해/준수나최종전체G완료를주장하지않는다. 불변생산자/수신자하위경계의기존승인성질과현재직접소비회귀만유지하며L01 Q1/Q2·UTF-8byte미충족·Windows1314symlink실반려미검사·G4기본전체/G5freshT3/G6전수변이/G7최종판연결/G8review는남는다.",
+  "acceptance": [
+    {
+      "id": "A1",
+      "result": "pass",
+      "detail": "028 source-inspected2675와 시작SHA 차이0이다. 여덟 원finding/지정JSON과 현재 owner·단언을 대조했다. 당시 순수관찰의14거짓통과는 같은 시작판 조건으로 한정 재사용했고 새실행과 구별한다. 기존38문서메서드와 다른 기존 시험메서드는 AST 동일이며 helper31개 중 command_issues/_document_section의 필요한 확장2개 외29개는 동일하다. 삭제/이동은 없다. P/PURE/소유·line-local/배열/callable/정책/반환/단일지급의 기존 정의·시험은 불변이다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/start-comparison.json",
+        "run:phases/029/tasks/doc-names/evidence/source-start.json",
+        "run:phases/029/tasks/doc-names/evidence/red-reuse.json",
+        "run:phases/029/tasks/doc-names/evidence/input-profiles.json",
+        "run:phases/029/tasks/doc-names/evidence/existing-assertions.json",
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json"
+      ]
+    },
+    {
+      "id": "A2",
+      "result": "pass",
+      "detail": "모듈목록·knowledge·external·kind 네 문구 묶음을 실제 클래스/생산·저장/수신 정의에 맞췄다. 실제14/17집합·여섯연산·새canonicalID/개정·조건부formal·withdrawn·HTTP세결과·TEXT/같은묶음제안 경계를 문서와 현재 직접소비시험에 연결했다. actual class/schema/pure checker 및 기존 실제 소비는 검증하지만 모델가용성·독해·외부효과·승인·무한입력 정확성을 주장하지 않는다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json",
+        "run:phases/029/tasks/doc-names/evidence/counterexamples-final.json",
+        "run:phases/029/tasks/doc-names/evidence/c2/report.json",
+        "run:phases/029/tasks/doc-names/evidence/m2/report.json",
+        "run:phases/029/tasks/doc-names/evidence/changes.diff"
+      ]
+    },
+    {
+      "id": "A3",
+      "result": "pass",
+      "detail": "setup/probe parser 옵션 선언은 원 main의AST와 같다. build_parser/parse_arguments를 main과 문서검사가 함께 호출하며 기본값/선택지/상호배타/필수관계·오류를 보존한다. 정상setup/probe·정확차용반례와 main의효과전반려·기존sim실제도구소비를 실행했다. README설정과 초기화grant예제는 config/DECISION/GRANT로만 검사하며 필드/절/fence부재·오타·차용을 반려하고 placeholder를 승인하지 않는다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/parser-preservation.json",
+        "run:phases/029/tasks/doc-names/evidence/counterexamples-final.json",
+        "run:phases/029/tasks/doc-names/evidence/c2/report.json",
+        "run:phases/029/tasks/doc-names/evidence/m2/report.json",
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json"
+      ]
+    },
+    {
+      "id": "A4",
+      "result": "pass",
+      "detail": "전체 documents(SKILL) 순회가 지정문서를 반드시 포함하고 named_document_issues로 검사한다. runtime상태/config단일기본값·enum/query선택지/완전knowledge control+candidate/네stage의root·item·enum/checkpoint파일을 실제 정의에 연결했다. 원14반례와 모듈반례2개가 모두 정확사유로 반려되고 관련절·표·선언·fence부재 단언도 양쪽에서실행됐다. 명시음성 task상태·부분 relation_claim/academic/config 및027부분역할JSON은 해당완전객체로 혼합하지 않았다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/counterexamples-final.json",
+        "run:phases/029/tasks/doc-names/evidence/verification.json",
+        "run:phases/029/tasks/doc-names/evidence/c2/report.json",
+        "run:phases/029/tasks/doc-names/evidence/m2/report.json"
+      ]
+    },
+    {
+      "id": "A5",
+      "result": "pass",
+      "detail": "최종고정판 c2/m2는 같은183선택/183고유row/183passed·exit0이며 fail/error/skip/not_run0이다. 양쪽875PythonSHA와 changed_during_run=[] 및 task전후2675소스를대조했다. 기존38문서ID와 새10문서시험·setup2/probe1/query1시험이 전부 선택/실행됐다. 공식mirror1336파일 --check와양쪽skill-only verified/exit0이다. 변경22개(정본10·미러10·비용캐시2)는 writes안이며 공용문서/engine/graphify/Gitindex와기존dirty파일을고치지않았다. 원실패와 중간성공은 별도로보존하고 최종G4~G8/L01/symlink남김을닫지않는다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/verification.json",
+        "run:phases/029/tasks/doc-names/evidence/source-preservation.json",
+        "run:phases/029/tasks/doc-names/evidence/source-end.json",
+        "run:phases/029/tasks/doc-names/evidence/final-c2.source-before.json",
+        "run:phases/029/tasks/doc-names/evidence/final-c2.source-after.json",
+        "run:phases/029/tasks/doc-names/evidence/final-m2.source-before.json",
+        "run:phases/029/tasks/doc-names/evidence/final-m2.source-after.json",
+        "run:phases/029/tasks/doc-names/evidence/mirror-check.stdout",
+        "run:phases/029/tasks/doc-names/evidence/mirror-check.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/skill-c.stdout",
+        "run:phases/029/tasks/doc-names/evidence/skill-m.stdout",
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "detail": "knowledge/external/kind의 네 지정 경계를 현재 동작과 맞추고 인접 external 상태표를 교정했다."
+    },
+    {
+      "path": ".claude/skills/do-math/references/초기화-운전.md",
+      "detail": "Codex 식별 모듈7누락을 전건14개로 보충해 Claude의17개 집합과도 맞췄다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_cli.py",
+      "detail": "실제 parser/기존 입력 검사 출구를 추출해 main과 문서 검사가 공유하며 invalid argv는 host 준비 전에 반려한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/setup_lean.py",
+      "detail": "실제 parser 생성과 기존 교차 인자 검사를 build_parser/parse_arguments로 추출하고 main이 동일 정의를 사용한다. 옵션/기본값/오류 의미는 유지한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 관련 실행이 갱신한 비용 캐시와 공식 생성 사본이다. 시험 결과 캐시나 T3 증거가 아니다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+      "detail": "probe의 타도구 flag 차용을 실제 main의 host 접근 전 반려로 확인한다. 기존 actual runner/worker 소비 단언을 유지한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+      "detail": "setup의 실제 main 반려와 유효한 inspect 인자의 실제 입력파일 소비를 설치/컴파일 없이 검사한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "detail": "기존38메서드를 그대로 보존하고 전체 문서 순회와 정확 반례/부재/의미 경계의 새10시험을 추가했다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+      "detail": "두 실제 도구 parser와 지정 config/grant/모듈/state/default/enum/query/knowledge/stage/checkpoint 결속을 추가했다. 기존 owner/P/PURE helper는 유지한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+      "detail": "query의 정상 record/file 모드와 잘못된 선택지/조합을 실제 JSON parser와 argv parser에서 검사한다."
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "이번 정확 문서 좌표와 parser/shared 정의 검사의 책임·placeholder/권한/부분 객체의 한계를 한 문단 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/references/CLI-실행-계약.md",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. knowledge/external/kind의 네 지정 경계를 현재 동작과 맞추고 인접 external 상태표를 교정했다."
+    },
+    {
+      "path": ".agents/skills/do-math/references/초기화-운전.md",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. Codex 식별 모듈7누락을 전건14개로 보충해 Claude의17개 집합과도 맞췄다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/probe_cli.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 실제 parser/기존 입력 검사 출구를 추출해 main과 문서 검사가 공유하며 invalid argv는 host 준비 전에 반려한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/setup_lean.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 실제 parser 생성과 기존 교차 인자 검사를 build_parser/parse_arguments로 추출하고 main이 동일 정의를 사용한다. 옵션/기본값/오류 의미는 유지한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/.timings.json",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 공식 관련 실행이 갱신한 비용 캐시와 공식 생성 사본이다. 시험 결과 캐시나 T3 증거가 아니다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_operator_probe_contract.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. probe의 타도구 flag 차용을 실제 main의 host 접근 전 반려로 확인한다. 기존 actual runner/worker 소비 단언을 유지한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/sim/test_toolchain_tools.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. setup의 실제 main 반려와 유효한 inspect 인자의 실제 입력파일 소비를 설치/컴파일 없이 검사한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 기존38메서드를 그대로 보존하고 전체 문서 순회와 정확 반례/부재/의미 경계의 새10시험을 추가했다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 두 실제 도구 parser와 지정 config/grant/모듈/state/default/enum/query/knowledge/stage/checkpoint 결속을 추가했다. 기존 owner/P/PURE helper는 유지한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. query의 정상 record/file 모드와 잘못된 선택지/조합을 실제 JSON parser와 argv parser에서 검사한다."
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      "detail": "공식 build_skill_mirrors.py로 생성했다. 이번 정확 문서 좌표와 parser/shared 정의 검사의 책임·placeholder/권한/부분 객체의 한계를 한 문단 추가했다."
+    }
+  ],
+  "seams": [],
+  "findings": [
+    {
+      "id": "F1",
+      "kind": "fact",
+      "detail": "028의여덟issue를지정문구/실제정의소비/정확반례/양쪽최종관련실행으로해소했다. finding-closure.json이각원finding을A2~A4와정확passed ID에연결한다. 기존38문서시험과다른기존단언은보존됐고모듈목록/도메인schema·권한은실제정본을계속사용한다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/finding-closure.json",
+        "run:phases/029/tasks/doc-names/evidence/existing-assertions.json",
+        "run:phases/029/tasks/doc-names/evidence/verification.json",
+        "run:phases/029/tasks/doc-names/evidence/counterexamples-final.json"
+      ],
+      "affects": [
+        "run:context.md#C10",
+        "run:context.md#G1",
+        "run:context.md#G3",
+        "run:plan.md"
+      ],
+      "next_action": "manager가여덟원finding의정확해소근거와유한검사범위를검수해지정남김을닫는다. 다른문서전체의의미/독해나G전체완료로확대하지않는다."
+    },
+    {
+      "id": "F2",
+      "kind": "fact",
+      "detail": "최종양쪽183passed와공식미러/skill-only는지정관련판본의증거다. setup/probe parser추출과문서변화는새설치/향후prompt hash를바꾸므로역사전체설치·실호출전체판본동등성이나운전독해를재인증하지않는다. 불변하위함수/입력의승인성질만유지하며새유료/Lean/OS/학술호출은없다. L01의외부결정과원문byte미충족·symlink1314실제반려미검사·G4~G8최종관문은그대로남는다.",
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/source-preservation.json",
+        "run:phases/029/tasks/doc-names/evidence/verification.json",
+        "run:phases/029/tasks/doc-names/evidence/skill-c.stdout",
+        "run:phases/029/tasks/doc-names/evidence/skill-m.stdout"
+      ],
+      "affects": [
+        "run:context.md#C11",
+        "run:context.md#C12",
+        "run:context.md#G4",
+        "run:context.md#G5",
+        "run:context.md#G6",
+        "run:context.md#G7",
+        "run:context.md#G8",
+        "run:plan.md"
+      ],
+      "next_action": "manager가변경영향과실호출의불변하위경계재사용조건을기록하고남은원래관문/외부결정책임을유지한다. 이번관련통과를최종전체증거로합산하지않는다."
+    }
+  ],
+  "checks": [
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_doc_code sim.test_toolchain_tools.SetupParserTests sim.test_operator_probe_contract.ProbeContractTests.test_probe_parser_refuses_a_borrowed_setup_flag_before_host_effects --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/f",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/focus.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/focus.stdout",
+        "run:phases/029/tasks/doc-names/evidence/focus.stderr"
+      ],
+      "detail": "50선택의48passed/2failed·exit1. 새반례와parser시험은통과했고기존순회가 knowledge.kind 무소유표기 및 barefilename/pipeline의새도구검사경계를발견했다. 실제owner표기와shell인자추출만수리했다. 원stderr와보고를보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_doc_code sim.test_toolchain_tools.SetupParserTests sim.test_operator_probe_contract.ProbeContractTests.test_probe_parser_refuses_a_borrowed_setup_flag_before_host_effects unit.test_engine_cli_contract.RequestModeTests.test_query_json_arguments_preserve_valid_modes_and_refuse_incompatible_combinations --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/f2",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/focus2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/focus2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/focus2.stderr"
+      ],
+      "detail": "수리뒤52선택/52passed·exit0. 기존38문서시험·새10·setup2/probe1/query1을실행했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/audit.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/audit.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/audit.stdout",
+        "run:phases/029/tasks/doc-names/evidence/audit.stderr"
+      ],
+      "detail": "Gitblob바이트를작업트리정확바이트로가정한보조검산이실패했다. 동일시작SHA의027원archive바이트를읽어교정했다. 제품실패가아니다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/audit.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/audit2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/audit2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/audit2.stderr"
+      ],
+      "detail": "manifest write_text의Windows개행변환을LF로예측한보조검산이실패했다. 실제native개행으로예측을교정했고원실패를보존한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/audit.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/audit3.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/audit3.stdout",
+        "run:phases/029/tasks/doc-names/evidence/audit3.stderr"
+      ],
+      "detail": "기존시험/helper보존과원38row·14반례재사용, 공식mirror변경11개/허용범위·manifest불변·외부TEMP상위Git부재를확인했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/mirror-build.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/mirror-build.stdout",
+        "run:phases/029/tasks/doc-names/evidence/mirror-build.stderr"
+      ],
+      "detail": "공식생성기11갱신/0생성/0삭제·1336파일. 미리확인한허용범위만변경했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_doc_code unit.test_configuration unit.test_engine_cli_contract sim.test_toolchain_tools sim.test_operator_probe_contract sim.test_provider_collection.IdentityTests sim.test_knowledge_import_control unit.test_knowledge_io_contracts unit.test_academic_external_operations unit.test_academic_external_sends unit.test_submission_extension_semantics unit.test_submission_contracts unit.test_review_cycle_stages unit.test_observation_checkpoint --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/c",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/final-c.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/final-c.stdout",
+        "run:phases/029/tasks/doc-names/evidence/final-c.stderr"
+      ],
+      "detail": "첫정본필수선택183passed/exit0. 최종코드대조에서형식결과없는개정후보의연구계획분기문구를추가교정해최종c2로대체한다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py structure.test_doc_code unit.test_configuration unit.test_engine_cli_contract sim.test_toolchain_tools sim.test_operator_probe_contract sim.test_provider_collection.IdentityTests sim.test_knowledge_import_control unit.test_knowledge_io_contracts unit.test_academic_external_operations unit.test_academic_external_sends unit.test_submission_extension_semantics unit.test_submission_contracts unit.test_review_cycle_stages unit.test_observation_checkpoint --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/m",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/final-m.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/final-m.stdout",
+        "run:phases/029/tasks/doc-names/evidence/final-m.stderr"
+      ],
+      "detail": "첫미러같은183passed/exit0. 최종문구교정전성공이며m2가최종인도판본증거다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/mirror-build2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/mirror-build2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/mirror-build2.stderr"
+      ],
+      "detail": "최종knowledge문구와비용캐시를공식미러에반영했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py structure.test_doc_code unit.test_configuration unit.test_engine_cli_contract sim.test_toolchain_tools sim.test_operator_probe_contract sim.test_provider_collection.IdentityTests sim.test_knowledge_import_control unit.test_knowledge_io_contracts unit.test_academic_external_operations unit.test_academic_external_sends unit.test_submission_extension_semantics unit.test_submission_contracts unit.test_review_cycle_stages unit.test_observation_checkpoint --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/c2",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/final-c2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/final-c2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/final-c2.stderr"
+      ],
+      "detail": "최종정본필수같은183선택/고유183row/전건passed·exit0. 875PythonSHA와전후2675소스에서비캐시변경0이다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u -B .agents/skills/do-math/scripts/run_tests.py structure.test_doc_code unit.test_configuration unit.test_engine_cli_contract sim.test_toolchain_tools sim.test_operator_probe_contract sim.test_provider_collection.IdentityTests sim.test_knowledge_import_control unit.test_knowledge_io_contracts unit.test_academic_external_operations unit.test_academic_external_sends unit.test_submission_extension_semantics unit.test_submission_contracts unit.test_review_cycle_stages unit.test_observation_checkpoint --jobs 1 --output docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/m2",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/final-m2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/final-m2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/final-m2.stderr"
+      ],
+      "detail": "최종미러같은183선택/고유183row/전건passed·exit0. 875PythonSHA와전후2675소스에서비캐시변경0이다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/mirror-cache.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/mirror-cache.stdout",
+        "run:phases/029/tasks/doc-names/evidence/mirror-cache.stderr"
+      ],
+      "detail": "두실행후공식생성기를사용해허용된미러.timings.json만갱신했다. 제품/시험/문서바이트변경0이다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/mirror-check.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/mirror-check.stdout",
+        "run:phases/029/tasks/doc-names/evidence/mirror-check.stderr"
+      ],
+      "detail": "공식 --check가1336파일드리프트없음·exit0을반환했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .claude/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/skill-c.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/skill-c.stdout",
+        "run:phases/029/tasks/doc-names/evidence/skill-c.stderr"
+      ],
+      "detail": "정본 --skill-only installed_skill_structure verified·exit0. 운전독해/연구/Lean/모델호출인증이아니다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B .agents/skills/do-math/scripts/probe_cli.py --skill-only",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/skill-m.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/skill-m.stdout",
+        "run:phases/029/tasks/doc-names/evidence/skill-m.stderr"
+      ],
+      "detail": "미러 --skill-only installed_skill_structure verified·exit0. 운전독해/연구/Lean/모델호출인증이아니다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/verify.py",
+      "cwd": "repo:.",
+      "result": "fail",
+      "exit_code": 1,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/verification.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/verification.stdout",
+        "run:phases/029/tasks/doc-names/evidence/verification.stderr"
+      ],
+      "detail": "보조AST검산에서docstring을제외하려고모든Expr를제외해add_argument까지버린관찰자오류다. 원실패보존후관찰자만교정했다."
+    },
+    {
+      "command": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -B docs/do-math/continuous-development-2026-10-13/phases/029/tasks/doc-names/evidence/verify.py",
+      "cwd": "repo:.",
+      "result": "pass",
+      "exit_code": 0,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/evidence/verification2.execution.json",
+        "run:phases/029/tasks/doc-names/evidence/verification2.stdout",
+        "run:phases/029/tasks/doc-names/evidence/verification2.stderr"
+      ],
+      "detail": "최종양쪽선택/row/exit/판본·기존38ID·반례16·parser옵션선언AST동등·변경22개/writes를전건검산했다."
+    },
+    {
+      "command": "기본전체/fresh T3/전수변이/최종G7실연쇄/G8review·L01실독해·symlink실반려",
+      "cwd": "repo:.",
+      "result": "not_run",
+      "exit_code": null,
+      "evidence": [
+        "run:phases/029/tasks/doc-names/objective.md"
+      ],
+      "detail": "이번지정관련work밖이며미충족/미검사와외부결정조건을유지한다. 새유료모델·Lean설치/컴파일·실예약·학술호출은추가하지않았다."
+    }
+  ]
+}

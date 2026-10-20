@@ -1,0 +1,184 @@
+{
+  "tree": "C:\\math\\.claude\\worktrees\\codex-close-integration",
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nhk6ysgd\\report.json",
+      "sha256": "84cbc060b80913d0ccda7be03e1bb386b5c0f8179bab64489e1ba8a1e75e7b5c",
+      "facts": {
+        "counts": {
+          "passed": 3402,
+          "expected_failure": 26,
+          "skipped": 1
+        },
+        "total_seconds": 1313.6,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l81gsdym\\report.json",
+      "sha256": "03138467d08dc4b49fa271350bc73b33fd2711ba3765b091c633b94472bd89bd",
+      "facts": {
+        "counts": {
+          "passed": 48,
+          "expected_failure": 8
+        },
+        "total_seconds": 2853.5,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-85rq0ceh\\report.json",
+      "sha256": "2257632e8fc8631710017dc4677f093ef63c7b324a4c636128a73b192e29fd0f",
+      "facts": {
+        "counts": {
+          "passed": 60
+        },
+        "total_seconds": 46.8,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qbqhccj3\\report.json",
+      "sha256": "98fede43549be01dd6e2ff0fdeed4a7ac0112d2f70b49bd5052494a3724c5e8f",
+      "facts": {
+        "counts": {
+          "passed": 61
+        },
+        "total_seconds": 24.4,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-mutation-lkrlil3t\\mutation.json",
+      "sha256": "4634ecd209715812ac1d85fd82b7e4d43892a512b2c6d1d14bebdf61ae64e86a",
+      "facts": {
+        "counts": {
+          "timeout": 4,
+          "killed": 38,
+          "not_executed": 2
+        },
+        "seconds": 1308.3,
+        "functions": 44,
+        "baseline_failing": [],
+        "unreasoned_entries": 0
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-contract-mutation-3m5otyxt\\mutation.json",
+      "sha256": "afd6b3978700b1edc823cca1bcb83cab0fa4aeb827eafd2c762ba9a1f638c041",
+      "facts": {
+        "counts": {
+          "killed": 20,
+          "not_executed": 6,
+          "survived": 2
+        },
+        "seconds": 12.8,
+        "functions": 28,
+        "baseline_failing": [],
+        "unreasoned_entries": 2
+      }
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-contract-mutation-yu8h357s\\mutation.json",
+      "sha256": "7e2b2f6aa0b6d030645138e78299dbde02aafd4b3e74613c202abf5ea6294d97",
+      "facts": {
+        "counts": {
+          "killed": 28
+        },
+        "seconds": 24.9,
+        "functions": 28,
+        "baseline_failing": [],
+        "unreasoned_entries": 0
+      }
+    }
+  ],
+  "current_1a_correction": {
+    "bindings": [
+      {
+        "path": "tests/contracts/pairs.py",
+        "sha256": "78c8ed01df4096fd302500a1e0c0995d5146a095f810f62b084b85c547ef10af",
+        "matches_whole_t2": true
+      },
+      {
+        "path": "tests/contracts/test_pairs.py",
+        "sha256": "99ed909bf42b19c74a9386bf04221270ef527e0ce2e6384d9ba5208fb5232130",
+        "matches_whole_t2": true
+      },
+      {
+        "path": "tests/sim/test_provider_runner.py",
+        "sha256": "71ffca2d51acf3a1933e666469d8bfc4b87e7f8c66d22b8010b41ab3cb086b8f",
+        "matches_whole_t2": true
+      }
+    ],
+    "rows": [
+      {
+        "id": "sim.test_provider_runner.ProviderRoutingTests.test_model_lock_is_opt_in_and_reaches_only_claude",
+        "outcome": "passed",
+        "seconds": 0.2190000000409782,
+        "details": []
+      },
+      {
+        "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+        "outcome": "passed",
+        "seconds": 1.609000000054948,
+        "details": []
+      },
+      {
+        "id": "contracts.test_pairs.ContractPairTests.test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment",
+        "outcome": "passed",
+        "seconds": 0.06199999991804361,
+        "details": []
+      }
+    ],
+    "finding": "The historical audit claim that Codex plus claude_only=True is omitted is stale. Both flag choices run through actual production helpers and both real runner/worker chains in these current tests.",
+    "limit": "This resolves that configuration coordinate only; it does not certify all six producer populations or the full branch gate."
+  },
+  "original_log": {
+    "path": "C:/Users/wogud/.claude/projects/C--math/16d62671-b86c-420b-ad51-2d857f6fa9e7.jsonl",
+    "line_numbering": "1-based",
+    "user_lines": [
+      9,
+      357,
+      368,
+      378,
+      388,
+      457,
+      467,
+      474,
+      484,
+      490,
+      500,
+      506,
+      522,
+      3300,
+      9575,
+      15927
+    ],
+    "assistant_lines_read": [
+      361,
+      366,
+      376,
+      382,
+      461,
+      504,
+      519
+    ],
+    "scope": "selected original messages, not a full-session reading; truncated output was not credited as full reading"
+  },
+  "full_t3_launch": {
+    "directory": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-full-after-contracts-e2b57e566ead41d188e054405019a585",
+    "log": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-full-after-contracts-e2b57e566ead41d188e054405019a585.log",
+    "tree": "C:\\math\\.claude\\worktrees\\codex-close-integration",
+    "command": "python .claude/skills/do-math/scripts/run_tests.py --tier T3 --full --jobs 3 --timeout 1800",
+    "started_at": "2026-10-03T01:39:43.0321305Z"
+  },
+  "full_t3_state": "running; session 72305; parent PID 24828; 475 modules, 3819 tests, 3 workers; no completion claim"
+}

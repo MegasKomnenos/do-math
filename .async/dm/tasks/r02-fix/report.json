@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "summary": "R02/1-A 작업자 요청 시험의 F1을 수리했다. 기존 helper 직접 조립을 유효 research_work AI 프로필 또는 unpinned 입력으로 실제 ModelRunner.run 저장→adapter snapshot→두 worker load/run→CLI→collector를 실행하는 표본으로 바꿨다. 공급자별 유효20입력, 정확 identity/ref/limits/control/tools/lock 및 schema 의미, scholarly args 0/1/여럿을 단언한다. 기존 필수+선택 역방향, Codex lock 무효과와 Claude True 제한, 결과8표본을 보존했다. 시험 정본2파일과 대응 미러2파일을 바꿨고 공식 비용캐시2파일을 갱신했다. runtime 수정이나 새 내부 대역은 없다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py"
+  ],
+  "verification": "기존 최소 ID에 실제 저장 입력 is_file 단언을 먼저 넣어 원 helper에서 두 공급자의 의미 실패를 확인했다(evidence/red/report.json, exit1, failed1 row; red-test_pairs.py 보존). 수리 후 contracts.test_pairs --jobs 1은 green1에서6passed/exit0(7.6초), 비용·경로 확인 이유를 docstring에 남긴 최종 Python 판본에서6passed/exit0(9.8초)다. 최종 선택6ID와 실제6row가 일치하고 fixture 오류·미실행·실행 중 소스 변경이 없다. 최종 공식 보고의 전체 Python SHA875개가 제출판과 일치한다. 각20조합과 args6호출은 실제 worker를 실행하는 기존 ProviderJobs/ScriptedCLI로 검증했으며 외부 실제 모델/Job/학술 서버 호출은0이다. 정확 단언은 파일이 살아 있는 동안 수행했다. 공식 미러 생성 및 --check --target .agents exit0, 1336파일 드리프트 없음, 변경시험/캐시3쌍 바이트 일치. baseline 대비 변경6경로는 허용 writes 안에 있다. 입력축/시험ID/단언은 evidence/branch-assertion-map.json, 실제 row·exit·판본·비용·한계는 evidence/verification.json과 final/report.json에 연결했다. 전체 G4/T3/변이/T4/T5는 이번 배정에서 실행하지 않았다.",
+  "findings": [
+    "F1 | R02/1-A, G1/G3, K-78 request slice/PR18: pair는 실제 저장 요청을 반환하며 양 공급자의20합법조합 전부 실제 runner/adapter/worker/collector를 통과한다. Claude research_work+limits+control+scholarly+lock=True의 ticket/seal/host publication, 정확 binding, schema 부재, CLI1회와 Job 정리를 확인했다. scholarly []/[absolute_server]/[absolute_server,--flag]도 같은 최대 조합에서 두 공급자에 확인했다. Runtime 결함은 관측하지 않았다. manager의 통합/수용은 아직 수행하지 않았다.",
+    "G2/lock 및 결과 보존: 각 request.profile_ref는 자기 AI profile_ref와 정확히 대조한다. lock 차이로 다른 프로필 참조는 서로 다름을 단언한 뒤 전송효과 비교에서만 제외한다. evidence/snapshot 경로만 정규화하고 workspace/control/tools binding은 유지한다. Codex 실제 CLI argv/stdin 무효과, Claude True에만 lock field와 정확 settings 제한을 단언했다. 기존 collected/bound/incomplete/stopped8표본·정확 의미 단언은 유지된다.",
+    "비용: 최종 관련 모듈9.8초, 네 시험은 계약의0.2초 소프트 기준을 넘었다(최종5.922/0.406/0.531/2.922초). 기존 결과와 필드역방향을 포함한 실제 파일/worker/collector 연결이 필요한 비용이며 docstring과 공식 budget row에 이유·관측을 남겼다. 속도 개선 효과로 해석하지 않는다. .timings.json은 공식 실행기의 비용갱신이다.",
+    "F2 | 최종 판본 실행 대기: 이번6개 관련 시험으로 G4~G8 전체 판정이나 실제 경계 인증을 대체하지 않는다. 029 설치/prompt 판본 한계, L01 Q1/Q2·UTF-8 byte 미충족, Windows1314 symlink 실제 반려 미검사, 다른 요청/저장 가족·K/P2 및 의미 미결은 그대로 유지한다. 공용소스·다른 task·Git index·원자료는 수정하지 않았다."
+  ]
+}

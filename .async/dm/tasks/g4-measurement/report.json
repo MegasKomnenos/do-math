@@ -1,0 +1,12 @@
+{
+  "status": "complete",
+  "summary": "자기 workspace에만 독립 .git과 실제 snapshot의 로컬 기준 commit(49cb9b7fba3a106eeff163f4c2996562f8f0d9a3)을 준비했다. 기존 Git ceiling을 보존·추가하고 외부 temp의 상위 Git 탐색을 차단했다. 준비 전후 2,759파일 SHA256과 기록한 2,749개 blob의 바이트 일치를 확인했다. 이 준비만으로 지정 adapter meta 7개가 모두 통과했고 이전 setUpClass 오류 아래 not_run 2개도 실제 실행됐다. 측정 구현·단언·문서 변경은 필요 없었으며 제품 변경은 없다. 정확한 준비·판정·재현·한계는 evidence/judgment.md와 git-preparation.json에 기록했다.",
+  "changes": [],
+  "verification": "workspace cwd에서 공식 run_tests.py unit.test_adapter_coverage --jobs 1을 한 번 실행했다(evidence/focused/invocation.json). 원보고는 evidence/focused/raw/report.json, SHA256 40e6b33ece2bce49784f543f0d4bb9caa87bd9be5bb658947120f7769dc915a1이다. selected7=실제7passed·누락/여분/중복0·fixture_counts={}·complete=true·successful=true·관측exit0이다. 912개 Python SHA가 준비판/제출판과 전건 일치하고 changed_during_run=[]다. 공식114.5초/외부119.156초 및 7행의 소프트 예산 초과를 보존했다. 실제 native 자식/Windows Job과 publication 반례는 기존 meta 단언으로 확인했으며, 유지된 T4 자식 원보고는11passed·adapter완결·worker1 merged/exit0이다. 기존 TemporaryDirectory가 정리한 다른 자식의 원파일은 남지 않아 별도 보존을 주장하지 않는다. 부모/격리 worker 원보고·stdout/stderr와 유지된 자식 자료는 focused/raw에 있다. 증거 summary helper 오류는 공식 종료 뒤 원보고만 다시 읽어 교정했고 시험 재실행은 없다. 실행으로 바뀐 timing 캐시2개는 evidence에 보존 후 base복원했다. 최종 snapshot2,759파일은 base와 동일하고 공통 workspaces.changes 결과도 []다. 공식 미러 --check는1,375파일 드리프트 없음/exit0이었다. repository_root/write_index 및 _finish_t3의 실제 root/HEAD 소비를 정적으로 확인하고 자기 root/HEAD 조회 성공을 기록했다. 전체 write_index·G4·fresh 전체T3·변이·전체T4/T5는 실행하지 않았다.",
+  "findings": [
+    "원 full4의 측정 3failed/2error/2not_run·fixture error1은 Git 없는 사본의 실행 준비 문제였다. 원본문/traceback과 전체 실패판은 보존하고 evidence/original-failures.json으로 연결했다. 이번 7passed를 원 전체4288행과 합산하지 않는다.",
+    "후속 G4/G5는 수용된 통합판의 새 사본에서 해당 배정이 허용하는 독립 Git 기준판을 준비해야 한다. 현재 .git은 workspaces.py의 제외 대상이라 통합되지 않으며, 로컬 HEAD는 공용 main commit/통과 증거가 아니다. evidence/prepare.py·git-preparation.json·judgment.md에 정확한 명령/필수 파일범위/환경/root·HEAD/바이트 불변과 산출물 위치를 남겼다.",
+    "full T3 write_index는 실제 HEAD를 요구한다. 현재 준비로 HEAD 조회 전제는 충족하지만 이번 부분 native T3는 selection_index=None이며 fresh 전체 T3/쓰기분기 도달 성공을 입증하지 않는다. 관련 작은 기존 meta와 정적 확인으로 이번 준비 범위를 마쳤다.",
+    "저장 범위 사용자 지시/A22를 유지했다. 새 가족별 전수 재입증·비Git fallback·가짜 HEAD·별도 검증 framework는 추가하지 않았다. 전체 G4/G5/G6~G8·L01/Windows1314·실경계·최종review는 계속 열려 있다. 공용 소스/문서/계획/queue/state·다른 task·engine·공용 Git·graphify·기존 연구는 수정하지 않았다."
+  ]
+}

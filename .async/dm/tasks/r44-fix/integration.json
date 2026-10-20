@@ -1,0 +1,23 @@
+{
+  "task": "r44-fix",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_goal_audit.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_close_currentness.py",
+    ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_goal_audit.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/do_math/knowledge.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_close_currentness.py"
+  ]
+}

@@ -1,0 +1,379 @@
+{
+  "scope": "4-B/13-B 실패 대기3종의 실제 진입/소유자 해소 및KD-0705 로컬 종결 정산. 전체 대기 공간과 다른11의무의 폐쇄는 아니다.",
+  "population": [
+    "output_validation",
+    "execution_failure",
+    "submission_failure"
+  ],
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-oi8aaskq\\report.json",
+      "sha256": "234ae6f39526da09e200e98038b780746772b84d9c12e9b8486e3f9ca58edec3",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "not_run": 1
+      },
+      "total_seconds": 11.9,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "setUpModule (flows.test_failed_action_wait_contract)",
+          "outcome": "error",
+          "seconds": 0,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 15, in setUpModule\n    failure_sim(kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 42, in failure_sim\n    return built('failed-action-contract', _failed, kind=kind)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 399, in built\n    return warm_built(name, build, **parameters).restore()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in warm_built\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 312, in __init__\n    sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in <lambda>\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 35, in _failed\n    raise AssertionError('real failure did not produce its declared kind: ' + repr(entry))\nAssertionError: real failure did not produce its declared kind: {'action': {'role': 'research_plan', 'id': 'AC-failed', 'reason': 'Compare the current task population', 'repetition_bases': {'selection_failure': '188b5558cbc8253cd0bcde846a64fc3399e63b5964c7576e35a0983435fc598c'}, 'revision_targets': {}, 'lineage_id': 'AC-failed', 'profile_ref': {'id': 'EP-438aa4010aa362bd67158eb9a92bc70fd7df8f24e07883669bfc6527808949c0', 'revision': 1, 'sha256': '438aa4010aa362bd67158eb9a92bc70fd7df8f24e07883669bfc6527808949c0'}, 'actor_kind': 'ai', 'model_selection': {'tier': 'high', 'model': 'gpt-6-astra', 'assessment': None, 'reason': 'Configured role requirement; raise when task difficulty or importance requires it.', 'profile_ref': {'id': 'EP-438aa4010aa362bd67158eb9a92bc70fd7df8f24e07883669bfc6527808949c0', 'revision': 1, 'sha256': '438aa4010aa362bd67158eb9a92bc70fd7df8f24e07883669bfc6527808949c0'}}, 'grant_id': 'GR-research-sim', 'owner_activity_id': 'AY-03E6TRPT000000000000000023'}, 'kind': 'execution_failure', 'reason': 'native final failed central structural validation; see runtime/artifacts/BA-03E6TRPT00000000000000002C/submission/check.json', 'failure_kind': 'execution_failure', 'execution_id': 'EX-03E6TRPT000000000000000024', 'input_snapshot': '740e9d41064dd3ab528ec5a460957d549d437d76', 'next_owner': 'operational_review'}\n"
+          ],
+          "fixture": true
+        },
+        {
+          "id": "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+          "outcome": "not_run",
+          "seconds": 0,
+          "details": [
+            "A fixture failed before this test could run."
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-u745b6mm\\report.json",
+      "sha256": "5b2a8cae0424015aae30115abe4c371469b7da51a9254796dbb7447eca8fc931",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "not_run": 1
+      },
+      "total_seconds": 25.4,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "setUpModule (flows.test_failed_action_wait_contract)",
+          "outcome": "error",
+          "seconds": 0,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 15, in setUpModule\n    failure_sim(kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 55, in failure_sim\n    return built('failed-action-contract', _failed, kind=kind)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 399, in built\n    return warm_built(name, build, **parameters).restore()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in warm_built\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 312, in __init__\n    sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in <lambda>\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 45, in _failed\n    raise AssertionError('the external Git read fault was not reached exactly once')\nAssertionError: the external Git read fault was not reached exactly once\n"
+          ],
+          "fixture": true
+        },
+        {
+          "id": "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+          "outcome": "not_run",
+          "seconds": 0,
+          "details": [
+            "A fixture failed before this test could run."
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-e80vmlph\\report.json",
+      "sha256": "eb574f553bd72de67c3218677b9d88ecb88bda50512b19b4afb368237bbb5f11",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "not_run": 1
+      },
+      "total_seconds": 21.3,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "setUpModule (flows.test_failed_action_wait_contract)",
+          "outcome": "error",
+          "seconds": 0,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 15, in setUpModule\n    failure_sim(kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 67, in failure_sim\n    return built('failed-action-contract', _failed, kind=kind)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 399, in built\n    return warm_built(name, build, **parameters).restore()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in warm_built\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 312, in __init__\n    sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in <lambda>\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 38, in _failed\n    sim.repository = sim.engine.repository\n                     ^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'ResearchEngine' object has no attribute 'repository'\n"
+          ],
+          "fixture": true
+        },
+        {
+          "id": "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+          "outcome": "not_run",
+          "seconds": 0,
+          "details": [
+            "A fixture failed before this test could run."
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-aifzd9eg\\report.json",
+      "sha256": "3722b58747f669acfa4e0109a469f76e43cb5b263b21c86d976dcd7673faca0c",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "not_run": 1
+      },
+      "total_seconds": 27.0,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "setUpModule (flows.test_failed_action_wait_contract)",
+          "outcome": "error",
+          "seconds": 0,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 15, in setUpModule\n    failure_sim(kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\failed_actions.py\", line 67, in failure_sim\n    return built('failed-action-contract', _failed, kind=kind)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 399, in built\n    return warm_built(name, build, **parameters).restore()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 412, in warm_built\n    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 313, in __init__\n    assert_template_quiescent(sim)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\support\\sim.py\", line 390, in assert_template_quiescent\n    raise AssertionError('template has unsettled execution resources: ' + repr(pending))\nAssertionError: template has unsettled execution resources: {'pending_executions': ['EX-03E6TRPT000000000000000024'], 'held_reservations': [], 'jobs': [], 'calls': []}\n"
+          ],
+          "fixture": true
+        },
+        {
+          "id": "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+          "outcome": "not_run",
+          "seconds": 0,
+          "details": [
+            "A fixture failed before this test could run."
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1f8g_7rx\\report.json",
+      "sha256": "e80e089cb8fe379d724f076bd727bdbd535064272c77ef64dcd9afc250a3d6c7",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "total_seconds": 23.2,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis",
+          "outcome": "failed",
+          "seconds": 8.295999999972992,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 29, in test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis\n    self.assertEqual(execution['status'], 'ended')\nAssertionError: 'stopping' != 'ended'\n- stopping\n+ ended\n\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6k2ojcui\\report.json",
+      "sha256": "af1aa290b7b6ae10222c586833df359b6c579c796e12f5a7c068da72f1b9fc44",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1,
+        "unexpected_success": 1
+      },
+      "total_seconds": 37.3,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+        "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+          "outcome": "failed",
+          "seconds": 14.10999999998603,
+          "details": [
+            "test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit (flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit) (kind='submission_failure')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 45, in test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit\n    identifier, entry = next((key, row) for key, row in sim.runtime['waiting_actions'].items()\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nStopIteration\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_failed_action_wait_contract.py\", line 92, in test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit\n    self.assertEqual(exercised, FAILED_ACTION_WAITS)\nAssertionError: {'output_validation', 'execution_failure'} != frozenset({'submission_failure', 'output_validation', 'execution_failure'})\n"
+          ]
+        },
+        {
+          "id": "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis",
+          "outcome": "unexpected_success",
+          "seconds": 7.734000000054948,
+          "details": []
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-bfsdjanm\\report.json",
+      "sha256": "7483489e86a15db4f9c2304c7a84b3803dfced82e25ac09e82f486b1e8a3aede",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 2
+      },
+      "total_seconds": 51.1,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+        "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis"
+      ],
+      "budget": {
+        "over_budget": [],
+        "tier": null
+      },
+      "failures": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_wylb7bq\\report.json",
+      "sha256": "87e3ef4cafb2fcfb84cd0011cf20188da21b760758ae570e99e9be851f7f1215",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 63
+      },
+      "total_seconds": 186.6,
+      "changed_during_run": [],
+      "selected": [
+        "flows.test_failed_action_wait_contract.FailedActionWaitContractTests.test_every_failure_has_a_real_producer_negative_condition_and_exact_owner_exit",
+        "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis",
+        "flows.test_scheduling_close_return_evidence.MachineTerminationEvidenceTests.test_verified_lean_returns_remain_owned_until_named_job_exit_is_confirmed",
+        "flows.test_scheduling_close_return_evidence.UnconfirmedReturnTests.test_real_runner_evidence_is_preserved_while_named_job_termination_is_unknown",
+        "flows.test_scheduling_close_settlement.ReturnSettlementTests.test_ai_before_calculation_pause_preserves_owner_and_returns_capacity",
+        "flows.test_scheduling_close_settlement.ReturnSettlementTests.test_ai_running_stop_and_fence_drain_every_execution",
+        "flows.test_scheduling_close_settlement.ReturnSettlementTests.test_machine_first_turn_stop_has_confirmed_termination",
+        "flows.test_scheduling_close_settlement.ReturnSettlementTests.test_machine_running_pause_is_applied_within_one_owner_pass",
+        "flows.test_scheduling_close_settlement.ReturnSettlementTests.test_step_cap_applies_sealed_ai_completion_before_return",
+        "flows.test_scheduling_research_recovery.InvalidPlanTests.test_exhausted_output_repair_does_not_stop_unrelated_work",
+        "flows.test_scheduling_research_recovery.InvalidPlanTests.test_output_failure_opens_diagnosis_without_replaying_rejected_plan",
+        "flows.test_scheduling_research_recovery.ParkedFailureTests.test_diagnosed_plan_retry_uses_fresh_input_and_preserves_failure_and_independent_work",
+        "flows.test_scheduling_research_recovery.ParkedFailureTests.test_diagnosis_wait_does_not_block_independent_actions",
+        "flows.test_scheduling_research_recovery.ParkedFailureTests.test_successful_fresh_plan_resolves_parked_failure_without_deleting_history",
+        "flows.test_scheduling_research_recovery.ReviewedTaskTests.test_plan_rejection_names_missing_unexpected_and_duplicate_ids",
+        "flows.test_scheduling_research_recovery.ReviewedTaskTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history",
+        "flows.test_submission_publication_retry.DelayedPublicationTests.test_delayed_publication_settles_each_role_and_preserves_pending_followups",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_changed_task_question_reports_contract_drift_without_misclassifying_review_inputs",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_confirmed_question_must_still_be_open",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_contract_review_refresh_captures_new_exact_basis",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_deleted_planning_target_is_rejected_without_applying",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_ended_research_task_has_no_requirement_refresh",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_execution_contract_hash_must_match_current_task",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_failed_revision_requires_accepted_revision_resolution",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_finished_planning_target_is_rejected",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_missing_failed_action_resolution_is_atomic",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_missing_research_task_has_no_requirement_refresh",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_old_resolution_evidence_requires_current_premises",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_plan_cannot_apply_after_candidate_contract_changes",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_plan_cannot_apply_when_selection_is_no_longer_ready",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_review_task_basis_must_match_original_snapshot",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_second_operational_refresh_does_not_queue_itself",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_second_refresh_parks_research_and_queues_operations",
+        "sim.test_governance_decision_resolution.PremiseRefreshTests.test_premise_refresh_of_an_output_repair_continues_the_refreshed_execution",
+        "sim.test_governance_decision_resolution.ResolutionTests.test_current_resolution_commits_only_with_its_complete_bundle",
+        "sim.test_governance_decision_resolution.ResolutionTests.test_current_resolution_requires_its_validated_bundle_and_same_scope",
+        "sim.test_scheduling_research_recovery.ParkedFailureTests.test_rejected_history_keeps_original_output_out_of_inline_action",
+        "sim.test_scheduling_research_recovery.ParkedFailureTests.test_resume_keeps_failed_output_out_of_execution_queue",
+        "sim.test_scheduling_research_recovery.ParkedFailureTests.test_status_failure_summary_does_not_repeat_rejected_output",
+        "sim.test_scheduling_research_recovery.ReviewedTaskTests.test_plan_input_always_has_authoritative_ready_ids",
+        "structure.test_action_wait_contract.ActionWaitDeclarationTests.test_every_current_wait_creation_uses_the_declaration_and_real_resolvers",
+        "structure.test_known_defects.KnownDefectLedgerTests.test_ledger_and_marks_correspond",
+        "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+        "structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason",
+        "structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name",
+        "structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization",
+        "unit.test_lifecycle_engine_records.CapabilityEvidenceTests.test_negative_job_is_not_cleared_by_later_help_probe",
+        "unit.test_lifecycle_engine_records.LifecycleRecordTests.test_original_unicode_bytes_survive_canonical_roundtrip",
+        "unit.test_lifecycle_engine_records.LifecycleRecordTests.test_terminal_marker_cannot_have_live_projection",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_blocked_scope_must_match_target_and_every_judgment_coordinate",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_capture_flags_reject_nonboolean_or_cross_bundle_inconsistency",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_capture_rejects_wrong_execution_and_ambiguous_byte_sources",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_changed_tool_is_distinguished_from_changed_input",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_check_modes_and_history_limits_are_not_coerced",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_checkpoint_limit_reports_exact_size_rule_without_parsing",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_control_request_checks_kind_budget_binding_and_workspace_in_order",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_load_extensions_preserves_nonobject_and_unknown_empty_family",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_metadata_relation_claim_contributes_only_current_explicit_edges",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_nested_metadata_title_keeps_its_original_coordinate_and_owner",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_partial_capture_requires_correct_owner_and_at_least_one_good_bundle",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_producer_chain_identity_and_sequence_are_separate_checks",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_producer_lock_outside_draft_and_schema_drift_have_distinct_contracts",
+        "unit.test_submission_check_invariants.CheckInvariantTests.test_sibling_boundaries_distinguish_duplicates_from_outside_input"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "flows.test_submission_publication_retry.DelayedPublicationTests.test_delayed_publication_settles_each_role_and_preserves_pending_followups",
+            "seconds": 66.81200000003446,
+            "budget_seconds": 60.0
+          },
+          {
+            "id": "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_changed_task_question_reports_contract_drift_without_misclassifying_review_inputs",
+            "seconds": 12.48499999998603,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+            "seconds": 14.187000000034459,
+            "budget_seconds": 5.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": []
+    }
+  ],
+  "sources": {
+    "do_math/core_engine.py": "7a05a4e44195a35b50465bebf5781ba777bda37ff2dd3911a706ae379ac600e2",
+    "do_math/wait_rules.py": "3b354430da8e30e679a100f8a94ed2b859d9e7222ebd9aa90847e54a568d7060",
+    "tests/support/failed_actions.py": "d719e598f791ee8abbef7f7e7bf3272986ce81a06e2974249f44d451edfe0f62",
+    "tests/flows/test_failed_action_wait_contract.py": "d297e4f7c15481dc774191c8774aae94ac083e98b0cb54aa8683a429aa71b5fc",
+    "tests/known_defects.json": "f8e1580141400bfebf1f8aafdf4fb0ef6125bbd0b0c7c123a98a106d9d2726ce",
+    "이음새-정본.md": "71e31192273b6e468b01c95085b9e502ed45bc5f0e2fc0994a3c422f431dea0b"
+  },
+  "ledger": {
+    "total": 54,
+    "open": 0,
+    "entry": {
+      "id": "KD-0705",
+      "summary": "정상 모델 제출의 지연 게시를 별도 실제 수신자가 재대조하다 봉인 자료 읽기에 실패하면 submission_failure로 전환하지만 로컬 종료가 확인된 실행을 stopping에 남긴다.",
+      "category": 4,
+      "reproduction": "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis",
+      "found_by": "실제 모델 제출/게시 보류 뒤 독립 Repository 수신자의 봉인 읽기에 Git 포트 OSError를1회 주입. do-math-tests-1f8g_7rx에서 local_termination_confirmed=true인데 stopping!=ended로 실패했다.",
+      "missed_kind": "기존 지연 게시 검사는 정상 재게시와 대기 종류만 확인하며 봉인 재대조 실패 뒤 로컬 실행 종결·예약 정산을 확인하지 않았다.",
+      "status": "closed"
+    }
+  },
+  "entry_producers": "실행 실패는 실제 worker의 거부/실패 계획,출력 반려는 정상 완료 provider의 잘못된 native 계획과0수리한도,제출 실패는 정상 제출의 지연 게시와 별도 실제 Repository 수신자의 봉인 읽기에 Git 포트 OSError1회를 주어 생산한다. kind를 바꿔 전건으로 세지 않는다.",
+  "fixture_corrections": [
+    "보존 한도 초과 native 입력은 중앙 포착에서 실행 실패로 분류되어 제출 실패를 만들지 않았다(oi8aaskq).",
+    "이미 읽은 봉인 바이트의 정상 메모 때문에 같은 수신자의 Git 읽기 오류는 실행되지 않았다(u745b6mm). 실제 독립 수신자를 사용했다.",
+    "새 수신자의 repository 속성 위치를 잘못 쓴 오류를 engine.store.repository로 교정했다(e80vmlph).",
+    "독립 저장소를 기본 단일 저장소 경로의 공유 템플릿으로 복원한 오류(6k2ojcui)를 독립 실제 장면으로 교정했다. 모델/엔진/저장 검사를 대신하지 않았다."
+  ],
+  "defect": "정상 provider의 로컬 종료와 예약 반환이 확인됐는데,지연 게시 재대조의 SealedSubmissionError 뒤 실행이 stopping에 남았다. aifzd9eg의 template quiescence 오류 뒤 직접 실제 장면 재현1f8g_7rx에서 ended를 요구해 red를 확인했다.",
+  "repair": "게시 재대조 실패를 submission_failure로 넘길 때 기존 _settle_recovered_execution 정본으로 로컬 종료를 확인하고 실행을 정산한다. 성공하면 실제 오류/분류를 기록하고 활동 정산 뒤 진단한다. 종료 확인이 안 되면 그 정본은 execution이나예약을 강제로 종결하지 않는다.",
+  "generic_verification": "FAILED_ACTION_WAITS 전건을 실제 생산자로 순회한다. 조건 전 실제 upkeep2회의 연구/runtime 전문 불변,실제 저장/적재 status JSON/사람용 출력,수락된 새 동일 범위 판단이나 운영 진단의 실제 owner1회 후 해소,원 실패 실행 전문 불변,해소 이력의 원 대기 전문 또는 안전한 후속1개,반복 upkeep의 전체 불변과 저장 적재를 확인한다.",
+  "contract_correction": "현재 공통 action_resolutions는 output_validation/execution_failure 두 종류만 허용한다. submission_failure 등록부에서 그 부적절한 해소자/설명을 제거하고 실제 허용된 진단·재시도 계약으로 검사했다. 다른 종류의 미검증 해소자까지 완료로 세지 않는다.",
+  "remaining": [
+    "다른 행동 대기 가족의 실제 일반 출구와 전체 관측 표면",
+    "과제/활동/수명/질문/반복 보류/공급자/설치/사건/역할 판정 공간",
+    "11의무/여섯부류/P2",
+    "1e/1f·전체T2/flows/freshT3/모든함수변이/예산",
+    "T4/T5·말뭉치·미러·check·main통합"
+  ]
+}

@@ -4,3 +4,13 @@ phases/*/logs/*
 phases/*/tasks/*/evidence/**/scratch/
 phases/*/tasks/*/evidence/**/__pycache__/
 phases/*/tasks/*/evidence/**/.coverage*
+
+# Assignments and conclusions are tracked; other raw artifacts remain local.
+# Previously tracked evidence is unaffected.
+phases/*/*
+!phases/*/phase.json
+!phases/*/manager.json
+!phases/*/tasks/
+phases/*/tasks/*/*
+!phases/*/tasks/*/objective.md
+!phases/*/tasks/*/report.json

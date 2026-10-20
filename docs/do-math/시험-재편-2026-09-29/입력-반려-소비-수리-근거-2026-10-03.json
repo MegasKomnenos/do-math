@@ -1,0 +1,121 @@
+{
+  "closed": [
+    "KD-0004",
+    "KD-0005",
+    "KD-0009"
+  ],
+  "open_in_repair": 27,
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vfk8cgx3\\report.json",
+      "sha256": "b3adcf7ca36af1be55b42b002093b1e5fa0a2850095cda399869fdb45de7e7b5",
+      "counts": {
+        "passed": 3444,
+        "expected_failure": 16,
+        "skipped": 1,
+        "failed": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 892.7,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mfv0xjlq\\report.json",
+      "sha256": "e77b7983cb912a1544511d9a25d6e06aa26d55f30e61318f56037fb90ddc8ea0",
+      "counts": {
+        "passed": 1
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 0.0,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-o5s1bc33\\report.json",
+      "sha256": "878433ec8a8d77eed8c2cde868eabe7bf38bd4c119b3857c0ac7382622c8fa32",
+      "counts": {
+        "unexpected_success": 3
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 6.1,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-rz6oq51r\\report.json",
+      "sha256": "8fdc65c6c93855c9a685ba51e3c1e52a5e590d6ede8fc5793fe5711372e9011c",
+      "counts": {
+        "passed": 57,
+        "failed": 2,
+        "error": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 22.6,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-hocnb883\\report.json",
+      "sha256": "56451b661e3a93b8e11075be1b1c9b2f2a1b3a7746956b419c98458af9177ee3",
+      "counts": {
+        "passed": 58,
+        "failed": 2
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 20.0,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nljh8ff3\\report.json",
+      "sha256": "271d9dca175ee6fbf1129a670722c65c49e5f37ce8a19e5b3237fd83b1c18703",
+      "counts": {
+        "passed": 2
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 0.1,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ejshaed3\\report.json",
+      "sha256": "d758912da7e6338b946b690bcf3c26664402f9750cbaa214ad52bdb35b7119c5",
+      "counts": {
+        "passed": 60
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 20.3,
+      "changed_during_run": []
+    }
+  ],
+  "files": [
+    {
+      "path": "do_math/core_engine.py",
+      "sha256": "dcbceff043e8062b78bac9fcd67836ff3571d0161d81a6918bd857f40e16932a"
+    },
+    {
+      "path": "do_math/control_transport.py",
+      "sha256": "0489bb907a3c214fbf88872ebe99650b6827a9c9cf9c72bfc59f3017e146a734"
+    },
+    {
+      "path": "tests/sim/test_ingress_consumption.py",
+      "sha256": "3a4600037d7257478cead271d196eb6393511ac7b76fda289590c0a3b7aa72bb"
+    },
+    {
+      "path": "tests/unit/test_engine_control_transport.py",
+      "sha256": "6537d2c3b7d538beaa542a6e98f77763ef30f927c350638085cdce4cc0dae12b"
+    },
+    {
+      "path": "tests/unit/test_ingress_rejection.py",
+      "sha256": "7a20a4ebd602965459c4bc854ebdec04a89af74ceade506d2312c6735e9d6790"
+    },
+    {
+      "path": "tests/unit/test_planning_condition_validation.py",
+      "sha256": "10b3762c823685c2de53121dca109a62aa0d12a1f8b3919645dd03c3c661484f"
+    }
+  ],
+  "additional_p2_corrections": "The old transport pump assertion pinned owner-loop ValueError. It now requires structured rejection, original immutable receipt and no second publication; close retains unsettled delivery evidence. Original twelve P2 items remain separate.",
+  "scope": "Actual inbox/transport/restart and consumer regressions; all final whole gates remain pending."
+}

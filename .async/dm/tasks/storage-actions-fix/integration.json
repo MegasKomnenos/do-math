@@ -1,0 +1,27 @@
+{
+  "task": "storage-actions-fix",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_action_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_authority_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".claude/skills/do-math/scripts/tests/support/planning_contract_inputs.py",
+    ".agents/skills/do-math/scripts/tests/support/planning_contract_inputs.py",
+    ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_authority_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_action_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_authority_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_control.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_control.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_authority_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py"
+  ]
+}

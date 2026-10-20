@@ -1,0 +1,43 @@
+{
+  "id": "mutation-parallel",
+  "kind": "work",
+  "depends_on": [
+    "g6-inputs",
+    "g5-remainder"
+  ],
+  "writes": [
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/support/mutation_parallel.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    ".agents/skills/do-math/scripts/tests/support/mutation.py",
+    ".agents/skills/do-math/scripts/tests/support/mutation_parallel.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/run_tests.py"
+  ],
+  "inputs": [
+    "C:\\math\\.async\\dm\\sources\\mutation-parallel-direction-2026-10-16.md",
+    "C:\\math\\.async\\dm\\tasks\\g6-run\\objective.md",
+    "C:\\math\\.async\\dm\\tasks\\g6-run\\evidence\\population.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-run\\evidence\\b01-execution.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-inputs\\report.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-inputs\\evidence\\execution-plan.md",
+    "C:\\math\\.async\\dm\\tasks\\g5-remainder\\report.json",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+    "C:/g6run-g6-exec/b01"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

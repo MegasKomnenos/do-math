@@ -1,0 +1,41 @@
+{
+  "id": "r07-fix",
+  "kind": "work",
+  "depends_on": [
+    "r07"
+  ],
+  "writes": [
+    ".claude/skills/do-math/scripts/do_math/provider_final.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/do_math/provider_final.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ],
+  "inputs": [
+    "C:/math/.async/dm/tasks/r07/report.json",
+    "C:/math/.async/dm/tasks/r07/evidence/conclusion.md",
+    "C:/math/.async/dm/tasks/r07/evidence/ownership-map.json",
+    "C:/math/.async/dm/tasks/r07/evidence/output-contract-probe.json",
+    "C:/math/.async/dm/tasks/r07/evidence/requirement-links.json",
+    "C:/math/.async/dm/tasks/r07/evidence/historical-evidence.json",
+    "C:/math/.async/dm/managers/0003/review.md",
+    "C:/math/.async/dm/managers/0003/source-review.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/user-decisions.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/model-policy-2026-10-14.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/document-batching-2026-10-14.md",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/provider_final.py",
+    ".claude/skills/do-math/scripts/do_math/values.py",
+    ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

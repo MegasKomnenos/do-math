@@ -1,0 +1,13 @@
+state.json
+*.lock
+runtime/
+# Content-addressed history and raw execution artifacts are local archives.
+# Previously tracked evidence remains tracked.
+objects/
+managers/*/*
+!managers/*/review.md
+tasks/*/*
+!tasks/*/objective.md
+!tasks/*/task.json
+!tasks/*/report.json
+!tasks/*/integration.json

@@ -1,0 +1,29 @@
+{
+  "status": "complete",
+  "summary": "템플릿/공개경로 K-15~21·K-23·K-25·K-33~35의12개 유한 질문을 원문·실제 정의·정확 단언·판본에 연결했다. 실제 공개 거부 뒤 유효 제어도 실패하던 Sim._apply를 요청별 durable receipt 검사로 수리하고, purpose drive의 현재 predicate/실패/정지 상태를 다음 pass 전에 확인한다. 공개 초기화부터 해결을 주장하는 solution 시험은 매번 빈 경로에서 시작하도록 고쳤다. 복원 상태/독립 사본·JSON 입력/키별 실패·quiescence·예상 밖 verifier와 공개 pause 단언을 보완하고 정본7/미러7을 맞췄다. runtime 변경은 없다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/flows/test_activation.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_purpose_solution.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_template.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_purpose.py",
+    ".agents/skills/do-math/scripts/tests/support/sim.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_template_inputs.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_activation.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_purpose_solution.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_template.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_purpose.py",
+    ".claude/skills/do-math/scripts/tests/support/sim.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_template_inputs.py"
+  ],
+  "verification": "공식 run_tests.py --jobs 1: red-helper는수정전6선택/failed4·passed2/exit1로 실제 공개 제어와 loop 반례를 보존했다. final-related는25선택=25고유실제passed·관측exit0·98.2초·complete/successful=true·fixture_counts={}·changed_during_run=[]·소프트초과0이다. Python889 SHA 전건 제출판일치, 실제 저장/새엔진/대역Git·시계·Job ID 분리와 fresh 공개활성화→목표해결→입력/형식결과 저장을 확인했다. 순수 drive 정책 표본과 실제 엔진/저장 시험을 구별한다. 공식mirror build/check exit0·1352파일drift0·7쌍byte일치·변경14Python AST parse·runtime248파일own baseline불변이다. 비용캐시2개의관측bytes를evidence에보존후own base복원했다. B48/B80의실제diff→현재caller/단언→원보고를한정정적재사용했으며 원Temp4개부재와B80추적150passed의과거판본을최신25와합산하지않았다. 상세evidence/judgment.md·judgment-matrix.json·verification.json·historical-review.json·submission-checks.json을참조한다.",
+  "findings": [
+    "12개K질문은이번배정범위에서충족·최종통합판증거대기다. judgment-matrix.json은각원ID를실제정의·정확시험ID/단언·현재실행또는정적검토·원보고SHA에연결한다. G2/G3전체의완료주장이아니다.",
+    "현재 process_state는외부clock/Job ID/owner/Git 객체·worktrees·format을보존한다. 역사디스크만표현과구별했다. 실제연구저장과ResearchEngine은유지하고소비자가변값·엔진readiness는다음사본으로복사하지않는다. cross readiness는실제task_ready/_record_readiness로재계산하며durable facts불변단언을유지한다.",
+    "공용설명인계:Sim.control은수송이며_apply/activate는선택한요청의실제applied receipt를검사한다. ID없는_check_applied는현재scheduling_initial의전체준비검사다. drive는현재상태부터확인하고45는owner pass상한이다. solution시험은자기빈경로에서초기화/활성화하며일반purpose소비자는설정별템플릿복원을쓴다. 시험지침/이음새는읽기전용으로유지했다.",
+    "K34음성은모델double응답경계에서실제verify_lean에진입해empty declaration으로반려되는호출이다. active최종상태가같아도금지호출을검출했다. formal worker음성/native Lean실호출은하지않았으며기존관찰·Job/Lean guard와양성단언은정적으로확인했다.",
+    "PR04는B48의restart owner-loss seam과B80의실제prefix/새responder/readiness/귀속만판정했다. B36전체모델계약·PR05원장전수·전체템플릿소비자동시사용·새LONG/T3·벽시계장시간실측은이번결과로인증하지않는다.",
+    "전체일반/fresh T3/변이/T4/T5·실공급자/Lean/Windows/예약·G4~G8·최종review는별도남김이다. canonical source_repo/다른task/공용문서·queue·state/engine/Gitindex/graphify/기존연구는수정하지않았다."
+  ]
+}

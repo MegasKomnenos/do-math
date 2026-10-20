@@ -1,0 +1,31 @@
+{
+  "task": "g5-io",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_context_rejections.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_provider_observation_gaps.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_close_parallel.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py",
+    ".claude/skills/do-math/scripts/do_math/parallel.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_observation_checkpoint.py",
+    ".agents/skills/do-math/scripts/do_math/parallel.py",
+    ".claude/skills/do-math/scripts/do_math/file_io.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_provider_observation_gaps.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_call_manager.py",
+    ".agents/skills/do-math/scripts/do_math/file_io.py",
+    ".agents/skills/do-math/scripts/do_math/context_store.py",
+    ".claude/skills/do-math/scripts/do_math/observations.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_close_parallel.py",
+    ".agents/skills/do-math/scripts/do_math/observations.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_file_fingerprints.py",
+    ".agents/skills/do-math/scripts/do_math/scheduler.py",
+    ".claude/skills/do-math/scripts/do_math/scheduler.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_context_rejections.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_file_fingerprints.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+    ".claude/skills/do-math/scripts/do_math/context_store.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_observation_checkpoint.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_call_manager.py"
+  ]
+}

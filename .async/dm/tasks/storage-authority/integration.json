@@ -1,0 +1,13 @@
+{
+  "task": "storage-authority",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_authority_pairs.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/support/storage_authority_pairs.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_authority_pairs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_authority_pairs.py"
+  ]
+}

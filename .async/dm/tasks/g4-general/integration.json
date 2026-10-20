@@ -1,0 +1,9 @@
+{
+  "task": "g4-general",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_ingress_owner.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_ingress_owner.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py"
+  ]
+}

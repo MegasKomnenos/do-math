@@ -1,0 +1,23 @@
+{
+  "task": "g5-entry-gate",
+  "files": [
+    ".agents/skills/do-math/scripts/operator_bootstrap.py",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/scripts/operator_bootstrap.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+    ".agents/skills/do-math/scripts/do_math/control_server.py",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    ".claude/skills/do-math/scripts/do_math/control_server.py",
+    ".claude/skills/do-math/scripts/do_math/control_transport.py",
+    ".agents/skills/do-math/scripts/do_math/control_transport.py",
+    ".agents/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".agents/skills/do-math/scripts/do_math/codex_worker.py",
+    ".agents/skills/do-math/scripts/probe_cli.py",
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".agents/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "summary": "Lean·신뢰의 과거 남김 9arc/10행을 실제 공개 생산자·등록/저장·활동/입장·반환/게시 계약으로 마무리했다. stopped 반환의 한 줄 if/return을 두 행으로 명확히 하고, 등록 후 중복 lexical 검사·정상 machine caller에서 불가능한 None guard·같은 KN 원문 덮어쓰기 검사·stop 뒤 환경 재동등성 검사를 줄였다. 공개 무효화와 새 transition에 따른 실제 거절, 시계/권한/증거/현재성 및 원결과 보존은 유지했다. 제품2·직접시험2·설명2와 공식미러6쌍(12파일)을 변경했다. evidence/judgment.md와 coordinate-judgment.json에 도달2arc/3행·제거7arc/7행·새제외/남김0 및 근거를 연결했다. 이 complete는 본 배정의 완료이며 전체 G5 완료가 아니다.",
+  "changes": [
+    ".agents/skills/do-math/references/지식-저작과-재사용.md",
+    ".agents/skills/do-math/scripts/do_math/formal.py",
+    ".agents/skills/do-math/scripts/do_math/formal_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_knowledge_formal_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_trust_branch_contracts.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/references/지식-저작과-재사용.md",
+    ".claude/skills/do-math/scripts/do_math/formal.py",
+    ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_knowledge_formal_engine.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_trust_branch_contracts.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "자기 workspace의 공식 run_tests.py를 --jobs 1 --tier T3 --full의 부분 선택 한 번으로 실행했다. evidence/final1/invocation.json에 command/cwd/env/관측exit1·외부101.982초를, raw에 원report/coverage와 stdout/stderr를 보존했다. 선택19=고유실제19행 모두passed, fixture0, complete/successful=true, changed_during_run=[]다. 부분선택의 branch_gate/최상위passed=false 및 closing_eligible=false를 유지한다. 공식101.2초와 소프트초과13행은 실패/skip으로 바꾸지 않았다. 초기invalid의 무기동/정확실패/이전권위 보존, 실제 verified 반환 뒤 새transition의 봉인거절/원결과/정산/후속계획, stopped 원두stream/Job닫힘을 확인했다. 독립 작은 coverage 입력은 한 줄 try/finally 반환의 정적exit미도달과 두 행 표기의 실제arc를 비교했다. 선행48개와 합산하지 않았다. 측정919Python 중917SHA와 모든제품SHA가 제출판과 같고, 두시험은 관측비용docstring만 달라 원파일SHA 및 docstring외AST 동일을 정적으로 확인했다. 공식 미러 생성과 --check exit0, 변경Python AST, 실제변경12경로·쓰기범위, 공용/동료 미변경 및 독립Git준비 전후bytes를 확인했다. evidence/verification.json·source-review.json·git-preparation.json·mirror-check.json·reused-inputs.json에 근거가 있다. 실제 Lean/Mathlib·native Windows Job·유료호출·전체G4/G5/변이는 실행하지 않았다.",
+  "findings": [
+    "초기 invalid 검사는 중복이 아니다. 공개 invalidate는 pending transition과 trust_check를 남겨 실제 dispatch가 허용되므로 compiler 전 정확 거절을 유지했다. 이때 transition.ready는 모든 target의 반환을 뜻하며 verified 전체의 뜻이 아니다.",
+    "최종 게시 catch는 필요하다. 컴파일 중 새 transition이 시작되면 고정 active 환경과 KN은 같아 stop_reasons=[]여도 record_formal_result가 formal publication waits for the trust transition으로 봉인을 거절한다. 내부 불완전 verified dict 주입 없이 실제 verifier·외부compiler 대역·공개control/owner pass로 확인했다.",
+    "세 machine 등록 None은 uncapped 선언뿐 아니라 실제 새/자기continuation 활동·AI전용 review입장/복원·build_profiles/SessionSlots의 빈provider/model/host예약을 함께 대조해 제거했다. 공유등록기/프로필/동료 제공자는 수정하지 않았고 필요한 제공자 결함은 발견하지 않았다.",
+    "원설계3.3/A22와 사용자 저장범위 교정을 적용했다. 기존 공통저장/등록/현재성/종료/영향처분 보장을 재사용했으며 전가족·전필드·새reader·옛head quota나 장기감사를 추가하지 않았다. 생성cache/index/timing/store의 workspace변경은0이다.",
+    "과거좌표의 남김0은 최종 통합판 전체 gap0의 뜻이 아니다. 최종수용판 전체G4/G5·G6~G8·G1~G3연결·L01/실경계는 공용계획에 남는다. 외부대역의 성공은 실제Lean/Mathlib·Windows Job종료 성공이 아니다."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "status": "partial",
+  "summary": "명시적 제출의 Git CAS 성공 응답 유실과 재조회 실패가 겹칠 때 최종 반려를 게시하던 결함, native 캡처 재조회 실패 때 원 head 아래 임시 영수증/실행 전이가 남던 결함을 수리했다. 두 경로는 미확정 오류를 전파하고 원 후보를 복원하며 복구 뒤 원 영수증을 재사용한다. 실제 inbox 삭제 경쟁·요청 wakeup·관찰 게시 뒤 종료도 직접 확인했다. 원58arc/63행 중 직접 해소2arc/3행, 보존56arc/60행이며 유한 질문 전체를 끝내지 못해 partial이다.",
+  "changes": [
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py"
+  ],
+  "verification": "공식 run_tests.py --tier T3 --jobs 1의 순차 부분6실행과 원report/stdout/stderr/coverage·선택/실제행·실행별 Python bytes/SHA·generated 자료를 보존했다. 초기 ref_oid fixture 오류2실행은 제품 재현으로 세지 않으며, object_info로 교정하고 시작 제품에서 explicit 실패1건과 native 수리 전 원상보존 실패1건을 확보했다. capture-races-final=3passed, native-final=2passed이고 변경 자기점검/기존 CAS 시험2건은 앞 capture-after에서 passed다. 변경 시험본문5개는 각각 동일AST passing 원행에 연결했다. 모든 complete=true·fixture/실행중변경0, 모든 부분 gate/최상위passed/closing_eligible=false·관측exit1이다. 서로 다른 부분판을 전체성공으로 합산하지 않았다. 원/현재좌표·같은 함수 AST raw도달 연결, 측정 캐시 시작bytes/부재 복원, 공식 미러5쌍 생성/check·bytes 대조, 변경 Python compile과 CRLF-aware git diff --check를 확인했다. 전체G4/freshG5·변이·T4/T5·실제 공급자/OS Job/Lean은 실행하지 않았다.",
+  "findings": [
+    "evidence/judgment.md가 두 결함의 원인·수리·직접 단언·초기 fixture 오류·한계를 구분한다. 명시적 capture는 성공한 재조회로 미게시를 확인할 때만 기존 반려를 유지하며, 재조회 자체가 실패하면 수송의 최종 반려를 만들지 않는다. native 경로는 finally에서 원 head의 임시 instance/runtime을 복원한다.",
+    "evidence/scope-coordinates.json에 배정121좌표 전부의 original/수용판/제출좌표와 함수AST별 raw근거를 보존했다. 새 직접 해소는 요청 wakeup1arc, inbox 삭제2행, 관찰 후 종료1arc/1행이다. 그 밖의 incidental raw도달을 의미 완료로 세지 않았다. 분기제거/새제외/no-cover/skip·층/분모/임계값 변경은 없다.",
+    "evidence/remaining-functions.md와 remaining-judgments.json에 남은56arc/60행의 현재 의미·보존 이유·최소 다음 조건을 기록했다. 원 user request/operational target/action 부재·response lineage 충돌·planning population·hardlink race·닫힌 role을 저장형식만으로 불가능하다고 지우지 않았다. 위임 현재권한·혼합/다른 impact·source/academic/추가authority·private insight·준비/revision/조건·운영 처분/repair와 일부 외부 파일/Git 경계는 미완료이며 외부 입력 대기 blocked는 아니다.",
+    "정본runtime1·시험2·설명2와 공식미러5쌍, 총10파일만 변경했다. A22/저장범위 지시에 따라 공통codec·검증게시·기존 업무 보장을 재사용했다. 기존 cleanup archive/final CAS·실제 삭제 보존, closed source·overflow 공개retry·nested condition 이름 결박을 반복 실행하지 않았고 전가족/전필드/reader quota·새framework·장기감사를 추가하지 않았다.",
+    "전체G4/freshG5·G6~G8·G1~G3최종연결, 환경6arc/10행·L01 Q1/Q2/원UTF-8 bytes·현지원quota/복수result/동적schema 외부 공백은 전체계획의 남김이다. 공용 source_repo/Git·queue/state·다른task·engine·graphify는 수정하지 않았다."
+  ]
+}

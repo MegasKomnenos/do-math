@@ -1,0 +1,22 @@
+{
+  "status": "partial",
+  "summary": "R21의25대표 포장 상태·기본 입력/필수 예산·원값/blocked/source 보존 단언과 실제100×10/37프로필의필수입력·공개읽기/저장바이트를 보완했다. R22의전체4,286,783바이트녹화·preview원값·실제cycle생산/5단계필수입력·같은603폐포의1/5선언 저장상한을 같은시험3개/helper1개와미러4개로 수리했다. runtime 결함은 관측되지 않았다. 모든 저장가족의 실제비빈 생산 규모/상수배 연결은 미확인이라 partial이며 기존manifest/형식결과의성공으로 전건충족 처리하지 않았다. 자세한 원문/생산자/소비자/단언/남김은 evidence/judgment.md에 있다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_recorded_lean_scale.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_stored_input_scale.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_size_cases.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_role_input_scale.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_recorded_lean_scale.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_stored_input_scale.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_size_cases.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_role_input_scale.py"
+  ],
+  "verification": "workspace 공식run_tests.py --jobs1: evidence/focused-1/report.json은5선택/5실제·3passed/2failed·관측exit1. 새순서기대와cycle policy_ref fixture를 고친 evidence/corrected-2/report.json은2선택/2고유passed·관측exit0,15.8초이며 제출판Python876 SHA와 전부일치한다. 앞3passed는 직접불변경로만재사용하고 최종단일판5전건성공으로합산하지 않는다. changed_during_run=[]/fixture_counts={}이며8.922초단위소프트예산초과를 보존했다. B66~B69실제hunk/원보고SHA와B129지정row를 읽었고 B54부재3원보고수치는재사용하지 않았다. build_skill_mirrors.py --target .agents 및 --check --target .agents exit0·1337파일 drift0;변경4쌍바이트일치. 캐시2개는evidence보존후base복원하고 다시mirror check drift0. 읽기소비22파일불변·허용writes·최종SHA는 evidence/submission-checks.json. 외부Lean/모델·전체관문·모든저장가족규모실행은하지않았다.",
+  "findings": [
+    "F1 해결(R21): 기존 규모unit은필수키 존재/길이와planning source만 검사했다. 공급필드전부의inline/정확source 원값·validation·blocked 카탈로그 부재를 추가했고,실제stored100×10의core._context→prepare_role_input에 정본assert_judgment_inputs를 연결했다. 25상태는 합성포장표이며 PR17의실제생산/누락 성질과 구별한다.",
+    "F2 해결(R22/C-14): 기존5선언한표본만있던저장크기질문에 전체원녹화를유지하고 같은source/603본문폐포의1선언투영을 실제verifier/worker/record/store로 연결했다. 공유hash/source한벌+선언별가변bytes의고정5배+4096을검사한다. 투영은독립실Lean측정이나무한모집단증명이아니다.",
+    "F3 남김(10-A 저장가족): 실제100×10전체파일의2배+파일당1024상한·manifest한벌·toolchain참조1.2배·formal상한은각해당축만입증한다. 현재producer/record storage시험은정확왕복/반려를제공하지만모든가족의비빈생산규모와크기상수가연결된표/단언은없다. goal_judgments/academic_resolution_records/self_check_responses/delegation_applications/장기간review_cycles등의필요한입력축·상한은기존실제생산자/공통codec과연결해판단해야한다. 동일5MB를모든레코드에넣는새요구를만들지않았다.",
+    "원자료/판본한계:4,286,783바이트녹화는SHA로그대로보존되며과거5,381,117바이트원문과동일하지않다. 56230합성파일관찰값은실설치/활성화가아니다. B129전체successful=false, B54Temp3원보고부재, core과거전체SHA Git회수미확인은evidence에보존했다.",
+    "인계:직접소비runtime/공유helper22파일시작SHA와함수AST SHA는evidence/start-consumers.json이며 전부불변이다. 정본4·미러4만통합하면된다. R21의한정수리와R22의해결slice는최종통합판대기이며F3는별도미해결이다. 전체10-A/PR/K/P2/G4~G8·L01·Windows1314를새로종결하지않는다."
+  ]
+}

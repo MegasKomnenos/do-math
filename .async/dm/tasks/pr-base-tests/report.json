@@ -1,0 +1,14 @@
+{
+  "status": "complete",
+  "summary": "scope.json의 기반1a 실행기/구조검사와1d Sim/ModelDouble/Calls/템플릿/A19/A25/corpus seed를 최초8commit hunk·현행 직접 소비와 대조해9개 유한 의미 판단을 완료했다. 선택/fixture/subTest/격리 보고, 명시 결함 원장, 실제 제출/정확 영수증·종료, 준비판 복원은 수용된 교정을 유지한다. 최초 묵시 fallback·무조건 terminal 성공 등 이미 교정된 약점과 정당하게 제거한 timeout/중복 송신을 구별했다. 새 제품 결함이나 새 수리 배정은 확인하지 않았다. 제품 변경 없는 review 완료이며 전체 G2/G3/G8 인증은 아니다.",
+  "changes": [],
+  "verification": "정적 읽기만 사용했다. evidence/judgment.md와 decisions.json에9개 질문별 실제 hunk/commit·현재 파일/심볼·재사용 범위·처분·한계를 기록했다. inspect_sources.py는 제품 import 없이 stdlib AST/JSON/bytes 및 읽기 전용 Git show로 현재67개 정의 참조와8개 commit diff, 수용8보고, 관련17정의 연결, 원3 corpus seed를 보존한다. 과거1a/1d raw report8개의 SHA·선택/고유실제행·집계·fixture/완결/실행중변경과 비통과 상세를 읽었다.1a 오류1건과1d corpus의 실패1/미구현3error 및 별도green을 유지하며,1d runner의LF/CRLF SHA 차이와 템플릿 보고의이전판을 구별했다. B56/B36 Temp9개 부재는 당시 exact실행 인증의 한계로 남겼다. 제품 시험·실공급자/환경probe·설치/예약·Git쓰기·graphify0회다. 지정 check.py report를 직접 실행하고 evidence/report-check.json에 결과를 기록한다.",
+  "findings": [
+    "기반 1a/1d의 지정 의미 질문 9개는 완료했다. 새 제품 결함이나 최소 수정 배정은 없다. 판단 근거는 evidence/decisions.json BT01~BT09 및 judgment.md다.",
+    "1a 원보고 3개는 합계 1969선택=실제1969 중 1967passed/1skip/1error이고 b1 successful=false다. KD-0001은 현재 closed이며 mark가 없다. 잠금 후 빈 byte 초기화와 원 대기/byte 보존/재획득 경로를 읽었다. expectedFailure와 skip은 passed로 읽지 않는다. PR05의1931→1932/특성시험 은퇴는 pr-records 수용판을 재사용했다.",
+    "최초 모델의 binding 부재 fallback과 모든 terminal 수용은 B36에서 이미 교정됐다. 현행 공통 송신과 호출별 Answer는 정확 receipt 뒤 provider 종료를 정하고 정상 close는 원 closure의 실제 결과를 보존한다. Sim-only owner loss, r14 관찰 유예, r15/r16 최종 drain은 각각 별도 계약이다. manager0089의 수신결과 선저장과 ready 후속 check를 유지한다.",
+    "구조 검사는 import/열거 효과/구문 신호를 본다. 전체 의미나 모든 저장 필드 생산을 증명하지 않는다. A22와 사용자 저장범위 지시에 따라 공통 codec/검증게시·수용 업무 근거를 재사용하고 새 전가족/전필드 quota나 장기감사를 추가하지 않았다.",
+    "원보고 8개를 직접 읽었고 B56 Temp4/B36 Temp5는 부재다. c-red 모델은 교정 전이고 c-green 모델은 도입 commit의 CRLF bytes와 일치한다. d-t2/d-t2b runner는 닫은 commit의 CRLF bytes와 일치하지만 Sim은 d-t2b에서만 일치하며 d-template은 이전판이다. 당시 outer exit/전체 의존판본을 새로 인증하지 않고 별도 partial green을 현행 전체 성공으로 합산하지 않는다.",
+    "실공급자 quota/복수 result/동적 역할 schema·L01/환경 원자료 조건과 최종 G4/freshG5/G6/T4/나머지 G7/G8은 기존 소유에 남는다. 전체 PR/K61/P2·1932 disposition을 재개방하거나 이 review를 전체관문의 포괄 선행으로 만들지 않는다. source_repo와 다른 task/공용문서·queue·state는 수정하지 않았다."
+  ]
+}

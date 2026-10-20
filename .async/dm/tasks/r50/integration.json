@@ -1,0 +1,31 @@
+{
+  "task": "r50",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/flows/test_operator_bootstrap_contract.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_operator_recovery_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_operator_bootstrap_contract.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_operator_rules.py",
+    ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".agents/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".agents/skills/do-math/scripts/operator_bootstrap.py",
+    ".agents/skills/do-math/scripts/do_math/supervision.py",
+    ".claude/skills/do-math/scripts/do_math/preflight.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/do_math/supervision.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_operator_recovery_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".claude/skills/do-math/scripts/operator_bootstrap.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_finish_ports.py",
+    ".agents/skills/do-math/scripts/do_math/preflight.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".agents/skills/do-math/scripts/do_math/repair_execution.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_finish_ports.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_operator_rules.py"
+  ]
+}

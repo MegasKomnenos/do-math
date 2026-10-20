@@ -1,0 +1,13 @@
+{
+  "task": "keep-runner",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/support/runner_contracts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+    ".agents/skills/do-math/scripts/tests/support/runner_contracts.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_runner_tiers.py"
+  ]
+}

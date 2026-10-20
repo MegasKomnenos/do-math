@@ -1,0 +1,34 @@
+{
+  "status": "partial",
+  "summary": "impact assignment의 유한 후보 계산과 수용 뒤 cleanup Git CAS 실패 처리를 수리했다. 실제 활동·질문 전이로 보장되는 overflow 중복 검사를 줄였고 source/호스트 upkeep·조건 이름 결박·native 재시도·goal/impact 봉인 손상의 원결과 보존을 직접 확인했다. 배정의 원70arc/94행 중 raw도달9arc/28행·제거3arc/3행·남김58arc/63행이다. 남은 계약 질문을 모두 해결하지 못했으므로 partial이다.",
+  "changes": [
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/integration.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_impact_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_goal_audit_slots.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduling_initial.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_host_resource_contract.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/integration.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_impact_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_goal_audit_slots.py",
+    ".claude/skills/do-math/scripts/tests/support/scheduling_initial.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_host_resource_contract.py"
+  ],
+  "verification": "공식 run_tests.py --tier T3 --jobs 1의 9개 부분 실행과 원report/coverage/Python bytes/실행별T3 store를 보존했다. fixture와 실행중변경은 모두0이다. 수정 전 integration과 cleanup의 실패를 재현했고 최종 변경 시험본문12개는 각각 동일AST passing 기록과 연결했다. integration-after=4passed, cleanup-settlement=1passed이나 모든 부분gate/closing_eligible=false·관측exit1이다. 중간 제품회귀/fixture 오류와 교정을 evidence/judgment.md에 구분했다. 원/현재좌표·함수AST·SHA 연결, 최종 smell/patch/Unicode0, 공식 미러10쌍 생성/check, git diff --check를 확인했다. 서로 다른 부분판을 전체성공으로 합산하지 않았고 실제 공급자/Windows Job/Lean/전체 관문은 실행하지 않았다.",
+  "findings": [
+    "evidence/judgment.md에 구현 판단·실제 확인·한계와 원실패를 기록했다. evidence/remaining-functions.md와 scope-coordinates.json에 미확인58arc/63행의 원/현재 위치·현재 의미·다음 필요한 조건을 남겼다. 자동 제외나 불가능으로 처리하지 않았다.",
+    "integration 회귀는 실제 plan_impact와 import_candidate가 만든 domain graph의 계약을 확인했다. 서로 다른 assignment 두 개가 공개 owner 경로에서 만들어지는 전체 흐름을 인증한 것은 아니다.",
+    "cleanup archive/final CAS 실패에도 accepted 응답·영수증·output_accepted를 보존하고 실제 삭제를 completed_paths로 유지한다. 재적재 불가 Git 오류는 계속 전파한다.",
+    "위임 권한 변화·추가 현재성·mixed impact/다른 pending 검토·reassessment·운영 처분/repair·private insight와 일부 외부 Git/파일/종료 관찰 경계는 남는다. 관련 caller와 현재 소유자 전이를 추가 판단해야 하며 외부 입력 부재로 차단된 상태는 아니다.",
+    "공식 미러 포함20파일만 변경했다. 저장범위/A22에 따라 공통 codec·검증저장과 기존 보장을 재사용했으며 새 저장가족/전필드/reader quota·검증framework·장기감사를 추가하지 않았다. 전체G4/G5·G6~G8·G1~G3연결·환경6arc/10행·L01/실경계는 미완료다."
+  ]
+}

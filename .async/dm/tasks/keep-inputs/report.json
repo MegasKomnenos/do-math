@@ -1,0 +1,31 @@
+{
+  "status": "complete",
+  "summary": "K-27/29/30/31/32/46/48/49의8개 유한 질문을 현행 helper·정확 시험 단언·실제 원보고/판본에 연결했다. 경로 없는 source_ref를 건너뛰던 읽기와 빈/무관한 동일성 평가를 승인하던 목표감사 helper 공백을 반례로 재현해 수정했다. 역할 입력·개정봉인·grant/profile·호출별 Answer/영수증·issued schema 원바이트→receiver 해시 단언을 보완하고 정본8/미러8을 맞췄다. 충분한 동시성·조사·기밀 read-tool 근거는 정적으로 재사용했으며 runtime은 변경하지 않았다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_flow.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_purpose_goal_audit.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_flow.py",
+    ".agents/skills/do-math/scripts/tests/support/purpose_answers.py",
+    ".agents/skills/do-math/scripts/tests/support/role_answers.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_model_submission_contract.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_producer_seal.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_flow.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_purpose_goal_audit.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_flow.py",
+    ".claude/skills/do-math/scripts/tests/support/purpose_answers.py",
+    ".claude/skills/do-math/scripts/tests/support/role_answers.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_model_submission_contract.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_producer_seal.py"
+  ],
+  "verification": "workspace 공식 run_tests.py --jobs 1로 red-inputs2선택/2failed·관측exit1을 보존하고 related-final28선택=28고유실제passed·관측exit0·50.2초를 확인했다. complete/successful=true·fixture_counts={}·changed_during_run=[]이며889Python SHA가 제출판과 전부 같다. 실제 엔진/입력 producer/저장/ModelRunner/worker/submission·중앙receipt/형식검사를 유지하고 외부 모델·Lean·Job/Calls·Git/clock은 기존 Sim 대역이다. 실제 provider/Lean/HTTP/OS예약·새native read-tool 실행은 없다. 소프트초과3개와 원인·red 판본은 evidence/verification.json에 있다. B129의 지정passed row와 B80/pythonw 원보고의 실제 child-read/held/reached 단언을 현재코드/판본에 한정해 재사용했으며 전체 실패 보고·부재한B36 Temp5개·서로 다른 판본 성공을 구별했다. 공식 mirror build/check관측exit0·1352파일drift0·8쌍bytes일치·변경16Python ASTparse·smell0·runtime248파일own base불변이다. 두 비용캐시 관측bytes를 보존한 뒤own base복원했다. 상세질문별정의/정확메서드·원보고SHA/한계는evidence/judgment.md·judgment-matrix.json·historical-review.json·historical-source-slices.json·submission-checks.json에 있다.",
+  "findings": [
+    "F1해결(K29):read_fixture_context의top-level source_ref검사에서path존재조건만제거했다. 같은real read_source가missing·hash/length·path오류를정확사유로거부하고잘림없는원bytes와nested JSON pointer를소비한다. 실제prepare_role_input의task results/reviews/revision_history/assessment_history원값을단언했다. runtime reader를복제하지않았다.",
+    "F2해결(K32):PurposeAnswers.goal_audit는nonempty identity_assessments와supplied links의assessment_id집합일치를요구한다. 기존nonempty eligibility/link·match판정과PurposeResponder.failures→drive를유지한다. actual centrally verified/sealed producer의정상입력과각반려를구별했고현재성은제품usable_links가계속판정한다. 공개solution양성도현재판본에서통과했다.",
+    "K27/30/31/49의기존구현은유지하고직접단언을보완했다. 정상binding/정확receipt·standalone/raw·returncode1·interleaved Answer·실제ModelDouble개정반려·구조계약/빈보고/선택모델평가/원문/명시관점·지급grant/profile을연결한다. PublicGitFlow는설치schema/immutable archive/issued schema원bytes와receiver input_hashes를비교한다. 모델대역에schema중복검사를추가하지않았다.",
+    "K46/48은현재Overlap의실제3동시입장/owner순차저장/distinct workspace,InvestigationRunner의source SHA/계약비상속,RejectingResponder와Claude quota/재개worker제출,실제고정snapshot의held와prompt/workspace/child-read reached를정적으로재사용했다.120초wall timeout은사용자정책으로폐기하고유한owner-turn단언을유지한다. quota최초native실패와재개성공의중앙제출을구별한다.",
+    "판본한계:B129전체는3988passed/1failed/1skipped이며지정passed행만재사용한다. pythonw related-before는19passed/2fixture error·후속windowless-after는별도2passed다. B80의150passed·keep-templates25passed·이번28passed를합산하지않는다. B36Temp원보고5개는현재도부재다. r31-r33의F4와r31-fix후속/별도판본교정도기존수용범위대로유지한다.",
+    "8개K질문은배정범위충족·최종통합판증거대기다. 전체G2/G3·다른K/P2·G4~G8·L01Q1/Q2/UTF8byte·Windows1314·최종review를종결하지않는다. 공용소스/공용문서·queue/state·다른task·engine/Gitindex·graphify·기존연구운전은수정하지않았다."
+  ]
+}

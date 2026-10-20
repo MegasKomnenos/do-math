@@ -1,0 +1,15 @@
+{
+  "task": "g5-core-tail",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "status": "complete",
+  "summary": "KEEP-RUNNER-DISCOVERY/REPORT의 K-01~09·K-12·K-54·K-62·K-68을 현행 owner와 실제 단언/원보고에 연결했다. 현행 실행기 동작은 유지하고 ghost 수집·tier/match 조합·출력 재사용 거부/실제 재실행·준비 오류/skip 집계의 직접 시험을 보강했다. 변경 검출 시험은 실제 임시 Python bytes와 discovery/main을 사용하게 교체했다. 공통 임시 패키지 준비와 시험 지침·공식 미러를 함께 갱신했다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/support/runner_contracts.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/support/runner_contracts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_runner_regressions.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "verification": "공식 scripts/run_tests.py --jobs 1로 unit.test_runner_regressions 및 test_runner_tiers.ReportTests/TierTests만 실행했다. exit0, selected27=고유 실제 row27, passed27, fixture_counts={}, complete/successful=true, changed_during_run=[], 5.3초다. source_sha256 889개가 제출판과 전건 같다. 의도한 하위 오류/실패/skip 반례와 부모27passed를 구별한다. 소프트 초과6개는 verification.json에 시간/사유를 남겼다. 공식 미러 생성 exit0(생성1/갱신3), check exit0/1352파일 drift0와 변경4쌍 bytes 일치를 확인했다. 비용 캐시 두 경로의 전후 bytes를 evidence에 보존하고 own base로 복원했다. 전체 일반/T3/변이/T4/T5·외부 호출·실 OS 경계·미러 중복 실행은 하지 않았다.",
+  "findings": [
+    "13개 ID의 현행 처분/정확 정의·시험 메서드/실제 단언은 evidence/judgment-matrix.json이다. 전부 이 task의 유한 질문은 충족했으며 최종 통합판 근거 대기다. K01/02/03/04/05/68은 SHARDS 복원 없이 실제 디스크·loader와 오류/빈선택 exit2를 보존한다.",
+    "K06은 새/빈 출력에서 동일 선택을 실제로 두 번 실행하고 비빈 출력 재요청의 exit2·원 report bytes 보존을 확인했다. K07은 class/module 준비 오류 각각 fixture error1/not_run2/exit1과 준비 skip의 fixture skipped1/skipped2/exit0을 확인했다. complete=true는 묶음 보고 완결성이다.",
+    "K08/12는 다음 시험 전에 complete=false 실패파일 게시와 subTest 실패/skip의 부모 결과를 유지한다. K09/54는 실제 임시 소스 추가/삭제/변경을 main이 successful=false·exit1로 반려하며 task workspace를 실행 중 편집하지 않았다. K62의 인도 근거는 공식 원보고다.",
+    "evidence/historical-review.json에서 B129 원보고 SHA06c413e0…의 관련 row와 전체successful=false, B125 green의 관련 row를 직접 읽고 판본 차이를 남겼다. 과거/현재 성공 수를 단일 최종판 전체 성공으로 합산하지 않는다.",
+    "PR01의 B56은 실제 commit066f2b82 runner hunk와 현재 _whole_module_costs/실제 caller 및 기존 단언을 대조해 비용자료/일반결과 분리의 한정 slice를 유지한다. 네 원Temp 보고는 모두 부재여서 재사용 성공으로 인증하지 않는다. branch_gate/selection/mutation/t3_store·Windows Job의 별도 전체 보존 질문과 G2/G3·PR01전체·G4~G8은 미완료 범위다.",
+    "runtime run_tests.py와 core/operator는 불변이다. 새 registry, 결과 캐시, timeout, 전체 제품 시험 재명명은 추가하지 않았다. 공용 소스/공용 문서/queue/state/engine/Git index/graphify/연구 운전은 수정하지 않았다."
+  ]
+}

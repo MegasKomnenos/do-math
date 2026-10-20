@@ -1,0 +1,19 @@
+{
+  "task": "r15-r16",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/support/scheduling_return_observer.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_exception_evidence.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_return_evidence.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_return_settlement.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_settlement.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_settlement.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduling_return_observer.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_matrix.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_matrix.py",
+    ".claude/skills/do-math/scripts/tests/support/scheduling_return_matrix.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_return_evidence.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_return_settlement.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduling_return_matrix.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_exception_evidence.py"
+  ]
+}

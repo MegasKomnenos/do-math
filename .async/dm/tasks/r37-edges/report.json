@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "summary": "형식·신뢰·외부 owner의 지정 여섯 대기 종류를 실제 생산/조건전/정확 재개/원 증거/공개 표시와 연결했다. formal resolver가 행동 해소 뒤 남기던 원 활동 대기, grant_revoked를 영구 명시정지로 오분류하던 formal 수신, 외부 공개 retry의 큐 owner/continuation 및 활동 해소 공백을 수리했다. 신뢰·학술/currentness/transport 관문과 schema는 보존했다. 전용 helper는 실제 공개 중단 제어에 config 전달만 추가했고, 직접 시험3모듈과 대응 미러를 보완했다. 배정 범위 완료이며 상세 여섯 판정·정적/실행 구별은 evidence/review.md다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/external_engine.py",
+    ".agents/skills/do-math/scripts/do_math/formal_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_external.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_trust_transition.py",
+    ".agents/skills/do-math/scripts/tests/support/knowledge_formal_engine.py",
+    ".claude/skills/do-math/scripts/do_math/external_engine.py",
+    ".claude/skills/do-math/scripts/do_math/formal_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_external.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_trust_transition.py",
+    ".claude/skills/do-math/scripts/tests/support/knowledge_formal_engine.py"
+  ],
+  "verification": "workspace 공식 run_tests.py/jobs1: focused-red는7선택/3passed·2failed·2error/관측exit1·63.5초, related-final은15선택/13passed·2error/exit1·83.1초, stop-final은교정2ID/2passed/exit0·45.1초다. 첫 실행의 inbox 미적용2건과 둘째 trust scheduler reload 전 미저장 오류를 제품 결함과 구별해 교정했다. corrected actual formal revoke는 grant_revoked 오분류의 유효 재현이었다. 마지막888 Python SHA가 제출판과 전부 같으며 세 실행 fixture_counts={}·실행 중변경=[]다. related-final 이후 runtime AST 차이는 _formal_steps의 정지 분류1곳뿐이며 resolver/trust/external은 불변이다. 앞13 passed와 최종2 passed를 단일 최종판15전건 실행으로 합산하지 않는다. exact selected/row/exit/SHA와 소프트초과4/6/1건은 verification.json·원보고에 보존했다. 최종 trust_check35.437초/2초는 실제 reviewed 상태·paused owner·재개/저장 비용이며 시간으로 중단하거나 의미검사를 축소하지 않았다. 공식 미러 .agents build 완료 뒤 실행했고 최종 check exit0/1351파일 drift0, 정본6/미러6 bytes 일치·실제12변경 모두writes안·변경시험/helper smell 정적0이다. timing cache2개는 관측본 보존 뒤 own base로 복원했다. 첫 --target agents 오타의 parser 반려는 시험 미시작이며 그 exit는 별도 보존하지 않았다. 전체 일반/T3/변이/T4/T5·미러시험 반복·실모델/Lean/HTTP/예약은 미실행이다.",
+  "findings": [
+    "formal_environment | 실제 record 읽기 실패→wait_detail/원 artifact/receipt부재/조건전 반복/공개 JSON·사람 표시→record 복구→같은 owner의 후속1개·verified·원 execution/artifact 불변을 연결했다. E1의 활동 해소는 정확 원 owner/kind/action_ids 또는 직접 knowledge_id 조건에만 적용한다. formal_authority의 기존 실제 parked 생산/해소와 explicit stop 보류 시험은 유지했다.",
+    "formal_stopped | 실제 live compiler 뒤 공개 grant revoke는 stop_requested=grant_revoked와 authority_changed를 생산해야 한다. 기존 수신은 execution_stop_requested도 붙여 새 권한 뒤에도 영구 보류했다(E2). 해당 생산 표지만 recoverable authority로 분류하고 원 stop_requested/현재 권한/고정 입력 및 다른 명시·미지 정지 보류는 유지했다. 다른 역할 grant에는 유지, 정확 formal 권한에는 동일 owner·continuation_of·후속1개·verified와 원 bytes를 최종2ID 중 하나에서 확인했다. 모든 자동 stop marker의 전수 실제생산 인증은 아니다.",
+    "environment_interrupted/trust_check_stopped | 실제 공개 quiesce/release 및 pause/resume owner를 사용해 조건·원 environment/stopped evidence·같은 활동·원 계보·조건전 무착수·재전달 후 후속1개·표시 해소를 확인했다. 기존 flows.test_lifecycle_engine_trust의 lineage/currentness 단언은 읽어 재사용했으며 runtime은 불변이다. constructor 등록을 실제 생산으로 세지 않는다.",
+    "external_reconciliation/external_followup | unknown의 sent/request/SHA/key/원 ended execution을 보존하며 재진입/prepare 재전달은 재전송0이다. 정확 공개 succeeded 재조정은 원 활동만 완료하고 다른 실제 unknown owner를 보존한다. failed의 effect_absent 재조정 근거와 전송전 cancelled의 transmitted=False/attempts=[]를 구별한 공개 retry는 같은 현행 grant/현재 request·학술 prerequisite 검사를 유지한다. E3 수리로 큐에도 원 owner/continuation을 명시하고 정확 operation/status 대기만 해소한다. 성공 후 원 execution 불변·restart·공개 request 재전달 무변경을 확인했다.",
+    "기존 근거/남김 | r06-edges의 unexpected sent null→unknown/no receipt/restart와 r15-r16의 양성 named Job 종료 후 정산 의미를 재사용한다. HTTP send marker는 future 종료 장벽과 다르다. academic.effect_receipts의 confirmed+succeeded 및 task/requirement/basis/effect/grant 결속과 실제 producer의 기존 receipt 시험은 정적으로 확인했으며 학술 전체 flow를 새로 실행하지 않았다. 과거 실패·원Temp 부재·counts/판본 한계와 r37-r38 F2는 유지한다. core/review/provider/과제5종·revision_dependency·전체 R37/R38/PR10/G4~G8/L01/Windows1314는 닫지 않는다. 공용소스·다른task·공용문서/queue/state·engine·Git index·graphify는 불변이다."
+  ]
+}

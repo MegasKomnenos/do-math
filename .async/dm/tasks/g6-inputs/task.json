@@ -1,0 +1,50 @@
+{
+  "id": "g6-inputs",
+  "kind": "work",
+  "depends_on": [
+    "g5-target",
+    "g6-scope"
+  ],
+  "writes": [
+    ".claude/skills/do-math/scripts/tests/support/mutation.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/scripts/tests/support/mutation.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_mutation.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_operation_trace.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_trace_failure_paths.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "inputs": [
+    "C:\\math\\.async\\dm\\managers\\0096\\review.md",
+    "C:\\math\\.async\\dm\\managers\\0096\\verification-review.json",
+    "C:\\math\\.async\\dm\\managers\\0096\\handoff-delta.json",
+    "C:\\math\\.async\\dm\\sources\\t3-targeted-direction-2026-10-16.md",
+    "C:\\math\\.async\\dm\\sources\\storage-scope-direction-2026-10-15.md",
+    "C:\\math\\.async\\dm\\sources\\archive-resume-2026-10-16.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/user-decisions.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/document-batching-2026-10-14.md",
+    "C:/math/docs/do-math/시험-재편-2026-09-29/설계.md",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    "C:\\math\\.async\\dm\\tasks\\g6-scope\\report.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-scope\\integration.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-scope\\evidence\\population.json",
+    "C:\\math\\.async\\dm\\tasks\\g6-scope\\evidence\\execution-plan.md",
+    "C:\\math\\.async\\dm\\tasks\\g6-scope\\evidence\\static-check.json",
+    "C:\\math\\.async\\dm\\tasks\\g5-target\\report.json",
+    "C:\\math\\.async\\dm\\tasks\\g5-target\\integration.json",
+    "C:\\math\\.async\\dm\\tasks\\g45-final\\evidence\\G6-inputs.json",
+    "C:\\math\\.async\\dm\\tasks\\g45-final\\evidence\\prepare.py",
+    "C:\\math\\.async\\dm\\managers\\0095\\index-baseline.json",
+    "C:\\math\\.async\\dm\\managers\\0095\\g45-index-baseline.bundle",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

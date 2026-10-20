@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "summary": "K-73의 현행 정상 기준 수리 무력화 확인 한 건을 완료했다. 시작 workspace와 같은 독립 정상 사본에서 지정 두 ID가 통과하고, baseline의 실제 child 오류를 passed로 바꾸는 status 식 한 곳만 수정한 probe에서 missing-normal ID가 정확히 killed == killed 단언으로 실패했다. 정상 대조 ID와 내부 일반/subTest 두 정상 fixture는 보존됐다. 제품 writes=[]이며 코드 수리·미러·공용소스 변경은 없다. 근거와 판정은 evidence/judgment.md 및 verification.json이다.",
+  "changes": [],
+  "verification": "지정 기존 task의 exited 상태를 2026-10-15T04:08:42.616419+00:00에 읽기 전용으로 보존하고 예약 시험 슬롯을 인계받았다. 독립 전용 Git root/HEAD를 구성한 normal/probe에서 각 공식 scripts/run_tests.py에 지정 두 ID만 --jobs 1로 한 번씩 순차 실행했다. 정상: 관측 runner exit0, 선택2=고유 실제row2, counts passed2, fixture_counts={}, complete/successful=true, changed_during_run=[]. Probe: 관측 runner exit1, 선택2=고유 실제row2, passed1/failed1, fixture_counts={}, complete=true/successful=false, changed_during_run=[]. 실패는 test_mutation_baseline.py:80 AssertionError: killed == killed이며 import/fixture/미실행 오류가 아니다. 양쪽 실제 정상 child exit17·result 파일 부재·result=null·FileNotFoundError와 실제 mutant exit0/failed row, baseline id0 연결을 대조했다. 정상 evidence_error/execution_error가 probe passed/killed로 바뀐 연결을 보존했고, 대조 일반/subTest 정상 child들은 exit0/passed다. 각893Python SHA와 전체1186원파일의 사본 실행 전후 일치 및 workspace do-math bytes 불변을 확인했다. 원spec/attempt/output/result(또는 부재)·부모 stdout/stderr·보고/최초 실패·명령·SHA/원경로 manifest와 소스zip을 evidence에 보존했다. 전체 boundary/일반/T3/전체 변이·모델/Lean/외부 서비스는 실행하지 않았다.",
+  "findings": [
+    "K-73의 이 정상 기준 수리 한 건은 현재판 직접 무력화로 충족했다. probe의 의도된 실패는 제품 정상판 실패가 아니다. manager가 무변경 integrate와 수용을 판단한다.",
+    "probe는 baseline status 식 한 곳에 attempt.error이면 passed를 우선하는 분류만 추가했다. validate_result/_evidence_error/실제 child/정상 result/선택/passed 함수/시험 기대값/원오류는 유지했다. evidence/probe.diff 및 정확 소스 bytes로 검토 가능하다.",
+    "독립 임시 root C:/pb-19s7ktdc의 n,p와 최소 Git HEAD는 이 task 전용 시험 입력이다. 공용 C:/math를 fixture root로 쓰지 않았다. 원경로를 유지한 manifest와 필요한 원자료를 task/evidence에 보존했고 정상 소스zip과 의도된 diff로 두 판본을 재구성할 수 있다.",
+    "핵심 세파일 SHA는 수용된 keep-proof의 legacy final과 같아 기존58passed의 하위 성질을 재사용했다. 이번893Python 전체판과 역사 전체판의 동등성을 주장하지 않는다.",
+    "G2/G3 전체·PR01 전체·다른 역사 수리·G4~G8/최종 통합판·Windows1314·L01은 종결하지 않았다. 이번 확인 범위에 남은 제품 결함이나 미완료 항목은 없다."
+  ]
+}

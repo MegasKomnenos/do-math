@@ -1,0 +1,11 @@
+{
+  "task": "r06-finish",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py",
+    ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+    ".agents/skills/do-math/scripts/do_math/governance_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_engine_transitions.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_engine_transitions.py"
+  ]
+}

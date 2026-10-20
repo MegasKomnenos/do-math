@@ -1,0 +1,25 @@
+{
+  "status": "complete",
+  "summary": "실행 저장의 남은19필드를 실제 생산 입력·검증 게시·별도 Repository load·독립 기대값에 연결하고, 기존73행의 범위 한정 근거와 함께 executions 유효92필드(required8+optional84)의 전체 역방향을 공통 contracts.pairs.assert_pair로 검사한다. 같은 실제 준비/수신/반려/보관/복구 표본을 helper로 공유하며 새 미생산 optional의 누락도 동일 검사에서 실패한다. 실제 Claude rate-limit 소수 입력과 종료 미확정 포트 관측에서 failure 최상위의 원 float 복사 때문에 저장이 거부되는 제품 결함을 재현했고, CallEngineMixin._receive_call의 해당 분기에서 정본 json_safe 결과를 실행 failure와 원결과 artifact에 함께 사용하도록 수정했다. 스키마/권한/종료 장벽은 유지한다. 필드102행의 제거10/유효92·현재 producer SHA/receiver/내용 단언/정확ID·범위는 evidence/execution-fields.json과 judgment.md에 기록했다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/call_engine.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_delegation_storage.py",
+    ".agents/skills/do-math/scripts/tests/support/execution_inputs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_provider_stored_executions.py",
+    ".claude/skills/do-math/scripts/do_math/call_engine.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_delegation_storage.py",
+    ".claude/skills/do-math/scripts/tests/support/execution_inputs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_provider_stored_executions.py"
+  ],
+  "verification": "공식 workspace run_tests.py --jobs 1의 final-related: 25선택=25고유실제row, 25passed, 관측exit0, 98.4초. structure3/unit14/sim1/contracts7, complete/successful=true, fixture_counts={}, changed_during_run=[]이며 901 Python SHA가 제출판과 전건 일치한다. 역방향92필드와 미생산 optional 추가 반례, 위19필드 내용, 기존 제거10 정확 반려·원오류·예약·정산·활동/대기/wake를 확인했다. 최초 시험 장면 오류/91필드 역방향 실패와 별도의 실제 소수 저장 결함 재현/교정판은 실행별 원보고로 보존하고 counts를 합산하지 않는다. 소프트초과12개와 source판본/정확rows는 evidence/verification.json에 보존했다. 공식 mirror build exit0·갱신6, check exit0·1364파일 drift0, 정본6/미러6 bytes동일이며 캐시는 관측 보존 뒤 own base로 복원했다. 전체 일반/fresh T3/변이/T4/T5·실모델/실HTTP/실Lean/native Job/설치/OS예약은 실행하지 않았고 전쓰기분기 도달0이나 전체 프로젝트 완료를 주장하지 않는다.",
+  "findings": [
+    "제품 수리: 종료 미확정 _receive_call에서 provider failure.native_info.utilization=0.75를 원 float로 실행에 복사해 seal_large가 반려했다. delegation-and-barrier 원보고의 test_unconfirmed_provider_failure_preserves_exact_decimal_evidence에서 재현했고 final-related에서 수리 통과했다. error_kind/failure와 result_ref artifact에 동일한 json_safe 표현을 쓰므로 reported_decimal을 보존하며 stopping/unknown·예약·옛head도 보존된다. 중앙 schema와 공통 정본 변경은 없다.",
+    "시험 제공/소비: storage_execution_pairs.StoredExecutions.read는 새 Repository로 온전한 head를 검증 적재한 뒤 실행 표본을 공급한다. stored_pair는 현행 StateContract 전체 properties를 공통 Pair에 전달한다. 기존 세 StoredCallEvidence 장면과 delegated_judgment_scene은 원 unit/sim 시험과 새 계약시험이 공유한다. 별도 역방향 알고리즘·제품 registry·사후 실행필드 보충·시험 모듈 사이 import는 없다. 관리자 공용 seams 갱신 시 이 helper 소비와 종료 미확정 failure의 json_safe 의미를 연결할 수 있다.",
+    "위임의 새 실제 준비에는 initial/research 두 유효 grant의 모호성을 숨기지 않고 adopted research grant 하나를 명시했다. 기존 직접 role-input 시험은 준비/권한 선택을 실행하지 않았으므로 이 추가 입력이 필요 없었다. 생성된 학술 task도 실제 평가 준비 뒤에 검토를 준비한다. 이 시험 장면 교정과 제품의 소수 저장 결함을 구별한다.",
+    "지정92필드의 역방향과 남은19행 내용 질문은 완료했지만 선행73행의 모든 비빈 의미/역할/선택값 조합·모든 쓰기분기와 최종 fresh T3는 남는다. 현재 producer 심볼/파일·AST SHA/정확ID를 field table에 남겼다. 다른29가족·관찰4최종판·다른원요구/K/P2·G4~G8·L01/Windows1314·최종review는 별도다. 공용 source/context/plan/seams/queue/state·다른task·engine·Git index/commit·graphify·기존 연구는 수정하지 않았다."
+  ]
+}

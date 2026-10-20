@@ -1,0 +1,17 @@
+{
+  "task": "r14-fix",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_close_progress.py",
+    ".claude/skills/do-math/scripts/do_math/parallel.py",
+    ".agents/skills/do-math/scripts/do_math/parallel.py",
+    ".agents/skills/do-math/scripts/do_math/observation_transport.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_port_calls.py",
+    ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_provider_native_storage.py",
+    ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    ".agents/skills/do-math/scripts/do_math/model_runner.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_close_progress.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_port_calls.py"
+  ]
+}

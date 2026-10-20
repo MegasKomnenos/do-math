@@ -1,0 +1,9 @@
+{
+  "task": "keep-evidence",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_synthetic_evidence.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_synthetic_evidence.py"
+  ]
+}

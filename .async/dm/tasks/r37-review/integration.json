@@ -1,0 +1,13 @@
+{
+  "task": "r37-review",
+  "files": [
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_review_owner_path.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_review_owner_path.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_resource_evidence.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_resource_evidence.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_wait_contract.py"
+  ]
+}

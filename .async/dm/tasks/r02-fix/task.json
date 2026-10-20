@@ -1,0 +1,51 @@
+{
+  "id": "r02-fix",
+  "kind": "work",
+  "depends_on": [
+    "r02"
+  ],
+  "writes": [
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_pinned_runner.py",
+    ".claude/skills/do-math/scripts/tests/support/provider_runs.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_provider_pinned_runner.py",
+    ".agents/skills/do-math/scripts/tests/support/provider_runs.py",
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ],
+  "inputs": [
+    "C:/math/.async/dm/tasks/r02/report.json",
+    "C:/math/.async/dm/tasks/r02/evidence/conclusion.md",
+    "C:/math/.async/dm/tasks/r02/evidence/branch-field-map.json",
+    "C:/math/.async/dm/tasks/r02/evidence/source-symbols.json",
+    "C:/math/.async/dm/tasks/r02/evidence/history-and-reports.json",
+    "C:/math/.async/dm/managers/0002/review.md",
+    "C:/math/.async/dm/managers/0002/source-review.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/user-decisions.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/model-policy-2026-10-14.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/document-batching-2026-10-14.md",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/model_call.py",
+    ".claude/skills/do-math/scripts/do_math/model_runner.py",
+    ".claude/skills/do-math/scripts/do_math/worker_request.py",
+    ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/tests/support/provider_inputs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_host_configuration.py",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py",
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_pinned_runner.py",
+    ".claude/skills/do-math/scripts/tests/support/provider_runs.py"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

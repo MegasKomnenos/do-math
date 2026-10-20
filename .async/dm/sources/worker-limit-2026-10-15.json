@@ -1,0 +1,8 @@
+{
+  "requested_at": "2026-10-15T01:22:24.259757+00:00",
+  "user_instruction": "작업자 상한을 10으로 증가",
+  "max_workers": 10,
+  "manager_limit": 1,
+  "test_worker_policy_changed": false,
+  "application": "settings.json atomically replaced; state.json max_workers=10 observed without restart"
+}

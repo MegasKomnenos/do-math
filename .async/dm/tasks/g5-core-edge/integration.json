@@ -1,0 +1,19 @@
+{
+  "task": "g5-core-edge",
+  "files": [
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/scripts/tests/support/engine_overflow.py",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/scripts/tests/support/submission_receiver.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_overflow.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_input_overflow.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/tests/support/submission_receiver.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_input_overflow.py"
+  ]
+}

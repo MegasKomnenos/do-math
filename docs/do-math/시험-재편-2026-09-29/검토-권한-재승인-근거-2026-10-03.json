@@ -1,0 +1,112 @@
+{
+  "defect": "KD-0701",
+  "status": "closed",
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-c2pap6dx\\report.json",
+      "sha256": "cca3806d60c36bd59be28e09a5e037351f09b579ac35cfcb48cdccb40adb0e07",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "error": 1
+      },
+      "total_seconds": 0.3,
+      "changed_during_run": [],
+      "failures": [
+        {
+          "id": "unit.test_review_wait_contract.ReviewAdmissionWaitContractTests.test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input",
+          "outcome": "error",
+          "seconds": 0.06300000008195639,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_review_wait_contract.py\", line 81, in test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input\n    denied = self.engine._prepare_review_context(deepcopy(next(row for row in self.engine.runtime['queue']\n                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nStopIteration\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-e79szuh1\\report.json",
+      "sha256": "5b185f50275f6ab3d5dbf2a5749b81db053d2f90ef30a243ea934589b8454cef",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "total_seconds": 0.4,
+      "changed_during_run": [],
+      "failures": [
+        {
+          "id": "unit.test_review_wait_contract.ReviewAdmissionWaitContractTests.test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input",
+          "outcome": "failed",
+          "seconds": 0.06299999996554106,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_review_wait_contract.py\", line 94, in test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input\n    self.assertEqual(prepared['disposition'], 'ready')\nAssertionError: 'authorization_denied' != 'ready'\n- authorization_denied\n+ ready\n\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-lw_d6y6i\\report.json",
+      "sha256": "c8f6af3261e75eeeae15e299256ae32d02c13b56200c561194c7389f764c5d99",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 1,
+        "expected_failure": 1
+      },
+      "total_seconds": 2.7,
+      "changed_during_run": [],
+      "failures": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2vyscj_b\\report.json",
+      "sha256": "e0f8f2697b10306e88589e93e374062e308a7f40a1f89b5c306c7105357aac79",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "unexpected_success": 1
+      },
+      "total_seconds": 0.3,
+      "changed_during_run": [],
+      "failures": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-s2e9g4b4\\report.json",
+      "sha256": "3b33bd40ee6c6bb0c7484e4a27cc3797bbf07d3a51ee5b5b242184da931350d9",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 5
+      },
+      "total_seconds": 3.4,
+      "changed_during_run": [],
+      "failures": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-sj44er15\\report.json",
+      "sha256": "fd7e85b389ad5663ab49fa4933a43bf340f7a16345e9ab986bdd76c95e9bcb17",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 131
+      },
+      "total_seconds": 69.3,
+      "changed_during_run": [],
+      "failures": []
+    }
+  ],
+  "current_sources": {
+    "do_math/review_cycle.py": "ad4f1fb89d7ee7541750090c0bbf8f0a250578d4645cdc83383aad60326c1c06",
+    "tests/unit/test_review_wait_contract.py": "86ccfa7a04f5391e695f8c86c144c8a437dfd455586c54b8aafed09255f155db",
+    "tests/known_defects.json": "b9df7f097350fcba9fe602b57203658be6dddfa61fa3bd654ed524d146d1d508"
+  },
+  "reproduction": "실제 공개 grant 승인→대체 승인→공개 revoke→새 공개 grant→재승인→실제 입력 준비. e79szuh1에서 replacement_ready 뒤 authorization_denied를 반환했다. c2pap6dx는 revoke가 기존 큐를 제거한 정당한 동작을 놓친 fixture 오류였다.",
+  "change": "아직 입장한 시도가 없는 대체는 새 권한의 grant/sha/request/authority/delegation/case에 결박한다. 행동 ID·검토 자리·sealed_input_sha256·omitted_indices는 그대로다. previous_binding을 실제 주기 이력에 보존한다. 같은 재승인은 이력을 다시 늘리지 않는다.",
+  "boundary": "이미 같은 대체 action ID에 입장한 실행이 있으면 authority sealed 거부를 돌려주고 주기·실행을 바꾸지 않는다. 철회된 grant는 계속 revoked다. 이 수리는 새 grant의 미시작 재승인과 입장 후 거부를 증명하며 모든 위임 전이를 완료했다고 주장하지 않는다.",
+  "verification": "원래 표시 재현은 unexpected_success로 교정됐고 marker/원장을 함께 정리했다. 성공·재전달·입장 후 거부·원상 보존 5개와 최종 관련131개 모두 passed였다.",
+  "remaining": [
+    "나머지 행동/과제/활동 대기·질문·판정/사건 등록과 실제 소유자 회차",
+    "다른 부류·11의무·P2 전건",
+    "1e/1f 최종 분기·함수 변이·예산·전체T2/flows",
+    "T4/T5·말뭉치·미러·check·main 통합"
+  ]
+}

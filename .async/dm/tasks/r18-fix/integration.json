@@ -1,0 +1,7 @@
+{
+  "task": "r18-fix",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/structure/test_boundary_invariants.py",
+    ".agents/skills/do-math/scripts/tests/structure/test_boundary_invariants.py"
+  ]
+}

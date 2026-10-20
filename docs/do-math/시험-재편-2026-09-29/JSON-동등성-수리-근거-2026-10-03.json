@@ -1,0 +1,117 @@
+{
+  "closed": "KD-0200",
+  "open_in_repair": 41,
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-21282i9i\\report.json",
+      "sha256": "03892477a19f67d214443889ce2ccd2467b402a9a70bcd05307ee26341019214",
+      "counts": {
+        "passed": 1,
+        "failed": 1,
+        "expected_failure": 1,
+        "error": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 0.3,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xgr9y6gi\\report.json",
+      "sha256": "b214c7269cfef8deb271fe86cbc16c682db97d33e4dbd08b796da7ddab15e95d",
+      "counts": {
+        "failed": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 0.1,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2smocom2\\report.json",
+      "sha256": "464c47bd0b9acbb299aa4f46279065c764a2f8de207cd7f860c5b66190a091f2",
+      "counts": {
+        "passed": 3,
+        "unexpected_success": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 0.5,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tn1hxkoe\\report.json",
+      "sha256": "e0c94a624095a6c62b942d61f78d84632bef0495ad2e0700f0b2fe17e12214ec",
+      "counts": {
+        "passed": 50
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 5.4,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-34c3vawe\\report.json",
+      "sha256": "3caff1d71d59cfdbb4082075e66c88341df89fa616619c1517e828df31b138f4",
+      "counts": {
+        "passed": 3431,
+        "expected_failure": 26,
+        "skipped": 1
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 1365.1,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_66690_1\\report.json",
+      "sha256": "56717a698a5989444eb86d23e94b3681cc8848915df8e542525962040dd5c83c",
+      "counts": {
+        "passed": 2752,
+        "expected_failure": 39,
+        "timeout": 1,
+        "not_run": 1041,
+        "skipped": 1
+      },
+      "complete": false,
+      "successful": false,
+      "total_seconds": 3144.3,
+      "changed_during_run": []
+    }
+  ],
+  "files": [
+    {
+      "path": "do_math/canonical.py",
+      "sha256": "503939496bb980c8152637d2a7feca071a8cf883966471aace40f7730c8473e0"
+    },
+    {
+      "path": "do_math/state_contract.py",
+      "sha256": "69bc108334b90bd7cfdb50f51df04223c657dc09cc3482fc569a46a65910e2d9"
+    },
+    {
+      "path": "do_math/repository.py",
+      "sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7"
+    },
+    {
+      "path": "do_math/payloads.py",
+      "sha256": "91027bbe6ebb9b9718a1977881e69d2400282fdb7a8d1a6ab0ecb9b5bc7655f8"
+    },
+    {
+      "path": "tests/unit/test_storage_type_recurrence.py",
+      "sha256": "93b5cec562d7353d676286e65586d4bf843ec621140030ce1b0ab25e394874da"
+    },
+    {
+      "path": "tests/unit/test_storage_repository.py",
+      "sha256": "35dcaf0f5d45ee5c6507ed63eed2fa4b5364f41624efed95b68eb502a3cc5ca8"
+    }
+  ],
+  "additional_p2_correction": "The unmarked reuse diagnostic pinned the 1/True defect and is corrected to exact JSON bytes; not folded into the original twelve P2 items.",
+  "fixture_error": "Initial schema-skip test wrongly assumed config exists in current_state; replaced by actual registered boolean singleton and confirmed the original skip accepts integer zero.",
+  "current_t2": {
+    "session": 26923,
+    "jobs": 3,
+    "selected_parallel": 3459,
+    "status": "running"
+  },
+  "scope": "Targeted repair and original completed reports; whole current T2/final gates remain pending."
+}

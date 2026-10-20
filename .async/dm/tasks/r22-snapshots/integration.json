@@ -1,0 +1,25 @@
+{
+  "task": "r22-snapshots",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_payload_rejections.py",
+    ".claude/skills/do-math/scripts/do_math/payloads.py",
+    ".claude/skills/do-math/scripts/do_math/state_contract.py",
+    ".agents/skills/do-math/scripts/do_math/payloads.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_payloads.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_snapshot_cases.py",
+    ".agents/skills/do-math/scripts/do_math/review_engine.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_storage_scale.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_snapshot_cases.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_payload_rejections.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_payloads.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_storage_scale.py",
+    ".agents/skills/do-math/scripts/do_math/state_contract.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_storage_scale.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_storage_scale.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_engine_stages.py",
+    ".claude/skills/do-math/scripts/do_math/review_engine.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md"
+  ]
+}

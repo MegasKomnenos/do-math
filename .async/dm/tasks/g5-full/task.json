@@ -1,0 +1,34 @@
+{
+  "id": "g5-full",
+  "kind": "work",
+  "depends_on": [
+    "g4-final"
+  ],
+  "writes": [
+    ".claude/skills/do-math/",
+    ".agents/skills/do-math/"
+  ],
+  "inputs": [
+    "C:/math/.async/dm/managers/0067/review.md",
+    "C:/math/.async/dm/managers/0067/verification-review.json",
+    "C:/math/.async/dm/tasks/g4-final/report.json",
+    "C:/math/.async/dm/tasks/g4-final/evidence/judgment.md",
+    "C:/math/.async/dm/tasks/g4-final/evidence/full1/report.json",
+    "C:/math/.async/dm/tasks/g4-final/evidence/prepare.py",
+    "C:/math/.async/dm/tasks/g4-final/evidence/git-preparation.json",
+    "C:/math/.async/dm/sources/storage-scope-direction-2026-10-15.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/user-decisions.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/model-policy-2026-10-14.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/document-batching-2026-10-14.md",
+    "C:/math/docs/do-math/시험-재편-2026-09-29/설계.md",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    ".claude/skills/do-math/scripts/do_math/layers.py",
+    ".claude/skills/do-math/scripts/tests/support/branch_gate.py",
+    ".claude/skills/do-math/scripts/tests/support/t3_store.py",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

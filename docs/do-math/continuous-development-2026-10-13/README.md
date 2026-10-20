@@ -1,5 +1,7 @@
 # do-math 연속 개발 실행 준비
 
+> 이 실행은 2026-10-15 async-development로 이관된 역사 기록이다. 현재 상태와 재개 지침은 [새 실행 기록](../../../.async/dm/README.md)을 따른다. phase 배정·report·manager 결론과 이미 추적된 선별 증거는 Git에 보존하고, 그 외 중간 파일·큰 원자료는 로컬 보관한다. 정리 과정에서 과거 보고를 새 성공으로 바꾸지 않았다.
+
 이 디렉터리는 `services/continuous-development`를 사용하는 실제 실행 기록 루트다. 프로젝트 루트는 `C:/math`다. 공용 context·plan·seams와 첫 work phase 001이 준비돼 있다. 설정 준비만 했으며 Codex 개발 세션은 아직 시작하지 않았다.
 
 ## 시작
@@ -16,7 +18,7 @@ python docs/do-math/continuous-development-2026-10-13/start.py --check-only
 & ./docs/do-math/continuous-development-2026-10-13/start.ps1
 ```
 
-터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 모델·effort는 로컬 Codex 프로젝트 기본값을 따른다.
+터미널에서 직접 기다리려면 `start.ps1 -Foreground` 또는 `python .../start.py`를 사용한다. 현재 환경과 같은 쓰기 권한 설정(`--sandbox danger-full-access -c 'approval_policy="never"'`)을 각 Codex 호출에 전달한다. 파일 소유 범위는 context/objective/protocol로 제한하며 서비스 자체가 모든 파일 쓰기를 강제 감시하는 것은 아니다. 작업자는 `gpt-6.1-sol/high`, manager는 settings.json의 `gpt-6-astra/xhigh`를 사용한다. 2026-10-14의 기존 실행기 교체 이후 상태는 `runtime/model-change.json`을 확인한다. 원 `launch-001.json`의 종료는 전체 목표 완료를 뜻하지 않는다. 자세한 전환 기록은 [모델 정책](sources/model-policy-2026-10-14.md)에 있다.
 
 처음에는 3개 읽기 전용 task가 병렬로 요구별 상태, 문서 검사기 마감 범위, 최종 관문 준비도를 판단한다. 첫 phase부터 전체 일반/T3/변이를 돌리거나 기존 구현을 다시 쓰지 않는다. 모든 task가 끝나면 새로운 manager 세션이 보고를 검사하고 실제 다음 phase를 작성한다.
 

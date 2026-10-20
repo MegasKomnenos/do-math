@@ -1,0 +1,14 @@
+{
+  "status": "complete",
+  "summary": "원 stage1 19개·stage2 11개의 ID/원문 성질과 기존 의미수리 판단을 보존한 obligation-state.json을 작성하고, manager0082~0105 수용delta를 현재 정의·소비시험·보고/통합 근거에 연결했다. gate-state.json은 원G4/전체T3·지정5모듈 추가판·G6의 판본별 처분·원T4/정확3수리·예약/기존실경계 재사용과 정확미충족을 구별한다. core 제공자와 원LONG/예약 후속 대기를 갱신했으며, 최종판 전체일반 대응·환경/도구 제약·native/L01 입력·G8 남김을 명시했다. 제품변경 없이 이 연결배정을 완료했고 G1~G8 전체 충족은 주장하지 않는다.",
+  "changes": [],
+  "verification": "evidence/verify_connection.py의 JSON/AST 정적대조로 원30행의19+11·누락/중복0, 원문/위치/요구성질·기존수용의미 보존, 현재 제품/시험심볼·행·SHA와 수용report/integration 대응을 확인했다. G45의 필요한5파일만 공식 result restore해 현재 core3/lifecycle1/GitCAS1함수 및 Sim/mutation 차이를 읽었다. 기존 G45/G6 source inventory에서 바뀐54Python만 자기baseline/현재bytes와 대조했고 원general-b에서 short/LONG/required-event·회귀58passed행과 해당4소스불변을 연결했다. G6 새21 실제실패/정상대응은0105 검수를 재사용했으며 재감사하지 않았다. static-review.json에 직접확인범위를 기록했다. 제품import·시험·T3/T4/T5·변이·실호출·환경probe는0이다. 마지막 check.py report 결과는 evidence/report-check.txt에 보존한다.",
+  "findings": [
+    "G6 원1677은 유효killed1613·trivial32·이전해결10·정확동등1·이번정확killed21로 처분돼 미해결/미실행0이다. 최종판 전체재실행 성공은 아니며 cancelled/미수용 g6p-run 및 미완료 repair-b09 부모 상태를 보존한다.",
+    "G4 원general-b는4522passed·정당한WinError1314 skip1·exit0이다. 이후5runtime함수·공유Sim/helper·변경/신규시험이 함께 들어간 현재판의 공식 기본전체선택↔행/fixture/소스전후/exit 한 전체보고는 없다. 직접수리/G6 정상기준을 전체성공으로 합산하지 않으며 manager가 이 정확최종판 실행남김을 판단해야 한다. 자동전체반복을 배정하지 않았다.",
+    "원전체T3의39arc/43행 중 비환경 질문은 지정추가의 수용판정/정리·성공관측에 연결됐다. 환경6arc/10행과 부분plan.reuse/closing=false·전체index미갱신·좌표/helper digest의 자동store제약은 남는다. 전체 --full 반복이나 수동coverage/index변경 없이 판본별 유효범위를 유지한다.",
+    "원T4 301passed/1error/2skip·exit1과 정확Lake/provenance3passed·exit0는 별도판이다. 예약T5 한선택/자기정리/HOLD 후속은 완료됐고 Lean/Job·기본provider·학술list_sources의 기존한정성질을 재사용한다. 현재최종전체T4 성공으로 합산하지 않았다.",
+    "현재지원 native quota/동일session 복수result·후속실패/절단/cleanup/역할동적schema 원자료, L01 Q1운전프로필·Q2단위권위/원UTF-8 출력byte와 실제symlink/POSIX 조건은 미충족이다. 같은probe/질문/호출quota·새세션/예약/설치0이다. G8 제품수정없는최종review는 미수행이다.",
+    "저장A22 공통보장·기존업무/의미 판단을 재사용하고 가족별quota·새framework·역사전수재감사를 만들지 않았다. 독립g23-close의 미완성결과·다른task의 진행중사본은 소비하지 않았다. 새독립제품결함을 직접확인한 결과는 없다. 근거와 바로필요한 다음판단은 evidence/judgment.md에 있다."
+  ]
+}

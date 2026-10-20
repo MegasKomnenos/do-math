@@ -1,0 +1,9 @@
+{
+  "task": "r23-r24",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_cost_counts.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_storage_owner_costs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_storage_owner_costs.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_cost_counts.py"
+  ]
+}

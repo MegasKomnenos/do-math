@@ -1,0 +1,80 @@
+{
+  "scope": "4-C 추가 무진전 계수와 4-B 반복 계보의 순수 도메인/공개 결정 출구. 전체 대기 등록부·소유자 한 바퀴 검증 완료가 아니다.",
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2z3844sa\\report.json",
+      "sha256": "7b00be46152ad53c9b4d16c252fd2678ad95254f52bf1f5eec8110d1e26c32a2",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 47
+      },
+      "total_seconds": 0.8,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-of50z26b\\report.json",
+      "sha256": "ab0d7d207534add92ad79dde43cee62230fd0f8b2057c7691dbb28c077f470ed",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 98
+      },
+      "total_seconds": 43.1,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-hvrr88fd\\report.json",
+      "sha256": "bcaaa9658106d8320385c287db9379bf6a71e91b7f6ed3de6c7c5b38ac19d14f",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 1
+      },
+      "total_seconds": 0.0,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ghfnzvjh\\report.json",
+      "sha256": "61198fcd3d21b722f0c542579cc2fd6363211a856d2c0c1fddc09fd624a44e35",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 48
+      },
+      "total_seconds": 25.0,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-055a56l_\\report.json",
+      "sha256": "62113f8a93f00aadea37fd667cac269e598ef2f8bf173f8bca2906bbe4727b3b",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 1
+      },
+      "total_seconds": 0.1,
+      "changed_during_run": []
+    }
+  ],
+  "sources": {
+    "do_math/control_protocol.py": "f94966fcf7b3ad2c4c99d086e5bf16a08189d778d59141e7684984d471ab8604",
+    "do_math/observations.py": "f95baf492fb07b8c7a66bab4dff01a4da7fa7b74273c58be946d1024fa36a1d3",
+    "tests/unit/test_self_check_progress_contract.py": "dc7fe349e697f25387cb19065f8bd81f62a832e4f5336c3c4dea43c479e91686",
+    "tests/unit/test_repetition_hold_contract.py": "b2f418abcb1627a01d9df60f685a697b60e4139b6afcb84449f11c706335a75e"
+  },
+  "population": {
+    "self_check_progress": 3,
+    "rule_verdicts": 3,
+    "repeat_lineages": 5
+  },
+  "self_check": "실제 checkpoint 생산→의무 생성→첫 무진전 응답→진행값×규칙 판정값 순회. 송신/수신 스키마 enum이 정본에서 생성된다. 반려와 재전달은 계수를 바꾸지 않으며 defect/indeterminate/contract_mismatch/no_progress 문턱의 우선순위와 운영 점검 acknowledgement를 직접 대조한다.",
+  "hold": "모든 계보에서 실제 영수증으로 문턱 직전과 정각의 계수/대기를 생산한다. 실제 의미 판본 계보는 판본1/2를 사용한다. 같은 영수증은 이력/큐/대기를 전혀 바꾸지 않는다. 잘못된 hold ID/행동 범위는 공개 결정에서 원상 보존하며, 정확한 공개 governance.apply_decision만 보류 해소·계수 재설정·원 행동 범위와 사용자 질문 해결을 만든다.",
+  "limitations": [
+    "4-A의 모든 종류·동적 생성과 해소자 등록",
+    "4-B 전체 소유자 한 바퀴와 관측 표면",
+    "다른 부류/11의무·P2 전건",
+    "1e/1f 분기·모든 함수 변이·예산 최종 관문",
+    "T4/T5·말뭉치·미러·check·main 통합"
+  ]
+}

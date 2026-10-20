@@ -1,0 +1,11 @@
+{
+  "task": "r02-fix",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
+    ".claude/skills/do-math/scripts/tests/.timings.json",
+    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
+    ".agents/skills/do-math/scripts/tests/.timings.json",
+    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py"
+  ]
+}

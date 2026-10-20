@@ -1,0 +1,15 @@
+{
+  "task": "storage-actions",
+  "files": [
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_action_pairs.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_preparation_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_action_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/sim/test_preparation_wait_contract.py"
+  ]
+}

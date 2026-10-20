@@ -1,0 +1,374 @@
+{
+  "scope": "KD-0704 및4-B/13-B의 의도 import 대기2종×초기화/활성2상태. 전체 대기 공간과 다른11의무의 폐쇄는 아니다.",
+  "population": [
+    "import_application_authority",
+    "import_user_decision"
+  ],
+  "phases": [
+    "initializing",
+    "active"
+  ],
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-27rmyus1\\report.json",
+      "sha256": "80ac4dd974ce3ee7e1f886df89b76214c2095afe90b6c46e41b91853c951676f",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "total_seconds": 25.7,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 2.562000000034459,
+            "budget_seconds": 2.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+          "outcome": "failed",
+          "seconds": 2.562000000034459,
+          "details": [
+            "test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row (sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row) (kind='import_user_decision')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 49, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.assertNotIn(identifier, sim.runtime.get('waiting_actions', {}))\nAssertionError: 'AC-03E6TRPT000000000000000030' unexpectedly found in {'AC-03E6TRPT000000000000000030': {'action': {'role': 'intent_interpretation', 'stage': 'check', 'import_id': 'IM-03E6TRPT00000000000000002Z', 'grant_id': 'GR-research-sim', 'profile_ref': {'id': 'EP-065abdf2c116dc60caba23981431467d0889629828c6cdf1ccc1ca8e09dfc80f', 'revision': 1, 'sha256': '065abdf2c116dc60caba23981431467d0889629828c6cdf1ccc1ca8e09dfc80f'}, 'owner_activity_id': 'AY-03E6TRPT00000000000000002K', 'lineage_id': 'AC-03E6TRPT00000000000000001Z', 'reason': 'Independently compare every meaning unit and question with the exact original', 'target': 'IN-close-question', 'repetition_bases': {'import_rework': '9c192d17cc10517800a7151b91c9ce9c35cb44027a4c1fcc86b35514f447419e'}, 'revision_targets': {}, 'id': 'AC-03E6TRPT000000000000000030', 'actor_kind': 'ai', 'model_selection': {'tier': 'high', 'model': 'gpt-6-astra', 'assessment': None, 'reason': 'Explicit immutable profile meeting the role/task requirement.', 'profile_ref': {'id': 'EP-065abdf2c116dc60caba23981431467d0889629828c6cdf1ccc1ca8e09dfc80f', 'revision': 1, 'sha256': '065abdf2c116dc60caba23981431467d0889629828c6cdf1ccc1ca8e09dfc80f'}}}, 'kind': 'import_user_decision', 'import_id': 'IM-03E6TRPT00000000000000002Z', 'reason': 'Checked interpretation awaits its blocking user answers', 'next_owner': 'user'}}\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 65, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.assertEqual(exercised, IMPORT_ACTION_WAITS)\nAssertionError: {'import_application_authority'} != frozenset({'import_application_authority', 'import_user_decision'})\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6d4bj3ai\\report.json",
+      "sha256": "1326a1b51ce368dcdd86f37d745ec5aa57951c9f7727496e882eb75377b40d7d",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "unexpected_success": 1
+      },
+      "total_seconds": 24.7,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 2.812999999965541,
+            "budget_seconds": 2.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+          "outcome": "unexpected_success",
+          "seconds": 2.812999999965541,
+          "details": []
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-dlvmvlv0\\report.json",
+      "sha256": "447461f6575bb13b4555281740ee7252ac6236295f7d1e7aba0f47685ea4344e",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "total_seconds": 39.9,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 5.140999999945052,
+            "budget_seconds": 2.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+          "outcome": "failed",
+          "seconds": 5.140999999945052,
+          "details": [
+            "test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row (sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row) (kind='import_user_decision', state='active')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 35, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.exercise_wait(sim, find_bundle, kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 72, in exercise_wait\n    self.assertEqual(history[0]['resolution_refs'], [question['resolution_ref']])\nAssertionError: Lists differ: ['DC-03E6TRPT000000000000000043'] != [None]\n\nFirst differing element 0:\n'DC-03E6TRPT000000000000000043'\nNone\n\n- ['DC-03E6TRPT000000000000000043']\n+ [None]\n",
+            "test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row (sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row) (kind='import_user_decision', state='initializing')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 35, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.exercise_wait(sim, find_bundle, kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 72, in exercise_wait\n    self.assertEqual(history[0]['resolution_refs'], [question['resolution_ref']])\nAssertionError: Lists differ: ['DC-03E6TRPT00000000000000001Y'] != [None]\n\nFirst differing element 0:\n'DC-03E6TRPT00000000000000001Y'\nNone\n\n- ['DC-03E6TRPT00000000000000001Y']\n+ [None]\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 37, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.assertEqual(exercised, {(kind, state) for kind in IMPORT_ACTION_WAITS\nAssertionError: Items in the second set but not the first:\n('import_user_decision', 'active')\n('import_user_decision', 'initializing')\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kxdmwb87\\report.json",
+      "sha256": "6013c0bed59cc6b5b96116d9b6fd78540045988f7e7b2baec0f79afa6e01dde5",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "failed": 1
+      },
+      "total_seconds": 47.4,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 10.234000000054948,
+            "budget_seconds": 2.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": [
+        {
+          "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+          "outcome": "failed",
+          "seconds": 10.234000000054948,
+          "details": [
+            "test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row (sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row) (kind='import_user_decision', state='initializing')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 39, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.exercise_wait(sim, find_bundle, kind)\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 83, in exercise_wait\n    self.assertEqual((sim.instance, sim.runtime), released)\nAssertionError: Tuples differ: ({'ac[320170 chars]000021'}], 'recovery_checked': True, 'reservat[1199 chars] {}}) != ({'ac[320170 chars]000020'}], 'recovery_checked': True, 'reservat[1199 chars] {}})\n\nFirst differing element 1:\n{'act[138219 chars]000021'}], 'recovery_checked': True, 'reservat[1198 chars]: {}}\n{'act[138219 chars]000020'}], 'recovery_checked': True, 'reservat[1198 chars]: {}}\n\nDiff is 1477738 characters long. Set self.maxDiff to None to see it.\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_import_wait_contract.py\", line 41, in test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row\n    self.assertEqual(exercised, {(kind, state) for kind in IMPORT_ACTION_WAITS\nAssertionError: Items in the second set but not the first:\n('import_user_decision', 'initializing')\n"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ttvk1tm2\\report.json",
+      "sha256": "7e8dc92beb83d48801c824d7d16f8eb3566d7c5bf0ef69ef3ba70f9b2f607ce9",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 1
+      },
+      "total_seconds": 50.2,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 11.14000000001397,
+            "budget_seconds": 2.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fm1ee88k\\report.json",
+      "sha256": "cdd571746464dc4ac3980906ca9e56f1448b50437ad7d4edfe1e490249d13d22",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 87
+      },
+      "total_seconds": 98.8,
+      "changed_during_run": [],
+      "selected": [
+        "sim.test_governance_approval.InitialApprovalTests.test_failed_initial_followup_does_not_publish_partial_control_effect",
+        "sim.test_governance_approval.InitialApprovalTests.test_initial_later_control_completes_initialization_without_new_check",
+        "sim.test_governance_approval.LaterApprovalTests.test_corrected_exact_approval_cancels_unstarted_recheck_of_same_seal",
+        "sim.test_governance_approval.LaterApprovalTests.test_exact_later_control_applies_once_and_queues_followup",
+        "sim.test_governance_approval.LaterApprovalTests.test_import_source_and_public_input_have_distinct_global_identity",
+        "sim.test_governance_approval.LaterApprovalTests.test_original_changed_before_later_approval_is_not_applied",
+        "sim.test_governance_approval.LaterApprovalTests.test_stale_approval_rejects_and_routes_to_reauthor",
+        "sim.test_governance_approval.PublicApprovalTests.test_control_applies_actual_checked_import_and_records_one_public_result",
+        "sim.test_governance_approval.PublicApprovalTests.test_git_changed_premise_rejects_later_approval_and_preserves_seal",
+        "sim.test_governance_approval.SealedApprovalTests.test_git_configuration_import_uses_public_transition_and_profiles",
+        "sim.test_governance_approval.SealedApprovalTests.test_git_sealed_import_later_control_and_restart",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_applied_secondary_import_during_initialization_does_not_open_research",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_audit_schema_adds_required_field_without_changing_argument",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_changed_original_queues_fresh_lineage_before_check_rejection",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_completed_goal_preserves_unprocessed_user_input_question",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_current_seal_finishes_duplicate_activity_without_new_unresolved_item",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_existing_audit_group_cannot_change_required_count",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_missing_committed_audit_returns_none_without_mutation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_missing_import_rejection_does_not_queue_reinterpretation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_nonapproval_rejection_does_not_queue_reinterpretation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_other_wait_kind_is_preserved",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_previous_import_is_copied_into_rework_context",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_seal_count_conflict_is_rejected_without_mutation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_seal_producer_role_change_is_rejected_without_mutation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_superseded_answered_import_wait_is_removed_without_rework",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_superseded_import_rejection_does_not_queue_reinterpretation",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_unanswered_import_questions_keep_waits_and_queue",
+        "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_unapplied_import_does_not_trigger_followup",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_already_initialized",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_approval_identity_collision",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_approval_source_collision",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_nonuser_approval",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_original_input_binding",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_record_hash_binding",
+        "sim.test_governance_initial_approval_contracts.GovernanceInitialApprovalTests.test_source_identity_collision",
+        "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+        "sim.test_initialization_controls.ActivationEvidenceTests.test_a_changed_intent_receipt_or_unadopted_review_policy_is_missing",
+        "sim.test_initialization_controls.ActivationEvidenceTests.test_completing_another_input_is_not_the_initial_intent",
+        "sim.test_initialization_controls.ActivationEvidenceTests.test_the_applied_independent_import_is_the_initial_intent_evidence",
+        "sim.test_initialization_controls.ActivationEvidenceTests.test_the_working_view_is_the_instance_with_its_governance_fields",
+        "sim.test_initialization_controls.ActiveProbeTests.test_active_probe_refreshes_observation_without_adopting_contract",
+        "sim.test_initialization_controls.ActiveProbeTests.test_user_refreshes_exact_active_profile_and_other_authority_is_rejected",
+        "sim.test_initialization_controls.AdoptionTests.test_adopting_a_configuration_whose_role_profiles_lack_settings_is_rejected",
+        "sim.test_initialization_controls.AdoptionTests.test_adoption_of_a_configuration_other_than_the_current_one_is_rejected",
+        "sim.test_initialization_controls.AdoptionTests.test_adoption_takes_no_profile_list",
+        "sim.test_initialization_controls.AdoptionTests.test_public_default_init_rejects_unready_adoption_then_adopts_the_configured_one",
+        "sim.test_initialization_controls.InitialAdoptionTests.test_a_repeated_adoption_names_its_source_once_and_records_each_decision",
+        "sim.test_initialization_controls.InitialAdoptionTests.test_each_adoption_field_refuses_what_it_does_not_name",
+        "sim.test_initialization_controls.InitialAdoptionTests.test_initial_and_research_authority_use_distinct_grants",
+        "sim.test_initialization_controls.InitialAdoptionTests.test_initial_retries_pass_over_empty_and_undiagnosed_waits",
+        "sim.test_initialization_controls.InitialAdoptionTests.test_the_initial_interpretation_waits_for_its_profile_evidence_grant_and_open_import",
+        "sim.test_initialization_controls.InitializeConfigurationTests.test_configuration_outside_the_current_contract_is_rejected_before_creating_an_instance",
+        "sim.test_initialization_controls.ProbeBatchTests.test_a_probe_names_one_or_several_distinct_ai_editions",
+        "sim.test_initialization_controls.ProbeBatchTests.test_activation_batch_reuses_only_the_current_provider_observation",
+        "sim.test_initialization_controls.ProbeBatchTests.test_batch_preserves_each_profile_and_observed_capability_scope",
+        "sim.test_initialization_controls.ProbeBatchTests.test_failed_later_observation_does_not_publish_partial_evidence",
+        "sim.test_initialization_controls.ProbeBatchTests.test_invalid_reference_is_rejected_before_probing_or_mutating_evidence",
+        "sim.test_initialization_controls.ProbeBatchTests.test_probe_without_named_editions_must_name_the_current_configuration",
+        "sim.test_initialization_controls.ProbeBatchTests.test_probe_without_named_editions_observes_every_current_ai_role_profile",
+        "structure.test_action_wait_contract.ActionWaitDeclarationTests.test_every_current_wait_creation_uses_the_declaration_and_real_resolvers",
+        "structure.test_known_defects.KnownDefectLedgerTests.test_ledger_and_marks_correspond",
+        "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+        "structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason",
+        "structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name",
+        "structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_distinct_ai_resolution_is_valid_but_duplicate_is_rejected",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_duplicate_resolution_ids_change_nothing",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_empty_blocking_targets_change_nothing",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_existing_source_cannot_change_owner",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_invalid_owner_changes_nothing",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_nonboolean_blocking_changes_nothing",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_operations_resolution_requires_operational_role",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_partial_resolution_keeps_order_and_exact_history",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_pending_overflow_retry_exempts_only_its_question",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_route_index_and_unknown_target_have_exact_diagnostics",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_unknown_resolution_changes_nothing",
+        "unit.test_governance_question_contracts.GovernanceQuestionContractTests.test_unrelated_answer_changes_nothing",
+        "unit.test_governance_questions.GovernanceQuestionTests.test_actual_answer_preserves_other_affected_targets",
+        "unit.test_governance_questions.GovernanceQuestionTests.test_question_advice_does_not_block_and_partial_target_answer_does_not_erase_wait",
+        "unit.test_governance_questions.QuestionRouteTests.test_route_targets_admit_the_records_of_the_record_index",
+        "unit.test_governance_questions.QuestionTests.test_an_ai_extension_cannot_resolve_a_user_question",
+        "unit.test_governance_questions.QuestionTests.test_only_the_explicitly_affected_task_waits_and_plan_can_choose_other_tasks",
+        "unit.test_governance_questions.QuestionTests.test_resolving_one_user_question_preserves_the_other",
+        "unit.test_governance_questions.QuestionTests.test_retry_bypasses_only_the_question_for_its_held_overflow",
+        "unit.test_governance_questions.QuestionTests.test_source_identity_not_equal_text_controls_deduplication",
+        "unit.test_governance_questions.RepetitionQuestionTests.test_limit_question_reads_preserved_history_after_roundtrip_and_append",
+        "unit.test_governance_questions.RepetitionQuestionTests.test_scoped_continuation_resolves_only_the_current_hold_question"
+      ],
+      "budget": {
+        "over_budget": [
+          {
+            "id": "sim.test_governance_approval.LaterApprovalTests.test_import_source_and_public_input_have_distinct_global_identity",
+            "seconds": 3.0,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_approval.PublicApprovalTests.test_git_changed_premise_rejects_later_approval_and_preserves_seal",
+            "seconds": 3.734000000054948,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_approval.SealedApprovalTests.test_git_configuration_import_uses_public_transition_and_profiles",
+            "seconds": 3.718999999924563,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_approval.SealedApprovalTests.test_git_sealed_import_later_control_and_restart",
+            "seconds": 4.562000000034459,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_applied_secondary_import_during_initialization_does_not_open_research",
+            "seconds": 16.01500000001397,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_audit_schema_adds_required_field_without_changing_argument",
+            "seconds": 6.125,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_completed_goal_preserves_unprocessed_user_input_question",
+            "seconds": 17.93799999996554,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_current_seal_finishes_duplicate_activity_without_new_unresolved_item",
+            "seconds": 14.625,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_superseded_answered_import_wait_is_removed_without_rework",
+            "seconds": 23.75,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+            "seconds": 21.359000000054948,
+            "budget_seconds": 2.0
+          },
+          {
+            "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+            "seconds": 15.48499999998603,
+            "budget_seconds": 5.0
+          }
+        ],
+        "tier": null
+      },
+      "failures": []
+    }
+  ],
+  "sources": {
+    "do_math/wait_rules.py": "2e3627b8c96ce0196a6eb7bb2e2be5b520cc25b720138a02486898711bd3050b",
+    "do_math/core_engine.py": "3c7e6698d2549a00e090385dc34086309709fd02afa93aeedfa4ec3aae018bca",
+    "do_math/lifecycle_engine.py": "29b070ee50d12953a48ea811229e4c13f6b48e75def3e589997cae41cfaa4387",
+    "do_math/governance_engine.py": "9ff6bedbb87bc0ae602bf1b53c4e65edb9eb723b512dff674f653d35277ca70f",
+    "tests/sim/test_import_wait_contract.py": "d990e9197c6d329e7cd57fdd991aa2a2c32506147502d8642ecf6ec75f48b777",
+    "tests/support/governance_cases.py": "d1db1847dcd80e49d26bf9f39fefd147fb947db7054056a9e4b5b693e8acd980",
+    "tests/known_defects.json": "d7d02b5becad5611b24cf17992d41a9e4e21dd6b1efd14efd188e6de5ba19ca7",
+    "이음새-정본.md": "6fa8d54530d6339494cf628d276802fbb7f15fe546515e3a6c30f936658d402e"
+  },
+  "ledger": {
+    "total": 53,
+    "open": 0,
+    "entry": {
+      "id": "KD-0704",
+      "summary": "공개 question_answer가 import의 blocking question을 해결해도 소유자의 준비성 갱신/실행 준비가 _resume_import_question_waits를 호출하지 않아 원 import_user_decision 대기가 남는다.",
+      "category": 4,
+      "reproduction": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+      "found_by": "4-B/13-B import 두 종류의 실제 생산·공개 결정·소유자 실행 준비 일반 검사. do-math-tests-27rmyus1에서 import_user_decision이 공개 답변 뒤에도 남아 실패했다. 다른 import_application_authority는 같은 검사에서 통과했다.",
+      "missed_kind": "기존 답변 검사는 해소자를 직접 호출하거나 다음 import 수신에 의존하여 공개 답변 뒤 실제 소유자 한 회차의 연결 누락을 보지 못했다.",
+      "status": "closed"
+    }
+  },
+  "reproduction": "실제 공개 입력→해석/독립 대조 worker→저장 대기. 공개 question_answer 적용과 owner 준비 뒤에도 import_user_decision이 남아 실패(27rmyus1). import_application_authority는 같은 일반 검사에서 통과했다.",
+  "repair": "활성 상태 준비성 갱신과 모든 초기화/활성 실행 준비가 실제 해소자를 호출한다. 조건이 맞으면 원문/lineage를 보존한 재해석을 한 번 배정한다. 당시 대기 전문과 실제 resolution_refs를 해소 이력에 보존한다.",
+  "general_test": "IMPORT_ACTION_WAITS와 case 모집단의 양방향 일치를 검사한다. 실제 두 종류×두 상태를 자동 순회하며 조건 전 반복 호출의 연구/runtime 전문 불변, 공개 승인/답변과 실제 sim.step 소유자1회 뒤 해소, 대기열/실행의 원문 재해석 고유 요청1개, 정확한 원문/선행 import, 해소 근거/원 대기 전문, 공개 재전달의 전체 불변, 실제 저장/적재와status JSON/사람용 행을 확인한다.",
+  "fixture_corrections": [
+    "dlvmvlv0: 공개 결정이 새 roots를 반환하는데 이전 질문 객체에서 resolution_ref를 읽은 오류. 원 객체 불변을 확인하고 현재 같은 ID의 질문을 다시 읽도록 교정했다.",
+    "kxdmwb87: 내부 준비 함수 호출 뒤 volatile 상태를 다음 공개 명령이 재적재하여 검사 기준이 어긋났다. 실제 소유자 한 회차 sim.step을 실행하고 대기열과 실행 기록의 동일 후속 ID를 모두 대조하도록 강화했다."
+  ],
+  "remaining": [
+    "다른 행동 대기20종의 일반 동적 연결과 전체 관측 표면",
+    "과제/활동/수명/질문/반복 보류/공급자/설치/사건/역할 판정 공간",
+    "11의무/여섯부류/P2",
+    "1e/1f·전체T2/flows/freshT3/모든함수변이/예산",
+    "T4/T5·말뭉치·미러·check·main통합"
+  ]
+}

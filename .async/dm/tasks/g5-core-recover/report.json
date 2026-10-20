@@ -1,0 +1,29 @@
+{
+  "status": "complete",
+  "summary": "복구 권한·운영 처분·수용 후 정산의 배정된 12함수·원22arc/24행 질문을 현재 생산/소비 계약으로 판단했다. 실제 게시 재시도의 수용 후 활동 정산 오류가 원 결과를 submission_failure로 바꾸던 결함을 수리했다. 수신 결과를 먼저 저장하고 정산을 진행하므로 원 수용·영수증·owner를 보존한다. 보존 위임 요청의 같은 CAS 생산, 공통 실행 등록기의 ID 있는 원 action, 정본 admissible_basis_refs의 target 거절을 소비해 세 중복 방어도 줄였다. 현재 권한·source 충돌·종료 확인·정확 checkpoint/과제/assessment·사용자 질문·cleanup gate는 유지했다. native의 ready는 원 활동에 check 후속이 남는 정상 상태임을 확인했다. 정본 runtime1·직접시험4·설명2와 공식 미러7쌍, 총14파일을 변경했다. 완료는 이 유한 계약 판단이며 전체 G5 통과가 아니다.",
+  "changes": [
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_publication_retry.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_recovery_choices.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_delegation_engine.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_publication_retry.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_recovery_choices.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_delegation_engine.py"
+  ],
+  "verification": "공식 run_tests.py --tier T3 --jobs 1의 순차 부분6실행을 원 command/cwd/환경/관측exit·report/stdout/stderr/coverage·실행 전 Python bytes/SHA와 함께 보존했다. evidence/verification.json에서 선택=고유실제행·counts·fixture/실행중변경0·소스SHA를 대조하고 변경시험본문5개의 동일 AST passing 원행을 연결했다. settlement-before의 execution_incomplete != output_accepted는 기존 _retry_submission_publications와 동일 AST에서 실제 결함을 재현했다. recovery-final은 passed3/failed1로 정산 수리·원 native owner/check 후속·4역할×followup 유무의 기존 회귀 통과와 권한 fixture 오류를 구별한다. authority-receivers의 passed1은 최종 복구 함수의 checkpoint 회귀다. authority-fallback-final은 passed1/error1이며 최종 권한 시험이 통과했다. fallback-final은 passed1/successful=true로 malformed extensions의 check·원 output·반려를 확인했다. 나머지 실패는 native finished 기대, 공개 control 전 저장 누락, 수신 전 stopping 누락, 반려 위치/문구와 issue 필드명 오판이며 제품 결함 재현이나 변이 포착으로 세지 않았다. 모든 실행은 complete=true·부분gate/최상위passed/closing_eligible=false·관측exit1이고 서로 다른 부분판을 전체성공으로 합산하지 않는다. 나머지 함수는 evidence/judgment.md의 생산자/수신자·기존 단언으로 정적으로 판단했으며 모든 외부 실패 분기를 새로 실행했다고 하지 않는다. 공식 미러 생성/check·7쌍bytes·변경Python10파일 compile·CRLF-aware diff check·실제14경로 쓰기범위 확인을 마쳤고 측정/선택/시간10경로를 시작bytes/부재로 복원했다. check.py report를 직접 실행해 PASS report(exit 0)를 확인했다.",
+  "findings": [
+    "실제 수리의 경계는 bundle 게시 뒤 수신 결과 저장 전의 활동 정산이다. 시계 포트의 단발 OSError로 재현/수리를 확인했다. GitStateStoreError와 지속적인 정산/재적재 장애는 계속 외부 오류이며, 이번 단발 복구를 모든 장애 복구의 보장으로 확대하지 않는다.",
+    "native의 ready를 처음 종료 누락으로 보았으나 실제 같은 활동의 독립 check 후속이 남아 있었다. 잘못된 finished 단언 실패는 보존했고 불필요한 제품 정산 호출은 최종 코드에서 제거했다. 최종 _finish_native_recovery는 base와 같은 AST이며 원 receipt/실행 모집단과 check 후속을 유지한다.",
+    "공개 생산된 영구 실패 review slot/wait에서 두 등록 실행의 합성 within_scope 판정과 현재 grant 철회를 직접 수신해 거절/원 cycle·wait 보존을 확인했다. 비교의 모델/중앙제출 자체를 재인증한 시험은 아니다. explicit 철회 거절은 governance.apply_decision에서 먼저 발생한다. 그때의 when과 뒤 clock.now가 다르므로 뒤 현재 권한 검사는 유지했다. 사용자 지정 request_id와 기존 governance source ID의 실제 충돌도 공개 거절된다.",
+    "일반 schema optional 필드만으로 missing request/action/target 상태를 조립하지 않았다. 원 요청과 비교 action의 같은 CAS, 실행 등록·복사, 공통 target guard를 정적으로 대조했다. 새 no-cover/skip·층·분모·임계값 완화는 없다. 과거 원좌표와 현재 함수/AST는 verification.json에 보존되며 최종 fresh G5의 실제 도달 판단은 별도다.",
+    "재평가 upkeep 저장, 다른 goal wait 보존, 운영 superseded/정확 task assessment/user question, post-accept feedback/repair, live·종료미확정 cleanup gate는 현재 코드와 명시한 기존 근거를 재사용했다. 기존 cleanup archive/final CAS·앞 explicit/native capture 수리를 재실행하지 않았고 공통codec·새reader/옛head·전가족 quota나 장기감사를 추가하지 않았다.",
+    "공용 source_repo/Git·다른task·engine·공용 context/plan/seams/queue/state·graphify는 수정하지 않았다. 전체 G1~G8·최종G4/freshG5/G6/T4, 환경6arc/10행·L01 Q1/Q2/원UTF-8 bytes·실지원 quota/복수result/역할 동적schema의 원자료 조건은 전체계획에 남는다. 근거와 한계는 evidence/judgment.md·verification.json·cache-restoration.json·submission-check.json을 따른다."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "g1-handoff",
+  "kind": "work",
+  "depends_on": [
+    "g5-entry-gate",
+    "g5-trust-rest",
+    "g5-core-rest"
+  ],
+  "writes": [],
+  "inputs": [
+    "C:\\math\\.async\\dm\\managers\\0080\\review.md",
+    "C:\\math\\.async\\dm\\managers\\0080\\verification-review.json",
+    "C:\\math\\.async\\dm\\sources\\storage-scope-direction-2026-10-15.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/user-decisions.md",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/sources/requirements-index.json",
+    "C:/math/docs/do-math/continuous-development-2026-10-13/phases/001/tasks/closure-map/evidence/requirement-state.json",
+    "C:/math/docs/do-math/시험-재편-2026-09-29/설계.md",
+    "C:/math/docs/do-math/시험-재편-2026-09-29/조사/결함-범주.md",
+    ".claude/skills/do-math/AGENTS.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

@@ -1,0 +1,41 @@
+{
+  "status": "complete",
+  "summary": "R50/12-A 중 운영자 owner의 기동 판본 표시와 수리 보고 provenance를 구현·직접 확인했다. 필수 installation_version/source_commit을 생산 prompt·schema·실제 worker 수신·launcher 검증·저장/결과 보고에 연결하고, 수리 후 설치 bytes/원천 Git 관측과 다른 보고는 receipt·재시작 전에 반려한다. 동결 manifest와 live target의 파일별 차이를 startup 저장/JSON에 표시하며 기존 bootstrap 자기검증은 유지한다. 판본 수집 실패가 원 provider-limit/model-policy 결과를 덮는 경계도 수정했다. 엔진/직접 CLI의 시작 전 독립 기대값 대조와 공개 provenance 남김은 고정 소스 SHA·현재 단언·필요 owner로 r49-startup에 인계했다. task의 운영자 구현/한정 인계 완료이며 전체 R50/12-A 완료를 뜻하지 않는다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/preflight.py",
+    ".agents/skills/do-math/scripts/do_math/repair_execution.py",
+    ".agents/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".agents/skills/do-math/scripts/do_math/supervision.py",
+    ".agents/skills/do-math/scripts/operator_bootstrap.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_operator_bootstrap_contract.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_operator_recovery_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_finish_ports.py",
+    ".agents/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_operator_rules.py",
+    ".claude/skills/do-math/scripts/do_math/preflight.py",
+    ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/do_math/supervision.py",
+    ".claude/skills/do-math/scripts/operator_bootstrap.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_operator_bootstrap_contract.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_operator_recovery_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_finish_recovery.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_schema.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_finish_ports.py",
+    ".claude/skills/do-math/scripts/tests/support/operator_finish_scene.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_operator_rules.py"
+  ],
+  "verification": "공식 workspace run_tests.py/jobs1의 related-final은75선택/75고유passed·관측exit0·93.7초다. 이후 판본 수집 불가 보존을 위한 runtime2/회귀1 변경을 installation-final의8선택/8고유passed·exit0·13.3초로 확인했다. 마지막 prompt 문구1변경 뒤 prompt-final은2선택/2고유passed·exit0·4.7초이며888 Python SHA 전건이 제출판과 같다. 앞 성공은 실제 원소스SHA와 함수diff(edition-reuse.json)를 통해 한정 재사용하며 단일 최종75/76passed로 합산하지 않는다. 세 성공 보고의 fixture_counts={}·실행중변경=[]·선택=실제row다. 초기focused6passed, own-base schema red의error1(필수단언2실패/신필드 추가반려)·exit1, 추가경계 post-call-red1failed·exit1을 보존했다. 관련75의 sim7개/installation8의1개 소프트초과와 공개 목표template 비용을 verification.json에 기록했고 마지막2는 초과0이다. 실제 workspace 설치에 GitProcess로 읽기만 수행해 source unavailable/null을 확인했다. B52 실제diff→현재52메서드(모두존재/48AST동일)와 원보고2개부재를 기록했다. bootstrap freeze/verify와 core/engine/cli의 읽기전용 정의는 정적으로 대조했다. 공식 mirror build/check exit0·1351파일 drift0·13쌍bytes일치, 두 비용캐시 실행bytes 보존/own-base복원을 확인했다. 전체 일반/T3/변이/T4/T5·외부 유료모델/실Lean/HTTP/OS예약·미러시험반복은 실행하지 않았다.",
+  "findings": [
+    "F1 해결 | supervision.OPERATOR_SCHEMA/repair_report_schema의 필수 installation_version:string/source_commit:string|null을 실제 ModelRunner/worker/수신에 적용했다. repair_execution.installation_evidence는 기존 설치파일/hash 정본과 기존 GitBackend 읽기를 쓰며 input_manifest.installation_before와 실제 입력파일, after sidecar/result로 전후 근거를 연결한다. check_repair_version의 불일치는 원output을 보존하고 receipt/검증child/재시작을 막는다. 새 schema는 preflight 두 변형과 직접 fixture도 소비한다.",
+    "F2 해결·한계 | bootstrap.startup_evidence는 검증한 동결manifest를 기대값으로 live target의 추가/삭제/변경 expected/observed SHA를 보고한다. main은 startup.json을 동작전에 저장하고 stdout startup에도 보존한다. 기록 manifest 없는 live는 no_recorded_manifest로 표시하며 독립 대조 성공으로 세지 않는다. 기존 bytes/목록/directory/mark/reparse 검증 AST는 불변이다.",
+    "F3 판본 의미 | source_commit은 실제 source HEAD이고 연구 snapshot과 별개다. unavailable은 null/사유이며 source Git 없는 task 사본을 저장소로 만들거나 가짜 커밋을 채우지 않았다. observed source도 tracked diff/미추적 설치파일을 함께 보존하므로 HEAD를 설치bytes의 commit반영/clean 증명으로 주장하지 않는다. 현재 GitProcess diff port는 stdout만 보존하므로 빈diff도 clean 인증이 아니다. 실제 비null commit 연쇄는 외부Git포트 대역의 명시관측으로 확인했고 실 source commit 생성/수정은 하지 않았다.",
+    "F4 유지 | diagnosed repaired/unresolved·회귀파일·진단/원결과/봉인과 복구6결과/계수·P2 C-20의 unjudged limit/HOLD 제외·judged report1회·unknown 종료와 예약/lock/해제후restart 책임을 유지했다. 추가 판본 관측에서 target이 사라진 경우도 provider-limit를 recovery_failed로 덮지 않는 실제 반례/수리를 보존했다.",
+    "F5 정확 후속 | evidence/engine-startup-handoff.md와 source-sha.json이 읽기전용 do_math.py→cli→ResearchEngine.run/_installation_manifest/_check_installation 및 실제 ps1 명령의 의미/단언/SHA를 연결한다. 현재 엔진은 시작 설치 자체를 기대값으로 잡아 기동전 drift를 구별하지 못하고 hash모집단도 설치전체와 다르다. 직접 공개 CLI operator 경로는 scheduled_operator.main의 새 startup 저장을 우회한다. r49-startup은 이 engine/cli 남김과 새 정본·nullable source_commit의 공유 설명만 이어서 마감해야 한다. 진행중 r41 코드는 읽지 않았다.",
+    "F6 근거와 범위 | B52 commit06a00bcfa8ebbf6ca1d0ccf5936bda649381562f의 실제4파일diff와 현재52원메서드를 대조했다. 원Temp 보고2개부재와 board 수치를 새성공에 합산하지 않는 한계를 보존했다. PR15의 다른B·전체PR/K/P2·G4~G8·L01·Windows1314는 종결하지 않는다. 공용source_repo/다른task/공용문서·queue·state/engine/Git index/graphify/기존연구운전은 수정하지 않았다. check.py report 직접실행 결과는 evidence/report-check.txt에 남긴다."
+  ]
+}

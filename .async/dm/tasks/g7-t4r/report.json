@@ -1,0 +1,21 @@
+{
+  "status": "partial",
+  "summary": "복구 수용판에서 공식 전체 T4를 실행하고 직접 드러난 시험 문제 두 곳을 수리했다. mutation 기준 fixture는 외부 scratch의 독립 실제 Git 저장소·빈 HEAD와 CLI/T3 소비 경로를 함께 사용하며, bootstrap 시험은 저장된 failure와 별도 startup 게시를 stdout 전체와 정확히 대조한다. 정본 시험 2개·시험 지침 1개와 공식 미러 3개, 총 6파일을 수정했다. 최종 전체 선택 304개는 301 passed·1 error·2 skipped다. 수리한 9개 시험은 최종판에서 모두 통과했다. Lake 기본 설치 경로와 과거 provenance baseline 입력이 없어 전체 T4 성공 조건은 남았으므로 partial로 보고한다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_operator_bootstrap.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/boundary/test_mutation_baseline.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_operator_bootstrap.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "verification": "자기 workspace/.claude/skills/do-math에서 공식 python -u -B scripts/run_tests.py --tier T4 --jobs 1을 새 외부 output a/b로 실행했다. a는 292 passed·9 error·1 failed·2 skipped, 관측 exit 1, 공식 2135.0초였다. 직접 수리 확인 9선택은 8 passed·1 error였고, 남은 T3 fixture 경로를 고친 뒤 같은 1선택은 passed·exit 0이었다. 최종 b는 선택 304개와 고유 실제 304행이 정확히 대응하며 중복·누락·여분이 없다. 결과는 301 passed·1 error·2 skipped, fixture_counts={}, complete=true, successful=false, changed_during_run=[], 관측 exit 1, 공식 1570.4초/외부 1580.437초다. skipped_subtests와 not_run 행은 없다. t4_adapter.complete/tests_complete=true·problems=[]이고, 61 worker의 run/request/source_sha256/source_after·게시 파일 SHA·실제 branch DB를 대조했다. adapter 5파일의 514/563행·103/142분기는 정보 보고다. 최종 919 Python SHA와 제출판이 일치하고, 정본/미러 Python·문서 1892파일의 bytes도 실행 전 기록과 같다. 변경 3쌍은 동일 bytes, Python 2쌍은 동일 AST다. 최종 공식 build_skill_mirrors.py --check는 1382파일 drift 0·exit 0이다. 원 출력 2881파일/58423223bytes의 복사 SHA를 확인했다. 변경된 timings-t3 2파일은 공식 restore로 baseline bytes에 복원했고 실제 변경은 보고한 6경로뿐이다. 공식 runner/JobsContract의 종료 장벽을 소비했고 기록한 runner 4PID와 직접 자식의 최종 OS 조회는 0건이다. 전체 일반·최종 fresh T3·전체 변이·미러 T4·T5·유료 호출·환경 설치는 실행하지 않았다.",
+  "findings": [
+    "evidence/judgment.md·verification.json, a/fix/fix2/b-execution.json과 각 audit가 원실패·중간 수리·최종판을 구별한다. t4-a/t4-fix/t4-fix2/t4-b에 원 report/stdout/stderr·worker report/request·branch DB·adapter-measurement manifest를 보존했다. raw-files.json은 원 경로·사본·SHA를 연결한다. 서로 다른 판본의 부분 성공을 전체 성공으로 합산하지 않았다.",
+    "남은 error는 LakeEnvironmentTests.test_lake_search_paths_are_observed_once_per_unchanged_project_input다. 시험이 formal.toolchain_root()/portable_bin에서 찾는 자기 workspace/.skill-workspace/do-math-toolchains/.../bin/lake.exe가 없고, formal worker의 CreateProcess가 WinError 2로 실패했다. 명시한 기존 실제 lean.exe는 SHA 10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810·83968bytes이며 실제 compiler 시험은 통과했다. compiler 존재를 Lake/Mathlib 준비로 확대하지 않는다. 다음 직접 범위는 별도 실제 Lake 입력/경로를 준비·연결한 그 1선택이다. 다운로드·설치·신뢰 승인·호스트 정책 변경·symlink/WSL 재probe는 하지 않았다.",
+    "기존 skipped 2건은 SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences와 test_exact_baseline_two_worker_raw_union이다. SHARED_INPUT_BASELINE_SCRIPTS가 미지정이며, 수리 전 실제 scripts 판본을 요구하는 원 skipUnless를 그대로 소비했다. 현재판 사본이나 임의 구판을 과거 기준으로 꾸미지 않았다. 정확한 과거 입력이 제공되면 이 2선택이 다음 직접 범위다. 새 skip·단언 약화·모집단 축소는 없다.",
+    "mutation fixture의 새 Git은 시험 소유 외부 scratch의 실제 빈 commit이다. 원래 기준에 없는 subject를 검사하는 의미와 실제 mutation/정상 child, 오류·skip·fixture·비정상 exit·다음 witness 및 CLI/T3 판정 단언을 유지한다. 제품 runtime과 mutation 실행기 구현은 변경하지 않았다. bootstrap 시험은 scheduled_operator.execute의 {**result, startup} 반환을 두 게시 레코드와 정확히 연결하며 live/설치/runtime 신원도 단언한다.",
+    "측정의 repository_root 계약 때문에 독립 .git을 자기 workspace에만 준비했다. 시작 2773파일 중 생성 측정 10파일을 뺀 2763blob이 시작 bytes와 일치한다. 전후 제품 bytes 변화 0·remote 없음·HEAD f305cfb2c18b79a6924facb8c7b07f8fba4f5b38을 기록했다. 기존 Git ceiling을 보존하고 자기 부모/외부 root를 추가했으며 Git 없는 짧은 임시 root의 Git 탐색 실패를 확인했다. 최종 설치 탐침 worker021은 실제 child의 cwd=설치 snapshot/scripts를 단언해 통과했다. runner 종료 장벽과 기록한 PID 부재를 확인했으며 전호스트 자원 감사를 주장하지 않는다. 외부 output과 raw evidence는 의도적으로 보존한다.",
+    "사용자 저장범위/A22에 따라 기존 codec·검증 게시·업무 보장을 재사용했고 가족별 quota나 장기 감사를 추가하지 않았다. T4 runner 지원 self-test의 자식 측정은 T3 분모/색인에 합산하지 않는다. 최종 1570.4초는 소프트 300초 기준 초과로 남기며 자동 종료나 기준 완화는 없다. 미러는 공식 변환과 bytes/AST 일치에 따라 이 실행을 재사용했다. canonical source_repo·다른 task·engine·공용 문서/queue/state·graphify는 수정하지 않았다. 전체 G7·L01·실지원 quota/복수 result/역할 동적 schema 및 기존 환경 6arc/10행·최종 G4/G5/G6/G8의 별도 남김은 유지한다."
+  ]
+}

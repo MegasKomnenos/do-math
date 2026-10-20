@@ -1,0 +1,28 @@
+{
+  "status": "partial",
+  "summary": "실행 저장 계약의 미생산 최상위10슬롯(pid/conversation_id/finished_at/workspace/parent_execution_id/profile_ref/submission_check/started/currentness/integration_id)을 제거해 required8+optional84=92필드로 맞췄다. governance의 미생산 session별칭 소비와 recovery-material의 dead 부모조건을 제거하고 실제 새 provider 요청·명시 continuation의 현재 독립성 규칙을 유지했다. StorageExecutionPairTests를 공통 contracts.pairs.assert_pair에 연결했다. 실제 준비/호출/봉인결과·unsealed 반려 원문·maintenance 보관/종료·live-review 정지/recovery의 검증 저장과 별도 load·옛head 단언을 보완하고 정본7/미러7을 함께 갱신했다. 원102행 각각의 현재 producer/receiver·심볼/SHA·정확ID·제거/범위한정근거/남김을 evidence/execution-fields.json에 기록했다. 제거10·범위한정근거73와 달리19개는 독립 기대값과 실제 저장 원판본의 결박이 남으므로 executions 전체 역방향 완료는 보고하지 않는다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/governance.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_checker_lineage.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_provider_stored_executions.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/governance.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_checker_lineage.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_provider_stored_executions.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "자기 workspace 공식 run_tests.py --jobs 1의 final-related:34선택=34고유실제row·34passed·관측exit0·49.1초(structure3/unit25/contracts6), complete/successful=true·fixture_counts={}·changed_during_run=[]·901Python SHA 제출판 전건 일치다. 제거10필드의 정확 additional-properties 반려/입력·옛head불변과 뒤 정상저장, 두 provider 실제 runner/worker 전달 argv의 fresh invocation 및 session재개입력 반려, 실제 공개해석의 stored checker/hash·기존 continuation/context 구별, 새 실제 저장 대표를 확인했다. 소프트초과17개와 최초 pid 허용 재현/그 뒤 head-conflict 연쇄, 오류경로 끝 slash 및 새 fixture의 charter/role-output/봉인ref/staging경로/전이 오류와 각 별도 교정판을 원보고에 보존했다. 서로 다른 판본 counts를 합산하지 않았다. 이전 storage-execution이 지정한 여섯 raw report/정확71row·보고SHA·현재파일SHA를 대조하고 B129 전체 unsuccessful를 유지했다. 공식 mirror build exit0 및 관측 timing 보존/own base 복원 후 check exit0·1364파일 drift0·7쌍bytes동일·허용writes 밖변경0이다. 제품 저장/engine/validator는 실제, 외부 Git/clock/Jobs/CLI/host/scheduler는 기존 포트 대역이다. 전체일반/freshT3/변이/T4/T5/실외부는 실행하지 않았다. evidence/judgment.md와 verification.json에 실제 범위·판본·초기오류·한계를 구별했다.",
+  "findings": [
+    "F1 세 필드의 결정: pid는 launch_ticket/capacity.process의 중첩 신원, execution 종료는 ended_at이다. conversation_id와 provider_session_id의 실행최상위 생산/worker 재개입력은 없으며 실제 Codex exec --ephemeral/Claude print --no-session-persistence와 명시 continuation의 논리 독립성을 직접 확인했다. native session ID 원문은 stream에 보존하며 runtime.conversations 사용자 임대와 섞지 않았다. 구판 alias/default/필드복제/검사예외는 없다.",
+    "나머지 제거7개는 workspace/parent_execution_id/profile_ref/submission_check/started/currentness/integration_id다. integration_id는 private bundle 후보의 일시 routing필드이며 검증/게시 전에 pop된다. durable bundle ID는 integration_result/result_disposition에 남는다. 실행자료 전달 경계 밖 제품은 정리하지 않았다.",
+    "미완료19개: academic_requirements_sha256/delegation_input_sha256/input_solution_basis/input_basis/additional_audit_input/output/runner/operational_continuation/pending_operational_disposition/preserved_reason/failure/error_kind/usage_segments/model_usage_reported/usage_scope/reported_models/observation_fact_sequence/observation_rules/stop_reason. 현재 실제 생산자는 field table에 정확히 연결했으나 해당 의미의 독립 expected값·검증 저장/load·정확 원보고판본을 모두 결박하지 못했다. 다른 record의 같은 이름·runner-only 성공·직접 보충 fixture·optional 부재 일치를 완료 근거로 승격하지 않는다.",
+    "73행의 새/재사용 근거도 대표 분기와 보존 성질에 한정된다. basis/metrics의 실제 수신값 비교를 모든 비빈 의미 분기로 넓히지 않는다. 새로 모든 필드를 한 객체에 채운 fixture나 범용 registry를 만들지 않았다. producer 심볼/행·파일/AST SHA와 관련ID는 evidence/execution-fields.json에 있어 최종 fresh T3가 소비할 수 있으나 전체쓰기분기 도달0을 측정한 것은 아니다.",
+    "초기 실패·새 시험 오류와 final34passed는 evidence 아래 별도 보고에 불변 보존한다. 전체 R01/1-A/1-B/K-78·다른원요구/K/P2·G4~G8·L01/Windows1314·최종review는 종결하지 않는다. canonical source/context/plan/seams/queue/state, 다른task, engine, Git index, graphify와 기존연구는 불변이며 통합/수용은 manager가 판단한다."
+  ]
+}

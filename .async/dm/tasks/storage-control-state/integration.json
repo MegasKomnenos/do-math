@@ -1,0 +1,13 @@
+{
+  "task": "storage-control-state",
+  "files": [
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py"
+  ]
+}

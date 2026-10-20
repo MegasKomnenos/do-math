@@ -1,0 +1,13 @@
+{
+  "task": "keep-rejections",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/support/port_contracts/git_backend.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_port_git_backend.py",
+    ".claude/skills/do-math/scripts/tests/support/port_contracts/git_backend.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_port_git_backend.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_operator_rules.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_operator_rules.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_port_git_backend.py",
+    ".claude/skills/do-math/scripts/tests/boundary/test_port_git_backend.py"
+  ]
+}

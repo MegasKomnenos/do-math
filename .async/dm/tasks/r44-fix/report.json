@@ -1,0 +1,32 @@
+{
+  "status": "complete",
+  "summary": "F1/F2를 기존 readiness/knowledge/core owner에서 수리했다. 같은 target·task revision·contract hash의 미종결 검토는 정책/외부 근거 변화로 중복 개설하지 않고 ended 뒤 최신 전체 근거로 후속을 연다. knowledge.basis_record를 capture/validate와 goal key가 공유해 지식의 검토 일정 ID와 변경 가능한 네 가족의 최상위 관리 이력만 근거에서 제외한다. 내용·판본·참조/출처·시각·수락/사용 효력·검증/신뢰·봉인 판정 전체와 필요한 모집단은 보존한다. 정확 저장/봉인 hash와 영향 계획은 바꾸지 않았다. 정본9·공식 미러9파일을 수정했으며 5-A 조사에서 남긴 두 구현/직접검증 남김을 해소했다. 최종 통합판 연결과 다른 요구의 완료는 별도다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/knowledge.py",
+    ".agents/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_goal_audit.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_close_currentness.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_goal_audit.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_close_currentness.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_io_contracts.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "공식 workspace run_tests.py --jobs 1로 red-valid 4failed/1error·exit1, 유효 goal 생산자로 교정한 goal-producer-red 1failed·exit1을 확인했다. focused-final은 34passed/2error/1failed·exit1이며 IA immutable 입력·없는 history·정책 결정 뒤 교체 전 execution 참조의 시험 오류를 고쳤다. corrected-final 3passed·exit0 뒤 두 비용 docstring과 미러를 맞춘 submission-final은 7selected/7고유 실제passed·exit0, 30.5초다. 마지막888Python SHA가 제출판과 전부 같고 모든 실행의 fixture_counts={}·changed_during_run=[]이다. 앞 판본의 passed를 단일 성공으로 합산하지 않는다. 실제 등록·user policy 결정·running/stopping/ended, 유효 cycle 생산/실제 저장-reload, 실제 goal 수락/slot/재시작/내용 및 사용중단 재판정, 관계 endpoint와 call stop을 직접 확인했다. 기존 불변 소비와 r41 owner는 코드/AST로 확인했다. 공식 mirror build 생성0/갱신9/삭제0 및 check drift0·1351파일·exit0, 9미러쌍bytes/18writes/AST parse와 두 timing own-base복원을 확인했다. 소프트 초과는 unit0.438초/0.2, goal4.938초/2, 기존population-stop2.047초/2이며 실제 저장/재시작 의미를 유지했다. 각 판본/초기 실패/준비 오류·원보고SHA·선택/실제row·비용·한계는 evidence/verification.json과 review.md에 있다. 실모델/Lean/HTTP/실OS예약·전체일반/T3/변이/T4/T5는 실행하지 않았다.",
+  "findings": [
+    "F1 완료 | lifecycle._refresh_readiness의 live_review는 target와 contract_edition={revision,contract_sha256}만으로 미종결 실행을 식별한다. 결과의 contract_review_current와 queue/blocked_review 및 종료 뒤 후속은 full goal/policy/input key를 계속 소비한다. 실제 정책 결정으로 revision/hash가 그대로인 채 policy/key를 바꾸고 running·stopping 각각 추가요청0, 다른target1·원action불변, ended뒤 최신key1과 반복불변을 확인했다. 계약내용/revision-only 변경은 별도 개설을 직접 확인했다. core._enqueue 및 원 활동/대기 책임은 수정하지 않았다.",
+    "F2 완료 | knowledge.basis_record는 knowledge/formal_results/expositions/assessment_uses의 최상위 history/use_history와 KN의 review_cycle_id/previous_review_cycle_id만 제외한다. 그 밖의 내용·revision·source/origin·시각·lifecycle/publication/formal_use·AU.status·verification/trust와 미지 필드를 보존하며 IA는 review-cycle 증거 좌표를 포함한 전체를 보존한다. capture_basis/validate_basis의 {id,sha256,status} 계약과 goal key의 가족별 전체ID/환경/활성ID가 이를 공유한다. exact_content_hash/_hash/record_digest와 frozen artifact·영향계획의 exact identity 및 좁은 decision_reference/제출 assessment_basis는 그대로다.",
+    "실제 소비 근거 | governance_engine._apply_governance_goal_audit→record_basis→knowledge_engine._invalidate_goal_currentness는 관리 변경 뒤 수락/solved/current/slot을 유지하고 내용 및 실제 AU use suspension 뒤 unsolved/research_plan으로 전환했다. knowledge_io.import_candidate→relation_endpoint_basis→knowledge_records.record_premises_current는 관리history 안정/title변화 반려를 확인했다. 실제 _start_identity_review의 새 검토ID 생산은 goal key를 바꾸지 않고 call harness의 history만 게시는 stop을 만들지 않으며 content/new-record 모집단 변화는 stop을 만든다. research_insights의 원snapshot capture/현재validate 소비는 정적 확인으로 충분해 추가 여정을 실행하지 않았다.",
+    "선행·재사용 | input-review.json에서 r44-r46의56파일과 own base를 대조했다. r41이 바꾼 관련 core._register_execution/_apply·task_scope.apply_task_assessments를 다시 읽었으며 이번 diff는 이 함수를 바꾸지 않는다. machine 성공후resume/같은거부 보존·계약반려 owner·원 reason/basis와 학술 전용 준비를 유지한다. B74 인용/tuple, B75 완료/직접판정, B76 trust inventory, B77 준비/현재성-only routing과 r31-fix 지급source의 충분한 성질은 조사 근거를 재사용하고 새 실행으로 주장하지 않는다. 5-A의 유한 의미 남김 F1/F2는 해소됐고 최종 동일 통합판 관문 연결은 남는다.",
+    "r49-startup 인계 | 변경 제품심볼은 knowledge.basis_record/capture_basis/validate_basis, core._goal_basis_key, lifecycle._refresh_readiness다. goal stop 시험에 history-stable/content-stop을 추가했고 shared 이음새 설명 두 행을 갱신했다. clock/시간·시작후polling·terminal 흡수·기동/operator 기능은 수정하지 않았다. 정확 좌표/해시는 verification.json files.changed_symbols를 따른다. 공용소스/문서/queue/state·다른task·engine·Git index·graphify·기존 연구 운전은 수정하지 않았으며 다른 원요구/보존/P2·G4~G8·L01/Windows1314는 별도다."
+  ]
+}

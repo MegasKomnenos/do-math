@@ -1,0 +1,218 @@
+{
+  "status": "active",
+  "date": "2026-10-03",
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pl6xvsy3\\report.json",
+      "sha256": "a6a36afc548fcdface6f7aaaa4c8e078016f6a9cad43dfbac4890b53d3f1b40f",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 82
+      },
+      "seconds": 65.1,
+      "changed_during_run": [],
+      "closing_eligible": null
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-wx3xqsqe\\report.json",
+      "sha256": "cc37c5c502734f76b3fa15ba730a2676f2755bd5c0d563750b11532e5b409ef2",
+      "complete": true,
+      "successful": false,
+      "counts": {
+        "error": 1,
+        "failed": 1
+      },
+      "seconds": 0.0,
+      "changed_during_run": [],
+      "closing_eligible": null
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-t50nrsnw\\report.json",
+      "sha256": "3e8bfd9d2991b1a1bbcbf244d10d28cf12b5170e10635c84e8aeabc5dd231044",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 57
+      },
+      "seconds": 11.3,
+      "changed_during_run": [],
+      "closing_eligible": null
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1tiu8u7x\\report.json",
+      "sha256": "fd684e6b5b6bdbdaa36cc3a063ce562bf1d1eedfd82a4fe8ceaa1e6ea2d65d5f",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 94
+      },
+      "seconds": 125.2,
+      "changed_during_run": [],
+      "closing_eligible": false
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jxvt_abx\\report.json",
+      "sha256": "4a2cd870290ec61ea7ae9562bbaeb645901dee26dad4d3d18a601d7c49d40326",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "expected_failure": 1,
+        "passed": 2
+      },
+      "seconds": 154.0,
+      "changed_during_run": [],
+      "closing_eligible": null
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-y12rtca_\\report.json",
+      "sha256": "f4a7e3d123a97b643be51e2c7d5f77c3b13ffb34b020335f3ab067346d3d05c0",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "expected_failure": 1,
+        "passed": 2
+      },
+      "seconds": 120.8,
+      "changed_during_run": [],
+      "closing_eligible": null
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q5653ysx\\report.json",
+      "sha256": "2801ac0b8e747cf334f1aa6dd15ae2946f786fb1fd7b23b46571130022d48474",
+      "complete": true,
+      "successful": true,
+      "counts": {
+        "passed": 8
+      },
+      "seconds": 103.2,
+      "changed_during_run": [],
+      "closing_eligible": null
+    }
+  ],
+  "exact_original_mutant_probes": [
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_role_profile_references",
+      "rule": "return_first",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0003\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust (family='role_profile_refs')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_lifecycle_references",
+      "rule": "return_first",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0004\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust (family='lifecycle')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_event_queue_references",
+      "rule": "return_first",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0005\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust (family='pending_events')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_trust_binding_references",
+      "rule": "return_first",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0008\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust (family='trust_bindings')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_immutable_input_rules",
+      "rule": "pass",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0011\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_cold_lifecycle_validation_checks_original_bytes_and_current_projection"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_cold_lifecycle_validation_checks_original_bytes_and_current_projection"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_capability_evidence_rules",
+      "rule": "pass",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0016\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_capability_and_import_seals_reject_damage_before_publication"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_capability_and_import_seals_reject_damage_before_publication (reason='capability evidence ID differs from its content')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "_intent_import_rules",
+      "rule": "pass",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0017\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_capability_and_import_seals_reject_damage_before_publication"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_capability_and_import_seals_reject_damage_before_publication (reason='sealed intent import hash mismatch')"
+        ]
+      }
+    },
+    {
+      "module": "do_math/record_schemas/__init__.py",
+      "function": "validate_lifecycle",
+      "rule": "pass",
+      "mutant": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-goal-schema-expanded-jgvca2xl\\mutant-0019\\mutant.py",
+      "tests": [
+        "unit.test_producer_record_storage.SchemaIngressTests.test_cold_lifecycle_validation_checks_original_bytes_and_current_projection"
+      ],
+      "returncode": 0,
+      "result": {
+        "failing": [
+          "unit.test_producer_record_storage.SchemaIngressTests.test_cold_lifecycle_validation_checks_original_bytes_and_current_projection (reason='current lifecycle contract: the lifecycle and the runtime status are required')"
+        ]
+      }
+    }
+  ],
+  "probe_sha256": "201f639c5ef7c98773fce89f4185fbcece3242d8db4886bb88be10b7f9b166fc",
+  "running_mutation": "C:/Users/wogud/AppData/Local/Temp/do-math-goal-schema-final-ew5xkwl4",
+  "stage1_closed": false
+}

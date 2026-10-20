@@ -1,0 +1,23 @@
+{
+  "task": "r37-r38",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/sim/test_storage_status_reporting.py",
+    ".agents/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".claude/skills/do-math/scripts/do_math/reporting.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_activity_guards.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_action_authority_waits.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".claude/skills/do-math/scripts/do_math/activities.py",
+    ".agents/skills/do-math/scripts/do_math/reporting.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_waits.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_action_authority_waits.py",
+    ".claude/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_waits.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_storage_status_reporting.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_activity_guards.py",
+    ".agents/skills/do-math/scripts/do_math/activities.py"
+  ]
+}

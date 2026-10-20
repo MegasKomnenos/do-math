@@ -1,0 +1,23 @@
+{
+  "task": "g5-trust",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".agents/skills/do-math/scripts/do_math/review_engine.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_trust_branch_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/knowledge.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_knowledge_revision_and_trust.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_knowledge_formal_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/trust_branch_inputs.py",
+    ".claude/skills/do-math/references/지식-저작과-재사용.md",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/support/trust_branch_inputs.py",
+    ".agents/skills/do-math/references/지식-저작과-재사용.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_revision_and_trust.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_trust_branch_contracts.py",
+    ".claude/skills/do-math/scripts/do_math/review_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".agents/skills/do-math/scripts/do_math/knowledge.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/sim/test_knowledge_formal_engine.py"
+  ]
+}

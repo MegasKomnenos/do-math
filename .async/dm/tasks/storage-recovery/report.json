@@ -1,0 +1,25 @@
+{
+  "status": "complete",
+  "summary": "복구/운영 처분/정비 fence/모델 위반 네 저장 가족의 실제 생산·검증 Repository 게시·새 installed_contract reader 첫 decode·원내용/닫힌 필드 대응을 마쳤다. 정산 미확정 복구에서 artifact 참조만 게시하고 bytes를 빠뜨리던 결함과 운영 처분의 대상 실행 참조 검사 누락을 재현·수리했다. 실제 미생산 중첩 disposition/root applied_at·error 세 슬롯을 정리하고 기존 권한·현재성·종료/예약·원owner·명시 resume 성질과 열린 EVIDENCE를 보존했다. 직접시험/helper·설명·공식미러를 함께 반영한 정본6/미러6 변경이다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_recovery_pairs.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_recovery_pairs.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_recovery_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_recovery_pairs.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "자기 workspace 공식 run_tests.py/jobs1 final-related는9선택=고유 실제9passed·관측exit0·108.9초, fixture_counts={}·changed_during_run=[]이며912 Python SHA가 제출판과 전건 일치한다. recoveries11/operational_dispositions9/proposal17/fence8 명명필드는 기존 Pair/assert_pair/_named_fields에서 missing=[]이고 세 실제 optional 추가 반례를 검출했다. 열린 model marker는 빈 역방향 대신 원결과/배정·중첩격리·paused/종결·cold restart/명시 resume 제거로 확인했다. 정확 제거슬롯·타입/참조/키 반려/write0/head불변·손상 cold read·원파일/checkpoint bytes·중간 필드부재/순서/이전head를 검사했다. 최초 준비/기대 오류와 세 슬롯/참조/artifact 실제 red·교정판은 verification.json/각 원보고에 보존하며 판본 성공을 합산하지 않는다. 소프트초과8개를 보존했다. 공식 mirror build/check 관측exit0/0·1375파일 drift0·6쌍bytes동일·변경Python10 AST유효, 비용캐시2개 관측보존 후 own base복원을 확인했다. 실제 외부호출·전체일반/freshT3/변이/T4/T5·설치/OS예약은 미실행이다.",
+  "findings": [
+    "evidence/judgment.md·families.json은 원 네 root/family의 현재 shape/schema·필수/선택/닫힌중첩 전체와 실제 저장branch·독립기대값·정확test ID를 연결한다. producer-symbols.json의30 writer/receiver/소비 심볼은 source/AST SHA와 원task 사본 비교를, historical-reuse.json은10개 원보고판본을 보존한다. final-related/pairs.states.json.gz와 pairs.json은 실제 cold 상태와 Pair 관측이다.",
+    "복구 finished_at은 순회 완료이고 원격 종료·예약 전부 정산이 아니다. queued+held 및 launch-without-capacity는 명시 복구경계 입력 fixture이며 정상 atomic acquire의 자연 발생 writer로 세지 않는다. 그 입력에 대한 실제 복구 출력과 artifact 게시를 확인했다. all-writer branch 도달/final integrated edition은 fresh T3·최종review에 남긴다.",
+    "운영 제안은 기존 validate_disposition→contracts.disposition_schema 정본을 소비하고 disposition/result EVIDENCE를 임의로 닫지 않았다. 실제 observation/self-check obligation·봉인 user/repair 검토와 기존 source-authorized 과제 처분, continue/retry/resume·checkpoint/종료장벽·후속1회·원owner를 연결했다. incomplete는 assessment decision, 과제 status는 waiting이라는 현행 의미를 유지한다.",
+    "기존 실제 파일수리의 권한/판본·현재성·미확정효과/계수와 r49-startup의 독립 설치/원provider, execution-storage의 소수 보존은 현재 원문/불변 심볼로 재사용한다. 새 모델/OS/외부 성공으로 확대하지 않는다. source_repo·공용 맥락/queue/state·다른task·engine·Git index/graphify는 수정하지 않았다. 나머지 원84/관찰4/다른원요구/K/P2·G4~G8·L01/Windows1314·최종review는 범위 밖이다."
+  ]
+}

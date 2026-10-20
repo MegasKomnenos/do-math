@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "summary": "held 응답 전체를 outcome만 있는 dict와 비교하던 F1을 현행 startup 반환·게시 계약으로 수리했다. 실제 frozen check/run-engine/wake의 정확 출력과 startup.json, manifest snapshot·원 설치·runtime 경로·독립 설치/Git 관측·UTC 시각을 함께 검사한다. 직접 smoke·지침·공식 미러까지 정본3/미러3을 갱신했고, 지정된 예약 T5 한 선택을 실제 Windows에서 한 번 실행해 통과했다. HOLD 유지·자기 세 예약 발화와 해제·자기 프로세스 부재를 확인했다. 배정은 complete이며 전체 G7/G8 또는 연구 엔진 운전 성공은 아니다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md",
+    ".claude/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md"
+  ],
+  "verification": "공식 python -u -B scripts/run_tests.py --tier T5 smoke.test_scheduler_live.SchedulerLiveTests.test_held_pythonw_tasks_start_wake_and_uninstall --jobs 1 --output C:/g7s-e3ed497b/o를 자기 workspace/.claude/skills/do-math에서 실행했다. 선택1=고유 실제1행 passed, fixture_counts={}, complete/successful=true, changed_during_run=[], runner native exit0·worker returncode0, 공식101.8초/외부106.809초다. 919 Python SHA가 제출판과 일치하고 원 output396파일·snapshot291파일을 evidence/t5-output에 보존·SHA 대조했다. 설치 XML/action/cwd/principal/interval과 새 ticks/결과0, 직접 start 없는 wake 시각 발화·PID 한 관측을 확인했다. 마지막 status/inspect 세 null·자기 pythonw0·cleanup.errors=[]·HOLD bytes 불변·연구/engine/recovery 미생성을 확인했다. 직접 세 held 출력은 게시 startup 전체와 일치하며 옛 predicate로는 모두 false인 정적 반례다. 정본/미러 공식 변환3쌍·Python AST2쌍 일치, 최종 build_skill_mirrors.py --check는1382파일 drift없음·exit0이다. .timings 관측은 보존 후 base 복원했다. OS task stdout·모든 역할 PID·연구 실운전·전체 T4/G4~G8은 이 확인 범위가 아니다.",
+  "findings": [
+    "evidence/judgment.md와 verification.json이 F1 이유·현재 caller·실행/정리·한계를 연결한다. execution.json/runner 원바이트, raw-files.json의396개 원경로/사본SHA와 t5-output의 공식 report·ownership/requests·snapshot/manifest·before/after/cleanup을 인계한다. 원 외부 output도 보존했다. 출하 corpus의 기존 bytes/의미는 유지했다.",
+    "자기 세 OS task DoMath-Operator/Engine/Wake-9041de37211f는 시작 부재 확인 후 생성했고 최종 모두 해제됐다. 마지막 자기 프로세스0·cleanup 오류0으로 후속 OS 정리 행동은 없다. operator/engine/wake는 각 미실행 ticks에서 새 ticks로 바뀌고 Ready/exit0이다. wake에는 직접 start 요청이 없다.",
+    "서비스 시각-요청 차이는 operator -11초/engine -21초/wake +2초로 원값을 보존했다. 원인은 미확인이고 시각 보정이나 지연 보증으로 쓰지 않는다. wake PID24900/parent1604만 관측했으며 모든 역할 PID로 확대하지 않는다. Operational 로그 disabled·OS task stdout 미관측은 유지한다.",
+    "직접 child는 독립 부모 관측과 같은 source_status=unavailable/source_commit=null이다. 마지막 OS live wake는 상위 C:/math를 source_repository로 관측했으나 source_tree=null·no subtree 사유로 unavailable/null commit을 유지했다. OS 서비스의 환경 상속을 추정하지 않았고 상위 commit을 자기 설치판으로 사용하지 않았다. 실제 설치 bytes 신원과 source 관측의 한계를 구별한다.",
+    "미러는 공식 생성기/변환과 동일 Python AST·입력/경로 계약으로 이번 실제 실행을 재사용했다. 준비 보조 script 두 중지는 overlay 누락 및 exit 예상 오류였고 OS/공식 시험 실패가 아니다. 공식 시험은 성공한 정확1선택 한 실행뿐이며 반복·전체 T5·유료/Lean/학술·권한/정책 변경은 없다.",
+    "제품 runtime/PS/bootstrap·공용 context/plan/seams·canonical source_repo·동료 사본/결과·queue/state·기존 연구·graphify는 수정하지 않았다. 사용자 저장범위/A22의 기존 보장 재사용을 유지하고 전가족 quota나 장기감사를 추가하지 않았다. 최종 전체 T4/G4/fresh G5/G6·나머지 G7/L01/원자료·G8은 별도 후속이다."
+  ]
+}

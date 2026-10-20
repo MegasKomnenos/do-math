@@ -1,0 +1,32 @@
+{
+  "status": "partial",
+  "summary": "R37/R38와 4-A/4-B/13-B의 지정 행동22·활동33·저장 과제5종 및 PR10 B28/B32/B78/B79를 현재 producer/resolver/정확 단언·원보고와 대조했다. activities.resume_activity의 1/True·0/False/nested 조건 혼동 F1은 기존 canonical.same_json_value 정본을 사용해 수리했다. 활동의 사람 보고에 저장 해소 조건 JSON을 표시하고 실제 action owner의 활동 조건·담당자·좌표·조회 독립성 단언을 공통 wait_reporting helper에 연결했다. 실제 권한 대기의 restart·무관 grant·정확한 후속1개와 해소 후 표시 부재, 실제 review 입장 권한 반려/재승인/같은 owner/회계/재전달, publication 표시·재시도 불변을 보완했다. formal_authority는 실제 생산 기록을 소비하게 고쳤고 다른 constructor 주입 사례의 한계는 보존했다. 읽기 전용 core_engine/review_engine의 실제 F2 및 아직 연결되지 않은 owner별 의미 성질이 있어 배정 전체 완료로 보고하지 않는다. 상세 판단은 evidence/review.md와 wait-matrix.json이다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/activities.py",
+    ".agents/skills/do-math/scripts/do_math/reporting.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_waits.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_action_authority_waits.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_storage_status_reporting.py",
+    ".agents/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_activity_guards.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_wait_contract.py",
+    ".claude/skills/do-math/scripts/do_math/activities.py",
+    ".claude/skills/do-math/scripts/do_math/reporting.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_waits.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_action_authority_waits.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_formal_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_storage_status_reporting.py",
+    ".claude/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_activity_guards.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_wait_contract.py"
+  ],
+  "verification": "workspace 공식 run_tests.py/jobs1: focused-1은19선택/19고유passed·관측exit0·18.9초, review-final은4선택/4고유passed·exit0·0.8초, consumers-final은11선택/11고유passed·exit0·136.5초다. 모두 Python SHA887·fixture_counts={}·실행 중 변경=[]이며 consumers-final은 제출판 SHA 전건 일치. 앞19개는 제출판과 검토/publication 시험2파일만 다르고 review-final은 publication 시험1파일만 달라, 불변 runtime/helper/선택시험 근거를 재사용한다. 단일 최종판34passed로 합산하지 않는다. verification.json에 exact selected/rows/SHA/budget, execution-results.json에 관측exit를 보존했다. review-1의 status instance.id 없는 layer2 fixture1error, review-2/3의 불완전 선행 owner/단언 실패를 구분해 교정했고, 실제 admission·입력·종료 owner로 재현한 review-owner-red의1failed/exit1과 reported SHA 일치 reproduction.py를 F2 근거로 보존했다. 소프트초과 focused formal7.563초/2초, final review0.485초/0.2초, consumers import11.969·preparation15.735초/2초 및 storage0.234초/0.2초는 원보고에 유지한다. 과거23원보고경로를 직접 조회해2존재/21부재를 기록했고 B78의 whole unsuccessful3909passed/5failed/1skipped와 B79의92passed 중 지정 exact row를 대조했다. 과거 counts를 현재 성공으로 전환하지 않았다. 정적 current AST로 task stored waiting5종과 runtime 변경함수 resume_activity/render_waiting_activities 두 곳을 확인했다. own base 대비18변경 전부writes안·정본9/미러9 byte일치, 공식 mirror build/check exit0·1350파일 drift0. 타이밍 캐시2개는 관측본 보존 뒤 own base로 복원했다. 전체 일반/freshT3/변이/T4/T5·외부 모델/실제 Lean/예약·미러 시험 반복은 하지 않았다.",
+  "findings": [
+    "F1 해결 | resume_activity는 exact JSON 조건의 boolean/integer 및 nested 정체성을 구별한다. 다른 owner·원상 보존·재해소 반려를 실제 API 최소 입력으로 확인했으며 새 schema/호환 분기를 추가하지 않았다.",
+    "F2 미해결·허용 범위 밖 | 실제 review_authority 입장 거부의 activity.condition은 core_engine.CoreEngineMixin._register_execution이 raw admission(disposition/authority)으로 저장한다. review_engine.ReviewEngineMixin._authorize_review_replacement→_release_review_wait는 recovery.slot 또는 action_ids 조건만 인식해, 정확 재승인 후 행동 대기는 해소/후속1개지만 activity는 waiting/next=governance로 남는다. 다음 실제 등록은 원owner를 유지하고 activity wait를 해소하므로 영구 착수 차단이라고 확대하지 않는다. 두 owner 함수의 exact slot/action 조건 생산·소비 수리가 필요하다. evidence/review-owner-red/reproduction.py의 ready assertion과1failed/exit1/동일SHA가 유효 재현이며 초기 owner 없는 fixture 실패와 구별한다.",
+    "증거 수준과 남김 | wait-matrix.json은 action22/activity33/stored task5종의 현재 source/resolver/정확 시험ID와 remaining을 연결한다. common API/constructor 표시33건은33실제owner 해소 증거가 아니다. formal_environment/formal_stopped 가족은 사후 kind 주입, review restoration 가족도 constructor 삽입이다. revision_dependency 전exit/표시, extra 활동 machine/provider/trust/external/resource/recovery 전이 및 task5종의 전체 조건전후 연결을 닫지 않았다. 읽기 전용 owner를 대역이나 허용 모듈의 임의 자동해소로 우회하지 않았다.",
+    "PR10 slice | B28 d3700755의 waiting work/task 전값·deferred target·별도 knowledge 수신/restart 성질은 현재 코드/단언으로 유지, 원Temp7개 부재. B32 e26c159d의 등록·constructor·좌표 투영은 유지하되 주입시험의 실제진입 과대해석을 교정/보완, 원Temp10개와 impact-read4개 부재. B78 fc11770b는 typed wait/최근5개 밖 표시를 유지·조건비교/사람조건표시 추가. B79 b0e0b59a는 stored assessment wait와 readiness의 실제 owner/좌표/detached 표시를 유지. 과거2raw 전체SHA는 현재와 달라 최종판 실행으로 재사용하지 않는다.",
+    "범위 보존 | r29-r30의 execution_failure/native re-receive·원결과/봉인/owner/종료 및 r06/r12/r22의 null/저장/입장 의미를 변경하지 않았다. 진행 중 r31-fix/r34-r36/structure-finish의 사본·API를 소비하거나 수정하지 않았다. PR10 전체·R39~R43·G4~G8·원요구/보존/P2 전체·L01/Windows1314 및 최종 통합판 관문은 열려 있다."
+  ]
+}

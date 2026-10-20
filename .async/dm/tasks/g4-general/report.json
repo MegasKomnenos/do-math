@@ -1,0 +1,19 @@
+{
+  "status": "partial",
+  "summary": "G4는 미충족이다. 두 현행 계약과 어긋난 시험 기대값을 수리하고 정확한 실패 ID의 직접 확인 및 공식 미러 생성을 마쳤다. 생산자/중앙 양경계 검사 호출 수와 호출자를 정확히 대조하고, 운영자 startup 근거와 엔진 결과를 각 실제 저장 파일에 대조한다. 두 수리는 마지막 전체 실행 안에서도 passed다. 제출판 기본 전체 선택은 끝까지 실행했으나 여러 독립적인 저장/지급 입력 fixture, 문서/단언 연결, 비Git 사본의 측정 경계 수리가 드러나 배정의 부분 완료 조건으로 인계한다. 단언 약화·skip 추가·선택 축소·구판 호환 계층은 도입하지 않았다.",
+  "changes": [
+    ".claude/skills/do-math/scripts/tests/flows/test_submission_ingress_owner.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_submission_ingress_owner.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py"
+  ],
+  "verification": "정확한 작은 공식 선택 focused1=1passed/18.6초/exit0, focused2=1passed/10.2초/exit0. 마지막 고정판 full4는 위치/--tier/--match 없이 run_tests.py --jobs 3으로 실행했다. 최종 selected 4288=중복·누락 없는 실제 4288행이며 4262passed/14failed/9error/1skipped/2not_run, fixture error 1, complete=true/successful=false, 관측 exit1이다. 공식4892.8초/외부4897.672초, 소프트 초과740행을 보존한다. source_sha256 912Python은 제출판 전건 일치, changed_during_run=[]이다. 정본/미러 각1205파일의 전후·제출 트리도 대조했으며 실행 중 .timings.json만 변했고 evidence 보존 뒤 base로 복원했다. 공식 최종 미러 check는1375파일 드리프트 없음/exit0이다. 원 stdout/stderr·환경·UTC시각·exit·보고 byte 사본·행/판본 감사는 evidence/full4/, 전체 원자료는 C:/dm-g4-7b924e/full4/에 있다. 세 중단 실행 및 서로 다른 판본의 작은 성공을 전체 성공으로 합산하지 않는다.",
+  "findings": [
+    "판정과 부분 완료 범위: C:/math/.async/dm/tasks/g4-general/evidence/judgment.md. 원실패→두 수리→직접 확인·미러 근거는 evidence/repair.md. 마지막 전체 보고와 source/log SHA 및 행 대응은 evidence/full4/report.json·audit.json이다. 실패 전부의 fixture/subTest 상세는 evidence/failures.json, 그룹별 정확한 ID는 evidence/failure-groups.json에 보존했다.",
+    "남은 23개 failed/error와2개 fixture 미실행은 여러 독립 수리다. 저장 관리정보/복구 fixture의 폐기 필드, 운영 검토의 누락된 지급 입력, 단언 helper 연결6건, 운영자 startup 기대, 검토 continuation 계보, 문서 기호/상태 과제 대기 경계, 이행 원장의 옛ID, 반복 판본 결속, 복구 뒤 활동 상태를 현재 생산/소비 계약으로 함께 고쳐야 한다. 제안한 후속 수리를 수행하거나 검증했다고 주장하지 않는다. 새 task/공용 계획은 만들거나 수정하지 않았다.",
+    "격리 adapter meta 시험의 Git 경계는 failed3/error2/fixture error1/not_run2다. support.branch_gate.repository_root가 Git root를 강제하지만 이 workspace는 의도적으로 Git 메타데이터가 없다. 고정 원천 root/fixture 준비와 측정 계약을 함께 판단해야 한다. 상위 공용 C:/math를 자기 판본으로 사용하거나 ceiling을 해제하지 않았다. full T3 write_index의 HEAD 요구도 이 task에서 해결·실행하지 않았다.",
+    "환경 skip의 정확한 ID는 unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported이며 실제 사유는 WinError1314다. 원문은 symlink 부재/생성 OSError를 사유와 함께 skip한다. 계약상 조건부 skip지만 passed가 아니며 실제 outside_symlink 반려를 확인하지 못했다. 호스트 권한은 바꾸지 않았다.",
+    "full1은 실행 도우미의 기존 Git ceiling 누락을 확인해 명시 중단했다(evidence/environment-correction.md). 교정한 full2/full3은 확인된 실패 수리 전에 정확한 자기 root/자손만 명시 중단하고 부분 원자료·exit를 보존했다. full4는 중단 없이 종료했으며 workspace/외부temp Git 부재와 기존 ceiling 보존을 확인했다. live 도우미의 파일 공유 오류는 기존 read_bytes_shared로 교정한 증거 도구 문제이며 제품 변경이 아니다.",
+    "저장 범위 사용자 교정/A22를 유지한다. 별도 전가족/전필드 감사·새reader/옛head quota·새 검증 프레임워크를 만들지 않았다. G4 미충족이며 G1~G3/G5~G8·L01/Windows1314·실제 경계·최종 review를 닫지 않는다. 공용소스·공용 기록·다른task·engine·Git index/commit·graphify·기존 연구는 수정하지 않았다."
+  ]
+}

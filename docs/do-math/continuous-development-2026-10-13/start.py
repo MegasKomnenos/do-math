@@ -35,7 +35,8 @@ def main():
     if checked.returncode:
         return checked.returncode
     command = [sys.executable, str(engine / 'run.py'), str(repo), str(records), args.phase,
-               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"']
+               '--sandbox', 'danger-full-access', '-c', 'approval_policy="never"',
+               '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"']
     if args.check_only:
         print(json.dumps({'state': 'ready_not_started', 'repo': str(repo), 'records': str(records),
                           'codex': codex, 'command': command}, ensure_ascii=False))

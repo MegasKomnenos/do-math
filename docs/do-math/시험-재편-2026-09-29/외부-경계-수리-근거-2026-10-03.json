@@ -1,0 +1,104 @@
+{
+  "closed": [
+    "KD-0001",
+    "KD-0002",
+    "KD-0003"
+  ],
+  "open_in_repair": 32,
+  "reports": [
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qebbr391\\report.json",
+      "sha256": "0449a4c5f5064b5192ea15d107a234e67a7c4d10912d699e253888e9be5a0e46",
+      "counts": {
+        "passed": 3439,
+        "expected_failure": 20,
+        "skipped": 1
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 1193.7,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9e1q7c4_\\report.json",
+      "sha256": "aee158581e6bd64e8b59089e89ec0d0cccb0cab3decc0420e387da5568013c4f",
+      "counts": {
+        "passed": 6,
+        "unexpected_success": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 1.0,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nqiikkdd\\report.json",
+      "sha256": "c1774ab0242136b1459d62181c4992c07e341d297b0bae354f45a183bb8128d3",
+      "counts": {
+        "unexpected_success": 2,
+        "passed": 7
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 2.2,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jzow91e8\\report.json",
+      "sha256": "f6de21924da66084a4d52f805ed7b891e0001b5b2d5097ec062bd53f5c1926ce",
+      "counts": {
+        "unexpected_success": 1
+      },
+      "complete": true,
+      "successful": false,
+      "total_seconds": 1.6,
+      "changed_during_run": []
+    },
+    {
+      "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1me_z4wh\\report.json",
+      "sha256": "ca572ed12da4d987a7807dc520135fd8d75d1a46eabd1078be32584e11defd87",
+      "counts": {
+        "passed": 47
+      },
+      "complete": true,
+      "successful": true,
+      "total_seconds": 14.2,
+      "changed_during_run": []
+    }
+  ],
+  "files": [
+    {
+      "path": "do_math/file_io.py",
+      "sha256": "9f9cd7bdcb3ca17be8822c915ca90ab3689bb7d4c28fda1191c4cd2b1cd3b538"
+    },
+    {
+      "path": "do_math/codex_adapter.py",
+      "sha256": "76c86d4ea93b6c2beb7f9a289f2d98aad1c2089600617f2a08b29b6bbf1e7069"
+    },
+    {
+      "path": "do_math/formal.py",
+      "sha256": "fda6864b2489fe2e0800f6b825c1b10aca9880b46d7d7e3670701a8bdd4d19cc"
+    },
+    {
+      "path": "do_math/cli_execution.py",
+      "sha256": "cb1c1b5d432e8ad590d3de07783d70eee1cb3088ac72461c3d9d6b6fd6345c2c"
+    },
+    {
+      "path": "setup_lean.py",
+      "sha256": "5450208069e8274bad89a3424ff35ec7c36a1135c05a32b7cdd2f45d80cb1a3c"
+    },
+    {
+      "path": "tests/structure/test_boundary_invariants.py",
+      "sha256": "0266dab41b5915bf3955ded7acbfc11b91707090a01ba077f0363d92800423f9"
+    },
+    {
+      "path": "tests/unit/test_provider_close_collector.py",
+      "sha256": "6584d5ae93fc58ecceb012d4a17a1c637804ef6eb3b98cf7db1bd877e29b1ba9"
+    },
+    {
+      "path": "tests/boundary/test_file_io_lock.py",
+      "sha256": "da9d4260052b61d08059100255edea4bb4a98cbb9785cbf83431dde63ac9f9b4"
+    }
+  ],
+  "scope": "Actual lock boundary and normalizer consumers plus no-console static guard. Final T2/branch/mutation/other ledger and boundary gates remain pending."
+}

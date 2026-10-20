@@ -1,0 +1,7 @@
+{
+  "task": "r22-storage",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_storage_scale.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_storage_scale.py"
+  ]
+}

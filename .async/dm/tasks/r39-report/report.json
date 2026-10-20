@@ -1,0 +1,30 @@
+{
+  "status": "complete",
+  "summary": "R39의 질문·과제 없는 반복 보류·사용자 pause 표시 F2 세 건을 reporting의 기존 snapshot 경계에서 해결했다. 기존 question_view로 복원한 모든 open 질문의 본문/owner/사유/원문·실행 좌표/원·미해소 대상을 human에 표시하고, active_repetition_holds의 구조적 값 목록을 새 JSON repetition_holds와 human에 연결했다. user_pause blocker와 human에는 기존 저장 reason/request_id/created_at를 보존했다. 실제 owner 시험의 부분 답변·정확 계속·재전달/restart·pause/resume 전후를 보강하고 관련 설명·미러를 함께 갱신했다. 상태 저장·권한·계수·전역 blocker 우선순위는 그대로다.",
+  "changes": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/do_math/reporting.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_governance_questions.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_planning_repetition_engine.py",
+    ".agents/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/scripts/do_math/reporting.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_governance_questions.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_planning_repetition_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/wait_reporting.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "공식 run_tests.py/jobs1만 사용했다. report-red는 지정 누락의3선택/3고유 row,2failed+1error/exit1이다. related-final은8선택/8고유 row,7passed+1error/exit1이며 반복 시험의 추가 이력 단언이 kind 없는 제어 이력을 읽은 오류를 보존했다. 정확 hold의 포함 검사로 고친 corrected-final은 해당1선택/1고유passed/exit0, complete/successful=true다. 두 실행을 단일 최종판8passed로 합산하지 않는다. 각888Python SHA/fixture_counts={}/changed_during_run=[]이며 corrected-final은 제출판과 전건 일치한다. related-final은 반복 시험1파일만 다르고 runtime/helper/나머지 선택시험은 동일하며 이전 파일을 원SHA대로 evidence에 보존했다. JSON 왕복/실제 human 내용·조회 불변/반환 사본 독립성·실제 봉인 질문·targetless hold·operator 반려/명시 user resume·문서 필드의 직접 소비와 기존 action/activity/condition/공개 CLI repair 표시를 확인했다. related23.0초/소프트초과3건, corrected10.8초/초과1건을 보존했다. 공식mirror build/check exit0,1351파일drift0,변경8쌍byte동일,직접시험/helper5파일smell0,실제16변경모두writes안이다. timing관측bytes를보존하고own base로복원했다. runtime변경은reporting의세함수뿐이며다른owner/clock수리는base와같다. 상세선택·고유row·exit·SHA는evidence/final-integrity.json,판정/한계는evidence/judgment.md다. 전체일반/freshT3/변이/T4/T5·외부모델/실Lean/예약은실행하지않았다.",
+  "findings": [
+    "F2-질문 해결 | question_links의 JSON 의미와 기존 user questions를 유지한다. human은 open만 표시하며 target_ids=[]와task0도포함한다. 실제maintenance의세owner질문→부분user답변후charter만미해소→restart/재전달→research resolved·operations superseded현재표시제외→마지막답변뒤부재를기존owner시험에서확인했다. 원문복원은question_view정본이며문자열파싱/본문복제없음.",
+    "F2-반복 해결 | 새공개필드repetition_holds는active_repetition_holds의값목록이며tuple key를노출하지않는다. lineage/lineage_id/event_ref/count/limit/owner/next_owner/reason/release_condition/question전값을보존하고human에해소좌표를표시한다. 실제accepted empty의task0/hold1·primary_blocker=null,정확continue/재전달/restart뒤목록/human부재·원hold이력/후속1/count0를확인했다. 전역정지의미나새registry없음.",
+    "F2-pause 해결 | operating_summary의user_pause blocker는supervision_facts의기존reason/request_id/created_at를보존하고human도같은값을표시한다. operator resume정확반려뒤같은pause와명시user resume/restart뒤현재표시부재를확인했다. renderer의새상태조회/호스트조회/시계관측없음.",
+    "검증 처분 | related-final의시험오류1건과red실패를지우지않았다. corrected-final은단언교정1개만실행해passed다. 이전7passed는동일한runtime/helper/선택시험bytes의한정근거로사용하며최종판전체성공으로합산하지않는다. 초기오류의반복시험원bytes와888SHA대조·소프트비용은evidence에보존했다.",
+    "범위 | 이번r39-report배정은완료다. R39전체/13-B전건·다른owner의의미질문과R40/R41/R43,전체PR/K/P2,G4~G8,L01Q1/Q2·원문UTF-8 bytes,Windows1314는별도다. canonical source_repo·다른task·공용문서/queue/state·Git index·graphify·기존연구운전은수정하지않았다."
+  ]
+}

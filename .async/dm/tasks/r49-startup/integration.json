@@ -1,0 +1,31 @@
+{
+  "task": "r49-startup",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/flows/test_observation_application.py",
+    ".agents/skills/do-math/README.md",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".agents/skills/do-math/scripts/do_math/cli_contract.py",
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+    ".claude/skills/do-math/README.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_engine_cli_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_planning_document_context.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_planning_document_context.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/cli.py",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/tests/flows/test_observation_application.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_public.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".claude/skills/do-math/scripts/do_math/cli_contract.py",
+    ".agents/skills/do-math/scripts/do_math/engine.py",
+    ".agents/skills/do-math/scripts/do_math/cli.py",
+    ".claude/skills/do-math/scripts/do_math/engine.py"
+  ]
+}

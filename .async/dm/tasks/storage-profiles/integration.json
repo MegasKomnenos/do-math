@@ -1,0 +1,9 @@
+{
+  "task": "storage-profiles",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/support/storage_profile_pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_profile_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_profile_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_profile_pairs.py"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "task": "g5-core-rest",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+    ".claude/skills/do-math/scripts/do_math/retention.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/retention.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+    ".agents/skills/do-math/scripts/do_math/external_engine.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_extension_semantics.py",
+    ".claude/skills/do-math/scripts/do_math/external_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_extension_semantics.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_review_wait_contract.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_academic_external_control_validation.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_control_receipts.py",
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_review_wait_contract.py"
+  ]
+}

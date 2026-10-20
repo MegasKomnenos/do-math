@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "summary": "원 K61/P2 12의73행과 PR25/109slice를 누락·중복 없이 manager0105의 G6 수용판에 연결했다. 기존72 한정검토와 이후 수용된37 역사hunk·기반1a/1d 9질문 및1b/1c17질문을 재사용하고 PR05의1931/1932 해명을 반영했다. core/Git 수리·G45 입력/문서교정·G6 예열/유한초기화/Job정리·직접단언/정확함수선택의 영향만 현재 producer/consumer/시험/수용보고에 연결했다. 제품 변경과 새 제품 결함은 없다. 이 연결 배정의 완료이며 전체 G2/G3/G8·최신판 전체실행 성공은 아니다.",
+  "changes": [],
+  "verification": "제품 import/시험 없이 원문·JSON과 현재 Python AST만 읽었다. evidence/build_close.py로 원 index의 K61/P2 12 ID·K원문, PR25/109slice의 ID·원소속·순서, 기존72/추가37 및 기반9/17을 대조했다. 후속19 수용 task의 report/integration.task·manager review와 현재192파일473고유 정의 좌표를 확인했다. manager0105 실제diff와 현재 Sim/Future·본문 producer·scheduler max_steps·Job 대기/직접장벽·mutation 선택 코드를 읽고 기존0103/0104 단언보존·0105 실제실패/정상대응 검수는 재사용했다. G6의1677=1613+32+10+1+21 판본별 처분과 미해결0을 연결했고 원전체/부분수리를 합산하지 않았다. 제품시험·실호출·환경probe·graphify0회다. 지정 check.py report의 직접 실행 결과는 evidence/report-check.json에 기록한다.",
+  "findings": [
+    "evidence/preservation-state.json과 prior-review-state.json이 현재 연결판이다. accepted-delta-connections.json은14개 영향성질·정확 수용근거/현재 심볼을 제공하며 judgment.md는 바뀐 판단·재사용 이유·한계를 설명한다. 역사 매핑/AST 해소와 실제 hunk/의미 검토를 구별했다.",
+    "인계 당시 역사37과 기반1a~1d 질문은 수용 근거로 해소됐다. 원Temp 부재·당시 실패/skip·판본/개행 차이·1c 넷째/다섯째 raw 실행 및 parent exit 미인증은 한계로 유지한다. PR05 추가특성시험1개의 정당 은퇴 해명은 전1932행 강도 인증이나 새 전수감사 요구가 아니다.",
+    "G6 warm_template의 원예외 Future 전달/재시도없음과 별도 keyed sticky failure를 구별했다. 합성 초기화32는 비live action 한정이며 원 active/formal 미호출 단언을 유지한다. Job정리는 runner 대기를 쓰고 제품 termination_confirmed는 직접검사한다. 대역 경계와 실제경로를 보존했으며 새로운 제품수리가 필요한 반례는 발견하지 않았다.",
+    "원G4/전체T3·정확T4수리·G6 판본별 처분은 별도 근거다. 최종판 전체 재실행으로 합치지 않는다. G5 환경6arc/10행·부분index/자동store 제약, G7 현지원quota/복수result/동적역할schema 원자료, L01 Q1/Q2 원UTF-8 byte, G8은 남는다. G1 원30의무는 독립 g1-close 소유이며 그 임시결과를 소비하지 않았다.",
+    "A22 공통codec/검증게시·기존업무 보장을 재사용했다. 폐기timeout/누적예산/SHARDS/호환수단·전가족quota·기존연구운전·push·반복환경probe/실호출·graphify를 추가하지 않았다. canonical source_repo·공용문서/queue/state·다른task는 수정하지 않았다."
+  ]
+}

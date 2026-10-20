@@ -1,0 +1,30 @@
+{
+  "status": "complete",
+  "summary": "배정된 입구·보존자료 10함수의 계약 질문을 해결했다. 단일 bundle continuation의 서로 다른 실제 수용 응답을 충돌로 보던 결함을 재현하고, 공통 integration.split_research 판정으로 원 응답 고정을 연구 부분편입에 한정했다. 영수증 후손·물리 경로·native 현재성·개정 overflow pin·check 우선순위·파일/Git 오류의 실제 계약을 확인했다. 지원 호출 불변식에 따른 중복 조건을 줄이고, 위임 원요청과 split 응답 충돌의 무결성 guard 두 곳만 사유를 적어 유지/제외했다. 정본 runtime1·직접시험2·helper2·설명2와 미러7쌍 총14파일을 변경했다. 이 완료는 해당 유한 묶음이며 이전 partial의 전체 남김이나 최종 G5 완료가 아니다.",
+  "changes": [
+    ".agents/skills/do-math/references/과제-착수조건.md",
+    ".agents/skills/do-math/references/초기화-효율과-정비.md",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_engine_input_overflow.py",
+    ".agents/skills/do-math/scripts/tests/support/engine_overflow.py",
+    ".agents/skills/do-math/scripts/tests/support/submission_receiver.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+    ".claude/skills/do-math/references/과제-착수조건.md",
+    ".claude/skills/do-math/references/초기화-효율과-정비.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_engine_input_overflow.py",
+    ".claude/skills/do-math/scripts/tests/support/engine_overflow.py",
+    ".claude/skills/do-math/scripts/tests/support/submission_receiver.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py"
+  ],
+  "verification": "공식 run_tests.py --tier T3 --jobs 1의 순차 부분선택 8실행을 원 command/cwd/환경/관측exit·report/stdout/stderr/coverage·실행 전 Python bytes/SHA와 함께 보존했다. 실제 선택=고유rows·counts·공식 fixture 행0·실행중변경0을 대조하고, 변경 시험8본문 각각을 동일 AST의 passing 원행에 연결했다(비용 docstring 제외). lineage-original에서 실제 두 수용 응답 뒤 기존 계보 오류를 재현했고, 수리판의 계보/연구 원응답 투영·후손 없는 미게시 제어·junction 이탈·handler Git 오류·설치 재열거·native 전제·blocked 우선순위와 개정 overflow 정확 반려를 확인했다. 중간 준비 구성 오류 6개와 실제 제품 회귀를 구분했으며 각 실패 원자료를 보존했다. 마지막 overflow-pinned는 passed1/successful=true지만 모든 부분 branch gate/최상위 passed/closing_eligible=false·exit1이다. 서로 다른 부분판을 전체성공으로 합산하지 않았다. 앞 explicit/native 유실응답+재조회실패 시험은 재실행하지 않고 _save/_reload/ModelCalls의 예외 소유와 기존 근거를 정적으로 재사용했다. _apply_inbox와 _capture_native_submission은 앞 수용 실행의 동일 함수 AST·raw에 연결했다. T3 store/index/timing 10경로를 base bytes로 복원하고 공식 미러 생성/check·7쌍 bytes 일치·변경Python10파일 compile·CRLF-aware git diff --check·실제14경로 쓰기범위 검사를 마쳤다. 자세한 판단은 evidence/judgment.md, 실행 대조는 evidence/verification.json, 좌표/재사용은 evidence/scope-coordinates.json, 제출파일/명령은 evidence/submission-check.json·final-commands.json이다.",
+  "findings": [
+    "새 제품 규칙이나 schema 사본은 없다. response 고정의 적용 범위는 integration.split_research를 직접 소비하며 단일 bundle 조상 receipt IDs는 계속 보존한다. 실제 domain continuation/수신의 수리이고 공개 운영 처분 전체 여정의 인증은 아니다.",
+    "의도적으로 도달하지 않는 두 무결성 guard는 그대로 두고 설계5.5에 따라 같은 행에 실제 생산·호출 사유를 적었다. 위임 원요청 결손은 원요청 게시 뒤 배정/비삭제 history, split 충돌은 action 보존 및 inspect_bundles의 원응답 변경/재배정 금지와 apply_bundles의 원 receipt 재사용에 근거한다. 각각 if/raise 두 행, 총4행의 개별 제외이며 외부 Git/artifact/파일 오류는 제외하지 않았다.",
+    "submit_control의 FileExistsError replay fallback은 지원 writer의 acceptance lock/재확인 아래 필요 없어 제거했다. 예기치 않은 외부 파일 충돌은 hardlink 오류로 전파되고 목적 파일은 덮어쓰지 않는다. 앞 task의 미확정 capture 오류 전파·원후보 복원·원영수증 재사용 계약을 유지했다.",
+    "support.submission_receiver의 공유 입력 게시 helper를 issue_input으로 공개화하고 내부/새 소비자를 함께 바꿨다. held_work는 기존 waiting_action/questions.link로 저장 가능한 사유와 실제 질문을 생산한다. 준비 실패는 제품 결함으로 세지 않았다: grant ID 누락, 활성화 receipt 포함 단언, 대기 reason/질문 누락, active 계약 즉시 개정, 모호한 동일 역할/모델 프로필 제안이다.",
+    "현판 native finally의 false arc를 이번에 새로 직접 측정하지 않았다. 정상 재조회가 채택한 새 durable head를 유지하는 경로는 현재 코드와 기존 실제 CAS 시험본문으로 정적 판단했고, 원상 복원/원영수증 재사용은 앞 native-final의 같은 함수 AST·원결과를 재사용했다. 최종 전체 G5 도달 주장은 별도다.",
+    "원 g5-core-tail의 다른 남김은 인수하거나 완료로 바꾸지 않았다. g5-core-apply/recover는 같은 core/helper/설명의 이 결과를 소비할 수 있다. 최종 G4/freshG5·G6·T4/T5/G7·G8과 G1~G3 연결, 환경6arc/10행·L01 Q1/Q2/원UTF-8 byte·현지원 quota/복수result/역할 동적schema 원자료 조건은 전체 계획에 남는다.",
+    "storage-scope-direction과 설계3.3/A22에 따라 공통codec/Repository와 기존 업무 근거를 재사용했다. 새 전가족·전필드/reader/옛head quota·장기감사·검증 framework를 만들지 않았다. 공용 source_repo/Git·context/plan/seams/queue/state·다른 task·engine·graphify는 수정하지 않았다."
+  ]
+}

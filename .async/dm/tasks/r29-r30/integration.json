@@ -1,0 +1,21 @@
+{
+  "task": "r29-r30",
+  "files": [
+    ".agents/skills/do-math/scripts/tests/flows/test_scheduling_bulkheads.py",
+    ".agents/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py",
+    ".claude/skills/do-math/scripts/do_math/call_engine.py",
+    ".claude/skills/do-math/scripts/do_math/native_final.py",
+    ".agents/skills/do-math/scripts/tests/support/owner_failure_cases.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_scheduling_bulkheads.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_scheduling_bulkheads.py",
+    ".agents/skills/do-math/scripts/do_math/call_engine.py",
+    ".claude/skills/do-math/scripts/tests/support/owner_failure_cases.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_native_final.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_engine_cli_conditional_journey.py",
+    ".agents/skills/do-math/scripts/do_math/native_final.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_scheduling_bulkheads.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_native_final.py"
+  ]
+}

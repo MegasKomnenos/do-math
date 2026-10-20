@@ -1,0 +1,11 @@
+{
+  "task": "g7-scheduler",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/smoke/test_scheduler_live.py",
+    ".claude/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".claude/skills/do-math/scripts/tests/시험-지침.md",
+    ".agents/skills/do-math/scripts/tests/support/scheduler_live.py",
+    ".agents/skills/do-math/scripts/tests/시험-지침.md"
+  ]
+}

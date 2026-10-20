@@ -1,0 +1,33 @@
+{
+  "status": "complete",
+  "summary": "배정된 실행 입구 13arc/25행을 현행 계약에 맞게 처분했다. 독립 interpreter의 좁은 import/dispatch 12arc/24행에는 같은 행 사유와 실제 T4 책임을 붙였고, scheduled_operator.run_engine의 인접 manifest 중복 탐색 1arc/1행은 제거했다. bootstrap이 명시 manifest 경로를 main→execute→run_engine에 전달하며 startup 비교도 그 경로에서 만든다. 별도 bootstrap_evidence API를 제거하고 실제 caller·시험·CLI 설명·공식 미러를 함께 갱신했다. 일반 처리/검증·설치 신원·정확 child argv·HOLD 기록은 유지한다. 정본9개와 미러9개 총18파일의 변경이며 이번 배정은 complete다.",
+  "changes": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/do_math/claude_worker.py",
+    ".agents/skills/do-math/scripts/do_math/codex_worker.py",
+    ".agents/skills/do-math/scripts/do_math/control_server.py",
+    ".agents/skills/do-math/scripts/do_math/control_transport.py",
+    ".agents/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".agents/skills/do-math/scripts/operator_bootstrap.py",
+    ".agents/skills/do-math/scripts/probe_cli.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+    ".claude/skills/do-math/scripts/do_math/control_server.py",
+    ".claude/skills/do-math/scripts/do_math/control_transport.py",
+    ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+    ".claude/skills/do-math/scripts/operator_bootstrap.py",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_operator_supervision_contract.py"
+  ],
+  "verification": "공식 run_tests.py --jobs 1로 순차 실행했다. focused1 부분T3는 선택=고유8행 모두passed, complete/successful=true, fixture/실행중변경0이지만 전체 branch_gate/최상위passed/closing_eligible=false·index미작성·관측exit1이다(71.3초/외부72.157초). 원본 package main/execute의 명시 manifest·동일 경로의 전체 live child 명령·정산과 live CLI/probe/HOLD, 같은 행 제외 사유·시험 smell·문서 함수 참조를 확인했다. boundary1 T4는 live help/frozen check 실제 interpreter 2선택=2고유passed·exit0, complete/successful=true·fixture/실행중변경0(19.6초/외부26.438초)이다. T4 adapter complete/tests_complete=true·problems없음·필요worker merged다. 각 실행의919Python 제출SHA·raw보존SHA를 대조했고 원command/cwd/환경/PID/exit/stdout/stderr/report/coverage/store를 evidence에 보존했다. 주석만 바뀐5제품은 시작판과 실행AST동일하며 기존worker/MCP/submit_draft/probe T4 근거를 재사용했다. root불일치반려는 기존코드/반례를 정적으로 재사용했다. 공식mirror 생성9갱신, --check1382파일 drift없음/exit0, cache/index/store변경0이다. 독립Git 실제root/HEAD·2773파일 준비전후bytes·2763commit blob을 대조했다. 전체G4/fresh전체T3·전체변이·전체T4/T5·유료호출/실예약/환경설정 변경은 하지 않았다.",
+  "findings": [
+    "evidence/judgment.md와 gap-disposition.json은 모든 original/base/current 좌표·SHA·처분·T4책임·분모변화를 연결한다. 배정12arc/24행은 사유있는제외, 1arc/1행은제거, 배정내미해결0이며 역사gap의 새raw도달은0이다. T4 child/동결 행동을 T3 report/coverage/함수진입/index에 합치지 않았다.",
+    "7대상모듈 분모는 statements1159→1124, branch arcs422→396, excluded_lines4→37이다. 새33제외물리행은 배정24행+header/else등9행이다. 제외로22arc(배정12+반대쪽10), 코드단순화로4arc(배정1포함)가 빠졌다. 반대쪽10arc의 정확좌표/이전부분raw상태도 보존했다. 일반검사/처리함수·전체모듈 제외나 임계값/층/실행기 변경은 없다.",
+    "공용seams 후속: scheduled_operator.main/execute의 bootstrap_evidence는 제거되고 installation_manifest:Path|None을 소비한다. operator_bootstrap.main만 인접 manifest를 선택하고 원설치root와 그경로를 전달한다. execute는 그 manifest로 기동근거를 만들고 run_engine에 전달한다. run_engine의 직접 명시API는 유지하며 생략은live다. import전/기동근거/child시작전 검증은 유지되어 bootstrap경유execute 검증이하나늘었고 성능향상 주장은없다. 이 task는 공용seams를수정하지않았다.",
+    "범위밖 환경미검증6arc/10행은 유지한다. context_store의 실제파일symlink1arc/3행과 file_io의실제POSIX5arc/7행에는 실제파일symlink/reparse파일가용환경·실제POSIX Python이필요하다. 기존WinError1314와WSL2 HCS_E_HYPERV_NOT_INSTALLED 및WSL시작probe의별도exit/원bytes부재한계를재사용했고 probe/권한/도구설정변경·POSIX삭제·호스트부재제외는없다.",
+    "이전g5-entry-io의boundary1 6passed/2failed·교정후boundary2 2passed·별도focused1 2passed/partialgatefalse를 하나의성공으로합산하지않는다. 재사용원자료SHA/각row는reused-evidence.json에있다. 이번두선택도 전체G5성공이아니다. 최종수용판G4/G5·G6~G8·환경실경계는별도후속이다.",
+    "사용자저장범위/A22에따라 기존Scene/포트·codec/검증저장·업무보장을재사용했다. 전가족/전필드/새reader/옛headquota·장기감사·새측정framework는없다. canonical source_repo·다른task·공용문서/queue/state·engine·기존연구·graphify는수정하지않았다. 독립HEAD073f6465de0b14b90da87bcbfb4ad8e1297cf232는자기기준판이며공용main/성공인증이아니다."
+  ]
+}

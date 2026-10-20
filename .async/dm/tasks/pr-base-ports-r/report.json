@@ -1,0 +1,12 @@
+{
+  "status": "complete",
+  "summary": "기반 1b의 여섯 포트 도입·이행 기본값 제거와 1c 첫~다섯 이동 단위의 두 의미 질문을 고정 workspace에서 정적으로 판단했다. 실제 Git diff15개·현재 생산/소비와 공유 검사를 연결해 유지/정당 제거/이미 교정을 17행으로 처분했다. 새 제품 결함이나 수정 필요는 확인하지 않았다. 제품 changes=[]이며 두 기반 질문의 판단 완료이지 PR전체/G2/G3/G8 또는 현행 전체시험 인증은 아니다.",
+  "changes": [],
+  "verification": "제품 import/시험/실호출 없이 read-only git show/diff/log, rg, ast.parse와 SHA256을 사용했다. 역사 diff별 AST 이동과 선택된 순수 이동을 대조했고, 1600457d의 준비·시작·정지·수신 절단 네 문장 AST 비교는 모두 일치했다. 현재 직접 관련21파일/38호출에서 필수 port keyword 누락0, pr-ports의40현재참조 파일 bytes 일치를 확인했다. 원1b/1c report32개의 SHA·대표source·실제행/집계·실패/skip/실행중변경을 읽었으며 최종메타데이터가 있는28개의 선택/고유행/집계가 맞고 나머지4개는 group행만 있는 미완결 보고다. 1c/c5는 셋째단위 f2583f07 판본으로 식별했다. 원shell exit와 넷째/다섯째단위의 source연결 raw실행은 이 유한 원자료에서 인증하지 않았다. evidence/judgment.md·decisions.json·cut-comparison.json·current-connections.json·original-reports.json에 정확 범위와 한계를 남겼다. check.py report의 직접 실행 결과는 evidence/report-check.json에 보존한다.",
+  "findings": [
+    "유지/정당 제거: Clock/Git/Calls/Jobs/Scheduler/Http의 효과 창구와 실제 내부 판정·저장·owner를 보존한다. migration_defaults와 None/구 계산 fallback 제거는 현재 입력 검사 제거가 아니며 validate_control_payload·profile/host/input seal·launch·권한/현재성·path/schema 검사는 실제 caller에 남는다. decisions.json의 단계별 commit/current symbol/SHA와 이유를 소비하면 된다.",
+    "기존 수용 성질 재사용: B38 Git/두 역사 교정·B07 layer1/engine 단일등록, r18/r18-fix 외부경계/native교체와 r07-fix 반환소유 교정을 해당 범위만 재사용했다. manager0089 recover의 수신결과 선행save와 원request/action·정본target 검사를 현재 core에서 대조해 이미 교정/중복guard 정당제거로 처분했다. 옛 실패 동작을 복구하지 않는다.",
+    "원자료 한계: original-reports.json의32개는28완결+4미완결이며 원실패·skip·실행중변경을 보존하고 성공으로 합산하지 않았다. c5라는 디렉터리명을 다섯째 단위 증거로 쓰지 않는다. 넷째/다섯째의 raw 실행·과거 parent exit를 인증하지 못한다는 한계와 현재 hunk의 정적 판단 완료를 구별한다. 자료 부재만으로 재시험/재조사 task를 요구하지 않는다.",
+    "범위 유지: 저장 지시/A22에 따라 공통codec·검증게시·기존업무 보장을 재사용하고 가족별quota·반복실호출·전1932처분/시험강도 감사·장기감사를 추가하지 않았다. 최종소비판 G1~G3 연결/G4/freshG5/G6/T4/나머지G7/G8 및 환경6arc/10행·L01 Q1/Q2/UTF-8 byte·현재공급자 원자료 조건은 별도다. 진행중 task 사본/미완성결과는 소비하지 않았고 이 리뷰는 전체관문의 새 선행이 아니다."
+  ]
+}

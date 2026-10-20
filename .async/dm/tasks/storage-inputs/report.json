@@ -1,0 +1,25 @@
+{
+  "status": "partial",
+  "summary": "입력4가족(sources/inputs/private_insights/pending_kind_checks)의 실제 생산→검증 게시→새 installed_contract/ResearchRepository decode→공통 Pair의 필수·선택 역방향 및 독립 내용 질문을 구현했다. 미생산 sources.created_at과 pending item.execution_id를 제거했다. 실제 core 종류 판정이 쓰는데 선행에서 제거된 kind_definitions.check 때문에 정상 저장이 실패하는 결함을 기존 시험으로 재현하고 해당 EVIDENCE 슬롯을 복원했다. 실제 통찰 보류·격리·completed/unresolved 해제와 현행 종류 철회 시 원작성자 오류 귀속을 확인했다. 정본5/공식미러5를 수정했다. 네 가족 직접시험과 제품 수리는 통과했으나 check를 미생산으로 가정하는 기존 ontology helper/계약시험2파일과 미러가 writes 밖이어서 그 표본·기대값 수리는 남기고 partial로 제출한다.",
+  "changes": [
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_input_pairs.py",
+    ".claude/skills/do-math/scripts/tests/contracts/test_storage_input_pairs.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_input_pairs.py",
+    ".agents/skills/do-math/scripts/tests/contracts/test_storage_input_pairs.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md"
+  ],
+  "verification": "자기 workspace 공식 run_tests.py --jobs 1의 final-related는 15선택=15고유실제passed·관측exit0·124.9초(프로세스130.2초), mirror-related는 별도판의4선택=4고유실제passed·관측exit0·81.2초다. 두 실행 모두 complete/successful=true·fixture_counts={}·changed_during_run=[]이며 각각907Python SHA가 제출판과 전건 같다. 원 bytes/SHA/크기·초기파일/source.bin·동일내용/ID/history·신규/변경, 최초/후속input 원값/순서/재전달/재시작·영구close, source basis 현재성·정확 입력반려, 검토 실제scope/initial·등록/입장/종료·보류/격리/두결말/원작성자·발행계획, 실제 kind 제안/정확독립checker/세판정/불일치ID/hash/현재정의/입력기초/author반려·다른pending/최종0개와 저장check 원내용을 확인했다. 종류의 기존 실제 worker/중앙수신 회귀도 포함한다. 최초red-1의2failed/2error·exit1과 준비오류 교정판, private-corrected-3의 기존ontology1failed·새helper2error/별도2passed를 원보고/로그로 보존하고 합산하지 않는다. 외부포트는 기존 Git/clock/host/Jobs/모델/Lean 대역이며 새실호출은 없다. 공식mirror생성 exit0·2생성/4갱신/0삭제, 두timing 관측 보존/own base복원 뒤 --check exit0·1370파일 drift0, 최종5미러쌍bytes동일·변경Python8 AST유효를 확인했다. 정본5개/미러4개 소프트초과는 각 원보고에 있다. 가족별필드/생산SHA/정확ID는 evidence/families.json, 실행·판본·실제exit는 verification.json/각process.json, 판정/남김은 judgment.md, 원보고 재사용한계는 historical-reuse.json, 최종경로는 final-integrity.json이다. 전체일반/freshT3/변이/T4/T5·실provider/Lean/HTTP/native Job/설치/OS예약은 실행하지 않았다.",
+  "findings": [
+    "F1 제품수리: _apply_kind_definition_check는 kind_definitions.check에 실제 {definition_id,definition_sha256,decision,findings,execution_id}를 쓴다. 선행storage-authority가 이 슬롯을 제거해 기존 sim.test_knowledge_import_control.KnowledgeImportTests.test_custom_kind_reaches_worker_catalog_only_after_check_and_activation도 정상판정후 _save에서 Additional properties('check')로 실패했다(red-1). 실제writer/내용을 없애지 않고 EVIDENCE object만 복원했다. 세판정과 별도decode 및 기존worker검사는 final-related에서passed다. history/checks/activation은 복원하지 않았다.",
+    "F2 미완료·범위밖: .claude/skills/do-math/scripts/tests/support/storage_authority_pairs.py:ontology_samples와 tests/contracts/test_storage_authority_pairs.py:AuthorityFieldPairs.test_ontology_fields_reach_the_actual_map_and_list_receivers 및 대응 .agents 미러에 수정권한이 없다. 전자는 실제core의check 생산표본을 포함하고 후자는 check를 제거목록에서 빼 원판정내용을 검사해야 한다. 최소반례 private-corrected-3의 해당1부모row에서 reverse walk의missing check와 check=[]의실제type오류/옛Additional-properties기대 불일치 두subTest가failed다. 해당helper/test/schema는 제출판에서그대로며 새4가족통과로 이실패를해결했다고주장하지않는다. 이것이partial의이유다.",
+    "필드판정: sources9필드(required3/optional6), inputs9필드(required3/optional6), pending item5필드(required2/optional3)를 실제표본으로 공통assert_pair에 연결했다. private_insights는 열린cycle→항목배열이므로 /value와 독립원문/순서/author/격리/해제를검사했다. root properties가비었다고역방향을면제하거나 열린내용에허구필드를만들지않았다. 추가optional반례는닫힌각가족의동일Pair에서실패하며 삭제2필드저장은정확추가필드오류·옛head불변이다.",
+    "현재통찰catch유지: 실제working중정상insight의종류를철회한뒤다른reviewer가cycle을끝내면원insight가무효가된다. 그history/question은원작성자에게귀속되고현재reviewer의정상insight는발행된다. 따라서구판전용분기가아니며동작은유지하고core주석만고쳤다. 기존test_review_released_insights의수동fixture는국소해제성질로유지했다. 새표본은실제scope/initial검토·등록/입장/수명/적용을거치며모델수송과중앙제출은합성입력이다.",
+    "근거재사용/한계: B129의source변경뒤completed-task이력보존·교차역할재계획·knowledge사용중단3passed row와현행동일시험파일SHA를확인했다. _apply_inbox/sources_current/suspend_for_source_change의AST는수용base와같다. 변경된provider/schema를포함한B129전체판동등성은주장하지않고원전체3988passed/1failed/1skipped·unsuccessful를보존한다. 최초helper의title/input_manifest/scope owner/계획reason병합준비오류와제품check저장결함을분리했다.",
+    "인계: 네가족지정질문과가까운제품수리는완료했고ontology직접시험정합성2정본/2미러수리가남는다. 이후전체쓰기freshT3/관찰4최종판·다른가족/원요구/K/P2·G4~G8·L01/Windows1314·최종review는별도다. 공용source/context/plan/seams/queue/state·다른task·engine·Gitindex/commit·graphify·기존연구는수정하지않았다. 통합/수용과공용설명갱신은manager가판단한다."
+  ]
+}
