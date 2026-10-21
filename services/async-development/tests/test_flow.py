@@ -72,12 +72,6 @@ class AsyncFlowTests(unittest.TestCase):
             queue=json.loads((records/'queue.json').read_text())
             self.assertEqual(queue['status'],'complete')
             self.assertEqual(set(queue['accepted']),{'a','b','c','review'})
-            for i in queue['accepted']:
-                home=records/'tasks'/i
-                self.assertFalse((home/'base').exists())
-                self.assertFalse((home/'workspace').exists())
-                self.assertTrue((home/'archive.json').exists())
-                self.assertEqual(json.loads((home/'cleanup.json').read_text())['status'],'complete')
             for i in 'abc':self.assertEqual((repo/'src'/f'{i}.txt').read_text(),'new-'+i)
             check=subprocess.run([sys.executable,str(ENGINE/'check.py'),'queue',str(records)],capture_output=True,text=True)
             self.assertEqual(check.returncode,0,check.stdout+check.stderr)

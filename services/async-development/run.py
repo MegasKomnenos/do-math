@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 
-from workspaces import cleanup_accepted, prepare, read_json, write_json
+from workspaces import prepare, read_json, write_json
 
 ENGINE=Path(__file__).resolve().parent
 
@@ -98,10 +98,7 @@ def bootstrap(session):
             '자잘한 보완은 묶고 독립 후속 기능은 바로 준비한다. 새 task는 objective.md와 queue entry를 작성한다. '
             '공용 문서를 먼저 갱신하고 check.py queue RECORDS QUEUE_PENDING_FILE로 제출할 배정을 확인한다. '
             'queue.json은 검사한 임시파일에서 원자 교체해 마지막으로 게시한다. '
-            '제품 코드 수정은 task에 맡기고 공용 맥락/계획/배정을 갱신한다. '
-            '수용하고 종료한 task의 workspace는 이 manager가 끝난 뒤 정리된다. '
-            '과거 파일은 workspaces.py restore RECORDS TASK baseline|result NEW_DIRECTORY [PATH ...]로 복원하며 '
-            '보고/근거는 기존 task 디렉터리에 남는다.\n')
+            '제품 코드 수정은 task에 맡기고 공용 맥락/계획/배정을 갱신한다.\n')
     else:
         home=Path(session['records'])/'tasks'/session['task']
         instructions+=(f'{home / "inputs"}의 context.md, plan.md, seams.md와 '
@@ -109,9 +106,7 @@ def bootstrap(session):
             '소스 수정/시험은 workspace에서 수행하고 canonical source_repo 및 다른 task의 파일은 수정하지 않는다. '
             'inputs에 명시한 원자료는 필요한 부분을 읽는다. 공용 정의를 재발명하지 않는다. '
             '작업의 실제 완료/부분완료/차단을 report.json에 기록하고 check.py report를 직접 실행한다. '
-            'review task는 사용자 요구와 실제 결과를 대조하고 제품을 수정하지 않는다. '
-            '시작판은 baseline.json과 RECORDS/objects에 보존되며 base 디렉터리는 없다. '
-            '과거 수용 task의 workspace가 정리됐으면 workspaces.py restore RECORDS TASK baseline|result NEW_DIRECTORY [PATH ...]로 필요한 파일을 복원한다.\n')
+            'review task는 사용자 요구와 실제 결과를 대조하고 제품을 수정하지 않는다.\n')
     return 'SESSION_JSON='+json.dumps(session,ensure_ascii=False)+'\n'+principles+'\n'+instructions
 
 
@@ -153,7 +148,7 @@ def run(repo, records, *, adopt_workers=False):
                 entry.update(status='interrupted',returncode=None)
                 state['pending'].append(dict(id=task_id,status='interrupted',returncode=None))
         write_json(state_path,state)
-        manager=None;startup=not bool(workers);failed_manager=False;cleanup_due=True
+        manager=None;startup=not bool(workers);failed_manager=False
         settings_stamp=None
         while True:
             stamp=(records/'settings.json').stat().st_mtime_ns
@@ -172,7 +167,7 @@ def run(repo, records, *, adopt_workers=False):
                 print(json.dumps(dict(event='task_exited',task=task_id,returncode=code)),flush=True)
                 changed=True
             if manager and manager[0].poll() is not None:
-                proc,log=manager;log.close();manager=None;cleanup_due=True
+                proc,log=manager;log.close();manager=None
                 state['manager'].update(status='exited',returncode=proc.returncode)
                 if proc.returncode:
                     state['pending']=state['manager']['completed']+state['pending'];failed_manager=True
@@ -180,10 +175,6 @@ def run(repo, records, *, adopt_workers=False):
                 changed=True
             if changed:write_json(state_path,state)
             queue=read_json(records/'queue.json')
-            if not manager and cleanup_due:
-                for result in cleanup_accepted(records):
-                    print(json.dumps(dict(event='task_cleanup',**result)),flush=True)
-                cleanup_due=False
             if failed_manager:
                 if not workers:
                     state['status']='manager_failed';write_json(state_path,state);return 1

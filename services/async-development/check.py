@@ -4,25 +4,18 @@ from pathlib import Path
 import re
 import sys
 
-from workspaces import changes, permitted, read_json, safe
+from workspaces import changes, files, read_json, safe
 
 
 def need(value,message):
     if not value:raise ValueError(message)
 
 
-def report_metadata(records, task_id):
+def report(records, task_id):
     home=safe(records,'tasks/'+task_id);r=read_json(home/'report.json')
     need(r.get('status') in ('complete','partial','blocked'),'Unknown report status')
     for key in ('summary','verification'):need(isinstance(r.get(key),str) and r[key].strip(),f'{key} required')
     for key in ('changes','findings'):need(isinstance(r.get(key),list) and all(isinstance(x,str) for x in r[key]),f'{key} must be strings')
-    need(len(r['changes'])==len(set(r['changes'])),'Duplicate report change paths')
-    return r
-
-
-def report(records, task_id):
-    r=report_metadata(records,task_id)
-    home=safe(records,'tasks/'+task_id)
     if (home/'baseline.json').exists():
         _,delta=changes(records,task_id)
         need(set(r['changes'])==set(delta),'Report changes must match actual workspace changes')
@@ -59,22 +52,9 @@ def queue(records, queue_file=None):
         for d in by_id[i]['depends_on']:visit(d)
         visiting.remove(i);visited.add(i)
     for i in ids:visit(i)
-    # Actual workspace bytes are checked by report() and integrate(), not on
-    # every later queue publication. Here validate the recorded acceptance.
-    reports={}
     for i in accepted:
-        reports[i]=report_metadata(records,i)
-        path=records/'tasks'/i/'integration.json'
-        need(path.is_file(),'Integrate before acceptance: '+i)
-        receipt=read_json(path)
-        need(isinstance(receipt,dict) and receipt.get('task')==i,'Wrong integration task: '+i)
-        paths=receipt.get('files')
-        need(isinstance(paths,list) and all(isinstance(p,str) for p in paths),'Invalid integration files: '+i)
-        need(len(paths)==len(set(paths)) and set(paths)==set(reports[i]['changes']),
-             'Report and integration changes differ: '+i)
-        for p in paths:
-            safe(records/'tasks'/i/'workspace',p)
-            need(permitted(p,by_id[i]['writes']),'Integrated path outside assigned writes: '+p)
+        report(records,i)
+        need((records/'tasks'/i/'integration.json').is_file(),'Integrate before acceptance: '+i)
     if q['status']=='complete':
         need(not any(e['status']=='running' for e in state['tasks'].values()),'Tasks still running')
         need(set(ids)<=set(accepted+cancelled),'Unresolved tasks remain')
@@ -85,7 +65,7 @@ def queue(records, queue_file=None):
             result=set(by_id[i]['depends_on'])
             for d in list(result):result.update(ancestors(d))
             return result
-        need(any(reports[t['id']]['status']=='complete' and work<=ancestors(t['id']) for t in reviews),
+        need(any(report(records,t['id'])['status']=='complete' and work<=ancestors(t['id']) for t in reviews),
              'Final review must follow the accepted work')
         need(bool(q.get('reason','').strip()),'Explain completion')
     if q['status']=='blocked':need(bool(q.get('reason','').strip()),'Explain external blocker')
