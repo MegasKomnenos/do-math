@@ -88,7 +88,7 @@ Claude는 아래 **최상위 필드 세 개가 함께 있는** 레코드를 계�
 위 예는 필드 위치 설명용 합성 레코드다. `api_error_params.rate_limit_info`에서 시간 의미가 분명한 다음 경우만 해제 시각을 채택한다.
 
 - `status="rejected"`이고 일반 제한 창(`five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet`, `seven_day_overage_included`)이며 `overageStatus`와 `overageResetsAt`이 모두 생략되거나 `null`이면 `resetsAt`을 쓴다.
-- `overageStatus="rejected"`이고 창이 위 목록 또는 `overage`인 일반 overage 거절에서는 `resetsAt`·`overageResetsAt` 중 제공된 값의 최솟값을 쓴다. 제공된 모든 값이 유효한 미래 시각이어야 한다. 앞선 값이 만료됐다고 뒤의 값을 임의로 선택하지 않는다.
+- `status="rejected"`와 `overageStatus="rejected"`가 함께 있고 창이 위 목록 또는 `overage`인 일반 overage 거절에서는 `resetsAt`·`overageResetsAt` 중 제공된 값의 최솟값을 쓴다. 제공된 모든 값이 유효한 미래 시각이어야 한다. 앞선 값이 만료됐다고 뒤의 값을 임의로 선택하지 않는다.
 - 위 두 분기 모두 `isUsingOverage`가 생략·`null`·false 중 하나이고, `overageDisabledReason`·`limitScope`·`overageScope`는 각각 생략되거나 `null`이어야 한다. 조직·그룹·채널의 특수 지출 한도, 모르는 창이나 모순된 상태, 불명확한 다중 reset은 설정 간격으로 처리한다. 그 경우에도 명시적인 계정 거절 자체는 유지된다.
 
 `resetsAt`·`overageResetsAt`은 Unix 초다. `unifiedWindows`는 다른 창의 예방적 통계를 포함하므로 사용하지 않는다. `rate_limit_event` 보조 신호는 채택하지 않는다. 이 이벤트는 정상·경고도 포함하고 기본 사용량이 rejected여도 paid overage로 계속 사용할 수 있기 때문이다. 실제 거절 표식이 없는 allowed/allowed_warning/rejected 상태 이벤트, 일반 `error="rate_limit"`·429와 문구 인용은 한도로 읽지 않는다.
@@ -101,7 +101,7 @@ Claude는 아래 **최상위 필드 세 개가 함께 있는** 레코드를 계�
 
 Claude typed 필드는 `@internal`이므로 이후 CLI에서 바뀔 수 있다. 이 어댑터는 현재 구독 인증 경로를 대상으로 하며 API key·다른 cloud 공급자의 모든 한도, 모든 오류 문구를 포괄하지 않는다. 버전 고정이나 설치 비교는 하지 않는다. 실제 모델 접근과, 프롬프트를 읽고 자기 폴더에 산출을 쓰는 동작은 2026-10-21에 Codex 세 세션과 Claude 두 세션이 작은 목표를 무인 완주한 실제 인스턴스에서 확인했다. 사용자 설정·hooks는 호스트마다 다르므로, 그 완주의 설정 밖에서 그것들이 세션에 주는 영향은 확인되지 않았다.
 
-`tests/test_cli_adapter.py`는 실제 한도를 유도하지 않고 근거에서 만든 합성 로그로 미래 시각, 날짜 미확인, 일반 overage와 특수 분기, 정상 인용·경고·불완전 로그를 구분한다. 테스트 실행에는 TOML 인자 확인용 표준 라이브러리 `tomllib`이 있는 Python 3.11 이상을 사용한다.
+`tests/test_cli_adapter.py`는 실제 한도를 유도하지 않고 근거에서 만든 합성 로그로 미래 시각, 날짜 미확인, 일반 overage와 특수 분기, 정상 인용·경고·불완전 로그를 구분한다.
 
 ```powershell
 python -B -m unittest discover -s .claude/skills/do-math/tests -p test_cli_adapter.py

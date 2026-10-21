@@ -1,7 +1,6 @@
 """Small real-process flows with the official checker and a temporary Git repo."""
 
 import json
-import os
 from pathlib import Path
 import shutil
 import subprocess

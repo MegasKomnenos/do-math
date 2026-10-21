@@ -135,6 +135,7 @@ class HandoffTests(unittest.TestCase):
         cases = [
             ("references", [{"record": "absent"}], "record does not exist"),
             ("references", [{"record": "k1", "file": "absent.md"}], "file does not exist"),
+            ("references", [{"record": "k1", "file": "bad\0name.md"}], "expected a relative"),
             ("references", [{"record": "k1", "result": "absent"}], "result does not exist"),
             ("supersedes", ["absent"], "record does not exist"),
         ]

@@ -286,6 +286,8 @@ class Runner:
         # File names are random; submission order is the content write time.
         paths = [p for p in (self.instance / "control/inputs").iterdir()
                  if not p.name.startswith(".") and p.name not in self.state["seen_inputs"]]
+        # Report only the current scan's input failures.
+        self.state["input_errors"] = {}
         for path in sorted(paths, key=lambda p: (p.stat().st_mtime_ns, p.name)):
             if not path.is_file():
                 continue
@@ -296,7 +298,6 @@ class Runner:
             except (OSError, UnicodeError, ValueError) as exc:
                 self.state["input_errors"][path.name] = str(exc)
                 continue
-            self.state["input_errors"].pop(path.name, None)
             self.state["seen_inputs"].append(path.name)
             self.state["events"].append({"kind": "user_input", "text": text})
             self.state["wait"] = None

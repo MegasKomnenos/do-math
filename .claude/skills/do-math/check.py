@@ -57,8 +57,8 @@ def local_file(root, value, where):
     text(value, where)
     parts = PurePosixPath(value)
     need(not parts.is_absolute() and ".." not in parts.parts
-         and "\\" not in value and ":" not in value, where,
-         "expected a relative /-separated file path without ..")
+         and "\\" not in value and ":" not in value and "\0" not in value, where,
+         "expected a relative /-separated file path without .. components, backslashes, : or NUL")
     path = root.joinpath(*parts.parts).resolve()
     need(path.is_relative_to(root.resolve()), where, "file escapes its record")
     need(path.is_file(), where, f"file does not exist: {path}")
