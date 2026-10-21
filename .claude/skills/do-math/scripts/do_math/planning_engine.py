@@ -114,7 +114,18 @@ class PlanningEngineMixin:
             basis = assessment_basis(task)
             review = next((r for r in reversed(task.get("reviews", []))
                            if all(r.get(k) == v for k, v in basis.items())), None)
-            if not review or review.get("decision") == "approved":
+            if not review or review.get("decision") != "revision_required":
+                continue
+            fields = {field for item in review['item_reviews'] if item['decision'] == 'revision_required'
+                      for field in item.get('revision_fields', ['contract'])}
+            if 'contract' in fields:
+                from .planning import pending_revisions
+                task['waiting'] = {'kind': 'contract_revision', 'target_refs': [tid],
+                    'next_owner': 'research_preparation', 'basis_ref': review['execution_id'],
+                    'reason': 'Handle the review request while preserving the user-owned academic contract'}
+                if not any(tid in row['action'].get('revision_targets', {}) for row in pending_revisions(self.runtime)):
+                    self._enqueue('research_preparation', tid, contract_review_execution=review['execution_id'],
+                        reason='Handle the academic contract review request: dismiss a disproved AI premise or defer to the actual user owner; do not rewrite the user contract')
                 continue
             if any(row.get('contract_review_execution') == review['execution_id']
                    for row in task.get('observation_rule_history', [])):
@@ -122,14 +133,15 @@ class PlanningEngineMixin:
                 # Its pending independent review, not an already-consumed
                 # rejection, owns the next judgment.
                 continue
-            if task.get('model_assessment'):
+            if 'model_assessment' in fields and task.get('model_assessment'):
                 task.setdefault('model_assessment_history', []).append({
                     **basis, 'assessment': task.pop('model_assessment'),
                     'contract_review_execution': review['execution_id']})
-            task.setdefault('observation_rule_history', []).append({
-                **basis, 'rules': task.pop('initial_observation_rules', []),
-                'contract_review_execution': review['execution_id']})
-            self.runtime.get('task_observation_rules', {}).pop(tid, None)
+            if 'initial_observation_rules' in fields:
+                task.setdefault('observation_rule_history', []).append({
+                    **basis, 'rules': task.pop('initial_observation_rules', []),
+                    'contract_review_execution': review['execution_id']})
+                self.runtime.get('task_observation_rules', {}).pop(tid, None)
         missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
                    if task.get("status") not in TERMINAL_TASK_STATUSES and not task.get("model_assessment")}
         missing_rules = {}
@@ -199,6 +211,11 @@ class PlanningEngineMixin:
                 continue
             if not task.get('model_assessment'):
                 continue
+            request = task.get('revision_requested', {})
+            if revision_requested(task) and not request.get('user_decision_refs'):
+                task.pop('revision_requested')
+                if task.get('waiting', {}).get('kind') == 'contract_revision':
+                    task.pop('waiting')
             from .model_policy import work_profile_selection
             work_profile_selection(self.instance['config'], task, self.instance)
             basis = {**assessment_basis(task), 'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision']}

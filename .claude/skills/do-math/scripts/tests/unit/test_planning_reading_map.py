@@ -13,7 +13,7 @@ import shutil
 import tempfile
 import unittest
 
-from do_math.contracts import prompt_documents, render_prompt
+from do_math.contracts import ROLES, prompt_documents, render_prompt
 
 
 class ReadingMapTests(unittest.TestCase):
@@ -44,6 +44,18 @@ class ReadingMapTests(unittest.TestCase):
         self.assertIn('Apply the existing result only within its actual assumptions.', prompt)
         self.assertNotIn('For research_plan:', prompt, 'another role must not receive a separately maintained copy of planning rules')
         self.assertNotIn('Select a model from difficulty and importance', prompt, 'model selection rules go only to the roles that assess models')
+
+    def test_installed_common_execution_reaches_every_internal_role_prompt(self):
+        source = Path(__file__).resolve().parents[3]
+        path = 'references/공통-실행.md'
+        raw = (source / path).read_bytes()
+        for role in ROLES:
+            with self.subTest(role=role):
+                documents = prompt_documents(role, skill_root=source)
+                shared, = [document for document in documents if document['path'] == path]
+                self.assertEqual(shared['content'].encode('utf-8'), raw)
+                self.assertEqual(shared['sha256'], hashlib.sha256(raw).hexdigest())
+                self.assertIn(shared['content'], render_prompt(role, {}, skill_root=source))
 
     def test_role_rows_add_their_references_after_the_common_documents(self):
         common = ['SKILL.md', 'GLOSSARY.md', 'references/공통-실행.md', 'references/지식-저작과-재사용.md', 'references/학술자료-활용.md']

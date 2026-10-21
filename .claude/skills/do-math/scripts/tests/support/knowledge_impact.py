@@ -99,6 +99,9 @@ class ImpactCase(unittest.TestCase):
         self.extensions = {"knowledge_changes": [{"id": kid, "changes": {"summary": "Revised " + str(n)},
             "reason": "Correct explanation", "impact_set": [self.ids[1]]} for n, kid in enumerate((self.ids[0], self.ids[2]))]}
         self.bundle = next(self.api.split_bundles(self.output, self.extensions, research_work_context()))
+        self.fixed_context = {**research_work_context(), 'knowledge_catalog': [
+            {**deepcopy(self.instance['knowledge'][kid]), 'content_sha256': content_hash(self.instance['knowledge'][kid])}
+            for kid in self.ids]}
 
     def request(self):
         return self.api.bundle_impact_request(self.instance, self.runtime, self.bundle,

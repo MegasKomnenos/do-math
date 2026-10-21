@@ -210,7 +210,7 @@ class ActivationEvidenceTests(unittest.TestCase):
         self.assertEqual(initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock), evidence)
         checker = runtime['executions'][evidence['check_execution_id']]
         checker['intent_import_sha256'] = '0' * 64
-        with self.assertRaisesRegex(ValueError, 'initial interpretation execution evidence does not resolve'):
+        with self.assertRaisesRegex(ValueError, '^checker execution must bind exact preserved import input$'):
             initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertIn('independent_intent', self.requirements()['missing'])
 

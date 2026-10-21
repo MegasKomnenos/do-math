@@ -17,7 +17,7 @@ class GovernanceSemanticCheckRejectionTests(unittest.TestCase):
             gov.check_import(sim.instance, sim.runtime, bundle['id'], output,
                 execution_id=bundle['check']['execution_id'],
                 owner_handlers=sim.engine.governance_owner_handlers(), clock=sim.clock)
-        self.assertEqual(str(caught.exception), 'check is sealed; reauthor instead')
+        self.assertEqual(str(caught.exception), 'check is sealed; evidence release required')
         self.assertEqual((sim.instance, sim.runtime, output), before)
 
     def test_checker_role(self):

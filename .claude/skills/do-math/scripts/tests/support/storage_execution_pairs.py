@@ -128,6 +128,8 @@ class StoredExecutions:
 
 def stored_execution_inputs(samples):
     """Preparation writes the hashes/bases/rules; no execution fields are supplied."""
+    from support.storage_action_pairs import intent_evidence_samples
+    intent_evidence_samples(samples)
     from do_math import academic
     from do_math.canonical import exact_content_hash
     from support.academic_scenes import consumer_sim, MANUSCRIPT

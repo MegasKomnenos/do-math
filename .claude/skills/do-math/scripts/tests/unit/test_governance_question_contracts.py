@@ -75,7 +75,8 @@ class GovernanceQuestionContractTests(unittest.TestCase):
 
     def test_operations_resolution_requires_operational_role(self):
         row = questions.link(self.runtime, execution_id='EX-operation', field='questions/0',
-                             owner='operations', targets=['A'], clock=self.clock)
+                             owner='operations', targets=['A'], clock=self.clock,
+                             obligation={'kind': 'other', 'subject_ref': 'A', 'requirement_ref': 'support'})
         before = deepcopy(self.runtime)
         self.assertEqual(questions.resolution_error(row, 'research_plan'),
                          'an operations question requires an operational role')
@@ -100,7 +101,7 @@ class GovernanceQuestionContractTests(unittest.TestCase):
         row = questions.link(self.runtime, execution_id='EX-research', field='questions/0',
                              owner='research', targets=['A'], clock=self.clock)
         context = {'action': {'role': 'research_plan'}, 'question_links': [row]}
-        resolution = {'question_id': row['id']}
+        resolution = {'question_id': row['id'], 'disposition': 'resolved', 'reason': 'The supplied record answers it', 'evidence_refs': ['A']}
         self.assertEqual(questions.validate_extensions({}, {'question_resolutions': [resolution]}, context), [])
         self.assertEqual(questions.validate_extensions({}, {'question_resolutions': [resolution, resolution]}, context), [
             {'path': 'question_resolutions', 'message':

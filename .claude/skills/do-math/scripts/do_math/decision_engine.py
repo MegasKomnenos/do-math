@@ -33,9 +33,11 @@ class DecisionEngineMixin:
             if evidence_id != execution_id and decision_basis_changes(evidence.get("decision_basis"), self.instance, self.runtime):
                 raise ValueError("resolution evidence no longer has current premises")
             required = set(previous.get("revision_targets", {}))
-            revised = {row["record_id"] for row in evidence.get("extensions", {}).get("revision_resolutions", []) if row["disposition"] == "revised"}
-            if required - revised:
-                raise ValueError("failed revision obligations require the actual accepted revisions")
+            from .revisions import resolved_targets, remaining_targets
+            if remaining_targets(previous.get('revision_targets', {}),
+                                 resolved_targets(evidence['action'], evidence.get('extensions', {}),
+                                                  consumer_targets=previous.get('revision_targets', {}))):
+                raise ValueError("failed revision obligations require accepted target dispositions")
             self.runtime["history"].append({"kind": "failed_action_explicitly_resolved", "action_id": identifier,
                 "failed_execution_id": entry.get("execution_id"), "resolved_by": evidence_id,
                 "decision_execution_id": execution_id, "reason": claim["reason"], "previous": deepcopy(entry)})
@@ -92,9 +94,30 @@ class DecisionEngineMixin:
             refs.discard(action.get("target"))
         execution["decision_basis"] = capture_decision_basis(original_instance, original_runtime, refs)
         changes = decision_basis_changes(execution["decision_basis"], self.instance, self.runtime)
+        for identifier, declared in action.get('revision_targets', {}).items():
+            request = self.runtime.get('tasks', {}).get(identifier, {}).get('revision_requested', {})
+            before, after = set(declared.get('user_decision_refs', [])), set(request.get('user_decision_refs', []))
+            if after - before:
+                changes.append({'id': identifier, 'field': 'revision_authority', 'before': sorted(before), 'after': sorted(after)})
+        if action.get('question_ids'):
+            from .questions import reference_basis
+            links = {q['id']: q for q in self.runtime.get('question_links', [])}
+            for question in context.get('operations_questions', []):
+                current_question = links.get(question['id'])
+                if (not current_question or current_question['status'] != 'open'
+                        or current_question['handling']['generation'] != action['question_generation']):
+                    changes.append({'id': question['id'], 'field': 'question_applicability', 'before': 'assigned_open_generation',
+                                    'after': current_question['status'] if current_question else 'missing'})
+                for ref, before in question['record_bases'].items():
+                    cited = set(submission.reported_references(output, execution.get('extensions', {}), context))
+                    if ref not in {question['obligation']['subject_ref'], *action['question_target_ids'], *cited}:
+                        continue
+                    after = reference_basis(self.instance, self.runtime, ref)
+                    if before != after:
+                        changes.append({'id': ref, 'field': 'question_subject_basis', 'before': before, 'after': after})
         changes.extend(self._execution_requirement_changes(action,evaluation_context=evaluation_context))
-        from .questions import open_links, user_waits
-        changes.extend({"field": "user_decision", **row} for row in user_waits(action, self.instance, self.runtime))
+        from .questions import open_links, action_waits
+        changes.extend({"field": "question_dependency", **row} for row in action_waits(action, self.instance, self.runtime))
         if output.get("confirmed_question_ids"):
             open_questions = {row["id"] for row in open_links(self.runtime, "user")}
             changes.extend({"id": identifier, "field": "question_applicability", "reason": "the user question is no longer open"}

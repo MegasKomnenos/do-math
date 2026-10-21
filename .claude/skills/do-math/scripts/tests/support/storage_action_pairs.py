@@ -80,6 +80,54 @@ class StoredActions:
         return rows if identifiers is None else {key: rows[key] for key in identifiers}
 
 
+def question_samples(samples):
+    """Actual question binding and revision exception producers, at their storage seam."""
+    from do_math import questions
+    from support.engine_lifecycle import _ended_execution, clear_work, task
+    from support.role_answers import review_items
+    from support.sim import Sim
+    sim = Sim.activated()
+    clear_work(sim)
+    engine = sim.engine
+    row = task(engine, 'TK-storage-question', approved=False)
+    _ended_execution(engine, 'EX-storage-question-report', 'research_work')
+    linked = questions.link(engine.runtime, execution_id='EX-storage-question-report', field='output/questions/0',
+        owner='operations', targets=[row['id']], blocks=True, obligation={'kind': 'input_retrieval',
+            'subject_ref': row['id'], 'requirement_ref': 'support'}, clock=engine.ports.clock)
+    engine.runtime['executions']['EX-storage-question-report']['output'] = {'questions': ['Retrieve the exact support input']}
+    engine._reconcile_question_actions()
+    engine._save()
+    keep(engine, samples.samples, 'question has a real pending handler')
+    _ended_execution(engine, 'EX-storage-question-review', 'task_contract_review')
+    engine._apply({'role': 'task_contract_review', 'target': row['id']},
+        review_items([row['id']], decision='revision_required', findings=['Check this contract input']),
+        'EX-storage-question-review', owns_response=False)
+    preparation = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
+    _ended_execution(engine, 'EX-storage-deferred', 'research_preparation')
+    engine.runtime['executions']['EX-storage-deferred']['extensions'] = {'revision_resolutions': [{
+        'record_id': row['id'], 'disposition': 'deferred', 'question_ids': ['output:questions/0'], 'reason': 'Wait for the user scope question'}],
+        'question_routes': [{'question_index': 0, 'owner': 'user', 'target_ids': [row['id']],
+            'reason': 'The original scope belongs to its user owner'}]}
+    deferred_output = {'questions': ['Which exact original scope may be changed?']}
+    deferred_ref = 'runtime/artifacts/BA-storage-deferred/output.json'
+    from do_math.canonical import canonical_json
+    engine._record_output_questions(preparation, deferred_output, 'EX-storage-deferred', source_ref=deferred_ref)
+    engine._apply_revision_followup(preparation, {'summary': 'Keep the exact request while waiting'}, 'EX-storage-deferred')
+    engine._remove_action(preparation)
+    engine._save({deferred_ref: canonical_json(deferred_output)})
+    user_question = next(q for q in engine.runtime['question_links'] if q['owner'] == 'user')
+    samples.case.assertEqual(engine.runtime['waiting_actions'][preparation['id']]['deferrals'][row['id']]['question_ids'],
+                             [user_question['id']])
+    keep(engine, samples.samples, 'deferred revision retains its actual question')
+    _ended_execution(engine, 'EX-storage-dismissal', 'research_preparation')
+    resolution = {'record_id': row['id'], 'disposition': 'dismissed', 'request_refs': ['EX-storage-question-review'],
+        'evidence_refs': [row['id']], 'reason': 'The supplied contract already covers this responsibility'}
+    engine.runtime['executions']['EX-storage-dismissal']['extensions'] = {'revision_resolutions': [resolution]}
+    engine._apply_revision_followup(preparation, {'summary': 'Dismiss the disproved AI request'}, 'EX-storage-dismissal')
+    engine._save()
+    keep(engine, samples.samples, 'dismissal creates a separate independent reconsideration')
+
+
 def impact_samples(samples):
     """A real returned work bundle and the independent unresolved impact verdict."""
     from do_math import submission
@@ -526,6 +574,28 @@ def intent_samples(samples):
     case.assertEqual(rework['intent_repair']['findings'], ['Missing second clause e\u0301\r\n'])
     case.assertEqual(rework['previous_import_id'], rework['intent_repair']['import_id'])
     keep(engine, samples.samples, 'actual input interpretation check requests bounded rework')
+    intent_evidence_samples(samples)
+
+
+def intent_evidence_samples(samples):
+    if getattr(samples, '_intent_evidence_collected', False):
+        return
+    samples._intent_evidence_collected = True
+    from support.intent_evidence import waiting_sim, evidence_waits
+    sim = waiting_sim(evidence_ref='source:intent-check-source.txt')
+    wait, = evidence_waits(sim)
+    bundle = deepcopy(sim.runtime['intent_imports'][wait['import_id']])
+    samples.read(sim.engine, 'intent check waits for actual question evidence')
+    sim.restart()
+    sim.run_until(lambda s: any(a.get('import_check_release') for a in s.runtime['queue']), max_steps=4)
+    samples.read(sim.engine, 'released intent check retains its exact evidence authorization')
+    sim.run_until(lambda s: s.runtime['intent_imports'][bundle['id']].get('application', {}).get('status') == 'applied'
+        and all(e['status'] == 'ended' for e in s.runtime['executions'].values()), max_steps=4)
+    samples.read(sim.engine, 'independent recheck preserves old and current seals')
+    received = sim.runtime['intent_imports'][bundle['id']]
+    samples.case.assertEqual(received['check_history'], [bundle['check']])
+    samples.case.assertEqual(received['sha256'], bundle['sha256'])
+    return sim, bundle
 
 
 def preparation_case(kind, *, source=None):

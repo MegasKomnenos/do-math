@@ -21,6 +21,33 @@ from support.planning_owner import enqueue, owner_sim, theorem_id, warm_owner
 
 
 class RevisionObligationTests(unittest.TestCase):
+    def test_user_revise_authority_is_bound_stored_and_cannot_be_dismissed(self):
+        from support.engine_lifecycle import applied
+        h = self.engine
+        task = h.runtime['tasks']['TK-1']
+        applied(self.sim, 'decision', config={'change': {'kind': 'task_scope', 'task_id': task['id'],
+            'disposition': 'revise', 'revision': task['revision'], 'contract_sha256': planning.contract_hash(task),
+            'reason': 'The user requires an explicit contract correction'}})
+        h = self.sim.engine
+        task = h.runtime['tasks']['TK-1']
+        request = task['revision_requested']
+        self.assertEqual(len(request['user_decision_refs']), 1)
+        self.assertEqual(request['source_refs'], request['user_decision_refs'])
+        action = next(a for a in h.runtime['queue'] if a.get('target') == task['id'] and a['role'] == 'research_preparation')
+        basis = action['revision_targets'][task['id']]
+        self.assertEqual(basis['user_decision_refs'], request['user_decision_refs'])
+        extension = {'revision_resolutions': [{'record_id': task['id'], 'disposition': 'dismissed',
+            'request_refs': basis['source_refs'], 'evidence_refs': [task['id']], 'reason': 'AI would prefer to keep it'}]}
+        self.assertTrue(revisions.submission_errors({'candidates': []}, extension, {'action': action, 'tasks': [task]}))
+        h._save()
+        head, instance, runtime = h.store.load()
+        bad = deepcopy(runtime)
+        bad['tasks'][task['id']]['revision_requested']['user_decision_refs'] = []
+        with self.assertRaisesRegex(ValueError, 'retain its actual user revise authority'):
+            h.store.save_with_state(head, instance, bad)
+        self.sim.restart()
+        self.assertEqual(self.sim.runtime['tasks'][task['id']]['revision_requested'], request)
+
     @classmethod
     def setUpClass(cls):
         warm_owner()

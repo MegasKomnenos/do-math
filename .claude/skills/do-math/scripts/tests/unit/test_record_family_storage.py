@@ -500,36 +500,45 @@ class FamilyRecordStorageTests(StoreCase):
         self.assertEqual(repository.load(head)[1]['object_format'], 'sha256')
 
     def test_identity_bearing_singleton_and_nonexecution_question(self):
+        from do_math import questions
         contract = installed_contract()
         contract.register_family('research', 'singleton_proof', shape='singleton', schema={
             'type': 'object', 'additionalProperties': False,
             'properties': {'id': {'type': 'string'}, 'claim': {'type': 'string'}}, 'required': ['id', 'claim']})
         repository = self.store(instance_id=OTHER_INSTANCE_ID, contract=contract)
-        question = {'id': 'QU-1', 'origin_execution_id': None, 'origin_field': 'input_overflow/AC-1',
-                    'source_ref': 'runtime/artifacts/BA-1/overflow.json', 'owner': 'user', 'target_ids': ['SP-1'],
-                    'unresolved_target_ids': ['SP-1'], 'status': 'open', 'resolution_ref': None}
-        head = repository.initialize(*current_state({'singleton_proof': {'id': 'SP-1', 'claim': 'P'}},
-                                                    {'question_links': [question]}))
+        instance, runtime = current_state({'singleton_proof': {'id': 'SP-1', 'claim': 'P'}})
+        questions.link(runtime, execution_id=None, field='input_overflow/AC-1', source_ref='UI-fixture',
+                       owner='user', targets=['SP-1'], clock=self.clock)
+        head = repository.initialize(instance, runtime)
         self.assertEqual(repository.read_record('SP-1', head)['path'], 'research/singleton_proof/SP-1.json')
         self.assertIsNone(repository.load(head)[2]['question_links'][0]['origin_execution_id'])
 
     def test_question_target_can_be_a_preserved_waiting_action_coordinate(self):
+        from do_math import questions
         instance, runtime = current_state(runtime={'waiting_actions': {'AC-1': {
-            'action': {'id': 'AC-1', 'role': 'research_plan'}, 'reason': 'input_overflow', 'question_id': 'QU-1'}},
-            'question_links': [{'id': 'QU-1', 'origin_execution_id': None, 'origin_field': 'input_overflow/AC-1',
-                                'source_ref': 'archived-overflow', 'owner': 'user', 'target_ids': ['AC-1'],
-                                'unresolved_target_ids': ['AC-1'], 'status': 'open', 'resolution_ref': None}]})
+            'action': {'id': 'AC-1', 'role': 'research_plan'}, 'reason': 'input_overflow'}}})
+        question = questions.link(runtime, execution_id=None, field='input_overflow/AC-1', source_ref='UI-fixture',
+                                  owner='user', targets=['AC-1'], clock=self.clock)
+        runtime['waiting_actions']['AC-1']['question_id'] = question['id']
         self.repository.validate_candidate(instance, runtime)
-        runtime['question_links'][0].update(target_ids=['AC-absent'], unresolved_target_ids=['AC-absent'])
+        question.update(target_ids=['AC-absent'], unresolved_target_ids=['AC-absent'])
+        question['origins'][0]['target_ids'] = ['AC-absent']
         with self.assertRaisesRegex(ValueError, 'question target'):
             self.repository.validate_candidate(instance, runtime)
 
     def test_resolved_question_preserves_a_historical_action_coordinate(self):
-        instance, runtime = current_state(runtime={'waiting_actions': {},
-            'question_links': [{'id': 'QU-1', 'origin_execution_id': None,
-                                'origin_field': 'resolution_question/question', 'source_ref': 'archived-overflow',
-                                'owner': 'user', 'target_ids': ['AC-finished'], 'unresolved_target_ids': [],
-                                'blocks': True, 'status': 'resolved', 'resolution_ref': None}]})
+        from do_math import governance, questions
+        instance, runtime = current_state(runtime={'waiting_actions': {'AC-finished': {
+            'action': {'id': 'AC-finished', 'role': 'research_plan'}, 'reason': 'input_overflow'}}})
+        question = questions.link(runtime, execution_id=None, field='resolution_question/question',
+            source_ref='UI-fixture', owner='user', targets=['AC-finished'], blocks=True, clock=self.clock)
+        instance['governance_sources'] = {'GS-answer': governance.preserve_source('GS-answer',
+            'The requested input is supplied.', origin='user')}
+        instance['decisions'] = {}
+        instance, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'question_answer',
+            'text': 'The requested input is supplied.', 'resolves_questions': [question['id']],
+            'target_ids': ['AC-finished']}, source_ref='GS-answer', clock=self.clock)
+        runtime['waiting_actions'].clear()
         checked = self.repository.validate_candidate(instance, runtime)
         self.assertEqual(checked['runtime']['question_links'][0]['target_ids'], ['AC-finished'])
 

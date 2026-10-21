@@ -342,6 +342,9 @@ def render_human_report(report: dict) -> str:
         lines.append('  coordinates: ' + json.dumps(coordinates, ensure_ascii=False, sort_keys=True))
         lines.append('  targets: ' + json.dumps({field: row[field] for field in
             ('target_ids', 'unresolved_target_ids')}, ensure_ascii=False, sort_keys=True))
+        if row.get('handling'):
+            lines.append('  handling: ' + json.dumps(row['handling'], ensure_ascii=False, sort_keys=True))
+            lines.append('  reports: ' + json.dumps(row['reports'], ensure_ascii=False, sort_keys=True))
     for row in report.get('repetition_holds', []):
         lines.append(f"repetition hold: {row['lineage']}/{row['lineage_id']} "
                      f"count={row['count']}/{row['limit']} next={row['next_owner']} reason={row['reason']}")

@@ -687,7 +687,8 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             # This is authority, not a second application of TASKS' lifecycle.
             _queue(runtime, "research_plan", reason, scope_decision_id=decision_id, clock=clock)
         else:
-            task["revision_requested"] = {"source": decision_id, "revision": task["revision"], "reason": reason}
+            task["revision_requested"] = {"revision": task["revision"], "contract_sha256": contract_hash(task),
+                "source_refs": [decision_id], "user_decision_refs": [decision_id], "reason": reason}
             from .revisions import capture_targets
             _queue(runtime, "research_preparation", reason, target=tid,
                    revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id), clock=clock)
@@ -952,8 +953,134 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
 
 
 def import_seal(bundle):
-    """The seal digest of an intent import: every field but the seal, its check, status, supersession and application."""
-    return exact_content_hash({k: v for k, v in bundle.items() if k not in {"sha256", "check", "status", "superseded_by", "application"}})
+    """Seal the interpretation, independently of its immutable check receipts."""
+    return exact_content_hash({k: v for k, v in bundle.items() if k not in {"sha256", "check", "check_history", "status", "superseded_by", "application"}})
+
+
+def import_check_evidence_basis(instance, runtime, wait):
+    """Observe only this consumer's fixed QU scopes and actual cited content."""
+    from .questions import question_scope_state, reference_basis
+    return {'questions': {qid: question_scope_state(runtime, qid, scope)
+                          for qid, scope in wait['question_scopes'].items()},
+            'records': {ref: reference_basis(instance, runtime, ref) for ref in wait['evidence_basis']}}
+
+
+def import_check_evidence_ready(wait, basis):
+    if (set(basis['questions']) != set(wait['question_scopes']) or set(basis['records']) != set(wait['evidence_basis'])
+            or any(row['ref'] != ref for ref, row in basis['records'].items())):
+        raise ValueError('import check evidence basis differs from its fixed wait scope')
+    questions = basis['questions']
+    return (bool(questions) and all(row['resolved'] for row in questions.values())
+            and questions != wait['question_resolution_basis']) or basis['records'] != wait['evidence_basis']
+
+
+def validate_import_check_wait(runtime, bundle, wait, check):
+    execution = runtime.get('executions', {}).get(wait['execution_id'], {})
+    action = wait['action']
+    if (wait.get('kind') != 'import_check_evidence' or wait['import_id'] != bundle['id'] or wait['bundle_sha256'] != bundle['sha256']
+            or wait['source_sha256'] != bundle['source']['sha256'] or wait['check_sha256'] != check['sha256']
+            or wait['execution_id'] != check['execution_id'] or action != execution.get('action')
+            or action.get('role') != 'intent_interpretation' or action.get('stage') != 'check'
+            or action.get('import_id') != bundle['id'] or action.get('target') != bundle['input_ref']
+            or wait['next_owner'] != 'question_handler'
+            or check['decision'] == 'revision_required' or (check['decision'] == 'approved' and check['scope_complete'])):
+        raise ValueError('import check wait differs from its unresolved check')
+    ids = set(wait['question_ids'])
+    if not ids or ids != set(wait['question_scopes']) or ids != set(wait['question_resolution_basis']):
+        raise ValueError('import check wait must bind exact question scopes and receipt basis')
+    if any(row['ref'] != ref for ref, row in wait['evidence_basis'].items()):
+        raise ValueError('import check wait content basis differs from its references')
+    links = {q['id']: q for q in runtime.get('question_links', [])}
+    for qid, scope in wait['question_scopes'].items():
+        if qid not in links or not scope or set(scope) - set(links[qid]['target_ids']):
+            raise ValueError('import check wait question scope does not resolve')
+        origins = [o for o in links[qid]['origins'] if o['execution_id'] == check['execution_id']]
+        if set(scope) - {t for o in origins for t in o['target_ids']}:
+            raise ValueError('import check wait lacks its actual question origin')
+
+
+def import_check_action_release(runtime, bundle, action, previous):
+    """Resolve an engine release, never a caller's permission to overwrite a check."""
+    ref = action.get('import_check_release')
+    release = next((row for row in runtime.get('history', [])
+                    if row.get('kind') == 'import_check_evidence_resumed' and row.get('sha256') == ref), None)
+    if not release or release['sha256'] != exact_content_hash({k: v for k, v in release.items() if k != 'sha256'}):
+        raise ValueError('check is sealed; evidence release required')
+    wait = release['previous']
+    validate_import_check_wait(runtime, bundle, wait, previous)
+    original = runtime['executions'][previous['execution_id']]
+    if (original.get('status') != 'ended' or original.get('outcome') != 'output_accepted'
+            or not any(r.get('execution_id') == previous['execution_id'] and 'output' in r.get('members', [])
+                       for r in runtime.get('integrations', {}).values())):
+        raise ValueError('import check release requires the accepted original check receipt')
+    if (action.get('role') != 'intent_interpretation' or action.get('stage') != 'check'
+            or action.get('import_id') != bundle['id'] or action.get('target') != bundle['input_ref']
+            or not import_check_evidence_ready(wait, release['basis'])):
+        raise ValueError('check evidence release differs from the unresolved import')
+    return release
+
+
+def import_check_release(runtime, bundle, execution_id, previous):
+    action = runtime.get('executions', {}).get(execution_id, {}).get('action', {})
+    release = import_check_action_release(runtime, bundle, action, previous)
+    lineage = [row.get('action', {}).get('id') for _, row in
+               execution_lineage(runtime, execution_id, ('continuation_of',)) if row]
+    if release['action_id'] not in lineage:
+        raise ValueError('check evidence release belongs to another execution')
+    return release
+
+
+def validate_import_checks(bundle, runtime):
+    """The current check and history share seals, coverage and execution rules."""
+    history = bundle['check_history']
+    if history and not bundle.get('check'):
+        raise ValueError('check history requires its current check')
+    prior, authors = None, [bundle['execution_id']]
+    for check in [*history, *([bundle['check']] if bundle.get('check') else [])]:
+        if check.get('sha256') != exact_content_hash({k: v for k, v in check.items() if k != 'sha256'}):
+            raise ValueError('sealed check changed')
+        validate_import_check_output(bundle, check)
+        eid = check['execution_id']
+        validate_independent_execution(runtime, eid, authors)
+        execution = runtime['executions'][eid]
+        if execution.get('role') != 'intent_interpretation' or execution.get('intent_import_sha256') != bundle['sha256']:
+            raise ValueError('checker execution must bind exact preserved import input')
+        if prior:
+            release = import_check_release(runtime, bundle, eid, prior)
+            if check.get('reconsideration_ref') != release['sha256']:
+                raise ValueError('check history must retain its evidence release')
+            if not execution.get('import_check_basis'):
+                raise ValueError('check history must retain its delivered evidence basis')
+        elif check.get('reconsideration_ref'):
+            raise ValueError('first check cannot consume an evidence release')
+        authors.append(eid)
+        prior = check
+
+
+def validate_import_check_output(bundle, output):
+    if output.get('bundle_sha256') != bundle['sha256']: raise ValueError('check read a different import')
+    if output.get('decision') not in INTERPRETATION_DECISIONS: raise ValueError('invalid semantic verdict')
+    if type(output.get('scope_complete')) is not bool: raise ValueError('scope completeness required')
+    for field, expected in (('unit_ids', [u['unit_id'] for u in bundle['output']['import_units']]),
+                            ('question_ids', [q['id'] for q in bundle['output'].get('question_details', [])])):
+        distinct_texts(output.get(field), field)
+        if set(output[field]) - set(expected) or (output['scope_complete'] and set(output[field]) != set(expected)):
+            raise ValueError('check must cover all meaning units and questions')
+    distinct_texts(output.get('findings'), 'check findings')
+    if output['decision'] == 'revision_required' and not output['findings']:
+        raise ValueError('failed check needs repair findings')
+
+
+def import_check_input_errors(output, extensions):
+    """Missing check evidence has actual routed owners, separate from import questions."""
+    if output.get('decision') == 'revision_required' or (output.get('decision') == 'approved' and output.get('scope_complete')):
+        return []
+    routes = extensions.get('question_routes', [])
+    indices = [r['question_index'] for r in routes]
+    if (not indices or sorted(indices) != list(range(len(output.get('questions', []))))
+            or any(not r['target_ids'] for r in routes)):
+        return ['unresolved import check requires explicitly routed missing-input questions']
+    return []
 
 
 def import_input_source(instance, runtime, input_id):
@@ -1002,7 +1129,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
               "basis_sha256": _import_basis(instance, runtime, output),
               "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers, clock=clock)),
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
-              "status": "checking"}
+              "status": "checking", "check_history": []}
     bundle['input_ref'] = input_ref
     bundle["sha256"] = import_seal(bundle)
     if previous: previous["superseded_by"] = identifier
@@ -1017,6 +1144,7 @@ def current_import(instance, runtime, import_id, *, owner_handlers=None, clock):
     if import_input_source(instance, runtime, bundle['input_ref']) != bundle['source']:
         raise ValueError('original public input changed')
     if bundle["sha256"] != import_seal(bundle): raise ValueError("sealed import changed")
+    validate_import_checks(bundle, runtime)
     source = instance.get("governance_sources", {}).get(bundle["source"]["id"])
     if source is not None and source != bundle["source"]: raise ValueError("original version changed")
     receipt = bundle.get("application")
@@ -1035,23 +1163,28 @@ def current_import(instance, runtime, import_id, *, owner_handlers=None, clock):
 
 def check_import(instance, runtime, import_id, output, *, execution_id, owner_handlers=None, clock):
     bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers, clock=clock)
-    if bundle.get("check"): raise ValueError("check is sealed; reauthor instead")
     require_text(execution_id, "checker execution")
-    validate_independent_execution(runtime,execution_id,[bundle["execution_id"]])
+    prior = bundle.get('check')
+    release = import_check_release(runtime, bundle, execution_id, prior) if prior else None
+    validate_independent_execution(runtime, execution_id,
+        [bundle['execution_id'], *(c['execution_id'] for c in bundle['check_history']),
+         *([prior['execution_id']] if prior else [])])
     execution = runtime.get("executions", {}).get(execution_id, {})
     if execution.get("role") != "intent_interpretation" or execution.get("intent_import_sha256") != bundle["sha256"]:
         raise ValueError("checker execution must bind exact preserved import input")
-    if output.get("bundle_sha256") != bundle["sha256"]: raise ValueError("check read a different import")
-    if output.get("decision") not in INTERPRETATION_DECISIONS: raise ValueError("invalid semantic verdict")
-    if type(output.get("scope_complete")) is not bool: raise ValueError("scope completeness required")
-    for field, expected in (("unit_ids", [u["unit_id"] for u in bundle["output"]["import_units"]]),
-                            ("question_ids", [q["id"] for q in bundle["output"].get("question_details", [])])):
-        distinct_texts(output.get(field), field)
-        if output["scope_complete"] and set(output[field]) != set(expected): raise ValueError("check must cover all meaning units and questions")
-    distinct_texts(output.get("findings"), "check findings")
-    if output["decision"] == "revision_required" and not output["findings"]: raise ValueError("failed check needs repair findings")
+    validate_import_check_output(bundle, output)
+    if release:
+        from .input_basis import CurrentnessChanged
+        before = execution.get('import_check_basis')
+        after = import_check_evidence_basis(instance, runtime, release['previous'])
+        if before != after:
+            raise CurrentnessChanged([{'id': import_id, 'field': 'import_check_evidence', 'before': before, 'after': after}])
     check = {**deepcopy(output), "execution_id": execution_id}
+    if release:
+        check['reconsideration_ref'] = release['sha256']
     check["sha256"] = exact_content_hash(check)
+    if prior:
+        bundle['check_history'].append(deepcopy(prior))
     bundle["check"] = check
     bundle["status"] = output["decision"] if output["scope_complete"] else "unresolved"
     return deepcopy(bundle)
@@ -1132,8 +1265,8 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     from .questions import link
     for q in bundle["output"].get("question_details", []):
         row = link(state, execution_id=bundle["execution_id"], field=f"output/questions/{q['question_index']}", owner="user",
-                   targets=q["target_ids"], blocks=q["blocks"], reason=q["reason"], checked_by=check["execution_id"], clock=clock)
-        row.update(source_kind="intent_import", source_id=import_id)
+                   targets=q["target_ids"], blocks=q["blocks"], reason=q["reason"], checked_by=check["execution_id"],
+                   source_kind='intent_import', source_id=import_id, clock=clock)
     if any(q["blocks"] for q in bundle["output"].get("question_details", [])):
         outcome = {"status": "awaiting_decision", "import_id": import_id, "applied_units": []}
     else:

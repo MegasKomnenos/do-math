@@ -218,7 +218,8 @@ class AcademicPreparationPrefixTests(unittest.TestCase):
         previous_rules = deepcopy(task.get('initial_observation_rules', []))
         _ended_execution(sim.engine, 'EX-unrated-review', 'task_contract_review')
         sim.engine._apply({'role': 'task_contract_review', 'target': task['id']},
-            review_items([task['id']], decision='revision_required', findings=['Supply the missing rating.']),
+            review_items([task['id']], decision='revision_required', findings=['Supply the missing rating.'],
+                         revision_fields=['model_assessment', 'initial_observation_rules']),
             'EX-unrated-review', owns_response=False)
         task = sim.runtime['tasks'][task['id']]
         sim.engine._ensure_model_assessments()
@@ -258,7 +259,8 @@ class AcademicPreparationPrefixTests(unittest.TestCase):
             self.assertTrue(task['initial_observation_rules'])
             observed.append(deepcopy(task))
             return {**output, **contract_review(context, decision='revision_required',
-                findings=['평가 근거를 보완한다.'])}
+                findings=['평가 근거를 보완한다.'],
+                revision_fields=['model_assessment', 'initial_observation_rules'])}
 
         sim.model.on('task_contract_review').reply(Answer(reject))
         with ExecutedLines(sim.engine._ensure_model_assessments) as reached:

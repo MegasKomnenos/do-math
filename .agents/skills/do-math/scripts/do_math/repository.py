@@ -34,7 +34,7 @@ from .git_store import GitStateStore
 from .file_io import PhysicalBoundary
 # canonical_json and its value check run on every node of every save.
 from .canonical import FrozenText, canonical_json, exact_content_hash, same_json_value, validate_storage_value
-from .payloads import decode, encode, seal_large
+from .payloads import decode, encode, prefetch, seal_large
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
@@ -259,11 +259,16 @@ class ResearchRepository:
         # Sealed artifacts are not parsed or loaded just to reconstruct state.
         files = self._store.read_many(head, sorted(p for p in paths if not p.startswith(ARTIFACT_ROOT)))
         payload_bytes = {}
+        def prefetch_payloads(paths):
+            missing = [path for path in paths if path not in payload_bytes]
+            for offset in range(0, len(missing), 64):
+                payload_bytes.update(self._store.read_many(head, missing[offset:offset + 64]))
         def read_payload(path):
             if path not in payload_bytes:
-                payload_bytes[path] = self._store.read_bytes(head, path)
+                prefetch_payloads([path])
             return payload_bytes[path]
         read_payload.decoded = {}
+        read_payload.prefetch = prefetch_payloads
         with phase('snapshot_decode', snapshot=head):
             instance, runtime, _ = _decode_families(files, self.contract, self._store.object_format,
                                                     read_payload=read_payload, git_dir=self.git_dir)
@@ -798,12 +803,15 @@ def _decode_families(files, contract, object_format, *, read_payload, git_dir=No
     third value is None.
     """
     states, descriptors, expected = {}, [], set()
+    documents = {path: _decode_object(raw) for path, raw in files.items()}
+    prefetch((document for path, document in documents.items()
+              if not path.endswith('/_state/manifest.json')), read_payload, git_dir)
     installed = contract.manifest()
     for root in ("research", "runtime"):
         manifest_path = f"{root}/_state/manifest.json"
         if manifest_path not in files:
             raise ValueError("missing family manifest: " + root)
-        manifest = _decode_object(files[manifest_path])
+        manifest = documents[manifest_path]
         declared = manifest.get("contract")
         if (set(manifest) != {"contract", "object_format", "containers"}
                 or not isinstance(declared, dict) or set(declared) != set(installed)
@@ -822,7 +830,7 @@ def _decode_families(files, contract, object_format, *, read_payload, git_dir=No
         if metadata_path not in files:
             raise ValueError("missing root metadata record: " + root)
         raw_metadata = files[metadata_path]
-        envelope = _decode_object(raw_metadata)
+        envelope = documents[metadata_path]
         metadata = decode(envelope, read_payload, git_dir)
         if not isinstance(metadata, dict) or envelope.get('contract_id') != STATE_CONTRACT_ID or envelope.get('family') != 'metadata':
             raise ValueError("invalid root metadata envelope: " + root)
@@ -864,7 +872,7 @@ def _decode_families(files, contract, object_format, *, read_payload, git_dir=No
                     raise ValueError("missing registered record file: " + path)
                 expected.add(path)
                 raw = files[path]
-                envelope = _decode_object(raw)
+                envelope = documents[path]
                 row = decode(envelope, read_payload, git_dir)
                 if envelope.get('contract_id') != STATE_CONTRACT_ID or envelope.get('family') != name:
                     raise ValueError("invalid record envelope: " + path)

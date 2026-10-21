@@ -231,25 +231,23 @@ class RevisionTransitionTests(unittest.TestCase):
         self.assertFalse(self.engine._selected_action_current(action, evaluation_context=self.engine._evaluation_context()))
         self.assertEqual(self.sim.runtime, before)
 
-    def test_contract_revision_cancels_unstarted_selection_and_records_owner(self):
+    def test_revision_writer_cancels_selection_without_inventing_a_required_request(self):
         selected = select(self.sim)
         previous = deepcopy(selected)
         history = deepcopy(self.sim.runtime['history'])
         revision = enqueue(self.engine, 'research_preparation', self.identifier)
         task = self.sim.runtime['tasks'][self.identifier]
         self.assertEqual(self.sim.runtime['queue'], [revision])
-        self.assertEqual(task['status'], 'waiting')
-        self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],
-            'next_owner': 'research_preparation', 'basis_ref': revision['id'], 'reason': 'contract revision requested'})
-        self.assertEqual(task['revision_requested'], {'revision': task['revision'], 'source': revision['id'],
-                                                    'reason': 'contract revision requested'})
+        self.assertEqual(task['status'], 'planned')
+        self.assertNotIn('waiting', task)
+        self.assertNotIn('revision_requested', task)
+        self.assertTrue(planning.revision_waits({'role': 'research_work', 'target': self.identifier},
+            self.sim.instance, self.sim.runtime))
         self.assertNotIn('selected_by', task)
         self.assertEqual(self.sim.runtime['history'], [*history, {'kind': 'selection_cancelled_for_revision',
             'action': previous, 'revision_action_id': revision['id']}])
         self.save_and_reload()
         self.engine = self.sim.engine
-        from support.wait_reporting import assert_task_wait_report
-        assert_task_wait_report(self, self.engine, self.identifier)
         before = deepcopy(self.sim.runtime['tasks'][self.identifier])
         enqueue(self.engine, 'research_preparation', self.identifier)
         self.assertEqual(self.sim.runtime['tasks'][self.identifier], before)
@@ -258,7 +256,7 @@ class RevisionTransitionTests(unittest.TestCase):
         self.assertEqual(current['revision'], before['revision'] + 1)
         self.assertNotIn('waiting', current)
         self.assertNotIn('revision_requested', current)
-        self.assertEqual(current['revision_history'][-1]['waiting'], before['waiting'])
+        self.assertNotIn('waiting', current['revision_history'][-1])
         self.assertEqual(current['reviews'][-1]['decision'], 'approved')
 
     def test_preparation_only_cancels_selection_without_requesting_contract_revision(self):
@@ -354,15 +352,16 @@ class RevisionTransitionTests(unittest.TestCase):
         self.assertEqual(action['revision_targets'], {})
         self.assertEqual(self.sim.runtime['tasks'][self.identifier]['status'], 'closed')
 
-    def test_revision_of_active_task_without_queued_selection_still_sets_wait_owner(self):
+    def test_revision_writer_without_queued_selection_preserves_its_actual_request(self):
         selected = select(self.sim)
         self.engine._remove_action(selected)
         history = deepcopy(self.sim.runtime['history'])
         action = enqueue(self.engine, 'research_preparation', self.identifier)
         task = self.sim.runtime['tasks'][self.identifier]
-        self.assertEqual(task['waiting'], {'kind': 'contract_revision', 'target_refs': [self.identifier],
-            'next_owner': 'research_preparation', 'basis_ref': action['id'], 'reason': 'contract revision requested'})
-        self.assertEqual(task['status'], 'waiting')
+        self.assertNotIn('waiting', task)
+        self.assertNotIn('revision_requested', task)
+        self.assertEqual(task['status'], 'planned')
+        self.assertIn(action, self.sim.runtime['queue'])
         self.assertEqual(self.sim.runtime['history'], history)
         self.save_and_reload()
 

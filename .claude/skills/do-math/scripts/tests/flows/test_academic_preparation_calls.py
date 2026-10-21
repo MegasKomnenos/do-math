@@ -281,10 +281,22 @@ class RejectedAcademicAssessmentTests(unittest.TestCase):
         self.assertEqual(len(task['model_assessment_history']), 1)
         self.assertFalse(any(a['role'] == 'task_contract_review' for a in engine.runtime['queue']))
 
+        # Missing review input retains the rating and rules until its answer;
+        # it does not declare these AI-authored fields defective.
+        waiting, waiting_id, before = rejected_sim('unresolved')
+        waiting.restart()
+        waiting.engine._refresh_readiness()
+        retained = waiting.runtime['tasks'][waiting_id]
+        self.assertEqual(retained['model_assessment'], before['model_assessment'])
+        self.assertEqual(retained['initial_observation_rules'], before['initial_observation_rules'])
+        self.assertNotIn('model_assessment_history', retained)
+        self.assertEqual(retained['waiting']['kind'], 'contract_review_input')
+        self.assertFalse(any(waiting_id in a.get('assessment_targets', {}) for a in waiting.runtime['queue']))
+
     def test_repaired_and_unchanged_ratings_both_receive_fresh_independent_review(self):
         for unchanged in (False, True):
             with self.subTest(unchanged=unchanged):
-                sim, tid, original = rejected_sim('unresolved' if unchanged else 'revision_required')
+                sim, tid, original = rejected_sim()
                 engine = sim.engine
                 rejected_id = engine.runtime['tasks'][tid]['reviews'][-1]['execution_id']
                 engine.runtime['queue'] = [a for a in engine.runtime['queue']

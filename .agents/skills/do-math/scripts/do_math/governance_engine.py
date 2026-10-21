@@ -7,7 +7,7 @@ from .wait_rules import waiting_action
 from copy import deepcopy
 from pathlib import Path
 
-from . import governance, academic, knowledge, knowledge_records, execution_profiles
+from . import governance, academic, knowledge, knowledge_records, execution_profiles, questions
 from .configuration import validate_config
 from .control_contracts import user_decision_changed
 from .canonical import canonical_json, exact_content_hash
@@ -138,6 +138,10 @@ class GovernanceEngineMixin:
             context['source_coordinate_unit'] = 'unicode_codepoint'
             context['interpretation_stage'] = action.get('stage', 'interpret')
             context['interpretation_to_check'] = deepcopy(self.runtime.get('intent_imports', {}).get(action.get('import_id')))
+            if action.get('import_check_release'):
+                release = next(row for row in self.runtime['history']
+                    if row.get('kind') == 'import_check_evidence_resumed' and row.get('sha256') == action['import_check_release'])
+                context['import_check_evidence'] = governance.import_check_evidence_basis(self.instance, self.runtime, release['previous'])
             if action.get('previous_import_id'):
                 context['previous_interpretation'] = deepcopy(self.runtime['intent_imports'][action['previous_import_id']])
         return context
@@ -154,8 +158,112 @@ class GovernanceEngineMixin:
             expected = governance.additional_audit_input(self.instance, self.runtime)
             if context.get('additional_audit_input') != expected: raise ValueError('delivered additional audit input changed')
             execution['additional_audit_input'] = deepcopy(expected)
+        if action.get('import_check_release'):
+            bundle = self.runtime['intent_imports'][action['import_id']]
+            release = governance.import_check_release(self.runtime, bundle, execution['id'], bundle['check'])
+            expected = governance.import_check_evidence_basis(self.instance, self.runtime, release['previous'])
+            if context.get('import_check_evidence') != expected:
+                raise ValueError('delivered import check evidence changed')
+            execution['import_check_basis'] = deepcopy(expected)
+
+    def _retire_import_check_waits(self, bundle, reason):
+        for aid, wait in list(self.runtime.get('waiting_actions', {}).items()):
+            if wait.get('kind') != 'import_check_evidence' or wait['import_id'] != bundle['id']:
+                continue
+            self.runtime['history'].append({'kind': 'import_check_evidence_retired', 'reason': reason,
+                'import_id': bundle['id'], 'previous': deepcopy(wait)})
+            del self.runtime['waiting_actions'][aid]
+
+    def _wait_import_check_evidence(self, action, bundle, execution_id, *, source_ref=None,
+                                    read_artifact=None, output_files=None):
+        execution = self.runtime['executions'][execution_id]
+        output = bundle['check']
+        routes = {r['question_index']: r for r in execution.get('extensions', {}).get('question_routes', [])}
+        errors = governance.import_check_input_errors(output, execution.get('extensions', {}))
+        if errors:
+            raise ValueError(errors[0])
+        source_ref = source_ref or execution.get('submission_intent', {}).get('output_ref')
+        if not source_ref:
+            raise ValueError('import check questions require the sealed output source')
+        scopes = {}
+        for index, route in routes.items():
+            row = questions.link(self.runtime, execution_id=execution_id, field='questions/' + str(index),
+                owner=route['owner'], targets=route['target_ids'], source_ref=source_ref,
+                reason=route['reason'], blocks=route.get('blocks', False),
+                obligation=route.get('obligation'), existing_question_id=route.get('existing_question_id'),
+                handler_role=route.get('handler_role'), reopen_reason=route.get('reopen_reason'),
+                observation_basis=([self._resolve_execution_evidence(execution_id, ref,
+                    read_artifact=read_artifact, output_files=output_files) for ref in route['reopen_basis_refs']]
+                    if route.get('reopen_basis_refs') else None), clock=self.ports.clock)
+            scopes[row['id']] = list(dict.fromkeys([*scopes.get(row['id'], []), *route['target_ids']]))
+        _, issued_instance, issued_runtime = self.store.view(execution['input_snapshot'])
+        supplied = {q['id'] for q in issued_runtime.get('question_links', [])}
+        # Read receipts in the check's actual input, not receipts arriving during its call.
+        receipt_basis = {qid: questions.question_scope_state(issued_runtime, qid, scope)
+            if qid in supplied else {'resolved': False, 'resolution_refs': []} for qid, scope in scopes.items()}
+        # QU routing/report counts and the mutable import/check are not content evidence.
+        excluded = ({q['id'] for q in self.runtime.get('question_links', [])} | set(self.runtime.get('intent_imports', {}))
+            | {bundle['execution_id'], execution_id, *(c['execution_id'] for c in bundle['check_history'])})
+        evidence = {ref: questions.reference_basis(issued_instance, issued_runtime, ref)
+                    for ref in output.get('used_sources', []) if ref not in excluded}
+        self.runtime.setdefault('waiting_actions', {})[action['id']] = waiting_action({
+            'action': deepcopy(action), 'kind': 'import_check_evidence', 'import_id': bundle['id'],
+            'execution_id': execution_id, 'bundle_sha256': bundle['sha256'],
+            'source_sha256': bundle['source']['sha256'], 'check_sha256': output['sha256'],
+            'question_ids': list(scopes), 'question_scopes': scopes, 'question_resolution_basis': receipt_basis,
+            'evidence_basis': evidence, 'reason': '; '.join(output['findings']) or 'Required interpretation check evidence is unavailable',
+            'next_owner': 'question_handler'})
+
+    def _resume_import_check_waits(self):
+        """One new independent check for a real release of this fixed input wait."""
+        from .session_slots import held_reservations
+        if self.instance.get('lifecycle', {}).get('state') == 'paused' or self._instance_closed():
+            return False
+        changed = False
+        for aid, wait in list(self.runtime.get('waiting_actions', {}).items()):
+            if wait.get('kind') != 'import_check_evidence':
+                continue
+            bundle = self.runtime['intent_imports'][wait['import_id']]
+            owners = {eid: e for eid, e in self.runtime['executions'].items()
+                      if e.get('action', {}).get('id') == aid}
+            if any(e['status'] != 'ended' for e in owners.values()) or held_reservations(self.runtime, owners):
+                continue
+            if self.runtime['executions'][wait['execution_id']].get('outcome') != 'output_accepted':
+                continue
+            if bundle.get('superseded_by'):
+                self._retire_import_check_waits(bundle, 'Interpretation was superseded')
+                changed = True
+                continue
+            try:
+                governance.current_import(self.instance, self.runtime, bundle['id'],
+                    owner_handlers=self.governance_owner_handlers(), clock=self.ports.clock)
+            except ValueError as error:
+                if str(error) not in {'original public input changed', 'original version changed',
+                        'import authority or affected targets changed', 'import domain premises changed',
+                        'import domain owner is no longer registered'}:
+                    raise
+                self._queue_intent_rework(bundle, str(error))
+                changed = True
+                continue
+            basis = governance.import_check_evidence_basis(self.instance, self.runtime, wait)
+            if not governance.import_check_evidence_ready(wait, basis):
+                continue
+            identifier = self.ports.clock.new_id('AC')
+            release = {'kind': 'import_check_evidence_resumed', 'action_id': identifier,
+                       'previous': deepcopy(wait), 'basis': basis}
+            release['sha256'] = exact_content_hash(release)
+            self.runtime['history'].append(release)
+            fields = {key: deepcopy(wait['action'][key]) for key in
+                      ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id', 'lineage_id') if key in wait['action']}
+            self._enqueue('intent_interpretation', bundle['input_ref'], stage='check', import_id=bundle['id'],
+                id=identifier, import_check_release=release['sha256'], **fields,
+                reason='Required evidence changed; independently check the same preserved interpretation')
+            del self.runtime['waiting_actions'][aid]
+            changed = True
+        return changed
 
     def _queue_intent_rework(self, bundle, reason):
+        self._retire_import_check_waits(bundle, reason)
         author = self.runtime.get('executions', {}).get(bundle['execution_id'], {}).get('action', {})
         fields = {key: deepcopy(author[key]) for key in ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id') if key in author}
         input_id = bundle['input_ref']
@@ -259,17 +367,20 @@ class GovernanceEngineMixin:
             bundle = self.runtime.get('intent_imports', {}).get(change.get('import_id'))
             # Premature approval does not invalidate an interpretation still
             # awaiting its independent check. Keep that check's existing route.
-            if (bundle and 'check' in bundle and not bundle.get('superseded_by')
+            if (bundle and bundle.get('status') == 'approved' and 'check' in bundle and not bundle.get('superseded_by')
                     and bundle.get('application', {}).get('status') != 'applied'):
                 self._queue_intent_rework(bundle, reason)
 
-    def _apply_governance_intent(self, action, output, execution_id):
+    def _apply_governance_intent(self, action, output, execution_id, *, source_ref=None,
+                                 read_artifact=None, output_files=None):
         target = action['target']
         source = self._governance_input_source(target)
         handlers = self.governance_owner_handlers()
         if action.get('stage', 'interpret') == 'interpret':
             bundle = governance.prepare_import(self.instance, self.runtime, source, output, execution_id=execution_id,
                 previous_id=action.get('previous_import_id'), owner_handlers=handlers, input_ref=target, clock=self.ports.clock)
+            if action.get('previous_import_id'):
+                self._retire_import_check_waits(self.runtime['intent_imports'][action['previous_import_id']], 'Interpretation was superseded')
             self._enqueue('intent_interpretation', target, stage='check', import_id=bundle['id'],
                 **{key: deepcopy(action[key]) for key in ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id') if key in action},
                 lineage_id=action.get('lineage_id', action.get('id', target)),
@@ -281,8 +392,12 @@ class GovernanceEngineMixin:
             raise ValueError('original source changed before independent check')
         bundle = governance.check_import(self.instance, self.runtime, action['import_id'], output,
                                          execution_id=execution_id, owner_handlers=handlers, clock=self.ports.clock)
-        if bundle['status'] != 'approved':
+        if bundle['check']['decision'] == 'revision_required':
             self._queue_intent_rework(bundle, '; '.join(bundle['check']['findings']) or 'independent check is unresolved')
+            return bundle
+        if bundle['status'] != 'approved':
+            self._wait_import_check_evidence(action, bundle, execution_id, source_ref=source_ref,
+                read_artifact=read_artifact, output_files=output_files)
             return bundle
         required = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
         if not any(q['blocks'] for q in bundle['output'].get('question_details', [])) and required:

@@ -4,6 +4,7 @@ import re
 import unittest
 
 from do_math import governance as gov
+from do_math.canonical import exact_content_hash
 from support.governance_sim import checked_sim, checked_bundle
 
 class GovernanceImportSealRejectionTests(unittest.TestCase):
@@ -142,7 +143,7 @@ class GovernanceImportSealRejectionTests(unittest.TestCase):
         handlers = sim.engine.governance_owner_handlers()
         r['executions'][bundle['check']['execution_id']]['intent_import_sha256'] = '0' * 64
         before = deepcopy((i, r))
-        with self.assertRaisesRegex(ValueError, "^" + re.escape('checker input evidence no longer resolves') + "$"):
+        with self.assertRaisesRegex(ValueError, "^" + re.escape('checker execution must bind exact preserved import input') + "$"):
             gov.apply_import(i, r, identifier, owner_handlers=handlers, clock=sim.clock)
         self.assertEqual((i, r), before)
         self.assertEqual(sim.engine.store.load(sim.engine.head)[1:], stored)
@@ -263,6 +264,8 @@ class GovernanceImportSealRejectionTests(unittest.TestCase):
         identifier = bundle['id']
         handlers = sim.engine.governance_owner_handlers()
         bundle['check']['scope_complete'] = False
+        bundle['status'] = 'unresolved'
+        bundle['check']['sha256'] = exact_content_hash({k: v for k, v in bundle['check'].items() if k != 'sha256'})
         before = deepcopy((i, r))
         with self.assertRaisesRegex(ValueError, "^" + re.escape('approval draft requires a complete independently checked import') + "$"):
             gov.import_approval_draft(i, r, identifier, owner_handlers=handlers, clock=sim.clock)
@@ -277,6 +280,8 @@ class GovernanceImportSealRejectionTests(unittest.TestCase):
         identifier = bundle['id']
         handlers = sim.engine.governance_owner_handlers()
         bundle['check']['decision'] = 'unresolved'
+        bundle['status'] = 'unresolved'
+        bundle['check']['sha256'] = exact_content_hash({k: v for k, v in bundle['check'].items() if k != 'sha256'})
         before = deepcopy((i, r))
         with self.assertRaisesRegex(ValueError, "^" + re.escape('approval draft requires a complete independently checked import') + "$"):
             gov.import_approval_draft(i, r, identifier, owner_handlers=handlers, clock=sim.clock)
@@ -292,7 +297,7 @@ class GovernanceImportSealRejectionTests(unittest.TestCase):
         handlers = sim.engine.governance_owner_handlers()
         bundle['check']['sha256'] = '0' * 64
         before = deepcopy((i, r))
-        with self.assertRaisesRegex(ValueError, "^" + re.escape('approval draft requires a complete independently checked import') + "$"):
+        with self.assertRaisesRegex(ValueError, "^" + re.escape('sealed check changed') + "$"):
             gov.import_approval_draft(i, r, identifier, owner_handlers=handlers, clock=sim.clock)
         self.assertEqual((i, r), before)
         self.assertEqual(sim.engine.store.load(sim.engine.head)[1:], stored)

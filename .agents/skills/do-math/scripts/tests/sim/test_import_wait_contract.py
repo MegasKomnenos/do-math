@@ -11,6 +11,7 @@ from support.engine_lifecycle import applied
 from support.governance_cases import question_sim, question_bundle, initial_question_sim
 from support.governance_sim import checked_sim, checked_bundle, approval, initial_checked_sim
 from support.wait_reporting import assert_wait_report
+from support.intent_evidence import (waiting_sim, initial_waiting_sim, evidence_bundle, authorize_initial_evidence)
 
 
 def setUpModule():
@@ -23,6 +24,7 @@ def setUpModule():
 CASES = {
     'import_application_authority': ((checked_sim, initial_checked_sim), checked_bundle),
     'import_user_decision': ((question_sim, initial_question_sim), question_bundle),
+    'import_check_evidence': ((waiting_sim, initial_waiting_sim), evidence_bundle),
 }
 
 
@@ -51,6 +53,33 @@ class ImportWaitContractTests(unittest.TestCase):
             sim.engine._resume_import_question_waits()
             sim.engine._after_governance_import(bundle['id'])
             self.assertEqual((sim.instance, sim.runtime), held)
+        if kind == 'import_check_evidence':
+            if sim.instance['lifecycle']['state'] == 'initializing':
+                authorize_initial_evidence(sim)
+            # The existing maintenance worker seals the answer; it is not a
+            # permission to reinterpret the original or approve its meaning.
+            sim.run_until(lambda s: identifier not in s.runtime.get('waiting_actions', {}), max_steps=4)
+            history = [row for row in sim.runtime['history']
+                       if row.get('kind') == 'import_check_evidence_resumed'
+                       and row['previous']['action']['id'] == identifier]
+            self.assertEqual(len(history), 1)
+            self.assertEqual(history[0]['previous'], entry)
+            next_id = history[0]['action_id']
+            next_actions = [a for a in sim.runtime['queue'] if a['id'] == next_id]
+            next_actions += [e['action'] for e in sim.runtime['executions'].values()
+                             if e['action']['id'] == next_id]
+            self.assertEqual(len({a['id'] for a in next_actions}), 1)
+            for action in next_actions:
+                self.assertEqual((action['stage'], action['import_id'], action['target']),
+                                 ('check', bundle['id'], bundle['input_ref']))
+                self.assertEqual(action['import_check_release'], history[0]['sha256'])
+            released = deepcopy((sim.instance, sim.runtime))
+            for _ in range(2):
+                self.assertFalse(sim.engine._resume_import_check_waits())
+                self.assertEqual((sim.instance, sim.runtime), released)
+            sim.engine._save()
+            self.assertNotIn(identifier, sim.engine.store.load()[2].get('waiting_actions', {}))
+            return
         if kind == 'import_application_authority':
             change = approval(bundle)
         else:

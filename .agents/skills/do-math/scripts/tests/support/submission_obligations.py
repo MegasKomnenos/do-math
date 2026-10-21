@@ -73,6 +73,17 @@ def schema_seed(schema):
             if schema.get('additionalProperties') is False:
                 raise AssertionError('닫힌 구조 표본에서 minProperties를 만족할 키가 없다')
             value['구조표본' + str(len(value))] = '값'
+        # Conditional requirements belong to the supplied schema, including
+        # the property constraints that make its required fields valid.
+        from jsonschema import Draft202012Validator
+        for clause in schema.get('allOf', []):
+            if 'if' in clause and Draft202012Validator(clause['if']).is_valid(value):
+                consequence = clause.get('then', {})
+                for key in consequence.get('required', []):
+                    value.setdefault(key, schema_seed(schema['properties'][key]))
+                for key, child in consequence.get('properties', {}).items():
+                    if key in value:
+                        value[key] = schema_seed({**schema['properties'][key], **child})
         return value
     if kind == 'array':
         return [schema_seed(schema.get('items', {})) for _ in range(schema.get('minItems', 0))]

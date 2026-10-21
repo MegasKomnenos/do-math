@@ -88,6 +88,8 @@ def judgment_input_keys(role, action):
     """
     keys = list(ROLE_INPUT_REQUIREMENTS[role]['keys'])
     keys.extend(('snapshot', 'execution_profile', 'record_map', 'record_index'))
+    if action.get('question_ids'):
+        keys.append('operations_questions')
     if role == 'supplemental_research':
         keys.extend(('review_research', 'proposal') if action.get('review_cycle_id') else
                     ('task', 'knowledge_catalog', 'relations', 'sources', 'formal_verifier', 'grants'))
@@ -100,6 +102,8 @@ def judgment_input_keys(role, action):
                          'sources', 'reference_catalog', 'record_index', 'configuration_source'))
             if action.get('stage') == 'check':
                 keys.append('interpretation_to_check')
+                if action.get('import_check_release'):
+                    keys.append('import_check_evidence')
     elif role == 'maintenance':
         if action.get('kind_definition_id'):
             keys.append('kind_definition_to_check')

@@ -6,9 +6,31 @@ corpus) go through the same function.
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Any
 
 from .values import strict_json_loads
+
+
+def stderr_diagnostics(raw: bytes | None) -> list[dict[str, Any]]:
+    """Index recognized CLI logs in the preserved stderr, without judging the call.
+
+    A models-manager refresh timeout reports a catalog request, not a failed
+    model turn. Unknown log formats remain available in the raw artifact.
+    Offsets and lengths are bytes, including the line's original terminator.
+    """
+    diagnostics = []
+    offset = 0
+    for line in (raw or b"").splitlines(keepends=True):
+        match = re.fullmatch(
+            rb"(\d{4}-\d{2}-\d{2}T[0-9:.]+Z) (ERROR|WARN) codex_models_manager::manager: "
+            rb"failed to refresh available models: request timed out", line.rstrip(b"\r\n"))
+        if match:
+            diagnostics.append({"kind": "model_catalog_refresh_timeout", "scope": "cli_model_catalog",
+                                "reported_at": match[1].decode("ascii"), "reported_level": match[2].decode("ascii"),
+                                "source": {"artifact": "stderr", "offset": offset, "bytes": len(line)}})
+        offset += len(line)
+    return diagnostics
 
 
 def parse_jsonl(raw: bytes | None) -> dict[str, Any]:

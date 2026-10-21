@@ -15,6 +15,8 @@ from .execution_profiles import task_research
 from .values import json_copy
 from .input_basis import CurrentnessChanged
 from .canonical import exact_content_hash
+from .values import is_sha256
+from .git_store import GitStateStoreError
 
 
 REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "evidence_refs",
@@ -34,6 +36,8 @@ def failure_kind(issues):
     rules = {row.get('rule_id', '') for row in issues}
     if 'integration.publication' in rules:
         return 'publication_failure'
+    if rules & {'integration.input_context', 'integration.environment'}:
+        return 'input_failure'
     # Changed premises alone refresh the decision; any other error stays the producer's.
     if rules == {'integration.currentness'}:
         return 'currentness_changed'
@@ -61,6 +65,9 @@ def submission_outcome(received):
         raise ValueError('unknown integration receipt status: ' + repr(received['status']))
     if received['status'] == 'accepted':
         return 'accepted'
+    if any(row.get('rule_id') in {'integration.input_context', 'integration.environment'}
+           for row in received['issues']):
+        return 'publication_wait'
     owners = {row.get('next_owner') for row in received['bundles']}
     if 'engine' in owners:
         return 'publication_wait'
@@ -78,6 +85,11 @@ class ImpactReviewRequired(ValueError):
         self.request = deepcopy(request)
 
 
+def _missing_previous_hashes(bundle, targets):
+    """One required-declaration rule for the fixed checker and live impact gate."""
+    return set(targets) - bundle.get('previous_hashes', {}).keys()
+
+
 def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, input_snapshot):
     """Bind the unchanged held payload to each actual domain plan separately."""
     from . import knowledge, planning
@@ -91,6 +103,14 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
     coordinates = [p for p in bundle["members"] if p.startswith("activity-extensions.json/knowledge_changes/")]
     if len(changes) != len(coordinates) or len({row["id"] for row in changes}) != len(changes):
         raise ValueError("impact changes need distinct targets and exact member coordinates")
+    prior = bundle.get("previous_hashes", {})
+    # Compare before traversing live roots: a target that disappeared after the
+    # fixed check is a changed premise, not an invalid newly authored target.
+    for identifier, expected in prior.items():
+        if identifier not in records or knowledge.content_hash(records[identifier]) != expected:
+            raise CurrentnessChanged([{'id': identifier, 'field': 'content_sha256',
+                'before': expected, 'after': (knowledge.content_hash(records[identifier])
+                                             if identifier in records else None)}])
     for coordinate, change in zip(coordinates, changes):
         target_roots = knowledge.revision_roots(instance, change["id"])
         roots.update(target_roots)
@@ -100,12 +120,8 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
         if family != "knowledge_changes" and target in records:
             roots.add(target)
             targets.add(target)
-    prior = bundle.get("previous_hashes", {})
-    if targets - prior.keys():
+    if _missing_previous_hashes(bundle, targets):
         raise ValueError("bundle previous hashes missing for mutation targets")
-    for identifier, expected in prior.items():
-        if identifier not in records or knowledge.content_hash(records[identifier]) != expected:
-            raise ValueError("bundle previous semantic hash changed: " + identifier)
     if not roots and bundle["impact_set"]:
         raise ValueError("bundle declares impact without an existing mutation root")
 
@@ -349,7 +365,7 @@ def derived_bundles(output, extensions, context):
 
 
 def inspect_bundles(output, extensions, context, *, derived=None):
-    """Check declared structure only; live state is checked again before each CAS.
+    """Check structure and exact fixed-input declarations before any live checks.
 
     derived may carry derived_bundles() of these same arguments."""
     if not isinstance(output, dict) or not isinstance(extensions, dict):
@@ -450,11 +466,23 @@ def inspect_bundles(output, extensions, context, *, derived=None):
         for ref in set(bundle["authority_refs"]) - authorities:
             issues.append(issue("integration.authority_reference", "output/integration_bundles",
                                 "authority is not in the fixed visible input: " + ref, ident))
-        for target, coordinate in mutations.items():
-            if owners[coordinate] != ident:
+        targets = {target: coordinate for target, coordinate in mutations.items() if owners[coordinate] == ident}
+        missing = _missing_previous_hashes(bundle, targets)
+        # Extra declared hashes also bind fixed input; forged extras must not
+        # turn into a live currentness failure later.
+        for target in sorted(set(targets) | bundle.get('previous_hashes', {}).keys()):
+            coordinate = targets.get(target, 'output/integration_bundles')
+            if target not in input_records:
+                issues.append(issue('integration.mutation_target', coordinate,
+                                    'mutation target is not in the fixed visible input: ' + target, ident))
                 continue
-            expected = input_records.get(target, {}).get("content_sha256")
-            if expected and bundle.get("previous_hashes", {}).get(target) != expected:
+            expected = input_records[target].get('content_sha256')
+            if not is_sha256(expected):
+                # This is an engine-supplied input defect, not a producer repair.
+                issues.append(issue('integration.input_context', 'context/' + target + '/content_sha256',
+                                    'fixed mutation target needs a semantic content hash'))
+                continue
+            if target in missing or bundle.get("previous_hashes", {}).get(target) != expected:
                 issues.append(issue("integration.previous_hash", coordinate,
                                     "mutation must name the fixed input content hash", ident))
     return issues
@@ -520,7 +548,7 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
                 continue
             local_issues.append(issue("integration.id_reuse", "output/integration_bundles",
                                       "accepted ID cannot be reused for changed content", ident))
-        stage = "currentness"
+        stage = "validation"
         try:
             if local_issues:
                 raise ValueError("bundle has unresolved submission issues")
@@ -538,17 +566,23 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
             stage = "publication"
             publish(candidate_instance, candidate_runtime, bundle, validated)
         except Exception as error:
+            from .trust_validation import EnvironmentUnavailable
             if not local_issues:
                 # A changed premise found while applying is still a currentness return.
-                rule = "integration.currentness" if isinstance(error, CurrentnessChanged) else "integration." + stage
+                rule = ("integration.currentness" if isinstance(error, CurrentnessChanged)
+                        else "integration.environment" if isinstance(error, (OSError, GitStateStoreError, EnvironmentUnavailable)) and stage != 'publication'
+                        else "integration." + stage)
                 local_issues = [issue(rule, "output/integration_bundles", str(error), ident)]
             results.append({"integration_id": ident, "status": "returned", "issues": local_issues,
                             "next_owner": "producer" if stage != "publication" else "engine"})
-            if isinstance(error, ImpactReviewRequired):
+            if isinstance(error, CurrentnessChanged):
+                results[-1]['next_owner'] = 'refresh_decision'
+            elif isinstance(error, ImpactReviewRequired):
                 results[-1].update(next_owner="impact_review", impact_review_request=deepcopy(error.request))
-            from .trust_validation import EnvironmentUnavailable
             if isinstance(error, EnvironmentUnavailable):
                 results[-1].update(next_owner='engine', environment_wait=dict(error.detail))
+            elif isinstance(error, (OSError, GitStateStoreError)):
+                results[-1]['next_owner'] = 'engine'
             # The durable parent may have changed. ENGINE must reload before
             # trying any further publication, never bless a stale candidate.
             if stage == "publication":

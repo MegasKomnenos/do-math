@@ -2,7 +2,7 @@
 from .wait_rules import waiting_action
 from copy import deepcopy
 
-from . import planning, revisions
+from . import planning, revisions, questions
 from .execution_profiles import RESEARCH_PRODUCER_ROLES, TASK_TARGET_ROLES, task_research
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
@@ -133,6 +133,10 @@ class RevisionEngineMixin:
                 for identifier in shared:
                     basis = action["revision_targets"][identifier]
                     basis["required"] = bool(basis.get("required") or pending[identifier].get("required"))
+                    for field in ('source_refs', 'user_decision_refs'):
+                        refs = list(dict.fromkeys([*basis.get(field, []), *pending[identifier].get(field, [])]))
+                        if refs:
+                            basis[field] = refs
                     reference = {"action_id": parent_id, "reason": entry.get("reason")}
                     if reference not in basis.setdefault("obligation_refs", []):
                         basis["obligation_refs"].append(reference)
@@ -174,10 +178,7 @@ class RevisionEngineMixin:
                 task['status'] = 'planned'
                 task.pop('selected_by', None)
                 continue
-            task["status"] = "waiting"
-            task['waiting']={'kind':'contract_revision','target_refs':[identifier],'next_owner':'research_preparation',
-                'basis_ref':action['id'], 'reason':'contract revision requested'}
-            task['revision_requested']={'revision':task['revision'],'source':action['id'],'reason':'contract revision requested'}
+            task['status'] = 'planned'
             task.pop("selected_by", None)
 
     def _revision_dispatch_waits(self, action):
@@ -195,12 +196,55 @@ class RevisionEngineMixin:
                     except ValueError:
                         continue
                     action["revision_targets"][identifier] = {**old, **{k: v for k, v in current.items() if k != "required"}}
+                    for field in ('source_refs', 'user_decision_refs'):
+                        refs = list(dict.fromkeys([*old.get(field, []), *current.get(field, [])]))
+                        if refs:
+                            action['revision_targets'][identifier][field] = refs
                 action.setdefault("superseded_revision_bases", []).append(previous)
-        from .questions import user_waits
-        return [*user_waits(action, self.instance, self.runtime), *planning.revision_waits(action, self.instance, self.runtime),
+        from .questions import action_waits
+        return [*action_waits(action, self.instance, self.runtime), *planning.revision_waits(action, self.instance, self.runtime),
                 *revisions.action_repetition_waits(self.instance,self.runtime,action)]
 
-    def _apply_revision_followup(self, action, output, execution_id):
+    def _request_contract_reconsideration(self, task, row, execution_id):
+        from .canonical import exact_content_hash
+        contract = planning.contract_hash(task)
+        basis = planning.review_basis_key(task, self.instance, self.runtime)
+        key = exact_content_hash({'contract_sha256': contract, 'basis_key': basis})
+        history = task.setdefault('contract_review_reconsiderations', [])
+        previous = next((r for r in history if r['key'] == key), None)
+        if previous:
+            previous['status'] = 'conflict'
+            # A repeated disagreement retains a real investigation, never an endless review loop.
+            question = questions.link(self.runtime, execution_id=execution_id, field='extensions/revision_resolutions/' + str(
+                next(i for i, r in enumerate(self.runtime['executions'][execution_id]['extensions']['revision_resolutions'])
+                     if r['record_id'] == task['id'])) + '/reason',
+                owner='operations', targets=[task['id']], blocks=True,
+                obligation={'kind': 'decision_conflict', 'subject_ref': task['id'], 'requirement_ref': key},
+                reason=row['reason'], observation_basis=[self._resolve_execution_evidence(execution_id, ref)
+                    for ref in row['request_refs']], reopen_reason='A new independent judgment repeated the disputed request',
+                clock=self.ports.clock)
+            task['waiting'] = {'kind': 'contract_review_input', 'question_ids': [question['id']],
+                'question_scopes': {question['id']: [task['id']]},
+                'question_resolution_basis': {question['id']: questions.question_scope_state(self.runtime, question['id'], [task['id']])},
+                'target_refs': [task['id']], 'next_owner': question['handling']['role'], 'basis_ref': execution_id,
+                'contract_sha256': contract, 'review_basis_key': basis,
+                'reason': 'Independent judgments disagree on the same unchanged contract'}
+            task['status'] = 'waiting'
+            return
+        effective = planning.effective_contract_review(task, self.instance, self.runtime)
+        if effective and effective['decision'] == 'approved':
+            return
+        reconsideration = {'key': key, 'basis_key': basis, 'contract_sha256': contract,
+            'requested_by': execution_id, 'source_refs': list(row['request_refs']),
+            'evidence_refs': list(row['evidence_refs']), 'status': 'pending', 'review_execution_id': None}
+        history.append(reconsideration)
+        self._enqueue('task_contract_review', task['id'],
+            contract_basis={'revision': task['revision'], 'contract_sha256': contract, **self._governance_revisions()},
+            review_basis_key=basis, contract_review_reconsideration={k: deepcopy(reconsideration[k]) for k in
+                ('key', 'requested_by', 'source_refs', 'evidence_refs')},
+            reason='Independently judge the unchanged contract after the AI request was dismissed')
+
+    def _apply_revision_followup(self, action, output, execution_id, *, read_artifact=None, output_files=None):
         execution = self.runtime["executions"][execution_id]
         extension = execution.get("extensions", {})
         for request in extension.get("revision_requests", []):
@@ -219,16 +263,59 @@ class RevisionEngineMixin:
                     'basis_ref':execution_id, 'reason':'Returned revised work requires independent assessment'}
                 task.pop("status_before_reassessment", None)
         resolutions = {row["record_id"]: row for row in extension.get("revision_resolutions", [])}
+        resolutions = deepcopy(resolutions)
+        fixed_questions = None
+        for row in resolutions.values():
+            if row.get('question_ids'):
+                scopes = {}
+                for ref in row['question_ids']:
+                    if ref.startswith('output:questions/'):
+                        index = questions.output_question_index(ref)
+                        qid = next(q['id'] for q in self.runtime.get('question_links', []) if any(
+                            o['execution_id'] == execution_id and o['field'] == 'questions/' + str(index) for o in q['origins']))
+                        scopes[qid] = [row['record_id']]
+                    else:
+                        if fixed_questions is None:
+                            issued, _ = self._issued_input(execution, with_schema=False)
+                            fixed_questions = {q['id']: q for q in issued['question_links']}
+                        provided = fixed_questions[ref]
+                        scopes[ref] = ([row['record_id']] if row['record_id'] in provided['target_ids']
+                                       else list(provided['unresolved_target_ids']))
+                row.update(question_ids=list(scopes), question_scopes=scopes)
         withdrawals = {row["task_id"] for row in extension.get("task_dispositions", [])}
+        resolved = revisions.resolved_targets(action, extension)
+        for identifier, row in resolutions.items():
+            if row['disposition'] != 'dismissed':
+                continue
+            evidence = [self._resolve_execution_evidence(execution_id, ref, read_artifact=read_artifact,
+                         output_files=output_files) for ref in row['evidence_refs']]
+            task = self.runtime['tasks'].get(identifier)
+            if task:
+                request = task.get('revision_requested', {})
+                if request.get('user_decision_refs'):
+                    raise ValueError('user revision cannot be dismissed')
+                remaining = [ref for ref in request.get('source_refs', []) if ref not in resolved.get(identifier, [])]
+                if request and not remaining:
+                    task.pop('revision_requested')
+                    if task.get('waiting', {}).get('kind') == 'contract_revision':
+                        task.pop('waiting')
+                        task['status'] = 'planned'
+                elif remaining:
+                    request['source_refs'] = remaining
+                self.runtime['history'].append({'kind': 'revision_request_dismissed', 'target': identifier,
+                    'execution_id': execution_id, 'source_refs': resolved.get(identifier, []),
+                    'evidence': evidence, 'reason': row['reason']})
+                if not planning.revision_required(task):
+                    self._request_contract_reconsideration(task, row, execution_id)
         unresolved, delegated = {}, {}
         for identifier, basis in declared.items():
             if identifier in withdrawals:
                 continue
             row = resolutions[identifier]  # Exact coverage was checked against fixed input.
             disposition = row["disposition"]
-            if disposition in {"revised", "unchanged"}:
+            if identifier not in revisions.remaining_targets({identifier: basis}, resolved):
                 continue
-            unresolved[identifier] = deepcopy(basis)
+            unresolved.update(revisions.remaining_targets({identifier: basis}, resolved))
             if disposition == "delegated":
                 matches = [task for task in self.runtime["tasks"].values()
                            if task.get("producer_execution") == execution_id and task["title"] == row["task_title"]]
@@ -243,20 +330,22 @@ class RevisionEngineMixin:
         for owner in owners:
             entry = self.runtime.get("waiting_actions", {}).get(owner)
             if entry and entry.get("kind") == "revision_dependency":
-                remaining = deepcopy(entry["action"].get("revision_targets", {}))
+                targets = entry['action'].get('revision_targets', {})
+                remaining = revisions.remaining_targets(targets,
+                    revisions.resolved_targets(action, extension, consumer_targets=targets))
                 transferred = False
                 for identifier in declared:
                     if identifier not in remaining:
                         continue
-                    if identifier in withdrawals:
-                        remaining.pop(identifier, None)
-                        continue
                     disposition = resolutions[identifier]["disposition"]
-                    if disposition in {"revised", "delegated"} or (disposition == "unchanged" and not remaining[identifier].get("required")):
+                    if disposition == "delegated":
                         remaining.pop(identifier, None)
                         transferred |= disposition == "delegated"
                     elif disposition == "deferred":
                         entry.setdefault("deferrals", {})[identifier] = {"execution_id": execution_id, "reason": resolutions[identifier]["reason"]}
+                        if resolutions[identifier].get('question_ids'):
+                            entry['deferrals'][identifier]['question_ids'] = list(resolutions[identifier]['question_ids'])
+                            entry['deferrals'][identifier]['question_scopes'] = deepcopy(resolutions[identifier]['question_scopes'])
                         unresolved.pop(identifier, None)
                 if remaining:
                     entry["action"]["revision_targets"] = remaining
@@ -271,6 +360,12 @@ class RevisionEngineMixin:
                 "action": {**deepcopy(action), "revision_targets": unresolved}, "kind": "revision_dependency",
                 "delegated_targets": delegated, "execution_id": execution_id,
                 "reason": "; ".join(resolutions[identifier]["reason"] for identifier in unresolved)})
+            deferrals = {identifier: {'execution_id': execution_id, 'reason': row['reason'],
+                         'question_ids': list(row['question_ids']), 'question_scopes': deepcopy(row['question_scopes'])}
+                         for identifier, row in resolutions.items()
+                         if identifier in unresolved and row.get('question_ids')}
+            if deferrals:
+                self.runtime['waiting_actions'][action['id']]['deferrals'] = deferrals
         elif action["id"] in self.runtime.get("waiting_actions", {}):
             previous = self.runtime["waiting_actions"][action["id"]]
             if previous.get("kind") == "revision_dependency":

@@ -277,43 +277,59 @@ class ContractVerdictReceivers(unittest.TestCase):
                     **engine._governance_revisions())
                 output = {**common('task_contract_review'), **review_items([task_id], decision=decision,
                     next_owner='research_preparation', findings=[] if decision == 'approved' else ['계약 근거 보완'])}
+                extensions = {}
+                source_ref = 'runtime/artifacts/BA-' + eid + '/output.json'
+                if decision == 'unresolved':
+                    output['questions'] = ['Retrieve the missing contract judgment evidence']
+                    extensions = {'question_routes': [{'question_index': 0, 'owner': 'operations',
+                        'target_ids': [task_id], 'blocks': True, 'reason': 'The supplied judgment evidence is unavailable',
+                        'review_item_ids': list(contracts.CONTRACT_REVIEW_ITEMS),
+                        'obligation': {'kind': 'input_retrieval', 'subject_ref': task_id, 'requirement_ref': 'contract-evidence'}}]}
+                from do_math.canonical import canonical_json
+                artifacts = {source_ref: canonical_json(output)}
                 context = {'action': action, 'execution_id': eid, 'snapshot': engine.head,
                     'tasks': list(engine.runtime['tasks'].values())}
                 def apply(instance, runtime, bundle):
                     engine._apply_bundle_candidate(instance, runtime, bundle,
-                        action=action, execution_id=eid, extensions={})
+                        action=action, execution_id=eid, extensions=extensions, question_source_ref=source_ref)
                 def publish(instance, runtime, bundle, validated):
                     engine.instance, engine.runtime = instance, runtime
-                    engine._save()
+                    engine._save(artifacts)
                 callbacks = {'apply_bundle': apply,
                     'validate_current': lambda i, r, b: engine._validate_bundle_current(i, r, b,
                         action=action, execution_id=eid, context=context),
-                    'validate_candidate': engine._validate_bundle_candidate,
+                    'validate_candidate': lambda i, r, b: engine._validate_bundle_candidate(i, r, b, artifacts=artifacts),
                     'publish': publish}
-                first = integration.apply_bundles(engine.instance, engine.runtime, output, {}, context,
+                first = integration.apply_bundles(engine.instance, engine.runtime, output, extensions, context,
                     execution_id=eid, **callbacks)
                 self.assertEqual(first['status'], 'accepted', first['issues'])
                 current = engine.runtime['tasks'][task_id]
                 self.assertEqual(current['reviews'][-1]['decision'], decision)
                 self.assertEqual(current['reviews'][-1]['execution_id'], eid)
                 preparations = [a for a in engine.runtime['queue'] if a['role'] == 'research_preparation']
-                self.assertEqual(len(preparations), int(decision != 'approved'))
+                self.assertEqual(len(preparations), int(decision == 'revision_required'))
                 if decision == 'approved':
                     self.assertEqual(current['status'], 'planned')
                     self.assertNotIn('waiting', current)
-                else:
+                elif decision == 'revision_required':
                     self.assertEqual(current['waiting']['basis_ref'], eid)
                     self.assertEqual(preparations[0]['contract_review_execution'], eid)
                     assert_task_wait_report(self, engine, task_id)
+                else:
+                    self.assertNotIn('revision_requested', current)
+                    self.assertEqual(current['waiting']['kind'], 'contract_review_input')
+                    self.assertEqual(len([a for a in engine.runtime['queue'] if a.get('question_ids')]), 1)
+                    self.assertEqual(planning.task_ready(current, engine.instance, engine.runtime,
+                        evaluation_context=engine._evaluation_context())['state'], 'not_ready')
                 before = deepcopy(engine.store.load())
-                second = integration.apply_bundles(engine.instance, engine.runtime, output, {}, context,
+                second = integration.apply_bundles(engine.instance, engine.runtime, output, extensions, context,
                     execution_id=eid, **callbacks)
                 self.assertEqual(second['bundles'][0]['status'], 'already_accepted', second['issues'])
                 self.assertEqual(engine.store.load(), before)
                 self.assertEqual((second['instance'], second['runtime']), before[1:])
                 sim.restart()
                 self.assertEqual(sim.runtime['tasks'][task_id], before[2]['tasks'][task_id])
-                if decision != 'approved':
+                if decision == 'revision_required':
                     produce_task(sim, '수정 계약', revises=task_id)
                     self.assertNotIn('waiting', sim.runtime['tasks'][task_id])
                     self.assertEqual(sim.runtime['tasks'][task_id]['reviews'][-1]['decision'], 'approved')

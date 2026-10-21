@@ -226,7 +226,6 @@ class DelegatedRevisionTests(unittest.TestCase):
     def test_optional_delegated_work_preserves_required_parent_after_unchanged(self):
         from support.engine_lifecycle import _ended_execution
         from support.planning_owner import enqueue
-        from support.planning_paths import ExecutedLines
         action = enqueue(self.engine, 'research_work', self.tid)
         parent = deepcopy(self.sim.runtime['waiting_actions'][self.parent])
         self.assertIs(parent['action']['revision_targets'][self.kid]['required'], True)
@@ -239,23 +238,9 @@ class DelegatedRevisionTests(unittest.TestCase):
             'knowledge_catalog': list(self.sim.instance['knowledge'].values())}), [])
         _ended_execution(self.engine, 'EX-unchanged-work', 'research_work')
         self.sim.runtime['executions']['EX-unchanged-work']['extensions'] = extension
-        with ExecutedLines(self.engine._apply_revision_followup) as reached:
-            self.engine._apply_revision_followup(action, output, 'EX-unchanged-work')
-        import ast
-        import inspect
-        import textwrap
-        source, start = inspect.getsourcelines(self.engine._apply_revision_followup)
-        function = ast.parse(textwrap.dedent(''.join(source))).body[0]
-        parents = {child: node for node in ast.walk(function) for child in ast.iter_child_nodes(node)}
-        guards = [node for node in ast.walk(function) if isinstance(node, ast.If)
-                  and ast.unparse(node.test) == "disposition == 'deferred'"]
-        self.assertEqual(len(guards), 1)
-        guard = guards[0]
-        loop = parents[guard]
-        while not isinstance(loop, ast.For):
-            loop = parents[loop]
-        self.assertEqual((ast.unparse(loop.target), ast.unparse(loop.iter)), ('identifier', 'declared'))
-        self.assertTrue(reached.crossed(start + guard.lineno - 1, start + loop.lineno - 1), reached.lines)
+        # Source-scoped settlement may finish the child's optional obligation
+        # before the parent loop; the required parent's exact state is the contract.
+        self.engine._apply_revision_followup(action, output, 'EX-unchanged-work')
         self.assertEqual(self.sim.runtime['waiting_actions'], {self.parent: parent})
         self.engine._remove_action(action)
         self.engine._save()

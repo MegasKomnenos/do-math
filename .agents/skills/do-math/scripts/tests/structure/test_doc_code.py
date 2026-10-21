@@ -632,7 +632,9 @@ class DocumentCodeTests(unittest.TestCase):
             'research_sources': ('sim/test_role_input_context.py', 'PackagedInputTests',
                            'test_planning_keeps_completed_report_and_active_work_as_readable_context'),
             'results': ('flows/test_submission_acceptance.py', 'AcceptanceTests',
-                           'test_large_accepted_report_survives_revision_review_and_resumed_work')}
+                           'test_large_accepted_report_survives_revision_review_and_resumed_work'),
+            'call_result': ('sim/test_provider_collection.py', 'CodexCollectionTests',
+                           'test_model_catalog_timeout_is_diagnostic_evidence_for_success_and_failure')}
         def verify(mapping):
             self.assertEqual(set(mapping), set(RESULT_INPUT_BOUNDARIES), 'document owner population differs')
             for owner, (path, class_name, method_name) in mapping.items():
@@ -673,7 +675,7 @@ class DocumentCodeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
                 scoped_field_issues('`' + owner + '.' + field + '`', schemas, defer_operational_inputs=other)
             self.assertEqual(scoped_field_issues('`' + owner + '.' + field + '`', schemas,
-                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                 defer_operational_inputs=(owner,)), [])
         for name in ('checkpoint_source', 'recovery_source', 'checkpoint_files', 'recovered_output_files'):
             self.assertNotIn(name, schemas)
@@ -681,7 +683,7 @@ class DocumentCodeTests(unittest.TestCase):
             scoped_field_issues('', schemas, defer_operational_inputs=('operational_evience',))
         with self.assertRaisesRegex(ValueError, 'result_source fields require the actual continuation'):
             scoped_field_issues('`result_source.local_path`', schemas,
-                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                               defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                                defer_operational_inputs=('operational_evidence', 'recovery_materials'))
 
     def test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method(self):
@@ -795,7 +797,7 @@ class DocumentCodeTests(unittest.TestCase):
                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
                             defer_query_record=True, defer_query_result=True,
                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                             defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                             defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                             defer_continuations=others)
@@ -872,7 +874,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_status=True, defer_operation_progress=True,
                                                   defer_query_record=True, defer_query_result=True,
                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                                                  defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                                  defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                                                   defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
@@ -882,6 +884,15 @@ class DocumentCodeTests(unittest.TestCase):
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
         schemas = field_schemas()
+        token = 'call_result.execution.collect.diagnostics[].source.offset'
+        with self.assertRaisesRegex(ValueError, 'call_result fields require the actual result input'):
+            scoped_field_issues('`' + token + '`', schemas)
+        self.assertEqual(scoped_field_issues('`' + token + '`', schemas,
+                         defer_result_inputs=('call_result',)), [])
+        self.assertEqual(unowned_field_references('`' + token + '`', schemas), [])
+        # The ledger execution cannot borrow fields from its result artifact.
+        self.assertEqual(scoped_field_issues('`execution.collect.diagnostics`', schemas),
+                         [('scoped field', 'execution.collect.diagnostics')])
         self.assertEqual(scoped_field_issues('`config.plan_settle_seconds` and `action.role`', schemas), [])
         self.assertEqual(scoped_field_issues('`config.owner_activity_id`', schemas),
                          [('scoped field', 'config.owner_activity_id')])
@@ -914,7 +925,7 @@ class DocumentCodeTests(unittest.TestCase):
         schemas = field_schemas()
         self.assertEqual(scoped_field_issues(
             '`operational_evidence.activity_continuations`', schemas,
-            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
             defer_operational_inputs=('operational_evidence',)), [])
         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
@@ -991,7 +1002,7 @@ class DocumentCodeTests(unittest.TestCase):
                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
                             defer_query_record=True, defer_query_result=True,
                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                            defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                             defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                             defer_role_inputs={'input_manifest', 'prompt', 'documents', 'profile_selection'} - {owner})
                     self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])

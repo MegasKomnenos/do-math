@@ -413,7 +413,9 @@ class PackagedInputTests(unittest.TestCase):
                     detail = json.loads((root / ref['path']).read_bytes())
                     file = detail['results'][0]['output_files'][0]
                     self.assertEqual((root / file['local_path']).read_bytes(), raw)
-                    self.assertEqual(next(row for row in fixed['tasks'] if row['id'] == task['id']), original)
+                    from do_math.knowledge import content_hash
+                    self.assertEqual(next(row for row in fixed['tasks'] if row['id'] == task['id']),
+                                     {**original, 'content_sha256': content_hash(original)})
                     self.assertEqual(engine.runtime['tasks'][task['id']], original)
                     assert_result_documents(self, ref, root, engine, owner='source_ref', expected=detail)
                     assert_result_documents(self, detail['results'], root, engine, owner='results', task_id=task['id'])
@@ -885,6 +887,78 @@ class PreparedInputTests(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaisesRegex(ValueError, "pinned profile supplies"):
                     runner.run(**options, evidence_dir=root / name, **{name: value})
             self.assertEqual(len(requests), 1, 'a refused override starts no worker')
+
+
+class PlanningHashTests(unittest.TestCase):
+    def test_generated_checker_input_rejects_missing_hash_and_accepts_its_fixed_hash(self):
+        from do_math import knowledge, revisions
+        from support.submission_protocol import check_output
+        task = {'id': 'TK-revision', 'title': 'Finite sum', 'revision': 1,
+                'status': 'planned', 'results': [], 'question': 'Compute S'}
+        engine = context_engine(runtime={'tasks': {task['id']: task}})
+        action = {'id': 'AC-revision', 'role': 'research_preparation',
+                  'revision_targets': revisions.capture_targets(engine.instance, engine.runtime, [task['id']])}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context(action, root, execution_id='EX-revision')
+            profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == action['role'])
+            schema = contracts.action_schema(action)
+            fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+                role=action['role'], profile=profile, snapshot=engine.head, workspace=root,
+                activity_id='AY-revision', output_schema=schema,
+                install_submission_tools=True, clock=engine.ports.clock)
+            fixed = fitted['validation_context']
+            output = common('research_preparation')
+            from datetime import timedelta
+            from do_math.values import parse_utc
+            output['regenerate_after'] = (parse_utc(fixed['observed_at']) + timedelta(hours=1)).isoformat()
+            extensions = {'revision_resolutions': [{'record_id': task['id'], 'disposition': 'unchanged',
+                                                    'reason': 'The existing optional contract is sufficient.'}]}
+            output['integration_bundles'] = [{'integration_id': 'IN-revision', 'members': [
+                'output', 'activity-extensions.json/revision_resolutions/0'], 'impact_set': [], 'authority_refs': []}]
+            for valid in (False, True):
+                if valid:
+                    output['integration_bundles'][0]['previous_hashes'] = {task['id']: knowledge.content_hash(task)}
+                producer = check_output(self, root, fixed, output, extensions)
+                receiver = submission.check_submission(output, schema, fixed, extensions, root,
+                    mode='receiver', execution_id='EX-revision', tool_sha256=fixed['submission_contract']['tool_sha256'],
+                    clock=engine.ports.clock)
+                self.assertEqual(producer['passed'], valid, producer['issues'])
+                self.assertEqual(receiver['issues'], producer['issues'])
+                self.assertEqual(integration.inspect_bundles(output, extensions, fixed), producer['issues'])
+                calls = []
+                receipt = integration.apply_bundles(engine.instance, engine.runtime, output, extensions, fixed,
+                    execution_id='EX-revision', validate_current=lambda *args: calls.append('live'),
+                    apply_bundle=lambda *args: calls.append('apply'), validate_candidate=lambda *args: None,
+                    publish=lambda *args: calls.append('publish'))
+                self.assertEqual(integration.submission_outcome(receipt), 'accepted' if valid else 'output_rejected')
+                self.assertEqual(calls, ['live', 'apply', 'publish'] if valid else [])
+                if not valid:
+                    engine.route_submission_return(action, receipt, 'EX-revision', output)
+                    retry = next(row for row in engine.runtime['queue'] if row.get('continuation_of') == 'EX-revision')
+                    self.assertIn('repair', retry)
+                    self.assertNotIn('refresh', retry)
+
+    def test_checker_keeps_hashes_for_the_entire_task_catalog(self):
+        from do_math import knowledge
+        tasks = {identifier: {'id': identifier, 'title': identifier, 'revision': 1,
+                              'status': status, 'results': [], 'question': 'Compute a finite sum'}
+                 for identifier, status in (('TK-selected', 'planned'), ('TK-catalog', 'waiting'))}
+        engine = context_engine(runtime={'tasks': tasks})
+        for role in ('research_preparation', 'research_plan'):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                fitted, fixed = package(engine, Path(directory), role)
+                expected = {identifier: knowledge.content_hash(task) for identifier, task in tasks.items()}
+                self.assertEqual({row['id']: row['content_sha256'] for row in fixed['tasks']}, expected)
+                self.assertEqual(fitted['validation_context']['tasks'], fixed['tasks'])
+                catalog = fitted['context']['task_catalog']
+                if isinstance(catalog, dict):
+                    catalog = json.loads((Path(directory) / catalog['source_ref']['path']).read_bytes())
+                self.assertEqual({row['id'] for row in catalog}, set(tasks))
+                for row in catalog:
+                    detail = json.loads((Path(directory) / row['source_ref']['path']).read_bytes())
+                    self.assertEqual(detail['content_sha256'], expected[row['id']])
+                self.assertEqual(engine.runtime['tasks'], tasks)
 
 
 class ArchivedControlInputTests(unittest.TestCase):

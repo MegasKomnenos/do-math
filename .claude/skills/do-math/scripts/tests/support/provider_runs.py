@@ -7,7 +7,7 @@ only doubles are the two things outside the process (설계 2.2 "작업자와 �
 프로그램"): the Jobs port, whose Job runs its worker module in process, and the
 provider CLI at the worker's ``spawn`` seam.
 
-- ``ScriptedCLI(stdout=None, final=b'{}', returncode=0, timeout=False)``: the
+- ``ScriptedCLI(stdout=None, stderr=b'', final=b'{}', returncode=0, timeout=False)``: the
   provider CLI. Each start is recorded in ``calls`` (``command``, ``env``,
   ``shell``, ``cwd``, ``creationflags`` and the ``stdin`` it was given). It
   writes ``stdout`` (default: a completed stream encoding semantic ``final``
@@ -103,8 +103,9 @@ def cli_final(command, final):
 
 
 class ScriptedCLI:
-    def __init__(self, *, stdout=None, final=b"{}", returncode=0, timeout=False):
+    def __init__(self, *, stdout=None, stderr=b"", final=b"{}", returncode=0, timeout=False):
         self.stdout, self.final, self.returncode, self.timeout = stdout, final, returncode, timeout
+        self.stderr = stderr
         self.calls = []
 
     def spawn(self, command, *, stdin=None, stdout=None, stderr=None, cwd=None, env=None, shell=False,
@@ -112,6 +113,8 @@ class ScriptedCLI:
         call = {"command": list(command), "env": dict(env or {}), "shell": shell, "cwd": cwd,
                 "creationflags": creationflags}
         self.calls.append(call)
+        if stderr is not None:
+            stderr.write(self.stderr)
         return _Process(self, call, stdout)
 
 

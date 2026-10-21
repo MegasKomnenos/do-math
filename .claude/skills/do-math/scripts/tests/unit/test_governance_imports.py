@@ -391,6 +391,9 @@ class ImportApprovalTests(unittest.TestCase):
         self.assertEqual(receipt['status'], 'applied')
         broken = deepcopy(runtime)
         broken['intent_imports'][bundle['id']]['check']['scope_complete'] = False
+        failed = broken['intent_imports'][bundle['id']]
+        failed['status'] = 'unresolved'
+        failed['check']['sha256'] = exact_content_hash({k: v for k, v in failed['check'].items() if k != 'sha256'})
         with self.assertRaisesRegex(ValueError, '^approval draft requires a complete independently checked import$'):
             gov.import_approval_draft(instance, broken, bundle['id'], clock=_entry.ports.clock)
 

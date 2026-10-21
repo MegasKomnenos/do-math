@@ -109,11 +109,19 @@ class ImpactBundleTests(ImpactReviewCase):
                 if fault == 'missing':
                     del self.bundle['previous_hashes'][target]
                     reason = '^bundle previous hashes missing for mutation targets$'
+                    with self.subTest(target=target, fault=fault), self.assertRaisesRegex(ValueError, reason):
+                        self._request()
                 else:
-                    self.bundle['previous_hashes'][target] = '0' * 64
-                    reason = '^bundle previous semantic hash changed: ' + target + '$'
-                with self.subTest(target=target, fault=fault), self.assertRaisesRegex(ValueError, reason):
-                    self._request()
+                    from do_math.input_basis import CurrentnessChanged
+                    record = self.instance['knowledge'][target]
+                    previous = deepcopy(record)
+                    record['summary'] = 'A live change after the fixed declaration'
+                    with self.subTest(target=target, fault=fault), self.assertRaises(CurrentnessChanged) as caught:
+                        self._request()
+                    self.assertEqual(caught.exception.changes, [{'id': target, 'field': 'content_sha256',
+                        'before': original['previous_hashes'][target], 'after': content_hash(record)}])
+                    record.clear()
+                    record.update(previous)
                 self.assertEqual((self.instance, self.runtime), before)
         self.bundle = original
 
@@ -323,14 +331,15 @@ class ImpactBundleTests(ImpactReviewCase):
         producer_output['integration_bundles'] = [{'integration_id': 'IN-producer-explicit-ids',
             'members': ['output', 'activity-extensions.json/knowledge_changes/0', 'activity-extensions.json/knowledge_changes/1',
                         'activity-extensions.json/revision_resolutions/0', 'activity-extensions.json/revision_resolutions/1'],
-            'impact_set': [], 'authority_refs': []}]
+            'impact_set': [], 'authority_refs': [], 'previous_hashes': {
+                identifier: content_hash(self.instance['knowledge'][identifier]) for identifier in (self.ids[1], self.ids[0])}}]
         producer_extensions = {'knowledge_changes': [sibling, row], 'revision_resolutions': [
             {'record_id': identifier, 'disposition': 'revised', 'reason': 'Apply the declared revision'}
             for identifier in (self.ids[1], self.ids[0])]}
         producer_action = {**research_work_context()['action'],
                            'revision_targets': {identifier: {} for identifier in (self.ids[1], self.ids[0])}}
         producer_context = {**research_work_context(), 'action': producer_action, 'execution_id': 'EX-producer',
-                            'knowledge_catalog': [{'id': identifier} for identifier in self.ids]}
+                            'knowledge_catalog': deepcopy(self.fixed_context['knowledge_catalog'])}
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             response_schema = contracts.schema_for('research_work')
@@ -407,7 +416,7 @@ class ImpactReviewTests(ImpactReviewCase):
                              'Installed producer must reject duplicate scope judgments')
 
     def test_review_required_is_a_waiting_disposition_not_a_producer_retry(self):
-        result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, research_work_context(),
+        result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, self.fixed_context,
             execution_id='EX-producer', apply_bundle=lambda *args: self.fail('unreviewed mutation'),
             validate_current=lambda i, r, b: self.api.require_bundle_impact_review(i, r, b,
                 producer_execution_id='EX-producer', input_snapshot='fixed-input'),
@@ -637,14 +646,14 @@ class ImpactReviewTests(ImpactReviewCase):
                 updated, running = self.api.apply_reviewed_knowledge_changes(i, r, b, actor_ref='EX-producer', **args, clock=self.clock)
                 i.clear(); i.update(updated)
                 r.clear(); r.update(running)
-            result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, research_work_context(),
+            result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, self.fixed_context,
                 execution_id='EX-producer', apply_bundle=apply_changes,
                 validate_current=lambda i, r, b: self.api.require_bundle_impact_review(i, r, b, **args),
                 validate_candidate=validate, publish=publish)
             self.assertEqual('accepted', result['status'], result)
             saved, i, r = repo.load(head)
             self.assertEqual({self.ids[0], self.ids[2]}, {v['supersedes'] for v in i['knowledge'].values() if v.get('supersedes')})
-            replay = self.api.apply_bundles(i, r, self.output, self.extensions, research_work_context(), execution_id='EX-producer',
+            replay = self.api.apply_bundles(i, r, self.output, self.extensions, self.fixed_context, execution_id='EX-producer',
                 apply_bundle=lambda *a: self.fail('accepted bundle applied twice'),
                 validate_current=lambda *a: self.fail('accepted bundle revalidated'),
                 validate_candidate=validate, publish=lambda *a: self.fail('accepted bundle republished'))

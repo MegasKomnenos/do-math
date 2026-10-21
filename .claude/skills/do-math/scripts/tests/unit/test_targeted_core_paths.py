@@ -55,8 +55,11 @@ class TargetedCorePaths(unittest.TestCase):
         finally:
             engine.instance, engine.runtime = original
         before = deepcopy((engine.head, engine.instance, engine.runtime))
-        with self.assertRaisesRegex(ValueError, '^academic requirements changed during execution$'):
+        from do_math.input_basis import CurrentnessChanged
+        with self.assertRaises(CurrentnessChanged) as caught:
             engine._validate_bundle_current(instance, runtime, bundle, action=action, execution_id=eid, context=context)
+        self.assertEqual(caught.exception.changes,
+                         [{'field': 'academic_requirements', 'reason': 'requirements changed during execution'}])
         self.assertEqual((engine.head, engine.instance, engine.runtime), before)
 
     def test_feedback_delivery_failure_preserves_the_accepted_operational_response(self):
@@ -190,9 +193,12 @@ class TargetedCorePaths(unittest.TestCase):
             action=scene.action, execution_id=scene.execution_id, context=context)
         applied(sim, 'decision', config={'change': {'kind': 'revoke', 'grant_id': 'GR-additional-bundle'}})
         before = deepcopy((engine.head, engine.instance, engine.runtime))
-        with self.assertRaisesRegex(ValueError, '^bundle authority is no longer current: GR-additional-bundle$'):
+        from do_math.input_basis import CurrentnessChanged
+        with self.assertRaises(CurrentnessChanged) as caught:
             engine._validate_bundle_current(deepcopy(engine.instance), deepcopy(engine.runtime), bundle,
                 action=scene.action, execution_id=scene.execution_id, context=context)
+        self.assertEqual(caught.exception.changes, [{'field': 'authority', 'id': 'GR-additional-bundle',
+                                                    'reason': 'bundle authority is no longer current'}])
         self.assertEqual((engine.head, engine.instance, engine.runtime), before)
 
     def test_plan_rejects_external_issued_input_without_the_fixed_population(self):

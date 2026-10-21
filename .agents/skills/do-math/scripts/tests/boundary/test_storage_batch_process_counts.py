@@ -10,9 +10,27 @@ from support.entry import entry
 from support.state_builders import current_state
 from support.storage_files import audit_events
 from support.storage_records import record_store
+from support.storage_snapshot_cases import fresh_reader, payload_state
 
 
 class BatchProcessCounts(unittest.TestCase):
+    def test_payload_restore_batches_text_and_reachable_snapshot_frontiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            backend = GitProcess(environment=entry().environment)
+            writer = record_store(Path(directory), backend=backend)
+            original = payload_state(80)
+            head = writer.initialize(*original)
+            reader = fresh_reader(writer)
+            with audit_events('subprocess.Popen') as processes:
+                restored = reader.load(head)
+            self.assertEqual(restored, (head, *original))
+            # This includes ls-tree, record bytes and nested graph discovery.
+            # Eighty distinct texts alone previously needed eighty children.
+            self.assertLess(len(processes), 30)
+            with audit_events('subprocess.Popen') as warm:
+                self.assertEqual(reader.load(head), restored)
+            self.assertEqual(warm, [])
+
     def test_export_and_query_start_one_git_child_per_batch(self):
         for count in (3, 200, 1043):
             with self.subTest(count=count), tempfile.TemporaryDirectory() as directory:

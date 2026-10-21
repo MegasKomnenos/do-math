@@ -170,7 +170,7 @@ class AuthorityTests(unittest.TestCase):
         e = Sim.activated().engine
         original = deepcopy(e.runtime['intent_imports'])
         self.assertEqual(len(original), 1)
-        for field, reason in (('check', 'initial input requires a sealed, fully checked applied import'),
+        for field, reason in (('check', 'sealed check changed'),
                               ('application', 'sealed import application receipt changed'),
                               ('source', 'immutable source bytes or revision changed')):
             with self.subTest(field=field):

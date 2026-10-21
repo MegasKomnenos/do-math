@@ -93,6 +93,11 @@ class OperationalDispositionTests(unittest.TestCase):
         queue = list(runtime['queue'])
         result = self.engine._complete_operational_disposition(runtime['operational_dispositions']['OD-repair'])
         self.assertEqual(result['status'], 'installation_repair_pending')
+        from do_math.questions import handling_wait_ready
+        question_wait = {'handling': {'state': 'waiting', 'waiting': {'kind': 'operational_disposition',
+            'disposition_id': result['id']}}}
+        self.assertFalse(handling_wait_ready(question_wait, self.engine.instance, self.engine.runtime,
+            now=self.engine.ports.clock.now()), 'A pending installation handoff is not a repair receipt')
         self.assertEqual(result['result']['installation_repair'],
                          {'installation_sha256': installation_sha256(SKILL), 'evidence_refs': [self.host.source]})
         self.assertEqual(runtime['queue'], queue)
@@ -102,6 +107,13 @@ class OperationalDispositionTests(unittest.TestCase):
         self.assertEqual(stored['operational_dispositions']['OD-repair'], result)
         self.assertEqual(self.engine._complete_operational_disposition(result), result)
         self.assertEqual(self.engine.head, head)
+        # This boundary receives the already verified repair receipt. It does
+        # not run the external installer or claim that its verification ran.
+        from do_math.repair_execution import resume_installation_repair
+        resume_installation_repair(self.engine.runtime, self.engine.runtime['operational_dispositions'][result['id']],
+            repaired_by='verified-repair-receipt', at=self.engine.ports.clock.now())
+        self.assertTrue(handling_wait_ready(question_wait, self.engine.instance, self.engine.runtime,
+            now=self.engine.ports.clock.now()))
 
     def test_a_repair_target_must_be_a_file_of_the_installed_skill(self):
         runtime = self.engine.runtime

@@ -32,6 +32,68 @@ from support.submission_receiver import held_ref, history, order, receive, resea
 setUpModule = warm_template
 
 
+class SubmissionFailureMeaningTests(unittest.TestCase):
+    def test_revoked_authority_refreshes_without_producer_repair_or_pause_release(self):
+        from do_math import governance
+        scene = history()
+        _, captured = submit(scene, 'CT-before-revocation', canonical_json(scene.output))
+        self.assertEqual(captured['state'], 'accepted')
+        engine = scene.engine
+        engine.instance['grants'][scene.action['grant_id']]['status'] = 'revoked'
+        engine.runtime['status'] = 'paused'
+        receipt = receive(scene)
+        self.assertEqual(integration.submission_outcome(receipt), 'premises_changed')
+        self.assertEqual(engine.runtime['status'], 'paused')
+        execution = engine.runtime['executions'][scene.execution_id]
+        self.assertEqual(execution['error_kind'], 'currentness_changed')
+        refreshed = next(row for row in engine.runtime['queue'] if row.get('continuation_of') == scene.execution_id)
+        self.assertIn('refresh', refreshed)
+        self.assertNotIn('repair', refreshed)
+        self.assertFalse(governance.authorize(engine.instance, refreshed, runtime=engine.runtime,
+                                             at=scene.sim.clock.now())['allowed'])
+        self.assertFalse(any(row['execution_id'] == scene.execution_id
+                             for row in engine.runtime.get('integrations', {}).values()))
+
+    def test_live_use_suspension_refreshes_even_when_the_content_hash_is_unchanged(self):
+        from do_math.input_basis import capture_decision_basis
+        from support.record_builders import observation_knowledge
+        sim = Sim.activated()
+        sim.engine.instance, sim.engine.runtime, kid = knowledge_io.import_candidate(
+            sim.engine.instance, sim.engine.runtime, observation_knowledge('Fixed observation'),
+            source_ref='fixture', actor_ref='user', plan_nonformal=False, clock=sim.clock)
+        sim.engine._save()
+        scene = history(sim=sim)
+        engine = scene.engine
+        engine.runtime['executions'][scene.execution_id]['decision_basis'] = capture_decision_basis(
+            engine.instance, engine.runtime, [kid])
+        _, captured = submit(scene, 'CT-before-suspension', canonical_json(scene.output))
+        self.assertEqual(captured['state'], 'accepted')
+        before = knowledge.content_hash(engine.instance['knowledge'][kid])
+        engine.instance['knowledge'][kid]['use_suspended'] = True
+        self.assertEqual(knowledge.content_hash(engine.instance['knowledge'][kid]), before)
+        receipt = receive(scene)
+        self.assertEqual(integration.submission_outcome(receipt), 'premises_changed')
+        execution = engine.runtime['executions'][scene.execution_id]
+        self.assertEqual(execution['error_kind'], 'currentness_changed')
+        refreshed = next(row for row in engine.runtime['queue'] if row.get('continuation_of') == scene.execution_id)
+        self.assertIn('refresh', refreshed)
+        self.assertNotIn('repair', refreshed)
+
+    def test_checker_input_defect_goes_to_existing_diagnosis_without_output_repair(self):
+        scene = history()
+        engine = scene.engine
+        received = {'status': 'returned', 'bundles': [], 'retry_bundle_ids': [], 'issues': [
+            integration.issue('integration.input_context', 'context/TK-fixed/content_sha256',
+                              'fixed mutation target needs a semantic content hash')]}
+        self.assertTrue(engine._hold_submission_input_failure(scene.action, scene.execution_id, received))
+        wait = engine.runtime['waiting_actions'][scene.action['id']]
+        self.assertEqual(wait['kind'], 'submission_failure')
+        self.assertEqual(wait['next_owner'], 'operational_review')
+        self.assertTrue(any(row['role'] == 'operational_review' and row.get('target') == scene.execution_id
+                            for row in engine.runtime['queue']))
+        self.assertFalse(any(row.get('repair') or row.get('refresh') for row in engine.runtime['queue']))
+
+
 class CentralSubmissionHistoryTests(unittest.TestCase):
     def setUp(self):
         self.scene = history()
@@ -240,10 +302,13 @@ class PreviewEntryTests(unittest.TestCase):
         engine = scene.engine
         execution = engine.runtime['executions']['EX-history']
         output = {**deepcopy(scene.output), 'questions': ['What should operations decide?']}
-        seal_response(output, scene.context, scene.workspace)
         draft = scene.workspace / 'draft.json'
+        (scene.workspace / 'activity-extensions.json').write_bytes(canonical_json({'knowledge_changes': [],
+            'question_routes': [{'question_index': 0, 'owner': 'user',
+                                 'target_ids': [scene.context['action']['grant_id']],
+                                 'reason': 'Ask the user which operational outcome is intended'}]}))
+        seal_response(output, scene.context, scene.workspace)
         draft.write_bytes(canonical_json(output))
-        (scene.workspace / 'activity-extensions.json').write_bytes(b'{"knowledge_changes": []}')
         before, head = canonical_json(engine.runtime), engine.head
         issued = {'runtime/artifacts/BA-history-input/input/submission/context.json',
                   'runtime/artifacts/BA-history-input/schema.json'}
@@ -434,9 +499,12 @@ class ContinuationConnections(unittest.TestCase):
             engine._validate_bundle_impacts(engine.instance, engine.runtime, beyond, action=action,
                                             execution_id="EX-author")
         engine.instance["knowledge"][kid]["title"] = "Changed after input"
-        with self.assertRaisesRegex(ValueError, re.escape("bundle previous semantic hash changed: " + kid)):
+        from do_math.input_basis import CurrentnessChanged
+        with self.assertRaises(CurrentnessChanged) as changed:
             engine._validate_bundle_impacts(engine.instance, engine.runtime, bundle, action=action,
                                             execution_id="EX-author")
+        self.assertEqual(changed.exception.changes, [{'id': kid, 'field': 'content_sha256',
+            'before': bundle['previous_hashes'][kid], 'after': knowledge.content_hash(engine.instance['knowledge'][kid])}])
 
 
 class KnowledgeConnections(unittest.TestCase):

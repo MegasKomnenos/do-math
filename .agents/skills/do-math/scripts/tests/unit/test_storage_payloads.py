@@ -192,8 +192,9 @@ class PayloadStorageTests(unittest.TestCase):
             with ObservedCalls(read_many=GitStateStore.read_many) as reads:
                 decoded = reader.load(head)[1]
             self.assertTrue(decoded['title'] is decoded['label'], 'decoded values should share immutable bytes')
-            # The observation sees the parent read of a head published elsewhere (the second contract's cache).
-            self.assertEqual([call['commit'] for call in reads.captured('read_many')], [head])
+            # One batch reads record files; one reads the distinct payload.
+            self.assertEqual([call['commit'] for call in reads.captured('read_many')], [head, head])
+            self.assertEqual(reads.captured('read_many')[1]['paths'], [stored['payloads'][0]['path']])
             with ObservedCalls(read_many=GitStateStore.read_many) as reads:
                 new_head, new_i, new_r = repo.save_with_state(head, instance, {**runtime, 'status': 'ready'})
             self.assertEqual([call['commit'] for call in reads.captured('read_many') if call['commit'] == head], [])

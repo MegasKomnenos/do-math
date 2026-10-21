@@ -201,6 +201,8 @@ class BundleApplicationTests(unittest.TestCase):
         self.assertEqual([(r['rule_id'], r['integration_id']) for r in issues],
                          [('integration.mutation_conflict', 'IN-B')])
         extensions['knowledge_changes'][1]['id'] = 'KN-other'
+        context['knowledge_catalog'].append({'id': 'KN-other', 'content_sha256': 'a' * 64})
+        output['integration_bundles'][1]['previous_hashes'] = {'KN-other': 'a' * 64}
         self.assertEqual(integration.inspect_bundles(output, extensions, context), [])
         output['integration_bundles'][0]['previous_hashes'] = {}
         issues = integration.inspect_bundles(output, extensions, context)
@@ -213,7 +215,10 @@ class BundleApplicationTests(unittest.TestCase):
                       'question_routes': [{'question_id': 'QU-1'}]}
         output['integration_bundles'][1]['members'] += ['activity-extensions.json/knowledge_changes/0',
                                                        'activity-extensions.json/question_routes/0']
-        issues = integration.inspect_bundles(output, extensions, research_work_context())
+        context = research_work_context()
+        context['knowledge_catalog'] = [{'id': 'KN-old', 'content_sha256': 'a' * 64}]
+        output['integration_bundles'][1]['previous_hashes'] = {'KN-old': 'a' * 64}
+        issues = integration.inspect_bundles(output, extensions, context)
         self.assertEqual([(r['rule_id'], r['path']) for r in issues], [
             ('integration.new_identity', 'activity-extensions.json/knowledge_changes/0'),
             ('integration.reference_closure', 'activity-extensions.json/question_routes/0')])

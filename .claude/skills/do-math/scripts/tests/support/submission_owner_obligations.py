@@ -99,8 +99,13 @@ class OwnerIngressAssertions:
                     self.assertEqual(len(output['integration_bundles']), 1)
                     output['integration_bundles'][0]['members'] = sorted(
                         integration.member_values(output, extensions, fixed))
-                self.reject_and_replay(sim, workspace, fixed['control_binding'], output, extensions,
-                    [(rule, 'activity-extensions.json/' + family + '/' + path, message)], index)
+                # The common fixed-input checker may also reject the structural
+                # sample's placeholder target. Its rules are pinned independently
+                # in integration tests; here both entry points must consume them.
+                common = [(row['rule_id'], row['path'], row['message'])
+                          for row in integration.inspect_bundles(output, extensions, fixed)]
+                expected = common + [(rule, 'activity-extensions.json/' + family + '/' + path, message)]
+                self.reject_and_replay(sim, workspace, fixed['control_binding'], output, extensions, expected, index)
             sidecar.write_bytes(original)
             # 상태를 가진 정상 응답 생산자도 한 번만 호출한다. 실제 worker가
             # 뒤에 제출할 답은 방금 정상 검사를 통과한 바로 그 출력이다.

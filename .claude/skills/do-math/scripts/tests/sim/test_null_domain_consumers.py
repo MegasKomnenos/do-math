@@ -88,6 +88,23 @@ class ImportNullTests(unittest.TestCase):
     def test_failed_and_unresolved_checks_keep_the_actual_repair_basis(self):
         for decision in ('revision_required', 'unresolved'):
             with self.subTest(decision=decision):
+                if decision == 'unresolved':
+                    from support.intent_evidence import evidence_waits, waiting_sim
+                    sim = waiting_sim()
+                    entry, = evidence_waits(sim)
+                    checked = sim.runtime['intent_imports'][entry['import_id']]
+                    self.assertEqual(checked['status'], 'unresolved')
+                    self.assertEqual((entry['bundle_sha256'], entry['source_sha256'], entry['check_sha256']),
+                        (checked['sha256'], checked['source']['sha256'], checked['check']['sha256']))
+                    self.assertEqual(sim.runtime['executions'][entry['execution_id']]['outcome'], 'output_accepted')
+                    self.assertEqual(set(entry['question_scopes']), set(entry['question_resolution_basis']))
+                    self.assertTrue(entry['question_scopes'])
+                    self.assertFalse(any(a.get('previous_import_id') == checked['id'] for a in sim.runtime['queue']))
+                    sim.engine._save()
+                    saved = deepcopy((sim.instance, sim.runtime))
+                    sim.restart()
+                    self.assertEqual((sim.instance, sim.runtime), saved)
+                    continue
                 sim = checked_sim()
                 previous = checked_bundle(sim)
                 author = sim.runtime['executions'][previous['execution_id']]['action']

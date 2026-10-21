@@ -174,6 +174,7 @@ def assert_governance_documents(case, value, *, owner, instance=None, runtime=No
         return
     if owner == 'governance':
         governance.validate_governance_state(instance)
+        case.assertIn('charter', value, 'governance.charter')
         active = [r for r in instance['governance'].values() if r['status'] == 'active']
         charter, = [r for r in active if r['kind'] == 'charter']
         case.assertEqual(value['charter'], charter)
@@ -330,6 +331,11 @@ def assert_result_documents(case, value, workspace, engine=None, *, owner, task_
     for document in documents(Path(__file__).resolve().parents[3]):
         case.assertEqual(result_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
                          str(document))
+    if owner == 'call_result':
+        from do_math.payloads import json_safe
+        case.assertIsNotNone(expected, 'call result needs the actual runner return')
+        case.assertEqual(value, json.loads(canonical_json(json_safe(expected))))
+        return
     root = Path(workspace).resolve()
     def local_bytes(path, expected_path):
         case.assertEqual(path, expected_path)

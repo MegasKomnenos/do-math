@@ -115,7 +115,10 @@ class GovernanceTaskScopeTests(unittest.TestCase):
         before = deepcopy((i, r, source))
         result, state, event = gov.apply_decision(i, r, change, source_ref=source, clock=sim.clock)
         self.assertEqual((i, r, source), before)
-        self.assertEqual(state['tasks'][tid]['revision_requested'], {'source': event['id'], 'revision': task['revision'], 'reason': change['reason']})
+        from do_math.planning import contract_hash
+        self.assertEqual(state['tasks'][tid]['revision_requested'], {
+            'source_refs': [event['id']], 'user_decision_refs': [event['id']],
+            'contract_sha256': contract_hash(task), 'revision': task['revision'], 'reason': change['reason']})
         self.assertEqual(state['queue'][:-1], r['queue'])
         queued = state['queue'][-1]
         self.assertEqual((queued['role'], queued['target'], queued['reason']), ('research_preparation', tid, change['reason']))

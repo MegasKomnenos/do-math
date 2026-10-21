@@ -6,10 +6,28 @@ before stays reported.
 """
 import unittest
 
-from do_math.codex_stream import parse_jsonl
+from do_math.codex_stream import parse_jsonl, stderr_diagnostics
 
 
 class CodexStreamTests(unittest.TestCase):
+    def test_stderr_diagnostics_index_exact_log_lines_without_decoding_other_bytes(self):
+        line = (b'2026-10-20T15:55:28.118316Z ERROR codex_models_manager::manager: '
+                b'failed to refresh available models: request timed out')
+        prefix = b'\xff\xfe\r\n'
+        raw = prefix + line + b'\r\n' + line
+        diagnostics = stderr_diagnostics(raw)
+        self.assertEqual([row['source'] for row in diagnostics], [
+            {'artifact': 'stderr', 'offset': len(prefix), 'bytes': len(line) + 2},
+            {'artifact': 'stderr', 'offset': len(prefix) + len(line) + 2, 'bytes': len(line)}])
+        self.assertEqual([raw[row['source']['offset']:row['source']['offset'] + row['source']['bytes']]
+                          for row in diagnostics], [line + b'\r\n', line])
+        self.assertEqual(stderr_diagnostics(line.replace(b'ERROR', b'WARN'))[0]['reported_level'], 'WARN')
+        for other in (None, b'', b'request timed out\n', b'quoted: ' + line,
+                      line.replace(b'codex_models_manager::manager', b'other_component'),
+                      line.replace(b'request timed out', b'connection failed')):
+            with self.subTest(raw=other):
+                self.assertEqual(stderr_diagnostics(other), [])
+
     def test_native_error_is_a_complete_failure_only_with_its_failed_terminal(self):
         prefix = (b'{"type":"thread.started","thread_id":"failed-request"}\n'
                   b'{"type":"turn.started"}\n'

@@ -48,10 +48,19 @@ def revision_requested(task: dict) -> bool:
 
 
 def revision_required(task: dict) -> bool:
-    """A contract revision was requested, or a review of the current revision did not approve it."""
-    return revision_requested(task) or any(
-        review.get("revision") == task.get("revision") and review.get("decision") != "approved"
-        for review in task.get("reviews", []))
+    """Outstanding requests, independent of the historical review verdicts."""
+    return revision_requested(task)
+
+
+def effective_contract_review(task, instance, runtime, *, task_basis=None):
+    """The last accepted verdict on current premises owns approval."""
+    if any(r['status'] in {'pending', 'conflict'} and r['contract_sha256'] == contract_hash(task)
+           for r in task.get('contract_review_reconsiderations', [])):
+        return None
+    for review in reversed(task.get('reviews', [])):
+        if contract_review_current(review, task, instance, runtime, task_basis=task_basis)['valid']:
+            return review
+    return None
 
 
 def task_reference_basis(task: dict) -> dict:
@@ -276,6 +285,14 @@ def seal_contract_review(task, output, instance, runtime, *, execution_id):
     from .input_basis import capture_decision_basis, capture_sources
     if execution_id == task.get("producer_execution") or execution_id in task.get("author_execution_ids", []):
         raise ValueError("contract author cannot independently review its contract")
+    execution = runtime.get('executions', {}).get(execution_id, {})
+    reconsideration = execution.get('action', {}).get('contract_review_reconsideration')
+    if reconsideration:
+        from .governance import execution_lineage
+        excluded = {task.get('producer_execution'), reconsideration['requested_by'], *reconsideration['source_refs']}
+        if any(identifier in excluded or record is None
+               for identifier, record in execution_lineage(runtime, execution_id)):
+            raise ValueError('contract reconsideration must have an independent execution context')
     records = record_index(instance, runtime)
     refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime, records=records)
     return {"id": execution_id, "execution_id": execution_id, "revision": task["revision"],
@@ -304,7 +321,10 @@ def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) ->
     """Validate the supplied planning population, before applying any decision."""
     from .task_contracts import returned_task_ids, validate_plan_dispositions
     comparison_ids = set(ready_ids) | set(returned_task_ids(tasks))
-    comparison_tasks = {identifier: task for identifier, task in tasks.items()
+    # The fixed checker catalog adds this semantic hash for integration. It is
+    # not a stored task field; retain the original catalog for its other readers.
+    comparison_tasks = {identifier: {key: value for key, value in task.items() if key != 'content_sha256'}
+                        for identifier, task in tasks.items()
                         if identifier in comparison_ids}
     validate_plan_dispositions(output, comparison_tasks, ready_ids)
 
@@ -623,25 +643,26 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     except (ValueError, TypeError, KeyError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     action = action or {"role": "research_work", "target": task["id"]}
-    from .questions import user_waits
-    waits = user_waits(action, instance, runtime, records=records)
+    from .questions import action_waits
+    waits = action_waits(action, instance, runtime, records=records)
     if waits:
-        return {"state": "not_ready", "basis": [], "errors": ["an explicit user decision is required"], "waits": waits}
+        return {"state": "not_ready", "basis": [], "errors": [
+            'question disposition required from: ' + ', '.join(sorted({w['next_owner'] for w in waits}))], "waits": waits}
     if instance.get("goal_status") == "mathematically_solved" and not task.get("academic_requirement_id"):
         return {"state": "not_ready", "basis": [], "errors": ["research production stopped after goal satisfaction"]}
     if task.get("status") not in LIFECYCLE_STATES - TERMINAL_TASK_STATUSES:
         return {"state": "not_ready", "basis": [], "errors": ["task state is not schedulable"]}
     if revision_requested(task):
-        return {"state": "not_ready", "basis": [], "errors": ["a contract revision was requested by " + str(task["revision_requested"].get("source")) + "; awaiting a new revision"]}
-    revision = task.get("revision")
-    reviews = task.get("reviews", [])
-    approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]
+        return {"state": "not_ready", "basis": [], "errors": ["outstanding contract revision sources: " +
+            ', '.join(task['revision_requested']['source_refs'])]}
     try:
-        task_basis = capture_task_basis(task, instance, runtime, records=records) if approved else None
-        approved = [r for r in approved if contract_review_current(r, task, instance, runtime, task_basis=task_basis)["valid"]]
+        task_basis = capture_task_basis(task, instance, runtime, records=records)
+        review = effective_contract_review(task, instance, runtime, task_basis=task_basis)
     except (ValueError, KeyError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
-    if not approved: return {"state": "not_ready", "basis": [], "errors": [CONTRACT_REVIEW_MISSING]}
+    if not review or review['decision'] != 'approved':
+        return {"state": "not_ready", "basis": [], "errors": [CONTRACT_REVIEW_MISSING]}
+    approved = [review]
     waits = revision_waits(action, instance, runtime, records=records)
     if waits:
         return {"state": "not_ready", "basis": [], "errors": ["required record has an unresolved revision"], "waits": waits}
@@ -793,16 +814,21 @@ def research_wake_reasons(instance, runtime, *, now, evaluation_context=None):
     """Read-only wake decision over the same snapshot used for status."""
     if (instance.get('lifecycle', {}).get('state') != 'active'
             or runtime.get('status') != 'waiting'
-            or runtime.get('user_pause') or instance.get('goal_status') == 'mathematically_solved'):
+            or runtime.get('user_pause')):
         return []
+    from .questions import open_links, handling_wait_ready
+    question_reasons = [{'kind': 'operations_question_due', 'question_id': q['id']}
+        for q in open_links(runtime, 'operations') if handling_wait_ready(q, instance, runtime, now=now)]
+    if instance.get('goal_status') == 'mathematically_solved':
+        return question_reasons
     reasons = [{'kind': event['kind'], 'event_id': event['id']}
                for event in collect_due_events(instance, runtime, now)]
     state = exhaustion_state(instance, {**runtime, 'status': 'active'},
                              now=now, evaluation_context=evaluation_context)
-    from .questions import user_waits
-    if state['prepare'] and not user_waits({'role': 'research_preparation'}, instance, runtime):
+    from .questions import action_waits
+    if state['prepare'] and not action_waits({'role': 'research_preparation'}, instance, runtime):
         reasons.append({'kind': 'research_regeneration_due'})
-    return reasons
+    return [*reasons, *question_reasons]
 
 
 def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None, clock):

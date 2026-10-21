@@ -1,5 +1,5 @@
 """Installation registry and domain semantic checks for persisted families."""
-from .schemas import (BOOL, EVIDENCE, NAT, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
+from .schemas import (BOOL, EVIDENCE, NAT, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT, IMPORT_CHECK_RELEASE,
                       array, enum, nullable, obj)
 from ..values import json_copy
 from ..state_contract import ARTIFACT_ROOT
@@ -21,6 +21,13 @@ def _academic_references(row):
     for ref in row["evidence_refs"]:
         if not ref.startswith(ARTIFACT_ROOT):
             yield ref, "knowledge|formal_results|expositions|external_operations|executions"
+
+
+def _intent_import_references(row):
+    yield from refs(('execution_id', 'executions'), ('previous_id', 'intent_imports'),
+                    ('superseded_by', 'intent_imports'), ('input_ref', 'inputs'))(row)
+    for check in [*row['check_history'], *([row['check']] if row.get('check') else [])]:
+        yield check['execution_id'], 'executions'
 
 
 REFERENCES = {
@@ -61,7 +68,7 @@ REFERENCES = {
     "governance": refs(("approval_ref", "decisions"), ("source_ref", "governance_sources"), ("superseded_by", "governance"), lists=(("supersedes", "governance"),)),
     "trust_transitions": refs(("from_environment", "trust_environments"), ("to_environment", "trust_environments")),
     "academic_resolution_records": _academic_references,
-    "intent_imports": refs(("execution_id", "executions"), ("previous_id", "intent_imports"), ("superseded_by", "intent_imports"), ("input_ref", "inputs")),
+    "intent_imports": _intent_import_references,
     "delegation_applications": refs(("delegation_id", "delegations")),
 }
 
@@ -310,7 +317,8 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     from ..activities import validate_activities
     from ..execution_profiles import match_profile_ref, validate_host_constraint
     from ..lean_evidence import compare_formal_results
-    from ..governance import validate_governance_state, validate_grant_source
+    from ..governance import (validate_governance_state, validate_grant_source, validate_import_checks,
+                              validate_import_check_wait, import_check_action_release)
     from ..knowledge import plan_digest
     from ..knowledge_io import BUILTIN_DEFINITIONS, validate_stored_relation
     from ..knowledge_records import identity_premise, validate_formal_evidence, validate_knowledge_records
@@ -327,6 +335,17 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     validate_lifecycle(instance, runtime)
     if "governance" in instance:
         validate_governance_state(instance)
+    import jsonschema
+    release_checker = jsonschema.Draft202012Validator(IMPORT_CHECK_RELEASE)
+    for event in runtime.get('history', []):
+        if event.get('kind') == 'import_check_evidence_resumed':
+            from ..state_contract import validate_record
+            validate_record(release_checker, event, 'runtime/history/import_check_evidence_resumed')
+    for bundle in runtime.get('intent_imports', {}).values():
+        validate_import_checks(bundle, runtime)
+        check = bundle.get('check')
+        if check and bundle['status'] != (check['decision'] if check['scope_complete'] else 'unresolved'):
+            raise ValueError('import status differs from its current sealed check')
     sources, prior_sources = instance.get("governance_sources", {}), parent_instance.get("governance_sources", {})
     prior_grants, prior_decisions = parent_instance.get("grants", {}), parent_instance.get("decisions", {})
     for identifier, grant in instance.get("grants", {}).items():
@@ -378,6 +397,15 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             if profile["role"] != row.get("role") or (profile["actor_kind"] == "ai" and profile["ai"]["model"] != selection["model"]):
                 raise ValueError("model selection differs from the pinned role/model profile")
         action = row.get("action", row)
+        if action.get('import_check_release'):
+            release = next((e for e in runtime['history'] if e.get('kind') == 'import_check_evidence_resumed'
+                            and e.get('sha256') == action['import_check_release']), None)
+            bundle = runtime.get('intent_imports', {}).get(action.get('import_id'))
+            checks = [*bundle['check_history'], bundle['check']] if bundle and bundle.get('check') else []
+            prior = next((c for c in checks if release and c['sha256'] == release['previous']['check_sha256']), None)
+            if not prior:
+                raise ValueError('import check action must bind its actual evidence release')
+            import_check_action_release(runtime, bundle, action, prior)
         if "cleanup_execution_ids" in action:
             requested = action["cleanup_execution_ids"]
             if set(requested) - set(runtime.get("executions", {})):
@@ -603,9 +631,47 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
         # coordinates must remain live after a queued/waiting action finishes.
         if set(open_targets(question)) - question_targets:
             raise ValueError("question target does not resolve in a declared namespace")
+    from ..questions import validate_state as validate_questions
+    validate_questions(instance, runtime)
+    for task in runtime.get('tasks', {}).values():
+        wait = task.get('waiting', {})
+        if wait.get('kind') == 'contract_review_input':
+            links = {q['id']: q for q in runtime.get('question_links', [])}
+            if set(wait['question_ids']) != set(wait['question_scopes']) or set(wait['question_ids']) != set(wait['question_resolution_basis']):
+                raise ValueError('contract input wait must bind its exact question scopes and receipt basis')
+            for qid, scope in wait['question_scopes'].items():
+                if qid not in links or set(scope) - set(links[qid]['target_ids']):
+                    raise ValueError('contract input wait scope does not resolve')
+        request = task.get('revision_requested')
+        if request:
+            from ..revisions import user_revision_sources
+            if set(request['user_decision_refs']) != user_revision_sources(instance, request['source_refs'], task['id']):
+                raise ValueError('revision request must retain its actual user revise authority')
+            if set(request['user_decision_refs']) - set(request['source_refs']):
+                raise ValueError('user revision authority must be one of its request sources')
+            for ref in request['source_refs']:
+                if ref not in runtime.get('executions', {}) and ref not in instance.get('decisions', {}):
+                    raise ValueError('revision request source does not resolve')
+            for ref in request['user_decision_refs']:
+                decision = instance.get('decisions', {}).get(ref, {})
+                change = decision.get('change', {})
+                if (decision.get('actor') != 'user' or change.get('kind') != 'task_scope'
+                        or change.get('disposition') != 'revise' or change.get('task_id') != task['id']):
+                    raise ValueError('user revision authority must bind an actual user revise decision')
+        for record in task.get('contract_review_reconsiderations', []):
+            if (record['key'] != exact_content_hash({'contract_sha256': record['contract_sha256'], 'basis_key': record['basis_key']})
+                    or record['requested_by'] not in runtime.get('executions', {})
+                    or any(ref not in runtime.get('executions', {}) for ref in record['source_refs'])):
+                raise ValueError('contract reconsideration provenance does not resolve')
+            if record['review_execution_id'] and not any(r['execution_id'] == record['review_execution_id']
+                    for r in task['reviews']):
+                raise ValueError('contract reconsideration must name its actual independent review')
     for action_id, wait in runtime.get("waiting_actions", {}).items():
         if wait["action"]["id"] != action_id:
             raise ValueError("waiting action key differs from its preserved action")
+        if wait.get('kind') == 'import_check_evidence':
+            bundle = runtime['intent_imports'][wait['import_id']]
+            validate_import_check_wait(runtime, bundle, wait, bundle['check'])
         if wait.get("question_id") and wait["question_id"] not in identifiers:
             raise ValueError("waiting action question reference is missing")
         for field, family in (("execution_id", "executions"), ("import_id", "intent_imports")):
@@ -618,6 +684,13 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 raise ValueError("waiting action deferral target does not resolve: " + identifier)
             if identifiers.get(deferred['execution_id'], (None, None))[1] != 'executions':
                 raise ValueError("waiting action deferral execution does not resolve: " + deferred['execution_id'])
+            if deferred.get('question_ids'):
+                links = {q['id']: q for q in runtime.get('question_links', [])}
+                if set(deferred['question_ids']) != set(deferred['question_scopes']):
+                    raise ValueError('revision deferral must retain its exact question scopes')
+                if any(qid not in links or set(scope) - set(links[qid]['target_ids'])
+                       for qid, scope in deferred['question_scopes'].items()):
+                    raise ValueError('revision deferral question scope does not resolve')
         for identifier, request in wait.get("review_requests", {}).items():
             if identifier != request["integration_id"] or request["producer_execution_id"] not in runtime.get("executions", {}):
                 raise ValueError("held impact request does not bind its original bundle/execution")

@@ -89,6 +89,30 @@ def _encode_snapshot(value, blobs):
     return {'path': path, 'sha256': digest, 'bytes': len(blobs[path])}
 
 
+def _snapshot_node(value):
+    if (not isinstance(value, dict) or value.get('kind') not in {'object', 'list'}
+            or value['kind'] == 'object' and not (
+                set(value) == {'kind'}
+                or set(value) == {'kind', 'key', 'value'} and isinstance(value['key'], str)
+                or set(value) == {'kind', 'bit', 'zero', 'one'} and type(value['bit']) is int and value['bit'] >= 0)
+            or value['kind'] == 'list' and set(value) not in ({'kind'}, {'kind', 'previous', 'item'})):
+        raise ValueError('invalid snapshot node')
+    return value
+
+
+def _snapshot_cell(value):
+    if isinstance(value, list) and value:
+        if len(value) == 2 and value[0] == 'node':
+            if not is_sha256(value[1]):
+                raise ValueError('invalid snapshot node reference')
+            return 'node'
+        if len(value) == 2 and value[0] == 'value' and type(value[1]) in {str, int, bool, type(None)}:
+            return 'value'
+        if len(value) == 3 and value[0] == 'text' and is_sha256(value[1]) and type(value[2]) is int:
+            return 'text'
+    raise ValueError('invalid snapshot cell')
+
+
 def _decode_snapshot(reference, read_json, read_text):
     """Verify the whole reachable graph and materialize fresh containers.
 
@@ -103,28 +127,17 @@ def _decode_snapshot(reference, read_json, read_text):
             raise ValueError('invalid snapshot node reference')
         if digest not in nodes:
             value, raw = read_json(_SNAPSHOT_PREFIX + digest + '/value.json', digest, size)
-            if (not isinstance(value, dict) or value.get('kind') not in {'object', 'list'}
-                    or value['kind'] == 'object' and not (
-                        set(value) == {'kind'}
-                        or set(value) == {'kind', 'key', 'value'} and isinstance(value['key'], str)
-                        or set(value) == {'kind', 'bit', 'zero', 'one'} and type(value['bit']) is int and value['bit'] >= 0)
-                    or value['kind'] == 'list' and set(value) not in ({'kind'}, {'kind', 'previous', 'item'})):
-                raise ValueError('invalid snapshot node')
-            nodes[digest] = value
+            nodes[digest] = _snapshot_node(value)
         # Only the root supplies size, and read_json checked its bytes above.
         return nodes[digest]
 
     def cell(value):
-        if not isinstance(value, list) or not value:
-            raise ValueError('invalid snapshot cell')
-        if len(value) == 2 and value[0] == 'node':
+        kind = _snapshot_cell(value)
+        if kind == 'node':
             return visit(value[1])
-        if len(value) == 2 and value[0] == 'value' and type(value[1]) in {str, int, bool, type(None)}:
+        if kind == 'value':
             return value[1]
-        if (len(value) == 3 and value[0] == 'text' and is_sha256(value[1])
-                and type(value[2]) is int):
-            return read_text(value[1], value[2])
-        raise ValueError('invalid snapshot cell')
+        return read_text(value[1], value[2])
 
     def visit(digest, size=None):
         if not is_sha256(digest):
@@ -317,19 +330,9 @@ def _read_text(ref, read_payload, git_dir):
     return cache[key]
 
 
-def decode(envelope, read_payload, git_dir=None):
-    """Restore externalized payloads; ``git_dir`` names the repository they are read from.
-
-    A payload blob this process already matched in that repository
-    (repository.VERIFIED_ARTIFACTS) is parsed but not hashed or re-checked
-    for canonical encoding again: its path is its digest and bundles are
-    immutable.
-    """
-    from .values import is_sha256
-    from .canonical import canonical_json
+def _references(envelope):
     if set(envelope) not in ({'contract_id','family','record'}, {'contract_id','family','record','payloads'}):
         raise ValueError('invalid record envelope fields')
-    value = deepcopy(envelope['record'])
     references = envelope.get('payloads', [])
     if not isinstance(references, list): raise ValueError('payload references must be a list')
     for ref in references:
@@ -341,6 +344,69 @@ def decode(envelope, read_payload, git_dir=None):
                 or type(ref['bytes']) is not int or ref['bytes'] < (1 if snapshot else LIMIT)
                 or ref['path'] != prefix + ref['sha256'] + '/value.json'):
             raise ValueError('invalid immutable payload reference')
+    return references
+
+
+def prefetch(envelopes, read_payload, git_dir=None):
+    """Batch only reachable blobs, following checked snapshot nodes by frontier.
+
+    The reader's optional ``prefetch(paths)`` fills its snapshot-local byte
+    table. This is IO scheduling only: decode still checks every coordinate,
+    graph relationship and canonical re-encoding. No domain values are cached.
+    """
+    batch = getattr(read_payload, 'prefetch', None)
+    if batch is None:
+        return
+    pending = {}
+
+    def add(digest, *, snapshot=True, size=None):
+        if not is_sha256(digest):
+            raise ValueError('invalid snapshot node reference')
+        prefix = _SNAPSHOT_PREFIX if snapshot else ARTIFACT_ROOT + 'payload-'
+        pending.setdefault(prefix + digest + '/value.json', (digest, size, snapshot))
+
+    for envelope in envelopes:
+        if 'payloads' not in envelope:
+            continue
+        for ref in _references(envelope):
+            add(ref['sha256'], snapshot=ref['path'].startswith(_SNAPSHOT_PREFIX), size=ref['bytes'])
+    seen = set()
+    while pending:
+        frontier, pending = pending, {}
+        batch(list(frontier))
+        seen.update(frontier)
+        for path, (digest, size, snapshot) in frontier.items():
+            if not snapshot:
+                continue  # Text is checked and sealed once by the decoder.
+            value, _ = _read_json_blob(path, digest, size, read_payload, git_dir, 'snapshot')
+            row = _snapshot_node(value)
+            if 'bit' in row:
+                add(row['zero'])
+                add(row['one'])
+            if 'previous' in row:
+                add(row['previous'])
+            cell = row.get('value') if 'key' in row else row.get('item')
+            if 'key' in row or 'item' in row:
+                kind = _snapshot_cell(cell)
+                if kind == 'node':
+                    add(cell[1])
+                elif kind == 'text':
+                    if cell[2] < LIMIT:
+                        raise ValueError('invalid snapshot text reference')
+                    add(cell[1], snapshot=False, size=cell[2])
+        pending = {path: row for path, row in pending.items() if path not in seen}
+
+
+def decode(envelope, read_payload, git_dir=None):
+    """Restore externalized payloads; ``git_dir`` names their repository.
+
+    Bytes previously matched there by _read_json_blob are parsed but not
+    hashed or checked for canonical encoding again. Declared sizes still match.
+    """
+    references = _references(envelope)
+    value = deepcopy(envelope['record'])
+    for ref in references:
+        snapshot = ref['path'].startswith(_SNAPSHOT_PREFIX)
         if snapshot:
             def read_json(path, digest, size):
                 return _read_json_blob(path, digest, size, read_payload, git_dir, 'snapshot')

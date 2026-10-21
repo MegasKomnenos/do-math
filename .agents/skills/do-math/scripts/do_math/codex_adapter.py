@@ -23,7 +23,8 @@ from typing import Any, Mapping
 
 from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
-from do_math.codex_stream import artifact as _artifact, parse_response as _parse_codex, provider_observation as _provider_observation
+from do_math.codex_stream import (artifact as _artifact, parse_response as _parse_codex,
+                                 provider_observation as _provider_observation, stderr_diagnostics as _codex_diagnostics)
 from do_math.provider_final import EXECUTABLE_KEYS, final_bytes as _final_bytes, final_mismatch
 from do_math.cli_execution import (checked_start_paths, collection_reasons, decode_status, surface_report,
                                    termination_confirmed)
@@ -191,6 +192,7 @@ class LocalCLIAdapter:
                 "source_prompt": _artifact(prompt_raw, execution.prompt_sha256),
                 "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
                 "stdout": _artifact(stdout), "stderr": _artifact(stderr), "final": _artifact(final),
+                "diagnostics": self.stderr_diagnostics(stderr),
                 "worker_status": status, "jsonl": parsed, "worker_argv": execution.worker_argv,
                 "process_identity": process_identity(execution.job),
                 "stop_receipts": execution.stop_receipts,
@@ -213,6 +215,10 @@ class LocalCLIAdapter:
     def provider_failure(self, parsed: dict) -> dict | None:
         """A native admission rejection the provider reported; none by default."""
         return None
+
+    def stderr_diagnostics(self, raw: bytes | None) -> list[dict[str, Any]]:
+        """Provider log annotations only; completion is judged by collection_reasons."""
+        return []
 
 
 class CodexExecAdapter(LocalCLIAdapter):
@@ -242,4 +248,7 @@ class CodexExecAdapter(LocalCLIAdapter):
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
         return _parse_codex(raw, request)
+
+    def stderr_diagnostics(self, raw: bytes | None) -> list[dict[str, Any]]:
+        return _codex_diagnostics(raw)
 

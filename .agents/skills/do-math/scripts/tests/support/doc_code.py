@@ -40,7 +40,7 @@ CONTINUATION_BOUNDARIES = {owner: object() for owner in
 OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
                               ('operational_evidence', 'recovery_materials')}
 RESULT_INPUT_BOUNDARIES = {owner: object() for owner in
-                         ('source_ref', 'materialized_output_files', 'research_sources', 'results')}
+                         ('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result')}
 TOOL_INPUT_BOUNDARIES = {owner: object() for owner in
                         ('execution_window', 'scholarly', 'formal_verifier', 'preview',
                          'record_map.read_tool', 'submission_contract')}
@@ -594,7 +594,7 @@ def field_schemas():
     schemas['task_assessments'] = contracts.schema_for('research_plan')['properties']['task_assessments']
     schemas['item_dispositions'] = schemas['task_assessments']['items']['properties']['item_dispositions']
     extensions = submission.extension_schema({'role': 'research_preparation'})['properties']
-    for name in ('task_conditions', 'knowledge_changes', 'revision_resolutions', 'contract_checks'):
+    for name in ('task_conditions', 'knowledge_changes', 'revision_resolutions', 'contract_checks', 'question_routes'):
         schemas[name] = extensions[name]
     schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
     schemas['external_rejections'] = array(RECORDS['external_rejections'])
@@ -1047,7 +1047,7 @@ def tool_field_issues(text, owner, value):
 
 
 def result_field_issues(text, owner, value):
-    """Read fields of one actual catalog/restoration result, including line aliases.
+    """Read fields of one actual catalog, restoration or call result, including line aliases.
 
     Empty arrays establish only the empty case. Populated producer tests own
     item fields; an index requires that actual item. Other owners remain under

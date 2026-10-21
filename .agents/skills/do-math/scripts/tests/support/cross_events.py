@@ -85,6 +85,9 @@ class EventResponder:
         if event == 'contract':
             out.update(contract_review(ctx, decision=value,
                 findings=[] if value == 'approved' else ['The supplied domain needs an explicit boundary.']))
+            if value == 'unresolved':
+                from support.role_answers import user_contract_question
+                user_contract_question(out, ctx, workspace, 'Clarify the supplied contract domain boundary.')
         elif event == 'work':
             assert ctx['task']['id'] == ctx['action']['target']
             out.update(outcome=value)
@@ -186,6 +189,10 @@ class EventResponder:
                         'evidence': ['proposal:explanation']}]
             elif event == 'interpretation' and value != 'approved':
                 out['findings'] = ['The supplied interpretation requires a domain clarification.']
+                if value == 'unresolved':
+                    from support.role_answers import user_question
+                    user_question(out, workspace, 'Clarify the interpretation of the supplied domain.',
+                                  targets=[ctx['instance_id']])
         elif event == 'answer':
             assert out['answers'], ctx['action']
             for row in out['answers']:

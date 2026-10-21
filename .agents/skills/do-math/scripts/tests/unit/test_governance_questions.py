@@ -82,6 +82,84 @@ class QuestionTests(unittest.TestCase):
 
 
 class QuestionRouteTests(unittest.TestCase):
+    def test_consumer_scope_finishes_before_later_targets_and_waits_for_a_real_replacement(self):
+        from support.fakes.clock import FakeClock
+        clock = FakeClock()
+        runtime = {}
+        descriptor = {'kind': 'execution_support', 'subject_ref': 'TK-A', 'requirement_ref': 'support'}
+        row = questions.link(runtime, execution_id='EX-one', field='questions/0', owner='operations', targets=['TK-A'],
+            obligation=descriptor, clock=clock)
+        questions.link(runtime, execution_id='EX-two', field='questions/0', owner='operations', targets=['TK-B'],
+            obligation=descriptor, clock=clock)
+        questions.close(row, kind='ai_resolution', resolution_ref='EX-A-result', affected_ids=['TK-A'])
+        self.assertEqual(questions.question_scope_state(runtime, row['id'], ['TK-A']),
+                         {'resolved': True, 'resolution_refs': ['EX-A-result']})
+        self.assertFalse(questions.question_scope_state(runtime, row['id'], ['TK-B'])['resolved'])
+        recipient = questions.link(runtime, execution_id='EX-recipient', field='questions/0', owner='operations', targets=['TK-B'],
+            obligation={**descriptor, 'requirement_ref': 'remaining-support'}, clock=clock)
+        questions.close(row, kind='ai_resolution', resolution_ref='EX-transfer', affected_ids=['TK-B'], status='superseded',
+            evidence={'replacement_question_id': recipient['id']})
+        self.assertFalse(questions.question_scope_state(runtime, row['id'], ['TK-B'])['resolved'])
+        questions.close(recipient, kind='ai_resolution', resolution_ref='EX-B-result', affected_ids=['TK-B'])
+        self.assertEqual(questions.question_scope_state(runtime, row['id'], ['TK-B']),
+                         {'resolved': True, 'resolution_refs': ['EX-B-result', 'EX-transfer']})
+
+    def test_resolved_observation_is_not_reopened_by_another_report_but_real_recurrence_is_kept(self):
+        from support.fakes.clock import FakeClock
+        clock = FakeClock()
+        runtime = {}
+        descriptor = {'kind': 'execution_support', 'subject_ref': 'TK-A', 'requirement_ref': 'tool:scholarly'}
+        row = questions.link(runtime, execution_id='EX-one', field='questions/0', owner='operations', targets=['TK-A'],
+            obligation=descriptor, clock=clock)
+        observation = [{'artifact_ref': 'runtime/artifacts/BA-one/check.txt', 'sha256': 'a' * 64, 'bytes': 4}]
+        row['handling']['observation_basis'] = observation
+        questions.close(row, kind='sample', resolution_ref='EX-handler', affected_ids=['TK-A'])
+        for execution in ('EX-two', 'EX-three'):
+            same = questions.link(runtime, execution_id=execution, field='questions/0', owner='operations', targets=['TK-A'],
+                obligation=descriptor, clock=clock, observation_basis=observation, reopen_reason='The same recorded observation')
+            self.assertIs(same, row)
+            self.assertEqual((row['status'], row['handling']['generation']), ('resolved', 1))
+        questions.link(runtime, execution_id='EX-new-observation', field='questions/0', owner='operations', targets=['TK-A'],
+            obligation=descriptor, clock=clock, observation_basis=[{'artifact_ref': 'runtime/artifacts/BA-new/check.txt',
+                'sha256': 'b' * 64, 'bytes': 6}], reopen_reason='A new attempt actually failed')
+        self.assertEqual((row['status'], row['handling']['generation']), ('open', 2))
+        self.assertEqual(len(row['origins']), 4)
+
+    def test_collected_evidence_rejects_missing_paths_and_tampered_bytes(self):
+        import hashlib
+        from do_math.submission import resolve_output_evidence
+        raw = b'sealed support observation'
+        row = {'path': 'support.txt', 'artifact_ref': 'runtime/artifacts/BA-output/support.txt',
+               'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+        def record(ref):
+            raise AssertionError('workspace evidence must not be read as a central record')
+        args = {'output_files': [row], 'read_artifact': lambda ref: raw, 'resolve_record': record}
+        self.assertEqual(resolve_output_evidence('workspace:support.txt', **args), {k: row[k] for k in ('artifact_ref', 'sha256', 'bytes')})
+        for reference, reason in (
+                ('workspace:missing.txt', r'^workspace evidence must name a collected output file: workspace:missing\.txt$'),
+                ('workspace:../other-run/support.txt', r'^unsafe relative path: \.\./other-run/support\.txt$')):
+            with self.subTest(reference=reference), self.assertRaisesRegex(ValueError, reason):
+                resolve_output_evidence(reference, **args)
+        with self.assertRaisesRegex(ValueError,
+                r'^artifact evidence missing or hash differs: runtime/artifacts/BA-output/support\.txt$'):
+            resolve_output_evidence('workspace:support.txt', **{**args, 'read_artifact': lambda ref: raw + b'!'} )
+
+    def test_operations_reports_share_obligation_but_do_not_close_unread_targets(self):
+        from support.fakes.clock import FakeClock
+        clock = FakeClock()
+        runtime = {}
+        descriptor = {'kind': 'execution_support', 'subject_ref': 'TK-A', 'requirement_ref': 'tool:scholarly'}
+        first = questions.link(runtime, execution_id='EX-one', field='questions/0', owner='operations',
+            targets=['TK-A'], blocks=True, obligation=descriptor, clock=clock)
+        second = questions.link(runtime, execution_id='EX-two', field='questions/0', owner='operations',
+            targets=['TK-B'], blocks=False, obligation=descriptor, clock=clock)
+        self.assertIs(first, second)
+        self.assertEqual(len(first['origins']), 2)
+        questions.close(first, kind='ai_resolution', resolution_ref='EX-handler', affected_ids=['TK-A'])
+        self.assertEqual(first['unresolved_target_ids'], ['TK-B'])
+        self.assertEqual(questions.action_waits({'role': 'research_work', 'target': 'TK-B'},
+            {'id': 'RI-A'}, runtime), [])
+
     def test_route_targets_admit_the_records_of_the_record_index(self):
         # A grant a task relies on is a record the role may cite through its record_index.
         output = {'questions': ['May the task use GR-1 for this effect?']}

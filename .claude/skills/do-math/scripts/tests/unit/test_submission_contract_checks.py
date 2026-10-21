@@ -33,7 +33,11 @@ class ContractCheckTests(unittest.TestCase):
         self.conditions = []
 
     def issues(self, *entries, candidates=None):
-        return preparation_issues(entries, candidates=candidates or [self.item], context=self.context,
+        from do_math.knowledge import content_hash
+        # These are full fixed-input task records, including mutation hashes.
+        context = {**self.context, 'tasks': [{**task, 'content_sha256': content_hash(task)}
+                                           for task in self.context.get('tasks', [])]}
+        return preparation_issues(entries, candidates=candidates or [self.item], context=context,
                                   workspace=Path(self.temp.name), conditions=self.conditions)
 
     def rules(self, text):

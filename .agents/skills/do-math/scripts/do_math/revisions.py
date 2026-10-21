@@ -6,6 +6,56 @@ from .values import parse_utc
 from .canonical import exact_content_hash
 from .session_slots import live_action_ids
 
+REVISION_DISPOSITIONS = frozenset({'revised', 'unchanged', 'dismissed', 'deferred', 'delegated'})
+
+
+def user_revision_sources(instance, source_refs, identifier):
+    return {ref for ref in source_refs if (decision := instance.get('decisions', {}).get(ref, {})).get('actor') == 'user'
+            and decision.get('change', {}).get('kind') == 'task_scope'
+            and decision['change'].get('disposition') == 'revise' and decision['change'].get('task_id') == identifier}
+
+
+def resolution_schema():
+    from .contracts import TEXT, REFS, closed_object
+    return closed_object({'record_id': TEXT, 'disposition': {'enum': sorted(REVISION_DISPOSITIONS)},
+        'reason': TEXT, 'task_title': TEXT, 'request_refs': REFS, 'evidence_refs': REFS,
+        'question_ids': REFS}, ['record_id', 'disposition', 'reason'])
+
+
+def resolved_targets(action, extensions, *, consumer_targets=None):
+    """Answered sources for this consumer; an optional child cannot cancel its required parent."""
+    declared = action.get('revision_targets', {})
+    consumer = declared if consumer_targets is None else consumer_targets
+    result = {row['task_id']: list(declared[row['task_id']].get('source_refs', []))
+              for row in extensions.get('task_dispositions', []) if row['task_id'] in declared}
+    for row in extensions.get('revision_resolutions', []):
+        basis = declared.get(row['record_id'])
+        if basis is None:
+            continue
+        kind = row['disposition']
+        if kind == 'revised' or (kind == 'unchanged' and not basis.get('required')
+                                and not consumer.get(row['record_id'], {}).get('required')):
+            result[row['record_id']] = list(basis.get('source_refs', []))
+        elif (kind == 'dismissed' and not basis.get('user_decision_refs')
+              and row.get('request_refs') and row.get('evidence_refs')
+              and set(row['request_refs']) <= set(basis.get('source_refs', []))):
+            result[row['record_id']] = list(row['request_refs'])
+    return result
+
+
+def remaining_targets(targets, resolved):
+    """Subtract sources, preserving independently outstanding requests."""
+    remaining = deepcopy(targets)
+    for identifier, refs in resolved.items():
+        if identifier not in remaining:
+            continue
+        sources = [ref for ref in remaining[identifier].get('source_refs', []) if ref not in refs]
+        if sources:
+            remaining[identifier]['source_refs'] = sources
+        else:
+            del remaining[identifier]
+    return remaining
+
 
 def regeneration_time_valid(regenerate_after, observed_at) -> bool:
     """A regeneration time must be a zoned time strictly after the machine observation.
@@ -28,6 +78,14 @@ def capture_targets(instance, runtime, identifiers, *, required=False, source_re
         row["required"] = required
         if source_ref:
             row["source_refs"] = [source_ref]
+        if identifier in runtime.get('tasks', {}):
+            request = runtime['tasks'][identifier].get('revision_requested', {}) if planning.revision_requested(runtime['tasks'][identifier]) else {}
+            for field in ('source_refs', 'user_decision_refs'):
+                refs = list(dict.fromkeys([*request.get(field, []), *row.get(field, [])]))
+                if refs:
+                    row[field] = refs
+        if source_ref in user_revision_sources(instance, [source_ref], identifier):
+            row['user_decision_refs'] = list(dict.fromkeys([*row.get('user_decision_refs', []), source_ref]))
         result[identifier] = row
     return result
 
@@ -87,6 +145,30 @@ def submission_errors(output, extensions, context):
         if disposition == "unchanged":
             if declared[identifier].get("required") or planning.revision_required(tasks.get(identifier, {})):
                 issue("revision_resolutions", "a required revision or rejected contract cannot be cancelled as unchanged")
+        if disposition == 'dismissed':
+            basis = declared[identifier]
+            if (basis.get('user_decision_refs') or tasks.get(identifier, {}).get('revision_requested', {}).get('user_decision_refs')
+                    or not row.get('request_refs') or not row.get('evidence_refs')
+                    or set(row['request_refs']) - set(basis.get('source_refs', []))):
+                issue('revision_resolutions', 'dismissed requires AI request sources and evidence; user revisions cannot be dismissed')
+        if row.get('question_ids'):
+            supplied = {q['id'] for q in context.get('question_links', []) if q['status'] == 'open'
+                        and (identifier not in q['target_ids'] or identifier in q['unresolved_target_ids'])}
+            local = set()
+            for ref in row['question_ids']:
+                if not ref.startswith('output:questions/'):
+                    continue
+                try:
+                    from .questions import output_question_index
+                    index = output_question_index(ref)
+                    route = next(r for r in extensions.get('question_routes', []) if r['question_index'] == index)
+                    if not 0 <= index < len(output.get('questions', [])) or identifier not in route['target_ids']:
+                        continue
+                    local.add(ref)
+                except (ValueError, StopIteration):
+                    pass
+            if disposition != 'deferred' or set(row['question_ids']) - supplied - local:
+                issue('revision_resolutions', 'deferred question_ids must name supplied questions')
         if disposition == "delegated":
             title = row.get("task_title")
             if identifier not in known_knowledge or title not in prepared or identifier not in conditions.get(title, {}).get("knowledge_revision_targets", []):
@@ -250,8 +332,8 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
             'question': question})
         from .questions import link
         linked = link(runtime, execution_id=event_ref, field=f'{len(history) - 1}/question',
-             owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required', clock=clock)
-        linked['source_kind'] = 'history'
+             owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required',
+             source_kind='history', clock=clock)
     if classification['diagnose']:
         if repetition_hold(runtime, lineage, lineage_id):
             return deepcopy(row)

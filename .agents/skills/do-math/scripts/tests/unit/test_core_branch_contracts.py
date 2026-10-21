@@ -537,6 +537,8 @@ class CoreInputRules(unittest.TestCase):
         from do_math.wait_rules import waiting_action
         engine = Sim.activated().engine
         action = {'id': 'AC-retry', 'lineage_id': 'AC-original', 'role': 'maintenance', 'target': 'same'}
+        engine._action_lifecycle_gate(action)
+        engine._register_execution(action, {'id': 'EX-resolver', 'role': 'maintenance', 'status': 'running'})
         entries = {
             'AC-kind': {'kind': 'submission_failure', 'action': {**action, 'id': 'AC-kind'}},
             'AC-lineage': {'kind': 'execution_failure', 'action': {**action, 'id': 'AC-lineage', 'lineage_id': 'AC-other'}},
@@ -1163,6 +1165,7 @@ class PublicationRecoveryRules(unittest.TestCase):
     def test_bundle_currentness_rechecks_a_public_pause_and_revoked_execution_authority(self):
         """T3 3.6 s: real fixed input and public controls establish current rejection premises."""
         from do_math import integration
+        from do_math.input_basis import CurrentnessChanged
         from support.submission_receiver import history
         from support.engine_lifecycle import applied
         for action, reason in (('pause', 'the current pause no longer authorizes this recovery result'),
@@ -1178,9 +1181,11 @@ class PublicationRecoveryRules(unittest.TestCase):
                 else:
                     applied(scene.sim, 'decision', config={'change': {'kind': 'revoke', 'grant_id': scene.action['grant_id']}})
                 before = deepcopy((engine.head, engine.instance, engine.runtime))
-                with self.assertRaisesRegex(ValueError, '^' + reason + '$'):
+                with self.assertRaises(CurrentnessChanged) as caught:
                     engine._validate_bundle_current(deepcopy(engine.instance), deepcopy(engine.runtime), bundle,
                         action=scene.action, execution_id=scene.execution_id, context=scene.context)
+                self.assertEqual(caught.exception.changes, [{'field': 'pause' if action == 'pause' else 'authority',
+                                                            'reason': reason}])
                 self.assertEqual((engine.head, engine.instance, engine.runtime), before)
 
     def test_git_outage_propagates_and_keeps_the_original_publication_wait(self):

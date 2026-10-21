@@ -33,7 +33,7 @@ class QueryFamilyNameTests(unittest.TestCase):
             return scoped_field_issues(text, actual, defer_status=True,
                                        defer_operation_progress=True, defer_query_result=True,
                                        defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
-                                       defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                                       defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                                        defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                        defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                                        defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'), defer_trust=('project', 'toolchain', 'environment_check'))

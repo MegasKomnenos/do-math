@@ -29,7 +29,9 @@ PROTECTED_REFERENCE_KEYS = frozenset({
     "references", "dependencies", "source_refs", "origin_refs", "input_refs", "inputs", "reuse",
     "artifact_ref", "path", "checkpoint_ref", "source_ref", "formal_result_id", "exposition_id",
     "assessment_id", "evidence_refs", "authority_refs", "basis_refs", "record_refs", "result_ref",
-    "formal_result_refs", "assessment_refs"})
+    "formal_result_refs", "assessment_refs", 'question_ids', 'question_id', 'replacement_question_id',
+    'recipient_question_id', 'origin_execution_id', 'execution_id', 'execution_ids', 'owner_activity_id',
+    'action_id', 'resolution_ref', 'last_resolution_ref', 'user_decision_refs', 'request_refs', 'subject_ref'})
 # The fields of a referring object that name its target.
 _TARGET_FIELDS = ("id", "ref", "artifact_ref", "path")
 # Issued semantic references that name no materialized run file.

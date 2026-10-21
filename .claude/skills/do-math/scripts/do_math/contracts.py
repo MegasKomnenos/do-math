@@ -173,7 +173,10 @@ ITEM_DISPOSITION = {"anyOf": [closed_object({"obligation_id": TEXT, "kind": {"co
 CONTRACT_REVIEW_ITEMS = ("question_scope", "inputs_reuse", "outputs_obligations_judges", "stage_boundaries", "tools_authority_profiles")
 REVIEW_ITEM = closed_object({"item_id": {"enum": list(CONTRACT_REVIEW_ITEMS)},
     "decision": {"enum": ["approved", "revision_required", "unresolved"]},
-    "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT})
+    "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT,
+    'revision_fields': {'type': 'array', 'uniqueItems': True, 'minItems': 1,
+                        'items': {'enum': ['contract', 'model_assessment', 'initial_observation_rules']}}},
+    ['item_id', 'decision', 'evidence_refs', 'findings', 'missing_inputs', 'next_owner'])
 PLAN_DISPOSITION = closed_object({"task_id": TEXT, "kind": {"enum": ["selected", "not_selected", "not_assessable"]},
     "reason": TEXT, "uncertainty": STRING, "parallel_task_ids": REFS, "expected_research_change": STRING,
     "revisit": closed_object({"event_refs": REFS, "at": {"type": ["string", "null"]}}),

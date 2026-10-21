@@ -150,6 +150,26 @@ class ModelMetadataBoundaryTests(EngineCase):
 
 
 class ProcessedRejectionTests(EngineCase):
+    def test_original_academic_contract_request_has_a_recipient_without_erasing_ai_preparation(self):
+        from do_math import planning
+        host = self.engine()
+        task, _, _ = approved_task()
+        task['initial_observation_rules'] = prepared_rule_conditions([task['id']])[0]['observation_rules']
+        task.update(academic_requirement_id='R', model_assessment=rating(),
+            revision_requested={'revision': task['revision'], 'contract_sha256': planning.contract_hash(task),
+                'source_refs': ['EX-review'], 'user_decision_refs': [], 'reason': 'The review requests an original contract correction'})
+        task['reviews'] = [{**assessment_basis(task), 'decision': 'revision_required', 'execution_id': 'EX-review',
+            'item_reviews': [{'decision': 'revision_required', 'revision_fields': ['contract']}]}]
+        host.runtime['tasks'], host.runtime['queue'] = {task['id']: task}, []
+        before = deepcopy((task['model_assessment'], task['initial_observation_rules']))
+        host._ensure_model_assessments()
+        host._ensure_model_assessments()
+        requests = [a for a in host.runtime['queue'] if a['role'] == 'research_preparation']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['revision_targets'][task['id']]['source_refs'], ['EX-review'])
+        self.assertEqual((task['model_assessment'], task['initial_observation_rules']), before)
+        self.assertEqual(task['waiting']['next_owner'], 'research_preparation')
+
     def test_processed_rejection_cannot_erase_a_fresh_equal_or_changed_assessment(self):
         host = self.engine()
         host.instance['config'] = {'session_limits': deepcopy(LIMITS)}
@@ -162,7 +182,8 @@ class ProcessedRejectionTests(EngineCase):
                 task.update(academic_requirement_id='R', revision_requested={'revision': task['revision'], 'source': 'REJECT',
                     'reason': 'task contract review returned revision_required'},
                     model_assessment=rating())
-                task['reviews'] = [{**assessment_basis(task), 'decision': 'revision_required', 'execution_id': 'REJECT'}]
+                task['reviews'] = [{**assessment_basis(task), 'decision': 'revision_required', 'execution_id': 'REJECT',
+                    'item_reviews': [{'decision': 'revision_required', 'revision_fields': ['model_assessment', 'initial_observation_rules']}]}]
                 # Each case starts as the legacy state did: this one task and an empty queue.
                 runtime['tasks'], runtime['queue'] = {task['id']: task}, []
                 self.assertEqual(runtime.get('waiting_actions', {}), {})
@@ -178,8 +199,9 @@ class ProcessedRejectionTests(EngineCase):
                 self.assertEqual([a['id'] for a in runtime['queue']], ['NEW-REVIEW'])
                 task['reviews'].append({**assessment_basis(task), 'decision': 'unresolved', 'execution_id': 'REJECT-NEW'})
                 host._ensure_model_assessments()
-                self.assertNotIn('model_assessment', task)
-                self.assertEqual(len(task['model_assessment_history']), 2)
+                self.assertEqual(task['model_assessment'], revised)
+                self.assertEqual(task['initial_observation_rules'], rules)
+                self.assertEqual(len(task['model_assessment_history']), 1)
                 self.assertIs(host.runtime, runtime)
 
 

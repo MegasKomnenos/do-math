@@ -18,7 +18,7 @@ import jsonschema
 from .file_io import atomic_replace, console_python
 from .values import json_copy
 
-from . import knowledge_io, planning, review_cycle
+from . import knowledge_io, planning, review_cycle, revisions
 from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, relative_path
 from .state_contract import ARTIFACT_ROOT
 from .ids import ULID_PATTERN
@@ -29,7 +29,7 @@ from .observations import read_checkpoint, checkpoint_value, CHECKPOINT_MAX_BYTE
 from .values import reject_constant, unique_pairs
 from .canonical import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
-from .questions import QUESTION_OWNERS
+from . import questions
 from .task_contracts import CONTEXT_INPUT_REFS, TERMINAL_TASK_STATUSES
 from . import integration
 
@@ -205,13 +205,9 @@ def extension_schema(action: dict) -> dict:
             'next_owner': {'enum': ['user', 'research_preparation', 'research_plan', 'maintenance']}}),
         "queued_requests": closed_object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
         "revision_requests": closed_object({"record_ids": {**REFS, "minItems": 1}, "reason": TEXT}),
-        "revision_resolutions": closed_object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
-            "reason": TEXT, "task_title": TEXT}, ["record_id", "disposition", "reason"]),
-        "question_routes": closed_object({"question_index": {"type": "integer", "minimum": 0},
-            "owner": {"enum": sorted(QUESTION_OWNERS)}, "target_ids": REFS, "reason": TEXT,
-            "blocks": {"type": "boolean"}}, ["question_index", "owner", "target_ids", "reason"]),
-        "question_resolutions": closed_object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
-            "evidence_refs": {**REFS, "minItems": 1}, "reason": TEXT}),
+        "revision_resolutions": revisions.resolution_schema(),
+        "question_routes": questions.route_schema(),
+        "question_resolutions": questions.resolution_schema(action),
         "action_resolutions": closed_object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
     }
     allowed = {name for name, roles in EXTENSION_ROLES.items() if action["role"] in roles}
@@ -272,6 +268,13 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.extend(row.get("record_ids", []))
     for row in extensions.get("revision_resolutions", []):
         refs.append(row.get("record_id"))
+        refs.extend(row.get('evidence_refs', []))
+    for row in extensions.get('question_resolutions', []):
+        refs.extend(row.get('evidence_refs', []))
+        if row.get('wait_for', {}).get('kind') == 'record_change':
+            refs.append(row['wait_for']['ref'])
+    for row in extensions.get('question_routes', []):
+        refs.extend(row.get('reopen_basis_refs', []))
     if context:
         refs.extend(context.get("action", {}).get("revision_targets", {}))
     for relation in [*output.get("relations", []), *extensions.get("relations", [])]:
@@ -577,7 +580,8 @@ def supplied_record_ids(context: dict, record_ids) -> list[str]:
 # A failed action a later accepted execution may resolve, and the judgment scope it must share.
 RESOLVABLE_WAITS = frozenset({"output_validation", "execution_failure"})
 _JUDGMENT_SCOPE = ("role", "stage", "slot", "round", "review_cycle_id", "assessment_targets",
-                   "observation_rule_targets", "live")
+                   "observation_rule_targets", "live", 'question_ids', 'question_generation', 'question_target_ids',
+                   'contract_review_reconsideration')
 
 
 def blocked_action_row(action_id: str, entry: dict) -> dict:
@@ -586,6 +590,21 @@ def blocked_action_row(action_id: str, entry: dict) -> dict:
     return {"action_id": action_id, "target": action.get("target"), "kind": entry.get("kind"),
             "reason": entry.get("reason"), "execution_id": entry.get("execution_id"),
             **{key: deepcopy(action[key]) for key in (*_JUDGMENT_SCOPE, "revision_targets") if key in action}}
+
+
+def resolve_output_evidence(ref, *, output_files, read_artifact, resolve_record):
+    """Resolve only this submission's sealed bytes, or an existing evidence record."""
+    if not ref.startswith('workspace:'):
+        return resolve_record(ref)
+    path = relative_path(ref[len('workspace:'):]).as_posix()
+    matches = [row for row in output_files if row['path'] == path]
+    if len(matches) != 1:
+        raise ValueError('workspace evidence must name a collected output file: ' + ref)
+    row = matches[0]
+    from .repository import sealed_bytes
+    sealed_bytes(None, row['artifact_ref'], row['sha256'], row['bytes'],
+                 lambda: read_artifact(row['artifact_ref']))
+    return {key: row[key] for key in ('artifact_ref', 'sha256', 'bytes')}
 
 
 def action_resolution_errors(blocked: dict, evidence_action: dict | None) -> list[str]:
@@ -733,6 +752,11 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                   lambda reference=reference: academic_evidence(reference), "submission.academic_evidence")
     if action["role"] == "intent_interpretation" and action.get("stage", "interpret") == "interpret":
         issues.extend(_intent_import_issues(output, context, clock=clock))
+    if action['role'] == 'intent_interpretation' and action.get('stage') == 'check':
+        from .governance import import_check_input_errors, validate_import_check_output
+        check('output', lambda: validate_import_check_output(context['interpretation_to_check'], output))
+        for message in import_check_input_errors(output, extensions):
+            issues.append(_issue('activity-extensions.json/question_routes', message, 'submission.import_check_input'))
 
     known = supplied_reference_ids(context) | record_index_ids(context)
     blocked = {row["action_id"]: row for row in context.get("blocked_actions", [])}
@@ -750,6 +774,10 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     for index, row in enumerate(extensions.get("question_resolutions", [])):
         for ref in row["evidence_refs"]:
             check(f"activity-extensions.json/question_resolutions/{index}/evidence_refs", lambda ref=ref: supplied(ref))
+    for family, field in (('revision_resolutions', 'evidence_refs'), ('question_routes', 'reopen_basis_refs')):
+        for index, row in enumerate(extensions.get(family, [])):
+            for ref in row.get(field, []):
+                check(f'activity-extensions.json/{family}/{index}/{field}', lambda ref=ref: supplied(ref))
     knowledge_ids = {row["id"] for row in context.get("knowledge_catalog", [])}
     tasks = {row["id"]: row for row in context.get("tasks", [])}
     if isinstance(context.get("task"), dict):
@@ -1274,7 +1302,8 @@ def preview_submission(output, schema, context, extensions, workspace, *, execut
             # Hashing a private error message could itself reveal a small verdict
             # space. Recreate its identity from public stage and bundle only.
             stage = row["rule_id"] if row["rule_id"] in {
-                "integration.currentness", "integration.application", "integration.candidate",
+                "integration.currentness", "integration.validation", "integration.environment",
+                "integration.input_context", "integration.application", "integration.candidate",
                 "integration.id_reuse"} else "integration.candidate"
             public_issues.append(integration.issue(stage, "output/integration_bundles",
                 "Candidate cannot pass this stage with the current admissible evidence.", row.get("integration_id")))

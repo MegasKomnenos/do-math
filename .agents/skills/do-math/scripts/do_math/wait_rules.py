@@ -212,6 +212,11 @@ PRODUCER_WAIT_RULES = {
         'resolvers': ('governance.apply_import_control',),
         'condition': 'Exact source-bound public approvals apply the preserved independently checked import units.',
     },
+    'import_check_evidence': {
+        'next_owner': 'question_handler', 'intent_import': True,
+        'resolvers': ('governance_engine.GovernanceEngineMixin._resume_import_check_waits',),
+        'condition': 'A new receipt resolves the fixed question scopes or actual cited evidence changes; recheck the same sealed import once.',
+    },
     'import_user_decision': {
         'next_owner': 'user', 'intent_import': True,
         'resolvers': ('governance_engine.GovernanceEngineMixin._resume_import_question_waits',),
@@ -268,6 +273,9 @@ def update_waiting_action(record, **changes):
 # Action-owned activity waits retain their existing release rule. Other activity
 # waits have their own cause even when their human explanation is arbitrary text.
 ACTIVITY_EXTRA_WAIT_RULES = {
+    'question_dependency': {'resolvers': ('question_engine.QuestionEngineMixin._reconcile_question_actions',
+        'question_engine.QuestionEngineMixin._advance_question_dependents'),
+        'condition': 'The assigned question generation receives an accepted disposition or a concrete wait receipt.'},
     'machine_capacity': {'resolvers': ('core_engine.CoreEngineMixin._register_execution',),
         'condition': 'Machine admission permits the preserved action after local resources return.'},
     'operational_repair': {'resolvers': ('core_engine.CoreEngineMixin._settle_activity', 'repair_execution.resume_installation_repair'),

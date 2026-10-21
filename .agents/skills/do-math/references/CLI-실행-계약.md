@@ -134,14 +134,17 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 | 저장 과제 대기 | 이어지는 조건과 담당자 |
 |---|---|
 | `contract_review` | 선택한 계약이나 승인 근거가 바뀌었다. 준비·계약검토가 현재 계약을 독립 승인하면 해소된다 |
-| `contract_revision` | 계약 개정 요청 또는 검토 반려·미해결이다. 연구 준비가 새 계약을 작성하고 독립 검토가 승인한다 |
+| `contract_revision` | 실제 계약 개정 요청의 처리를 기다린다. 후보 준비가 결함을 수정하거나 근거 있는 기각·자료 또는 사용자 결정 대기를 처리한다. 학술 사용자 원 계약은 보존하며, 원 계약 변경은 실제 사용자 결정 경로로 넘긴다. 수정·무수정 처분 자체가 독립 승인은 아니다 |
+| `contract_review_input` | 계약 의미 판단의 필수 자료 또는 판단 충돌의 근거를 실제 질문 담당이 처리한다. 같은 계약의 관련 질문 범위 전부 해소와 새 해소 영수증, 또는 실제 검토 근거 변화 뒤 새 독립 계약 검토로 이어진다. 이 대기 자체로 평가·관찰 규칙을 분리하지 않는다 |
 | `assessment` | 개정 수행 결과를 연구 계획이 독립 평가한다. 수행 결과가 waiting이라는 사실만으로 이 대기를 강제하지 않는다 |
 | `assessment_input` | 원 평가가 지정한 자료를 기다린다. 해당 자료 도착 뒤 원 수행 결과를 보존하고 새 평가를 받는다 |
 | `research_followup` | 불완전 평가의 잔여 의무를 연구 계획이 이어 갈 현재 과제로 선택한다 |
 
 준비 상태의 permission·condition·contract_revision 표시와 이 저장 대기는 구별한다. 자료 도착이나 원 실행의 종료가 과제 완료를 뜻하지 않는다. 개정 행동의 `revision_dependency`가 정확한 처분·위임·대상 종결로 해소되면 원 활동도 남은 요청·실행·의무에 맞게 정리된다. 활동의 finished는 미해결 결과를 보존할 수 있다.
 
-학술 과제의 검토 반려는 사용자 계약을 보존하면서 평가·관찰 규칙을 다시 준비한다. 이 전용 준비는 요청의 `assessment_targets`·`observation_rule_targets`로 과제에 연결된다. 같은 status 과제 행에서 준비 역할의 next_owner와 queued 요청 ID를 확인하고, 준비가 실행 중이면 active_records의 실제 실행 ID로 확인한다.
+학술 과제의 실제 `revision_required`에서 `revision_fields`에 `contract`가 없으면 지적된 평가·관찰 규칙만 이력에 보존해 현행에서 분리하고, 빠진 항목의 보충을 요청한다. 이 전용 준비는 요청의 `assessment_targets`·`observation_rule_targets`로 과제에 연결된다. `contract`가 포함되면 필드 분리 대신 사용자 원 계약을 보존하는 `contract_revision`의 요청 처리로 간다. `unresolved`는 기존 평가·규칙을 유지한 `contract_review_input`이며 실제 질문 담당의 근거를 기다린다. 보충·보류와 새 독립 검토의 상세는 [후보 준비의 기존 과제 보충 절](../계약/후보-준비.md#기존-과제의-평가와-관찰-규칙을-보충하는-실행)을 따른다.
+
+같은 `status.tasks[]` 행의 `waits`·`next_owner`에서 현재 후속과 담당을 확인한다. 보충·개정 처리·독립 검토가 queued 상태이면 `selected_actions`의 요청 ID(사람 출력의 `queued`)로, 실행 중이면 `active_execution_ids`의 실제 실행 ID(사람 출력의 `active_records`)로 확인한다. 질문 근거 대기에서는 `waits`의 `question_ids`로 실제 질문의 배정 action·실행·해소 근거를 조회한다. 요청이나 질문의 해소는 계약 승인이나 과제 완료가 아니다.
 
 `dispatch_waits`는 미시작 queue 요청의 보존된 대기 사유다. `capacity`는 동시 슬롯, `host_capacity`는 호스트 자원이다. 현재 예약 충돌은 제약 종류와 좌표를 함께 생산한다. 알려지지 않은 제약 종류를 새 대기로 대신 해석하지 않는다. 각 행의 `next_owner`, `profile_ref`, `constraint_id` 또는 `provider`로 후속을 확인한다. `status.budget`은 현행 설정의 요약이며 요청의 사유는 그 요청에 고정된 프로필·제약 판본을 따른다. 한도 변경은 재평가를 열지만 고정 프로필을 자동 교체하지 않는다. 과거 snapshot 조회는 새 예약 검사를 실행하지 않는다.
 
@@ -999,6 +1002,14 @@ GLOSSARY.md의 공통 개념과 현행 모듈의 표현은 각각 다음처럼 �
 Claude의 원본 `stream-json`은 그대로 보존한다. 수신자는 같은 세션에서 이어지는 `init`·`result` 구간의 순서·세션 ID를 검사하고 최종 구간의 응답 하나를 선택한다. 성공 여부, worker 영수증과 로컬 Job 종료도 함께 검사한다. 실행 중 `submit_draft`로 유효한 후보를 먼저 봉인했다면 그 후보만 검사하며 뒤의 native final로 바꾸지 않는다. 그런 봉인 후보가 없다면, 수집기가 정상적으로 끝난 stream에서 선택한 응답의 최종 텍스트로 final 바이트를 한 번 도출해 보존하고, 종료된 workspace 산출과 함께 포착한다. Claude worker는 stdout을 해석하거나 최종 파일을 쓰지 않으며, Claude worker 요청에는 `final_path`가 없다. 이 텍스트는 출력 스키마를 만족하는 완전한 JSON 값이어야 하며, 역할 실행에 공급자 측 `structured_output`을 요구하지 않는다. JSON이 아닌 텍스트, 잘린 결과, CLI 오류·중단, 입력 결속·권한·현재성 실패는 정상 제출로 편입하지 않고 진단·복구 자료로만 보존하며, 손상된 봉인 후보에서 다른 final로 fallback하지 않는다. 진행 관찰은 Claude의 도구 요청·결과와 메시지도 반영한다. Claude가 보고한 `modelUsage`와 비용 추정은 원 실행 증거에 보존하며 동시 세션 예산이나 실제 청구액으로 해석하지 않는다.
 
 Codex는 CLI가 쓴 최종 파일 `final.txt`를 final 바이트로 사용한다. 수집기는 일반 수집에서도 그 바이트를 종료 직전 `agent_message`의 본문과 대조하며, 둘이 다르면 정상 최종 응답으로 포착하지 않는다.
+
+### Codex 모델 목록 갱신 진단
+
+`call_result`는 실행 원장의 `result_ref`가 가리키는 `result.json` 객체다. 실제 제공자는 `codex_stream.stderr_diagnostics(...)`와 `LocalCLIAdapter.collect`, 보존자는 `CallEngineMixin._receive_call`이다.
+
+로컬 Job의 종료 장벽을 확인한 뒤 수집한 stderr 원바이트는 `result.json`의 `call_result.execution.collect.stderr`에 크기·SHA-256과 함께 보존한다. `call_result.execution.collect.diagnostics`는 이 원문에서 인식한 로그의 색인이다. Codex의 `codex_models_manager::manager: failed to refresh available models: request timed out` 로그는 `kind=model_catalog_refresh_timeout`, `scope=cli_model_catalog`로 기록한다. `reported_at`과 `reported_level`은 CLI가 쓴 시각·로그 수준이고, `call_result.execution.collect.diagnostics[].source.artifact=stderr`, `call_result.execution.collect.diagnostics[].source.offset`, `call_result.execution.collect.diagnostics[].source.bytes`는 원문 바이트 구간(줄바꿈 포함)이다. 예를 들어 `source.offset=0`, `source.bytes=119`이면 stderr의 첫 119바이트를 읽는다. 인식하지 못한 로그는 원문으로 남고 색인이 비어 있어도 stderr가 없다는 뜻은 아니다. 종료 장벽 미확인 수집은 파일과 진단 색인을 읽지 않는다.
+
+이 로그는 CLI 모델 목록 요청의 timeout 보고다. 로그 수준이 ERROR여도 모델 작업 실패나 공급자 장애를 확정하지 않는다. 성공 여부는 worker 종료 코드·요청/입력 결속, stdout의 정상 종료, final 일치와 출력 검사로 판단한다. 정상 완료와 함께 있으면 진단 근거로만 보존하며 출력 수리나 재시도를 만들지 않는다. stdout의 `type=turn.failed`는 `codex_stream.parse_jsonl(...)`이 판독하는 이벤트 값이다. CLI 비정상 종료·이 실패 이벤트·작업 기한 초과는 같은 진단이 있어도 기존 실패로 남는다. 목록 요청의 URL·HTTP 상태·시작/종료·내부 기한이나 원격 종료가 기록되지 않았다면 이 한 줄로 추정하지 않는다. 이 진단은 기존 결과 artifact 안에 보존되며 실행 원장 최상위나 `status`에 새 필드를 추가하지 않는다.
 
 ## 검증 근거의 해석
 

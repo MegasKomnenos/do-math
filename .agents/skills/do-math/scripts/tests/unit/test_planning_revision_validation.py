@@ -10,6 +10,23 @@ from support.role_answers import candidate
 
 
 class RevisionSubmissionTests(unittest.TestCase):
+    def test_optional_unchanged_preserves_required_consumers_but_actual_revision_resolves_them(self):
+        identifier = 'TK-consumer'
+        for refs in ([], ['EX-request']):
+            with self.subTest(source_refs=refs):
+                optional = {identifier: {'required': False, 'source_refs': list(refs)}}
+                required = {identifier: {'required': True, 'source_refs': list(refs)}}
+                action = {'revision_targets': optional}
+                extensions = {'revision_resolutions': [{'record_id': identifier, 'disposition': 'unchanged'}]}
+                before = deepcopy((action, extensions, required))
+                self.assertEqual(revisions.remaining_targets(optional, revisions.resolved_targets(action, extensions)), {})
+                self.assertEqual(revisions.remaining_targets(required, revisions.resolved_targets(
+                    action, extensions, consumer_targets=required)), required)
+                self.assertEqual((action, extensions, required), before)
+                extensions['revision_resolutions'][0]['disposition'] = 'revised'
+                self.assertEqual(revisions.remaining_targets(required, revisions.resolved_targets(
+                    action, extensions, consumer_targets=required)), {})
+
     def setUp(self):
         self.task = contract()
         self.context = {'action': {'role': 'research_preparation',
@@ -60,6 +77,36 @@ class RevisionSubmissionTests(unittest.TestCase):
         before = deepcopy((self.output, self.extensions, self.context))
         self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [{'path': 'activity-extensions.json/revision_resolutions', 'message': 'a required revision or rejected contract cannot be cancelled as unchanged'}])
         self.assertEqual((self.output, self.extensions, self.context), before)
+
+    def test_dismissal_requires_exact_ai_request_and_evidence_and_preserves_user_authority(self):
+        basis = self.context['action']['revision_targets'][self.task['id']]
+        basis.update(required=True, source_refs=['EX-review'])
+        row = self.extensions['revision_resolutions'][0]
+        row.update(disposition='dismissed', request_refs=['EX-review'], evidence_refs=[self.task['id']])
+        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])
+        row['request_refs'] = ['EX-other']
+        self.assertTrue(revisions.submission_errors(self.output, self.extensions, self.context))
+        row['request_refs'] = ['EX-review']
+        row['evidence_refs'] = []
+        self.assertTrue(revisions.submission_errors(self.output, self.extensions, self.context))
+        row['evidence_refs'] = [self.task['id']]
+        basis['user_decision_refs'] = ['DC-revise']
+        self.assertTrue(revisions.submission_errors(self.output, self.extensions, self.context))
+
+    def test_historical_rejection_does_not_recreate_a_resolved_revision_request(self):
+        self.task['reviews'] = [{'revision': 1, 'decision': 'revision_required'},
+                                {'revision': 1, 'decision': 'approved'}]
+        self.assertFalse(planning.revision_required(self.task))
+
+    def test_deferral_can_bind_a_real_question_in_the_same_response(self):
+        self.output['questions'] = ['Which correction is permitted?']
+        self.extensions['question_routes'] = [{'question_index': 0, 'owner': 'user',
+            'target_ids': [self.task['id']], 'reason': 'The original scope belongs to the user'}]
+        row = self.extensions['revision_resolutions'][0]
+        row.update(disposition='deferred', question_ids=['output:questions/0'])
+        self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])
+        row['question_ids'] = ['output:questions/00']
+        self.assertTrue(revisions.submission_errors(self.output, self.extensions, self.context))
 
     def test_invalid_delegation_has_exact_issue_and_no_mutation(self):
         self.assertEqual(revisions.submission_errors(self.output, self.extensions, self.context), [])

@@ -25,7 +25,8 @@ from ..knowledge_records import (ASSESSMENT_USE_STATUSES as _ASSESSMENT_USE_STAT
                                  RECORD_LIFECYCLES as _RECORD_LIFECYCLES)
 from ..model_policy import ASSESSMENT_SCHEMA as _ASSESSMENT_SCHEMA, TIERS as _TIERS
 from ..observations import CHECKPOINT_SCHEMA as _CHECKPOINT_SCHEMA, RULE_ID_SCHEMA as _RULE_ID_SCHEMA
-from ..questions import QUESTION_OWNERS as _QUESTION_OWNERS
+from ..questions import (QUESTION_OWNERS as _QUESTION_OWNERS, OPERATIONS_ROLES as _OPERATIONS_ROLES,
+                         obligation_schema as _obligation_schema, wait_schema as _question_wait_schema)
 from ..review_cycle import CYCLE_STATUSES as _CYCLE_STATUSES
 from ..state_contract import RECORD_ID
 from ..task_contracts import LIFECYCLE_STATES as _LIFECYCLE_STATES, REPEAT_LINEAGES as _REPEAT_LINEAGES
@@ -67,6 +68,13 @@ def mapping(value):
 
 REFS = array(ID, True)
 HISTORY = array(EVIDENCE)
+_QUESTION_RECEIPT_BASIS = mapping(obj({'resolved': BOOL, 'resolution_refs': REFS}, ('resolved', 'resolution_refs')))
+_REFERENCE_BASIS = {'oneOf': [obj({'ref': TEXT, 'missing': {'const': True}}, ('ref', 'missing')),
+                            obj({'ref': TEXT, 'family': TEXT, 'sha256': HASH}, ('ref', 'family', 'sha256'))]}
+_IMPORT_CHECK_BASIS = obj({'questions': _QUESTION_RECEIPT_BASIS, 'records': mapping(_REFERENCE_BASIS)}, ('questions', 'records'))
+_IMPORT_CHECK_WAIT_FIELDS = {'bundle_sha256': HASH, 'source_sha256': HASH, 'check_sha256': HASH,
+    'question_ids': REFS, 'question_scopes': mapping(array(_NONEMPTY_TEXT, True)),
+    'question_resolution_basis': _QUESTION_RECEIPT_BASIS, 'evidence_basis': mapping(_REFERENCE_BASIS)}
 PROFILE_REF = obj({"id": ID, "revision": {"type": "integer", "minimum": 1}, "sha256": HASH}, ("id", "revision", "sha256"))
 LIFECYCLE = enum(*sorted(_RECORD_LIFECYCLES))
 
@@ -116,6 +124,10 @@ _IMPACT_REQUEST = obj({"integration_id": TEXT, "payload_sha256": HASH, "producer
 # A queued action. An action embedded in an execution or wait is a historical
 # input copy, not another live queue record/global identity.
 _ACTION = record({"role": TEXT, "target": nullable(TEXT), "stage": TEXT, "slot": {"type": ["string", "integer"]},
+    'question_ids': {**REFS, 'minItems': 1, 'maxItems': 1}, 'question_generation': {'type': 'integer', 'minimum': 1},
+    'question_target_ids': {**array(_NONEMPTY_TEXT, True), 'minItems': 1},
+    'contract_review_reconsideration': obj({'key': HASH, 'requested_by': ID, 'source_refs': REFS, 'evidence_refs': array(_NONEMPTY_TEXT, True)},
+                                         ('key', 'requested_by', 'source_refs', 'evidence_refs')),
     "round": NAT, "reason": TEXT, "grant_id": ID, "profile_ref": PROFILE_REF,
     "owner_activity_id": ID, "continuation_of": ID,
     "context_origin": REFS, "lineage_id": ID, "review_cycle_id": ID, "import_id": ID,
@@ -151,6 +163,7 @@ _ACTION = record({"role": TEXT, "target": nullable(TEXT), "stage": TEXT, "slot":
     "revision_followup": array(_RECORD_TASK),
     "intent_repair": obj({"import_id": ID, "previous_sha256": HASH, "check_execution_id": ID,
         "findings": array(TEXT)}, ("import_id", "previous_sha256", "check_execution_id", "findings")),
+    'import_check_release': HASH,
     "recovery": obj({"execution_id": ID, "disposition_id": ID, "reason": TEXT,
         "provider_generation": NAT}, ("execution_id", "reason")),
     "refresh": obj({"execution_id": ID,
@@ -158,6 +171,8 @@ _ACTION = record({"role": TEXT, "target": nullable(TEXT), "stage": TEXT, "slot":
 _ACTION["allOf"] = [{"if": {"properties": {"stage": {"const": "impact_review"}}, "required": ["stage"]},
     "then": {"properties": {"role": {"const": "maintenance"},
         "input_basis": obj({"impact_review": _IMPACT_REQUEST}, ("impact_review",))}, "required": ["input_basis"]}}]
+_ACTION['dependentRequired'] = {key: [field for field in ('question_ids', 'question_generation', 'question_target_ids') if field != key]
+                              for key in ('question_ids', 'question_generation', 'question_target_ids')}
 # Only research_work produces this planner request. The dialogue measurement
 # belongs to identity-review overflows, retained in input_overflows.detail,
 # not in a planner action's overflow payload.
@@ -300,6 +315,7 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
         "formal_status", "error_kind", "input_published_at", "observed_at",
         "stop_observed_at", "preserved_reason")},
     **{key: HASH for key in ("intent_import_sha256", "contract_sha256", "academic_requirements_sha256", "delegation_input_sha256")},
+    'import_check_basis': _IMPORT_CHECK_BASIS,
     **{key: EVIDENCE for key in ("safe_boundary_report", "extensions", "integration_result", "control_transport",
         "decision_basis", "operational_continuation", "input_solution_basis",
         "termination", "collection", "failure")},
@@ -367,7 +383,13 @@ RECORDS["tasks"] = record({"question": _NONEMPTY_TEXT, "status": enum(*sorted(_L
     "results": HISTORY, "reviews": HISTORY, "assessment": _ASSESSMENT, "occurrence_condition": EVIDENCE,
     "waiting": EVIDENCE, "waiting_reason": EVIDENCE, "contract_review": EVIDENCE,
     "source_basis": HISTORY, "model_assessment": EVIDENCE,
-    "revision_history": HISTORY, "revision_requested": EVIDENCE,
+    "revision_history": HISTORY, "revision_requested": obj({'revision': {'type': 'integer', 'minimum': 1},
+        'contract_sha256': HASH, 'source_refs': {**REFS, 'minItems': 1}, 'user_decision_refs': REFS, 'reason': _NONEMPTY_TEXT},
+        ('revision', 'contract_sha256', 'source_refs', 'user_decision_refs', 'reason')),
+    'contract_review_reconsiderations': array(obj({'key': HASH, 'basis_key': HASH, 'contract_sha256': HASH,
+        'requested_by': ID, 'source_refs': REFS, 'evidence_refs': array(_NONEMPTY_TEXT, True),
+        'status': enum('pending', 'reviewed', 'conflict'), 'review_execution_id': nullable(ID)},
+        ('key', 'basis_key', 'contract_sha256', 'requested_by', 'source_refs', 'evidence_refs', 'status', 'review_execution_id'))),
     "scope_disposition": EVIDENCE,
     "academic_requirement_id": _NONEMPTY_TEXT,
     "selected_by": ID, "deferred_reason": TEXT, "tools": array(TEXT),
@@ -450,13 +472,27 @@ RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"
     "resource_limits": mapping(NAT), "revoked_at": TEXT, "revoked_by": ID},
     ("status", "decision_kind", "original_decision_id", "included_targets", "excluded_targets", "external_effects", "expires_at"))
 RECORDS["question_links"] = record({"origin_execution_id": nullable(ID), "origin_field": TEXT,
+    'origins': {**array(obj({'execution_id': nullable(ID), 'field': _NONEMPTY_TEXT, 'source_ref': _NONEMPTY_TEXT,
+        'target_ids': array(_NONEMPTY_TEXT, True), 'blocks': BOOL, 'reason': nullable(TEXT), 'obligation': _obligation_schema(),
+        'source_kind': TEXT, 'source_id': ID, 'observation_basis': array(EVIDENCE), 'reopen_reason': _NONEMPTY_TEXT},
+        ('execution_id', 'field', 'target_ids', 'blocks', 'reason'))), 'minItems': 1},
+    'obligation': _obligation_schema(), 'obligation_key': HASH,
+    'handling': obj({'generation': {'type': 'integer', 'minimum': 1}, 'role': enum(*sorted(_OPERATIONS_ROLES)),
+        'state': enum('pending', 'assigned', 'waiting', 'resolved', 'superseded'), 'action_id': nullable(ID),
+        'owner_activity_id': nullable(ID), 'execution_ids': REFS,
+        'waiting': nullable(_question_wait_schema(stored=True)),
+        'last_resolution_ref': nullable(ID), 'observation_basis': {'type': ['array', 'null'], 'items': EVIDENCE}},
+        ('generation', 'role', 'state', 'action_id', 'owner_activity_id', 'execution_ids', 'waiting', 'last_resolution_ref', 'observation_basis')),
     "owner": enum(*sorted(_QUESTION_OWNERS)),
     "target_ids": REFS, "status": enum("open", "resolved", "superseded"), "resolution_ref": nullable(ID),
     "source_ref": TEXT, "routing_reason": TEXT,
     "unresolved_target_ids": REFS, "blocks": BOOL,
     "checked_by": nullable(ID), "resolution_history": HISTORY, "source_kind": TEXT, "source_id": ID,
     "question_kind": enum("grant")},
-    ("origin_execution_id", "origin_field", "owner", "target_ids", "status", "resolution_ref", "unresolved_target_ids"))
+    ("origin_execution_id", "origin_field", "owner", "target_ids", "status", "resolution_ref", "unresolved_target_ids", 'origins'))
+RECORDS['question_links']['allOf'] = [{'if': {'properties': {'owner': {'const': 'operations'}}},
+    'then': {'required': ['obligation', 'obligation_key', 'handling']},
+    'else': {'not': {'anyOf': [{'required': [key]} for key in ('obligation', 'obligation_key', 'handling')]}}}]
 RECORDS["external_operations"] = record({"request": obj({"method": TEXT, "url": TEXT, "body": TEXT}, ("method", "url", "body")),
     "request_sha256": HASH, "grant_id": ID, "source_ref": TEXT, "status": enum(*sorted(_OPERATION_STATUSES)),
     "idempotency_key": HASH, "attempts": HISTORY, "credential_env": nullable(array(TEXT)), "transmitted": BOOL,
@@ -577,13 +613,16 @@ RECORDS["academic_resolution_records"] = record({"rejection_id": ID, "rejection_
     "decision": enum("resolved", "unresolved"), "evidence": TEXT, "evidence_refs": array(TEXT, True),
     "evidence_hashes": mapping(HASH), "sha256": HASH},
     ("rejection_id", "rejection_sha256", "solution_basis", "requirements_sha256", "execution_id", "decision", "evidence", "evidence_refs", "evidence_hashes", "sha256"))
+_IMPORT_CHECK = obj({**_interpretation_schema('check')['properties'], 'execution_id': ID, 'sha256': HASH,
+    'reconsideration_ref': HASH}, ('decision', 'scope_complete', 'bundle_sha256', 'unit_ids', 'question_ids', 'findings', 'execution_id', 'sha256'))
 RECORDS["intent_imports"] = record({"source": RECORDS["governance_sources"],
     "output": _interpretation_schema("interpret"), "execution_id": ID,
     "basis_sha256": HASH, "sha256": HASH,
     "previous_id": nullable(ID), "previous_findings": HISTORY, "status": TEXT,
-    "superseded_by": ID, "check": EVIDENCE, "application": EVIDENCE, "owner_basis": mapping(EVIDENCE), "input_ref": ID},
+    "superseded_by": ID, "check": _IMPORT_CHECK, 'check_history': array(_IMPORT_CHECK),
+    "application": EVIDENCE, "owner_basis": mapping(EVIDENCE), "input_ref": ID},
     ("source", "output", "execution_id", "basis_sha256", "sha256", "previous_id", "previous_findings", "status",
-     "input_ref"))
+     "input_ref", 'check_history'))
 RECORDS["recoveries"] = record({"started_at": TEXT, "execution_ids": REFS,
     "dispositions": array(obj({"execution_id": ID, "fact": TEXT, "next_owner": TEXT,
         "local_termination_confirmed": BOOL, "remote_termination": enum("unknown"),
@@ -699,6 +738,7 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
         "source_snapshot": TEXT, "restored_messages": HISTORY},
         ("proposal_digest", "proposal", "request", "slot", "visible_execution_ids", "workspace", "supplied_sources", "source_snapshot"))),
     "waiting_actions": mapping(obj({"action": _ACTION, "reason": nullable(TEXT), "kind": TEXT,
+        **_IMPORT_CHECK_WAIT_FIELDS,
         "execution_id": ID, "detail": EVIDENCE, "next_owner": TEXT,
         "question_id": ID,
         'diagnosis': obj({'execution_id': ID, 'decision': enum('retry', 'wait'), 'guidance': TEXT, 'retry_error': TEXT},
@@ -708,7 +748,9 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
         "observation_errors": HISTORY, "observation_rule_deferrals": HISTORY, "rule_input_version": EVIDENCE,
         "review_requests": mapping(_IMPACT_REQUEST), "review_execution_ids": mapping(ID),
         "delegated_targets": mapping(ID),
-        "deferrals": mapping(obj({"execution_id": ID, "reason": TEXT}, ("execution_id", "reason"))),
+        "deferrals": mapping({**obj({"execution_id": ID, "reason": TEXT, 'question_ids': REFS,
+            'question_scopes': mapping(array(_NONEMPTY_TEXT, True))}, ("execution_id", "reason")),
+            'dependentRequired': {'question_ids': ['question_scopes'], 'question_scopes': ['question_ids']}}),
         "delegation_history": array(_RECORD_TASK),
         "input_version": obj({"goal": NAT, "policy": {"type": ["integer", "string"]},
             "sources": array(obj({"name": TEXT, "sha256": HASH}, ("name", "sha256"))), "inputs": REFS},
@@ -721,3 +763,10 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
     "input_overflows": array(obj({"action": _ACTION, "detail": _OVERFLOW,
         "source_catalog": EVIDENCE}, ("action", "detail", "source_catalog"))),
 }
+RUNTIME_FIELDS['waiting_actions']['additionalProperties']['allOf'] = [
+    {'if': {'properties': {'kind': {'const': 'import_check_evidence'}}, 'required': ['kind']},
+     'then': {'required': [*_IMPORT_CHECK_WAIT_FIELDS, 'execution_id', 'import_id', 'next_owner']}}]
+IMPORT_CHECK_RELEASE = obj({'kind': {'const': 'import_check_evidence_resumed'}, 'action_id': ID,
+    'previous': RUNTIME_FIELDS['waiting_actions']['additionalProperties'], 'basis': _IMPORT_CHECK_BASIS, 'sha256': HASH},
+    ('kind', 'action_id', 'previous', 'basis', 'sha256'))
+IMPORT_CHECK_RELEASE['properties']['previous']['properties']['kind'] = {'const': 'import_check_evidence'}

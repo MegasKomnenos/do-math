@@ -406,6 +406,8 @@ _INTENT = ('intent_interpretation:interpret', 'intent_interpretation:check')
 # its exact catalog source and item count, which the role opens when it judges it useful.
 # A key not listed is inline for every role the engine gives it.
 INLINE_SCOPES = {
+    'operations_questions': ('maintenance:question', 'operational_review'),
+    'operational_dispositions': ('maintenance:question', 'operational_review'),
     'model_policy': (*_PLANNING, 'task_contract_review'),
     'resources': (*_PLANNING, 'task_contract_review', 'maintenance:general'),
     'budget_unit': (*_PLANNING, 'task_contract_review', 'maintenance:general'),
@@ -500,7 +502,7 @@ def input_scope(action, runtime):
     elif role == 'supplemental_research':
         mode = 'review' if action.get('review_cycle_id') else 'task'
     elif role == 'maintenance':
-        mode = ('kind' if action.get('kind_definition_id') else 'impact' if action.get('stage') == 'impact_review'
+        mode = ('question' if action.get('stage') == 'question' else 'kind' if action.get('kind_definition_id') else 'impact' if action.get('stage') == 'impact_review'
                 else 'diagnosis' if action.get('initial_submission_diagnosis') else 'general')
     elif role == 'operational_review':
         # A review seat's execution belongs to its review lineage, an audit slot's to its audit
@@ -748,6 +750,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             value['pending_revisions'] = deepcopy(revisions)
         from .planning import CONTRACT_FIELDS
         comparison_fields = set(CONTRACT_FIELDS) | {'id', 'title', 'question', 'revision', 'status',
+            'content_sha256',
             'scope', 'expected', 'completion_obligations', 'progress_criteria', 'profile_refs',
             'authority_refs', 'basis_refs', 'model_assessment', 'importance', 'difficulty',
             'assessment', 'contract_review', 'selection', 'unresolved'}
@@ -807,7 +810,11 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         value.pop(key, None)
     if role in PLANNING_ROLES:
         # Resolve catalog references independently of the comparison population.
-        validation_context['tasks'] = [deepcopy(runtime['tasks'][identifier])
+        # Hash the domain record, before reader-only paths and projections are
+        # added. This is the same semantic hash supplied by core._context.
+        from .knowledge import content_hash
+        validation_context['tasks'] = [{**deepcopy(runtime['tasks'][identifier]),
+                                        'content_sha256': content_hash(runtime['tasks'][identifier])}
                                        for identifier in sorted(runtime['tasks'])]
     if input_class(scope, 'relation_validation_source') == 'inline':
         # A fixed public domain view for the shared relation checker, not a

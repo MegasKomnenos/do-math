@@ -149,10 +149,18 @@ class RoleInputTests(unittest.TestCase):
                     snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True, clock=_entry.ports.clock)
                 context = json.loads((root / 'input/submission/context.json').read_bytes())
                 tasks = {t['id']: t for t in context['tasks']}
-                self.assertEqual(tasks, runtime['tasks'])
+                from do_math.knowledge import content_hash
+                self.assertEqual(tasks, {identifier: {**task, 'content_sha256': content_hash(task)}
+                                         for identifier, task in runtime['tasks'].items()})
                 self.assertNotIn('TK-completed', [t['id'] for t in fitted['context']['tasks']])
                 plan = {'dispositions': [task_disposition('TK-ready')], 'task_assessments': [assessment(returned)]}
+                original_catalog = deepcopy(tasks)
                 validate_plan_submission(plan, tasks, ['TK-ready'])
+                self.assertEqual(tasks, original_catalog)
+                invalid_catalog = deepcopy(tasks)
+                invalid_catalog['TK-returned']['catalog_leak'] = True
+                with self.assertRaisesRegex(ValueError, 'catalog_leak'):
+                    validate_plan_submission(plan, invalid_catalog, ['TK-ready'])
                 with self.assertRaisesRegex(ValueError, 'plan must assess every returned task exactly once'):
                     validate_plan_submission({**plan, 'task_assessments': []}, tasks, ['TK-ready'])
                 proposal = candidate('new')
@@ -325,7 +333,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_role_inputs=('input_manifest', 'prompt', 'documents'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'), defer_trust=('project', 'toolchain', 'environment_check'))
@@ -402,7 +410,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, actual,
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'), defer_trust=('project', 'toolchain', 'environment_check'))
 
@@ -570,7 +578,7 @@ class RoleInputTests(unittest.TestCase):
                                              'documents': document_schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_role_inputs=('profile_selection',),
-                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results'),
+                defer_result_inputs=('source_ref', 'materialized_output_files', 'research_sources', 'results', 'call_result'),
                 defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'), defer_tool_inputs=('execution_window', 'scholarly', 'formal_verifier', 'preview', 'record_map.read_tool', 'submission_contract'), defer_review_inputs=('role_review', 'pending_findings', 'review_research', 'review_sources'), defer_delivery_inputs=('submission_check', 'repair'), defer_governance=('import_payload', 'import_check', 'governance', 'academic_validation'), defer_waits=('change', 'plan_settle_wait'), defer_trust=('project', 'toolchain', 'environment_check'))
@@ -893,7 +901,8 @@ class RoleInputTests(unittest.TestCase):
             original = json.loads((root / supplied[0]['source_ref']['path']).read_bytes())
             self.assertEqual(original, task)
             checked = json.loads((root / 'input/submission/context.json').read_bytes())
-            self.assertEqual(checked['tasks'], [task])
+            from do_math.knowledge import content_hash
+            self.assertEqual(checked['tasks'], [{**task, 'content_sha256': content_hash(task)}])
 
 
 if __name__ == '__main__':

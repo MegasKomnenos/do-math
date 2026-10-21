@@ -29,7 +29,7 @@ REQUEST = {'integration_id': 'IN-1', 'payload_sha256': 'a' * 64, 'producer_execu
 
 
 def _calls():
-    from do_math import contracts, governance, integration, record_schemas, review_cycle, submission, supervision
+    from do_math import contracts, governance, integration, questions, record_schemas, review_cycle, revisions, submission, supervision
     from do_math.contracts import ROLES
     # Empty target maps are the installed preflight's presence-based inputs.
     # The ordinary role sample supplies the fourth (neither key) combination.
@@ -69,6 +69,15 @@ def _calls():
         'do_math.integration.impact_review_response_schema': [
             lambda request=request: integration.impact_review_response_schema(request) for request in requests],
         'do_math.record_schemas.config_schema': [record_schemas.config_schema],
+        'do_math.questions.obligation_schema': [questions.obligation_schema],
+        'do_math.questions.route_schema': [questions.route_schema],
+        'do_math.questions.wait_schema': [lambda stored=stored: questions.wait_schema(stored=stored)
+                                          for stored in (False, True)],
+        'do_math.questions.resolution_schema': [lambda action=action: questions.resolution_schema(action)
+            for action in (None, {}, {'question_ids': []},
+                {'question_ids': ['QU-1'], 'question_generation': 2, 'question_target_ids': ['P']},
+                {'question_ids': ['QU-1', 'QU-2'], 'question_generation': 3, 'question_target_ids': ['P', 'Q']})],
+        'do_math.revisions.resolution_schema': [revisions.resolution_schema],
         'do_math.review_cycle.stage_schema': [lambda stage=stage: review_cycle.stage_schema(stage)
                                               for stage in ('scope', 'initial', 'organize', 'answer', 'judge')],
         'do_math.review_cycle.research_schema': [review_cycle.research_schema],
@@ -286,6 +295,24 @@ class SchemaBuilderTests(unittest.TestCase):
             decisions = call()['properties']['plan_decisions']
             self.assertEqual((decisions['minItems'], decisions['maxItems']), (count, count))
             self.assertEqual(len(decisions['items']['oneOf']), count)
+        for call, stored in zip(calls['do_math.questions.wait_schema'], (False, True)):
+            question = call()['oneOf'][0]
+            self.assertEqual('target_ids' in question['properties'], stored)
+            self.assertEqual('target_ids' in question['required'], stored)
+        for call in calls['do_math.questions.resolution_schema'][:3]:
+            schema = call()
+            self.assertNotIn('generation', schema['required'])
+            self.assertNotIn('affected_ids', schema['required'])
+            self.assertNotIn('enum', schema['properties']['question_id'])
+        for call, count, generation in zip(calls['do_math.questions.resolution_schema'][3:], (1, 2), (2, 3)):
+            schema = call()
+            self.assertIn('generation', schema['required'])
+            self.assertIn('affected_ids', schema['required'])
+            self.assertEqual(schema['properties']['generation'], {'const': generation})
+            self.assertEqual(len(schema['properties']['question_id']['enum']), count)
+            targets = schema['properties']['affected_ids']
+            self.assertEqual((targets['minItems'], targets['maxItems']), (count, count))
+            self.assertEqual(targets['items']['enum'], ['P', 'Q'][:count])
 
     def test_unnamed_schema_composition_results_detach_every_mutable_node(self):
         self.assertEqual(_isolation_problems(_composition_calls()), [])

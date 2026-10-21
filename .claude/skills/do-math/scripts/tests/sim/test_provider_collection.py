@@ -37,6 +37,69 @@ class CollectorCase(unittest.TestCase):
 
 
 class CodexCollectionTests(CollectorCase):
+    def test_model_catalog_timeout_is_diagnostic_evidence_for_success_and_failure(self):
+        from do_math.canonical import canonical_json
+        from do_math.payloads import json_safe
+        import base64
+
+        # Exact manager log from EX-01M5D097XN0TR7G5S582K1MKX4. Other stderr
+        # stays raw; a quoted message from a different component is not this diagnostic.
+        log = (b'2026-10-20T15:55:28.118316Z ERROR codex_models_manager::manager: '
+               b'failed to refresh available models: request timed out\n')
+        prefix = 'unrelated stderr \uac00\ub098\ub2e4\r\n'.encode('utf-8')
+        stderr = prefix + log
+        failed_stream = (b'{"type":"thread.started","thread_id":"rejected"}\n'
+                         b'{"type":"turn.started"}\n'
+                         b'{"type":"error","message":"request rejected"}\n'
+                         b'{"type":"turn.failed","error":{"message":"request rejected"}}\n')
+        cases = [('completed', {}, None),
+                 ('nonzero', {'returncode': 1}, 'cli_nonzero_exit'),
+                 ('turn_failed', {'stdout': failed_stream}, 'turn_failed'),
+                 ('timeout', {'timeout': True}, 'max_runtime_elapsed'),
+                 ('unrelated', {'stderr': prefix}, None)]
+        for name, options, failure in cases:
+            with self.subTest(case=name):
+                root = self.root / name
+                cli = ScriptedCLI(**{'stderr': stderr, **options})
+                jobs = ProviderJobs(cli, clock=self.clock)
+                result = model_runner(root, jobs, self.clock).run(
+                    prompt='x', output_schema={}, workspace=root / 'ws', evidence_dir=root / 'e',
+                    model='m', effort='low', timeout_seconds=1)
+                collected = result['execution']['collect']
+                self.assertEqual(collected['stderr']['raw'], cli.stderr)
+                self.assertEqual(collected['stderr']['sha256'], sha256(cli.stderr))
+                self.assertTrue(collected['termination_barrier']['confirmed'])
+                self.assertEqual(collected['remote_termination'], 'unknown')
+                self.assertEqual(result['status'], 'failed' if failure else 'completed')
+                if failure:
+                    self.assertEqual(result['error_kind'], 'execution_failure')
+                    self.assertIn(failure, collected['reasons'])
+                else:
+                    self.assertEqual(collected['reasons'], [])
+                    self.assertNotIn('error_kind', result)
+                expected = [] if name == 'unrelated' else [{
+                    'kind': 'model_catalog_refresh_timeout', 'scope': 'cli_model_catalog',
+                    'reported_at': '2026-10-20T15:55:28.118316Z', 'reported_level': 'ERROR',
+                    'source': {'artifact': 'stderr', 'offset': len(prefix), 'bytes': len(log)}}]
+                self.assertEqual(collected['diagnostics'], expected)
+                # The existing result artifact serialization retains both the index and exact bytes.
+                preserved = json.loads(canonical_json(json_safe(result)))['execution']['collect']
+                self.assertEqual(preserved['diagnostics'], expected)
+                self.assertEqual(base64.b64decode(preserved['stderr']['raw']['base64']), cli.stderr)
+                self.assertEqual(len(cli.calls), 1)
+                if expected:
+                    from support.doc_code import result_field_issues
+                    from support.engine_context import assert_result_documents
+                    artifact = json.loads(canonical_json(json_safe(result)))
+                    assert_result_documents(self, artifact, root / 'ws', owner='call_result', expected=result)
+                    token = 'call_result.execution.collect.diagnostics[].source.offset'
+                    self.assertEqual(result_field_issues('`' + token + '`', 'call_result', artifact), [])
+                    del artifact['execution']['collect']['diagnostics'][0]['source']['offset']
+                    self.assertEqual(result_field_issues('`' + token + '`', 'call_result', artifact),
+                                     [('actual field', token)])
+                    self.assertEqual(result_field_issues('`call_result.execution.collect.nonexistent`',
+                        'call_result', artifact), [('actual field', 'call_result.execution.collect.nonexistent')])
+
     def test_collect_rejects_malformed_tail_even_with_turn_completed(self):
         jobs = ProviderJobs(ScriptedCLI(stdout=b'{"type":"turn.completed"}\nbroken', final=b'final'), clock=self.clock)
         (self.root / 'ws').mkdir()
@@ -82,6 +145,7 @@ class CodexCollectionTests(CollectorCase):
         self.assertEqual(collected['termination_barrier'], {'active_processes': 1, 'process_ids': (99,),
                                                             'root_signaled': True, 'confirmed': False})
         self.assertNotIn('stdout', collected)
+        self.assertNotIn('diagnostics', collected)
 
     def test_start_rejects_preexisting_output_before_creating_a_job(self):
         jobs = ProviderJobs(clock=self.clock)

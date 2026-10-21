@@ -58,19 +58,45 @@ def bind_candidates(output, context):
                                  if g["status"] == "active" and "research_work" in g.get("roles", [])]
 
 
-def review_items(evidence_refs, *, decision="approved", next_owner="research_plan", findings=()):
+def review_items(evidence_refs, *, decision="approved", next_owner="research_plan", findings=(), revision_fields=None):
     """A contract review output that reviews every product contract item alike."""
     return {"item_reviews": [{"item_id": item, "decision": decision,
         "evidence_refs": list(evidence_refs), "findings": list(findings),
         "missing_inputs": ["Contract clarification"] if decision == "unresolved" else [],
-        "next_owner": next_owner} for item in CONTRACT_REVIEW_ITEMS]}
+        "next_owner": next_owner,
+        **({'revision_fields': list(revision_fields)} if revision_fields is not None else {})}
+        for item in CONTRACT_REVIEW_ITEMS]}
 
 
-def contract_review(context, *, decision="approved", findings=()):
+def contract_review(context, *, decision="approved", findings=(), revision_fields=None):
     task = context["task"]
     if not task.get("completion_obligations") or not task.get("scope"):
         raise AssertionError("The review fixture requires the actual structured contract")
-    return review_items([task["id"]], decision=decision, next_owner="research_preparation", findings=findings)
+    return review_items([task["id"]], decision=decision, next_owner="research_preparation", findings=findings,
+                        revision_fields=revision_fields)
+
+
+def user_contract_question(output, context, workspace, text):
+    """A concrete missing-contract-input answer, shared by the scripted reviewers."""
+    items = [row for row in output['item_reviews'] if row['decision'] == 'unresolved']
+    assert items, 'the fixture needs an actual unresolved review item'
+    for row in items:
+        row['next_owner'] = 'user'
+    user_question(output, workspace, text, targets=[context['task']['id']],
+                  review_item_ids=[row['item_id'] for row in items])
+
+
+def user_question(output, workspace, text, *, targets, review_item_ids=()):
+    """Publish one scripted user input question in the actual output and sidecar."""
+    index = len(output['questions'])
+    output['questions'].append(text)
+    path = workspace / 'activity-extensions.json'
+    value = json.loads(path.read_bytes()) if path.exists() else {}
+    route = {'question_index': index, 'owner': 'user', 'target_ids': list(targets), 'blocks': True, 'reason': text}
+    if review_item_ids:
+        route['review_item_ids'] = list(review_item_ids)
+    value.setdefault('question_routes', []).append(route)
+    path.write_bytes(canonical_json(value))
 
 
 def scope_response(context):

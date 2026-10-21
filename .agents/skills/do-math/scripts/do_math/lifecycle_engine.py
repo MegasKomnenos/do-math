@@ -12,6 +12,7 @@ import hashlib
 import math
 
 from .governance import apply_decision, timestamp
+from . import planning
 from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
                        capture_task_basis, governance_revisions, assigned_event_refs, CONTRACT_REVIEW_MISSING)
 from .canonical import canonical_json, exact_content_hash
@@ -551,6 +552,7 @@ class LifecycleEngineMixin:
         self._retry_review_initialization()
         self._resume_import_question_waits()
         live_actions = live_action_ids(self.runtime)
+        self._reconcile_question_actions()
         for action in list(self.runtime['queue']):
             if action.get('id') in live_actions:
                 continue
@@ -621,9 +623,11 @@ class LifecycleEngineMixin:
                 else:
                     review.pop('currentness_changes', None)
             # inputs_current, set just above, already compares every review with `required`.
-            approved = any(review['inputs_current'] and review.get('decision') == 'approved'
-                           for review in task.get('reviews', []))
-            reviewed = any(review['inputs_current'] for review in task.get('reviews', []))
+            effective = planning.effective_contract_review(task, self.instance, self.runtime, task_basis=task_basis)
+            approved = bool(effective and effective['decision'] == 'approved')
+            reviewed = bool(effective) or planning.revision_required(task) or task.get('waiting', {}).get('kind') == 'contract_review_input'
+            reviewed |= any(r['status'] in {'pending', 'conflict'} and r['contract_sha256'] == contract_hash(task)
+                            for r in task.get('contract_review_reconsiderations', []))
             blocked_review = any(entry.get('action', {}).get('role') == 'task_contract_review'
                 and entry['action'].get('target') == task_id
                 and entry['action'].get('contract_basis') == required

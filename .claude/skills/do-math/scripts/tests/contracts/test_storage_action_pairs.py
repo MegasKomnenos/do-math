@@ -14,6 +14,22 @@ setUpModule = warm_template
 
 
 class StorageActionPairTests(unittest.TestCase):
+    def test_question_assignment_and_exception_fields_reach_the_first_reader(self):
+        from support.storage_action_pairs import StoredActions, question_samples, action_pair, waiting_pair
+        from support.state_builders import installed_contract
+        samples = StoredActions(self)
+        question_samples(samples)
+        contract = installed_contract()
+        pair = action_pair(contract, samples.samples)
+        for _, state in samples.samples:
+            pair.receive(state)
+        written = set().union(*(pair.written(state) for _, state in samples.samples))
+        self.assertTrue({'question_ids', 'question_generation', 'question_target_ids',
+                         'contract_review_reconsideration'} <= written, written)
+        waiting = waiting_pair(contract, samples.samples)
+        for _, state in samples.samples:
+            waiting.receive(state)
+
     def test_shared_action_and_wait_fields_have_real_stored_producers(self):
         """About four minutes cold: real owner inputs, publication and first blob decode.
 
@@ -30,13 +46,13 @@ class StorageActionPairTests(unittest.TestCase):
         from support.storage_action_pairs import (impact_samples, revision_samples, control_and_due_samples,
             recovery_samples, overflow_samples, diagnosis_samples, intent_samples, judgment_samples,
             observation_samples, review_research_samples, other_owner_samples, work_overflow_samples,
-            formal_failure_samples, assert_merge_samples, diagnosed_retry_samples, repetition_samples)
+            formal_failure_samples, assert_merge_samples, diagnosed_retry_samples, repetition_samples, question_samples)
         samples = StoredActions(self)
         for scene in (judgment_samples, observation_samples, review_research_samples, other_owner_samples,
                       work_overflow_samples, formal_failure_samples, assert_merge_samples, repetition_samples,
                       impact_samples, revision_samples, control_and_due_samples, recovery_samples,
                       overflow_samples, diagnosis_samples, diagnosed_retry_samples, intent_samples, stored_execution_inputs, assert_stored_delegation_input,
-                      stored_operational_dispositions, stored_recovery_and_machine_outputs):
+                      stored_operational_dispositions, stored_recovery_and_machine_outputs, question_samples):
             with self.subTest(scene=scene.__name__):
                 scene(samples)
         for kind in PREPARATION_WAIT_RULES:

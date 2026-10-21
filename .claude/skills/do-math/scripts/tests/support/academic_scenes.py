@@ -207,7 +207,13 @@ class RejectingResponder:
         self.calls.append(role)
         if role != 'task_contract_review':
             raise AssertionError('the rejecting reviewer was asked for ' + role)
-        return {**common(role), **contract_review(context, decision=self.decision, findings=[REVIEW_FINDING])}
+        output = {**common(role), **contract_review(context, decision=self.decision, findings=[REVIEW_FINDING],
+            revision_fields=['model_assessment', 'initial_observation_rules']
+                if self.decision == 'revision_required' else None)}
+        if self.decision == 'unresolved':
+            from support.role_answers import user_contract_question
+            user_contract_question(output, context, workspace, 'Clarify the impact of this academic assessment.')
+        return output
 
 
 _REJECTED = {}

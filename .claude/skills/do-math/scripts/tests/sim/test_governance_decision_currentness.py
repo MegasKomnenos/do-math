@@ -106,7 +106,7 @@ class GovernanceDecisionCurrentnessTests(unittest.TestCase):
         evidence.setdefault('extensions', {})['action_resolutions'] = [{'action_id': failed_action['id'],
             'evidence_execution_id': 'current', 'reason': '현재 판단으로 해소한다.'}]
         before = deepcopy((sim.instance, sim.runtime))
-        with self.assertRaisesRegex(ValueError, '^failed revision obligations require the actual accepted revisions$'):
+        with self.assertRaisesRegex(ValueError, '^failed revision obligations require accepted target dispositions$'):
             sim.engine._apply_action_resolutions(evidence['id'], accepting_current=True)
         self.assertEqual((sim.instance, sim.runtime), before)
 
