@@ -151,7 +151,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
   "results": [{
     "id": "r1",
     "exposition": "exposition.md",
-    "verification": "core Lean 파일을 컴파일했다. 자연수 전칭 명제이며 Mathlib은 사용하지 않았다.",
+    "verification": "core Lean 파일을 컴파일했다. #print axioms add_zero_example은 공리에 의존하지 않는다고 출력했다. 자연수 전칭 명제이며 Mathlib은 사용하지 않았다.",
     "lean": {"sources": ["Proof.lean"], "version": "Lean (version 4.32.0)"}
   }],
   "failed_attempts": [],
@@ -194,7 +194,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
   "results": [{
     "result": "r1",
     "assessment": {"verdict": "supported", "reason": "자연수 오른쪽 영 덧셈 주장이 제시한 정의와 증명으로 성립한다."},
-    "lean": {"verdict": "accepted", "reason": "공개된 Proof.lean을 다시 컴파일해 종료 코드 0을 확인했다."},
+    "lean": {"verdict": "accepted", "reason": "공개된 Proof.lean의 사본을 다시 컴파일해 종료 코드 0을 확인했고, #print axioms add_zero_example이 공리에 의존하지 않는다고 출력했다."},
     "alignment": {"verdict": "matches", "reason": "해설과 Lean 모두 모든 자연수 n의 n + 0 = n을 말한다."}
   }],
   "summary": "이 연구 산출의 결과 r1과 확인 범위를 검토했다."
@@ -206,7 +206,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
 | 항목 | 허용 verdict | 의미 |
 |---|---|---|
 | `assessment` | `supported`, `not_supported`, `undetermined` | 주장하는 결과를 제시한 근거가 뒷받침함 / 뒷받침하지 못함 / 판단을 마치지 못함 |
-| `lean` | `accepted`, `rejected`, `not_checked`, `not_applicable` | 공개 원문 재컴파일 수용 / 거부 / 미확인 / Lean 없는 결과 |
+| `lean` | `accepted`, `rejected`, `not_checked`, `not_applicable` | 공개 원문 재컴파일과 [common.md](common.md)의 공리 기준 통과 / 컴파일 실패 또는 허용 밖 공리 / 미확인 / Lean 없는 결과 |
 | `alignment` | `matches`, `differs`, `not_checked`, `not_applicable` | 해설과 Lean의 수학이 일치 / 다름 / 미확인 / Lean 없는 결과 |
 
 검토자는 Lean 수용만으로 결과나 해설이 맞다고 결론 내리지 않는다. 계산은 재현하거나 방법을 점검하고 문헌은 원문과 대조해 `assessment.reason`에 근거와 한계를 적는다. 검토자가 만든 보충 자료 역시 자기 `output/`에 두어 함께 공개할 수 있다.
