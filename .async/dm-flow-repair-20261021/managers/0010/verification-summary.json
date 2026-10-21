@@ -1,0 +1,154 @@
+{
+  "task": "academic-contract-guidance",
+  "decision": "accept",
+  "report_check": "PASS report, exit 0; manager ran check.py report",
+  "integration": "8 files, no conflicts; manager ran workspaces.py integrate",
+  "integrated_files": [
+    {
+      "path": ".claude/skills/do-math/계약/후보-준비.md",
+      "sha256": "44a2aa935fb3d32954e4e4fc102cd7e884a28b786f5120200a6d9aefc5747c5f"
+    },
+    {
+      "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "sha256": "ac18ba45440c777e79f0e7d19083251fd4ca31d34446e1b3deaa20b9961fa3fb"
+    },
+    {
+      "path": ".claude/skills/do-math/references/모델과-실행예산.md",
+      "sha256": "30b80aadd31724cb6a05cbac8218387a9eacc69833cdc40c558290235f2536c3"
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "sha256": "584f3e09844e42c95392ba11ede58ce5f1a3724b099e564c0390707ae6c204cb"
+    },
+    {
+      "path": ".agents/skills/do-math/계약/후보-준비.md",
+      "sha256": "44a2aa935fb3d32954e4e4fc102cd7e884a28b786f5120200a6d9aefc5747c5f"
+    },
+    {
+      "path": ".agents/skills/do-math/계약/작업-계약-검토.md",
+      "sha256": "ac18ba45440c777e79f0e7d19083251fd4ca31d34446e1b3deaa20b9961fa3fb"
+    },
+    {
+      "path": ".agents/skills/do-math/references/모델과-실행예산.md",
+      "sha256": "30b80aadd31724cb6a05cbac8218387a9eacc69833cdc40c558290235f2536c3"
+    },
+    {
+      "path": ".agents/skills/do-math/references/CLI-실행-계약.md",
+      "sha256": "584f3e09844e42c95392ba11ede58ce5f1a3724b099e564c0390707ae6c204cb"
+    }
+  ],
+  "matching_canonical_mirror_pairs": 4,
+  "code_sources_matching_task_static_evidence": [
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/core_engine.py",
+      "symbol": "CoreEngineMixin._apply",
+      "sha256": "20f5889f034b8f846eb128f9607cdc7fa9e35ec2db67ea22f1f60c2357abbe8a"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/planning_engine.py",
+      "symbol": "PlanningEngineMixin._ensure_model_assessments",
+      "sha256": "73db3a9bc226f3f83595468c30f837b1712bce27c5c77af5bb7ec0d38f734e04"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/planning_engine.py",
+      "symbol": "PlanningEngineMixin._finish_assessment_preparation",
+      "sha256": "73db3a9bc226f3f83595468c30f837b1712bce27c5c77af5bb7ec0d38f734e04"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+      "symbol": "assessment_basis",
+      "sha256": "33e1d8c57cf317ebdf8712a188e9644d69d1db95058e4eaa08bd96fafece3987"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+      "symbol": "QuestionEngineMixin._resume_contract_review_waits",
+      "sha256": "3984a1bf51c394c7a1933d01ff43d5408970df1fc076e0c587ba7644e0728d66"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+      "symbol": "QuestionEngineMixin._reconcile_question_actions",
+      "sha256": "3984a1bf51c394c7a1933d01ff43d5408970df1fc076e0c587ba7644e0728d66"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+      "symbol": "question_view",
+      "sha256": "3984a1bf51c394c7a1933d01ff43d5408970df1fc076e0c587ba7644e0728d66"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+      "symbol": "RevisionEngineMixin._request_contract_reconsideration",
+      "sha256": "653c81c6e92e1e3fc4a2c05a3d690016234b0ad3fa290e2a7bae64f826e03387"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+      "symbol": "RevisionEngineMixin._apply_revision_followup",
+      "sha256": "653c81c6e92e1e3fc4a2c05a3d690016234b0ad3fa290e2a7bae64f826e03387"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/revisions.py",
+      "symbol": "submission_errors",
+      "sha256": "774f980ddbe5d28d6d75951450e5573625bcef7d9304836b36c96ce6662109c2"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+      "symbol": "task_status",
+      "sha256": "9c85af8b562f368599fc7004fe9801ecf179f9ddf8e1cee99e3ef58ff6f5d8c1"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+      "symbol": "render_human_report",
+      "sha256": "9c85af8b562f368599fc7004fe9801ecf179f9ddf8e1cee99e3ef58ff6f5d8c1"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "symbol": "reading_map",
+      "sha256": "f3f478c9c8a14aa0def57018a94abcec87a33f6d65dd8cf19e59ff636c629c35"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "symbol": "prompt_documents",
+      "sha256": "f3f478c9c8a14aa0def57018a94abcec87a33f6d65dd8cf19e59ff636c629c35"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "symbol": "render_prompt",
+      "sha256": "f3f478c9c8a14aa0def57018a94abcec87a33f6d65dd8cf19e59ff636c629c35"
+    }
+  ],
+  "saved_delivery_evidence_verified_against_integrated_bytes": [
+    {
+      "tree": "claude",
+      "role": "research_preparation",
+      "documents": 8,
+      "prompt_sha256": "1c2845225ee2921b71aacc84aad4e439e7ad25d173ba3fe75d136328d29cd330",
+      "exact_documents_verified": true
+    },
+    {
+      "tree": "claude",
+      "role": "task_contract_review",
+      "documents": 8,
+      "prompt_sha256": "732a6135757d8a6165603b0139f9d4481b90fa556432bea8ea0a8c87bfe9bc78",
+      "exact_documents_verified": true
+    },
+    {
+      "tree": "agents",
+      "role": "research_preparation",
+      "documents": 8,
+      "prompt_sha256": "1c2845225ee2921b71aacc84aad4e439e7ad25d173ba3fe75d136328d29cd330",
+      "exact_documents_verified": true
+    },
+    {
+      "tree": "agents",
+      "role": "task_contract_review",
+      "documents": 8,
+      "prompt_sha256": "732a6135757d8a6165603b0139f9d4481b90fa556432bea8ea0a8c87bfe9bc78",
+      "exact_documents_verified": true
+    }
+  ],
+  "task_mirror_check": {
+    "command": "python -B .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check --target .agents",
+    "observed_output": "[.agents] 드리프트 없음 (1394파일)"
+  },
+  "next": "final-contract-review; keep existing assignment and dependency",
+  "limits": "Manager compared code and document semantics statically, then verified saved prompt bytes and hashes. No repeated prompt generation, full mirror build, runtime transition, product tests or live calls. Full mirror drift check is task evidence. Project completion awaits independent review."
+}

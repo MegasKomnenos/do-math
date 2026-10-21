@@ -1,0 +1,24 @@
+{
+  "id": "integration-repair-check",
+  "kind": "work",
+  "depends_on": [
+    "intent-check-evidence",
+    "batch-payload-reads",
+    "codex-refresh-diagnostics"
+  ],
+  "writes": [
+    ".claude/skills/do-math/",
+    ".agents/skills/do-math/",
+    "docs/do-math/flow-repair-20261021/integration-repair-check.md"
+  ],
+  "inputs": [
+    "C:\\math\\.async\\dm-flow-repair-20261021\\user-messages.md",
+    "C:\\math\\docs\\do-math\\flow-repair-20261021",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\intent-check-evidence\\report.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\intent-check-evidence\\evidence\\final-scoped\\report.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\intent-check-evidence\\evidence\\baseline-structure-comparison.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\managers\\0007\\verification-summary.json"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "summary": "역할·개정·운영 질문의 현행 평가와 구현 가능한 공유 설계를 docs/do-math/flow-repair-20261021/role-flow-design.md에 작성했다. 내부 AI 역할 10개, 후보 준비 보충·검토/의도 해석의 동적 단계, 기계 action, 모델 없는 감독과 별도 설치 복구의 실제 입력/출력 소비를 연결해 유지·수정 이유를 남겼다. unresolved와 실제 개정을 구분하고 AI 개정 요청을 근거 있게 dismissed로 종결하되 필요한 독립 승인은 별도 판단하도록 설계했다. 운영 질문은 같은 QU 의무에 보고 원문·실제 담당 action/execution·근거 처분·대기/이관·영향받은 검토/계획을 연결하도록 정확한 필드·함수·전이·오류 의미와 구현 경계를 제안했다. 제품 코드와 현행 역할 계약은 변경하지 않았으며 이 완료는 조사·설계 배정의 완료다.",
+  "changes": [
+    "docs/do-math/flow-repair-20261021/role-flow-design.md"
+  ],
+  "verification": "지정 protocol/task/inputs와 최신 사용자 정정, 정본 AGENTS/SKILL/이음새, 역할 계약 11개 및 관련 공통 문서, action/입력/검사/적용/후속 코드를 정적 추적했다. 원 감사의 실행표·관련 분석·재현 결과와 E05/E10/E12 보존 응답 및 E05/E10 확장을 대조했다. python -B ../evidence/inspect_current.py를 자기 workspace 코드에 실행해 내부 역할 10개의 실제 prompt_documents 순서·내용 해시, 같은 origin 재등록의 QU 1개 유지, 다른 origin의 같은 문장에 QU 2개 생성, 질문 등록 뒤 빈 queue, 연구 계획의 operations 해소 거부와 maintenance 허용, required unchanged 거부 및 과거 비승인+후속 승인에서도 revision_required=True를 확인했다. 결과는 evidence/current-observations.json에 보존했다. 새 상태 전이는 설계이며 실행 검증하지 않았다. 전체 시험·모델/학술 도구 호출·원 연구 재개·graphify 갱신·미러 생성은 하지 않았다.",
+  "findings": [
+    "계약 검토의 unresolved와 revision_required가 모두 필수 개정으로 소비된다. 새 처분 이름만 추가하면 planning.revision_required의 역사적 반려 OR, lifecycle의 reviewed 억제, 부모 revision_dependency와 failed action 해소가 여전히 막으므로 함께 수정해야 한다.",
+    "현재 revisions.py에는 objective에서 지칭한 validate_extensions 대신 submission_errors(output, extensions, context)가 실제 정본이다. 설계는 이 심볼을 소비한다.",
+    "운영 질문은 origin 단위 중복만 막고 등록 자체는 action을 만들지 않는다. operations의 blocks도 현재 user_waits 기반 일반 착수 gate에는 적용되지 않는다. 설계는 실제 처리 배정과 대상별 gate, 해소 뒤 독립 검토/준비/계획을 함께 연결한다.",
+    "의도 해석 check의 모든 비승인도 현재 재저작으로 간다. 자료 부족 unresolved는 같은 고정 묶음의 입력 대기/후속 독립 검사로 구분하도록 별도 구현 경계를 제안했다. import_seal의 check_history 제외와 저장 결박도 함께 바꿔야 한다.",
+    "정적 추적상 question_resolutions의 workspace 근거는 제출 참조 검사에서 허용될 수 있으나 적용은 academic.evidence_record로 기존 저장소를 읽는다. 이번 수집 artifact의 정확한 바이트를 candidate reader로 해소하는 공유 소비 경계를 설계에 포함했다. 이 추가 경계는 새 실행으로 재현하지 않았다.",
+    "정상 수행·의무별 완료·형식 검사·동일성·목표 감사와 사용자 권위의 구분, 동일성 이의 철회/기각, 고정 조사 범위와 외부 unknown/설치 복구의 제한은 유지할 근거가 있다. 운영 점검의 task_disposition 권한은 기존 지정 판정 집계와 첫머리 문구를 일치시켜야 한다.",
+    "R1~R3 제품 수리는 남아 있다. shared-validation-hashes의 core_engine/context_store/submission 등 수용판과 Windows 공통 문서 수용판을 실제 소비한 후 역할·개정·질문 연결을 하나의 구현 배정으로 마무리하고, 의도 검사 대기 소비자는 그 결과를 선행으로 사용하도록 권고했다.",
+    "현재 snapshot_paths에는 docs가 없다. 수용 후 후속 task에는 C:/math/docs/do-math/flow-repair-20261021/role-flow-design.md를 정확한 읽기 전용 inputs/objective로 지급해야 한다. 영구 근거는 이 task evidence에 보존했다.",
+    "당시 scholarly의 공급자 원본 도구 목록과 모델 내부 원인은 미확정이다. 관찰된 특정 호출의 성공을 전체 미래 프로필·기능 성공으로 확대하지 않았고, 원 연구 저장소/work/HOLD/예약 작업 및 canonical source_repo는 수정하지 않았다."
+  ]
+}

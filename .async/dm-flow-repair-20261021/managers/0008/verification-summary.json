@@ -1,0 +1,593 @@
+{
+  "task": "integration-repair-check",
+  "changed_count": 87,
+  "canonical_mirror_pairs": 43,
+  "runs": [
+    {
+      "name": "t2-flows",
+      "counts": {
+        "failed": 115,
+        "passed": 4482,
+        "error": 11,
+        "not_run": 1,
+        "skipped": 1
+      },
+      "fixture_counts": {
+        "error": 1
+      },
+      "complete": true,
+      "successful": false,
+      "worker_returncodes": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "changed_during_run": [],
+      "source_file_count": 930,
+      "final_source_differences": [
+        "do_math/core_engine.py",
+        "do_math/decision_engine.py",
+        "do_math/planning.py",
+        "do_math/questions.py",
+        "do_math/revision_engine.py",
+        "do_math/revisions.py",
+        "tests/flows/test_academic_preparation_calls.py",
+        "tests/flows/test_intent_check_evidence.py",
+        "tests/sim/test_governance_decision_currentness.py",
+        "tests/sim/test_governance_questions.py",
+        "tests/sim/test_governance_task_scope_contracts.py",
+        "tests/sim/test_import_wait_contract.py",
+        "tests/sim/test_initialization_controls.py",
+        "tests/sim/test_lifecycle_engine_controls.py",
+        "tests/sim/test_null_domain_consumers.py",
+        "tests/sim/test_planning_preparation_transitions.py",
+        "tests/sim/test_planning_relation_conditions.py",
+        "tests/sim/test_provider_collection.py",
+        "tests/sim/test_submission_receiver.py",
+        "tests/structure/test_doc_code.py",
+        "tests/support/academic_scenes.py",
+        "tests/support/cross_events.py",
+        "tests/support/engine_context.py",
+        "tests/support/intent_evidence.py",
+        "tests/support/role_answers.py",
+        "tests/support/submission_obligations.py",
+        "tests/support/submission_owner_obligations.py",
+        "tests/unit/test_core_branch_contracts.py",
+        "tests/unit/test_governance_questions.py",
+        "tests/unit/test_planning_revision_validation.py",
+        "tests/unit/test_record_family_storage.py",
+        "tests/unit/test_role_input_packaging.py",
+        "tests/unit/test_submission_contract_checks.py",
+        "tests/unit/test_targeted_core_paths.py"
+      ]
+    },
+    {
+      "name": "recheck-1",
+      "counts": {
+        "passed": 170,
+        "failed": 8,
+        "error": 1
+      },
+      "fixture_counts": {},
+      "complete": true,
+      "successful": false,
+      "worker_returncodes": [
+        1,
+        1,
+        1
+      ],
+      "changed_during_run": [],
+      "source_file_count": 930,
+      "final_source_differences": [
+        "do_math/core_engine.py",
+        "do_math/decision_engine.py",
+        "do_math/revision_engine.py",
+        "do_math/revisions.py",
+        "tests/sim/test_governance_questions.py",
+        "tests/sim/test_submission_receiver.py",
+        "tests/support/cross_events.py",
+        "tests/support/engine_context.py",
+        "tests/support/role_answers.py",
+        "tests/support/submission_owner_obligations.py",
+        "tests/unit/test_planning_revision_validation.py",
+        "tests/unit/test_targeted_core_paths.py"
+      ]
+    },
+    {
+      "name": "boundaries-and-recheck",
+      "counts": {
+        "passed": 30,
+        "failed": 2
+      },
+      "fixture_counts": {},
+      "complete": true,
+      "successful": false,
+      "worker_returncodes": [
+        0,
+        1,
+        1,
+        0
+      ],
+      "changed_during_run": [],
+      "source_file_count": 930,
+      "final_source_differences": [
+        "tests/sim/test_governance_questions.py",
+        "tests/sim/test_submission_receiver.py"
+      ]
+    },
+    {
+      "name": "final-fixtures",
+      "counts": {
+        "passed": 2
+      },
+      "fixture_counts": {},
+      "complete": true,
+      "successful": true,
+      "worker_returncodes": [
+        0,
+        0
+      ],
+      "changed_during_run": [],
+      "source_file_count": 930,
+      "final_source_differences": []
+    }
+  ],
+  "initial_nonpassing_count": 127,
+  "latest_observed_counts": {
+    "passed": 4618,
+    "skipped": 1
+  },
+  "remaining_observed_nonpassing": {},
+  "skip_ids": [
+    "unit.test_context_catalog.ContextStoreTests.test_outside_symlink_is_reported_when_supported"
+  ],
+  "manager_product_test_rerun": false,
+  "limits": "Rows span multiple source editions; this is not a final-edition full regression.",
+  "integration": {
+    "task": "integration-repair-check",
+    "files": [
+      ".agents/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py",
+      ".claude/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_targeted_core_paths.py",
+      ".claude/skills/do-math/scripts/tests/support/intent_evidence.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_provider_collection.py",
+      ".agents/skills/do-math/scripts/tests/support/cross_events.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_questions.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_planning_revision_validation.py",
+      ".agents/skills/do-math/scripts/tests/support/doc_code.py",
+      ".agents/skills/do-math/scripts/do_math/decision_engine.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_questions.py",
+      "docs/do-math/flow-repair-20261021/integration-repair-check.md",
+      ".agents/skills/do-math/scripts/do_math/revision_engine.py",
+      ".claude/skills/do-math/scripts/tests/support/submission_owner_obligations.py",
+      ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      ".claude/skills/do-math/scripts/tests/support/cross_events.py",
+      ".agents/skills/do-math/scripts/do_math/planning.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_targeted_core_paths.py",
+      ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      ".agents/skills/do-math/scripts/이음새-정본.md",
+      ".agents/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_task_scope_contracts.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+      ".agents/skills/do-math/scripts/tests/support/submission_obligations.py",
+      ".agents/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_governance_questions.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      ".agents/skills/do-math/scripts/tests/support/academic_scenes.py",
+      ".claude/skills/do-math/scripts/tests/support/submission_obligations.py",
+      ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py",
+      ".agents/skills/do-math/scripts/tests/support/intent_evidence.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_planning_revision_validation.py",
+      ".agents/skills/do-math/scripts/tests/flows/test_academic_preparation_calls.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_decision_currentness.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+      ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+      ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_planning_preparation_transitions.py",
+      ".claude/skills/do-math/scripts/do_math/revisions.py",
+      ".claude/skills/do-math/scripts/tests/시험-지침.md",
+      ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+      ".claude/skills/do-math/scripts/tests/support/role_answers.py",
+      ".agents/skills/do-math/scripts/tests/support/submission_owner_obligations.py",
+      ".claude/skills/do-math/references/CLI-실행-계약.md",
+      ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py",
+      ".agents/skills/do-math/references/CLI-실행-계약.md",
+      ".agents/skills/do-math/scripts/tests/시험-지침.md",
+      ".claude/skills/do-math/scripts/tests/flows/test_academic_preparation_calls.py",
+      ".claude/skills/do-math/scripts/tests/support/engine_context.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_import_wait_contract.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_task_scope_contracts.py",
+      ".agents/skills/do-math/scripts/do_math/core_engine.py",
+      ".claude/skills/do-math/scripts/do_math/core_engine.py",
+      ".agents/skills/do-math/scripts/do_math/questions.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_import_wait_contract.py",
+      ".claude/skills/do-math/scripts/do_math/planning.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_governance_questions.py",
+      ".claude/skills/do-math/scripts/do_math/questions.py",
+      ".agents/skills/do-math/scripts/tests/support/engine_context.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+      ".claude/skills/do-math/scripts/tests/support/doc_code.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py",
+      ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py",
+      ".claude/skills/do-math/scripts/이음새-정본.md",
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_decision_currentness.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_planning_preparation_transitions.py",
+      ".agents/skills/do-math/scripts/tests/support/role_answers.py",
+      ".agents/skills/do-math/scripts/do_math/revisions.py",
+      ".claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_provider_collection.py",
+      ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py",
+      ".claude/skills/do-math/scripts/tests/support/academic_scenes.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py",
+      ".agents/skills/do-math/scripts/tests/sim/test_submission_receiver.py"
+    ],
+    "changes": {
+      ".agents/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py": [
+        "25942d904e36541c98e9f0a685565a539e3222f2b3583e027582615a7f748a80",
+        "69826d77884852fa1827031a6a289f2adc4501924319e9e123f3dee3b9b1b404"
+      ],
+      ".claude/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py": [
+        "25942d904e36541c98e9f0a685565a539e3222f2b3583e027582615a7f748a80",
+        "69826d77884852fa1827031a6a289f2adc4501924319e9e123f3dee3b9b1b404"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_targeted_core_paths.py": [
+        "ab8a72886ac16fde1beda08bb45613cd454fcee7c064b289668eeb50da4c8508",
+        "afcb05c51feb9f614ff2d2fd42b56421207da988ac0e5a3c32986cba2ad075bc"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/intent_evidence.py": [
+        "7b5729534f9c9da8606059ba8d3eceffe5d97cbd31548c0c7785eff80f06aab0",
+        "6a8daa48457197e97aee3ec86f78ee4f4c8bf597d74b099e8273dea477885bd2"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_provider_collection.py": [
+        "cc4ac9f3ec4198c0b2186579249ec97c43313ea02ddda12055a9d83df525b392",
+        "51b077755da0628cd87c2ed7828256edf8eb8bccd129115c39d422ad56242dcd"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/cross_events.py": [
+        "8e82c9258cdf552efecb0cfab7cd4f1c62b070e2bcae2b0407ff4e77382a0ee3",
+        "615bf65962518513cf3ef5306f9fdae2588ca7057d14e07d8b42662e48739744"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_questions.py": [
+        "2a06a2a1464d501191b97df36968b560fcb8a2c70f27c36d64c4ce58071debf4",
+        "ed141678ab97d4089c17f46fc620cabef808074221560b28d1db513a6fd37764"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_planning_revision_validation.py": [
+        "77a7e0cf8c12902d61b6aa0353c5366d716f08144b71017a22bb50fbadfc175c",
+        "c8baa96c92b9a54fe33deb3f4cca3bce4a740e24c39ef250976c931061b78ee6"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/doc_code.py": [
+        "2fb0bcd3e96732552eb7de6941f86b827e37eb91b2e0e629f630cb978d278948",
+        "9e5329192653b0d0ecef1b5baeec1d2d672c83c4e6511506cd27113748051cc4"
+      ],
+      ".agents/skills/do-math/scripts/do_math/decision_engine.py": [
+        "bb944bad2794b619f83f6483d754e9a832dd1988f1f825bd8468ee094bd4b619",
+        "8fca45078862187836071afa23de538a641c1b20c569b04fcd5337223a14af82"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_questions.py": [
+        "2a06a2a1464d501191b97df36968b560fcb8a2c70f27c36d64c4ce58071debf4",
+        "ed141678ab97d4089c17f46fc620cabef808074221560b28d1db513a6fd37764"
+      ],
+      "docs/do-math/flow-repair-20261021/integration-repair-check.md": [
+        null,
+        "c604e6e21104fbd51fa5249afde9442b12585a798bad5241a7bcd0810d543945"
+      ],
+      ".agents/skills/do-math/scripts/do_math/revision_engine.py": [
+        "f77f4e334aeb60c40633c550e92b05c2cd9c67f885456b2540f0b20fe446f0dc",
+        "653c81c6e92e1e3fc4a2c05a3d690016234b0ad3fa290e2a7bae64f826e03387"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/submission_owner_obligations.py": [
+        "b6d3659126ac60e706d20482b7553bd1dfadbd3f9964f3cba8f6eb9675fe7b2f",
+        "bfd630583e6276b006e2678a9cf50ef986bb751e2f03aa986d53101e8e6cdc6c"
+      ],
+      ".claude/skills/do-math/scripts/tests/structure/test_doc_code.py": [
+        "725cabc4d7926831bfce26099721b5071d7f8593738152039708aff98f8e205f",
+        "94942ed5188ab9a111dfaff6e483ed2602dbf38b8db4a4a98d298bb6a353173c"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/cross_events.py": [
+        "8e82c9258cdf552efecb0cfab7cd4f1c62b070e2bcae2b0407ff4e77382a0ee3",
+        "615bf65962518513cf3ef5306f9fdae2588ca7057d14e07d8b42662e48739744"
+      ],
+      ".agents/skills/do-math/scripts/do_math/planning.py": [
+        "daa2b364be8f26b3ea82409e54873fb2a506843ce3d7cb7f3fdfd223e65c4770",
+        "dcff2c4fed733a52072660b40a2726450c758dedb58c3fbe3b529a0335ffade7"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_targeted_core_paths.py": [
+        "ab8a72886ac16fde1beda08bb45613cd454fcee7c064b289668eeb50da4c8508",
+        "afcb05c51feb9f614ff2d2fd42b56421207da988ac0e5a3c32986cba2ad075bc"
+      ],
+      ".claude/skills/do-math/scripts/tests/boundary/test_engine_cli.py": [
+        "0761f82a4e6bd46aee3643114bbe787b26d1b927d79f534900c44db0e62c365d",
+        "c40a95183629f2be70172b6bc0abd76e23daa747d85fa2225f96a0a6885a9f76"
+      ],
+      ".agents/skills/do-math/scripts/이음새-정본.md": [
+        "27adba46e5842c3bb251f7f3b1bad4fda6f7cf78123769846d74bfce3b192d31",
+        "430f122dda4f66d39aa19b21b9f2c88335a963a3699dd9ca139bf5e4bce04025"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py": [
+        "146b253794495bef90ec11ff7c48d6bb946989cba250d5198248753fdc18273f",
+        "b4b29ec39e6cebf793e6ddfd688b197d6cd17d34a4819fc8115cd9847b5bc9c0"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_task_scope_contracts.py": [
+        "69aae8cb89936ba5f2e70a33d2baa971a3e9683db4000f4f38769f72ac797566",
+        "3f3a729aeb1f5e349715b6d808e595bc7ec1fe904eeda3739b531e4613cff872"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py": [
+        "65a22a9692c400d46a8ab7bbe657572f44b1edda6e4cf7f6b4b83ba9b91e883b",
+        "99d46a966402682ffcae52269fda3be82707baf8bc0e9d754033743303fffc71"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/submission_obligations.py": [
+        "74b9a5a4d0199e11e384de7ae4e58b47cf9983348ee8aced16d6d9ede55502a6",
+        "9473f737ba117fb012cfd0e8ef07269b5afaa02cbf2fddd5ef782fa0980ed003"
+      ],
+      ".agents/skills/do-math/scripts/tests/structure/test_schema_builders.py": [
+        "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494",
+        "527f3cf047c5367effbeab9b7b65ce0f557713ea86c56a542b3ca282e77b43ff"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py": [
+        "d06ad3a31344dc00ab99bad19990606fbc2158d2becb23e3ccd1ad72b68aa49f",
+        "cf85a5bb783a07ed1dad4f28dcc68eb3f0b528aa7f9ec7809eaf4c7f7f8c8bbf"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_storage_report_projections.py": [
+        "e9857498838d887ccc7d00cd26696b65a59f73fcc412fe7ea49afee13bfa1c97",
+        "7c7e8a2dd06204bfbb45cdf5b0fea187744e70d0026b57d5e43c2f966d65ec52"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py": [
+        "32749a7ae5d4252275d4e3a1037722c1fc2608232c613e8f9c3af1fe5f0e5009",
+        "8d7265448ae6b3f7c6d2be4919f2aa202c2cbdbd650eff64c63f1be69d2e771e"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_governance_questions.py": [
+        "b858e08398bd25606a4ea416da6a5925a566ba499cb39929c371048d9456d3c7",
+        "fdb669093de5a711d947d09083e288106458cf5721747ecb43e4bf1e7d20c36f"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py": [
+        "6ca6fcaec76c4dc933247fc6e3573d9157049a783a17b2cdc580680928b45f2c",
+        "048e7190aa43779b60fff7822d97af4de52dd4fd675d9b346dbb4354f05dbb53"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/academic_scenes.py": [
+        "672e74cd4074e3e1647913236ab88e86234d0296da3eafdd71b79406a4266be3",
+        "b42e0b0a8d7e89f38240a73f370dbe037fc0f7292f8d10b81be51b667020b041"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/submission_obligations.py": [
+        "74b9a5a4d0199e11e384de7ae4e58b47cf9983348ee8aced16d6d9ede55502a6",
+        "9473f737ba117fb012cfd0e8ef07269b5afaa02cbf2fddd5ef782fa0980ed003"
+      ],
+      ".agents/skills/do-math/scripts/tests/boundary/test_engine_cli.py": [
+        "0761f82a4e6bd46aee3643114bbe787b26d1b927d79f534900c44db0e62c365d",
+        "c40a95183629f2be70172b6bc0abd76e23daa747d85fa2225f96a0a6885a9f76"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_initialization_controls.py": [
+        "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "6b41502e120626d2278a65fad36aa2f7aed8c87d55d9db737eefc8c2ce4a9c6e"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_initialization_controls.py": [
+        "32e2cfd8a5a23f1ca3bf2f52e86e2e4689ad662e9c9e763b75a5f2e16dc10234",
+        "6b41502e120626d2278a65fad36aa2f7aed8c87d55d9db737eefc8c2ce4a9c6e"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_core_branch_contracts.py": [
+        "65a22a9692c400d46a8ab7bbe657572f44b1edda6e4cf7f6b4b83ba9b91e883b",
+        "99d46a966402682ffcae52269fda3be82707baf8bc0e9d754033743303fffc71"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py": [
+        "63ac17d1b88dd01f707dc5d43083c74f2d71ea4ebfb96a4b98505e4f7b4fecd0",
+        "7fc3c693ac37a11a1787744e88320e7024f40d236257a7a823ad0b746e74a53b"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py": [
+        "3c4667f3e123f0cee6bba9963c6e01f2e44f9e9fba6688f4a3d9c14bc73aa77e",
+        "8e8a36c3abefb7d956d0f905f15507731a9374ab41f01fd3e2d53e4ff3a51e9c"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/intent_evidence.py": [
+        "7b5729534f9c9da8606059ba8d3eceffe5d97cbd31548c0c7785eff80f06aab0",
+        "6a8daa48457197e97aee3ec86f78ee4f4c8bf597d74b099e8273dea477885bd2"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_planning_revision_validation.py": [
+        "77a7e0cf8c12902d61b6aa0353c5366d716f08144b71017a22bb50fbadfc175c",
+        "c8baa96c92b9a54fe33deb3f4cca3bce4a740e24c39ef250976c931061b78ee6"
+      ],
+      ".agents/skills/do-math/scripts/tests/flows/test_academic_preparation_calls.py": [
+        "7661b113c6a6a25ca2b045a0a8999a3891183c69406fce5dbc8ec9140bd69aff",
+        "a7d3fdcf74acd2f5f9f879eb31a1a3d55ae9a9df4dcd060bab27b120b738a91e"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_decision_currentness.py": [
+        "cc78f5489244691d38748abd0ace08157e267f2660a13fdc9c8502fcdab10db8",
+        "c9e8a7631d0f52ecff80bf9c36f3610d7759a934b9a8d7faea8888a0da95df93"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_null_domain_consumers.py": [
+        "146b253794495bef90ec11ff7c48d6bb946989cba250d5198248753fdc18273f",
+        "b4b29ec39e6cebf793e6ddfd688b197d6cd17d34a4819fc8115cd9847b5bc9c0"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py": [
+        "6ca6fcaec76c4dc933247fc6e3573d9157049a783a17b2cdc580680928b45f2c",
+        "048e7190aa43779b60fff7822d97af4de52dd4fd675d9b346dbb4354f05dbb53"
+      ],
+      ".claude/skills/do-math/scripts/do_math/decision_engine.py": [
+        "bb944bad2794b619f83f6483d754e9a832dd1988f1f825bd8468ee094bd4b619",
+        "8fca45078862187836071afa23de538a641c1b20c569b04fcd5337223a14af82"
+      ],
+      ".claude/skills/do-math/scripts/do_math/revision_engine.py": [
+        "f77f4e334aeb60c40633c550e92b05c2cd9c67f885456b2540f0b20fe446f0dc",
+        "653c81c6e92e1e3fc4a2c05a3d690016234b0ad3fa290e2a7bae64f826e03387"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_planning_preparation_transitions.py": [
+        "e719adaf8f5ee0c9240e8715d2408abc31835518e22da4b4a4d8c302950b5b54",
+        "69a1698b5a837504ffe7cf4ae244ccdb85bfc751186706d482371448f7fdc418"
+      ],
+      ".claude/skills/do-math/scripts/do_math/revisions.py": [
+        "30083984f804653f7875b599625e9f9e4234c52bedd6caacbfb02a13cae6bac8",
+        "774f980ddbe5d28d6d75951450e5573625bcef7d9304836b36c96ce6662109c2"
+      ],
+      ".claude/skills/do-math/scripts/tests/시험-지침.md": [
+        "8a6675ad11cc88e106660c60508ac41c84b27b64871ed3573764c76f99bd2b11",
+        "a6820ac989256f5ce2f20c017b9ecedcb3c53f89b2c277a5e795213f56917182"
+      ],
+      ".agents/skills/do-math/scripts/tests/structure/test_doc_code.py": [
+        "725cabc4d7926831bfce26099721b5071d7f8593738152039708aff98f8e205f",
+        "94942ed5188ab9a111dfaff6e483ed2602dbf38b8db4a4a98d298bb6a353173c"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_role_input_packaging.py": [
+        "d06ad3a31344dc00ab99bad19990606fbc2158d2becb23e3ccd1ad72b68aa49f",
+        "cf85a5bb783a07ed1dad4f28dcc68eb3f0b528aa7f9ec7809eaf4c7f7f8c8bbf"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/role_answers.py": [
+        "7161fcec420911e7f43a746ed871fc40d9cb466eab72ce5315fb0a31455007a0",
+        "587e58601612bcac4dd45e07a8aeeed9cf29e9746dc03c6850cb3d5844be0bdb"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/submission_owner_obligations.py": [
+        "b6d3659126ac60e706d20482b7553bd1dfadbd3f9964f3cba8f6eb9675fe7b2f",
+        "bfd630583e6276b006e2678a9cf50ef986bb751e2f03aa986d53101e8e6cdc6c"
+      ],
+      ".claude/skills/do-math/references/CLI-실행-계약.md": [
+        "f45e1d59c6be669e0c91bcb1fcc52fbd1886285600d74cb7e3836a432714d3f2",
+        "f1c5ce862e58e2e197560b8a8b318ff165a2ccf20abbf454d8020c610823bf2f"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_storage_report_projections.py": [
+        "e9857498838d887ccc7d00cd26696b65a59f73fcc412fe7ea49afee13bfa1c97",
+        "7c7e8a2dd06204bfbb45cdf5b0fea187744e70d0026b57d5e43c2f966d65ec52"
+      ],
+      ".agents/skills/do-math/references/CLI-실행-계약.md": [
+        "f45e1d59c6be669e0c91bcb1fcc52fbd1886285600d74cb7e3836a432714d3f2",
+        "f1c5ce862e58e2e197560b8a8b318ff165a2ccf20abbf454d8020c610823bf2f"
+      ],
+      ".agents/skills/do-math/scripts/tests/시험-지침.md": [
+        "8a6675ad11cc88e106660c60508ac41c84b27b64871ed3573764c76f99bd2b11",
+        "a6820ac989256f5ce2f20c017b9ecedcb3c53f89b2c277a5e795213f56917182"
+      ],
+      ".claude/skills/do-math/scripts/tests/flows/test_academic_preparation_calls.py": [
+        "7661b113c6a6a25ca2b045a0a8999a3891183c69406fce5dbc8ec9140bd69aff",
+        "a7d3fdcf74acd2f5f9f879eb31a1a3d55ae9a9df4dcd060bab27b120b738a91e"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/engine_context.py": [
+        "dbfabd81f4201ec725df2606ce0f0ef6235ce200fff28d94a2b7a1be69a253e6",
+        "994ba364239b9d260cd470259446393ff102c6e19d326845fb16f9d678b5e0db"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py": [
+        "42b9e9d527b8de663c814ce2f7495b557a2add80b4377ba03463e162daa93f6a",
+        "3eee89126072c70663eaa214a4acb789b0edefb9bb480edd0f6811ba88ce8736"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_import_wait_contract.py": [
+        "d990e9197c6d329e7cd57fdd991aa2a2c32506147502d8642ecf6ec75f48b777",
+        "2366d4418e22fc43ca346ef321981f39083d28716d2dae36e168205ebd8e76c4"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py": [
+        "a3c1c94187b9e3b4a6cc901bc5c18052a212f11826ba44d2c63a4af7e28b1dc9",
+        "76d467d0e7131ca41641f323a5818c55a5a01d696beee0a92753910f5af71be0"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_governance_task_scope_contracts.py": [
+        "69aae8cb89936ba5f2e70a33d2baa971a3e9683db4000f4f38769f72ac797566",
+        "3f3a729aeb1f5e349715b6d808e595bc7ec1fe904eeda3739b531e4613cff872"
+      ],
+      ".agents/skills/do-math/scripts/do_math/core_engine.py": [
+        "585b442e29ab22187c4b0b37e46ccbc51ac4656bd6d7244821e6534278080cdc",
+        "20f5889f034b8f846eb128f9607cdc7fa9e35ec2db67ea22f1f60c2357abbe8a"
+      ],
+      ".claude/skills/do-math/scripts/do_math/core_engine.py": [
+        "585b442e29ab22187c4b0b37e46ccbc51ac4656bd6d7244821e6534278080cdc",
+        "20f5889f034b8f846eb128f9607cdc7fa9e35ec2db67ea22f1f60c2357abbe8a"
+      ],
+      ".agents/skills/do-math/scripts/do_math/questions.py": [
+        "e3bf7bc8a1e4f7f553b69af1767c330a91d1ae6c7ac5c70a61f99a33cfe09578",
+        "9725c6793954a8b063f3e42f995f7e1a6cffa7d0b329922766359ea408ef53e5"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_import_wait_contract.py": [
+        "d990e9197c6d329e7cd57fdd991aa2a2c32506147502d8642ecf6ec75f48b777",
+        "2366d4418e22fc43ca346ef321981f39083d28716d2dae36e168205ebd8e76c4"
+      ],
+      ".claude/skills/do-math/scripts/do_math/planning.py": [
+        "daa2b364be8f26b3ea82409e54873fb2a506843ce3d7cb7f3fdfd223e65c4770",
+        "dcff2c4fed733a52072660b40a2726450c758dedb58c3fbe3b529a0335ffade7"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_governance_questions.py": [
+        "b858e08398bd25606a4ea416da6a5925a566ba499cb39929c371048d9456d3c7",
+        "fdb669093de5a711d947d09083e288106458cf5721747ecb43e4bf1e7d20c36f"
+      ],
+      ".claude/skills/do-math/scripts/do_math/questions.py": [
+        "e3bf7bc8a1e4f7f553b69af1767c330a91d1ae6c7ac5c70a61f99a33cfe09578",
+        "9725c6793954a8b063f3e42f995f7e1a6cffa7d0b329922766359ea408ef53e5"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/engine_context.py": [
+        "dbfabd81f4201ec725df2606ce0f0ef6235ce200fff28d94a2b7a1be69a253e6",
+        "994ba364239b9d260cd470259446393ff102c6e19d326845fb16f9d678b5e0db"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py": [
+        "42b9e9d527b8de663c814ce2f7495b557a2add80b4377ba03463e162daa93f6a",
+        "3eee89126072c70663eaa214a4acb789b0edefb9bb480edd0f6811ba88ce8736"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_storage_record_queries.py": [
+        "2f5f54f25624fa7435564915ae6381c77bfeb237dc4c80be89b6eb00a61740fa",
+        "e8c26028d0f64890a770800cf02a3e6f2364bba52bd4c087469848c013d2f6d6"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/doc_code.py": [
+        "2fb0bcd3e96732552eb7de6941f86b827e37eb91b2e0e629f630cb978d278948",
+        "9e5329192653b0d0ecef1b5baeec1d2d672c83c4e6511506cd27113748051cc4"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_storage_record_queries.py": [
+        "2f5f54f25624fa7435564915ae6381c77bfeb237dc4c80be89b6eb00a61740fa",
+        "e8c26028d0f64890a770800cf02a3e6f2364bba52bd4c087469848c013d2f6d6"
+      ],
+      ".claude/skills/do-math/scripts/tests/structure/test_schema_builders.py": [
+        "41e2bccdf44b5d125c0c08a25a7db0101bc41ac6a12a8cbd72edddadafb9b494",
+        "527f3cf047c5367effbeab9b7b65ce0f557713ea86c56a542b3ca282e77b43ff"
+      ],
+      ".claude/skills/do-math/scripts/이음새-정본.md": [
+        "27adba46e5842c3bb251f7f3b1bad4fda6f7cf78123769846d74bfce3b192d31",
+        "430f122dda4f66d39aa19b21b9f2c88335a963a3699dd9ca139bf5e4bce04025"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_governance_decision_currentness.py": [
+        "cc78f5489244691d38748abd0ace08157e267f2660a13fdc9c8502fcdab10db8",
+        "c9e8a7631d0f52ecff80bf9c36f3610d7759a934b9a8d7faea8888a0da95df93"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_planning_preparation_transitions.py": [
+        "e719adaf8f5ee0c9240e8715d2408abc31835518e22da4b4a4d8c302950b5b54",
+        "69a1698b5a837504ffe7cf4ae244ccdb85bfc751186706d482371448f7fdc418"
+      ],
+      ".agents/skills/do-math/scripts/tests/support/role_answers.py": [
+        "7161fcec420911e7f43a746ed871fc40d9cb466eab72ce5315fb0a31455007a0",
+        "587e58601612bcac4dd45e07a8aeeed9cf29e9746dc03c6850cb3d5844be0bdb"
+      ],
+      ".agents/skills/do-math/scripts/do_math/revisions.py": [
+        "30083984f804653f7875b599625e9f9e4234c52bedd6caacbfb02a13cae6bac8",
+        "774f980ddbe5d28d6d75951450e5573625bcef7d9304836b36c96ce6662109c2"
+      ],
+      ".claude/skills/do-math/scripts/tests/unit/test_submission_contract_checks.py": [
+        "32749a7ae5d4252275d4e3a1037722c1fc2608232c613e8f9c3af1fe5f0e5009",
+        "8d7265448ae6b3f7c6d2be4919f2aa202c2cbdbd650eff64c63f1be69d2e771e"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_provider_collection.py": [
+        "cc4ac9f3ec4198c0b2186579249ec97c43313ea02ddda12055a9d83df525b392",
+        "51b077755da0628cd87c2ed7828256edf8eb8bccd129115c39d422ad56242dcd"
+      ],
+      ".agents/skills/do-math/scripts/tests/unit/test_engine_trace_report_corruption.py": [
+        "63ac17d1b88dd01f707dc5d43083c74f2d71ea4ebfb96a4b98505e4f7b4fecd0",
+        "7fc3c693ac37a11a1787744e88320e7024f40d236257a7a823ad0b746e74a53b"
+      ],
+      ".claude/skills/do-math/scripts/tests/support/academic_scenes.py": [
+        "672e74cd4074e3e1647913236ab88e86234d0296da3eafdd71b79406a4266be3",
+        "b42e0b0a8d7e89f38240a73f370dbe037fc0f7292f8d10b81be51b667020b041"
+      ],
+      ".claude/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py": [
+        "3c4667f3e123f0cee6bba9963c6e01f2e44f9e9fba6688f4a3d9c14bc73aa77e",
+        "8e8a36c3abefb7d956d0f905f15507731a9374ab41f01fd3e2d53e4ff3a51e9c"
+      ],
+      ".agents/skills/do-math/scripts/tests/sim/test_submission_receiver.py": [
+        "a3c1c94187b9e3b4a6cc901bc5c18052a212f11826ba44d2c63a4af7e28b1dc9",
+        "76d467d0e7131ca41641f323a5818c55a5a01d696beee0a92753910f5af71be0"
+      ]
+    }
+  },
+  "integrated_bytes_match": true,
+  "integrated_final_python_hash_count": 930
+}

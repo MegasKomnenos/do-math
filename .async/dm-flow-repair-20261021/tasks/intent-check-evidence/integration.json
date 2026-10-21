@@ -1,0 +1,202 @@
+{
+  "task": "intent-check-evidence",
+  "files": [
+    ".claude/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".claude/skills/do-math/scripts/tests/support/intent_evidence.py",
+    ".claude/skills/do-math/scripts/do_math/wait_rules.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/governance_engine.py",
+    ".agents/skills/do-math/계약/의도-해석.md",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_semantic_check_rejection.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+    ".agents/skills/do-math/scripts/do_math/role_input_requirements.py",
+    ".agents/skills/do-math/scripts/do_math/governance.py",
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+    ".claude/skills/do-math/scripts/do_math/governance.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/계약/의도-해석.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_semantic_check_rejection.py",
+    ".agents/skills/do-math/scripts/do_math/submission.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_intent_check_evidence.py",
+    ".agents/skills/do-math/scripts/tests/support/intent_evidence.py",
+    ".claude/skills/do-math/scripts/tests/support/storage_execution_pairs.py",
+    ".agents/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+    ".claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+    ".agents/skills/do-math/scripts/tests/support/storage_action_pairs.py",
+    ".claude/skills/do-math/references/입력-소비자.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_intent_check_evidence.py",
+    ".agents/skills/do-math/scripts/do_math/wait_rules.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_import_seal_rejection.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_imports.py",
+    ".claude/skills/do-math/scripts/do_math/submission.py",
+    ".claude/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py",
+    "docs/do-math/flow-repair-20261021/intent-check-evidence.md",
+    ".agents/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_import_seal_rejection.py",
+    ".agents/skills/do-math/references/입력-소비자.md"
+  ],
+  "changes": {
+    ".claude/skills/do-math/scripts/tests/support/storage_action_pairs.py": [
+      "d068866c988235ecd817e5ac58552ae096dee41fbf5edd88272c6e1cd278a5cf",
+      "473a790fe1339a435929733d0acf2822ba156b7e15549e8482854f0d9601f740"
+    ],
+    ".claude/skills/do-math/scripts/tests/support/intent_evidence.py": [
+      null,
+      "7b5729534f9c9da8606059ba8d3eceffe5d97cbd31548c0c7785eff80f06aab0"
+    ],
+    ".claude/skills/do-math/scripts/do_math/wait_rules.py": [
+      "847411a47ed2e282fabd6acf703e5794fbcb12fe2c4be4da4d9752f3d34210ab",
+      "2d92ec9c79ff8452be82fb53c9d74beab5ef72f792b0ddbbf75b9bd29d7a5c2a"
+    ],
+    ".agents/skills/do-math/scripts/do_math/core_engine.py": [
+      "68d77b89dfcf577862b21ed63932c919a6c80af981e0a78ed9eb8429733f4a12",
+      "585b442e29ab22187c4b0b37e46ccbc51ac4656bd6d7244821e6534278080cdc"
+    ],
+    ".agents/skills/do-math/scripts/do_math/governance_engine.py": [
+      "6832c503d34b8d1c201cb8ea97863ec95653fcaea260af7fc016e09d1c589612",
+      "bcdf65606764f7d0d568e5421976be15655f05df998ad6842774776e95dd2fbc"
+    ],
+    ".agents/skills/do-math/계약/의도-해석.md": [
+      "2087046d48d1b7f9f972fc308f60564ee1f7413283e631de53870592ce031e9a",
+      "ac7da0e6a28f802bcb76a037e9b401e2bd899d507f4e69a3b27876b46c8b73c1"
+    ],
+    ".claude/skills/do-math/scripts/do_math/core_engine.py": [
+      "68d77b89dfcf577862b21ed63932c919a6c80af981e0a78ed9eb8429733f4a12",
+      "585b442e29ab22187c4b0b37e46ccbc51ac4656bd6d7244821e6534278080cdc"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_semantic_check_rejection.py": [
+      "5aa00f564d5cfd6118a1e50eb6651deefd88c901a48b63ef3b9de58fce6527c7",
+      "e319f649b09f41f633ea641a3acf3967a726f5cc3c3dcb897d57441f38053b97"
+    ],
+    ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py": [
+      "d6c1dea62134594bb2c4b2922f9f22f56d19f6ca9d21819ec98949fdd579d869",
+      "babd4451a97aaf9c8cefc3215cbd1f47d6deb5d8ab68227e77387e7b92a96c04"
+    ],
+    ".agents/skills/do-math/scripts/tests/support/storage_execution_pairs.py": [
+      "08397da67a4486232d831795140cf6f94a046a6ab18f144d6749fceefb4168af",
+      "af71899904b3c9471d79310c97bf4e4a90ea367536ff09b60b9089fc5bdb5b70"
+    ],
+    ".claude/skills/do-math/scripts/이음새-정본.md": [
+      "c98c1b1b237fe5736c03c16a61c8414483519df7f6fcfc84739b560562e4265e",
+      "27adba46e5842c3bb251f7f3b1bad4fda6f7cf78123769846d74bfce3b192d31"
+    ],
+    ".claude/skills/do-math/scripts/do_math/governance_engine.py": [
+      "6832c503d34b8d1c201cb8ea97863ec95653fcaea260af7fc016e09d1c589612",
+      "bcdf65606764f7d0d568e5421976be15655f05df998ad6842774776e95dd2fbc"
+    ],
+    ".agents/skills/do-math/scripts/do_math/role_input_requirements.py": [
+      "08e101656593ff0bc61ef257b7d5d787376d1a7dcf280a8ab95b3df8adebaf9b",
+      "db6dfd1a30e768eb0496d0eb2c98fc436dc65f145b78dacb4290cdf90c8f5c5a"
+    ],
+    ".agents/skills/do-math/scripts/do_math/governance.py": [
+      "0e9f16098deccb8fd6101870a1ad8c36a460658f45b9009dbd2128a906073c49",
+      "8d892132fa6e1540d15d6297c4579d97d2bdea2757a8238e931e44d5c93e278e"
+    ],
+    ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py": [
+      "6c819f07b909a28479d58ec0a4cf06d27d99c9af20ed2a9b8d3c3efe4afed591",
+      "5fa2aa8dbb89983508142ca33296a89d9487b640d1efbe4e4e192e439ce4e35d"
+    ],
+    ".agents/skills/do-math/scripts/do_math/record_schemas/schemas.py": [
+      "6c819f07b909a28479d58ec0a4cf06d27d99c9af20ed2a9b8d3c3efe4afed591",
+      "5fa2aa8dbb89983508142ca33296a89d9487b640d1efbe4e4e192e439ce4e35d"
+    ],
+    ".claude/skills/do-math/scripts/do_math/governance.py": [
+      "0e9f16098deccb8fd6101870a1ad8c36a460658f45b9009dbd2128a906073c49",
+      "8d892132fa6e1540d15d6297c4579d97d2bdea2757a8238e931e44d5c93e278e"
+    ],
+    ".agents/skills/do-math/scripts/이음새-정본.md": [
+      "c98c1b1b237fe5736c03c16a61c8414483519df7f6fcfc84739b560562e4265e",
+      "27adba46e5842c3bb251f7f3b1bad4fda6f7cf78123769846d74bfce3b192d31"
+    ],
+    ".claude/skills/do-math/계약/의도-해석.md": [
+      "2087046d48d1b7f9f972fc308f60564ee1f7413283e631de53870592ce031e9a",
+      "ac7da0e6a28f802bcb76a037e9b401e2bd899d507f4e69a3b27876b46c8b73c1"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_semantic_check_rejection.py": [
+      "5aa00f564d5cfd6118a1e50eb6651deefd88c901a48b63ef3b9de58fce6527c7",
+      "e319f649b09f41f633ea641a3acf3967a726f5cc3c3dcb897d57441f38053b97"
+    ],
+    ".agents/skills/do-math/scripts/do_math/submission.py": [
+      "cd9b7fdd1f456b3beb60b91b779c6103b20954922e3d025fd1a8d1aa08ffc892",
+      "76c92e5b850ab86d6664e65f08d87c0ea70930362175fc11371e1fce210f325e"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_intent_check_evidence.py": [
+      null,
+      "e2d08e025d1e07eea8f6760bdb19854bac19b8321486fcdae50fcb0599b3da06"
+    ],
+    ".agents/skills/do-math/scripts/tests/support/intent_evidence.py": [
+      null,
+      "7b5729534f9c9da8606059ba8d3eceffe5d97cbd31548c0c7785eff80f06aab0"
+    ],
+    ".claude/skills/do-math/scripts/tests/support/storage_execution_pairs.py": [
+      "08397da67a4486232d831795140cf6f94a046a6ab18f144d6749fceefb4168af",
+      "af71899904b3c9471d79310c97bf4e4a90ea367536ff09b60b9089fc5bdb5b70"
+    ],
+    ".agents/skills/do-math/scripts/do_math/record_schemas/__init__.py": [
+      "d6c1dea62134594bb2c4b2922f9f22f56d19f6ca9d21819ec98949fdd579d869",
+      "babd4451a97aaf9c8cefc3215cbd1f47d6deb5d8ab68227e77387e7b92a96c04"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_imports.py": [
+      "6a159ac8ffd013d1b63d822e3363c69216369cf7051e4fa1f116b7c197e58c57",
+      "18bfd6b067d3c27f6a7f946136a3b56fda2c2a356237c069a0ce0976418d8b60"
+    ],
+    ".claude/skills/do-math/scripts/do_math/role_input_requirements.py": [
+      "08e101656593ff0bc61ef257b7d5d787376d1a7dcf280a8ab95b3df8adebaf9b",
+      "db6dfd1a30e768eb0496d0eb2c98fc436dc65f145b78dacb4290cdf90c8f5c5a"
+    ],
+    ".agents/skills/do-math/scripts/tests/support/storage_action_pairs.py": [
+      "d068866c988235ecd817e5ac58552ae096dee41fbf5edd88272c6e1cd278a5cf",
+      "473a790fe1339a435929733d0acf2822ba156b7e15549e8482854f0d9601f740"
+    ],
+    ".claude/skills/do-math/references/입력-소비자.md": [
+      "bbd24b5c8ea7e8f80cf3c6d23e1f9e7048a6c85915036d008b946196ba5f40b4",
+      "02cf7e576196893832aee2839a424ff8755bdf7440fe996455a298d2034ae54c"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_intent_check_evidence.py": [
+      null,
+      "e2d08e025d1e07eea8f6760bdb19854bac19b8321486fcdae50fcb0599b3da06"
+    ],
+    ".agents/skills/do-math/scripts/do_math/wait_rules.py": [
+      "847411a47ed2e282fabd6acf703e5794fbcb12fe2c4be4da4d9752f3d34210ab",
+      "2d92ec9c79ff8452be82fb53c9d74beab5ef72f792b0ddbbf75b9bd29d7a5c2a"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_import_seal_rejection.py": [
+      "5483b3cf28356688b854071b7e3be27bc8892938ce8a267187a92ea686df3cc5",
+      "391701f41aa6aabcdaff202d826f816f43d40b5bf9a5b60b8f714072a21fdbcf"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_governance_imports.py": [
+      "6a159ac8ffd013d1b63d822e3363c69216369cf7051e4fa1f116b7c197e58c57",
+      "18bfd6b067d3c27f6a7f946136a3b56fda2c2a356237c069a0ce0976418d8b60"
+    ],
+    ".claude/skills/do-math/scripts/do_math/submission.py": [
+      "cd9b7fdd1f456b3beb60b91b779c6103b20954922e3d025fd1a8d1aa08ffc892",
+      "76c92e5b850ab86d6664e65f08d87c0ea70930362175fc11371e1fce210f325e"
+    ],
+    ".claude/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py": [
+      null,
+      "25942d904e36541c98e9f0a685565a539e3222f2b3583e027582615a7f748a80"
+    ],
+    "docs/do-math/flow-repair-20261021/intent-check-evidence.md": [
+      null,
+      "9d233adebd70fd3b1c8e29571cc3bbcda174f2122ccfbdedac6cf137dbf9ff8d"
+    ],
+    ".agents/skills/do-math/scripts/tests/flows/test_intent_check_evidence.py": [
+      null,
+      "25942d904e36541c98e9f0a685565a539e3222f2b3583e027582615a7f748a80"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_governance_import_seal_rejection.py": [
+      "5483b3cf28356688b854071b7e3be27bc8892938ce8a267187a92ea686df3cc5",
+      "391701f41aa6aabcdaff202d826f816f43d40b5bf9a5b60b8f714072a21fdbcf"
+    ],
+    ".agents/skills/do-math/references/입력-소비자.md": [
+      "bbd24b5c8ea7e8f80cf3c6d23e1f9e7048a6c85915036d008b946196ba5f40b4",
+      "02cf7e576196893832aee2839a424ff8755bdf7440fe996455a298d2034ae54c"
+    ]
+  }
+}

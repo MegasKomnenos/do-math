@@ -1,0 +1,26 @@
+{
+  "id": "academic-contract-guidance",
+  "kind": "work",
+  "depends_on": [
+    "final-goal-review"
+  ],
+  "writes": [
+    ".claude/skills/do-math/계약/후보-준비.md",
+    ".claude/skills/do-math/계약/작업-계약-검토.md",
+    ".claude/skills/do-math/references/모델과-실행예산.md",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/계약/후보-준비.md",
+    ".agents/skills/do-math/계약/작업-계약-검토.md",
+    ".agents/skills/do-math/references/모델과-실행예산.md",
+    ".agents/skills/do-math/references/CLI-실행-계약.md"
+  ],
+  "inputs": [
+    "C:\\math\\.async\\dm-flow-repair-20261021\\user-messages.md",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\report.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\assessment.md",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\evidence\\contract-consistency.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\managers\\0009\\decision.md"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

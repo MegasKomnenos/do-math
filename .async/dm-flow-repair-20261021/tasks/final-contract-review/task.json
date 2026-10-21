@@ -1,0 +1,21 @@
+{
+  "id": "final-contract-review",
+  "kind": "review",
+  "depends_on": [
+    "academic-contract-guidance"
+  ],
+  "writes": [],
+  "inputs": [
+    "C:\\math\\.async\\dm-flow-repair-20261021\\user-messages.md",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\report.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\assessment.md",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\final-goal-review\\evidence",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\academic-contract-guidance\\report.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\academic-contract-guidance\\integration.json",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\academic-contract-guidance\\evidence",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\managers\\0009\\decision.md",
+    "C:\\math\\.async\\dm-flow-repair-20261021\\managers\\0009\\verification-summary.json"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

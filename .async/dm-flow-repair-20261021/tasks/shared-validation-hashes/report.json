@@ -1,0 +1,35 @@
+{
+  "status": "partial",
+  "summary": "R4~R5 제품 경로를 수리했다. 계획 역할의 전체 검사 과제 catalog에 원장 의미 해시를 유지하고, 사전·중앙·preview·적용이 같은 inspect_bundles로 대상 존재와 고정 previous_hashes를 검사한다. 누락·잘못된 선언을 출력 수리로 보내고, 실제 내용·사용 효력·권한 변경은 CurrentnessChanged와 refresh_decision으로 구별했다. 검사 입력 결함은 기존 운영 진단, 저장·환경·게시 실패는 엔진 소유로 유지했다. 공식 미러와 이음새 문서를 맞췄다. 쓰기 허용 범위 밖 기존 영향 검토 시험의 입력/신호 계약 갱신이 남아 partial이다.",
+  "changes": [
+    ".agents/skills/do-math/scripts/do_math/context_store.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/do_math/integration.py",
+    ".agents/skills/do-math/scripts/do_math/submission.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_currentness.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/do_math/context_store.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/integration.py",
+    ".claude/skills/do-math/scripts/do_math/submission.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_currentness.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    "docs/do-math/flow-repair-20261021/shared-validation-hashes.md"
+  ],
+  "verification": "공식 run_tests.py를 단일 프로세스로 사용했고 실행 중 소스를 편집하지 않았다. evidence/before-tests/report.json에서 수정 전 2개 실패·1개 오류로 해시 필드 소실과 오분류를 관측했다. 원 실행의 문맥·응답·확장·reader 과제 상세를 복사하고 SHA-256을 기록해 evidence/replay_hashes.py로 baseline integration.py와 수리판을 대조했다(audit-replay.json): 시작판 missing hash는 premises_changed, 수리판의 해시가 있는 고정 catalog에서 같은 응답은 output_rejected, 정확한 reader hash는 공통 검사 통과, 실제 live 내용 변경은 premises_changed였다. repair-tests의 unit 선택 65개 통과; consumer-fixed-tests 12개 통과로 실제 역할 입력/설치 producer 도구/중앙 검사/공통 적용과 전체 catalog, 사용 효력 정지, grant 회수·paused 보존을 확인했다. handoff-tests 36개 중 35개 통과: 실제 후보 준비·계약 교체·편입 게시와 중앙/preview/부분 편입/게시 재시도. 그 실행의 남은 1개는 허용 파일의 옛 오류 문구 단언을 CurrentnessChanged.changes로 수정해 impact-consumer-fixed에서 통과했다. final-owner-tests 6개 모두 통과해 receipt owner 변경을 확인했고, 마지막 live 대상 소실의 판정 순서 변경은 final-live-target-tests 7개 통과로 확인했다. native capture의 사용자 정지/paused/입력 변경/grant 회수/종료 장벽 미확인 사례도 통과했다. outside-scope-consumers의 기존 영향 검토 시험 2개는 실패했으며 허용 범위 밖이므로 수정하지 않았다. 공식 build_skill_mirrors.py 생성 및 --check가 성공했다. 전체 회귀·실제 모델·Lean 호출과 과거 응답의 현행 전체 schema 적용은 수행하지 않았다. 상세 범위와 반복 실행의 fixture 수정 이유는 docs/do-math/flow-repair-20261021/shared-validation-hashes.md에 기록했다.",
+  "findings": [
+    "후속 필수 writes: .claude/skills/do-math/scripts/tests/unit/test_knowledge_impact_review.py 및 대응 .agents 미러. ImpactBundleTests.test_previous_hashes_cover_the_exact_current_mutation_targets의 옛 ValueError 문자열 단언은 명시적 CurrentnessChanged.changes 단언으로 갱신해야 한다. 실제 변경 표본은 처음부터 틀린 선언 대신 올바른 고정 선언 뒤 live 기록을 바꾸어 구성해야 한다. 두 changed subTest의 실패를 직접 확인했다.",
+    "ImpactReviewTests.test_review_required_is_a_waiting_disposition_not_a_producer_retry는 mutation 대상이 없는 일반 research_work_context를 넘겨 새 공통 검사에서 반려된다(실행 실패 확인). 같은 파일 test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence의 적용·재전달 호출도 정적으로 같은 결손을 확인했다(이 세 번째 시험은 미실행). 실제 원판 mutation 대상의 content_sha256을 가진 고정 catalog를 만들고 재전달에도 그 문맥을 재사용해야 한다. 필요하면 tests/support/knowledge_impact.py:ImpactCase와 미러를 후속 범위에 추가한다.",
+    "고정 입력 구조/참조/해시의 정본은 integration.inspect_bundles다. 선언 누락 집합은 integration._missing_previous_hashes 하나를 fixed/live 검사가 공유한다. bundle_impact_request는 fixed 검사를 통과한 선언에 대해 현재 원장을 대조하는 추가 경계다. 직접 호출 시 fixed 검사를 먼저 충족해야 한다. 공용 seams 갱신 시 이 전제를 유지한다.",
+    "integration.currentness는 명시적 input_basis.CurrentnessChanged에서만 나온다. 실제 내용, 사용 효력, 권한 변화의 신호를 일반 제출 오류와 구별했다. 권한 재판단은 새 grant나 paused 해제를 주지 않는다. integration.input_context는 input_failure이며 생산자 출력 수리를 만들지 않고 기존 submission_failure/운영 진단으로 간다. 새 R2~R3 상태·개정 처분은 설계하지 않았다.",
+    "원 연구·HOLD·예약·원 감사 자료와 canonical source_repo 및 다른 task의 파일은 수정하지 않았다. 시험기가 자동 갱신한 양쪽 .timings.json은 baseline.json/objects에서 복원한 시작판 바이트로 되돌려 제품 변경에서 제외했다. 미러 생성 중 다른 스킬 변경이나 .agents/diff 변경은 없었다."
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "shared-validation-hashes": {
+    "tests": [
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\before-tests\\report.json",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2,
+          "passed": 2,
+          "error": 1
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\consumer-fixed-tests\\report.json",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\consumer-tests\\report.json",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 4,
+          "failed": 2
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\final-live-target-tests\\report.json",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\final-owner-tests\\report.json",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\handoff-tests\\report.json",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 35,
+          "failed": 1
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\impact-consumer-fixed\\report.json",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\outside-scope-consumers\\report.json",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2
+        }
+      },
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\shared-validation-hashes\\evidence\\repair-tests\\report.json",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 66,
+          "failed": 1
+        }
+      }
+    ],
+    "mirrors": [
+      {
+        "canonical": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/do_math/core_engine.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/unit/test_integration_currentness.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/이음새-정본.md",
+        "equal": true
+      }
+    ]
+  },
+  "windows-patch-guidance": {
+    "tests": [
+      {
+        "path": ".async\\dm-flow-repair-20261021\\tasks\\windows-patch-guidance\\evidence\\selected-tests\\report.json",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 54
+        }
+      }
+    ],
+    "mirrors": [
+      {
+        "canonical": ".claude/skills/do-math/references/공통-실행.md",
+        "equal": true
+      },
+      {
+        "canonical": ".claude/skills/do-math/scripts/tests/unit/test_planning_reading_map.py",
+        "equal": true
+      }
+    ]
+  }
+}

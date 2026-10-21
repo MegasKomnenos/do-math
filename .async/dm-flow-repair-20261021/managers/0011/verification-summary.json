@@ -1,0 +1,41 @@
+{
+  "result": "passed",
+  "review_report_check": "PASS report (manager command exit 0)",
+  "review_integration": {
+    "task": "final-contract-review",
+    "files": [],
+    "changes": {}
+  },
+  "current_shared_source_matches_review_baseline_files": 3420,
+  "source_mismatches": [],
+  "previous_review_change_paths": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/references/모델과-실행예산.md",
+    ".agents/skills/do-math/계약/작업-계약-검토.md",
+    ".agents/skills/do-math/계약/후보-준비.md",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".claude/skills/do-math/references/모델과-실행예산.md",
+    ".claude/skills/do-math/계약/작업-계약-검토.md",
+    ".claude/skills/do-math/계약/후보-준비.md"
+  ],
+  "canonical_mirror_pairs_matching": 4,
+  "static_code_excerpts_matching": 15,
+  "saved_prompt_current_document_comparisons": 4,
+  "final_review_covers_all_work": true,
+  "running_or_unexited_tasks": {},
+  "all_task_ids": [
+    "role-flow-design",
+    "shared-validation-hashes",
+    "batch-payload-reads",
+    "windows-patch-guidance",
+    "codex-refresh-diagnostics",
+    "role-question-flow",
+    "intent-check-evidence",
+    "integration-repair-check",
+    "final-goal-review",
+    "academic-contract-guidance",
+    "final-contract-review"
+  ],
+  "decision": "Accept final-contract-review; user development goals R1-R7 met within recorded scope; publish complete.",
+  "limits": "Static and saved-evidence comparison only. No new product test, prompt generation, full regression, benchmark or live model/scholarly/Lean/recovery run. Prior cross-edition test counts are not a final-edition full regression. Original research remains paused; external Codex timeout cause and future model compliance remain unverified."
+}

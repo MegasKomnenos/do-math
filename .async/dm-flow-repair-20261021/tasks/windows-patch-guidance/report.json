@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "summary": "기존 common 지급 문서인 references/공통-실행.md에 PowerShell Get-Content -LiteralPath·호출 연산자 &·공백 있는 실행파일/스크립트 인수, cmd 실제 명령/바깥 프로세스/PowerShell 호출 구분, JSON wire escape와 해석 후 문자열, Codex apply_patch의 한 파일 작업·여러 hunk 및 거부 뒤 읽기/재제출 절차를 추가했다. 새 필수 문서·입력 필드 없이 기존 지급 경로를 사용했고 공식 생성기로 대응 Codex 사본을 생성했다. 원 명령 실패 5건과 패치 stderr 2건을 대조하고 실제 호출·출력·도구 계약·미확인 경계를 evidence와 결과 문서에 보존했다.",
+  "changes": [
+    ".claude/skills/do-math/references/공통-실행.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_planning_reading_map.py",
+    ".agents/skills/do-math/references/공통-실행.md",
+    ".agents/skills/do-math/scripts/tests/unit/test_planning_reading_map.py",
+    "docs/do-math/flow-repair-20261021/windows-patch-guidance.md"
+  ],
+  "verification": "audit의 실패 5건을 원 stdout.jsonl의 command/exit_code/output과 동일 비교했다(evidence/original-boundaries.json). task 전용 파일과 복사한 Python으로 PowerShell 읽기·버전·공백 있는 실행파일/스크립트 및 단일 인수 전달을 exit 0으로 확인했다. cmd raw process 호출은 정상 읽기/버전/스크립트 exit 0, literal 역슬래시-따옴표 두 사례 exit 1이었다(evidence/cmd-raw-probes.json). 실제 tools.apply_patch로 중복 Update 거부를 재현하고 파일 미변경을 읽은 뒤 한 Update 두 hunk를 성공 적용·재독했다(evidence/tool-probes.json). prompt_documents/render_prompt로 정본·Codex 사본의 10개 역할씩 총 20개 실제 프롬프트에 공통 문서의 정확한 전문과 새 안내가 포함됨을 확인했다(evidence/prompt-delivery.json). 기존 읽기 시험에 설치 문서 전달 검사 하나를 추가하고 공식 run_tests.py의 unit.test_planning_reading_map 및 structure.test_doc_code 선택을 한 번 실행해 54 passed, complete=true, successful=true, exit 0을 확인했다(evidence/selected-tests/report.json). 공식 mirror build는 2파일 갱신, --check는 1388파일 드리프트 없음 exit 0이었다. 미래 역할의 준수, 과거 실패 요청의 재실행 성공, 모든 cmd wrapper의 호환성은 검증하지 않았다.",
+  "findings": [
+    "원 패치 거부 2건의 stderr에는 실제 도구 apply_patch, multiple operations target 오류와 대상 파일이 보존됐지만, stdout file_change에는 path/kind/status만 있어 거부된 패치 요청 본문은 확인할 수 없었다. 해당 thread의 영구 rollout을 찾지 못했고 현행 worker_request.codex_argv는 --ephemeral을 사용한다. 과거 요청이 두 Update인지 Delete+Add인지 확정하지 않았으며 현재 도구의 별도 작은 재현으로 안내 계약을 확인했다.",
+    "이번 exec_command에서 shell=cmd.exe로 정상 문자열을 직접 전달한 두 시도는 실패했지만, raw cmd process와 PowerShell에서의 cmd 호출은 성공했다. 내부 wrapper argv를 관측하지 않아 원인을 단정하지 않는다. 실제 cmd 명령, JSON 인코딩, 외부 호출층을 구분하는 예시와 대조 결과를 안내·evidence에 남겼다.",
+    "common 읽기 대응표와 contracts.ROLES/reading_map/prompt_documents/render_prompt를 재사용했다. 독립 운영·설치 복구의 고정 프롬프트는 이 10개 내부 역할 확인 범위에 포함하지 않는다. 역할 일반 책임 개정은 후속 R1 작업 범위다.",
+    "읽기 시험 하나의 0.375초가 0.2초 권고 예산을 초과했다는 실행기 표시는 있었으나 시험과 최종 실행은 성공했다. 실행기가 갱신한 범위 밖 .timings.json은 task baseline에서 복원해 제품 변경에 포함하지 않았다.",
+    "원 연구/HOLD/예약/graphify, canonical source_repo 및 다른 task 파일은 변경하지 않았다. 공식 미러 외 다른 스킬과 .agents/diff 변경도 없다. 영구 근거는 C:\\math\\.async\\dm-flow-repair-20261021\\tasks\\windows-patch-guidance\\evidence에 보존했다."
+  ]
+}

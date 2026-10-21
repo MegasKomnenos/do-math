@@ -1,0 +1,14 @@
+{
+  "confirmed_at": "2026-10-20T17:31:55.662590+00:00",
+  "service": "C:/math/services/async-development",
+  "records": "C:\\math\\.async\\dm-flow-repair-20261021",
+  "scheduled_task": "AsyncDev-DmFlowRepair-20261021",
+  "runner_pid": 21608,
+  "first_manager_pid": 12328,
+  "first_manager_number": 1,
+  "first_manager_start_observed": true,
+  "session_log": "C:\\math\\.async\\dm-flow-repair-20261021\\managers\\0001\\session.log",
+  "next_owner": "async-development manager and assigned tasks",
+  "research_hold_preserved": true,
+  "initial_input_manifest": "C:\\math\\.async\\dm-flow-repair-20261021\\runtime\\initial-input-manifest.json"
+}

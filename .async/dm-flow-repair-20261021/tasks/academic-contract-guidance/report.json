@@ -1,0 +1,23 @@
+{
+  "status": "complete",
+  "summary": "F1의 실제 지급 문서 불일치를 네 정본 문서와 공식 미러에서 수리했다. 후보 준비의 기존 과제 보충 절을 상세 정본으로 유지하면서, 필수 판단 자료 부족 unresolved는 기존 평가·관찰 규칙과 같은 계약을 보존하는 실제 질문 근거 대기, 실제 revision_required는 contract가 없을 때 지적된 revision_fields만 해당 history와 판본·해시·원 검토 참조에 보존해 분리·보충, contract 포함 시에는 사용자 원 계약을 보존하는 일반 개정 요청 처리로 구별했다. 기존 미평가·학술 규칙 누락 보충과 보충 뒤 새 독립 검토, 잘못된 AI 요청의 근거 있는 기각·자료/실제 사용자 결정 대기 및 사용자 권위를 유지했다. 작업 계약 검토·모델과 실행예산·CLI의 요약과 링크를 같은 의미로 고치고, CLI에서 contract_revision/contract_review_input 및 요청 ID·실행 ID 조회를 실제 후속에 맞췄다. 공식 생성기로 대응 미러 네 개를 갱신했으며 제품 Python/schema/시험은 수정하지 않았다.",
+  "changes": [
+    ".claude/skills/do-math/계약/후보-준비.md",
+    ".claude/skills/do-math/계약/작업-계약-검토.md",
+    ".claude/skills/do-math/references/모델과-실행예산.md",
+    ".claude/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/계약/후보-준비.md",
+    ".agents/skills/do-math/계약/작업-계약-검토.md",
+    ".agents/skills/do-math/references/모델과-실행예산.md",
+    ".agents/skills/do-math/references/CLI-실행-계약.md"
+  ],
+  "verification": "workspace의 core_engine.CoreEngineMixin._apply(task_contract_review), planning_engine.PlanningEngineMixin._ensure_model_assessments/_finish_assessment_preparation, model_policy.assessment_basis, question_engine._resume_contract_review_waits/question_view, revisions.submission_errors, revision_engine의 기각·독립 재검토, reporting.task_status와 사람용 상태 출력을 읽어 수정 문구와 정적으로 대조했다. evidence/static-comparison.md와 code-and-scope.json에 판단·정의·발췌·SHA를 남겼다. evidence/verify_delivery.py를 .claude와 .agents에 각각 실제 실행해 각 트리의 contracts.reading_map/prompt_documents/render_prompt를 호출했다. 후보 준비와 작업 계약 검토 각각의 8개 문서에서 정확 content·SHA·프롬프트 내 전문 포함을 단언해 네 역할/트리 조합 모두 passed였다. exact path/문구·SHA·공급 목록과 생성 프롬프트는 evidence/delivery-{claude,agents}.json 및 prompt-*.txt에 보존했다. 공식 build_skill_mirrors.py --target .agents는 0 생성/4 갱신/0 삭제(1394파일), --check --target .agents는 drift 없음(1394파일)을 출력했다. 읽기 전용 workspaces.changes와 baseline/objects 대조로 실제 변경이 배정된 8파일과 같고 정본/미러 네 쌍 bytes가 동일함을 확인했다. 시작판 대비 diff는 evidence/assigned-documents.diff다. 이 검증은 문서 의미의 정적 대조와 실제 문서 지급 확인이며 런타임 전이·모델 준수 검증이 아니다. 제품 시험·전체 회귀·live 모델/학술/Lean 호출은 실행하지 않았다. 마지막으로 python -B C:/math/services/async-development/check.py report C:/math/.async/dm-flow-repair-20261021 academic-contract-guidance를 직접 실행해 PASS report와 exit 0을 확인했다.",
+  "findings": [
+    "contract가 다른 revision_fields와 함께 포함돼도 실제 _ensure_model_assessments는 contract 분기를 먼저 처리하고 continue하므로 평가·규칙 분리로 보내지 않는다. 네 문서가 이 우선 분기를 설명한다.",
+    "unresolved의 재검토 조건은 같은 계약의 관련 고정 질문 scope 전부 해소와 읽지 않은 해소 영수증 또는 실제 review basis 변화다. 기존 평가·규칙을 삭제하거나 자료 부족을 AI 저작 결함으로 취급하는 지시는 제거했다.",
+    "AI의 dismissed는 잘못된 요청 출처만 근거 있게 종결한다. 사용자 revise 권위, 사용자 원 계약 변경의 실제 결정 경로, 새 독립 계약 승인 및 연구 완료는 별도로 유지된다. 새 보편 증명·승인 절차나 모든 요청의 재심사 의무는 추가하지 않았다.",
+    "CLI 문서는 두 역할의 직접 reading_map에는 없으므로 CLI 전문의 역할 프롬프트 공급을 주장하지 않는다. CLI는 실제 대기·상태 투영·질문 조회 정의와 정적으로 대조했고 정본/공식 미러 bytes를 확인했다.",
+    "추가 제품 Python/schema 수리가 반드시 필요한 사실은 확인하지 못했다. 이번 complete는 배정된 문서 수리와 필요한 확인의 완료다. 전체 사용자 목표 완료 판단은 수정 수용 뒤 final-contract-review와 manager가 기존 전체 리뷰의 확인 범위·한계를 유지해 수행한다.",
+    "수정은 자기 workspace의 배정 writes와 자기 task report/evidence에 한정했다. canonical source_repo·다른 task·공용 맥락·서비스 state/queue·원 연구/감사/HOLD/예약은 변경하거나 재개하지 않았으며 graphify도 갱신하지 않았다."
+  ]
+}

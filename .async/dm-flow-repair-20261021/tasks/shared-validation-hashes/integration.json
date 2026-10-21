@@ -1,0 +1,112 @@
+{
+  "task": "shared-validation-hashes",
+  "files": [
+    ".agents/skills/do-math/scripts/이음새-정본.md",
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/do_math/integration.py",
+    ".claude/skills/do-math/scripts/do_math/context_store.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_currentness.py",
+    ".claude/skills/do-math/scripts/이음새-정본.md",
+    ".agents/skills/do-math/scripts/do_math/integration.py",
+    ".agents/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py",
+    ".claude/skills/do-math/scripts/do_math/submission.py",
+    ".agents/skills/do-math/scripts/do_math/context_store.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_currentness.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py",
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py",
+    "docs/do-math/flow-repair-20261021/shared-validation-hashes.md",
+    ".agents/skills/do-math/scripts/do_math/submission.py"
+  ],
+  "changes": {
+    ".agents/skills/do-math/scripts/이음새-정본.md": [
+      "e5dc79b7dd0757f502a6d450a5221bce81193c10aaa15f45cd7ad7f5c41f00fa",
+      "5545b4b8721b9096bd9ced60569a9019b0d780da9cc85f9c36b42b57a059c5ee"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py": [
+      "a1bbd3cdfabcca62caa5d47047c5b5e690741430ed69ac6cbc8843d61a542d7e",
+      "15ea4da7fb74d0efb77d9a30f424610c6cbbd8bbe8fb5ccdf3104d8b6dc37cda"
+    ],
+    ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py": [
+      "f8be750f357d38c9b3e137bcb1e9855095106dbde641ad0e71f7b33c1dc75a79",
+      "a9cd02d51a8a552dae5d7b2d21b5cd13939c6b84f9c28af88347635fb1235ec0"
+    ],
+    ".claude/skills/do-math/scripts/do_math/integration.py": [
+      "2aee08a09799f78428988cc9ebbaf983a79a32dfdf8f90f7e3c02681db9a8b55",
+      "50cf957ad81eeed538feb89fb4482c41f5d252c8e371e71027cfbfcb63f0fb62"
+    ],
+    ".claude/skills/do-math/scripts/do_math/context_store.py": [
+      "562b3a14124ba8538d3865c6c0ae792791c883efa6e6ea35aeaaf30f940b3744",
+      "faefd151fefa29640fc7a50fa9ac69235ac968d8885a822c615c1dd85b9a785f"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_currentness.py": [
+      null,
+      "76e7763637db8a56e3dc07196364dfab3201de7538e290e0bf3332aad3ee2607"
+    ],
+    ".claude/skills/do-math/scripts/이음새-정본.md": [
+      "e5dc79b7dd0757f502a6d450a5221bce81193c10aaa15f45cd7ad7f5c41f00fa",
+      "5545b4b8721b9096bd9ced60569a9019b0d780da9cc85f9c36b42b57a059c5ee"
+    ],
+    ".agents/skills/do-math/scripts/do_math/integration.py": [
+      "2aee08a09799f78428988cc9ebbaf983a79a32dfdf8f90f7e3c02681db9a8b55",
+      "50cf957ad81eeed538feb89fb4482c41f5d252c8e371e71027cfbfcb63f0fb62"
+    ],
+    ".agents/skills/do-math/scripts/do_math/core_engine.py": [
+      "6bfbf81c0388f5b818c20b5bc6988a4d14bb72b0ca462223e07ed33a3bc46138",
+      "7b1ab69a89046d812d6aca2bdec0e0f0cacf93bfe82d5bed8d2eb15346d83fe9"
+    ],
+    ".agents/skills/do-math/scripts/tests/sim/test_submission_receiver.py": [
+      "5075a81663de8e8b1491b19399ba28599a30caba542cd53f2b57d506215c3bc4",
+      "a3c1c94187b9e3b4a6cc901bc5c18052a212f11826ba44d2c63a4af7e28b1dc9"
+    ],
+    ".claude/skills/do-math/scripts/tests/sim/test_submission_receiver.py": [
+      "5075a81663de8e8b1491b19399ba28599a30caba542cd53f2b57d506215c3bc4",
+      "a3c1c94187b9e3b4a6cc901bc5c18052a212f11826ba44d2c63a4af7e28b1dc9"
+    ],
+    ".claude/skills/do-math/scripts/do_math/submission.py": [
+      "126637c4dea29bc02e146cbf6c735159533b8198a57eab9439572c84fd171d6a",
+      "9532e712ec1e733302fb2c44ba359fe489dedfb67a290107462199cd54886128"
+    ],
+    ".agents/skills/do-math/scripts/do_math/context_store.py": [
+      "562b3a14124ba8538d3865c6c0ae792791c883efa6e6ea35aeaaf30f940b3744",
+      "faefd151fefa29640fc7a50fa9ac69235ac968d8885a822c615c1dd85b9a785f"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_currentness.py": [
+      null,
+      "76e7763637db8a56e3dc07196364dfab3201de7538e290e0bf3332aad3ee2607"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_submission_integration_bundles.py": [
+      "a1bbd3cdfabcca62caa5d47047c5b5e690741430ed69ac6cbc8843d61a542d7e",
+      "15ea4da7fb74d0efb77d9a30f424610c6cbbd8bbe8fb5ccdf3104d8b6dc37cda"
+    ],
+    ".agents/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py": [
+      null,
+      "372d2ac693f9736d31921c189674fc2469df5b8e17514f6dbc1a9480ebf0d5bb"
+    ],
+    ".claude/skills/do-math/scripts/do_math/core_engine.py": [
+      "6bfbf81c0388f5b818c20b5bc6988a4d14bb72b0ca462223e07ed33a3bc46138",
+      "7b1ab69a89046d812d6aca2bdec0e0f0cacf93bfe82d5bed8d2eb15346d83fe9"
+    ],
+    ".agents/skills/do-math/scripts/tests/sim/test_role_input_context.py": [
+      "f8be750f357d38c9b3e137bcb1e9855095106dbde641ad0e71f7b33c1dc75a79",
+      "a9cd02d51a8a552dae5d7b2d21b5cd13939c6b84f9c28af88347635fb1235ec0"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_integration_fixed_input.py": [
+      null,
+      "372d2ac693f9736d31921c189674fc2469df5b8e17514f6dbc1a9480ebf0d5bb"
+    ],
+    "docs/do-math/flow-repair-20261021/shared-validation-hashes.md": [
+      null,
+      "14bea5d785106c8f07242ee4819fcf6966ef9df3fd1f3ade5b98853982ea7e73"
+    ],
+    ".agents/skills/do-math/scripts/do_math/submission.py": [
+      "126637c4dea29bc02e146cbf6c735159533b8198a57eab9439572c84fd171d6a",
+      "9532e712ec1e733302fb2c44ba359fe489dedfb67a290107462199cd54886128"
+    ]
+  }
+}

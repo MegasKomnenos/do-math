@@ -1,0 +1,16 @@
+{
+  "id": "role-flow-design",
+  "kind": "work",
+  "depends_on": [],
+  "writes": [
+    "docs/do-math/flow-repair-20261021/role-flow-design.md"
+  ],
+  "inputs": [
+    "C:\\math\\.async\\dm-flow-repair-20261021\\user-messages.md",
+    "C:\\math\\.claude\\skills\\do-math\\SKILL.md",
+    "C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\contracts.py",
+    "C:\\math\\.skill-workspace\\parking-unimodality-20261021\\audit"
+  ],
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

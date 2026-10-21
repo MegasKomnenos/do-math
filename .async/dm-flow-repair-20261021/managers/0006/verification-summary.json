@@ -1,0 +1,43 @@
+{
+  "task": "role-question-flow",
+  "integration_files": 93,
+  "integrated_bytes_match": true,
+  "mirror_pairs": 46,
+  "final_syntax_identities": 35,
+  "latest_claimed_test_outcomes_checked": {
+    "passed": 306,
+    "failed": 1,
+    "error": 1
+  },
+  "report_runs_checked": 18,
+  "latest_report_changed_during_run": [],
+  "probe": {
+    "ast_python_files": 927,
+    "ast_status": "passed",
+    "probe_command": "python -B scripts/probe_cli.py --skill-only",
+    "probe_exit_code": 0,
+    "probe_status": "verified",
+    "probe_scope": "installed_skill_structure",
+    "probe_roles": 10,
+    "probe_not_verified": [
+      "document_semantics",
+      "runtime_execution",
+      "research_roles",
+      "Lean",
+      "research_efficacy"
+    ]
+  },
+  "issues": [],
+  "limits": [
+    "Manager statically reviewed changes and checked saved evidence, without rerunning product tests.",
+    "Per-ID latest passes span different snapshots; they do not certify full final-source regression.",
+    "Final T2+flows and final review remain after intent-check-evidence."
+  ],
+  "superseded_historical_ids": {
+    "sim.test_planning_revision_transitions.RevisionTransitionTests.test_contract_revision_cancels_unstarted_selection_and_records_owner": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revision_writer_cancels_selection_without_inventing_a_required_request",
+    "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revision_of_active_task_without_queued_selection_still_sets_wait_owner": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revision_writer_without_queued_selection_preserves_its_actual_request"
+  },
+  "current_latest_test_outcomes": {
+    "passed": 306
+  }
+}
