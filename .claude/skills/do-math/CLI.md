@@ -1,6 +1,6 @@
 # Codex·Claude 세션 연결
 
-실행기는 [cli_adapter.py](cli_adapter.py)의 함수로 새 세션의 명령을 만들고, 프로세스가 끝나면 로그에서 공급자 사용 한도를 읽는다. Python 3.10 이상과 표준 라이브러리를 사용한다. 범주별 기본 모델·노력과 계획의 개별 지정을 합치는 일은 호출자가 맡는다. 어댑터에는 그렇게 선택한 최종 값을 전달한다.
+실행기는 [cli_adapter.py](cli_adapter.py)의 함수로 새 세션의 명령을 만들고, 프로세스가 끝나면 로그에서 공급자 사용 한도를 읽는다. 어댑터는 표준 라이브러리만 사용하며, 실행에 필요한 Python 판본은 [RUNTIME.md](RUNTIME.md)가 정한다. 범주별 기본 모델·노력과 계획의 개별 지정을 합치는 일은 호출자가 맡는다. 어댑터에는 그렇게 선택한 최종 값을 전달한다.
 
 ## 모델 선택과 명령 생성
 
@@ -87,9 +87,9 @@ Claude는 아래 **최상위 필드 세 개가 함께 있는** 레코드를 계�
 
 위 예는 필드 위치 설명용 합성 레코드다. `api_error_params.rate_limit_info`에서 시간 의미가 분명한 다음 경우만 해제 시각을 채택한다.
 
-- `status="rejected"`이고 일반 제한 창(`five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet`, `seven_day_overage_included`)이면 `resetsAt`을 쓴다. 이 분기는 overage 상태·해제 시각이 없는 경우다.
+- `status="rejected"`이고 일반 제한 창(`five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet`, `seven_day_overage_included`)이며 `overageStatus`와 `overageResetsAt`이 모두 생략되거나 `null`이면 `resetsAt`을 쓴다.
 - `overageStatus="rejected"`이고 창이 위 목록 또는 `overage`인 일반 overage 거절에서는 `resetsAt`·`overageResetsAt` 중 제공된 값의 최솟값을 쓴다. 제공된 모든 값이 유효한 미래 시각이어야 한다. 앞선 값이 만료됐다고 뒤의 값을 임의로 선택하지 않는다.
-- 위 두 분기 모두 `isUsingOverage`가 없거나 false이고, `overageDisabledReason`·`limitScope`·`overageScope`가 없어야 한다. 조직·그룹·채널의 특수 지출 한도, 모르는 창이나 모순된 상태, 불명확한 다중 reset은 설정 간격으로 처리한다. 그 경우에도 명시적인 계정 거절 자체는 유지된다.
+- 위 두 분기 모두 `isUsingOverage`가 생략·`null`·false 중 하나이고, `overageDisabledReason`·`limitScope`·`overageScope`는 각각 생략되거나 `null`이어야 한다. 조직·그룹·채널의 특수 지출 한도, 모르는 창이나 모순된 상태, 불명확한 다중 reset은 설정 간격으로 처리한다. 그 경우에도 명시적인 계정 거절 자체는 유지된다.
 
 `resetsAt`·`overageResetsAt`은 Unix 초다. `unifiedWindows`는 다른 창의 예방적 통계를 포함하므로 사용하지 않는다. `rate_limit_event` 보조 신호는 채택하지 않는다. 이 이벤트는 정상·경고도 포함하고 기본 사용량이 rejected여도 paid overage로 계속 사용할 수 있기 때문이다. 실제 거절 표식이 없는 allowed/allowed_warning/rejected 상태 이벤트, 일반 `error="rate_limit"`·429와 문구 인용은 한도로 읽지 않는다.
 

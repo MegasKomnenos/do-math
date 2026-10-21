@@ -8,26 +8,13 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 ## 새 연구 준비
 
-아래 PowerShell 예에서 `$skill`은 설치된 스킬 폴더, `$instance`는 **아직 없는 새 인스턴스 폴더**다. 인스턴스는 저장소 밖 또는 상위 Git에서 제외된 `.skill-workspace/` 아래에 둔다. 이미 있는 목표·설정 파일을 입력으로 준비한다.
-
-```powershell
-$skill = 'C:/math/.agents/skills/do-math'
-$instance = 'C:/math/.skill-workspace/do-math/add-zero'
-python "$skill/runner.py" init $instance --goal C:/research-input/goal.md --settings C:/research-input/settings.json
-```
-
-`goal.md`는 비어 있지 않은 UTF-8 문서다. 예를 들어 “모든 자연수 n에 대해 n + 0 = n임을 core Lean으로 증명하고 증명에 충실한 해설을 작성한다. 자연수에는 0을 포함한다.”처럼 사용자가 얻으려는 결과와 조건을 담는다. 연구 방법과 과제 분할은 계획 세션이 정한다.
+목표·설정을 준비하고 새 인스턴스를 만드는 명령과 순서는 [SKILL.md](SKILL.md)의 ‘새 연구 준비’를 따른다.
 
 `settings.json`의 필드와 예시는 [protocol.md](protocol.md) 1절이 정본이다. 실행 파일 경로는 실제 설치 경로로 바꾸고, JSON의 Windows 경로에는 `/`를 쓰거나 역슬래시를 `\\`로 적는다. 실행기는 `max_sessions` 안에서 계획을 한 번에 하나만 실행한다. `lean` 설정은 세션이 읽어 Lean을 실행하며, 실행기가 Lean을 대신 실행하지 않는다.
 
 `init`은 원문 두 파일을 복사하고 `knowledge/`, `sessions/`, `runner/`, `control/inputs/`와 자체 `.git/`을 만든다. 첫 Git 커밋에는 목표·설정·`.gitignore`가 들어간다. 세션·실행 상태·사용자 입력은 파일로 보존하되 Git에서는 제외한다. 공개 지식은 반영마다 따로 커밋한다. 커밋 작성자는 호출 명령에 지정한 `do-math <do-math@localhost>`다. `init` 실패 시 생성 도중인 폴더가 남을 수 있으므로 오류를 고친 뒤 새 경로로 준비한다. 기존 인스턴스는 덮어쓰지 않는다.
 
 ## 독립 기동과 재기동
-
-```powershell
-python "$skill/runner.py" start $instance
-python "$skill/runner.py" status $instance
-```
 
 `start`는 실행기를 대화와 수명이 분리된 프로세스로 띄운다. Windows에서는 `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP`을 사용해 콘솔 창을 띄우지 않으며, stdin은 DEVNULL, stdout/stderr는 호출마다 새 로그 파일이다. Linux에서는 새 프로세스 세션을 만든다. 반환 JSON의 `pid`, `stdout`, `stderr`, `instance`를 기록하면 호출 대화는 종료할 수 있다.
 
@@ -37,16 +24,9 @@ python "$skill/runner.py" status $instance
 
 재기동한 실행기는 기록된 세션의 PID와 OS 생성 식별값을 확인한다. 살아 있으면 기다리고, 죽었으면 남은 산출을 공식 검사·반영 또는 실패로 처리한다. 그 세션을 다시 띄우지 않는다. 게시된 미파견 요청과 아직 전달하지 않은 사건은 이어서 처리한다. 실행기가 쓰는 `max_sessions`, `defaults`, `cli`, `limit_wait_seconds`는 기동 때 읽으므로 변경은 다음 기동부터 적용된다. `lean` 설정은 세션이 `settings.json`에서 직접 읽는 시점의 값으로 사용한다. 실행 중인 세션도 변경 뒤에 읽으면 바뀐 값을 쓰며, 실행기는 설정 형식을 기동 때 검사한다. 세션은 현재 경로의 문서와 도구를 읽는다.
 
-콘솔에 붙여 문제를 관찰할 때는 `python "$skill/runner.py" run $instance`를 쓸 수 있다. 이 명령은 종료까지 반환하지 않으므로 사용자 대화가 새 연구를 시작할 때는 `start`를 사용한다. 자동 재기동 서비스는 필요하지 않다.
+콘솔에 붙여 문제를 관찰할 때는 `python <skill>/runner.py run <instance>`를 쓸 수 있다. 이 명령은 종료까지 반환하지 않으므로 사용자 대화가 새 연구를 시작할 때는 `start`를 사용한다. 자동 재기동 서비스는 필요하지 않다.
 
 ## 상태 조회, 정지, 사용자 입력
-
-```powershell
-python "$skill/runner.py" status $instance
-python "$skill/runner.py" stop $instance
-python "$skill/runner.py" resume $instance
-python "$skill/runner.py" input $instance --file C:/research-input/answer.txt
-```
 
 `status`는 읽기 전용 JSON을 출력한다. `runner_alive`는 실행기 PID와 생성 식별값을 조회한 현재 결과다. `knowledge`는 공개 지식 위치다. `dispatch_blocks`에는 겹칠 수 있는 `STOP`, `external_input`, `usage_limit`, `halted`, `complete`가 나온다. `state`에는 아래 표의 상태 전체가 있다. 실행기가 죽었을 때 세션 상태는 마지막 저장 시점의 것이며, 재기동하면 실제 생존 여부와 대조해 갱신한다.
 
@@ -58,12 +38,7 @@ python "$skill/runner.py" input $instance --file C:/research-input/answer.txt
 
 ## 멈춰 버린 세션 하나 종료
 
-```powershell
-python "$skill/runner.py" status $instance
-python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcdef
-```
-
-마지막 인자는 조회한 실제 세션 ID로 바꾼다. `state.sessions`에서 범주·모델·시작 시각·요청을 읽어 대상 세션을 선택한다. 실행기의 수집 전에는 CLI PID가 아직 상태에 안 들어 있을 수 있으나 `kill-session`은 해당 세션의 최신 `process.json`을 직접 읽는다. CLI 기동 자체가 아직 안 됐거나 프로세스 정보를 얻지 못했다면 종료 명령이 오류를 반환한다.
+`kill-session`에는 조회한 실제 세션 ID를 준다. `state.sessions`에서 범주·모델·시작 시각·요청을 읽어 대상 세션을 선택한다. 실행기의 수집 전에는 CLI PID가 아직 상태에 안 들어 있을 수 있으나 `kill-session`은 해당 세션의 최신 `process.json`을 직접 읽는다. CLI 기동 자체가 아직 안 됐거나 프로세스 정보를 얻지 못했다면 종료 명령이 오류를 반환한다.
 
 이 명령은 기록된 CLI의 PID뿐 아니라 OS 생성 식별값까지 같은 프로세스 핸들에서 대조해 종료한다. PID가 다른 프로세스에 재사용됐으면 종료하지 않는다. Windows에서는 `TerminateProcess`, Linux에서는 pidfd로 SIGKILL을 보낸다. 대상은 해당 CLI 프로세스 하나다. CLI가 별도로 띄운 자손 프로세스 전체를 종료하는 명령은 아니다. 실행기나 세션 호스트를 대신 종료하지 않는다.
 
@@ -91,7 +66,7 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 
 첫 사건은 `start`다. 유효 검토 반영은 `review_finished`, 산출 부재·검사 실패·기동 실패는 `session_failed`, 사용자 원문은 `user_input`이다. 정상 연구 반영 자체는 계획 사건이 되지 않고 자동 검토 요청을 만든다. 새 계획은 빈 슬롯이 생기면 게시 요청보다 먼저 파견되며, 남은 슬롯에는 게시 순서대로 요청을 파견한다. 계획 중 도착한 사건은 다음 계획에 남긴다. 계획이 실패하면 그 계획이 받았던 사건은 실패 사건의 `task.events`에 담겨 다음 계획에 간다. 다음 계획에는 실패 사건과 그 이후 아직 전달하지 않은 사건이 온다.
 
-`session_failed`에는 실행기가 실패 세션의 `category`, 요청 키 `request`, 받은 `task` 원문, 요청의 `origin`, 탐지한 `limit`, `exit_code`, `launch_error`를 함께 담는다. 계획은 `sessions`를 뒤지지 않고 이 사건만으로 원 지시·대체 의도·검토 대상과 실패 원인의 단서를 읽는다. 사건 형식은 [protocol.md](protocol.md) 2절이 정한다. 검토자의 기동 입력에는 실행 상태나 작성자 세션 폴더·로그 경로를 추가하지 않는다.
+`session_failed`에는 실행기가 실패 세션의 `category`, 요청 키 `request`, 받은 `task` 원문, 요청의 `origin`, 탐지한 `limit`, `exit_code`, `launch_error`를 함께 담는다. 계획은 `sessions`를 뒤지지 않고 이 사건만으로 원 지시·대체 의도·검토 대상과 실패 원인의 단서를 읽는다. 사건 형식은 [protocol.md](protocol.md) 2절이 정한다.
 
 외부 입력 대기를 선언한 계획이 실행되는 동안 사용자 입력이 이미 도착했다면, 그 입력을 다음 계획에 전달할 수 있도록 대기를 유지하지 않는다. 동일 계획에 요청과 wait가 함께 있으면 요청은 게시되지만 새 입력이 오기 전까지 새 파견은 멈춘다. 실행기는 동시 대체 의도를 판정하지 않으며, 공개 기록의 현재성·상충 검토를 해석할 책임은 계획에 있다.
 
@@ -126,5 +101,6 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 작업맥락 문서는 시험용 임시 문서를 쓰므로 실제 문서의 판단 내용이나 실제 모델의 수행을 검증하는 시험은 아니다. 실제 Codex·Claude 모델 접근과 혼합 완주는 실제 인스턴스의 공개 결과·검토로 별도 확인한다. 다음 명령은 위의 Python 3.12 이상 환경에서 시험 전체를 실행한다. 상태 파일 교체 시험은 Windows에서만 실행된다.
 
 ```powershell
+$skill = 'C:/math/.agents/skills/do-math' # 실제 설치 경로
 python -B -m unittest discover -s "$skill/tests" -v
 ```
