@@ -279,8 +279,11 @@ class Runner:
             "selection": selection or {}, "status": "pending", "session": None})
 
     def ingest_inputs(self):
-        for path in sorted((self.instance / "control/inputs").iterdir()):
-            if not path.is_file() or path.name.startswith(".") or path.name in self.state["seen_inputs"]:
+        # File names are random; submission order is the content write time.
+        paths = [p for p in (self.instance / "control/inputs").iterdir()
+                 if not p.name.startswith(".") and p.name not in self.state["seen_inputs"]]
+        for path in sorted(paths, key=lambda p: (p.stat().st_mtime_ns, p.name)):
+            if not path.is_file():
                 continue
             try:
                 text = path.read_text(encoding="utf-8-sig")
