@@ -94,7 +94,7 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 명령 성공은 종료 코드 0과 stdout JSON이다. `run`은 시작 JSON을 출력하고 실행을 계속하며, 완료나 `halted` 뒤 남은 세션을 배출하면 0으로 종료한다. 명령 실행 오류는 stderr의 `{"error":"설명"}`과 종료 코드 1, 잘못된 인자 사용은 argparse 설명과 종료 코드 2다. `status`는 실행기가 꺼져 있거나 연구가 대기 중이어도 읽기에 성공하면 0이다. `stop/resume/input`은 파일을 전달한 성공이며 세션이 이미 처리했다는 확인은 `status`에서 한다.
 
-실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/InstanceLock`은 독립 기동·단일 실행기, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick/blocked`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 환경 봉인용 정보가 아니라 PID 재사용을 구별하기 위한 프로세스 식별값이다.
+실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/Runner.run/InstanceLock`은 독립 기동·단일 실행기·재기동 때의 정지 해제, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick`과 `dispatch_blocks`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 PID 재사용을 구별하기 위한 프로세스 식별값이다.
 
 [tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
 

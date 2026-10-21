@@ -115,6 +115,20 @@ class HandoffTests(unittest.TestCase):
         review = self.session("review", envelope("review", target=target, results=[], summary="Forgot r1."), target=target)
         self.assertIn("each target result exactly once", checker.check_session(review)[0])
 
+    def test_unreadable_json_returns_diagnostics(self):
+        author, _ = self.research()
+        path = author / "output" / "output.json"
+        depth = sys.getrecursionlimit() + 100
+        for content in ("[]", "[" * depth + "0" + "]" * depth):
+            with self.subTest(deep=len(content) > 2):
+                path.write_text(content, encoding="utf-8")
+                errors = checker.check_session(author)
+                self.assertEqual(len(errors), 1)
+                self.assertEqual(errors[0].count(str(path)), 1)
+                result = subprocess.run([sys.executable, str(SCRIPT), str(author)], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertFalse(json.loads(result.stdout)["ok"])
+
     def test_broken_references_and_public_files(self):
         author, original = self.research()
         self.publish(author, "k1")

@@ -46,9 +46,10 @@ def identifier(value, where):
 
 def read_json(path):
     try:
-        return obj(json.loads(path.read_text(encoding="utf-8-sig")), str(path))
-    except (OSError, UnicodeError, ValueError) as exc:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, ValueError, RecursionError) as exc:
         raise Invalid(f"{path}: {exc}") from exc
+    return obj(data, str(path))
 
 
 def local_file(root, value, where):

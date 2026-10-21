@@ -339,6 +339,8 @@ class Runner:
         try:
             provider = provider_for_model(selected["model"])
             s["provider"] = provider
+            if provider not in self.settings["cli"]:
+                raise ValueError(f"settings.cli has no {provider} executable")
             command = build_command(self.settings["cli"][provider], selected["model"], selected["effort"], session)
             write_json(session / "launch.json", {"runner": self.identity,
                        "command": {"argv": command.argv, "cwd": str(command.cwd)}})

@@ -227,6 +227,17 @@ class RunnerTests(unittest.TestCase):
         self.assertIsNone(self.engine.state["wait"])
         self.assertEqual(len(self.engine.state["events"]), 1)
 
+    def test_missing_cli_provider_is_a_launch_failure(self):
+        self.engine.state["events"] = []
+        del self.engine.settings["cli"]["claude"]
+        self.engine.enqueue("goal", "review", {"instructions": "check", "references": [], "target": {"kind": "goal"}},
+                            "test", {"model": "claude/sonnet"})
+        self.engine.tick()
+        session = self.engine.state["sessions"][self.engine.state["requests"]["goal"]["session"]]
+        self.assertIn("claude", session["launch_error"])
+        self.engine.tick()
+        self.assertEqual(self.engine.state["requests"]["goal"]["status"], "failed")
+
     def test_recovery_after_commit_before_effects(self):
         real_git = runner.git
         interrupted = False
