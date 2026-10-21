@@ -192,8 +192,11 @@ def detect_usage_limit(
         raise ValueError("fallback_seconds must yield a finite future datetime")
     if session_started_at is not None:
         session_started_at = _epoch(session_started_at)
-        if session_started_at is None or session_started_at > now:
-            raise ValueError("session_started_at must be Unix seconds at or before now")
+        if session_started_at is None:
+            raise ValueError("session_started_at must be finite Unix seconds")
+        if session_started_at > now:
+            # The clock moved back during the session, so no date is inferred.
+            session_started_at = None
     if local_timezone is not None and not isinstance(local_timezone, tzinfo):
         raise ValueError("local_timezone must be a tzinfo or None")
 

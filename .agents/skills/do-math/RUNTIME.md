@@ -8,8 +8,6 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 ## 새 연구 준비
 
-목표·설정을 준비하고 새 인스턴스를 만드는 명령과 순서는 [SKILL.md](SKILL.md)의 ‘새 연구 준비’를 따른다.
-
 `settings.json`의 필드와 예시는 [protocol.md](protocol.md) 1절이 정본이다. 실행 파일 경로는 실제 설치 경로로 바꾸고, JSON의 Windows 경로에는 `/`를 쓰거나 역슬래시를 `\\`로 적는다. 실행기는 `max_sessions` 안에서 계획을 한 번에 하나만 실행한다. `lean` 설정은 세션이 읽어 Lean을 실행하며, 실행기가 Lean을 대신 실행하지 않는다.
 
 `init`은 원문 두 파일을 복사하고 `knowledge/`, `sessions/`, `runner/`, `control/inputs/`와 자체 `.git/`을 만든다. 첫 Git 커밋에는 목표·설정·`.gitignore`가 들어간다. 세션·실행 상태·사용자 입력은 파일로 보존하되 Git에서는 제외한다. 공개 지식은 반영마다 따로 커밋한다. 커밋 작성자는 호출 명령에 지정한 `do-math <do-math@localhost>`다. `init` 실패 시 생성 도중인 폴더가 남을 수 있으므로 오류를 고친 뒤 새 경로로 준비한다. 기존 인스턴스는 덮어쓰지 않는다.

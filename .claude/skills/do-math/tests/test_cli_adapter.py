@@ -80,7 +80,7 @@ class AdapterTests(unittest.TestCase):
                  "You've hit your usage limit for GPT. Switch models, or try again at 7:11 PM."}]
         known = self.detect("codex", rows, session_started_at=NOW - 60)
         self.assertEqual(known.retry_at, NOW + 71 * 60)
-        for started in (None, NOW - 24 * 3600):
+        for started in (None, NOW - 24 * 3600, NOW + 60):
             with self.subTest(started=started):
                 limit = self.detect("codex", rows, session_started_at=started)
                 self.assertEqual((limit.retry_at, limit.source), (NOW + 600, "fallback"))

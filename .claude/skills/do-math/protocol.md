@@ -88,13 +88,13 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 
 범주별로 `task`에 다음 항목을 더한다.
 
-| 범주 | 필수 항목과 의미 |
+| 범주 | 실행기가 주는 항목과 의미 |
 |---|---|
 | research | `supersedes`: 이번 과제가 대신할 기존 기록 ID 목록. 없으면 `[]`. 계획의 연구 요청에서 복사한다. |
 | review | `target`: `{"kind":"research","record":"k0001"}` 또는 `{"kind":"goal"}`. 자동 검토는 대상과 기본 지시를, 추가 검토는 계획의 지시·참조도 받는다. |
-| plan | `events`: 이번 계획이 받는 사건 객체 목록. 아래 네 종류를 사용한다. `previous_plan`: 직전에 반영된 계획의 기록 ID. 아직 없으면 `null`. |
+| plan | `events`: 이번 계획이 받는 사건 객체 목록. 아래 네 종류를 사용한다. `previous_plan`: 직전에 반영된 계획의 기록 ID이며 아직 없으면 `null`이다. 실행기는 이 필드를 항상 넣는다. 검사기는 필드 생략과 `null`을 모두 허용하고, 그 밖의 값이면 실재하는 계획 기록 ID인지 확인한다. |
 
-계획 사건의 필수 구조:
+계획 사건의 구조 예시다. 검사기는 모든 사건의 `kind`와, `review_finished`의 `record`, `session_failed`의 `session`·`reason`, `user_input`의 `text`를 확인한다. 실패 사건의 나머지 필드는 실행기가 함께 담는 사실이다.
 
 ```json
 [
