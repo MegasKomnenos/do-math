@@ -1,0 +1,44 @@
+{
+  "disposition": {
+    "basis_refs": [
+      "EX-01M5E6DRSX67M3HC2CDM83234Z",
+      "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-41",
+      "SC-56ef3701924ad4bcb97b",
+      "runtime/artifacts/BA-01M5E6P6VDTA0CP4VQXA7EGZ5T/checkpoint.json"
+    ],
+    "kind": "repair",
+    "meaning_preserving": true,
+    "next_owner": "installation_recovery",
+    "reason": "SC-56ef3701924ad4bcb97b requires workspace:checkpoint.json to be read before a normal or defect response. Fact 39 records successful control_self_check acknowledgment ending at stdout offset 44093. Fact 40 starts item_20 at that offset with only Get-Content -LiteralPath 'checkpoint.json'; fact 42 confirms it returned the checkpoint successfully. Fact 41 nevertheless records research_action_before_response. Thus ordering and acknowledgment are established, but the operation was mandatory evidence inspection rather than new research. In the supplied submission-support.zip, do_math/observations.py lines 562–599 pass command_execution to _start_call and mark any acknowledged, non-control call as research before response without distinguishing evidence retrieval. This conflicts with the supplied self-check contract. The snapshot has no response receipt for this obligation; do not invent a rejection or require resubmission against this already-recorded missed reason. The checkpoint preserves meaningful proposal work and explicitly unconfirmed compilation, so neither mathematical failure nor completion follows. Installation recovery must compare the live code with the supplied module and retain the existing execution, authority and historical evidence boundaries; this diagnosis creates no retry or completion judgment.",
+    "repair_target": "installation:scripts/do_math/observations.py",
+    "verification": "Reproduce the observed request-query completion followed by the required checkpoint read using the captured event sequence and offsets in operational-diagnosis.json. Verify that required evidence can actually be read and a valid self-check response accepted through a narrowly bounded observable path without a false research_action_before_response. Do not blanket-exempt shell calls or trust a worker-supplied administrative label. Verify that genuine new research after acknowledgment and before response remains detected, pre-acknowledgment and pre-delivery events are not misclassified, and response deadlines, call-related deadline holds, stop controls and evidence-reference checks remain enforced. Preserve original facts and partial outputs. Run relevant regression and installation checks. After repair, central ownership must reconcile the affected obligation and actual execution termination/currentness, preserving any existing continuation and avoiding duplicate research."
+  },
+  "questions": [],
+  "summary": "Reviewed the supplied implementation documents in order, the target contract, the preserved checkpoint and both evidence files, and the obligation and ordered observation facts. The target is running in the fixed snapshot; local termination is unconfirmed and no continuation exists. The self-check miss is an installation classification defect: immediately after acknowledging the request, the worker read the checkpoint that the request required. The supplied observer classifies that evidence read as research before response. Request a meaning-preserving installation repair. The preserved proposal remains available, while compiler acceptance, semantic identity and task completion remain unconfirmed.",
+  "used_sources": [
+    "input/implementation/SKILL.md",
+    "input/implementation/GLOSSARY.md",
+    "input/implementation/references/공통-실행.md",
+    "input/implementation/references/지식-저작과-재사용.md",
+    "input/implementation/references/학술자료-활용.md",
+    "input/implementation/references/자기-점검.md",
+    "input/implementation/계약/운영-점검.md",
+    "EX-01M5E6DRSX67M3HC2CDM83234Z",
+    "AY-01M5E6DRSX761QJ3G45KMTS35K",
+    "TK-01M5E65YJDBVGCPX1N8TQCPTH5",
+    "GR-research-fresh",
+    "SC-56ef3701924ad4bcb97b",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-35",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-36",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-37",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-38",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-39",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-40",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-41",
+    "OF-EX-01M5E6DRSX67M3HC2CDM83234Z-42",
+    "runtime/artifacts/BA-01M5E6P6VDTA0CP4VQXA7EGZ5T/checkpoint.json",
+    "input/operational-review/EX-01M5E6DRSX67M3HC2CDM83234Z/evidence/Parking.lean",
+    "input/operational-review/EX-01M5E6DRSX67M3HC2CDM83234Z/evidence/explanation.md",
+    "workspace:operational-diagnosis.json"
+  ]
+}

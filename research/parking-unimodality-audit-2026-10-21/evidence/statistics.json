@@ -1,0 +1,199 @@
+{
+  "count": 30,
+  "outcomes": {
+    "output_accepted": 22,
+    "execution_incomplete": 8
+  },
+  "roles": {
+    "intent_interpretation": 2,
+    "trust_activate": 1,
+    "research_preparation": 3,
+    "task_contract_review": 4,
+    "research_plan": 5,
+    "research_work": 3,
+    "operational_review": 6,
+    "formal_check": 1,
+    "identity_review": 3,
+    "maintenance": 1,
+    "recovery": 1
+  },
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 28843648,
+    "input_tokens": 32342431,
+    "output_tokens": 181265,
+    "reasoning_output_tokens": 31288
+  },
+  "sum_execution_seconds": 6619.429,
+  "roles_detail": [
+    {
+      "role": "intent_interpretation",
+      "count": 2,
+      "outcomes": {
+        "output_accepted": 2
+      },
+      "seconds": 182.844,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 910208,
+        "input_tokens": 1116401,
+        "output_tokens": 7380,
+        "reasoning_output_tokens": 957
+      }
+    },
+    {
+      "role": "trust_activate",
+      "count": 1,
+      "outcomes": {
+        "output_accepted": 1
+      },
+      "seconds": 0,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "role": "research_preparation",
+      "count": 3,
+      "outcomes": {
+        "output_accepted": 2,
+        "execution_incomplete": 1
+      },
+      "seconds": 739.906,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 3487488,
+        "input_tokens": 3972016,
+        "output_tokens": 30656,
+        "reasoning_output_tokens": 4558
+      }
+    },
+    {
+      "role": "task_contract_review",
+      "count": 4,
+      "outcomes": {
+        "output_accepted": 4
+      },
+      "seconds": 605.602,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 2526208,
+        "input_tokens": 3021963,
+        "output_tokens": 24093,
+        "reasoning_output_tokens": 3623
+      }
+    },
+    {
+      "role": "research_plan",
+      "count": 5,
+      "outcomes": {
+        "output_accepted": 4,
+        "execution_incomplete": 1
+      },
+      "seconds": 838.827,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 5739904,
+        "input_tokens": 6528624,
+        "output_tokens": 32696,
+        "reasoning_output_tokens": 5074
+      }
+    },
+    {
+      "role": "research_work",
+      "count": 3,
+      "outcomes": {
+        "output_accepted": 2,
+        "execution_incomplete": 1
+      },
+      "seconds": 1651.5369999999998,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 4354560,
+        "input_tokens": 4615733,
+        "output_tokens": 30826,
+        "reasoning_output_tokens": 4510
+      }
+    },
+    {
+      "role": "operational_review",
+      "count": 6,
+      "outcomes": {
+        "execution_incomplete": 5,
+        "output_accepted": 1
+      },
+      "seconds": 1144.934,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 8118400,
+        "input_tokens": 8864354,
+        "output_tokens": 32982,
+        "reasoning_output_tokens": 7128
+      }
+    },
+    {
+      "role": "formal_check",
+      "count": 1,
+      "outcomes": {
+        "output_accepted": 1
+      },
+      "seconds": 73.831,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "role": "identity_review",
+      "count": 3,
+      "outcomes": {
+        "output_accepted": 3
+      },
+      "seconds": 418.206,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 2478336,
+        "input_tokens": 2816851,
+        "output_tokens": 13354,
+        "reasoning_output_tokens": 3505
+      }
+    },
+    {
+      "role": "maintenance",
+      "count": 1,
+      "outcomes": {
+        "output_accepted": 1
+      },
+      "seconds": 241.924,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 1228544,
+        "input_tokens": 1406489,
+        "output_tokens": 9278,
+        "reasoning_output_tokens": 1933
+      }
+    },
+    {
+      "role": "recovery",
+      "count": 1,
+      "outcomes": {
+        "output_accepted": 1
+      },
+      "seconds": 721.818,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      }
+    }
+  ]
+}

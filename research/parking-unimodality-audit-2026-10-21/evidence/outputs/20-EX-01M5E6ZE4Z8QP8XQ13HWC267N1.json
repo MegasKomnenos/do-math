@@ -1,0 +1,53 @@
+{
+  "proposal_digest": "c8f06a237f92a02f276939af236fc32288145e037b67465d4fedfe67e12f8b40",
+  "questions": [],
+  "scope_assessment": {
+    "activity_execution_limit": 20,
+    "assessment_id": "scope-c8f06a237f92-r1",
+    "initial_slots": [
+      {
+        "id": "initial-0",
+        "perspective": "Operational semantics and invariant reconstruction: full-proposal argument reconstruction, scope challenge and semantic identity",
+        "required_source_refs": [
+          "proposal",
+          "context:goal"
+        ]
+      },
+      {
+        "id": "initial-1",
+        "perspective": "Finite counting and target quantifiers: full-proposal argument reconstruction, scope challenge and semantic identity",
+        "required_source_refs": [
+          "proposal",
+          "context:goal"
+        ]
+      }
+    ],
+    "overflow_disposition": "unresolved",
+    "policy_id": "review-policy-v5-default",
+    "required_perspectives": [
+      "Operational semantics and invariant reconstruction: full-proposal argument reconstruction, scope challenge and semantic identity",
+      "Finite counting and target quantifiers: full-proposal argument reconstruction, scope challenge and semantic identity"
+    ],
+    "selected_profile_ref": {
+      "id": "EP-824e051376f26282bd8e96723aedbf6e930245d257757e9d02b1415d72de22f8",
+      "revision": 1,
+      "sha256": "824e051376f26282bd8e96723aedbf6e930245d257757e9d02b1415d72de22f8"
+    }
+  },
+  "scope_complete": true,
+  "summary": "Read the complete fixed proposal, including all 17 declarations, explanation, summary and central verified signatures/axioms, and the supplied review policy. Plan two independent full-proposal reviews: one emphasizes operational semantics and invariant reconstruction; the other emphasizes exact counting, boundary cases and target quantifiers. Each must apply all three basic perspectives to every declaration and explanatory claim. The self-contained proposal needs Lean/list/finite-enumeration expertise and elementary parking combinatorics; no additional literature is presently required. Select the available GPT 6.1 Sol high-effort medium profile. With U=1 and N=2, the multi-round lower bound is 12; the proposed limit 20 preserves the policy ceiling and round limit 3. This scope plan supplies no identity approval or goal-completion judgment. The operational emphasis includes index translation, least vacancy, arrival order, failure propagation, zip length, natural subtraction and maximum-fold invariants. The counting emphasis includes labeled enumeration, every hand case and trace, row completeness, peak-witness dependence, both inequality endpoints, n=1 and n=0. Both reviewers must check all these matters, distinguish informal invariant explanations from submitted theorem claims, and compare the summary with the actual formal evidence.",
+  "used_sources": [
+    "proposal",
+    "context:goal",
+    "context:policy",
+    "input/catalog/role_review.json",
+    "input/catalog/role_profile_refs.json",
+    "input/catalog/execution_profiles.json",
+    "SKILL.md",
+    "GLOSSARY.md",
+    "references/공통-실행.md",
+    "references/지식-저작과-재사용.md",
+    "references/학술자료-활용.md",
+    "계약/동일성-검토.md"
+  ]
+}

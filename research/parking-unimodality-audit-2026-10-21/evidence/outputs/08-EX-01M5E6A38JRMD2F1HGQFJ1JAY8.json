@@ -1,0 +1,89 @@
+{
+  "dispositions": [
+    {
+      "expected_research_change": "A combinatorially justified exact recurrence and reproducible finite rows with all admissible peaks, or a documented recurrence defect and the independently validated direct-count branch. Any larger-n or all-n gap remains explicit.",
+      "kind": "selected",
+      "missing_inputs": [],
+      "next_owner": "research_work",
+      "parallel_task_ids": [
+        "TK-01M5E65YJD3PQ8B42FTARMWEQA",
+        "TK-01M5E65YJDBVGCPX1N8TQCPTH5"
+      ],
+      "reason": "Select first for direct counterexample screening and a justified counting mechanism. The arbitrary-n prefix invariant and independent checks for n=1,...,6 distinguish recurrence correctness from the finite shape evidence through n=12. This task needs neither a literature formula nor the sibling formal encoding.",
+      "revisit": {
+        "at": null,
+        "event_refs": []
+      },
+      "task_id": "TK-01M5E65YJDCNH12B29FYAFA93D",
+      "uncertainty": "The recurrence argument, implementation agreement and computed shape are not yet established; finite agreement cannot prove all-n unimodality."
+    },
+    {
+      "expected_research_change": "Checked primary-source statements with their conditions and source coordinates, bounded search coverage, and an explicit list of unresolved equivalence or retrieval obligations for subsequent preparation.",
+      "kind": "selected",
+      "missing_inputs": [],
+      "next_owner": "research_work",
+      "parallel_task_ids": [
+        "TK-01M5E65YJDCNH12B29FYAFA93D",
+        "TK-01M5E65YJDBVGCPX1N8TQCPTH5"
+      ],
+      "reason": "Select second to recover fresh primary evidence and resolve the source-to-charter conventions, especially exact versus cumulative counts and interval parameters. Its bounded follow-up search can reveal usable statements or precisely documented access obstacles before a later global proof strategy is chosen.",
+      "revisit": {
+        "at": null,
+        "event_refs": []
+      },
+      "task_id": "TK-01M5E65YJD3PQ8B42FTARMWEQA",
+      "uncertainty": "Actual scholarly exposure, retrieval outcomes, source equivalence and follow-up findings remain unobserved. Configuration and contract approval do not establish successful retrieval."
+    },
+    {
+      "expected_research_change": "Self-contained Lean definitions, the exact all-n proposition, small-case proof terms and a readable declaration mapping submitted for central formal checking and independent identity review.",
+      "kind": "selected",
+      "missing_inputs": [],
+      "next_owner": "research_work",
+      "parallel_task_ids": [
+        "TK-01M5E65YJDCNH12B29FYAFA93D",
+        "TK-01M5E65YJD3PQ8B42FTARMWEQA"
+      ],
+      "reason": "Select third to establish an executable formal target and validate its success guard, displacement and peak quantifiers with complete rows for n=1,2,3. It starts directly from the charter; independent small-case overlap with the counting task provides a later reconciliation check without making either task a prerequisite.",
+      "revisit": {
+        "at": null,
+        "event_refs": []
+      },
+      "task_id": "TK-01M5E65YJDBVGCPX1N8TQCPTH5",
+      "uncertainty": "Compiler acceptance and semantic fidelity remain to be checked. Small cases cannot establish the universal conjecture, and the proposal is not yet usable as K."
+    }
+  ],
+  "goal_audit": false,
+  "preparation_requests": [],
+  "questions": [],
+  "summary": "Compared all three ready revision-1 contracts, their recorded independent approvals and readiness, the charter and fresh-start policy, current resources, configuration, and the complete shared research_work profile in input/details/selection-profiles.json. Select exact counting, primary-source comparison, then formal encoding, with all three intentionally parallel. Each has empty dependencies and reuse and can use the charter directly; none relies on a sibling's unverified output. Their small-case overlap is useful independent checking, while their principal outputs address different uncertainties. The knowledge/source/relationship catalogs and prior planning history are empty, and no task has returned results, so there is no previous expectation-to-outcome comparison or completion judgment to make. Retain each reviewed medium difficulty/medium importance assessment: these bounded investigations require no new global proof strategy or Astra escalation. The snapshot has three available GPT 6.1 Sol work slots, matching the three selections; actual starts remain subject to central currentness, authority and capacity checks. The shared profile supports the contracts' checkpoint observation binding; scholarly configuration and central Lean checking are support arrangements, not successful research calls. Reconsider strategy when results, access failures or encoding gaps return, reconciling source conventions and independently produced counts before selecting an all-n approach. No extra preparation duplicates these existing obligations, and no K result or goal-resolution evidence warrants a goal audit.",
+  "task_assessments": [],
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "references/공통-실행.md",
+    "references/지식-저작과-재사용.md",
+    "references/학술자료-활용.md",
+    "references/모델과-실행예산.md",
+    "계약/연구-계획.md",
+    "CH-parking-fresh",
+    "PO-fresh-model-boundary",
+    "GR-research-fresh",
+    "context:goal",
+    "context:policy",
+    "TK-01M5E65YJDCNH12B29FYAFA93D",
+    "TK-01M5E65YJD3PQ8B42FTARMWEQA",
+    "TK-01M5E65YJDBVGCPX1N8TQCPTH5",
+    "EX-01M5E6638AMFMEARZ3TTF96R9C",
+    "EX-01M5E660CZV91AGN1AWM9Y067Q",
+    "EX-01M5E65Z3ERZBKF40VD9MFF24Q",
+    "input/details/configuration.json",
+    "input/details/selection-profiles.json",
+    "input/catalog/task_readiness.json",
+    "input/catalog/resources.json",
+    "input/catalog/ongoing_work.json",
+    "input/catalog/recent_history.json",
+    "input/catalog/knowledge_catalog.json",
+    "input/catalog/sources.json",
+    "input/catalog/relations.json"
+  ]
+}

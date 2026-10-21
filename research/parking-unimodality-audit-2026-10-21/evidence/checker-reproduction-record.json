@@ -1,0 +1,252 @@
+{
+  "archive_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+  "fixed_snapshot": "e40976de6a4c553d052e3cb92281204d7c831d7c",
+  "mutation_scope": "In-memory checkpoint candidate only; fixed input and installation unchanged.",
+  "unchanged_candidate": {
+    "contract_id": "do-math-machine-check/5",
+    "tool_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+    "check_subject": {
+      "id": "AC-01M5E79ATB0ZNKXMKFTXC1VE93",
+      "role": "maintenance",
+      "target": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+      "stage": "question",
+      "slot": null,
+      "review_cycle_id": null,
+      "revision_targets": {}
+    },
+    "schema_ref": {
+      "family": "do-math-cli/5",
+      "id": "https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138",
+      "sha256": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "mode": "producer",
+    "execution_id": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+    "input_snapshot": "e40976de6a4c553d052e3cb92281204d7c831d7c",
+    "input_hashes": {
+      "output": "74ec656f60aa656261aeab57693908cc935824f6f34e1209181400cbf4148dd0",
+      "extensions": "3c99ce4b8f31bbf7e57507c8f17cc5f93c4378d7616f0ab4213d738e208659f8",
+      "context": "d34deb164c68f4d2a71e708dd6f6581e7c7950be03fdcd1179d70d8697080433",
+      "schema": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "check_order": [
+      "schema",
+      "payload_semantics",
+      "integration_structure",
+      "repair_coverage"
+    ],
+    "issues": [
+      {
+        "issue_id": "SI-4bf97bc95ddcfb02481f0d46",
+        "rule_id": "checkpoint.reference",
+        "integration_id": null,
+        "path": "checkpoint.json/evidence_paths",
+        "message": "reference must identify supplied input, a record of the input snapshot or a preserved workspace file: missing-checker-fixture-evidence.txt; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>"
+      }
+    ],
+    "passed": false,
+    "not_checked": [
+      "mathematical_meaning",
+      "Lean",
+      "application_time_currentness",
+      "final_authority_and_provenance",
+      "kind_semantic_approval"
+    ],
+    "files": [
+      {
+        "path": "checkpoint.json",
+        "bytes": 179,
+        "sha256": "14300ccb9bdb5546c2cd20628b00dff80efbc45dffe4fe064baa9771a716c5d3"
+      }
+    ],
+    "comparison": {
+      "status": "matched",
+      "previous_check_id": "MC-8529e8719b759b03b79fd775"
+    },
+    "repairs": [],
+    "capture_eligible": false,
+    "id": "MC-f331abe8aa47fb27b31e88d1"
+  },
+  "before": {
+    "contract_id": "do-math-machine-check/5",
+    "tool_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+    "check_subject": {
+      "id": "AC-01M5E79ATB0ZNKXMKFTXC1VE93",
+      "role": "maintenance",
+      "target": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+      "stage": "question",
+      "slot": null,
+      "review_cycle_id": null,
+      "revision_targets": {}
+    },
+    "schema_ref": {
+      "family": "do-math-cli/5",
+      "id": "https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138",
+      "sha256": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "mode": "producer",
+    "execution_id": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+    "input_snapshot": "e40976de6a4c553d052e3cb92281204d7c831d7c",
+    "input_hashes": {
+      "output": "74ec656f60aa656261aeab57693908cc935824f6f34e1209181400cbf4148dd0",
+      "extensions": "3c99ce4b8f31bbf7e57507c8f17cc5f93c4378d7616f0ab4213d738e208659f8",
+      "context": "d34deb164c68f4d2a71e708dd6f6581e7c7950be03fdcd1179d70d8697080433",
+      "schema": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "check_order": [
+      "schema",
+      "payload_semantics",
+      "integration_structure",
+      "repair_coverage"
+    ],
+    "issues": [
+      {
+        "issue_id": "SI-4bf97bc95ddcfb02481f0d46",
+        "rule_id": "checkpoint.reference",
+        "integration_id": null,
+        "path": "checkpoint.json/evidence_paths",
+        "message": "reference must identify supplied input, a record of the input snapshot or a preserved workspace file: missing-checker-fixture-evidence.txt; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>"
+      }
+    ],
+    "passed": false,
+    "not_checked": [
+      "mathematical_meaning",
+      "Lean",
+      "application_time_currentness",
+      "final_authority_and_provenance",
+      "kind_semantic_approval"
+    ],
+    "files": [
+      {
+        "path": "checkpoint.json",
+        "bytes": 179,
+        "sha256": "14300ccb9bdb5546c2cd20628b00dff80efbc45dffe4fe064baa9771a716c5d3"
+      }
+    ],
+    "comparison": {
+      "status": "no_previous_check"
+    },
+    "repairs": [],
+    "capture_eligible": false,
+    "id": "MC-8529e8719b759b03b79fd775"
+  },
+  "after_with_previous": {
+    "contract_id": "do-math-machine-check/5",
+    "tool_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+    "check_subject": {
+      "id": "AC-01M5E79ATB0ZNKXMKFTXC1VE93",
+      "role": "maintenance",
+      "target": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+      "stage": "question",
+      "slot": null,
+      "review_cycle_id": null,
+      "revision_targets": {}
+    },
+    "schema_ref": {
+      "family": "do-math-cli/5",
+      "id": "https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138",
+      "sha256": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "mode": "producer",
+    "execution_id": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+    "input_snapshot": "e40976de6a4c553d052e3cb92281204d7c831d7c",
+    "input_hashes": {
+      "output": "74ec656f60aa656261aeab57693908cc935824f6f34e1209181400cbf4148dd0",
+      "extensions": "3c99ce4b8f31bbf7e57507c8f17cc5f93c4378d7616f0ab4213d738e208659f8",
+      "context": "d34deb164c68f4d2a71e708dd6f6581e7c7950be03fdcd1179d70d8697080433",
+      "schema": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "check_order": [
+      "schema",
+      "payload_semantics",
+      "integration_structure",
+      "repair_coverage"
+    ],
+    "issues": [
+      {
+        "issue_id": "SI-122dc4ec7ecf98ea321abe9d",
+        "rule_id": "machine_check.tool_defect",
+        "integration_id": null,
+        "path": "checks",
+        "message": "producer and receiver disagree for the same tool and input hashes"
+      }
+    ],
+    "passed": false,
+    "not_checked": [
+      "mathematical_meaning",
+      "Lean",
+      "application_time_currentness",
+      "final_authority_and_provenance",
+      "kind_semantic_approval"
+    ],
+    "files": [
+      {
+        "path": "checkpoint.json",
+        "bytes": 141,
+        "sha256": "887f1973fd7fd825267e473bbcc0642855c6180eb82d99ba60cf7eaa4cbf35d4"
+      }
+    ],
+    "comparison": {
+      "status": "tool_defect",
+      "previous_check_id": "MC-8529e8719b759b03b79fd775"
+    },
+    "repairs": [],
+    "capture_eligible": false,
+    "id": "MC-4a1966ed6f010f17434ea1f1"
+  },
+  "after_without_previous": {
+    "contract_id": "do-math-machine-check/5",
+    "tool_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+    "check_subject": {
+      "id": "AC-01M5E79ATB0ZNKXMKFTXC1VE93",
+      "role": "maintenance",
+      "target": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+      "stage": "question",
+      "slot": null,
+      "review_cycle_id": null,
+      "revision_targets": {}
+    },
+    "schema_ref": {
+      "family": "do-math-cli/5",
+      "id": "https://do-math.invalid/schemas/cli/5/sha256/db5e32f8d13d467437aad2a69994e5d2cdabe79232612b44a59a5f6e66873138",
+      "sha256": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "mode": "producer",
+    "execution_id": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+    "input_snapshot": "e40976de6a4c553d052e3cb92281204d7c831d7c",
+    "input_hashes": {
+      "output": "74ec656f60aa656261aeab57693908cc935824f6f34e1209181400cbf4148dd0",
+      "extensions": "3c99ce4b8f31bbf7e57507c8f17cc5f93c4378d7616f0ab4213d738e208659f8",
+      "context": "d34deb164c68f4d2a71e708dd6f6581e7c7950be03fdcd1179d70d8697080433",
+      "schema": "7189101d8fbb375e40edca0be9fadda8b13ae7c4808a371e4a495042ad31a08b"
+    },
+    "check_order": [
+      "schema",
+      "payload_semantics",
+      "integration_structure",
+      "repair_coverage"
+    ],
+    "issues": [],
+    "passed": true,
+    "not_checked": [
+      "mathematical_meaning",
+      "Lean",
+      "application_time_currentness",
+      "final_authority_and_provenance",
+      "kind_semantic_approval"
+    ],
+    "files": [
+      {
+        "path": "checkpoint.json",
+        "bytes": 141,
+        "sha256": "887f1973fd7fd825267e473bbcc0642855c6180eb82d99ba60cf7eaa4cbf35d4"
+      }
+    ],
+    "comparison": {
+      "status": "no_previous_check"
+    },
+    "repairs": [],
+    "capture_eligible": true,
+    "id": "MC-61853e23d4d77a3473085e60"
+  },
+  "assertions_passed": true
+}

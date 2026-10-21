@@ -1,0 +1,87 @@
+{
+  "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+  "pages": [
+    {
+      "command": "query",
+      "exit_code": 0,
+      "request_id": "QR-066d300db834d0983ddf1589d36ea30bd375c3f26da316c3b25c6fb57abbfc36",
+      "response_contract": "do-math-cli/5",
+      "result": {
+        "items": [
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 943,
+            "json_pointer": "/record",
+            "logical_sha256": "c74c1a3c200bb32daf57061f0a9bd2fcbeab18b10de3d843b41b2400d75668b4",
+            "path": "research/identity_assessments/IA-01M5E795AGVJPY2ZVXY33R0RWW.json",
+            "record": {
+              "basis": {
+                "exposition": "6efa55763a8891b60ab0e42d09d29273b3cf8a5f02dcc012211a4ff85ee01e99",
+                "formal": "81ba9bf12e9c00ff67d76ca6e5bac2ebd13522c755671b824fe9b54f8f236578"
+              },
+              "decision": "match",
+              "execution_ids": [
+                "EX-01M5E73Z9N6VA3AKEQ6NKFHMWX",
+                "EX-01M5E7491BN2DSSQ6HMQT4T4D1"
+              ],
+              "exposition_id": "XP-01M5E6WKMZ7TDF3J55DS2W108S",
+              "family": "identity-assessment",
+              "formal_result_id": "FR-01M5E6WKMZ62F8DGB5N24Q4V1Y",
+              "id": "IA-01M5E795AGVJPY2ZVXY33R0RWW",
+              "policy_ref": "review-policy-v5-default:edbafb713a834953ca14b9f54321e70242bad8605498f948b9a17e311b3aec94",
+              "proposal_digest": "c8f06a237f92a02f276939af236fc32288145e037b67465d4fedfe67e12f8b40",
+              "review_cycle_id": "RC-01M5E6Z5C9GMJAP6BKSKZ5FD5K",
+              "scope_complete": true,
+              "summary": "Complete independent review"
+            },
+            "sha256": "ffb0d3c753b20a60fac461b551784115afa34a83fbdf0a78a5df18fea3e918a7",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          }
+        ],
+        "loaded": 1,
+        "next_cursor": null,
+        "query_basis": {
+          "complete": true,
+          "limit": 1000,
+          "loaded_ids": [
+            "IA-01M5E795AGVJPY2ZVXY33R0RWW"
+          ],
+          "parameters": {
+            "direction": "both",
+            "instance_id": "RI-01M5E5GMKK5Q7HBXRQ9QRCVRMD",
+            "kind": "identity-assessment",
+            "related_to": null,
+            "text": ""
+          },
+          "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+        },
+        "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+        "total": 1,
+        "truncated": false
+      },
+      "schema_version": 5
+    }
+  ],
+  "records": [
+    {
+      "basis": {
+        "exposition": "6efa55763a8891b60ab0e42d09d29273b3cf8a5f02dcc012211a4ff85ee01e99",
+        "formal": "81ba9bf12e9c00ff67d76ca6e5bac2ebd13522c755671b824fe9b54f8f236578"
+      },
+      "decision": "match",
+      "execution_ids": [
+        "EX-01M5E73Z9N6VA3AKEQ6NKFHMWX",
+        "EX-01M5E7491BN2DSSQ6HMQT4T4D1"
+      ],
+      "exposition_id": "XP-01M5E6WKMZ7TDF3J55DS2W108S",
+      "family": "identity-assessment",
+      "formal_result_id": "FR-01M5E6WKMZ62F8DGB5N24Q4V1Y",
+      "id": "IA-01M5E795AGVJPY2ZVXY33R0RWW",
+      "policy_ref": "review-policy-v5-default:edbafb713a834953ca14b9f54321e70242bad8605498f948b9a17e311b3aec94",
+      "proposal_digest": "c8f06a237f92a02f276939af236fc32288145e037b67465d4fedfe67e12f8b40",
+      "review_cycle_id": "RC-01M5E6Z5C9GMJAP6BKSKZ5FD5K",
+      "scope_complete": true,
+      "summary": "Complete independent review"
+    }
+  ]
+}

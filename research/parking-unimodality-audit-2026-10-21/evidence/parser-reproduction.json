@@ -1,0 +1,112 @@
+{
+  "frozen_before": {
+    "parsed_bytes": 263380,
+    "unparsed_tail_bytes": 1844208,
+    "parse_complete": false,
+    "turn_completed": false,
+    "turn_failed": false,
+    "unknown_events": [
+      {
+        "kind": "invalid_jsonl",
+        "offset": 263380
+      }
+    ],
+    "web_search_envelopes": null,
+    "usage": [],
+    "final_sha256": null
+  },
+  "live_after": {
+    "parsed_bytes": 2107588,
+    "unparsed_tail_bytes": 0,
+    "parse_complete": true,
+    "turn_completed": true,
+    "turn_failed": false,
+    "unknown_events": [],
+    "web_search_envelopes": [
+      {
+        "item_id": "item_38",
+        "provider_operation_id": "exec-279e1838-71b3-4afe-9a06-b1524ef8f1d4",
+        "source": {
+          "artifact": "stdout",
+          "offset": 263380,
+          "bytes": 154
+        }
+      },
+      {
+        "item_id": "item_38",
+        "provider_operation_id": "exec-279e1838-71b3-4afe-9a06-b1524ef8f1d4",
+        "source": {
+          "artifact": "stdout",
+          "offset": 263534,
+          "bytes": 880
+        }
+      },
+      {
+        "item_id": "item_40",
+        "provider_operation_id": "exec-70b2350d-e613-4b33-b072-a67f3c426a81",
+        "source": {
+          "artifact": "stdout",
+          "offset": 272546,
+          "bytes": 154
+        }
+      },
+      {
+        "item_id": "item_40",
+        "provider_operation_id": "exec-70b2350d-e613-4b33-b072-a67f3c426a81",
+        "source": {
+          "artifact": "stdout",
+          "offset": 272700,
+          "bytes": 929
+        }
+      },
+      {
+        "item_id": "item_43",
+        "provider_operation_id": "exec-46641f59-278a-4d2b-8d3e-0120ca8eb58d",
+        "source": {
+          "artifact": "stdout",
+          "offset": 303310,
+          "bytes": 154
+        }
+      },
+      {
+        "item_id": "item_43",
+        "provider_operation_id": "exec-46641f59-278a-4d2b-8d3e-0120ca8eb58d",
+        "source": {
+          "artifact": "stdout",
+          "offset": 303464,
+          "bytes": 891
+        }
+      },
+      {
+        "item_id": "item_45",
+        "provider_operation_id": "exec-52f023bc-f57e-4740-b17a-86394db99179",
+        "source": {
+          "artifact": "stdout",
+          "offset": 310957,
+          "bytes": 154
+        }
+      },
+      {
+        "item_id": "item_45",
+        "provider_operation_id": "exec-52f023bc-f57e-4740-b17a-86394db99179",
+        "source": {
+          "artifact": "stdout",
+          "offset": 311111,
+          "bytes": 265
+        }
+      }
+    ],
+    "usage": [
+      {
+        "input_tokens": 7051036,
+        "cached_input_tokens": 6780800,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 25710,
+        "reasoning_output_tokens": 7834
+      }
+    ],
+    "final_sha256": "51d1260b5531ee10d272d55ec2bc40c256f99964677e19fbe6d0ccb0f77ff0c3"
+  },
+  "preserved_final_sha256": "51d1260b5531ee10d272d55ec2bc40c256f99964677e19fbe6d0ccb0f77ff0c3",
+  "matches_preserved_final": true
+}

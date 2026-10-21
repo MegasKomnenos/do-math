@@ -1,0 +1,40 @@
+{
+  "disposition": {
+    "basis_refs": [
+      "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+      "SC-67057b97b4575edea674",
+      "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-41"
+    ],
+    "kind": "repair",
+    "meaning_preserving": true,
+    "next_owner": "installation_recovery",
+    "reason": "The self-check requires workspace:checkpoint.json to be read before a normal or defect response. Record 39 confirms successful retrieval of this exact request, ending at stdout offset 152782. Record 40 starts at that boundary and contains only Get-Content -LiteralPath reading the worker's checkpoint.json. Record 41 flags this required evidence inspection as research_action_before_response. In the supplied submission-support.zip, do_math/observations.py lines 570–599 pass the generic command type to _start_call and flag non-control calls after acknowledgement without distinguishing required evidence inspection. replay_observation.py reproduces the flag using the supplied obligation and exact command event; observation-replay.json preserves source hashes and excerpts. This conflicts with the requirement to read mandatory evidence. Preserve the original event, but do not interpret this command as new research. No live worker workspace or central record was accessed or changed.",
+    "repair_target": "installation:scripts/do_math/observations.py",
+    "verification": "Compare the supplied code and hashes with the live installation. Reproduce the successful item_19 poll followed by item_20's required checkpoint read; evidence preparation must remain possible without producing research_action_before_response. Verify that actual research before response still triggers the prohibition, unsuccessful or mismatched polls do not acknowledge an obligation, and pre-delivery events remain excluded. Preserve response deadlines, required-evidence validation, stop requests and authority boundaries. Run relevant observation/control tests and installation checks, retaining the original failure lineage. After accepting this diagnosis and confirming this review's termination, the engine must apply its existing quiescence and repair fence. Subsequent worker handling must use the actual current execution state."
+  },
+  "questions": [],
+  "summary": "Reviewed the supplied implementation documents in order, the target execution and task contract, the preserved checkpoint and its evidence, and observation records 36–41. The target is running in the supplied snapshot, without confirmed local termination or a continuation. The self-check trigger is reproducible: reading required checkpoint evidence after retrieving the request is classified as research_action_before_response. Request installation repair. The checkpoint does not establish completed source retrieval, convention comparison or bounded search coverage. No mathematical or task-completion judgment is made.",
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "references/공통-실행.md",
+    "references/지식-저작과-재사용.md",
+    "references/학술자료-활용.md",
+    "references/자기-점검.md",
+    "계약/운영-점검.md",
+    "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+    "TK-01M5E65YJD3PQ8B42FTARMWEQA",
+    "GR-research-fresh",
+    "SC-67057b97b4575edea674",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-36",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-37",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-38",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-39",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-40",
+    "OF-EX-01M5E6DN6P0GD8BVQT86GSJMC3-41",
+    "runtime/artifacts/BA-01M5E6H0R3X9VSV75BGP85P10J/checkpoint.json",
+    "input/operational-review/EX-01M5E6DN6P0GD8BVQT86GSJMC3/evidence/input/catalog/task.json",
+    "workspace:replay_observation.py",
+    "workspace:observation-replay.json"
+  ]
+}

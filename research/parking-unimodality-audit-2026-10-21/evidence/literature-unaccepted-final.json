@@ -1,0 +1,61 @@
+{
+  "summary": "Recovered and compared the original paper, completed three bounded search families, and read two additional primary works. Located a cumulative-count recurrence and clarified its relation to exact maximum-displacement counts. No all-n resolution or certification is claimed.",
+  "used_sources": [
+    "TK-01M5E65YJD3PQ8B42FTARMWEQA",
+    "CH-parking-fresh",
+    "PO-fresh-model-boundary",
+    "tool:scholarly",
+    "workspace:source-dossier.json",
+    "workspace:bounded-search-log.json",
+    "workspace:source-call-log.json",
+    "workspace:primary-files/direct-download-manifest.json",
+    "workspace:primary-files/celano-2507.07243v1.pdf",
+    "workspace:primary-files/celano-2507.07243v2.pdf",
+    "workspace:scholarly-data/blobs/062a21f50827c0c73996b8f9c5a364c2c88b48a27441393c1a620fbcf529dbdb",
+    "workspace:scholarly-data/blobs/7c35016e1759a69900ac4ce69168e3cf4edc9ac8818962b18bf7f668bbdc9f80",
+    "workspace:support-observation.json"
+  ],
+  "questions": [],
+  "outcome": "submitted",
+  "report": "The supplied implementation documents were read in the declared order. The task, charter, fresh-start policy and empty knowledge/source catalogs supplied the baseline; no prior-instance research was used. This submits the investigation for research_plan assessment of literature-original, literature-followups and literature-handoff, without declaring task completion.\n\nOriginal: pinned PDFs, extracted text, inspected images and retrieval hashes are preserved under primary-files/. The [v1 paper](https://arxiv.org/pdf/2507.07243v1) was read on pp.1-6,23-24; v2 on pp.1,3,23. The inspected definitions identify the charter’s statistic and exact-count sequence. The September 2026 revision retains Conjecture 6.5. source-dossier.json records version distinctions, formula coordinates, visually confirmed wording inconsistencies and unread ranges. The inconsistencies do not refute unimodality.\n\nAdditional works: two were selected, below the cap of three. Aguilar-Fraga et al., [Interval and ℓ-interval rational parking functions](https://doi.org/10.46298/dmtcs.12598), publisher PDF pp.1-6,8-10, supplies the cumulative recurrence in Theorem 3.7 (p.8), with proof through p.9. Its formula and cumulative table were visually checked. This is primary background from 2024, not a later resolution. Selig and Zhu, [Parking functions and Łukasiewicz paths](https://doi.org/10.47443/dml.2024.070), journal pp.77-81, supplies Theorem 2.1 (p.80): maximum displacement corresponds to path height on nondecreasing parking functions. The displayed domain and equality were visually checked. No transfer to arbitrary preference orderings is asserted.\n\nCoverage: bounded-search-log.json records actual queries, syntax, ordering, offsets, totals, inspected identifiers, selection reasons and stopping conditions. The title family inspected ten Crossref records after an arXiv 429; the conjecture-number/unimodality family inspected the first ten of 25 OpenAlex records; the maximum-displacement family inspected all six returned OpenAlex records after a zbMATH 404. No further pages were inspected. Unselected works remain content-unchecked. No all-n solution was identified in these windows and read passages; this does not establish literature-wide absence.\n\nRetrieval: scholarly tools became callable after initial discovery, so the provisional missing-tool inference and operations request were withdrawn. Actual scholarly arXiv searches/fetches returned HTTP 429 without Retry-After. A PDF-only request still entered the adapter’s metadata preflight. Browser access and explicit public downloads subsequently recovered both pinned PDFs; this fallback is distinguished from successful scholarly retrieval. Additional publisher PDFs, source responses and manifests remain in scholarly-data/.\n\nOne early self-check response was rejected as research_action_before_response after a checkpoint-read command; support-observation.json preserves that historical rejection. The subsequent interval self-check was accepted. The local submission checker passed with no structural issues; this does not establish central acceptance, mathematical validity or task completion.\n\nThese findings are nonformal literature observations. No Lean code was submitted: the task requests source investigation, and no verified K definition was supplied on which to build a formal result.",
+  "knowledge": [
+    {
+      "kind": "observation",
+      "title": "Checked identification of Conjecture 6.5 with the charter",
+      "statement": "In the inspected original-paper passages, maxdisp is the charter’s M and |IPF_n(k)^max| is b_{n,k}; |IPF_n(k)| instead counts M≤k.",
+      "explanation": "See source-dossier.json and the preserved v1 PDF, Definitions 2.5 and 2.7 (p.3), Conjecture 6.5 (p.23) and Table 1 (p.24); relevant v2 passages were also checked. These are source-reading observations, not a certified theorem. The dossier preserves transcription cautions and unread ranges.",
+      "summary": "The conjecture concerns exact maximum displacement, with matching cutoff parameter k.",
+      "lean_code": "",
+      "declaration_names": [],
+      "dependencies": []
+    },
+    {
+      "kind": "observation",
+      "title": "Primary cumulative recurrence for displacement cutoffs",
+      "statement": "Aguilar-Fraga et al., Theorem 3.7, states A_0(k)=1 and A_n(k)=Σ_{x=0}^{n−1} binom(n−1,x) min(x+1,k+1) A_x(k) A_{n−1−x}(k), where n≥1, k≥0 and A_n(k)=|IPF_n(k)|.",
+      "explanation": "The publisher PDF at scholarly-data/blobs/062a21f50827c0c73996b8f9c5a364c2c88b48a27441393c1a620fbcf529dbdb was read at pp.8-9, including the last-car partition proof; its formula and table were visually checked. The paper defines N to include zero. Specialize its number of spots to m=n. A counts displacement at most k; for the charter’s n≥1, define A_n(-1)=0 and obtain exact counts by A_n(k)-A_n(k-1). This comparison follows the matching definitions; the recurrence still needs an independent proof and formal verification before certified reuse.",
+      "summary": "A primary recurrence computes cumulative counts; unimodality of their first differences remains unproved here.",
+      "lean_code": "",
+      "declaration_names": [],
+      "dependencies": []
+    },
+    {
+      "kind": "observation",
+      "title": "Nondecreasing restriction of the maximum-displacement path theorem",
+      "statement": "Selig-Zhu Theorem 2.1 identifies maximum displacement with Łukasiewicz-path height for nondecreasing parking functions; it is not a theorem about all preference orderings.",
+      "explanation": "The publisher PDF at scholarly-data/blobs/7c35016e1759a69900ac4ce69168e3cf4edc9ac8818962b18bf7f668bbdc9f80 was read at journal pp.77-81. Theorem 2.1 and Equation (2) on p.80 were visually checked. The map records preference multiplicities, ell_i=#{j:p_j=i}-1, and its bijection domain is PF_n^inc. No statistic-preserving transfer to all ordered preference lists was established in this investigation.",
+      "summary": "The path-height interpretation is restricted evidence; the full-PF bridge remains open.",
+      "lean_code": "",
+      "declaration_names": [],
+      "dependencies": []
+    }
+  ],
+  "relations": [],
+  "remaining_work": [
+    "Research_plan: assess literature-original, literature-followups and literature-handoff against source-dossier.json, bounded-search-log.json and the preserved primary files; this response does not make that completion judgment.",
+    "Candidate preparation and subsequent research_work: independently establish and formalize the cumulative recurrence on the canonical parking procedure, then investigate unimodality of A_n(k)-A_n(k-1). No such new proof was attempted in this literature task.",
+    "Before reusing the refined generating function or universally stated adjacent inequalities, resolve the formula and range cautions in source-dossier.json. Application of the path theorem to arbitrary preference orderings requires an additional justified bridge.",
+    "Future literature work must preserve this search’s limits: unselected works and unread passages remain unchecked. Further discovery or an arXiv API retry needs a concrete new scope, target or availability condition."
+  ],
+  "checkpoint": "The bounded source investigation is ready for research_plan assessment. Resume from source-dossier.json and bounded-search-log.json. Pinned original PDFs and two additional publisher PDFs are preserved. The cumulative recurrence and restricted path theorem are available as nonformal source observations; an all-n proof, Lean verification and independent mathematical reviews remain outstanding."
+}

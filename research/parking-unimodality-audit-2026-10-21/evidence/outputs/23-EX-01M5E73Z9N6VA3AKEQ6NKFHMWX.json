@@ -1,0 +1,21 @@
+{
+  "decision": "match",
+  "findings": [],
+  "proposal_digest": "c8f06a237f92a02f276939af236fc32288145e037b67465d4fedfe67e12f8b40",
+  "questions": [],
+  "scope_complete": true,
+  "summary": "Reviewed the complete fixed proposal: statement, explanation, summary, all 17 named declarations, the auxiliary Decidable instance, formal signatures, axiom dependencies and supplied verification environment. Applied argument reconstruction, scope challenge and semantic comparison throughout.\n\nPreferences represents labeled ordered lists without quotienting permutations. Translating indices and values by one preserves arrival order and displacement. preferenceList enumerates car indices in increasing order. firstSpace searches the ascending range of spaces for the least unoccupied value at least the preference. run reserves that space before processing the tail, propagates either failure, and prepends returned spaces in arrival order. Occupancy storage order affects no membership decision. Induction reconstructs equal input/output lengths on success, eligible in-range selections and pairwise distinct chosen spaces. These are correctly presented as explanatory invariants rather than separately submitted Lean theorems.\n\npark starts with empty occupancy; Success and PF select exactly complete successes. M propagates failure. On success, equal list lengths prevent zip truncation, the eligibility invariant makes natural subtraction the intended displacement, and the zero-initialized maximum fold gives the maximum for n>=1. Every displacement is at most n-1, so row contains the complete possible range. The n=0 maximum convention is accurately disclosed and excluded from FullConjecture. Finset cardinality counts each labeled preference function once.\n\nUnimodalRow has a peak chosen separately for each n. Its increasing range needs no additional upper bound because k<c<n implies k+1<n. Its decreasing range includes the final adjacent comparison and matches the charter's bounds. The n=1 comparisons are vacuous. FullConjecture is a proposition definition, not a proof or assumption of universal unimodality.\n\nChecked every supplied hand case for n=1,2,3, including actual spaces, displacement and first failing car. The rows [1], [2,1], [6,7,3], the 16 successes and 11 failures for n=3, and both zero-based trace interpretations agree with the definitions and theorem signatures. The five proofs use decide; the source introduces no sorry, native_decide or assumed count constants.\n\nThe original formal artifact's bounded metadata inspection confirms verified status, exit code zero, empty stderr, matching signatures and source hash, and a verified environment check. Reported axioms stay within the permitted three; the two traces have none. The proposal's wording that central checking remains pending records its submission-time status and does not enlarge its mathematical claim. Neither the explanation nor summary claims arbitrary-n unimodality or formal invariant theorems. No semantic mismatch or unresolved review question remains. This is this reviewer's identity judgment, not an aggregate approval or goal-completion judgment.",
+  "used_sources": [
+    "proposal",
+    "context:goal",
+    "context:policy",
+    "input/catalog/role_review.json",
+    "runtime/artifacts/BA-01M5E6Z4VTYP5ZGBG1V9BXDCXR/formal.json",
+    "SKILL.md",
+    "GLOSSARY.md",
+    "references/공통-실행.md",
+    "references/지식-저작과-재사용.md",
+    "references/학술자료-활용.md",
+    "계약/동일성-검토.md"
+  ]
+}

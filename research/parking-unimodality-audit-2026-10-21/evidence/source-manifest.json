@@ -1,0 +1,122 @@
+[
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\codex_stream.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\codex_stream.py",
+    "sha256": "ca4379cdfe53288d00156c3137281b0f35454ef00ac38eb6e2ab22b5dfba0e88"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\codex_stream.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\codex_stream.py",
+    "sha256": "f527dea6cdc81c2e33dcce6e0b9c59b0bbe64b5e4f7381d89c2adf59d00e9b9c"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\observation_transport.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\observation_transport.py",
+    "sha256": "34ca46e279d656a7f47cbf772939d980a7cf01976451fc17e8d52568b6d67ba3"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\observation_transport.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\observation_transport.py",
+    "sha256": "3b863a923a8406a2b1fd33af56461b9aee785843db88ee6e7285db442b275ae1"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\model_call.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\model_call.py",
+    "sha256": "93fd304f141d1cb59d06554f09e7c45c81276b243ea452d49ecaaa7c4d85371c"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\model_call.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\model_call.py",
+    "sha256": "39afe45fe59d73f09707d1c7bea01e64f9d6e4d5770b3747e146aee98bde8901"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\model_runner.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\model_runner.py",
+    "sha256": "642236fbd367dd33a1aa11432e6f3a2adc49712591ccd65fd59c7db7246f6880"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\model_runner.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\model_runner.py",
+    "sha256": "5e5b21eb0e3c3fc10c69f38a3b4a23346cd4af1e2fa4a7973b6700f205a6d325"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\scheduled_operator.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\scheduled_operator.py",
+    "sha256": "2e69833c2e218bd24e505db293148834a781b658d7a6b1af96a17c3fcdf889dc"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\scheduled_operator.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\scheduled_operator.py",
+    "sha256": "2e69833c2e218bd24e505db293148834a781b658d7a6b1af96a17c3fcdf889dc"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\engine.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\engine.py",
+    "sha256": "63ae2cdf3de5452ee6d361a3647dcb3d93ac5f462237e765500910fb2275e44e"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\engine.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\engine.py",
+    "sha256": "63ae2cdf3de5452ee6d361a3647dcb3d93ac5f462237e765500910fb2275e44e"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\submission.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\submission.py",
+    "sha256": "76c92e5b850ab86d6664e65f08d87c0ea70930362175fc11371e1fce210f325e"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\submission.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\submission.py",
+    "sha256": "76c92e5b850ab86d6664e65f08d87c0ea70930362175fc11371e1fce210f325e"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\repair_execution.py",
+    "copy": "evidence\\source\\frozen\\scripts\\do_math\\repair_execution.py",
+    "sha256": "b6e4a6fc50c0c7854974db629a28a39a24c68e8aad62f8f9496bf47cc5fa24fc"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\repair_execution.py",
+    "copy": "evidence\\source\\live\\scripts\\do_math\\repair_execution.py",
+    "sha256": "b6e4a6fc50c0c7854974db629a28a39a24c68e8aad62f8f9496bf47cc5fa24fc"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\scripts\\do_math\\observations.py",
+    "copy": "evidence/source/frozen/scripts/do_math/observations.py",
+    "sha256": "e8706c37e96fae88839adc6561f18e0868d333ef8ee51fcfe401b53d8af8dbc4"
+  },
+  {
+    "edition": "frozen",
+    "source": "C:\\math\\.skill-workspace\\parking-unimodality-fresh-20261021-1144\\work\\operator\\bootstrap\\cf10dcac0e0caefc42f947189c4be90fad298411e6c8f960b1ece0ef8ef9460a\\references\\자기-점검.md",
+    "copy": "evidence/source/frozen/references/자기-점검.md",
+    "sha256": "4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\observations.py",
+    "copy": "evidence/source/live/scripts/do_math/observations.py",
+    "sha256": "e8706c37e96fae88839adc6561f18e0868d333ef8ee51fcfe401b53d8af8dbc4"
+  },
+  {
+    "edition": "live",
+    "source": "C:\\math\\.agents\\skills\\do-math\\references\\자기-점검.md",
+    "copy": "evidence/source/live/references/자기-점검.md",
+    "sha256": "4cab672763f818f59bd3d14b626c3edb3bf1c5bdb614e4b9c0d8b1bdacdc172d"
+  }
+]

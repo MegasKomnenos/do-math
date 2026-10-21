@@ -1,0 +1,57 @@
+{
+  "checkpoint": "The arbitrary-n prefix invariant is proved nonformally; DP rows through n=12 and independent full-list rows through n=6 are saved and agree on all 21 overlapping entries. All weak peak sets are singleton, with indices 0,0,1,1,1,2,2,3,3,4,4,5. Resume from recurrence.md, tables.md and validation.json; the next owner is research_plan for completion judgment and further all-n research selection.",
+  "knowledge": [
+    {
+      "declaration_names": [],
+      "dependencies": [],
+      "explanation": "A prefix's occupied set determines exactly the first available space for every next preference, while its maximum and the new displacement determine the updated maximum. Appending a is a bijection from prefixes counted by a given state to successful extensions associated with that state and a. Different state/preference triples give disjoint ordered tuples because deleting the final entry recovers the preceding prefix and its unique state. Conversely every successful extension has such a deletion. Induction from the unique empty prefix proves the invariant for all t<=n; at t=n the occupied set must be [n], giving the terminal counts. Failed arrivals have no successful extensions and contribute nothing. The empty maximum convention is valid because all displacements are nonnegative; n=1 produces [1]. recurrence.md gives the complete argument and bit-mask correspondence. This is a nonformal proved counting mechanism, without a claim of all-n unimodality or Lean certification.",
+      "kind": "partial_result",
+      "lean_code": "",
+      "statement": "For every n>=1, let D_t(S,m) count successful ordered length-t preference prefixes in [n]^t with occupied set S and maximum displacement m, with empty-prefix maximum 0. Initialize D_0(empty,0)=1. For each a in [n], if p=min([a,n] minus S) exists, add D_t(S,m) to D_{t+1}(S union {p},max(m,p-a)); otherwise add nothing. Then b[n,k]=D_n([n],k) for every 0<=k<n.",
+      "summary": "A direct prefix-counting proof justifies an exact state recurrence for arbitrary n, independently of published formulas; shape inequalities remain open.",
+      "title": "Occupied-set recurrence for exact maximum parking displacement"
+    },
+    {
+      "declaration_names": [],
+      "dependencies": [
+        "Occupied-set recurrence for exact maximum parking displacement"
+      ],
+      "explanation": "occupied_dp.py implements the occupied-set recurrence using Python arbitrary-precision integers. Independently, direct_enumeration.py simulates each full one-based tuple using a sorted explicit list of vacant spaces, without DP aggregation or shared transition helpers. validate_counts.py verifies all required n values, compares all 21 entries on the overlap, and tests each possible peak directly against both sets of weak inequalities. Full rows are preserved in dp_rows.json and tables.md, independent rows in direct_rows.json, and all comparisons, adjacent differences and separate log-concavity results in validation.json. Actual commands and environment are documented in README.md and environment.json; run logs preserve stdout. For n=1, the sole peak is 0; failure handling is included in enumeration. These exact finite computations provide no conclusion for n>=13 and do not prove the charter's all-n conjecture.",
+      "kind": "observation",
+      "lean_code": "",
+      "statement": "The complete rows b[n,0],...,b[n,n-1] computed for every 1<=n<=12 are weakly unimodal. Their only valid peak indices, in increasing n order, are 0,0,1,1,1,2,2,3,3,4,4,5. Independent direct enumeration agrees with the DP on every entry for 1<=n<=6. All twelve rows also pass exact log-concavity checks at every interior index.",
+      "summary": "All twelve finite rows have unique peaks; 21 overlapping counts match independent full-tuple enumeration. No finite obstruction was found, and no global shape result is claimed.",
+      "title": "Exact maximum-displacement rows and unique peaks through n=12"
+    }
+  ],
+  "outcome": "submitted",
+  "questions": [],
+  "relations": [],
+  "remaining_work": [
+    "Research planner: judge count-correctness, count-validation and count-conclusion from recurrence.md, the two independent implementations, full row JSON files and saved validation logs. No assigned counting range or peak-classification obligation remains unperformed.",
+    "Subsequent research planning: pursue an all-n unimodality argument or an independently established counterexample beyond the tested range; finite evidence through n=12 does not discharge that goal.",
+    "When the independent formal definitions become available, reconcile their parking semantics and indexing with recurrence.md and select formalization of the counting invariant if useful. Central formal verification, independent identity review and goal audit have not been performed on these nonformal results."
+  ],
+  "report": "For task TK-01M5E65YJDCNH12B29FYAFA93D, revision 1, I completed the successful recurrence branch of the three requested obligations and submit it to research_plan for completion judgment. I read the supplied implementation documents in their declared order and used the charter's parking rule directly. The supplied knowledge catalog, reuse list and dependencies were empty. I used no previous-instance research, literature formula or sibling-task output. The task_readiness occupancy reflects this dispatched execution, rather than a missing mathematical input.\n\ncount-correctness: recurrence.md defines D_t(S,m), initializes D_0(empty,0)=1, discards failed arrivals, and adds each state's multiplicity for every preference a to (S union {p},max(m,p-a)), where p is the first empty space at least a. Unique deletion/appending of the last preference proves the successful-prefix invariant by induction for arbitrary positive n. Thus b[n,k]=D_n([n],k). The empty-prefix maximum is 0 and the terminal range is 0<=k<n. Subtracting 1 from both preferences and spaces preserves displacement in the bit-mask implementation.\n\ncount-validation: occupied_dp.py computed all n=1,...,12 rows; direct_enumeration.py independently enumerated all full preference tuples for n=1,...,6 using one-based explicit empty lists, with no shared transition or counting helper. validate_counts.py compared all 21 overlapping entries successfully. The direct runs examined 1,4,27,256,3125,46656 tuples respectively, with successful totals 1,3,16,125,1296,16807 and failed totals 0,1,11,131,1829,29849. dp_rows.json and direct_rows.json preserve every integer, and dp_run.log, direct_run.log and validation_run.log preserve actual stdout. All executed counting and validation commands returned exit code 0. README.md gives reproducible commands; environment.json records Python 3.12.10 and arbitrary-precision arithmetic. An initially handwritten, unexecuted n=3 test expectation was corrected to [6,7,3]: the M=2 lists are exactly (1,1,1),(1,2,1),(2,1,1). Neither counting implementation changed.\n\ncount-conclusion: validation.json exhaustively checks every possible weak peak and saves exact adjacent differences. For n=1,...,12 the complete sets of valid peaks are respectively {0},{0},{1},{1},{1},{2},{2},{3},{3},{4},{4},{5}. tables.md contains every full row. The n=12 row is [479001600,27612565995,113407725802,193804329368,234483247248,242766518158,234882851708,218509882050,192828376414,157676318044,113792213426,61917364224]. No counterexample appears in this range. Separately, exact interior log-concavity tests pass for all twelve rows; that stronger finite observation is not generalized.\n\nThis is a complete nonformal counting investigation within the assigned finite scope. No verified K definition was supplied, so the same-execution formalization condition was not met. I did not run Lean or scholarly tools. Neither the recurrence proof nor the computational results are claimed to have passed central formal verification, independent identity review or goal audit.",
+  "summary": "Derived a nonformal occupied-set recurrence valid for every positive n and computed complete maximum-displacement rows for n=1,...,12. Independent exhaustive enumeration agrees on every entry for n=1,...,6. All twelve rows are weakly unimodal with unique peaks; the all-n conjecture remains unresolved.",
+  "used_sources": [
+    "TK-01M5E65YJDCNH12B29FYAFA93D",
+    "CH-parking-fresh",
+    "PO-fresh-model-boundary",
+    "context:goal",
+    "context:policy",
+    "workspace:recurrence.md",
+    "workspace:occupied_dp.py",
+    "workspace:direct_enumeration.py",
+    "workspace:validate_counts.py",
+    "workspace:dp_rows.json",
+    "workspace:direct_rows.json",
+    "workspace:validation.json",
+    "workspace:dp_run.log",
+    "workspace:direct_run.log",
+    "workspace:validation_run.log",
+    "workspace:tables.md",
+    "workspace:README.md",
+    "workspace:environment.json"
+  ]
+}

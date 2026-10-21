@@ -1,0 +1,96 @@
+{
+  "import_units": [
+    {
+      "decision_refs": [
+        "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+        "DC-01M5E5MFTNZEEX6P5RM0PM73S8"
+      ],
+      "interpretation": "$do-math를 사용하여 research\\problem-selection-2026-09-15에서 선정된 문제를 연구하라는 요청이다. 현행 CH-parking-fresh와 그 명시적 승인에서 연구 대상은 Celano 외의 추측 6.5 전체, 즉 표준 주차 함수의 최대 변위별 개수 b_{n,k}의 모든 n≥1에 대한 단봉성을 증명하거나 엄밀하게 반증하는 것으로 이미 확정되었다. 이 대상 연결은 지급된 승인 헌장에 근거하며 선정 문서의 이전 연구 산출을 열람하거나 가져온 결과가 아니다. 이미 같은 요청을 담은 헌장이므로 payload를 비워 중복 헌장을 만들지 않는다. 원문의 스킬 표기·경로·공백·구두점도 이 구간에 포함한다.",
+      "owner_kind": "charter",
+      "owner_ref": "CH-parking-fresh",
+      "payload": {},
+      "question_refs": [],
+      "source_range": {
+        "end": 76,
+        "start": 0
+      },
+      "unit_id": "unit-1"
+    },
+    {
+      "decision_refs": [
+        "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+        "DC-01M5E5MFTNZEEX6P5RM0PM73S8"
+      ],
+      "interpretation": "대부분의 작업을 gpt-6.1-sol로 수행하라는 모델 사용 선호다. 모든 작업을 이 모델로만 제한하거나 고정 비율·슬롯 수를 새로 지정한 것은 아니다. 현행 PO-fresh-model-boundary가 이 선호를 이미 보존하고, 채택된 설정도 low·medium 등급을 gpt-6.1-sol에 대응시키므로 추가 정책·설정 변경 없이 빈 payload로 연결한다.",
+      "owner_kind": "policy",
+      "owner_ref": "PO-fresh-model-boundary",
+      "payload": {},
+      "question_refs": [],
+      "source_range": {
+        "end": 105,
+        "start": 76
+      },
+      "unit_id": "unit-2"
+    },
+    {
+      "decision_refs": [
+        "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+        "DC-01M5E5MFTNZEEX6P5RM0PM73S8"
+      ],
+      "interpretation": "어려운 작업에서 필요하면 gpt-6-astra를 사용할 수 있다는 조건부 모델 선택 허용이다. Astra 사용을 의무화하거나 모든 연구 작업의 난이도를 일괄 상향하는 뜻은 아니다. 현행 PO-fresh-model-boundary는 실제 어려운 과제에서 구체적인 필요성을 기록하도록 이미 반영하며, 채택된 설정의 high 등급도 해당 모델에 연결되어 있다. 빈 payload는 이 기존 반영을 확인하며 별도의 행동 허가나 자원 확대를 만들지 않는다.",
+      "owner_kind": "policy",
+      "owner_ref": "PO-fresh-model-boundary",
+      "payload": {},
+      "question_refs": [],
+      "source_range": {
+        "end": 139,
+        "start": 105
+      },
+      "unit_id": "unit-3"
+    },
+    {
+      "decision_refs": [
+        "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+        "DC-01M5E5MFTNZEEX6P5RM0PM73S8"
+      ],
+      "interpretation": "effort를 작업 특성에 맞게 적절히 선택하라는 요청이며 사용자가 특정 effort 값을 직접 지정하지 않았다. 현행 헌장의 선호와 PO-fresh-model-boundary가 이를 이미 보존한다. 현재 설정의 effort=high와 operator_effort=high는 채택된 운영값이고 원문의 명시적 high 지시로 해석하지 않는다. 필요가 확인되면 공개 설정·프로필 절차에서 조정한다는 현행 정책을 유지하며, 이번 단위는 새 값을 제안하지 않으므로 빈 payload다.",
+      "owner_kind": "policy",
+      "owner_ref": "PO-fresh-model-boundary",
+      "payload": {},
+      "question_refs": [],
+      "source_range": {
+        "end": 169,
+        "start": 139
+      },
+      "unit_id": "unit-4"
+    },
+    {
+      "decision_refs": [
+        "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+        "DC-01M5E5MFTNZEEX6P5RM0PM73S8"
+      ],
+      "interpretation": "이전 연구·인스턴스를 활용하지 않고 새 인스턴스에서 연구하라는 독립 시작 요구다. 원문은 실제로 '처음부'에서 끝나며 빠진 글자나 추가 요구를 만들어 넣지 않는다. 독립 시작의 실행 경계는 이미 승인된 CH-parking-fresh와 PO-fresh-model-boundary에서 확정되어 있다. 이전 연구의 결과·진행 기록·후속 계획·실험·문헌 조사 산출을 읽거나 재사용하지 않고, 선정 문서에서는 문제 식별과 명제만 사용하며 문헌은 공개 원문에서 새로 조사한다. 공통 스킬 코드와 Lean·Mathlib 도구 설치의 사용은 현행 승인 정책이 구별해 허용한다. 이 경계를 중복 변경하지 않는 빈 payload이며, 현재 승인 기록으로 의미가 정해져 있어 끝부분의 철자 보완을 묻는 질문은 필요하지 않다.",
+      "owner_kind": "policy",
+      "owner_ref": "PO-fresh-model-boundary",
+      "payload": {},
+      "question_refs": [],
+      "source_range": {
+        "end": 202,
+        "start": 169
+      },
+      "unit_id": "unit-5"
+    }
+  ],
+  "question_details": [],
+  "questions": [],
+  "summary": "선정된 문제를 이전 연구와 독립된 새 인스턴스에서 연구하고, 대부분 gpt-6.1-sol을 사용하되 어려운 과제에는 필요에 따라 gpt-6-astra를 허용하며 effort를 작업 특성에 맞추라는 요청이다. 현행 승인 헌장·정책에 이미 반영되어 있어 중복 변경을 제안하지 않는다. 원문 202개 Unicode 코드 포인트를 다섯 단위로 전부 보존하며, 끝의 '처음부'를 임의로 복원하지 않는다.",
+  "used_sources": [
+    "GS-804a3f751e08c8ae2d34e7cbfacadd46c3ac00ee21349a86de0bd84f8a4246ec",
+    "UI-01M5E5GMKKKHBJ6QSM7HJBPSZG",
+    "CH-parking-fresh",
+    "PO-fresh-model-boundary",
+    "DC-01M5E5J3HC3Q0WA6DXKK7FDG7J",
+    "DC-01M5E5MFTNZEEX6P5RM0PM73S8",
+    "input/details/configuration.json"
+  ]
+}

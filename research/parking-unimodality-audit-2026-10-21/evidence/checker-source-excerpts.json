@@ -1,0 +1,407 @@
+{
+  "archive": "input/tools/submission-support.zip",
+  "archive_sha256": "265d65d67373e5fb69380dcac764dd35c94344cdba529866c9b92409ea155eeb",
+  "member": "do_math/submission.py",
+  "excerpts": {
+    "1143-1165": [
+      {
+        "line": 1143,
+        "text": "def _workspace_checks(context, workspace, candidate=None, *, clock):"
+      },
+      {
+        "line": 1144,
+        "text": "    issues = []"
+      },
+      {
+        "line": 1145,
+        "text": "    limits = context.get(\"submission_contract\", {}).get(\"limits\", {})"
+      },
+      {
+        "line": 1146,
+        "text": "    files = (candidate if candidate is not None else"
+      },
+      {
+        "line": 1147,
+        "text": "             collect_outputs(workspace, max_bytes=limits[\"max_artifact_bytes\"])"
+      },
+      {
+        "line": 1148,
+        "text": "             if limits.get(\"max_artifact_bytes\") is not None else {\"files\": {}, \"manifest\": [], \"omitted\": []})"
+      },
+      {
+        "line": 1149,
+        "text": "    issues.extend(_issue(row[\"path\"], row[\"reason\"], \"artifact.preservation\") for row in files[\"omitted\"])"
+      },
+      {
+        "line": 1150,
+        "text": "    checkpoint = _captured_checkpoint(files[\"files\"]) if candidate is not None else read_checkpoint(workspace, clock=clock)"
+      },
+      {
+        "line": 1151,
+        "text": "    if checkpoint[\"status\"] not in {\"missing\", \"valid\"}:"
+      },
+      {
+        "line": 1152,
+        "text": "        issues.append(_issue(\"checkpoint.json\", checkpoint.get(\"error\", checkpoint[\"status\"]), \"checkpoint.schema\"))"
+      },
+      {
+        "line": 1153,
+        "text": "    elif checkpoint[\"status\"] == \"valid\":"
+      },
+      {
+        "line": 1154,
+        "text": "        for reference in checkpoint[\"value\"][\"evidence_paths\"]:"
+      },
+      {
+        "line": 1155,
+        "text": "            try:"
+      },
+      {
+        "line": 1156,
+        "text": "                validate_reference(reference, context, workspace,"
+      },
+      {
+        "line": 1157,
+        "text": "                                   candidate_files=files[\"files\"] if candidate is not None else None)"
+      },
+      {
+        "line": 1158,
+        "text": "            except (ValueError, TypeError, OSError) as error:"
+      },
+      {
+        "line": 1159,
+        "text": "                issues.append(_issue(\"checkpoint.json/evidence_paths\", str(error), \"checkpoint.reference\"))"
+      },
+      {
+        "line": 1160,
+        "text": "    return issues, files[\"manifest\"]"
+      },
+      {
+        "line": 1161,
+        "text": ""
+      },
+      {
+        "line": 1162,
+        "text": ""
+      },
+      {
+        "line": 1163,
+        "text": "def _check_hashes(output, schema, context, extensions):"
+      },
+      {
+        "line": 1164,
+        "text": "    return {\"output\": exact_content_hash(output), \"extensions\": exact_content_hash(extensions),"
+      },
+      {
+        "line": 1165,
+        "text": "            \"context\": exact_content_hash(context), \"schema\": exact_content_hash(schema)}"
+      }
+    ],
+    "1233-1273": [
+      {
+        "line": 1233,
+        "text": "def check_submission(output, schema, context, extensions, workspace, *, mode,"
+      },
+      {
+        "line": 1234,
+        "text": "                     execution_id, tool_sha256, previous=None, candidate=None, clock):"
+      },
+      {
+        "line": 1235,
+        "text": "    \"\"\"Record deterministic payload checks; producer records never grant authority.\"\"\""
+      },
+      {
+        "line": 1236,
+        "text": "    if mode not in {\"producer\", \"receiver\", \"preview\"}:"
+      },
+      {
+        "line": 1237,
+        "text": "        raise ValueError(\"unknown submission check mode\")"
+      },
+      {
+        "line": 1238,
+        "text": "    candidate_files = candidate[\"files\"] if candidate is not None else None"
+      },
+      {
+        "line": 1239,
+        "text": "    issues = payload_issues(output, schema, context, extensions, workspace, candidate_files=candidate_files, clock=clock)"
+      },
+      {
+        "line": 1240,
+        "text": "    workspace_issues, files = _workspace_checks(context, workspace, candidate, clock=clock)"
+      },
+      {
+        "line": 1241,
+        "text": "    issues.extend(workspace_issues)"
+      },
+      {
+        "line": 1242,
+        "text": "    hashes = _check_hashes(output, schema, context, extensions)"
+      },
+      {
+        "line": 1243,
+        "text": "    skipped = list(NOT_MACHINE_CHECKED)"
+      },
+      {
+        "line": 1244,
+        "text": "    if any(row[\"rule_id\"].startswith(\"schema.\") for row in issues):"
+      },
+      {
+        "line": 1245,
+        "text": "        skipped.extend([\"payload_semantics\", \"integration_structure\"])"
+      },
+      {
+        "line": 1246,
+        "text": "    from .contracts import schema_reference"
+      },
+      {
+        "line": 1247,
+        "text": "    result = {\"contract_id\": \"do-math-machine-check/5\", \"tool_sha256\": tool_sha256,"
+      },
+      {
+        "line": 1248,
+        "text": "              \"check_subject\": _check_subject(context),"
+      },
+      {
+        "line": 1249,
+        "text": "              \"schema_ref\": schema_reference(schema),"
+      },
+      {
+        "line": 1250,
+        "text": "              \"mode\": mode, \"execution_id\": execution_id, \"input_snapshot\": context.get(\"snapshot\"),"
+      },
+      {
+        "line": 1251,
+        "text": "              \"input_hashes\": hashes, \"check_order\": [\"schema\", \"payload_semantics\", \"integration_structure\", \"repair_coverage\"],"
+      },
+      {
+        "line": 1252,
+        "text": "              \"issues\": issues, \"passed\": not issues, \"not_checked\": skipped, \"files\": files,"
+      },
+      {
+        "line": 1253,
+        "text": "              \"comparison\": {\"status\": \"no_previous_check\"}, \"repairs\": []}"
+      },
+      {
+        "line": 1254,
+        "text": "    if previous is not None:"
+      },
+      {
+        "line": 1255,
+        "text": "        same_tool = previous.get(\"tool_sha256\") == tool_sha256"
+      },
+      {
+        "line": 1256,
+        "text": "        same_input = previous.get(\"input_hashes\") == hashes"
+      },
+      {
+        "line": 1257,
+        "text": "        if not same_tool:"
+      },
+      {
+        "line": 1258,
+        "text": "            status = \"tool_changed\""
+      },
+      {
+        "line": 1259,
+        "text": "        elif not same_input:"
+      },
+      {
+        "line": 1260,
+        "text": "            status = \"input_changed\""
+      },
+      {
+        "line": 1261,
+        "text": "        else:"
+      },
+      {
+        "line": 1262,
+        "text": "            projection = lambda rows: sorted((row[\"rule_id\"], row[\"path\"], row.get(\"integration_id\")) for row in rows)"
+      },
+      {
+        "line": 1263,
+        "text": "            status = \"matched\" if (projection(previous.get(\"issues\", [])) == projection(issues)"
+      },
+      {
+        "line": 1264,
+        "text": "                                    and previous.get(\"not_checked\") == skipped) else \"tool_defect\""
+      },
+      {
+        "line": 1265,
+        "text": "        result[\"comparison\"] = {\"status\": status, \"previous_check_id\": previous.get(\"id\")}"
+      },
+      {
+        "line": 1266,
+        "text": "        if status == \"tool_defect\":"
+      },
+      {
+        "line": 1267,
+        "text": "            result[\"passed\"] = False"
+      },
+      {
+        "line": 1268,
+        "text": "            result[\"issues\"].append(_issue(\"checks\", \"producer and receiver disagree for the same tool and input hashes\","
+      },
+      {
+        "line": 1269,
+        "text": "                                          \"machine_check.tool_defect\"))"
+      },
+      {
+        "line": 1270,
+        "text": "        result[\"repairs\"] = _repair_links([previous], result)"
+      },
+      {
+        "line": 1271,
+        "text": "    result['capture_eligible'] = capture_eligible(output, extensions, context, result['issues'])"
+      },
+      {
+        "line": 1272,
+        "text": "    result[\"id\"] = \"MC-\" + exact_content_hash(result)[:24]"
+      },
+      {
+        "line": 1273,
+        "text": "    return result"
+      }
+    ],
+    "1578-1607": [
+      {
+        "line": 1578,
+        "text": "    relative = None"
+      },
+      {
+        "line": 1579,
+        "text": "    phase = 'read'"
+      },
+      {
+        "line": 1580,
+        "text": "    try:"
+      },
+      {
+        "line": 1581,
+        "text": "        context = load_json((workspace / \"input/submission/context.json\").read_bytes())"
+      },
+      {
+        "line": 1582,
+        "text": "        schema = load_json((workspace / \"input/submission/schema.json\").read_bytes())"
+      },
+      {
+        "line": 1583,
+        "text": "        draft = (workspace / draft).resolve()"
+      },
+      {
+        "line": 1584,
+        "text": "        if not draft.is_relative_to(workspace):"
+      },
+      {
+        "line": 1585,
+        "text": "            raise ValueError(\"submission draft must be inside this workspace\")"
+      },
+      {
+        "line": 1586,
+        "text": "        relative = draft.relative_to(workspace).as_posix()"
+      },
+      {
+        "line": 1587,
+        "text": "        raw = read_stable(safe_path(workspace, relative))"
+      },
+      {
+        "line": 1588,
+        "text": "        phase = 'parse'"
+      },
+      {
+        "line": 1589,
+        "text": "        output = load_json(raw)"
+      },
+      {
+        "line": 1590,
+        "text": "        extensions = read_extensions(workspace)"
+      },
+      {
+        "line": 1591,
+        "text": "        phase = 'check'"
+      },
+      {
+        "line": 1592,
+        "text": "        contract = context[\"submission_contract\"]"
+      },
+      {
+        "line": 1593,
+        "text": "        # Preparation fixed the support archive's digest; each check reuses it."
+      },
+      {
+        "line": 1594,
+        "text": "        tool_hash = contract[\"tool_sha256\"]"
+      },
+      {
+        "line": 1595,
+        "text": "        from .contracts import schema_reference"
+      },
+      {
+        "line": 1596,
+        "text": "        if schema_reference(schema) != contract[\"schema_ref\"]:"
+      },
+      {
+        "line": 1597,
+        "text": "            raise ValueError(\"installed response schema differs from its exact contract reference\")"
+      },
+      {
+        "line": 1598,
+        "text": "        result = check_submission(output, schema, context, extensions, workspace, mode=\"producer\","
+      },
+      {
+        "line": 1599,
+        "text": "            execution_id=context.get(\"execution_id\") or context.get(\"action\", {}).get(\"execution_id\"),"
+      },
+      {
+        "line": 1600,
+        "text": "            tool_sha256=tool_hash, previous=history[-1] if history else None, clock=clock)"
+      },
+      {
+        "line": 1601,
+        "text": "    except (ValueError, TypeError, KeyError, OSError) as error:"
+      },
+      {
+        "line": 1602,
+        "text": "        result = _failed_check(\"producer\", context, raw, error, phase, context.get(\"execution_id\"))"
+      },
+      {
+        "line": 1603,
+        "text": "    from .contracts import schema_reference"
+      },
+      {
+        "line": 1604,
+        "text": "    result[\"check_subject\"] = _check_subject(context)"
+      },
+      {
+        "line": 1605,
+        "text": "    result[\"producer_sequence\"] = len(history) + 1"
+      },
+      {
+        "line": 1606,
+        "text": "    result[\"previous_producer_check_id\"] = history[-1][\"id\"] if history else None"
+      },
+      {
+        "line": 1607,
+        "text": "    result[\"repairs\"] = _repair_links(history, result)"
+      }
+    ],
+    "1653-1656": [
+      {
+        "line": 1653,
+        "text": "        phase = 'check'"
+      },
+      {
+        "line": 1654,
+        "text": "        check = check_submission(output, schema, context, extensions, workspace, mode=\"receiver\","
+      },
+      {
+        "line": 1655,
+        "text": "            execution_id=execution_id, tool_sha256=context[\"submission_contract\"][\"tool_sha256\"],"
+      },
+      {
+        "line": 1656,
+        "text": "            candidate=collected, clock=clock)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1021 @@
+{
+  "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+  "pages": [
+    {
+      "command": "query",
+      "exit_code": 0,
+      "request_id": "QR-1d1cf531b4b0e632ee57a6d46b7a687620537c2f23458d67a59ac3c4b65e1d26",
+      "response_contract": "do-math-cli/5",
+      "result": {
+        "items": [
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 2319,
+            "json_pointer": "/record",
+            "logical_sha256": "2ce034faa4989c37a6a7eb0e868c22752fd68b90ea65ff319b97c69f5e839e1c",
+            "path": "runtime/self_check_obligations/SC-0f3c4913506ffa793417.json",
+            "record": {
+              "acknowledged_call_id": "item_65",
+              "acknowledged_source_offset": 1041894,
+              "consumed_boundaries": {
+                "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 2,
+                "maximum:0": 300000
+              },
+              "deadline_offset_ms": 616656,
+              "delivered_at": "2026-10-21T03:05:07.732213+00:00",
+              "delivered_request_sha256": "7a19d883a4b4e3f366f9f7bda1d11025a21c89c5b02ed3431ad814a726735cfa",
+              "delivered_source_offset": 304355,
+              "due": [
+                {
+                  "basis": {
+                    "source": "selected_profile",
+                    "unit": "milliseconds"
+                  },
+                  "boundary": 300000,
+                  "boundary_key": "maximum:0",
+                  "next_boundary": null,
+                  "operator": "wall_time_reached",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "@maximum_interval",
+                  "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+                  "value": 300485
+                }
+              ],
+              "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+              "family": "self_check_obligations",
+              "id": "SC-0f3c4913506ffa793417",
+              "kind": "self_check_due",
+              "observed_at": "2026-10-21T03:05:07.405210+00:00",
+              "opened_offset_ms": 300485,
+              "response_ref": "SR-EX-01M5E6DN6P0GD8BVQT86GSJMC3-2",
+              "rule_revision": 0,
+              "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 2
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_10",
+                  "item_11",
+                  "item_12",
+                  "item_13",
+                  "item_14",
+                  "item_15",
+                  "item_16",
+                  "item_17",
+                  "item_18",
+                  "item_20",
+                  "item_23",
+                  "item_24",
+                  "item_25",
+                  "item_26",
+                  "item_27",
+                  "item_28",
+                  "item_30",
+                  "item_31",
+                  "item_32",
+                  "item_33",
+                  "item_34",
+                  "item_35",
+                  "item_36",
+                  "item_37",
+                  "item_39",
+                  "item_4",
+                  "item_41",
+                  "item_42",
+                  "item_6",
+                  "item_7",
+                  "item_8",
+                  "item_9"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:05:07.397694+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "answered"
+            },
+            "sha256": "8eb184b525a038a7b4a32bccbe593d56faf53d580abbad580577487647121b5e",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          },
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 1936,
+            "json_pointer": "/record",
+            "logical_sha256": "2796d8af8ad3a67aac131a2b140d772f35d0eaa78d007c4a7b43ca451af60d1c",
+            "path": "runtime/self_check_obligations/SC-56ef3701924ad4bcb97b.json",
+            "record": {
+              "acknowledged_call_id": "item_19",
+              "acknowledged_source_offset": 44093,
+              "consumed_boundaries": {
+                "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40": 2
+              },
+              "deadline_offset_ms": 580718,
+              "delivered_at": "2026-10-21T03:04:46.286127+00:00",
+              "delivered_request_sha256": "66cf70216a132a9120e2874757c0dc3bd6cf00a154d92500a77cf4a92291a816",
+              "delivered_source_offset": 42040,
+              "due": [
+                {
+                  "basis": {
+                    "source": "checkpoint",
+                    "unit": "count"
+                  },
+                  "boundary": 2,
+                  "boundary_key": "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40",
+                  "first_boundary": 2,
+                  "next_boundary": 4,
+                  "operator": "checkpoint_count_gte",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "checkpoint-evidence-review",
+                  "subject": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+                  "value": 2
+                }
+              ],
+              "execution_id": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+              "family": "self_check_obligations",
+              "id": "SC-56ef3701924ad4bcb97b",
+              "kind": "self_check_due",
+              "missed_reason": "research_action_before_response",
+              "observed_at": "2026-10-21T03:04:45.670129+00:00",
+              "opened_offset_ms": 275375,
+              "rule_revision": 0,
+              "rules_sha256": "45447148428ddb9cf15e17a9dbd162702146e1a0b8b5f015f825ddc55f76a9c8",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DRSX67M3HC2CDM83234Z": 2
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_10",
+                  "item_11",
+                  "item_12",
+                  "item_13",
+                  "item_14",
+                  "item_16",
+                  "item_2",
+                  "item_4",
+                  "item_7",
+                  "item_8"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:04:45.648115+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "open"
+            },
+            "sha256": "23a3441a7b51186589aadb3967e169ffe6f2a457d5c9f3b02b010ea81c0f6048",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          },
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 1898,
+            "json_pointer": "/record",
+            "logical_sha256": "294fe95435fd59ff3b65d7a86aac78335db8df52fee5e20f50ddc80cc9d1c672",
+            "path": "runtime/self_check_obligations/SC-67057b97b4575edea674.json",
+            "record": {
+              "acknowledged_call_id": "item_19",
+              "acknowledged_source_offset": 152782,
+              "consumed_boundaries": {
+                "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 2
+              },
+              "deadline_offset_ms": 458907,
+              "delivered_at": "2026-10-21T03:01:55.999767+00:00",
+              "delivered_request_sha256": "7c7533a31a23b957abf82535f8593b81827addd151815329baca447f1c3baf92",
+              "delivered_source_offset": 85640,
+              "due": [
+                {
+                  "basis": {
+                    "source": "checkpoint",
+                    "unit": "count"
+                  },
+                  "boundary": 2,
+                  "boundary_key": "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826",
+                  "first_boundary": 2,
+                  "next_boundary": 4,
+                  "operator": "checkpoint_count_gte",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "checkpoint-evidence-review",
+                  "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+                  "value": 2
+                }
+              ],
+              "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+              "family": "self_check_obligations",
+              "id": "SC-67057b97b4575edea674",
+              "kind": "self_check_due",
+              "missed_reason": "research_action_before_response",
+              "observed_at": "2026-10-21T03:01:55.575182+00:00",
+              "opened_offset_ms": 108375,
+              "rule_revision": 0,
+              "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 2
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_10",
+                  "item_11",
+                  "item_12",
+                  "item_4",
+                  "item_6",
+                  "item_7",
+                  "item_8",
+                  "item_9"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:01:55.301815+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "open"
+            },
+            "sha256": "8bb2e83863686b3d9c2712ca7651dfcb96716d1cb3bb1b84d872767d58692e34",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          },
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 1885,
+            "json_pointer": "/record",
+            "logical_sha256": "a33e4fbb0d55b44a84e05701c176ee80c65dd3be95358d7194fd87f18fdffee0",
+            "path": "runtime/self_check_obligations/SC-acb63971a7bc78721420.json",
+            "record": {
+              "acknowledged_call_id": "item_17",
+              "acknowledged_source_offset": 56720,
+              "consumed_boundaries": {
+                "df2651fdea65c2719ad494cac90f348ebb01b7620c3a4b440eaa1ea33f7adfa4": 2
+              },
+              "deadline_offset_ms": 517531,
+              "delivered_at": "2026-10-21T03:03:40.709188+00:00",
+              "delivered_request_sha256": "e80caf3649876c4c9ad08def95cc003d7dd6179c583d12721969719b6854cae6",
+              "delivered_source_offset": 51462,
+              "due": [
+                {
+                  "basis": {
+                    "source": "checkpoint",
+                    "unit": "count"
+                  },
+                  "boundary": 2,
+                  "boundary_key": "df2651fdea65c2719ad494cac90f348ebb01b7620c3a4b440eaa1ea33f7adfa4",
+                  "first_boundary": 2,
+                  "next_boundary": 4,
+                  "operator": "checkpoint_count_gte",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "checkpoint-evidence-review",
+                  "subject": "EX-01M5E6DKN33DA6T703GZQ3N9TP",
+                  "value": 2
+                }
+              ],
+              "execution_id": "EX-01M5E6DKN33DA6T703GZQ3N9TP",
+              "family": "self_check_obligations",
+              "id": "SC-acb63971a7bc78721420",
+              "kind": "self_check_due",
+              "observed_at": "2026-10-21T03:03:39.550900+00:00",
+              "opened_offset_ms": 213172,
+              "response_ref": "SR-EX-01M5E6DKN33DA6T703GZQ3N9TP-1",
+              "rule_revision": 0,
+              "rules_sha256": "423d307485c82a43f1b3c100c708de023849041a1ef812ce44955d7ebe652aba",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DKN33DA6T703GZQ3N9TP": 2
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_11",
+                  "item_12",
+                  "item_14",
+                  "item_4",
+                  "item_5",
+                  "item_6",
+                  "item_8"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:03:37.520821+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "answered"
+            },
+            "sha256": "895d8640f862e1660b9ec98b47615a29bdba793a7a46493a38ee32e1d2c5ee67",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          },
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 3364,
+            "json_pointer": "/record",
+            "logical_sha256": "e3a464a1fbf21fb68cd2f620933092245b53c2cd9b0d2ca8647a1658a8f3c2a1",
+            "path": "runtime/self_check_obligations/SC-ba366f57cb67590c3723.json",
+            "record": {
+              "consumed_boundaries": {
+                "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 4,
+                "maximum:0": 300000,
+                "maximum:442391": 742391
+              },
+              "deadline_offset_ms": 1097235,
+              "delivered_at": "2026-10-21T03:13:24.154833+00:00",
+              "delivered_request_sha256": "789eff1946bd12a10fabcf7932c3dd3ddba8027feb713966a3709e6eb4ba0ba2",
+              "delivered_source_offset": 2098435,
+              "due": [
+                {
+                  "basis": {
+                    "source": "checkpoint",
+                    "unit": "count"
+                  },
+                  "boundary": 4,
+                  "boundary_key": "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826",
+                  "first_boundary": 4,
+                  "next_boundary": 6,
+                  "operator": "checkpoint_count_gte",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "checkpoint-evidence-review",
+                  "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+                  "value": 4
+                },
+                {
+                  "basis": {
+                    "source": "selected_profile",
+                    "unit": "milliseconds"
+                  },
+                  "boundary": 742391,
+                  "boundary_key": "maximum:442391",
+                  "next_boundary": null,
+                  "operator": "wall_time_reached",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "@maximum_interval",
+                  "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+                  "value": 765141
+                }
+              ],
+              "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+              "family": "self_check_obligations",
+              "id": "SC-ba366f57cb67590c3723",
+              "kind": "self_check_due",
+              "observed_at": "2026-10-21T03:13:23.288913+00:00",
+              "opened_offset_ms": 765141,
+              "rule_revision": 0,
+              "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 4
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_10",
+                  "item_11",
+                  "item_12",
+                  "item_13",
+                  "item_14",
+                  "item_15",
+                  "item_16",
+                  "item_17",
+                  "item_18",
+                  "item_20",
+                  "item_23",
+                  "item_24",
+                  "item_25",
+                  "item_26",
+                  "item_27",
+                  "item_28",
+                  "item_30",
+                  "item_31",
+                  "item_32",
+                  "item_33",
+                  "item_34",
+                  "item_35",
+                  "item_36",
+                  "item_37",
+                  "item_39",
+                  "item_4",
+                  "item_41",
+                  "item_42",
+                  "item_44",
+                  "item_47",
+                  "item_48",
+                  "item_49",
+                  "item_50",
+                  "item_51",
+                  "item_52",
+                  "item_53",
+                  "item_54",
+                  "item_55",
+                  "item_56",
+                  "item_57",
+                  "item_58",
+                  "item_59",
+                  "item_6",
+                  "item_60",
+                  "item_61",
+                  "item_62",
+                  "item_63",
+                  "item_64",
+                  "item_68",
+                  "item_69",
+                  "item_7",
+                  "item_71",
+                  "item_72",
+                  "item_73",
+                  "item_74",
+                  "item_75",
+                  "item_76",
+                  "item_78",
+                  "item_8",
+                  "item_82",
+                  "item_83",
+                  "item_84",
+                  "item_85",
+                  "item_86",
+                  "item_9"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:12:52.053151+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "open"
+            },
+            "sha256": "668ec527a85b74005d9e1583ede8d3993446b9c22bdda1c4a48d6e3976476fb3",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          },
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 1956,
+            "json_pointer": "/record",
+            "logical_sha256": "22f323a4ba42ff03612062ba945bd51b32ff2d1f4351bcfaa0f0b6d4b8baff50",
+            "path": "runtime/self_check_obligations/SC-d4df27d22b6de680f6da.json",
+            "record": {
+              "acknowledged_call_id": "item_28",
+              "acknowledged_source_offset": 80507,
+              "consumed_boundaries": {
+                "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40": 2,
+                "maximum:0": 300000
+              },
+              "deadline_offset_ms": 603827,
+              "delivered_at": "2026-10-21T03:05:11.298388+00:00",
+              "delivered_request_sha256": "82cea01b9c8eb58cde4d688e1cc0ca09b93c946c34d8c860b67cb22485fcb6b3",
+              "delivered_source_offset": 58084,
+              "due": [
+                {
+                  "basis": {
+                    "source": "selected_profile",
+                    "unit": "milliseconds"
+                  },
+                  "boundary": 300000,
+                  "boundary_key": "maximum:0",
+                  "next_boundary": null,
+                  "operator": "wall_time_reached",
+                  "required_evidence": [
+                    "workspace:checkpoint.json"
+                  ],
+                  "rule_id": "@maximum_interval",
+                  "subject": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+                  "value": 300703
+                }
+              ],
+              "execution_id": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+              "family": "self_check_obligations",
+              "id": "SC-d4df27d22b6de680f6da",
+              "kind": "self_check_due",
+              "observed_at": "2026-10-21T03:05:10.992352+00:00",
+              "opened_offset_ms": 300703,
+              "response_ref": "SR-EX-01M5E6DRSX67M3HC2CDM83234Z-2",
+              "rule_revision": 0,
+              "rules_sha256": "45447148428ddb9cf15e17a9dbd162702146e1a0b8b5f015f825ddc55f76a9c8",
+              "snapshot": {
+                "checkpoint_counts": {
+                  "EX-01M5E6DRSX67M3HC2CDM83234Z": 2
+                },
+                "completed_call_ids": [
+                  "item_1",
+                  "item_10",
+                  "item_11",
+                  "item_12",
+                  "item_13",
+                  "item_14",
+                  "item_16",
+                  "item_18",
+                  "item_2",
+                  "item_20",
+                  "item_22",
+                  "item_4",
+                  "item_7",
+                  "item_8"
+                ],
+                "counters": {},
+                "iterations": {},
+                "observed_at": "2026-10-21T03:05:10.980321+00:00",
+                "safe_boundary_ids": []
+              },
+              "status": "answered"
+            },
+            "sha256": "b4095c1d31dc8234057fd923a6749ce397ab643d23f4ad4a6c698ce7f6e9170f",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          }
+        ],
+        "loaded": 6,
+        "next_cursor": null,
+        "query_basis": {
+          "complete": true,
+          "limit": 1000,
+          "loaded_ids": [
+            "SC-0f3c4913506ffa793417",
+            "SC-56ef3701924ad4bcb97b",
+            "SC-67057b97b4575edea674",
+            "SC-acb63971a7bc78721420",
+            "SC-ba366f57cb67590c3723",
+            "SC-d4df27d22b6de680f6da"
+          ],
+          "parameters": {
+            "direction": "both",
+            "instance_id": "RI-01M5E5GMKK5Q7HBXRQ9QRCVRMD",
+            "kind": "self_check_obligations",
+            "related_to": null,
+            "text": ""
+          },
+          "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+        },
+        "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+        "total": 6,
+        "truncated": false
+      },
+      "schema_version": 5
+    }
+  ],
+  "records": [
+    {
+      "acknowledged_call_id": "item_65",
+      "acknowledged_source_offset": 1041894,
+      "consumed_boundaries": {
+        "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 2,
+        "maximum:0": 300000
+      },
+      "deadline_offset_ms": 616656,
+      "delivered_at": "2026-10-21T03:05:07.732213+00:00",
+      "delivered_request_sha256": "7a19d883a4b4e3f366f9f7bda1d11025a21c89c5b02ed3431ad814a726735cfa",
+      "delivered_source_offset": 304355,
+      "due": [
+        {
+          "basis": {
+            "source": "selected_profile",
+            "unit": "milliseconds"
+          },
+          "boundary": 300000,
+          "boundary_key": "maximum:0",
+          "next_boundary": null,
+          "operator": "wall_time_reached",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "@maximum_interval",
+          "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+          "value": 300485
+        }
+      ],
+      "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+      "family": "self_check_obligations",
+      "id": "SC-0f3c4913506ffa793417",
+      "kind": "self_check_due",
+      "observed_at": "2026-10-21T03:05:07.405210+00:00",
+      "opened_offset_ms": 300485,
+      "response_ref": "SR-EX-01M5E6DN6P0GD8BVQT86GSJMC3-2",
+      "rule_revision": 0,
+      "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 2
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_13",
+          "item_14",
+          "item_15",
+          "item_16",
+          "item_17",
+          "item_18",
+          "item_20",
+          "item_23",
+          "item_24",
+          "item_25",
+          "item_26",
+          "item_27",
+          "item_28",
+          "item_30",
+          "item_31",
+          "item_32",
+          "item_33",
+          "item_34",
+          "item_35",
+          "item_36",
+          "item_37",
+          "item_39",
+          "item_4",
+          "item_41",
+          "item_42",
+          "item_6",
+          "item_7",
+          "item_8",
+          "item_9"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:05:07.397694+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "answered"
+    },
+    {
+      "acknowledged_call_id": "item_19",
+      "acknowledged_source_offset": 44093,
+      "consumed_boundaries": {
+        "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40": 2
+      },
+      "deadline_offset_ms": 580718,
+      "delivered_at": "2026-10-21T03:04:46.286127+00:00",
+      "delivered_request_sha256": "66cf70216a132a9120e2874757c0dc3bd6cf00a154d92500a77cf4a92291a816",
+      "delivered_source_offset": 42040,
+      "due": [
+        {
+          "basis": {
+            "source": "checkpoint",
+            "unit": "count"
+          },
+          "boundary": 2,
+          "boundary_key": "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40",
+          "first_boundary": 2,
+          "next_boundary": 4,
+          "operator": "checkpoint_count_gte",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "checkpoint-evidence-review",
+          "subject": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+          "value": 2
+        }
+      ],
+      "execution_id": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+      "family": "self_check_obligations",
+      "id": "SC-56ef3701924ad4bcb97b",
+      "kind": "self_check_due",
+      "missed_reason": "research_action_before_response",
+      "observed_at": "2026-10-21T03:04:45.670129+00:00",
+      "opened_offset_ms": 275375,
+      "rule_revision": 0,
+      "rules_sha256": "45447148428ddb9cf15e17a9dbd162702146e1a0b8b5f015f825ddc55f76a9c8",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DRSX67M3HC2CDM83234Z": 2
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_13",
+          "item_14",
+          "item_16",
+          "item_2",
+          "item_4",
+          "item_7",
+          "item_8"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:04:45.648115+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "open"
+    },
+    {
+      "acknowledged_call_id": "item_19",
+      "acknowledged_source_offset": 152782,
+      "consumed_boundaries": {
+        "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 2
+      },
+      "deadline_offset_ms": 458907,
+      "delivered_at": "2026-10-21T03:01:55.999767+00:00",
+      "delivered_request_sha256": "7c7533a31a23b957abf82535f8593b81827addd151815329baca447f1c3baf92",
+      "delivered_source_offset": 85640,
+      "due": [
+        {
+          "basis": {
+            "source": "checkpoint",
+            "unit": "count"
+          },
+          "boundary": 2,
+          "boundary_key": "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826",
+          "first_boundary": 2,
+          "next_boundary": 4,
+          "operator": "checkpoint_count_gte",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "checkpoint-evidence-review",
+          "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+          "value": 2
+        }
+      ],
+      "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+      "family": "self_check_obligations",
+      "id": "SC-67057b97b4575edea674",
+      "kind": "self_check_due",
+      "missed_reason": "research_action_before_response",
+      "observed_at": "2026-10-21T03:01:55.575182+00:00",
+      "opened_offset_ms": 108375,
+      "rule_revision": 0,
+      "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 2
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_4",
+          "item_6",
+          "item_7",
+          "item_8",
+          "item_9"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:01:55.301815+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "open"
+    },
+    {
+      "acknowledged_call_id": "item_17",
+      "acknowledged_source_offset": 56720,
+      "consumed_boundaries": {
+        "df2651fdea65c2719ad494cac90f348ebb01b7620c3a4b440eaa1ea33f7adfa4": 2
+      },
+      "deadline_offset_ms": 517531,
+      "delivered_at": "2026-10-21T03:03:40.709188+00:00",
+      "delivered_request_sha256": "e80caf3649876c4c9ad08def95cc003d7dd6179c583d12721969719b6854cae6",
+      "delivered_source_offset": 51462,
+      "due": [
+        {
+          "basis": {
+            "source": "checkpoint",
+            "unit": "count"
+          },
+          "boundary": 2,
+          "boundary_key": "df2651fdea65c2719ad494cac90f348ebb01b7620c3a4b440eaa1ea33f7adfa4",
+          "first_boundary": 2,
+          "next_boundary": 4,
+          "operator": "checkpoint_count_gte",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "checkpoint-evidence-review",
+          "subject": "EX-01M5E6DKN33DA6T703GZQ3N9TP",
+          "value": 2
+        }
+      ],
+      "execution_id": "EX-01M5E6DKN33DA6T703GZQ3N9TP",
+      "family": "self_check_obligations",
+      "id": "SC-acb63971a7bc78721420",
+      "kind": "self_check_due",
+      "observed_at": "2026-10-21T03:03:39.550900+00:00",
+      "opened_offset_ms": 213172,
+      "response_ref": "SR-EX-01M5E6DKN33DA6T703GZQ3N9TP-1",
+      "rule_revision": 0,
+      "rules_sha256": "423d307485c82a43f1b3c100c708de023849041a1ef812ce44955d7ebe652aba",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DKN33DA6T703GZQ3N9TP": 2
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_11",
+          "item_12",
+          "item_14",
+          "item_4",
+          "item_5",
+          "item_6",
+          "item_8"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:03:37.520821+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "answered"
+    },
+    {
+      "consumed_boundaries": {
+        "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826": 4,
+        "maximum:0": 300000,
+        "maximum:442391": 742391
+      },
+      "deadline_offset_ms": 1097235,
+      "delivered_at": "2026-10-21T03:13:24.154833+00:00",
+      "delivered_request_sha256": "789eff1946bd12a10fabcf7932c3dd3ddba8027feb713966a3709e6eb4ba0ba2",
+      "delivered_source_offset": 2098435,
+      "due": [
+        {
+          "basis": {
+            "source": "checkpoint",
+            "unit": "count"
+          },
+          "boundary": 4,
+          "boundary_key": "cdd482162d4d10729ab709bb3f71942d0a6ae9e25aee58a85b0f0788af0ba826",
+          "first_boundary": 4,
+          "next_boundary": 6,
+          "operator": "checkpoint_count_gte",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "checkpoint-evidence-review",
+          "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+          "value": 4
+        },
+        {
+          "basis": {
+            "source": "selected_profile",
+            "unit": "milliseconds"
+          },
+          "boundary": 742391,
+          "boundary_key": "maximum:442391",
+          "next_boundary": null,
+          "operator": "wall_time_reached",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "@maximum_interval",
+          "subject": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+          "value": 765141
+        }
+      ],
+      "execution_id": "EX-01M5E6DN6P0GD8BVQT86GSJMC3",
+      "family": "self_check_obligations",
+      "id": "SC-ba366f57cb67590c3723",
+      "kind": "self_check_due",
+      "observed_at": "2026-10-21T03:13:23.288913+00:00",
+      "opened_offset_ms": 765141,
+      "rule_revision": 0,
+      "rules_sha256": "96d2600a9b99714e613cd1eeaa24eb6fa22f3510ba62a400ad2a5a95d611df16",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DN6P0GD8BVQT86GSJMC3": 4
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_13",
+          "item_14",
+          "item_15",
+          "item_16",
+          "item_17",
+          "item_18",
+          "item_20",
+          "item_23",
+          "item_24",
+          "item_25",
+          "item_26",
+          "item_27",
+          "item_28",
+          "item_30",
+          "item_31",
+          "item_32",
+          "item_33",
+          "item_34",
+          "item_35",
+          "item_36",
+          "item_37",
+          "item_39",
+          "item_4",
+          "item_41",
+          "item_42",
+          "item_44",
+          "item_47",
+          "item_48",
+          "item_49",
+          "item_50",
+          "item_51",
+          "item_52",
+          "item_53",
+          "item_54",
+          "item_55",
+          "item_56",
+          "item_57",
+          "item_58",
+          "item_59",
+          "item_6",
+          "item_60",
+          "item_61",
+          "item_62",
+          "item_63",
+          "item_64",
+          "item_68",
+          "item_69",
+          "item_7",
+          "item_71",
+          "item_72",
+          "item_73",
+          "item_74",
+          "item_75",
+          "item_76",
+          "item_78",
+          "item_8",
+          "item_82",
+          "item_83",
+          "item_84",
+          "item_85",
+          "item_86",
+          "item_9"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:12:52.053151+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "open"
+    },
+    {
+      "acknowledged_call_id": "item_28",
+      "acknowledged_source_offset": 80507,
+      "consumed_boundaries": {
+        "f8b894068c3c003ab16c440f7af292083513255ac28f1610ea6cf162dd43fb40": 2,
+        "maximum:0": 300000
+      },
+      "deadline_offset_ms": 603827,
+      "delivered_at": "2026-10-21T03:05:11.298388+00:00",
+      "delivered_request_sha256": "82cea01b9c8eb58cde4d688e1cc0ca09b93c946c34d8c860b67cb22485fcb6b3",
+      "delivered_source_offset": 58084,
+      "due": [
+        {
+          "basis": {
+            "source": "selected_profile",
+            "unit": "milliseconds"
+          },
+          "boundary": 300000,
+          "boundary_key": "maximum:0",
+          "next_boundary": null,
+          "operator": "wall_time_reached",
+          "required_evidence": [
+            "workspace:checkpoint.json"
+          ],
+          "rule_id": "@maximum_interval",
+          "subject": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+          "value": 300703
+        }
+      ],
+      "execution_id": "EX-01M5E6DRSX67M3HC2CDM83234Z",
+      "family": "self_check_obligations",
+      "id": "SC-d4df27d22b6de680f6da",
+      "kind": "self_check_due",
+      "observed_at": "2026-10-21T03:05:10.992352+00:00",
+      "opened_offset_ms": 300703,
+      "response_ref": "SR-EX-01M5E6DRSX67M3HC2CDM83234Z-2",
+      "rule_revision": 0,
+      "rules_sha256": "45447148428ddb9cf15e17a9dbd162702146e1a0b8b5f015f825ddc55f76a9c8",
+      "snapshot": {
+        "checkpoint_counts": {
+          "EX-01M5E6DRSX67M3HC2CDM83234Z": 2
+        },
+        "completed_call_ids": [
+          "item_1",
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_13",
+          "item_14",
+          "item_16",
+          "item_18",
+          "item_2",
+          "item_20",
+          "item_22",
+          "item_4",
+          "item_7",
+          "item_8"
+        ],
+        "counters": {},
+        "iterations": {},
+        "observed_at": "2026-10-21T03:05:10.980321+00:00",
+        "safe_boundary_ids": []
+      },
+      "status": "answered"
+    }
+  ]
+}

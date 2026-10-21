@@ -1,0 +1,239 @@
+{
+  "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+  "pages": [
+    {
+      "command": "query",
+      "exit_code": 0,
+      "request_id": "QR-b3923dd85aa6174c2171361caf0baf80527675fdb7054bf9dc4f05784ed10d4d",
+      "response_contract": "do-math-cli/5",
+      "result": {
+        "items": [
+          {
+            "byte_scope": "persisted_file",
+            "bytes": 5111,
+            "json_pointer": "/record",
+            "logical_sha256": "7d2d0648c971ed9f00dcda8919dccfbd6e967afad7931763476a799b3139bb2a",
+            "path": "runtime/question_links/QU-01M5E79AQ5BJAV221QM2X7XR4Q.json",
+            "record": {
+              "blocks": false,
+              "checked_by": null,
+              "family": "question",
+              "handling": {
+                "action_id": "AC-01M5E7H2PQCJBV15PBVM9STXSW",
+                "execution_ids": [
+                  "EX-01M5E79HDEKJ4GW71MF1T8XC0X"
+                ],
+                "generation": 2,
+                "last_resolution_ref": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+                "observation_basis": null,
+                "owner_activity_id": "AY-01M5E79HDEXY29KNXQS3V0AAZ5",
+                "role": "operational_review",
+                "state": "pending",
+                "waiting": null
+              },
+              "id": "QU-01M5E79AQ5BJAV221QM2X7XR4Q",
+              "obligation": {
+                "kind": "execution_support",
+                "requirement_ref": "submission_contract.command",
+                "subject_ref": "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+              },
+              "obligation_key": "7843fe542b5b5d4dfe0104459e9cd3909719c3e8898e786091a00d820ccdf268",
+              "origin_execution_id": "EX-01M5E735Z2TV0C7JQTPK45J5SR",
+              "origin_field": "questions/0",
+              "origins": [
+                {
+                  "blocks": false,
+                  "execution_id": "EX-01M5E735Z2TV0C7JQTPK45J5SR",
+                  "field": "questions/0",
+                  "obligation": {
+                    "kind": "execution_support",
+                    "requirement_ref": "submission_contract.command",
+                    "subject_ref": "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+                  },
+                  "reason": "Carry forward the observed, unaccepted historical checker issue from the previous execution. The two supplied diagnostic files preserve the actual observations; no repair or resolution is claimed, and normal final delivery is available.",
+                  "source_ref": "runtime/artifacts/BA-01M5E798KJF8ZG5VACSVMGM12Z/submission/output.json",
+                  "target_ids": [
+                    "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+                  ]
+                }
+              ],
+              "owner": "operations",
+              "resolution_history": [
+                {
+                  "affected_ids": [
+                    "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+                  ],
+                  "evidence": {
+                    "evidence_refs": [
+                      "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+                      "workspace:diagnostics/checker-reproduction.py",
+                      "workspace:diagnostics/reproduction.json",
+                      "workspace:diagnostics/checker-source-excerpts.json"
+                    ],
+                    "reason": "Confirmed checker comparison-identity defect, not genuine disagreement for identical complete candidates. The supplied archive SHA-256 matches the historical tool hash. do_math/submission.py:1163-1165 hashes only output, extensions, context and schema; 1254-1268 compares those hashes without files, although 1143-1160 validates checkpoint bytes. The historical checkpoint changed from 1579 bytes/e4665b35f3818c6f73ee3af0d61f16fea3d4ff3b16f5b2d262bb71558c280e25 to 1340 bytes/1786d7734271827d3f86c206ecfdd355e7640409364d131ef3ec4b0cb04e401b. diagnostics/reproduction.json confirms unchanged candidates match, a checkpoint-only correction causes tool_defect, and the corrected candidate passes without a predecessor. Transfer this same nonblocking QU and execution subject to operational_review for an evidence-backed installation repair disposition; maintenance has neither repaired the installation nor authorized replay. The old execution ended with confirmed local termination and a separate currentness return; its accepted native-final receiver check used changed output/extension hashes, so it does not certify repair of this defect.",
+                    "resolved_evidence": [
+                      {
+                        "family": "execution",
+                        "record_id": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+                        "sha256": "81f1d4d0514a1cc16931e268fae100f781707e894edd991c817f7caca2428552"
+                      },
+                      {
+                        "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/checker-reproduction.py",
+                        "bytes": 3985,
+                        "sha256": "9264f1fb3b254bcc902f0052ed5b122512120ae6ad130c0c290e509bb2e79669"
+                      },
+                      {
+                        "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/reproduction.json",
+                        "bytes": 9313,
+                        "sha256": "5b43a47b4d144093e3542ea7b75a7dfb53bdea893fe548e5ed15cfa0d16082a5"
+                      },
+                      {
+                        "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/checker-source-excerpts.json",
+                        "bytes": 12871,
+                        "sha256": "d4bc8bf9cc9f41438868a4d2d93e0fa1b63dd65adbbf4e5ec7ad6c4dbc314940"
+                      }
+                    ]
+                  },
+                  "kind": "transferred",
+                  "resolution_ref": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+                  "wait_for": null
+                }
+              ],
+              "resolution_ref": null,
+              "routing_reason": "Carry forward the observed, unaccepted historical checker issue from the previous execution. The two supplied diagnostic files preserve the actual observations; no repair or resolution is claimed, and normal final delivery is available.",
+              "source_ref": "runtime/artifacts/BA-01M5E798KJF8ZG5VACSVMGM12Z/submission/output.json",
+              "status": "open",
+              "target_ids": [
+                "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+              ],
+              "unresolved_target_ids": [
+                "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+              ]
+            },
+            "sha256": "ea9a56622dd39362ebb883956a6256aca79b740dc1bc1ca3088b201fddbd6145",
+            "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+          }
+        ],
+        "loaded": 1,
+        "next_cursor": null,
+        "query_basis": {
+          "complete": true,
+          "limit": 1000,
+          "loaded_ids": [
+            "QU-01M5E79AQ5BJAV221QM2X7XR4Q"
+          ],
+          "parameters": {
+            "direction": "both",
+            "instance_id": "RI-01M5E5GMKK5Q7HBXRQ9QRCVRMD",
+            "kind": "question",
+            "related_to": null,
+            "text": ""
+          },
+          "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8"
+        },
+        "snapshot": "a5678ee5991aa0680e94680b620efbee8af458b8",
+        "total": 1,
+        "truncated": false
+      },
+      "schema_version": 5
+    }
+  ],
+  "records": [
+    {
+      "blocks": false,
+      "checked_by": null,
+      "family": "question",
+      "handling": {
+        "action_id": "AC-01M5E7H2PQCJBV15PBVM9STXSW",
+        "execution_ids": [
+          "EX-01M5E79HDEKJ4GW71MF1T8XC0X"
+        ],
+        "generation": 2,
+        "last_resolution_ref": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+        "observation_basis": null,
+        "owner_activity_id": "AY-01M5E79HDEXY29KNXQS3V0AAZ5",
+        "role": "operational_review",
+        "state": "pending",
+        "waiting": null
+      },
+      "id": "QU-01M5E79AQ5BJAV221QM2X7XR4Q",
+      "obligation": {
+        "kind": "execution_support",
+        "requirement_ref": "submission_contract.command",
+        "subject_ref": "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+      },
+      "obligation_key": "7843fe542b5b5d4dfe0104459e9cd3909719c3e8898e786091a00d820ccdf268",
+      "origin_execution_id": "EX-01M5E735Z2TV0C7JQTPK45J5SR",
+      "origin_field": "questions/0",
+      "origins": [
+        {
+          "blocks": false,
+          "execution_id": "EX-01M5E735Z2TV0C7JQTPK45J5SR",
+          "field": "questions/0",
+          "obligation": {
+            "kind": "execution_support",
+            "requirement_ref": "submission_contract.command",
+            "subject_ref": "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+          },
+          "reason": "Carry forward the observed, unaccepted historical checker issue from the previous execution. The two supplied diagnostic files preserve the actual observations; no repair or resolution is claimed, and normal final delivery is available.",
+          "source_ref": "runtime/artifacts/BA-01M5E798KJF8ZG5VACSVMGM12Z/submission/output.json",
+          "target_ids": [
+            "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+          ]
+        }
+      ],
+      "owner": "operations",
+      "resolution_history": [
+        {
+          "affected_ids": [
+            "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+          ],
+          "evidence": {
+            "evidence_refs": [
+              "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+              "workspace:diagnostics/checker-reproduction.py",
+              "workspace:diagnostics/reproduction.json",
+              "workspace:diagnostics/checker-source-excerpts.json"
+            ],
+            "reason": "Confirmed checker comparison-identity defect, not genuine disagreement for identical complete candidates. The supplied archive SHA-256 matches the historical tool hash. do_math/submission.py:1163-1165 hashes only output, extensions, context and schema; 1254-1268 compares those hashes without files, although 1143-1160 validates checkpoint bytes. The historical checkpoint changed from 1579 bytes/e4665b35f3818c6f73ee3af0d61f16fea3d4ff3b16f5b2d262bb71558c280e25 to 1340 bytes/1786d7734271827d3f86c206ecfdd355e7640409364d131ef3ec4b0cb04e401b. diagnostics/reproduction.json confirms unchanged candidates match, a checkpoint-only correction causes tool_defect, and the corrected candidate passes without a predecessor. Transfer this same nonblocking QU and execution subject to operational_review for an evidence-backed installation repair disposition; maintenance has neither repaired the installation nor authorized replay. The old execution ended with confirmed local termination and a separate currentness return; its accepted native-final receiver check used changed output/extension hashes, so it does not certify repair of this defect.",
+            "resolved_evidence": [
+              {
+                "family": "execution",
+                "record_id": "EX-01M5E6X6N7EAD66VXB2FXGFXBG",
+                "sha256": "81f1d4d0514a1cc16931e268fae100f781707e894edd991c817f7caca2428552"
+              },
+              {
+                "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/checker-reproduction.py",
+                "bytes": 3985,
+                "sha256": "9264f1fb3b254bcc902f0052ed5b122512120ae6ad130c0c290e509bb2e79669"
+              },
+              {
+                "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/reproduction.json",
+                "bytes": 9313,
+                "sha256": "5b43a47b4d144093e3542ea7b75a7dfb53bdea893fe548e5ed15cfa0d16082a5"
+              },
+              {
+                "artifact_ref": "runtime/artifacts/BA-01M5E7GZ5J4HY36BSWR4HW9GT2/submission/files/diagnostics/checker-source-excerpts.json",
+                "bytes": 12871,
+                "sha256": "d4bc8bf9cc9f41438868a4d2d93e0fa1b63dd65adbbf4e5ec7ad6c4dbc314940"
+              }
+            ]
+          },
+          "kind": "transferred",
+          "resolution_ref": "EX-01M5E79HDEKJ4GW71MF1T8XC0X",
+          "wait_for": null
+        }
+      ],
+      "resolution_ref": null,
+      "routing_reason": "Carry forward the observed, unaccepted historical checker issue from the previous execution. The two supplied diagnostic files preserve the actual observations; no repair or resolution is claimed, and normal final delivery is available.",
+      "source_ref": "runtime/artifacts/BA-01M5E798KJF8ZG5VACSVMGM12Z/submission/output.json",
+      "status": "open",
+      "target_ids": [
+        "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+      ],
+      "unresolved_target_ids": [
+        "EX-01M5E6X6N7EAD66VXB2FXGFXBG"
+      ]
+    }
+  ]
+}

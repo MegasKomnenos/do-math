@@ -1,0 +1,7 @@
+{
+  "verdict": "revise",
+  "alignment": "네 번째 독해는 핵심 주장과 각 검증 한계를 정확히 재구성했다. 남은 한 지적을 코드 원문과 다시 대조한 결과, 보고서가 수리 대상 검사의 허용 결과 상태를 과하게 특정했음을 확인했다. 원래 함수가 직접 검사하는 종료 상태, error 존재, 보존 실패 참조로 문장을 교정한다. 다른 핵심 내용과 경중은 유지한다.",
+  "findings": [
+    {"index":1,"action":"revise","reason":"당시 동결판과 live판의 validate_installation_target을 확인했다. 함수는 status=ended와 비어 있지 않은 error, result_ref/submission_check_ref/submitted_output_ref 중 보존 참조를 요구한다. 보고서의 실행 미완료 또는 판정 대기라는 상태 제한은 이 근거에서 직접 도출되지 않으므로 제거하고 실제 검사 조건으로 바꾼다."}
+  ]
+}
