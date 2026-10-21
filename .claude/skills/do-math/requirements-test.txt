@@ -1,4 +1,0 @@
-# Test-only dependencies (docs/do-math/시험-재편-2026-09-29/설계.md 4.7).
-# The product installs requirements.txt only.
-coverage==7.16.2
-hypothesis==6.168.3

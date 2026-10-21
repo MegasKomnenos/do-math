@@ -1,4 +1,0 @@
-"__DO_MATH_SIGNATURE_BEGIN_corpus_apostrophe'__"
-corpus_apostrophe' : True
-"__DO_MATH_SIGNATURE_END_corpus_apostrophe'__"
-'corpus_apostrophe'' does not depend on any axioms
