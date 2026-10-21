@@ -22,6 +22,8 @@ def fake_session():
     data = runner.read_json(session / "input.json")
     category, task = data["category"], data["task"]
     output = {"category": category, "references": [], "supersedes": []}
+    if category == "plan" and scenario == "plan_failure":
+        return 1
     if category == "plan":
         kinds = [event["kind"] for event in task["events"]]
         output.update(reason="Choose the next small step.", research=[], reviews=[], goal_review=None, wait=None)
@@ -152,6 +154,8 @@ class RunnerTests(unittest.TestCase):
         events = runner.read_json(self.instance / "sessions" / plan / "input.json")["task"]["events"]
         self.assertEqual([e["kind"] for e in events], ["session_failed"])
         self.assertTrue(events[0]["reason"])
+        self.assertEqual((events[0]["category"], events[0]["task"]["instructions"]), ("research", "fail"))
+        self.assertTrue(events[0]["limit"] and events[0]["origin"])
         source = self.root / "answer.txt"
         source.write_bytes("자연수에는 0을 포함합니다.\n".encode("utf-8"))
         submitted = Path(runner.submit_input(self.instance, source))
@@ -163,6 +167,21 @@ class RunnerTests(unittest.TestCase):
         stop.unlink()
         self.until(lambda: self.engine.state["complete"] and not self.engine.active())
         self.assertEqual(len(self.engine.state["seen_inputs"]), 1)
+
+    def test_repeated_plan_failures_halt_until_restart(self):
+        self.scenario = "plan_failure"
+        self.until(lambda: self.engine.state["halted"] and not self.engine.active())
+        plans = [s for s in self.engine.state["sessions"].values() if s["category"] == "plan"]
+        self.assertEqual([s["status"] for s in plans], ["failed"] * runner.PLAN_FAILURE_LIMIT)
+        self.assertIn("halted", self.engine.blocked())
+        self.engine.tick()
+        self.assertEqual(len(self.engine.state["sessions"]), runner.PLAN_FAILURE_LIMIT)
+        # The first plan's consumed start event survives inside the failure chain.
+        event = self.engine.state["events"][-1]
+        self.assertEqual((event["category"], event["request"]), ("plan", None))
+        self.assertEqual(event["task"]["events"][-1]["task"]["events"][-1]["task"]["events"], [{"kind": "start"}])
+        self.engine.run()  # Restart releases the halt, retries, then exits halted.
+        self.assertEqual(len(self.engine.state["sessions"]), 2 * runner.PLAN_FAILURE_LIMIT)
 
     def test_recovery_live_cli_completion_drains_existing_work(self):
         self.engine.state["events"] = []

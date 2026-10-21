@@ -20,6 +20,9 @@ from cli_adapter import build_command, detect_usage_limit, provider_for_model
 
 SKILL = Path(__file__).resolve().parent
 SCRIPT = Path(__file__).resolve()
+# Consecutive failed plans before dispatch halts; limit-detected failures wait instead.
+# Raise it if transient CLI failures halt healthy instances; restart resets the count.
+PLAN_FAILURE_LIMIT = 3
 
 
 def read_json(path):
@@ -214,6 +217,7 @@ def initialize(instance, goal, settings):
         "events": [{"kind": "start"}], "requests": {}, "sessions": {},
         "seen_inputs": [], "input_errors": {}, "wait": None,
         "limit_until": 0, "complete": None,
+        "last_plan": None, "plan_failures": 0, "halted": None,
     })
 
 
@@ -376,9 +380,21 @@ class Runner:
                 if s.get("launch_error"):
                     reason = s["launch_error"] + "; " + reason
                 s.update(status="failed", reason=reason)
-                if s["request"]:
-                    self.state["requests"][s["request"]]["status"] = "failed"
-                self.state["events"].append({"kind": "session_failed", "session": sid, "reason": reason})
+                request = self.state["requests"].get(s["request"]) or {}
+                if request:
+                    request["status"] = "failed"
+                # The event carries the original task, so a failed plan's consumed events survive.
+                self.state["events"].append({
+                    "kind": "session_failed", "session": sid, "reason": reason,
+                    "category": s["category"], "request": s["request"],
+                    "task": request.get("task") or read_json(session / "input.json")["task"],
+                    "origin": request.get("origin"), "limit": s.get("limit"),
+                    "exit_code": s.get("exit_code"), "launch_error": s.get("launch_error")})
+                if s["category"] == "plan" and not s.get("limit"):
+                    self.state["plan_failures"] += 1
+                    if self.state["plan_failures"] >= PLAN_FAILURE_LIMIT:
+                        self.state["halted"] = {"reason": f"{PLAN_FAILURE_LIMIT} consecutive plan failures; last: {reason}",
+                                                "at": time.time()}
                 self.save()
                 return
             s.update(status="publishing", record="k" + uuid.uuid4().hex)
@@ -422,6 +438,7 @@ class Runner:
                              {"instructions": item["instructions"], "references": item["references"],
                               "target": {"kind": "goal"}}, record,
                              {key: item[key] for key in ("model", "effort") if key in item})
+            self.state.update(last_plan=record, plan_failures=0)
             # Inputs arriving while this plan ran have not been answered by it.
             self.state["wait"] = (None if any(e["kind"] == "user_input" for e in self.state["events"])
                                   else output["wait"])
@@ -461,16 +478,7 @@ class Runner:
             self.finish(sid, s)
 
     def blocked(self):
-        reasons = []
-        if self.state["complete"]:
-            reasons.append("complete")
-        if (self.instance / "control/STOP").exists():
-            reasons.append("STOP")
-        if self.state["wait"]:
-            reasons.append("external_input")
-        if time.time() < self.state["limit_until"]:
-            reasons.append("usage_limit")
-        return reasons
+        return dispatch_blocks(self.instance, self.state)
 
     def tick(self):
         self.collect()
@@ -482,7 +490,8 @@ class Runner:
         slots = self.settings["max_sessions"] - len(active)
         if slots > 0 and self.state["events"] and not any(s["category"] == "plan" for _, s in active):
             self.dispatch("plan", {"instructions": "사건과 축적 지식을 읽고 다음 연구·검토를 계획하라.",
-                                   "references": [], "events": list(self.state["events"])})
+                                   "references": [], "events": list(self.state["events"]),
+                                   "previous_plan": self.state["last_plan"]})
             slots -= 1
         for key, request in self.state["requests"].items():
             if slots <= 0 or self.blocked():
@@ -496,6 +505,9 @@ class Runner:
             # Load only after acquiring the lock, so a competing runner cannot
             # resume from an earlier state after the previous runner exits.
             self.state = read_json(self.state_path)
+            # A restart is the human's signal that the halt's cause was addressed.
+            self.state.update(halted=None, plan_failures=0)
+            self.state.setdefault("last_plan", None)  # States written before these fields
             for name in ("common.md", "protocol.md", "plan.md", "research.md", "review.md", "RUNTIME.md", "check.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
@@ -504,7 +516,7 @@ class Runner:
             print(json.dumps({"started": self.identity, "instance": str(self.instance), "token": token}), flush=True)
             while True:
                 self.tick()
-                if self.state["complete"] and not self.active():
+                if (self.state["complete"] or self.state["halted"]) and not self.active():
                     return
                 time.sleep(0.25)
 
@@ -533,19 +545,26 @@ def start(instance):
     raise RuntimeError(f"Readiness not yet confirmed (PID {child.pid}); inspect {stdout} and {stderr} before retrying")
 
 
-def status(instance):
-    state = read_json(instance / "runner/state.json")
-    path = instance / "runner/process.json"
-    runner = read_json(path) if path.exists() else None
+def dispatch_blocks(instance, state):
     reasons = []
     if state["complete"]:
         reasons.append("complete")
+    if state.get("halted"):
+        reasons.append("halted")
     if (instance / "control/STOP").exists():
         reasons.append("STOP")
     if state["wait"]:
         reasons.append("external_input")
-    if state["limit_until"] > time.time():
+    if time.time() < state["limit_until"]:
         reasons.append("usage_limit")
+    return reasons
+
+
+def status(instance):
+    state = read_json(instance / "runner/state.json")
+    path = instance / "runner/process.json"
+    runner = read_json(path) if path.exists() else None
+    reasons = dispatch_blocks(instance, state)
     return {"instance": str(instance), "knowledge": str(instance / "knowledge"),
             "runner": runner, "runner_alive": bool(runner and alive(runner["process"])),
             "dispatch_blocks": reasons, "state": state}

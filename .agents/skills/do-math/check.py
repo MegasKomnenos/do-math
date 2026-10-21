@@ -152,6 +152,9 @@ class Checker:
         elif category == "review":
             self.target(task.get("target"), "input.json.task.target")
         else:
+            if task.get("previous_plan") is not None:
+                record = self.record(task["previous_plan"], "input.json.task.previous_plan")
+                need(record.get("category") == "plan", "input.json.task.previous_plan", "expected a plan record")
             for index, event in enumerate(items(task.get("events"), "input.json.task.events")):
                 loc = f"input.json.task.events[{index}]"
                 obj(event, loc)

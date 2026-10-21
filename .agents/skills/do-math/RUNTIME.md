@@ -74,7 +74,7 @@ python "$skill/runner.py" resume $instance
 python "$skill/runner.py" input $instance --file C:/research-input/answer.txt
 ```
 
-`status`는 읽기 전용 JSON을 출력한다. `runner_alive`는 실행기 PID와 생성 식별값을 조회한 현재 결과다. `knowledge`는 공개 지식 위치다. `dispatch_blocks`에는 겹칠 수 있는 `STOP`, `external_input`, `usage_limit`, `complete`가 나온다. `state`에는 아래 표의 상태 전체가 있다. 실행기가 죽었을 때 세션 상태는 마지막 저장 시점의 것이며, 재기동하면 실제 생존 여부와 대조해 갱신한다.
+`status`는 읽기 전용 JSON을 출력한다. `runner_alive`는 실행기 PID와 생성 식별값을 조회한 현재 결과다. `knowledge`는 공개 지식 위치다. `dispatch_blocks`에는 겹칠 수 있는 `STOP`, `external_input`, `usage_limit`, `halted`, `complete`가 나온다. `state`에는 아래 표의 상태 전체가 있다. 실행기가 죽었을 때 세션 상태는 마지막 저장 시점의 것이며, 재기동하면 실제 생존 여부와 대조해 갱신한다.
 
 `stop`은 `control/STOP`을 만든다. 새 파견만 멈추고 이미 시작한 세션은 종료·검사·반영까지 진행한다. `resume`은 이 파일을 제거한다. 외부 입력 대기·공급자 한도·완료는 각각 별도 조건이므로 STOP을 지워도 남을 수 있다. `resume` 자체는 실행기를 시작하지 않는다. `status.runner_alive`가 false라면 `start`가 필요하다.
 
@@ -112,10 +112,12 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 | `events` | 아직 계획에 전달하지 않은 사건. 기동할 계획의 `input.json.task.events`로 전부 옮기고 비운다. 실행 중 계획에 새 사건을 끼워 넣지 않는다. |
 | `seen_inputs`, `input_errors` | 소비한 사용자 파일명 목록, 아직 소비할 수 없는 파일별 진단. 원문은 `control/inputs/`에 남는다. |
 | `wait`, `limit_until`, `complete` | 외부 입력 대기 `{needed,reason}` 또는 null, 모든 새 파견의 한도 만료 UTC Unix 초, 완료를 판정한 공개 목표 검토 ID 또는 null. |
+| `last_plan` | 마지막으로 반영된 계획의 기록 ID 또는 null. 다음 계획의 `task.previous_plan`으로 전달한다. |
+| `plan_failures`, `halted` | 한도 탐지 없이 연달아 실패한 계획 수(계획이 반영되면 0), 그 수가 한도에 이르러 새 파견을 멈춘 표시 `{reason, at}` 또는 null. |
 
-첫 사건은 `start`다. 유효 검토 반영은 `review_finished`, 산출 부재·검사 실패·기동 실패는 `session_failed`, 사용자 원문은 `user_input`이다. 정상 연구 반영 자체는 계획 사건이 되지 않고 자동 검토 요청을 만든다. 새 계획은 빈 슬롯이 생기면 게시 요청보다 먼저 파견되며, 남은 슬롯에는 게시 순서대로 요청을 파견한다. 계획 중 도착한 사건은 다음 계획에 남긴다. 계획이 실패했을 때 그 계획이 받았던 사건은 해당 계획 `input.json`에서 회수할 수 있다. 다음 계획에는 실패 사건과 그 이후 아직 전달하지 않은 사건이 온다.
+첫 사건은 `start`다. 유효 검토 반영은 `review_finished`, 산출 부재·검사 실패·기동 실패는 `session_failed`, 사용자 원문은 `user_input`이다. 정상 연구 반영 자체는 계획 사건이 되지 않고 자동 검토 요청을 만든다. 새 계획은 빈 슬롯이 생기면 게시 요청보다 먼저 파견되며, 남은 슬롯에는 게시 순서대로 요청을 파견한다. 계획 중 도착한 사건은 다음 계획에 남긴다. 계획이 실패하면 그 계획이 받았던 사건은 실패 사건의 `task.events`에 담겨 다음 계획에 간다. 다음 계획에는 실패 사건과 그 이후 아직 전달하지 않은 사건이 온다.
 
-`session_failed.session`을 `sessions`에서 찾아 `request` 키를 읽으면 `requests[그 키].task`와 `origin`으로 원 지시·대체 의도·검토 대상과 공개 배정 이유를 회수할 수 있다. `request: null`인 계획은 `<instance>/sessions/<실패 ID>/input.json`의 `task`에서 원 사건과 지시를 읽는다. 이 경로는 계획이 실패를 해석하고 새 요청을 고르는 데 사용한다. 검토자의 기동 입력에는 실행 상태나 작성자 세션 폴더·로그 경로를 추가하지 않는다.
+`session_failed`에는 실행기가 실패 세션의 `category`, 요청 키 `request`, 받은 `task` 원문, 요청의 `origin`, 탐지한 `limit`, `exit_code`, `launch_error`를 함께 담는다. 계획은 `sessions`를 뒤지지 않고 이 사건만으로 원 지시·대체 의도·검토 대상과 실패 원인의 단서를 읽는다. 사건 형식은 [protocol.md](protocol.md) 2절이 정한다. 검토자의 기동 입력에는 실행 상태나 작성자 세션 폴더·로그 경로를 추가하지 않는다.
 
 외부 입력 대기를 선언한 계획이 실행되는 동안 사용자 입력이 이미 도착했다면, 그 입력을 다음 계획에 전달할 수 있도록 대기를 유지하지 않는다. 동일 계획에 요청과 wait가 함께 있으면 요청은 게시되지만 새 입력이 오기 전까지 새 파견은 멈춘다. 실행기는 동시 대체 의도를 판정하지 않으며, 공개 기록의 현재성·상충 검토를 해석할 책임은 계획에 있다.
 
@@ -137,9 +139,11 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 
 재검사·Git 반영된 목표 검토의 `goal.verdict == "achieved"`만 완료를 만든다. 완료 뒤 자동 검토·계획을 포함해 새 파견은 모두 막는다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 정상 종료한다. 이때 미파견 요청과 남은 사건은 이력으로 남는다. 끝나지 않는 기존 세션이 있으면 실행기도 기다리므로 필요하면 `kill-session`을 사용한다.
 
+계획이 공급자 한도 탐지 없이 연달아 `PLAN_FAILURE_LIMIT`(runner.py 상수, 기본 3)번 실패하면 실행기는 `halted`를 기록하고 모든 새 파견을 멈춘다. 로그인 만료, 쓸 수 없는 모델 이름, 깨진 CLI 경로처럼 계획을 다시 띄워도 같은 실패가 반복되는 원인이 실패와 재계획의 무한 고리를 만들지 않게 하는 장치다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 종료한다. 사람이 원인을 고친 뒤 `start`나 `run`으로 재기동하면 `halted`와 실패 수가 풀린다. 연구·검토 실패는 이 수에 들지 않고 사건으로 계획에 간다.
+
 ## 명령 결과와 구현 진입점
 
-명령 성공은 종료 코드 0과 stdout JSON이다. `run`은 시작 JSON을 출력하고 실행을 계속하며, 완료·배출 뒤 0으로 종료한다. 명령 실행 오류는 stderr의 `{"error":"설명"}`과 종료 코드 1, 잘못된 인자 사용은 argparse 설명과 종료 코드 2다. `status`는 실행기가 꺼져 있거나 연구가 대기 중이어도 읽기에 성공하면 0이다. `stop/resume/input`은 파일을 전달한 성공이며 세션이 이미 처리했다는 확인은 `status`에서 한다.
+명령 성공은 종료 코드 0과 stdout JSON이다. `run`은 시작 JSON을 출력하고 실행을 계속하며, 완료나 `halted` 뒤 남은 세션을 배출하면 0으로 종료한다. 명령 실행 오류는 stderr의 `{"error":"설명"}`과 종료 코드 1, 잘못된 인자 사용은 argparse 설명과 종료 코드 2다. `status`는 실행기가 꺼져 있거나 연구가 대기 중이어도 읽기에 성공하면 0이다. `stop/resume/input`은 파일을 전달한 성공이며 세션이 이미 처리했다는 확인은 `status`에서 한다.
 
 실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/InstanceLock`은 독립 기동·단일 실행기, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick/blocked`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 환경 봉인용 정보가 아니라 PID 재사용을 구별하기 위한 프로세스 식별값이다.
 
