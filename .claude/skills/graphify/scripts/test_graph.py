@@ -5,10 +5,118 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import graph
 import semantic
+
+
+class EvidenceRecoveryTests(unittest.TestCase):
+    def setUp(self):
+        # Reproduce the wrapped Korean sentence and invented punctuation from real failures.
+        self.raw = ("동일 ID/내용은\n재전달되고 내용 변경은 반려된다.\n"
+                    "| 같은 정의를 사용한다 |\n동일 ID/내용은\n").encode("utf-8")
+        self.files = {"contract.md": self.raw}
+        self.response = {"nodes": [
+            {"key": "delivery", "label": "Delivery", "summary": "Repeated delivery preserves content",
+             "line": 2, "quote": "동일 ID/내용은"},
+            {"key": "definition", "label": "Definition", "summary": "Shared definition",
+             "line": 3, "quote": "같은 정의를 사용한다."}],
+            "edges": [{"source": "delivery", "target": "definition", "relation": "requires",
+                       "confidence": "INFERRED", "rationale": "Example relation",
+                       "line": 2, "quote": "동일 ID/내용은 재전달되고 내용 변경은 반려된다."}]}
+        self.corrections = {"corrections": [
+            {"kind": "nodes", "index": 0, "line": 1, "quote": "동일 ID/내용은"},
+            {"kind": "nodes", "index": 1, "line": 3, "quote": "같은 정의를 사용한다"},
+            {"kind": "edges", "index": 0, "line": 2, "quote": "재전달되고 내용 변경은 반려된다."}]}
+
+    def runner(self, outputs):
+        outputs = iter(outputs)
+
+        def run(command, **kwargs):
+            # Exercise actual invocation/log parsing while replacing only the CLI process.
+            response = next(outputs)
+            Path(command[command.index("-o") + 1]).write_text(json.dumps(response), encoding="utf-8")
+            kwargs["stdout"].write(b'{"type":"turn.completed","usage":{"input_tokens":10,"output_tokens":5}}\n')
+            self.assertLessEqual(kwargs["timeout"], 30)
+            return SimpleNamespace(returncode=0)
+        return run
+
+    def extract(self, state):
+        return semantic.extract_document(state, "contract.md", self.raw, self.files, "instructions", 30)
+
+    def test_repairs_all_evidence_without_changing_meaning_or_accepting_approximate_quotes(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(semantic.shutil, "which", return_value="codex"), \
+                patch.object(semantic.subprocess, "run", side_effect=self.runner([self.response, self.corrections])) as run:
+            state = Path(directory)
+            result = self.extract(state)
+            self.assertEqual(run.call_count, 2)
+            semantic.validate(result, "contract.md", self.raw, self.files)
+            self.assertEqual(result["usage"], {"input_tokens": 20, "output_tokens": 10})
+            self.assertEqual(len(result["repair_runs"]), 1)
+            self.assertEqual(result, semantic.cached(state, "contract.md", self.raw, self.files,
+                                                     semantic.digest(b"instructions")))
+            for kind in ("nodes", "edges"):
+                for before, after in zip(self.response[kind], result[kind]):
+                    self.assertEqual({k: v for k, v in before.items() if k not in {"line", "quote"}},
+                                     {k: v for k, v in after.items() if k not in {"line", "quote"}})
+
+    def test_repeated_invalid_repairs_preserve_graph_and_cache_and_release_lock(self):
+        wrong = copy.deepcopy(self.corrections)
+        wrong["corrections"][0]["line"] = 2
+        last = {"corrections": [wrong["corrections"][0]]}
+        with tempfile.TemporaryDirectory() as directory, patch.object(semantic.shutil, "which", return_value="codex"), \
+                patch.object(semantic.subprocess, "run", side_effect=self.runner([self.response, wrong, last])) as run:
+            state = Path(directory)
+            target = state / "graph.json"
+            target.write_bytes(b"old graph")
+            cache = semantic.cache_path(state, "contract.md")
+            cache.parent.mkdir()
+            cache.write_bytes(b"old cache")
+            with patch.object(graph, "STATE", state), patch.object(graph, "GRAPH", target):
+                with self.assertRaisesRegex(RuntimeError, "Graph preserved.*|Fix extraction failures"):
+                    graph.update(self.files, 1, 30)
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual(target.read_bytes(), b"old graph")
+            self.assertEqual(cache.read_bytes(), b"old cache")
+            self.assertFalse((state / "update.lock").exists())
+
+    def test_non_evidence_error_is_not_repaired(self):
+        wrong = copy.deepcopy(self.response)
+        wrong["edges"][0].update(target=None, target_file="../outside.py")
+        with tempfile.TemporaryDirectory() as directory, patch.object(semantic.shutil, "which", return_value="codex"), \
+                patch.object(semantic.subprocess, "run", side_effect=self.runner([wrong])) as run:
+            with self.assertRaisesRegex(ValueError, "out-of-scope.*see"):
+                self.extract(Path(directory))
+            self.assertEqual(run.call_count, 1)
+
+    def test_reuses_only_identical_completed_failed_extraction(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(semantic.shutil, "which", return_value="codex"):
+            state = Path(directory)
+            with patch.object(semantic.subprocess, "run", side_effect=self.runner([self.response, {"corrections": []}])):
+                with self.assertRaisesRegex(ValueError, "missing evidence corrections"):
+                    self.extract(state)
+            origin = next((state / "runs").iterdir())
+            # Legacy failures recorded only this error string.
+            semantic.atomic_json(origin / "validation-error.json", {"error": "invalid evidence: contract.md:2"})
+            prompt = (origin / "input.txt").read_text(encoding="utf-8")
+            self.assertIsNone(semantic.failed_response(state, "contract.md", self.raw + b"changed", prompt))
+            self.assertIsNone(semantic.failed_response(state, "contract.md", self.raw, prompt + "changed"))
+            with patch.object(semantic.subprocess, "run", side_effect=self.runner([self.corrections])) as run:
+                result = self.extract(state)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(result["extraction_run_id"], origin.name)
+            self.assertEqual(result["usage"], {"input_tokens": 20, "output_tokens": 10})
+            (origin / "events.jsonl").write_text('{"type":"turn.failed"}\n', encoding="utf-8")
+            self.assertIsNone(semantic.failed_response(state, "contract.md", self.raw, prompt))
+
+    def test_corrections_cannot_drop_add_or_change_other_fields(self):
+        issues = [{"kind": "nodes", "index": 0}]
+        valid = self.corrections["corrections"][0]
+        for entries in ([], [valid, valid], [dict(valid, index=1)], [dict(valid, summary="changed")]):
+            with self.subTest(entries=entries), self.assertRaises(ValueError):
+                semantic.apply_corrections(self.response, issues, {"corrections": entries})
 
 
 class ScopeTests(unittest.TestCase):
