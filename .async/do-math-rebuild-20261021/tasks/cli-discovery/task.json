@@ -1,0 +1,9 @@
+{
+  "id": "cli-discovery",
+  "kind": "work",
+  "depends_on": [],
+  "writes": [],
+  "inputs": [
+    "C:/math/.async/do-math-rebuild-20261021/user-messages.md"
+  ]
+}

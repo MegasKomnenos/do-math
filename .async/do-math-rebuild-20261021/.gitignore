@@ -12,3 +12,7 @@ tasks/*/*
 !tasks/*/report.json
 !tasks/*/integration.json
 !tasks/*/assessment.md
+!tasks/*/review.md
+!tasks/*/evidence.md
+!tasks/*/cli-evidence.md
+runner.*.log

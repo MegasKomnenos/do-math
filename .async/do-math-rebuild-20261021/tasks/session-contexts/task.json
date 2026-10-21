@@ -1,0 +1,18 @@
+{
+  "id": "session-contexts",
+  "kind": "work",
+  "depends_on": [
+    "protocol-checker"
+  ],
+  "writes": [
+    ".claude/skills/do-math/common.md",
+    ".claude/skills/do-math/plan.md",
+    ".claude/skills/do-math/research.md",
+    ".claude/skills/do-math/review.md"
+  ],
+  "inputs": [
+    ".claude/skills/do-math/protocol.md",
+    ".claude/skills/do-math/check.py",
+    "C:/math/.async/do-math-rebuild-20261021/user-messages.md"
+  ]
+}

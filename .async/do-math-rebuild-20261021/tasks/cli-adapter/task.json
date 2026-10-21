@@ -1,0 +1,16 @@
+{
+  "id": "cli-adapter",
+  "kind": "work",
+  "depends_on": [
+    "cli-discovery"
+  ],
+  "writes": [
+    ".claude/skills/do-math/cli_adapter.py",
+    ".claude/skills/do-math/CLI.md",
+    ".claude/skills/do-math/tests/test_cli_adapter.py"
+  ],
+  "inputs": [
+    "C:/math/.async/do-math-rebuild-20261021/tasks/cli-discovery/cli-evidence.md",
+    "C:/math/.async/do-math-rebuild-20261021/user-messages.md"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "task": "session-contexts",
+  "files": [
+    ".claude/skills/do-math/common.md",
+    ".claude/skills/do-math/plan.md",
+    ".claude/skills/do-math/research.md",
+    ".claude/skills/do-math/review.md"
+  ]
+}

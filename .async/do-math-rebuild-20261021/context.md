@@ -8,6 +8,26 @@ do-math는 이 저장소에서 Claude Code와 Codex가 쓰는 스킬이다. 연�
 
 이전 구현은 Git 이력에 남아 있지만 이 개발의 참고 자료가 아니다. 사용자는 기존 코드를 고치는 대신 처음부터 설계해 단절을 만들기로 했다. 그 이유는 3절에 있다. 그러므로 이전 코드와 문서에서 구조나 장치를 가져오지 않는다. CLI나 Lean의 동작처럼 외부 도구에 관한 사실이 필요하면 실제 도구의 `--help`와 작은 실행으로 확인한다.
 
+현재 상태(2026-10-21, manager 0009): 개발 완료. `cli-discovery`, `protocol-checker`, `cli-adapter`, `session-contexts`, `runner`, `skill-entry`, `mixed-completion`과 최종 독립 `final-review`를 검토·통합해 수용했다. 사용자 대화의 진입점은 `.claude/skills/do-math/SKILL.md`, 제품의 산출·참조·대체 계약은 `protocol.md`, 공식 구조·참조 검사는 `check.py`, CLI 연결은 `cli_adapter.py`와 `CLI.md`, 실행과 운영의 정의는 `runner.py`와 `RUNTIME.md`다. 세션은 자기 `output/`에 공개 산출을 모으고 실행기는 종료 코드와 관계없이 공식 재검사를 거쳐 전체 내용을 새 `knowledge/<record>/`로 복사하고 인스턴스 Git에 커밋한다. `supersedes`는 기존 기록 전체를 대신하며 새 기록은 별도 검토를 받는다. 실제 함수·필드의 의미는 `seams.md`에 있다.
+
+CLI 어댑터에서 남았던 모델 표기 불일치는 runner에서 해결했다. `codex/<model>`·`claude/<model>`의 첫 `/` 앞이 공급자이며 뒤 전체가 CLI 모델 인자다. bare 모델 추정은 사용하지 않는다. 사용자의 확정 요구 변경 없이 구성 요소의 계약을 맞췄다.
+
+수용된 작업맥락은 `common.md`와 `plan.md/research.md/review.md`다. 공개 반영과 수학적 인정의 구분, 실패·부분 결과의 환류, 전체 기록 대체, 세 가지 독립 판단, 공개 자료만으로 하는 검토를 담는다. 실행기는 common/protocol/goal과 해당 범주 문서를 input.json에 연결한다. 계획 프롬프트는 `RUNTIME.md`와 인스턴스 `runner/state.json`의 requests를 안내한다. 미파견·실행 중 요청의 지시·대체 의도와 실패 session의 원 요청을 이 경로에서 회수한다. 검토 입력과 프롬프트에는 작성자 폴더·로그를 넣지 않는다.
+
+runner는 init/start/run/status/stop/resume/input/kill-session 명령, 단일 실행기·전체 동시 상한, 계획 사건과 요청 게시, 자동 검토, 목표 완료, STOP·외부 입력·공급자 한도 대기를 제공한다. 대기 중 실행기는 살아 있으며 완료 뒤 기존 세션의 반영까지 마치면 종료한다. 독립 실행기와 한 번짜리 세션 호스트가 CLI를 운영하고 PID+OS 생성 식별값으로 재기동 시 생존 확인과 개별 CLI 종료를 처리한다. 세션 호스트는 AI 역할이나 자동 재기동 서비스가 아니다. 기록 ID와 배정·반영 효과의 상태 저장은 중복 파견·공개를 피하기 위한 구현 선택이다.
+
+manager는 runner의 변경 6개 파일 전체 또는 변경 diff, RUNTIME의 소비자 경로, 가짜 시험 코드를 사용자 원문·불변식·배정과 정적으로 대조하고 통합했다. task는 실제 가짜 프로세스·공식 검사기·임시 Git을 쓰는 runner 시험 6개와 어댑터 시험 8개의 통과를 보고했다. 5세션 완료 흐름, 비정상 종료 산출·추가 공개 파일 반영, 실패·STOP·입력·합성 한도, 복구·완료 후 기존 세션 반영, Windows 독립 기동을 확인한 범위다. manager는 이미 보고된 시험을 반복하지 않았다. 실제 모델 접근·파일 작성·Lean 컴파일·실제 한도 발생, Linux와 호스트 재부팅은 이 수용으로 확인되지 않았다. 판단 근거는 `managers/0006/decision.md`, task 보고와 `tasks/runner/integration.json`에 있다.
+
+`skill-entry`에서 SKILL.md 운영 진입점을 완성했다. 목표·설정·자체 Git 준비에서 init/start/status, 새 PID·로그 확인과 위치 반환으로 이어지며 공개 해설·검토·목표 판정, STOP·입력·한도·개별 세션 종료·재기동까지 안내한다. plan.md와 RUNTIME.md에는 미완료 requests와 실패 사건의 sessions.request→requests.task/origin 경로를 구체화했다. request가 null인 실패 계획은 해당 input.json의 task.events에서 원 사건을 회수한다. manager는 사용자 원문→SKILL 본문→RUNTIME/protocol/common→관련 runner 함수로 요구 누락과 실제 동작을 정적으로 대조하고 변경 세 문서를 통합했다. 실행 코드 변경과 새 승인 단계는 없다. task의 링크·명령 목록 확인은 반복하지 않았고 실제 모델·Lean 실행은 이번 수용 범위가 아니다. 근거는 `managers/0007/decision.md`, `tasks/skill-entry/verification.md`, `tasks/skill-entry/integration.json`이다.
+
+`mixed-completion`은 실제 Codex 3세션(계획·연구·다음 계획)과 Claude 2세션(연구 검토·목표 검토)으로 작은 목표를 무인 완주했다. 최종 인스턴스는 RECORDS의 `tasks/mixed-completion/evidence/instance-add-zero-fixed-20261021/`이다. 공개 연구 `k3812dd40113a4425b0b901de60dfd0bc`의 정리는 `theorem add_zero_all (n : Nat) : n + 0 = n := by rfl`이며 해설은 0 포함·전칭 범위·Nat.add의 정의적 계산·등호 반사성을 설명한다. 독립 연구 검토 `kf5af23be4e1b4e0588de16f547142351`은 supported/accepted/matches, 목표 검토 `kc7325f0829e84ab5ab14fdfd5938ca33`은 achieved다. 두 검토는 공개 원문의 작업 사본 재컴파일과 해설 대조를 기록했다. 실제 Lean은 4.32.0이다. 각 세션의 공식 검사 성공, 다섯 기록의 Git 반영, complete와 모든 세션 integrated·종료 및 실행기 종료가 기록돼 있다. 최종 인스턴스에는 추가 입력·수동 산출 편집·재기동이 없었다는 task 보고와 seen_inputs=[]를 함께 읽는다.
+
+첫 인스턴스는 Windows state.json 원자 교체의 WinError 5로 실행기가 종료해 완료 근거에서 제외했다. `runner.py:write_json`은 Windows 오류 5/32/33에만 50ms 간격으로 최대 1초 같은 교체를 재시도하고, 계속된 거부나 다른 오류는 전파한다. 기존의 완전한 상태를 유지하는 작은 수정이며 세션 실행 시간 제한이나 자동 재기동이 아니다. 당시 파일 독자는 특정하지 못했지만 task가 실제 열린 파일로 동일 오류와 해제 후 저장을 재현했고 지속 거부의 이전 상태 보존까지 두 시험으로 확인했다. 첫 인스턴스는 STOP을 적용하고 모든 프로세스 종료를 확인한 상태로 보존했다.
+
+manager는 변경 세 파일의 diff·시험, SKILL 진입점, 공개 연구·두 검토의 본문과 근거, 세션별 공식 검사·최종 상태·Git 기록, Runner.finish/apply_output을 대조하고 통합했다. 기존 시험과 Lean 컴파일은 반복하지 않았다. 근거 진입점은 `tasks/mixed-completion/evidence.md`, 수용 판단은 `managers/0008/decision.md`, 반영 결과는 `tasks/mixed-completion/integration.json`이다. Linux·호스트 재부팅·실제 공급자 한도·장기 어려운 연구·다른 Lean 판본은 미확인이다.
+
+최종 `final-review`는 사용자 요구에서 제품으로 중요한 누락을 찾고, 제품에서 코드·공개 근거로 돌아가 정확성을 대조해 합격으로 판단했다. `tasks/final-review/review.md`에 사용자 및 세션 진입점, 목적·불변식별 근거, 공개 수학 본문과 실제 실행 근거, 확인 한계가 있다. manager 0009는 이 검토와 사용자 원문·완료 기준을 읽고 SKILL 진입점, 공개 해설·연구 검토·목표 판정, 최종 상태·Git 기록과 Runner.finish/apply_output/tick/run을 대조했다. 제품 변경이 없는 검토도 integrate로 처리했으며 필수 후속 수정은 없다. 6절의 구현·가짜 흐름·실제 혼합 완주 기준과 최종 review 수용, 실행 중·미해결 task 없음에 따라 개발을 완료한다. 수용 판단은 `managers/0009/decision.md`, 통합 기록은 `tasks/final-review/integration.json`이다. 새 시험·모델 실행·Lean 컴파일을 반복하지 않았으며 `.agents/skills/do-math/` 사본 작성은 앞서 정한 별도 절차다.
+
 ## 2. do-math가 하려는 일
 
 사용자가 정한 do-math의 목적은 연구를 해서 목표를 달성하는 것이다. 이 목적은 다섯 가지 요구로 이루어진다. 새 구현의 모든 장치는 이 다섯 가지 가운데 하나에 기여해야 한다.
@@ -206,6 +226,8 @@ Codex와 Claude의 구독에는 사용 한도가 있다. 한도에 걸리면 그
 Mathlib을 쓰는 Lean 파일은 이렇게 컴파일한다. Lean의 `bin` 폴더를 `PATH`에 둔 채 Mathlib 프로젝트 폴더에서 `lake env lean <파일>`을 실행한다. `import Mathlib` 한 줄과 작은 정리 하나로 된 파일이 이 방식으로 컴파일됐다(종료 코드 0). 캐시가 차가운 상태에서 7분 22초가 걸렸다. 그러므로 Mathlib 컴파일은 몇 분이 걸린다는 전제로 다룬다. Mathlib을 import하지 않는 core Lean 파일은 `lean.exe <파일>`로 바로 컴파일된다. 6절의 작은 목표처럼 Mathlib이 필요 없는 증명은 이 경로가 빠르다.
 
 `.skill-workspace/`는 Git에서 제외된 로컬 작업 영역이다. 연구 인스턴스 폴더를 어디에 둘지 정할 때, 그 폴더의 Git 기록과 저장소 본체의 Git 기록이 섞이지 않게 한다.
+
+CLI 연결에서 바로 쓸 사실과 한계는 `seams.md` 8절에 있다. Codex exec의 한도 정보는 오류 메시지로, Claude는 계정 한도 거절 표식과 Unix 초 시각으로 전달된다. 일반 429나 정상 사용량 경고를 구독 한도와 혼동하지 않는다. 조사에 있는 무인 권한 인자는 OS 수준의 세션 폴더 격리를 보장하지 않는다. 자기 폴더에만 쓴다는 범위는 작업맥락으로 전달하며, 실제 두 CLI의 파일 산출은 위 혼합 완주에서 확인했다.
 
 ## 8. 저장소에서 작업할 때
 

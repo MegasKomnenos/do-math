@@ -1,0 +1,8 @@
+{
+  "task": "skill-entry",
+  "files": [
+    ".claude/skills/do-math/plan.md",
+    ".claude/skills/do-math/RUNTIME.md",
+    ".claude/skills/do-math/SKILL.md"
+  ]
+}

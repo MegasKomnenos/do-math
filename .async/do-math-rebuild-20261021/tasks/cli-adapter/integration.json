@@ -1,0 +1,8 @@
+{
+  "task": "cli-adapter",
+  "files": [
+    ".claude/skills/do-math/CLI.md",
+    ".claude/skills/do-math/tests/test_cli_adapter.py",
+    ".claude/skills/do-math/cli_adapter.py"
+  ]
+}
