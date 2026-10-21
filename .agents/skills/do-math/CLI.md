@@ -37,38 +37,9 @@ Codex의 노력 값은 비어 있지 않은 문자열을 TOML 문자열로 인�
 
 권한 옵션은 무인 작업 중 승인 대기를 피하기 위한 선택이다. cwd나 권한 우회가 OS 수준의 세션 폴더 쓰기 격리를 제공하지는 않는다. 프롬프트의 작업맥락에 자기 세션 폴더에만 쓴다는 지시와 읽을 공통 문서·범주 문서·이번 작업 문서·축적 지식 위치, 산출 검사 방법을 담는다.
 
-## Windows 기동 예
+## 실행기의 사용
 
-아래 함수는 어댑터와 같은 디렉터리에서 import할 수 있는 실행기에 넣는 예다. `cli_paths`는 호출자가 준비한 공급자→실행 파일 경로 매핑이며 인스턴스 설정 형식을 정하는 것이 아니다. 세션마다 다른 디렉터리와 로그를 사용한다.
-
-```python
-from pathlib import Path
-import subprocess
-import time
-from cli_adapter import build_command, provider_for_model, detect_usage_limit
-
-def launch_session(cli_paths, model, effort, session_dir, prompt):
-    session_dir = Path(session_dir).resolve()
-    session_dir.mkdir(parents=True, exist_ok=True)
-    command = build_command(cli_paths[provider_for_model(model)],
-                            model, effort, session_dir)
-    prompt_path = session_dir / "prompt.txt"
-    stdout_path = session_dir / "cli.stdout.jsonl"
-    stderr_path = session_dir / "cli.stderr.log"
-    prompt_path.write_bytes(prompt.encode("utf-8"))
-    started_at = time.time()
-    with prompt_path.open("rb") as inp, stdout_path.open("wb") as out, \
-            stderr_path.open("wb") as err:
-        child = subprocess.Popen(
-            command.argv, cwd=command.cwd, stdin=inp, stdout=out, stderr=err,
-            shell=False, creationflags=subprocess.CREATE_NO_WINDOW,
-        )
-    return child, command.provider, started_at, stdout_path, stderr_path
-```
-
-긴 한국어 프롬프트는 UTF-8 stdin 파일로 전달하므로 명령행 재인용·길이 문제를 피한다. stdout/stderr도 파일에 직접 연결해 PIPE를 비우지 않아 자식이 멈추는 일을 피한다. `CREATE_NO_WINDOW`는 Windows용이다. 다른 OS에서는 이 creationflags 인자를 생략한다. 실행기 자체를 독립 프로세스로 띄우는 일, PID·시작 시각·경로의 기록과 복구는 실행기의 책임이다.
-
-실행기는 반환된 **CLI 프로세스 핸들**의 `child.poll()`이 `None`인 동안 다른 작업을 진행한다. 종료 코드가 생겼을 때 아래 한도 함수를 호출한다. 세션 시간 상한은 두지 않는다. Popen 자체의 실패는 기동 실패로 기록한다. 프로세스가 끝났으면 종료 코드가 0이 아니어도 산출을 공식 검사기에 넘긴다.
+[runner.py](runner.py)의 세션 호스트가 `Command.argv`를 `Command.cwd`에서 shell 없이 실행한다. 긴 한국어 프롬프트는 세션 폴더의 UTF-8 `prompt.txt`를 stdin 파일로 연결해 전달하므로 명령행 재인용·길이 문제가 생기지 않는다. stdout과 stderr도 같은 폴더의 `cli.stdout.jsonl`·`cli.stderr.log`에 직접 연결한다. PIPE로 받고 아무도 읽지 않으면 버퍼가 차서 자식이 멈출 수 있기 때문이다. CLI가 끝나면 실행기가 이 두 로그로 아래 한도 함수를 호출한다. 호스트가 CLI 종료를 기다리는 방식, 기동 실패의 기록, 종료 코드와 무관한 산출 재검사는 [RUNTIME.md](RUNTIME.md)의 '세션 전달, 반영, 복구'가 정하고, 세션 시간 상한이 없다는 점은 같은 문서의 '멈춰 버린 세션 하나 종료'가 정한다.
 
 ## 끝난 로그에서 한도 읽기
 
@@ -122,13 +93,13 @@ Claude는 아래 **최상위 필드 세 개가 함께 있는** 레코드를 계�
 
 `resetsAt`·`overageResetsAt`은 Unix 초다. `unifiedWindows`는 다른 창의 예방적 통계를 포함하므로 사용하지 않는다. `rate_limit_event` 보조 신호는 채택하지 않는다. 이 이벤트는 정상·경고도 포함하고 기본 사용량이 rejected여도 paid overage로 계속 사용할 수 있기 때문이다. 실제 거절 표식이 없는 allowed/allowed_warning/rejected 상태 이벤트, 일반 `error="rate_limit"`·429와 문구 인용은 한도로 읽지 않는다.
 
-이 함수가 한도를 반환하면 실행기는 새 세션 파견을 `retry_at`까지 멈춘다. 이미 실행 중인 세션은 계속 두고 끝난 세션은 평소처럼 산출을 재검사한다. 한도 대기가 끝나도 사용자 정지, 외부 입력 대기, 완료 조건은 별도로 유지한다. 끝난 세션을 한도 때문에 그대로 다시 띄우지 않으며 이후 배정은 원래 흐름에서 계획이 결정한다.
+이 함수가 한도를 반환하면 실행기는 새 세션 파견을 `retry_at`까지 멈춘다. 이미 실행 중인 세션은 계속 두고 끝난 세션은 평소처럼 산출을 재검사한다. 끝난 세션을 한도 때문에 그대로 다시 띄우지 않으며 이후 배정은 원래 흐름에서 계획이 결정한다. 한도 대기와 다른 대기 조건의 관계는 [RUNTIME.md](RUNTIME.md)의 '세션 전달, 반영, 복구'에 있다.
 
 ## 근거와 확인 범위
 
 기동 옵션과 신호는 2026-10-21에 확인한 Codex CLI 0.163.0의 help·동일 버전 공식 소스 및 Claude Code 2.1.306의 help·설치 구현에 근거한다. Codex의 실제 메시지와 로컬 시각 형식은 [UsageLimitReachedError 및 format_retry_timestamp](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/protocol/src/error.rs), JSON 오류 위치는 [exec_events.rs](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/exec/src/exec_events.rs)에 정의돼 있다. Claude 설치 구현의 assistant schema·직렬화는 위 typed 필드를 최상위에 두고, 일반 overage 표시 분기는 두 reset 중 더 이른 것을 표시한다. 특수 조직 한도는 별도 분기를 사용한다.
 
-Claude typed 필드는 `@internal`이므로 이후 CLI에서 바뀔 수 있다. 이 어댑터는 현재 구독 인증 경로를 대상으로 하며 API key·다른 cloud 공급자의 모든 한도, 모든 오류 문구를 포괄하지 않는다. 버전 고정이나 설치 비교는 하지 않는다. 실제 모델 접근, 프롬프트를 읽고 자기 폴더에 산출을 쓰는 동작, 사용자 설정·hooks의 영향은 실제 혼합 세션 완주에서 확인해야 한다.
+Claude typed 필드는 `@internal`이므로 이후 CLI에서 바뀔 수 있다. 이 어댑터는 현재 구독 인증 경로를 대상으로 하며 API key·다른 cloud 공급자의 모든 한도, 모든 오류 문구를 포괄하지 않는다. 버전 고정이나 설치 비교는 하지 않는다. 실제 모델 접근과, 프롬프트를 읽고 자기 폴더에 산출을 쓰는 동작은 2026-10-21에 Codex 세 세션과 Claude 두 세션이 작은 목표를 무인 완주한 실제 인스턴스에서 확인했다. 사용자 설정·hooks는 호스트마다 다르므로, 그 완주의 설정 밖에서 그것들이 세션에 주는 영향은 확인되지 않았다.
 
 `tests/test_cli_adapter.py`는 실제 한도를 유도하지 않고 근거에서 만든 합성 로그로 미래 시각, 날짜 미확인, 일반 overage와 특수 분기, 정상 인용·경고·불완전 로그를 구분한다. 테스트 실행에는 TOML 인자 확인용 표준 라이브러리 `tomllib`이 있는 Python 3.11 이상을 사용한다.
 

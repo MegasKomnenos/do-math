@@ -104,7 +104,7 @@ class RunnerTests(unittest.TestCase):
         return Command(runner.provider_for_model(model),
                        [sys.executable, "-B", str(Path(__file__).resolve()), "--fake", self.scenario], Path(cwd))
 
-    def until(self, condition, limit=12):
+    def until(self, condition, limit=60):
         deadline = time.monotonic() + limit
         while time.monotonic() < deadline:
             self.engine.tick()

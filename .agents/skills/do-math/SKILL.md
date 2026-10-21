@@ -16,7 +16,7 @@ description: 수학 목표를 계획·연구·독립 검토 세션으로 이어 
 1. 이 `SKILL.md`가 있는 실제 폴더를 `$skill`로 잡고 [RUNTIME.md](RUNTIME.md)의 준비·기동 계약을 읽는다. Python 3.12 이상, Git, 사용할 CLI의 설치 경로와 기존 로그인·모델 설정을 확인한다. PowerShell의 `Get-Command python, git, codex, claude -ErrorAction SilentlyContinue`로 경로를 찾을 수 있고 PATH에 없으면 알려진 설치 위치를 읽는다. CLI는 네이티브 실행 파일의 절대 경로를 쓰는 것이 편하다. 설정·도구는 현재 설치를 그대로 사용한다.
 2. 사용자의 목표·필수조건·허가를 비어 있지 않은 UTF-8 `goal.md`에 쓴다. 목표에서 무엇이 달성되면 끝나는지 전달하되 연구 전략과 세부 과제는 계획 세션이 정하게 한다. 목표와 설정의 준비 파일은 인스턴스 밖에 둔다.
    증명이나 반증을 요구하는 목표는 기본적으로 Lean 증명이 있어야 달성으로 판정된다. 허용 공리 안의 Lean 정리가 독립 검토에서 수용되고, 그 해설이 Lean과 같은 수학이라고 판정되어야 한다. 정확한 기준은 [common.md](common.md)의 '목표 달성에 필요한 형식 증명'에 있다. 사용자가 비형식 증명으로 충분하다고 하거나 다른 보증 수준을 원하면 그 내용을 `goal.md`에 적는다. 목표 명제를 설정할 Lean 환경으로 진술하거나 증명하기 어려워 보이면(예: 필요한 라이브러리가 없음) 시작 전에 그 사정과 영향을 사용자에게 알리고 보증 수준을 정한다.
-3. 아래 의미에 맞춰 UTF-8 `settings.json`을 작성한다. [RUNTIME.md](RUNTIME.md)의 JSON 예시와 [protocol.md](protocol.md) 1절이 필드 정본이다. 사용할 수 있는 모델·경로를 그때 선택한다. 설정 형식 통과는 로그인이나 실제 모델 접근의 성공을 뜻하지 않는다.
+3. 아래 의미에 맞춰 UTF-8 `settings.json`을 작성한다. [protocol.md](protocol.md) 1절의 JSON 예시와 설명이 필드 정본이다. 사용할 수 있는 모델·경로를 그때 선택한다. 설정 형식 통과는 로그인이나 실제 모델 접근의 성공을 뜻하지 않는다.
 4. **아직 없는** 인스턴스 경로를 고른다. 저장소 밖이나 상위 Git에서 제외된 `.skill-workspace/` 아래에 둔다. 저장소 안이라면 `git check-ignore` 등으로 제외 여부를 확인한다. `init`이 인스턴스 자체 `.git/`을 만들며, 이 Git이 저장소 본체 Git과 섞이지 않아야 한다.
 
 설정에는 다음 의미를 담는다.
@@ -71,7 +71,7 @@ python "$skill/runner.py" status $instance
 python "$skill/runner.py" status $instance
 ```
 
-`runner_alive`는 지금 실행기가 살아 있는지, `dispatch_blocks`는 새 파견을 막는 조건을 보여 준다. `state.sessions`에는 범주·모델·상태·요청이 있고 `state.requests`에는 미파견·배정된 요청이 있다. 실행기가 죽어 있으면 저장된 세션 상태는 마지막 수집 시점의 값이다. [RUNTIME.md](RUNTIME.md)의 상태 표에서 필드와 사건의 뜻을 읽는다.
+`runner_alive`는 지금 실행기가 살아 있는지, `dispatch_blocks`는 새 파견을 막는 조건을 보여 준다. `state.sessions`에는 범주·모델·상태·요청이 있고 `state.requests`에는 게시된 요청 전체가 `status`(`pending` 미파견, `assigned` 배정, `finished` 반영 완료, `failed` 실패)와 함께 있다. 실행기가 죽어 있으면 저장된 세션 상태는 마지막 수집 시점의 값이다. [RUNTIME.md](RUNTIME.md)의 상태 표에서 필드와 사건의 뜻을 읽는다.
 
 공개 결과는 `knowledge/<기록 ID>/output.json`에서 시작한다. 연구의 `results[].exposition`이 가리키는 해설, `verification`, 해당하는 `lean.sources`를 읽고 `failed_attempts`, `open_questions`도 확인한다. 같은 연구 기록을 `target.record`로 가리키는 `category: "review"` 기록에서 독립 판단과 이유를 읽는다. 공개됐다는 사실은 구조·참조 검사를 통과했다는 뜻이며 수학적 인정은 검토로 판단한다. 검토 전 결과는 작성자의 주장이고 현재 검토가 상충하면 인정된 결과로 쓰지 않는다.
 
@@ -113,7 +113,7 @@ python "$skill/runner.py" status $instance
 
 실행기가 죽거나 PC가 재부팅되면 사용자의 운영 대화에서 `status`로 확인하고 같은 인스턴스에 `python "$skill/runner.py" start $instance`를 실행한다. 위와 같이 새 PID·시작 기록을 확인하고 위치를 전달한다. 자동 재기동 감시 서비스는 두지 않는다.
 
-재기동한 실행기는 기록된 세션의 실제 프로세스 생존을 확인한다. 살아 있으면 기다리고 죽었으면 남은 산출을 공식 검사해 반영 또는 실패 처리한다. 종료한 세션을 다시 띄우지 않는다. 미파견 요청·미전달 사건은 이어 처리한다. 설정은 실행기 기동 때 읽는다. 단일 실행기 잠금은 OS가 관리하므로 `runner/lock`을 지우거나 상태 파일을 편집해 재기동하지 않는다.
+재기동한 실행기는 기록된 세션의 실제 프로세스 생존을 확인한다. 살아 있으면 기다리고 죽었으면 남은 산출을 공식 검사해 반영 또는 실패 처리한다. 종료한 세션을 다시 띄우지 않는다. 미파견 요청·미전달 사건은 이어 처리한다. 실행기가 쓰는 설정은 기동 때 읽고, `lean` 설정은 각 세션이 `settings.json`을 직접 읽는 시점의 값을 쓴다. 단일 실행기 잠금은 OS가 관리하므로 `runner/lock`을 지우거나 상태 파일을 편집해 재기동하지 않는다.
 
 ## 실행 세션이 읽는 문서
 

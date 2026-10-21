@@ -18,33 +18,7 @@ python "$skill/runner.py" init $instance --goal C:/research-input/goal.md --sett
 
 `goal.md`는 비어 있지 않은 UTF-8 문서다. 예를 들어 “모든 자연수 n에 대해 n + 0 = n임을 core Lean으로 증명하고 증명에 충실한 해설을 작성한다. 자연수에는 0을 포함한다.”처럼 사용자가 얻으려는 결과와 조건을 담는다. 연구 방법과 과제 분할은 계획 세션이 정한다.
 
-`settings.json`의 예시다. 실행 파일 경로는 실제 설치 경로로 바꾼다. JSON의 Windows 경로에는 `/`를 쓰거나 역슬래시를 `\\`로 적는다.
-
-```json
-{
-  "max_sessions": 3,
-  "defaults": {
-    "plan": {"model": "codex/gpt-6.1-sol", "effort": "high"},
-    "research": {"model": "codex/gpt-6.1-sol", "effort": "high"},
-    "review": {"model": "claude/sonnet", "effort": "high"}
-  },
-  "cli": {
-    "codex": "C:/tools/codex.exe",
-    "claude": "C:/tools/claude.exe"
-  },
-  "limit_wait_seconds": 300,
-  "lean": {
-    "command": ["C:/tools/lean.exe"],
-    "version_command": ["C:/tools/lean.exe", "--version"],
-    "cwd": null,
-    "env": {}
-  }
-}
-```
-
-`max_sessions`는 계획·연구·검토를 합친 동시 상한인 양의 정수다. 계획은 이 상한 안에서 한 번에 하나만 실행한다. `defaults`는 세 범주의 기본 모델·노력이며 계획이 요청에서 지정한 `model`·`effort`만 덮어쓴다. 계획 자신과 연구 반영 후 자동 검토에는 각 범주의 기본값을 쓴다. 공급자는 모델의 첫 `/` 앞에서 고르고 뒤 전체를 CLI 모델 인자로 전달한다.
-
-`limit_wait_seconds`는 공급자 거절에서 해제 시각을 알 수 없을 때 기다릴 양의 초 수다. `lean.command`에는 원문 절대 경로를 마지막 인자로 붙이고, `version_command`로 얻은 판본 문자열을 연구 결과에 정보로 기록한다. `cwd: null`은 세션 폴더이며, Mathlib을 쓰면 `command`를 `[".../lake.exe", "env", "lean"]`, `cwd`를 Mathlib 프로젝트의 절대 경로로 설정할 수 있다. `env`는 Lean을 실행하는 세션이 상속 환경에 덮어쓸 문자열 매핑이다. 실행기가 Lean을 대신 실행하지 않는다.
+`settings.json`의 필드와 예시는 [protocol.md](protocol.md) 1절이 정본이다. 실행 파일 경로는 실제 설치 경로로 바꾸고, JSON의 Windows 경로에는 `/`를 쓰거나 역슬래시를 `\\`로 적는다. 실행기는 `max_sessions` 안에서 계획을 한 번에 하나만 실행한다. `lean` 설정은 세션이 읽어 Lean을 실행하며, 실행기가 Lean을 대신 실행하지 않는다.
 
 `init`은 원문 두 파일을 복사하고 `knowledge/`, `sessions/`, `runner/`, `control/inputs/`와 자체 `.git/`을 만든다. 첫 Git 커밋에는 목표·설정·`.gitignore`가 들어간다. 세션·실행 상태·사용자 입력은 파일로 보존하되 Git에서는 제외한다. 공개 지식은 반영마다 따로 커밋한다. 커밋 작성자는 호출 명령에 지정한 `do-math <do-math@localhost>`다. `init` 실패 시 생성 도중인 폴더가 남을 수 있으므로 오류를 고친 뒤 새 경로로 준비한다. 기존 인스턴스는 덮어쓰지 않는다.
 
@@ -61,7 +35,7 @@ python "$skill/runner.py" status $instance
 
 실행기가 죽거나 PC가 재부팅되면 같은 `start` 명령으로 다시 띄운다. 인스턴스의 파일 잠금은 OS가 유지하므로 프로세스가 죽으면 자동 해제된다. `runner/lock` 파일은 그대로 두며 지우지 않는다. 같은 인스턴스에 두 실행기가 동시에 상태를 바꾸지 못한다.
 
-재기동한 실행기는 기록된 세션의 PID와 OS 생성 식별값을 확인한다. 살아 있으면 기다리고, 죽었으면 남은 산출을 공식 검사·반영 또는 실패로 처리한다. 그 세션을 다시 띄우지 않는다. 게시된 미파견 요청과 아직 전달하지 않은 사건은 이어서 처리한다. 설정은 실행기 기동 때 읽으므로 설정을 바꾼 경우 다음 기동부터 적용된다. 세션은 새 프로세스로 현재 경로의 문서와 도구를 읽는다.
+재기동한 실행기는 기록된 세션의 PID와 OS 생성 식별값을 확인한다. 살아 있으면 기다리고, 죽었으면 남은 산출을 공식 검사·반영 또는 실패로 처리한다. 그 세션을 다시 띄우지 않는다. 게시된 미파견 요청과 아직 전달하지 않은 사건은 이어서 처리한다. 실행기가 쓰는 `max_sessions`, `defaults`, `cli`, `limit_wait_seconds`는 기동 때 읽으므로 변경은 다음 기동부터 적용된다. `lean` 설정은 세션이 `settings.json`에서 직접 읽는 시점의 값으로 사용한다. 실행 중인 세션도 변경 뒤에 읽으면 바뀐 값을 쓰며, 실행기는 설정 형식을 기동 때 검사한다. 세션은 현재 경로의 문서와 도구를 읽는다.
 
 콘솔에 붙여 문제를 관찰할 때는 `python "$skill/runner.py" run $instance`를 쓸 수 있다. 이 명령은 종료까지 반환하지 않으므로 사용자 대화가 새 연구를 시작할 때는 `start`를 사용한다. 자동 재기동 서비스는 필요하지 않다.
 
@@ -76,9 +50,9 @@ python "$skill/runner.py" input $instance --file C:/research-input/answer.txt
 
 `status`는 읽기 전용 JSON을 출력한다. `runner_alive`는 실행기 PID와 생성 식별값을 조회한 현재 결과다. `knowledge`는 공개 지식 위치다. `dispatch_blocks`에는 겹칠 수 있는 `STOP`, `external_input`, `usage_limit`, `halted`, `complete`가 나온다. `state`에는 아래 표의 상태 전체가 있다. 실행기가 죽었을 때 세션 상태는 마지막 저장 시점의 것이며, 재기동하면 실제 생존 여부와 대조해 갱신한다.
 
-`stop`은 `control/STOP`을 만든다. 새 파견만 멈추고 이미 시작한 세션은 종료·검사·반영까지 진행한다. `resume`은 이 파일을 제거한다. 외부 입력 대기·공급자 한도·완료는 각각 별도 조건이므로 STOP을 지워도 남을 수 있다. `resume` 자체는 실행기를 시작하지 않는다. `status.runner_alive`가 false라면 `start`가 필요하다.
+`stop`은 `control/STOP`을 만든다. 새 파견만 멈추고 이미 시작한 세션은 종료·검사·반영까지 진행한다. `resume`은 이 파일을 제거한다. 외부 입력 대기·공급자 한도·연속 계획 실패 정지(`halted`)·완료는 각각 별도 조건이므로 STOP을 지워도 남을 수 있다. `resume` 자체는 실행기를 시작하지 않는다. `status.runner_alive`가 false라면 `start`가 필요하다.
 
-`input`은 비어 있지 않은 UTF-8 입력 파일의 원문 바이트를 `control/inputs/<고유이름>.txt`로 복사하고 그 경로를 반환한다. 실행 중인 실행기는 입력을 감지해 `user_input` 사건으로 다음 계획에 전달하고 외부 입력 대기를 해제한다. 대기 중에도 실행기는 살아 있으므로 추가 기동은 필요 없다. 실행기가 죽어 있으면 입력을 넣고 `start`한다. STOP이나 한도 대기가 남아 있으면 입력을 보존한 채 그 조건의 해제를 기다린다. 완료 상태는 사용자 입력으로 해제되지 않는다.
+`input`은 비어 있지 않은 UTF-8 입력 파일의 원문 바이트를 `control/inputs/<고유이름>.txt`로 복사하고 그 경로를 반환한다. 실행 중인 실행기는 입력을 감지해 `user_input` 사건으로 다음 계획에 전달하고 외부 입력 대기를 해제한다. 대기 중에도 실행기는 살아 있으므로 추가 기동은 필요 없다. 실행기가 죽어 있으면 입력을 넣고 `start`한다. STOP이나 한도 대기가 남아 있으면 입력을 보존한 채 그 조건의 해제를 기다린다. `halted`는 입력으로 풀리지 않고 재기동으로 풀린다. 완료 상태는 사용자 입력으로 해제되지 않는다.
 
 파일로 직접 입력할 수도 있다. `control/inputs/`에 고유 이름의 UTF-8 텍스트 파일 하나를 완성한 뒤 추가한다. 실행기는 파일 이름으로 한 번 소비하고 원문은 지우거나 수정하지 않는다. 아직 소비하지 않은 파일이 여럿이면 파일 수정 시각 순서(같으면 이름 순서)로 사건을 만든다. 이미 소비한 파일을 수정해도 새 입력으로 보지 않는다. 쓰는 중인 파일은 점으로 시작하는 임시 이름에 작성한 뒤 최종 이름으로 바꾼다. 점으로 시작하는 파일은 무시한다. 빈 파일·디코딩/읽기 실패는 `state.input_errors`에 남고 소비하지 않으므로 해당 파일을 고쳐 다시 읽게 할 수 있다.
 
@@ -135,7 +109,7 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 
 반영한 계획의 요청 게시, 연구의 자동 검토, 검토의 다음 계획 사건과 세션 처리 완료 표시는 하나의 원자적 상태 교체로 저장한다. Windows에서 다른 독자의 열린 파일 때문에 교체가 잠시 거부되면 같은 교체를 최대 1초 동안 재시도한다. 그동안 독자는 이전의 완전한 상태를 읽으며, 계속되는 접근 거부와 다른 저장 오류는 그대로 드러난다. Git·디스크 오류로 실행기가 종료되면 새 시작 로그의 오류를 해결한 뒤 재기동한다. Git 반영 실패를 수학적 세션 실패로 바꾸지 않는다. `runner/`의 내부 파일이나 공개 기록을 손으로 지우거나 되돌리면 이 복구 경로의 전제가 사라지므로 운영 명령을 통해 진행한다.
 
-공급자 로그에서는 한도 신호만 읽는다. 한도가 있으면 `limit_until`까지 **전체 범주의 새 파견**을 막으며, 진행 중 세션과 종료 산출 처리는 계속한다. 로그 읽기 OSError는 `log_error`로 남겨도 공식 산출 검사를 계속한다. CLI 로그의 일반 문구·JSON 형식·종료 코드는 공개 산출 승인 조건이 아니다. 한도 만료는 STOP·외부 입력 대기·완료를 해제하지 않는다.
+공급자 로그에서는 한도 신호만 읽는다. 한도가 있으면 `limit_until`까지 **전체 범주의 새 파견**을 막으며, 진행 중 세션과 종료 산출 처리는 계속한다. 로그 읽기 OSError는 `log_error`로 남겨도 공식 산출 검사를 계속한다. CLI 로그의 일반 문구·JSON 형식·종료 코드는 공개 산출 승인 조건이 아니다. 한도 만료는 STOP·외부 입력 대기·`halted`·완료를 해제하지 않는다.
 
 재검사·Git 반영된 목표 검토의 `goal.verdict == "achieved"`만 완료를 만든다. 완료 뒤 자동 검토·계획을 포함해 새 파견은 모두 막는다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 정상 종료한다. 이때 미파견 요청과 남은 사건은 이력으로 남는다. 끝나지 않는 기존 세션이 있으면 실행기도 기다리므로 필요하면 `kill-session`을 사용한다.
 
@@ -147,9 +121,10 @@ python "$skill/runner.py" kill-session $instance s0123456789abcdef0123456789abcd
 
 실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/InstanceLock`은 독립 기동·단일 실행기, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick/blocked`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 환경 봉인용 정보가 아니라 PID 재사용을 구별하기 위한 프로세스 식별값이다.
 
-[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. 작업맥락 문서는 시험용 임시 문서를 쓰므로 실제 문서의 판단 내용이나 실제 모델의 수행을 검증하는 시험은 아니다. 실제 Codex·Claude 모델 접근과 혼합 완주는 실제 인스턴스의 공개 결과·검토로 별도 확인한다.
+[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
+
+작업맥락 문서는 시험용 임시 문서를 쓰므로 실제 문서의 판단 내용이나 실제 모델의 수행을 검증하는 시험은 아니다. 실제 Codex·Claude 모델 접근과 혼합 완주는 실제 인스턴스의 공개 결과·검토로 별도 확인한다. 다음 명령은 위의 Python 3.12 이상 환경에서 시험 전체를 실행한다. 상태 파일 교체 시험은 Windows에서만 실행된다.
 
 ```powershell
-python -B -m unittest discover -s "$skill/tests" -p test_runner.py -v
-python -B -m unittest discover -s "$skill/tests" -p test_cli_adapter.py -v
+python -B -m unittest discover -s "$skill/tests" -v
 ```
