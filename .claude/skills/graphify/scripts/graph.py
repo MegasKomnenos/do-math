@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 
-from semantic import atomic_json, cached, digest, extract_document
+from semantic import MODEL, atomic_json, cached, digest, extract_document
 
 REPO = Path(__file__).resolve().parents[4]
 ROOT = REPO / ".claude" / "skills" / "do-math"
@@ -430,7 +430,7 @@ def update(files, workers, timeout):
                 documents.append(result)
             else:
                 pending.append((name, raw))
-        print(f"Semantic: {len(documents)} cached, {len(pending)} pending; codex exec gpt-6-sol", flush=True)
+        print(f"Semantic: {len(documents)} cached, {len(pending)} pending; codex exec {MODEL}", flush=True)
         failures = []
         with ThreadPoolExecutor(max_workers=workers) as pool:
             jobs = {pool.submit(extract_document, STATE, name, raw, files, instructions, timeout): name
@@ -458,7 +458,7 @@ def update(files, workers, timeout):
             labels[cid] = " / ".join(Path(name).name for name, _ in frequent)
         graph.graph["scope"] = {"root": ".claude/skills/do-math", "files": hashes(files),
                                 "built_at": datetime.now(timezone.utc).isoformat(),
-                                "semantic_model": "gpt-6-sol", "semantic_transport": "codex exec",
+                                "semantic_model": MODEL, "semantic_transport": "codex exec",
                                 "graphify_version": version("graphifyy"),
                                 "prompt_hash": prompt_hash,
                                 "usage": {d["source_file"]: d.get("usage") for d in documents}}
@@ -474,7 +474,7 @@ def update(files, workers, timeout):
             staging.unlink(missing_ok=True)
         report = ["# do-math graph", "", f"Built: {graph.graph['scope']['built_at']}", "",
                   f"{len(files)} files · {graph.number_of_nodes()} nodes · {graph.number_of_edges()} edges", "",
-                  "Scope: .claude/skills/do-math only. Semantic extraction: codex exec gpt-6-sol.",
+                  f"Scope: .claude/skills/do-math only. Semantic extraction: codex exec {MODEL}.",
                   "This is a navigation map, not a correctness or contract-compliance verdict.",
                   "Python/Markdown structural extraction; other files have inventory nodes only.",
                   f"Unresolved structural references: {len(graph.graph['unresolved_references'])} (stored in graph metadata).",
@@ -584,8 +584,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status", help="read-only content-hash freshness check")
-    build = sub.add_parser("update", help="explicit rebuild; changed Markdown uses codex exec gpt-6-sol")
-    build.add_argument("--workers", type=int, default=3)
+    build = sub.add_parser("update", help=f"explicit rebuild; changed Markdown uses codex exec {MODEL}")
+    build.add_argument("--workers", type=int, default=8)
     build.add_argument("--timeout", type=int, default=900)
     for name in ("query", "path", "explain", "affected"):
         command = sub.add_parser(name)

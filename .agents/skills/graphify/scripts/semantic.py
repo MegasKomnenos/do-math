@@ -1,4 +1,4 @@
-"""Document extraction through isolated codex exec gpt-6-sol sessions."""
+"""Document extraction through isolated codex exec gpt-6.1-sol sessions."""
 import hashlib
 import json
 import os
@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import uuid
 
-MODEL = "gpt-6-sol"
+MODEL = "gpt-6.1-sol"
 
 
 def digest(data):

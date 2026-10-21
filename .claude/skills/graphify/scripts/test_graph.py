@@ -46,7 +46,7 @@ class ScopeTests(unittest.TestCase):
     def test_semantic_rejects_wrong_evidence_external_targets_and_model(self):
         raw = b"# Contract\nRequires worker.\n"
         valid = {"source_file": "contract.md", "sha256": semantic.digest(raw),
-                 "model": "gpt-6-sol", "transport": "codex exec",
+                 "model": "gpt-6.1-sol", "transport": "codex exec",
                  "nodes": [{"key": "worker", "label": "Worker", "summary": "Worker required", "line": 2, "quote": "Requires worker."}],
                  "edges": [{"source": "worker", "target_file": "worker.py", "relation": "requires", "confidence": "EXTRACTED", "line": 2, "quote": "Requires worker."}]}
         files = {"contract.md": raw, "worker.py": b""}

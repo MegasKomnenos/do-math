@@ -35,12 +35,12 @@ python .claude/skills/graphify/scripts/graph.py affected "scripts/do_math/contra
 python .claude/skills/graphify/scripts/graph.py update
 ```
 
-동시 추출 수는 기본 3개이며 `--workers N`, 문서당 제한 시간은 기본 900초이며 `--timeout 초`로 바꾼다. 의미 추출은 **`codex exec`와 `gpt-6-sol`**을 사용한다. Claude Code에서 업데이트해도 동일하다. Codex CLI 로그인과 해당 모델 접근 권한이 필요하다. Python의 graphify 라이브러리도 필요하며, 이 구성의 검증 환경은 `graphifyy==0.9.48`이다. 누락되면 `python -m pip install graphifyy==0.9.48`으로 준비한다.
+동시 추출 수는 기본 8개이며 `--workers N`, 문서당 제한 시간은 기본 900초이며 `--timeout 초`로 바꾼다. 의미 추출은 **`codex exec`와 `gpt-6.1-sol`**을 사용한다. Claude Code에서 업데이트해도 동일하다. Codex CLI 로그인과 해당 모델 접근 권한이 필요하다. Python의 graphify 라이브러리도 필요하며, 이 구성의 검증 환경은 `graphifyy==0.9.48`이다. 누락되면 `python -m pip install graphifyy==0.9.48`으로 준비한다.
 
 도구는 다음 순서로 갱신한다.
 
 1. 내부 파일의 스냅샷과 해시를 확보한다. 생성 캐시와 외부로 이어지는 링크는 제외한다.
-2. 새로 생기거나 바뀐 Markdown을 `codex exec -m gpt-6-sol`에 전달한다. 원문 해시·추출 지침·모델이 같은 유효한 추출은 재사용한다. [의미 추출 규격](references/semantic.md)에 따라 계약·절차의 개념과 관계를 추출한다.
+2. 새로 생기거나 바뀐 Markdown을 `codex exec -m gpt-6.1-sol`에 전달한다. 원문 해시·추출 지침·모델이 같은 유효한 추출은 재사용한다. [의미 추출 규격](references/semantic.md)에 따라 계약·절차의 개념과 관계를 추출한다.
 3. Python과 Markdown의 구조를 graphify로 추출한다. 문서 의미와 함께 방향 및 복수 관계를 보존한 그래프를 구성한다. 그 밖의 파일은 목록 노드로 포함되며 내부 구조까지 분석한 것은 아니다.
 4. 인용 행, 내부 경로, 관계 끝점과 실행 중 원본 변경 여부를 검사한다. 성공하면 현재 전체 파일 기준으로 그래프를 교체하므로 삭제된 파일의 노드도 사라진다. 커뮤니티 보고서와 탐색용 HTML을 생성한다.
 
