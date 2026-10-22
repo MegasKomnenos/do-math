@@ -292,7 +292,10 @@ class Runner:
         # A newly copied record has not been committed yet; append it once.
         for rid in sorted(paths, key=lambda r: (paths[r].parent.stat().st_mtime_ns, r)):
             ordered.setdefault(rid, None)
-        content = render_index([(rid, read_json(paths[rid])) for rid in ordered])
+        records = [(rid, read_json(paths[rid])) for rid in ordered]
+        plans = [rid for rid, data in records if data['category'] == 'plan']
+        status = plans[-1] if plans and (paths[plans[-1]].parent / 'research-status.md').is_file() else None
+        content = render_index(records, status)
         path = self.instance / 'knowledge/index.md'
         if not path.exists() or path.read_bytes() != content.encode('utf-8'):
             write_text(path, content)

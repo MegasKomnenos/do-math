@@ -1,22 +1,20 @@
 """Render a navigation index from published records, without rewriting summaries."""
 
 from collections import Counter, defaultdict
-import html
 import re
 
 
 def plain(value):
-    """Author text is prose, not index headings, links, or HTML."""
-    value = html.escape(' '.join(value.split()), quote=False)
-    return re.sub(r'([\\`*_{}\[\]()#+!|])', r'\\\1', value)
+    """Author text stays readable as raw text; escape only what could hide or relink it when rendered."""
+    return re.sub(r'([\\`<\[\]])', r'\\\1', ' '.join(value.split()))
 
 
 def record_link(record, label=None):
     return f'[{label or record}]({record}/output.json)'
 
 
-def render_index(records):
-    """records are (id, manifest) pairs in publication order."""
+def render_index(records, status=None):
+    """records are (id, manifest) pairs in publication order; status is the latest plan id with research-status.md."""
     by_id = dict(records)
     replaced = defaultdict(list)
     reviews = defaultdict(list)
@@ -28,8 +26,12 @@ def render_index(records):
     labels = {'research': '연구', 'review': '검토', 'plan': '계획'}
     lines = ['# 공개 지식 색인', '',
              '실행기가 공개 기록에서 생성한 탐색용 목록이다. 제목·요약은 작성자의 원문이며, '
-             '판정은 검토 기록의 명시 범위를 보여 준다. 실제 근거로 사용할 때에는 원문과 현재 검토를 읽는다.', '',
-             f'기록 {len(records)}개 · 공개 순서 · 각 기록의 `output.json`에서 해설·증명·계산 자료로 이동한다.', '']
+             '판정은 검토 기록의 명시 범위를 보여 준다. 요약 판정은 각 검토 기록의 `overview_assessment` 값이며 '
+             '그 근거와 작성 경위는 해당 검토 기록에서 읽는다. 실제 근거로 사용할 때에는 원문과 현재 검토를 읽는다.', '']
+    if status:
+        lines += [f'현재 연구 상태와 주요 정의: [{status}/research-status.md]({status}/research-status.md)'
+                  ' (마지막 계획의 연구 현황)', '']
+    lines += [f'기록 {len(records)}개 · 공개 순서 · 각 기록의 `output.json`에서 해설·증명·계산 자료로 이동한다.', '']
     for rid, data in records:
         overview = data['overview']
         lines += [f"## {plain(overview['title'])}", '',
@@ -47,7 +49,6 @@ def render_index(records):
                 review = by_id[review_id]
                 ov = review['overview_assessment']
                 lines.append(f"- {record_link(review_id, '현재 검토 ' + review_id)} · 요약: {ov['verdict']}")
-                lines.append('  요약 판정 근거: ' + plain(ov['reason']))
                 judgments['overview'].add(ov['verdict'])
                 for key in ('assessment', 'lean', 'alignment'):
                     counts = Counter(r[key]['verdict'] for r in review['results'])

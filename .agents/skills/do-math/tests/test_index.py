@@ -122,6 +122,41 @@ class IndexTests(RunnerTests):
         self.assertIn('P remains open', self.index())
         self.assertEqual((folder / 'output.json').read_bytes(), before)
 
+    def test_index_links_research_status_of_latest_plan_only(self):
+        self.publish_record('p1', envelope('plan'))
+        (self.instance / 'knowledge/p1/research-status.md').write_text('# old\n', encoding='utf-8')
+        self.publish_record('p2', envelope('plan'))
+        (self.instance / 'knowledge/p2/research-status.md').write_text('# new\n', encoding='utf-8')
+        self.engine.refresh_index()
+        header = self.index().split('\n## ', 1)[0]
+        self.assertIn('(p2/research-status.md)', header)
+        self.assertNotIn('p1/research-status.md', self.index())
+        # A latest plan without the file must not point readers to an older, stale status.
+        self.publish_record('p3', envelope('plan'))
+        self.engine.refresh_index()
+        self.assertNotIn('research-status.md)', self.index())
+
+    def test_index_shows_overview_verdict_without_reason(self):
+        self.publish_record('k1', envelope('research', results=[{'id': 'r1'}], failed_attempts=[], open_questions=[]))
+        review = envelope('review', target={'kind': 'research', 'record': 'k1'},
+            results=[{'result': 'r1', 'assessment': judgment('supported'),
+                      'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable')}],
+            overview_assessment={'verdict': 'supported', 'reason': 'UNIQUE-REASON-TEXT'}, summary='Detailed')
+        self.publish_record('k2', review)
+        self.engine.refresh_index()
+        self.assertIn('요약: supported', self.index())
+        self.assertNotIn('UNIQUE-REASON-TEXT', self.index())
+        self.assertIn('overview_assessment', self.index().split('\n## ', 1)[0])
+
+    def test_index_escapes_only_text_hiding_markdown(self):
+        summary = 'b(n,1)<b(n,2) when 0<L and n>3; f_(L,m)+1*2 & [x](y) `c` \\q'
+        self.publish_record('k1', envelope('research', overview={'title': 'T', 'summary': summary},
+                                           results=[], failed_attempts=[], open_questions=[]))
+        self.engine.refresh_index()
+        text = self.index()
+        self.assertIn('b(n,1)\\<b(n,2) when 0\\<L and n>3; f_(L,m)+1*2 & \\[x\\](y) \\`c\\` \\\\q', text)
+        self.assertNotIn('&lt;', text)
+
     def test_index_command_rebuilds_missing_file(self):
         (self.instance / 'knowledge/index.md').unlink()
         result = subprocess.run([sys.executable, str(runner.SCRIPT), 'index', str(self.instance)],
