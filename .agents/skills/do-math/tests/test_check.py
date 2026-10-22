@@ -23,7 +23,11 @@ def write_json(path, data):
 
 
 def envelope(category, **fields):
-    return {"category": category, "references": [], "supersedes": [], **fields}
+    data = {"category": category, "references": [], "supersedes": [],
+            "overview": {"title": "Example record", "summary": "An illustrative bounded result."}, **fields}
+    if category == "review" and fields.get("target", {}).get("kind") == "research":
+        data.setdefault("overview_assessment", judgment("supported"))
+    return data
 
 
 def judgment(verdict):

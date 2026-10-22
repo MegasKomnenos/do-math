@@ -227,6 +227,8 @@ class Checker:
         if target is None:
             self.judgment(data.get("goal"), ("achieved", "not_achieved", "undetermined"), "output.json.goal")
             return
+        self.judgment(data.get("overview_assessment"),
+                      ("supported", "not_supported", "undetermined"), "output.json.overview_assessment")
         reviewed_ids = []
         for index, result in enumerate(items(data.get("results"), "output.json.results")):
             loc = f"output.json.results[{index}]"
@@ -243,6 +245,10 @@ class Checker:
         data = self.check_input()
         output = read_json(self.output / "output.json")
         need(output.get("category") == data["category"], "output.json.category", "must match input.json.category")
+        overview = obj(output.get("overview"), "output.json.overview")
+        title = text(overview.get("title"), "output.json.overview.title")
+        need('\n' not in title and '\r' not in title, "output.json.overview.title", "expected a single-line title")
+        text(overview.get("summary"), "output.json.overview.summary")
         self.references(output.get("references"), "output.json.references")
         self.supersedes(output.get("supersedes"), "output.json.supersedes")
         # The entire output directory is copied. Links would preserve dependencies

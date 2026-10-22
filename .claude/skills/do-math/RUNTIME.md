@@ -10,7 +10,7 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 `settings.json`의 필드와 예시는 [protocol.md](protocol.md) 1절이 정본이다. 실행 파일 경로는 실제 설치 경로로 바꾸고, JSON의 Windows 경로에는 `/`를 쓰거나 역슬래시를 `\\`로 적는다. 실행기는 `max_sessions` 안에서 계획을 한 번에 하나만 실행한다. `lean` 설정은 세션이 읽어 Lean을 실행하며, 실행기가 Lean을 대신 실행하지 않는다.
 
-`init`은 원문 두 파일을 복사하고 `knowledge/`, `sessions/`, `runner/`, `control/inputs/`와 자체 `.git/`을 만든다. 첫 Git 커밋에는 목표·설정·`.gitignore`가 들어간다. 세션·실행 상태·사용자 입력은 파일로 보존하되 Git에서는 제외한다. 공개 지식은 반영마다 따로 커밋한다. 커밋 작성자는 호출 명령에 지정한 `do-math <do-math@localhost>`다. `init` 실패 시 생성 도중인 폴더가 남을 수 있으므로 오류를 고친 뒤 새 경로로 준비한다. 기존 인스턴스는 덮어쓰지 않는다.
+`init`은 원문 두 파일을 복사하고 `knowledge/`, `sessions/`, `runner/`, `control/inputs/`와 자체 `.git/`을 만든다. 첫 Git 커밋에는 목표·설정·`.gitignore`와 빈 `knowledge/index.md`가 들어간다. 세션·실행 상태·사용자 입력은 파일로 보존하되 Git에서는 제외한다. 공개 지식은 반영마다 색인 갱신과 함께 커밋한다. 커밋 작성자는 호출 명령에 지정한 `do-math <do-math@localhost>`다. `init` 실패 시 생성 도중인 폴더가 남을 수 있으므로 오류를 고친 뒤 새 경로로 준비한다. 기존 인스턴스는 덮어쓰지 않는다.
 
 ## 독립 기동과 재기동
 
@@ -25,6 +25,8 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 콘솔에 붙여 문제를 관찰할 때는 `python <skill>/runner.py run <instance>`를 쓸 수 있다. 이 명령은 종료까지 반환하지 않으므로 사용자 대화가 새 연구를 시작할 때는 `start`를 사용한다.
 
 ## 상태 조회, 정지, 사용자 입력
+
+`index`는 실행기가 꺼진 인스턴스의 잠금을 얻어 공개 기록에서 `knowledge/index.md`를 재구성한다. 순서는 인스턴스 Git의 공개 커밋 순서를 따른다. 새 기록을 뒤에 추가하고 현재 검토·대체 표시를 갱신하며, 내용이 같으면 커밋을 추가하지 않는다. 파생 색인이 없거나 손상돼도 원 기록이 정상이면 복원한다. 아직 Git에 커밋되지 않은 공개 기록이 있으면 `index`가 진단을 내고 변경 없이 거부하므로, `start`로 공개 작업을 복구한다. 복구 중인 세션은 `status`의 `state.sessions`에서 `publishing`으로 표시된다. 재기동에서도 미완료 공개를 먼저 처리한 뒤 색인을 재구성한다.
 
 `status`는 읽기 전용 JSON을 출력한다. `runner_alive`는 실행기 PID와 생성 식별값을 조회한 현재 결과다. `knowledge`는 공개 지식 위치다. `dispatch_blocks`에는 겹칠 수 있는 `STOP`, `external_input`, `usage_limit`, `halted`, `complete`가 나온다. `state`에는 아래 표의 상태 전체가 있다. 실행기가 죽었을 때 세션 상태는 마지막 저장 시점의 것이며, 재기동하면 실제 생존 여부와 대조해 갱신한다.
 

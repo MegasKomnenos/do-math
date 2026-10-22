@@ -16,6 +16,7 @@ import uuid
 
 from check import check_session
 from cli_adapter import build_command, detect_usage_limit, provider_for_model
+from knowledge_index import render_index
 
 
 SKILL = Path(__file__).resolve().parent
@@ -31,11 +32,15 @@ def read_json(path):
 
 def write_json(path, value):
     """Replace one state file atomically; readers see either complete version."""
+    write_text(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+
+
+def write_text(path, content):
+    """Publish a complete UTF-8 file with the same Windows sharing retry."""
     path = Path(path)
     temp = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
     with temp.open("w", encoding="utf-8", newline="\n") as stream:
-        json.dump(value, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+        stream.write(content)
         stream.flush()
         os.fsync(stream.fileno())
     # Windows readers may briefly hold the destination without delete sharing.
@@ -209,9 +214,10 @@ def initialize(instance, goal, settings):
     (instance / "goal.md").write_bytes(goal_bytes)
     (instance / "settings.json").write_bytes(settings_bytes)
     load_settings(instance)
+    write_text(instance / "knowledge/index.md", render_index([]))
     (instance / ".gitignore").write_bytes(b"/sessions/\n/runner/\n/control/\n")
     git(instance, "init")
-    git(instance, "add", "--", "goal.md", "settings.json", ".gitignore")
+    git(instance, "add", "--", "goal.md", "settings.json", ".gitignore", "knowledge/index.md")
     git(instance, "commit", "-m", "Initialize research goal and settings")
     write_json(instance / "runner/state.json", {
         "events": [{"kind": "start"}], "requests": {}, "sessions": {},
@@ -273,6 +279,29 @@ class Runner:
     def session_dir(self, sid):
         return self.instance / "sessions" / sid
 
+    def refresh_index(self, commit=True):
+        paths = {p.parent.name: p for p in (self.instance / 'knowledge').glob('*/output.json')}
+        # Publication commits preserve order across rebuilds, copies and restarts.
+        history = git(self.instance, 'log', '--reverse', '--format=%s', '--', 'knowledge')
+        ordered = dict.fromkeys(line[8:] for line in history.splitlines()
+                                if line.startswith('Publish ') and line[8:] in paths)
+        if commit:
+            for rid in paths.keys() - ordered.keys():
+                if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + rid):
+                    raise RuntimeError('Uncommitted publication; start the runner to recover before rebuilding the index')
+        # A newly copied record has not been committed yet; append it once.
+        for rid in sorted(paths, key=lambda r: (paths[r].parent.stat().st_mtime_ns, r)):
+            ordered.setdefault(rid, None)
+        content = render_index([(rid, read_json(paths[rid])) for rid in ordered])
+        path = self.instance / 'knowledge/index.md'
+        if not path.exists() or path.read_bytes() != content.encode('utf-8'):
+            write_text(path, content)
+        if commit:
+            git(self.instance, 'add', '--', 'knowledge/index.md')
+            if git(self.instance, 'diff', '--cached', '--name-only', '--', 'knowledge/index.md'):
+                git(self.instance, 'commit', '--only', '-m', 'Refresh knowledge index', '--', 'knowledge/index.md')
+        return path
+
     def active(self):
         return [(sid, s) for sid, s in self.state["sessions"].items()
                 if s["status"] in ("starting", "running", "publishing")]
@@ -314,7 +343,8 @@ class Runner:
         write_json(session / "input.json", data)
         prompt = (f"당신은 do-math의 {category} 세션이다. 자기 세션 폴더: {session}\n"
                   f"{session / 'input.json'}의 context.common, context.category, task를 모두 읽고 수행하라.\n"
-                  f"축적 지식 전체는 {self.instance / 'knowledge'}에서 읽는다. "
+                  f"축적 지식의 진입점은 {self.instance / 'knowledge/index.md'}다. "
+                  f"필요한 원문과 검토는 {self.instance / 'knowledge'}에서 읽는다. "
                   f"Lean 등 설정은 {self.instance / 'settings.json'}에서 읽는다.\n"
                   "새 파일과 수정 파일은 자기 세션 폴더 안에만 둔다. "
                   "공개할 산출 전체는 output/에 작성하라.\n"
@@ -416,9 +446,12 @@ class Runner:
             shutil.copytree(session / "output", staging)
             staging.rename(destination)
         relative = "knowledge/" + record
+        self.refresh_index(commit=False)
         if not git(self.instance, "log", "-1", "--format=%H", "--", relative):
-            git(self.instance, "add", "-f", "--", relative)
-            git(self.instance, "commit", "--only", "-m", "Publish " + record, "--", relative)
+            git(self.instance, "add", "-f", "--", relative, "knowledge/index.md")
+            git(self.instance, "commit", "--only", "-m", "Publish " + record, "--", relative, "knowledge/index.md")
+        else:
+            self.refresh_index()
         output = read_json(destination / "output.json")
         # Effects and the processed marker share one atomic state replacement.
         self.apply_output(s, record, output)
@@ -514,6 +547,8 @@ class Runner:
             for name in ("common.md", "protocol.md", "plan.md", "research.md", "review.md", "RUNTIME.md", "check.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
+            self.collect()
+            self.refresh_index()
             write_json(self.instance / "runner/process.json", {
                 "process": self.identity, "started_at": time.time(), "token": token})
             print(json.dumps({"started": self.identity, "instance": str(self.instance), "token": token}), flush=True)
@@ -589,7 +624,7 @@ def submit_input(instance, source):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("init", "start", "run", "status", "stop", "resume", "input", "kill-session", "_session"):
+    for name in ("init", "start", "run", "status", "stop", "resume", "input", "index", "kill-session", "_session"):
         sub = commands.add_parser(name)
         sub.add_argument("instance", type=Path)
         if name == "init":
@@ -621,6 +656,9 @@ def main(argv=None):
             (instance / "control/STOP").unlink(missing_ok=True)
         elif args.command == "input":
             result["input"] = submit_input(instance, args.file)
+        elif args.command == "index":
+            with InstanceLock(instance / "runner/lock"):
+                result["index"] = str(Runner(instance).refresh_index())
         elif args.command == "kill-session":
             state = read_json(instance / "runner/state.json")
             if args.session not in state["sessions"]:

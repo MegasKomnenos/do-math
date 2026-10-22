@@ -55,6 +55,8 @@ python "$skill/runner.py" status $instance
 
 ## 진행과 결과 읽기
 
+공개 기록의 목록은 `<instance>/knowledge/index.md`에서 시작한다. 제목·요약으로 필요한 기록을 고르고 연결된 `output.json`, 해설, 현재 검토로 내려간다. 실행기가 공개·검토·대체 때 갱신하며 재기동 때 재구성한다. 실행기가 꺼져 있을 때 색인만 다시 만들려면 `python "$skill/runner.py" index $instance`를 실행한다.
+
 ```powershell
 python "$skill/runner.py" status $instance
 ```

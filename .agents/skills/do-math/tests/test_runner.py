@@ -20,7 +20,8 @@ def fake_session():
     session = Path.cwd()
     data = runner.read_json(session / "input.json")
     category, task = data["category"], data["task"]
-    output = {"category": category, "references": [], "supersedes": []}
+    output = {"category": category, "references": [], "supersedes": [],
+              "overview": {"title": "Fixture " + category, "summary": "Synthetic bounded fixture, not a mathematical claim."}}
     if category == "plan" and scenario == "plan_failure":
         return 1
     if category == "plan":
@@ -51,6 +52,7 @@ def fake_session():
         if task["target"]["kind"] == "goal":
             output["goal"] = {"verdict": "achieved", "reason": "Synthetic goal fixture"}
         else:
+            output["overview_assessment"] = {"verdict": "supported", "reason": "Fixture overview matches."}
             output.update(results=[{"result": "r1", "assessment": {"verdict": "supported", "reason": "Fixture"},
                                     "lean": {"verdict": "not_applicable", "reason": "No Lean"},
                                     "alignment": {"verdict": "not_applicable", "reason": "No Lean"}}],
@@ -120,7 +122,7 @@ class RunnerTests(unittest.TestCase):
         state = self.engine.state
         sessions = list(state["sessions"].values())
         self.assertEqual([s["category"] for s in sessions], ["plan", "research", "review", "plan", "review"])
-        self.assertEqual(len(list((self.instance / "knowledge").iterdir())), 5)
+        self.assertEqual(len(list((self.instance / "knowledge").glob('*/output.json'))), 5)
         self.assertEqual(int(runner.git(self.instance, "rev-list", "--count", "HEAD")), 6)
         research = sessions[1]
         self.assertEqual((research["model"], research["effort"], research["exit_code"]), ("codex/gpt-6.1-sol", "low", 7))
@@ -206,7 +208,7 @@ class RunnerTests(unittest.TestCase):
         self.until(lambda: not self.engine.active())
         self.assertEqual(len(self.engine.state["sessions"]), 2)
         self.assertEqual(self.engine.state["sessions"][held_id]["status"], "integrated")
-        self.assertEqual(len(list((self.instance / "knowledge").iterdir())), 2)
+        self.assertEqual(len(list((self.instance / "knowledge").glob('*/output.json'))), 2)
         # Repeated recovery cannot duplicate knowledge or its Git commits.
         runner.Runner(self.instance, self.skill).tick()
         self.assertEqual(int(runner.git(self.instance, "rev-list", "--count", "HEAD")), 3)
@@ -262,7 +264,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(int(real_git(self.instance, "rev-list", "--count", "HEAD")), 6)
 
     def test_detached_runner_outlives_start_command(self):
-        for name in ("runner.py", "cli_adapter.py", "check.py"):
+        for name in ("runner.py", "cli_adapter.py", "check.py", "knowledge_index.py"):
             shutil.copyfile(runner.SKILL / name, self.skill / name)
         (self.instance / "control/STOP").touch()
         launched = subprocess.run([sys.executable, "-B", str(self.skill / "runner.py"), "start", str(self.instance)],
