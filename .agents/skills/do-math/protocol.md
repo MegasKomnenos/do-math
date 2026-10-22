@@ -41,7 +41,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 
 ```json
 {
-  "max_sessions": 3,
+  "max_sessions": 8,
   "defaults": {
     "plan": {"model": "codex/gpt-6.1-sol", "effort": "high"},
     "research": {"model": "codex/gpt-6.1-sol", "effort": "high"},
@@ -58,7 +58,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 }
 ```
 
-위 경로·모델은 형식 예시이며 사용 가능한 설치·모델을 설정한다. `max_sessions`는 모든 범주를 합친 양의 정수 상한이고, `limit_wait_seconds`는 공급자 한도 해제 시각이 없을 때 기다릴 양수 초다. 모델 문자열은 `codex/<CLI에 넘길 모델>` 또는 `claude/<CLI에 넘길 모델>`이다. 실행기는 앞부분으로 CLI를 고르고 `/` 뒤 전체를 모델 인자로 넘긴다. 노력은 비어 있지 않은 문자열이며 `claude/` 모델에는 `low`, `medium`, `high`, `xhigh`, `max` 중 하나를 쓴다. `codex/` 모델에는 문자열을 그대로 전달하며 지원 여부는 CLI와 모델이 정한다. 모델·노력을 지정할 때는 기본값과 합쳐 실제로 사용할 두 값을 함께 확인한다. 전달 방식은 [CLI.md](CLI.md)에 있다.
+위 경로·모델은 형식 예시이며 사용 가능한 설치·모델을 설정한다. `max_sessions`는 모든 범주를 합친 양의 정수 상한이다. 사용자가 동시성 상한을 따로 지정하지 않으면 새 인스턴스의 `settings.json`에 기본값 8을 명시한다. `limit_wait_seconds`는 공급자 한도 해제 시각이 없을 때 기다릴 양수 초다. 모델 문자열은 `codex/<CLI에 넘길 모델>` 또는 `claude/<CLI에 넘길 모델>`이다. 실행기는 앞부분으로 CLI를 고르고 `/` 뒤 전체를 모델 인자로 넘긴다. 노력은 비어 있지 않은 문자열이며 `claude/` 모델에는 `low`, `medium`, `high`, `xhigh`, `max` 중 하나를 쓴다. `codex/` 모델에는 문자열을 그대로 전달하며 지원 여부는 CLI와 모델이 정한다. 모델·노력을 지정할 때는 기본값과 합쳐 실제로 사용할 두 값을 함께 확인한다. 전달 방식은 [CLI.md](CLI.md)에 있다.
 
 계획이 게시한 요청에 `model` 또는 `effort`가 있으면 그 필드만 범주 기본값을 덮어쓴다. 하나라도 지정하면 `selection_reason`에 이유를 적는다. 계획 세션 자체와 자동 결과 검토는 범주 기본값을 쓴다.
 
