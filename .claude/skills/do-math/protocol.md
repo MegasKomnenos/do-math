@@ -1,6 +1,6 @@
 # do-math의 인스턴스와 산출 계약
 
-이 문서는 실행기와 계획·연구·검토 세션이 파일을 주고받는 계약이다. 목표 하나를 연구하는 **인스턴스** 안에서 세션은 자기 폴더에 결과를 쓰고, 실행기가 공개 산출만 **축적 지식**으로 복사한다. 다음 세션은 이 지식을 읽고 연구를 이어 간다. 사람이 읽는 수학 해설이 주 산출물이며 Lean 원문은 해당하는 결과의 근거다.
+이 문서는 실행기와 계획·연구·탐구·검토 세션이 파일을 주고받는 계약이다. 목표 하나를 연구하는 **인스턴스** 안에서 세션은 자기 폴더에 결과를 쓰고, 실행기가 공개 산출만 **축적 지식**으로 복사한다. 다음 세션은 이 지식을 읽고 연구를 이어 간다. 사람이 읽는 수학 해설이 주 산출물이며 Lean 원문은 해당하는 결과의 근거다.
 
 구현의 진입점은 [check.py](check.py)의 `check_session`과 `main`이다. 이 문서의 형식과 작은 예시는 해당 검사기의 계약이다. 연구 방법과 판단 원리는 범주별 작업맥락에서 다루며, 실행기의 사용자 명령과 프로세스 상태 내부 형식은 실행기에서 정한다.
 
@@ -46,6 +46,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
   "defaults": {
     "plan": {"model": "codex/gpt-6.1-sol", "effort": "high"},
     "research": {"model": "codex/gpt-6.1-sol", "effort": "high"},
+    "explore": {"model": "codex/gpt-6.1-sol", "effort": "high"},
     "review": {"model": "claude/sonnet", "effort": "high"}
   },
   "cli": {"codex": "C:/tools/codex.exe", "claude": "C:/tools/claude.exe"},
@@ -59,7 +60,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 }
 ```
 
-위 경로·모델은 형식 예시이며 사용 가능한 설치·모델을 설정한다. `max_sessions`는 모든 범주를 합친 양의 정수 상한이다. 사용자가 동시성 상한을 따로 지정하지 않으면 새 인스턴스의 `settings.json`에 기본값 8을 명시한다. `limit_wait_seconds`는 공급자 한도 해제 시각이 없을 때 기다릴 양수 초다. 모델 문자열은 `codex/<CLI에 넘길 모델>` 또는 `claude/<CLI에 넘길 모델>`이다. 실행기는 앞부분으로 CLI를 고르고 `/` 뒤 전체를 모델 인자로 넘긴다. 노력은 비어 있지 않은 문자열이며 `claude/` 모델에는 `low`, `medium`, `high`, `xhigh`, `max` 중 하나를 쓴다. `codex/` 모델에는 문자열을 그대로 전달하며 지원 여부는 CLI와 모델이 정한다. 모델·노력을 지정할 때는 기본값과 합쳐 실제로 사용할 두 값을 함께 확인한다. 전달 방식은 [CLI.md](CLI.md)에 있다.
+위 경로·모델은 형식 예시이며 사용 가능한 설치·모델을 설정한다. `defaults`에는 `plan`, `research`, `explore`, `review` 네 범주가 모두 있어야 한다. `max_sessions`는 모든 범주를 합친 양의 정수 상한이다. 사용자가 동시성 상한을 따로 지정하지 않으면 새 인스턴스의 `settings.json`에 기본값 8을 명시한다. `limit_wait_seconds`는 공급자 한도 해제 시각이 없을 때 기다릴 양수 초다. 모델 문자열은 `codex/<CLI에 넘길 모델>` 또는 `claude/<CLI에 넘길 모델>`이다. 실행기는 앞부분으로 CLI를 고르고 `/` 뒤 전체를 모델 인자로 넘긴다. 노력은 비어 있지 않은 문자열이며 `claude/` 모델에는 `low`, `medium`, `high`, `xhigh`, `max` 중 하나를 쓴다. `codex/` 모델에는 문자열을 그대로 전달하며 지원 여부는 CLI와 모델이 정한다. 모델·노력을 지정할 때는 기본값과 합쳐 실제로 사용할 두 값을 함께 확인한다. 전달 방식은 [CLI.md](CLI.md)에 있다.
 
 계획이 게시한 요청에 `model` 또는 `effort`가 있으면 그 필드만 범주 기본값을 덮어쓴다. 하나라도 지정하면 `selection_reason`에 이유를 적는다. 계획 세션 자체와 자동 결과 검토는 범주 기본값을 쓴다.
 
@@ -85,22 +86,24 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 }
 ```
 
-`instance`는 존재하는 인스턴스의 절대 경로다. 검사기는 여기서 `knowledge/`를 찾는다. `category`는 `plan`, `research`, `review` 중 하나다. `context.common`은 공통요소 문서와 목표·조건 파일의 절대 경로 목록, `context.category`는 해당 범주의 작업공통요소 파일 절대 경로다. 이 경로의 파일은 존재해야 한다. **작업특정요소는 이 input.json의 `task` 객체**다. `task.instructions`는 이번 지시, `task.references`는 사용할 공개 지식의 참조 목록이다(3절).
+`instance`는 존재하는 인스턴스의 절대 경로다. 검사기는 여기서 `knowledge/`를 찾는다. `category`는 `plan`, `research`, `explore`, `review` 중 하나다. `context.common`은 공통요소 문서와 목표·조건 파일의 절대 경로 목록, `context.category`는 해당 범주의 작업공통요소 파일 절대 경로다. 이 경로의 파일은 존재해야 한다. **작업특정요소는 이 input.json의 `task` 객체**다. `task.instructions`는 이번 지시, `task.references`는 사용할 공개 지식의 참조 목록이다(3절).
 
 범주별로 `task`에 다음 항목을 더한다.
 
 | 범주 | 실행기가 주는 항목과 의미 |
 |---|---|
 | research | `supersedes`: 이번 과제가 대신할 기존 기록 ID 목록. 없으면 `[]`. 계획의 연구 요청에서 복사한다. |
+| explore | 더하는 항목이 없다. 계획의 탐구 요청에서 `instructions`, `references`를 복사한다. |
 | review | `target`: `{"kind":"research","record":"k0001"}` 또는 `{"kind":"goal"}`. 자동 검토는 대상과 기본 지시를, 추가 검토는 계획의 지시·참조도 받는다. |
-| plan | `events`: 이번 계획이 받는 사건 객체 목록. 아래 네 종류를 사용한다. `previous_plan`: 직전에 반영된 계획의 기록 ID이며 아직 없으면 `null`이다. 실행기는 이 필드를 항상 넣는다. 검사기는 필드 생략과 `null`을 모두 허용하고, 그 밖의 값이면 실재하는 계획 기록 ID인지 확인한다. |
+| plan | `events`: 이번 계획이 받는 사건 객체 목록. 아래 다섯 종류를 사용한다. `previous_plan`: 직전에 반영된 계획의 기록 ID이며 아직 없으면 `null`이다. 실행기는 이 필드를 항상 넣는다. 검사기는 필드 생략과 `null`을 모두 허용하고, 그 밖의 값이면 실재하는 계획 기록 ID인지 확인한다. |
 
-계획 사건의 구조 예시다. 검사기는 모든 사건의 `kind`와, `review_finished`의 `record`, `session_failed`의 `session`·`reason`, `user_input`의 `text`를 확인한다. 실패 사건의 나머지 필드는 실행기가 함께 담는 사실이다.
+계획 사건의 구조 예시다. 검사기는 모든 사건의 `kind`와, `review_finished`·`exploration_finished`의 `record`, `session_failed`의 `session`·`reason`, `user_input`의 `text`를 확인한다. 실패 사건의 나머지 필드는 실행기가 함께 담는 사실이다.
 
 ```json
 [
   {"kind": "start"},
   {"kind": "review_finished", "record": "k0002"},
+  {"kind": "exploration_finished", "record": "k0004"},
   {"kind": "session_failed", "session": "s0003", "reason": "output/output.json이 없음",
    "category": "research", "request": "k0001:research:0",
    "task": {"instructions": "...", "references": [], "supersedes": []},
@@ -109,7 +112,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 ]
 ```
 
-이 목록은 사건 종류의 예시다. 실제 첫 계획에는 시작 사건만 있을 수 있다. `review_finished.record`는 재검사를 통과해 반영된 검토 기록이다. 실패는 산출이 없거나 재검사에 실패한 세션이며 계획·검토 실패도 포함한다. 실패 사건에는 실행기가 아는 사실을 함께 담는다. `category`와 `request`는 실패한 세션의 범주와 요청 키이고, 사건을 받은 계획이면 `request`가 `null`이다. `task`는 그 세션이 받은 작업특정요소 원문이다. 실패한 계획의 `task.events`에는 그 계획이 받았다가 처리하지 못한 사건이 그대로 들어 있다. `origin`은 요청을 만든 공개 기록 ID이고 계획이면 `null`이다. `limit`은 탐지한 공급자 한도 `{retry_at, source, provider}`, `exit_code`는 알 수 있는 CLI 종료 코드, `launch_error`는 기동 실패 문구이며, 해당하지 않으면 `null`이다. 실행기는 아직 어느 계획에도 주지 않은 사건 전부를 한 계획에 전달하고, 그 계획 실행 중 생긴 사건은 다음 계획에 전달한다. 정상 연구 종료는 사건이 아니다. 연구 반영은 자동 검토 요청을 만들고, 그 검토의 반영이 계획 사건이 된다.
+이 목록은 사건 종류의 예시다. 실제 첫 계획에는 시작 사건만 있을 수 있다. `review_finished.record`는 재검사를 통과해 반영된 검토 기록이고, `exploration_finished.record`는 같은 방식으로 반영된 탐구 기록이다. 실패는 산출이 없거나 재검사에 실패한 세션이며 계획·검토 실패도 포함한다. 실패 사건에는 실행기가 아는 사실을 함께 담는다. `category`와 `request`는 실패한 세션의 범주와 요청 키이고, 사건을 받은 계획이면 `request`가 `null`이다. `task`는 그 세션이 받은 작업특정요소 원문이다. 실패한 계획의 `task.events`에는 그 계획이 받았다가 처리하지 못한 사건이 그대로 들어 있다. `origin`은 요청을 만든 공개 기록 ID이고 계획이면 `null`이다. `limit`은 탐지한 공급자 한도 `{retry_at, source, provider}`, `exit_code`는 알 수 있는 CLI 종료 코드, `launch_error`는 기동 실패 문구이며, 해당하지 않으면 `null`이다. 실행기는 아직 어느 계획에도 주지 않은 사건 전부를 한 계획에 전달하고, 그 계획 실행 중 생긴 사건은 다음 계획에 전달한다. 정상 연구 종료는 사건이 아니다. 연구 반영은 자동 검토 요청을 만들고, 그 검토의 반영이 계획 사건이 된다. 탐구는 검토를 받지 않으므로 탐구 반영이 곧 `exploration_finished` 사건이 된다.
 
 실행기는 기동 프롬프트에서 세션 폴더, 이 `input.json`, 공식 검사 명령의 위치를 알려 준다. 검토 입력이나 기동 프롬프트에는 작성자 세션의 폴더·로그·중간 파일 위치를 넣지 않는다. 검토는 `knowledge/` 전체와 공개된 대상 기록을 읽는다. 이는 전달 규칙이며 파일 읽기를 감시하는 장치가 아니다.
 
@@ -135,9 +138,9 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 
 요약은 처음 다룬 질문과 접근에서 출발해, 실제 시도로 무엇이 밝혀졌는지와 무엇이 남았는지를 연결한다. 증명·반증·계산·문헌 조사·형식화의 결과뿐 아니라 중요한 실패, 배제한 접근, 실행하거나 검증하지 못한 부분도 산출의 의미를 바꾸는 만큼 담는다. 실패가 중심인 세션은 실패와 그 이유·적용 범위를 중심으로 소개한다. 실패한 강화 후보와 원 질문의 반례, 유한 확인과 전칭 증명, 비형식 논증과 Lean 보증을 구분한다. 예를 들어 보조 명제만 반증했다면 그 반증으로 어떤 경로가 배제됐고 원 문제는 어디까지 남았는지 함께 설명한다.
 
-여러 결과가 있으면 주요 결과들이 같은 질문에 어떻게 기여하는지 묶어 설명한다. 나머지 항목을 전부 나열할 필요는 없지만, 빠뜨리면 세션 전체를 잘못 이해하게 되는 성과·실패·한계는 포함한다. 정리 개수나 검사 통과만으로 연구 내용을 대신하지 않는다. 연구에서는 `results`, `failed_attempts`, `open_questions`와 해설 전체를 대조해 요약을 쓴다. 계획에서는 선택한 방향과 이유, 보류·변경한 접근 중 중요한 것과 다음 행동을, 검토에서는 대상 전체의 판정 범위, 결함·판단 유보·검증 한계를 소개한다. 산출에 없는 성공이나 실패를 추가하지 않고 작성 당시의 지식과 확인 범위를 유지한다.
+여러 결과가 있으면 주요 결과들이 같은 질문에 어떻게 기여하는지 묶어 설명한다. 나머지 항목을 전부 나열할 필요는 없지만, 빠뜨리면 세션 전체를 잘못 이해하게 되는 성과·실패·한계는 포함한다. 정리 개수나 검사 통과만으로 연구 내용을 대신하지 않는다. 연구에서는 `results`, `failed_attempts`, `open_questions`와 해설 전체를 대조해 요약을 쓴다. 계획에서는 선택한 방향과 이유, 보류·변경한 접근 중 중요한 것과 다음 행동을, 탐구에서는 들여다본 각도와 바뀐 이해, 넘긴 방향을, 검토에서는 대상 전체의 판정 범위, 결함·판단 유보·검증 한계를 소개한다. 산출에 없는 성공이나 실패를 추가하지 않고 작성 당시의 지식과 확인 범위를 유지한다.
 
-실행기는 공개 기록의 `overview`를 `knowledge/index.md`에 모은다. 연구에는 현재 검토별 `overview_assessment`의 판정 값과 결과 판정의 개수, 상충 여부를 표시하고 대체 기록에는 연결을 붙인다. 판정 근거는 색인에 옮기지 않으며 검토 기록에서 읽는다. 마지막 계획 기록에 `research-status.md`가 있으면 색인 머리말에 그 연결을 둔다. 검토가 공개되거나 기록이 대체되면 기존 항목도 갱신한다. 공개됐지만 검토가 없는 연구는 검토 전으로 표시한다. 색인은 탐색용 파생 파일이고 기록·검토 원문이 근거의 정본이다. 기록 공개와 색인 갱신은 같은 인스턴스 Git 커밋에 담으며, 재기동 때 공개 기록에서 색인을 재구성한다. 세션은 색인을 직접 수정하지 않는다.
+실행기는 공개 기록의 `overview`를 `knowledge/index.md`에 모은다. 연구에는 현재 검토별 `overview_assessment`의 판정 값과 결과 판정의 개수, 상충 여부를 표시하고 대체 기록에는 연결을 붙인다. 판정 근거는 색인에 옮기지 않으며 검토 기록에서 읽는다. 마지막 계획 기록에 `research-status.md`나 `glossary.md`가 있으면 색인 머리말에 각각의 연결을 둔다. 탐구 기록에는 검토를 받지 않는 기록이라는 표시를 붙인다. 검토가 공개되거나 기록이 대체되면 기존 항목도 갱신한다. 공개됐지만 검토가 없는 연구는 검토 전으로 표시한다. 색인은 탐색용 파생 파일이고 기록·검토 원문이 근거의 정본이다. 기록 공개와 색인 갱신은 같은 인스턴스 Git 커밋에 담으며, 재기동 때 공개 기록에서 색인을 재구성한다. 세션은 색인을 직접 수정하지 않는다.
 
 `category`는 입력과 같아야 한다. `references`는 실제로 사용한 축적 지식의 참조 배열이다. 각 참조는 `record`가 필수이며 `file`, `result`는 선택 항목이다. 둘을 함께 쓸 수도 있다.
 
@@ -202,6 +205,23 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
 
 `failed_attempts`의 항목은 `{"description":"시도와 실패 내용", "verification":"어디까지 실제로 확인했고 무엇은 모르는가"}`다. `open_questions`는 남은 질문 문자열 목록이다. 빈 목록은 해당 산출에 기록할 항목이 없다는 뜻이다.
 
+### 탐구 산출
+
+탐구는 공통 네 필드에 `exposition`과 `questions`를 더한다. `exposition`은 탐구 본문 파일의 `output/` 기준 상대 경로이고, `questions`는 탐구 중 떠오른 질문 문자열 목록이다. 탐구 기록은 다른 기록을 대신하지 않으므로 `supersedes`는 `[]`로 쓴다. 탐구에는 자동 검토가 붙지 않는다. 본문에 담을 내용은 [explore.md](explore.md)가 정한다.
+
+```json
+{
+  "category": "explore",
+  "overview": {"title": "작은 경우로 본 주차 함수의 구조", "summary": "n ≤ 6의 주차 함수를 직접 나열해 차량 순서와 빈자리의 관계를 여러 표현으로 보았다. 관측한 대칭은 추측으로 남겼고, 생성함수 표현에서 보인 방향을 넘긴다."},
+  "references": [],
+  "supersedes": [],
+  "exposition": "exploration.md",
+  "questions": ["관측한 대칭이 모든 n에서 성립하는가?"]
+}
+```
+
+연구·탐구·검토 세션은 새 용어를 `output/glossary-proposals.md`로 제안할 수 있고, 계획은 `output/glossary.md`에 용어 정본을 공개한다. 두 파일의 형식은 [common.md](common.md)의 '용어 정본'과 [plan.md](plan.md)의 '용어 정본 갱신하기'가 정한다. 검사기는 두 파일을 검사하지 않는다.
+
 ## 5. 검토 산출
 
 검토 대상은 입력의 `task.target`과 일치해야 한다. 연구 검토는 연구 세션 하나의 공개 산출 전체를 대상으로 하고 그 안의 모든 결과 ID를 정확히 한 번씩 판단한다. 연구 검토에는 `overview_assessment: {"verdict": "supported | not_supported | undetermined", "reason": "판정 근거"}`도 필수다. 대상의 제목·요약이 성공과 실패를 포함한 산출 전체의 타당한 소개인지, 중요한 누락이나 과장이 없는지 판단한다. 결과가 없어도 제목·요약을 판단하고 `results: []`와 `summary`로 실패 접근·남은 질문에 대한 검토를 남긴다. 목표 검토에는 `overview_assessment`를 요구하지 않는다.
@@ -218,7 +238,8 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
     "result": "r1",
     "assessment": {"verdict": "supported", "reason": "자연수 오른쪽 영 덧셈 주장이 제시한 정의와 증명으로 성립한다."},
     "lean": {"verdict": "accepted", "reason": "공개된 Proof.lean의 사본을 다시 컴파일해 종료 코드 0을 확인했고, #print axioms add_zero_example이 공리에 의존하지 않는다고 출력했다."},
-    "alignment": {"verdict": "matches", "reason": "해설과 Lean 모두 모든 자연수 n의 n + 0 = n을 말한다."}
+    "alignment": {"verdict": "matches", "reason": "해설과 Lean 모두 모든 자연수 n의 n + 0 = n을 말한다."},
+    "terminology": {"verdict": "conforms", "reason": "해설의 자연수와 덧셈은 goal.md의 정의와 같은 이름·뜻으로 쓰였다."}
   }],
   "summary": "이 연구 산출의 결과 r1과 확인 범위를 검토했다."
 }
@@ -231,6 +252,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
 | `assessment` | `supported`, `not_supported`, `undetermined` | 주장하는 결과를 제시한 근거가 뒷받침함 / 뒷받침하지 못함 / 판단을 마치지 못함 |
 | `lean` | `accepted`, `rejected`, `not_checked`, `not_applicable` | 공개 원문 재컴파일과 [common.md](common.md)의 공리 기준 통과 / 컴파일 실패 또는 허용 밖 공리 / 미확인 / Lean 없는 결과 |
 | `alignment` | `matches`, `differs`, `not_checked`, `not_applicable` | 해설과 Lean의 수학이 일치 / 다름 / 미확인 / Lean 없는 결과 |
+| `terminology` | `conforms`, `deviates` | 용어 정본을 따름 / 이름 위반이나 의미 위반이 있음. 결과의 인정 여부와 상충 판단에 들지 않는다. |
 
 검토자는 Lean 수용만으로 결과나 해설이 맞다고 결론 내리지 않는다. 계산은 재현하거나 방법을 점검하고 문헌은 원문과 대조해 `assessment.reason`에 근거와 한계를 적는다. 검토자가 만든 보충 자료 역시 자기 `output/`에 두어 함께 공개할 수 있다.
 
@@ -251,7 +273,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
 
 ## 6. 계획 산출과 파견
 
-공통 네 필드 외에 `reason`, `research`, `reviews`, `goal_review`, `wait`가 필수다. 아래는 첫 연구 하나를 게시하는 유효 예시다.
+공통 네 필드 외에 `reason`, `research`, `explorations`, `reviews`, `goal_review`, `wait`가 필수다. 아래는 첫 연구 하나를 게시하는 유효 예시다.
 
 ```json
 {
@@ -262,6 +284,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
     "instructions": "모든 자연수 n에 대해 n + 0 = n을 Lean으로 증명하고 충실한 해설을 써라.",
     "references": [], "supersedes": []
   }],
+  "explorations": [],
   "reviews": [],
   "goal_review": null,
   "wait": null
@@ -270,7 +293,7 @@ Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 �
 
 배열 항목의 정체성은 **계획 기록 ID + 배열 이름 + 0부터 시작하는 위치**로 식별할 수 있다. 실행기는 각 요청을 한 번씩 새 세션으로 파견하고, 세션이 끝나 실패했을 때 다시 할지는 다음 계획이 새 요청으로 정한다. 이후 계획의 빈 목록이 이미 게시된 다른 요청을 취소하지 않는다.
 
-`research[]`는 `instructions`, `references`, `supersedes`를 가진다. 실행기는 이 세 필드를 연구의 `task`로 복사한다. `reviews[]`는 `instructions`, `references`, 연구 `target`을 가진다. 이미 반영된 연구 산출의 추가 검토 요청이다. `goal_review`는 `null` 또는 `instructions`, `references`를 가진 객체이고, 실행기가 `target: {"kind":"goal"}`을 붙여 검토를 만든다. 세 종류 요청 모두 선택적으로 `model`, `effort`, 그리고 지정 이유 `selection_reason`을 가질 수 있다. 예:
+`research[]`는 `instructions`, `references`, `supersedes`를 가진다. 실행기는 이 세 필드를 연구의 `task`로 복사한다. `explorations[]`는 `instructions`, `references`를 가지며, 실행기는 이 두 필드를 탐구의 `task`로 복사한다. `reviews[]`는 `instructions`, `references`, 연구 `target`을 가진다. 이미 반영된 연구 산출의 추가 검토 요청이다. `goal_review`는 `null` 또는 `instructions`, `references`를 가진 객체이고, 실행기가 `target: {"kind":"goal"}`을 붙여 검토를 만든다. 네 종류 요청 모두 선택적으로 `model`, `effort`, 그리고 지정 이유 `selection_reason`을 가질 수 있다. 예:
 
 ```json
 {
@@ -298,13 +321,13 @@ python C:/path/to/skill/check.py C:/research/example/sessions/s0001
 
 Python 소비자는 `check_session(session: str | pathlib.Path) -> list[str]`을 호출할 수 있다. 빈 목록은 통과, 원소 하나의 목록은 첫 실패 이유다. JSON 해석·인코딩·일반 파일 접근 오류도 이 진단으로 돌아온다. 프로그래밍 오류까지 삼키지는 않는다. CLI와 함수는 `Checker.run()`의 동일 검사를 사용한다.
 
-검사기는 입력·산출 필수 항목과 형식, 범주의 일치, 파일·기록·결과 참조의 존재, 연구 검토의 대상 및 결과별 항목 완결성을 확인한다. 참조한 기록 전체를 재귀 검사하거나 기존 기록의 현재성을 판단하지 않는다. Lean을 실행하지 않고, 해설·근거의 옳고 그름, 목표 충족, 검토 판정 사이의 수학적 타당성, 계획의 가치를 판단하지 않는다. 사용한 지식을 빠짐없이 참조했는지는 세션의 책임이다.
+검사기는 입력·산출 필수 항목과 형식, 범주의 일치, 파일·기록·결과 참조의 존재, 연구 검토의 대상 및 결과별 항목 완결성을 확인한다. 용어 정본과 제안 파일의 내용, 정본 준수 여부는 확인하지 않는다. 참조한 기록 전체를 재귀 검사하거나 기존 기록의 현재성을 판단하지 않는다. Lean을 실행하지 않고, 해설·근거의 옳고 그름, 목표 충족, 검토 판정 사이의 수학적 타당성, 계획의 가치를 판단하지 않는다. 사용한 지식을 빠짐없이 참조했는지는 세션의 책임이다.
 
 실행기는 다음 순서로 이 계약을 소비한다.
 
 1. `input.json`을 준비하고 새 세션을 띄운다. 세션은 공개 산출을 작성하고 위 검사로 확인한 뒤 끝난다. 별도 승인·종료 필드는 없다.
 2. 프로세스가 끝나면 종료 코드나 종료 방식과 무관하게 위 검사를 다시 실행한다. 산출이 없거나 실패하면 반영하지 않고 `session_failed` 사건으로 다음 계획에 넘긴다.
 3. 통과하면 새로운 기록 ID를 부여하고 **`sessions/<ID>/output/`의 내용 전부**를 새 `knowledge/<기록 ID>/`에 복사한다. `output.json`도 함께 복사하며 내부 경로를 바꾸지 않는다. 대상 디렉터리는 새것이어야 하며 기존 파일은 덮어쓰지 않는다. 입력·작업 폴더·로그는 복사하지 않는다. 세션 폴더도 그대로 남긴다. 새 기록을 인스턴스 Git에 커밋한다.
-4. 반영된 계획에서 요청을 읽는다. 반영된 연구에는 기본 검토 하나를 붙인다. 반영된 검토는 계획 사건이 된다. 반영된 목표 검토가 달성이면 완료한다. 완료 뒤에는 자동 검토·계획을 포함해 새 세션을 띄우지 않지만, 이미 돌던 세션의 산출은 종료 시 같은 재검사·반영을 거친다.
+4. 반영된 계획에서 요청을 읽는다. 반영된 연구에는 기본 검토 하나를 붙인다. 반영된 탐구와 반영된 검토는 계획 사건이 된다. 반영된 목표 검토가 달성이면 완료한다. 완료 뒤에는 자동 검토·계획을 포함해 새 세션을 띄우지 않지만, 이미 돌던 세션의 산출은 종료 시 같은 재검사·반영을 거친다.
 
 실행기는 단일 실행기, 동시 상한, 한 번에 하나의 계획을 지킨다. 사용자 정지, 외부 입력 대기, 공급자 한도 대기, 연속 계획 실패 정지 중에는 새 세션을 띄우지 않는다. 종료한 세션을 그대로 재기동하지 않는다. 각 정지의 해제 조건, 프로세스 관리·재기동과 상태 저장은 [RUNTIME.md](RUNTIME.md)가 정한다.

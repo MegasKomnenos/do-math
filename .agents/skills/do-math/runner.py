@@ -186,7 +186,7 @@ def load_settings(instance):
     seconds = settings.get("limit_wait_seconds")
     if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds <= 0:
         raise ValueError("limit_wait_seconds must be positive and finite")
-    for category in ("plan", "research", "review"):
+    for category in ("plan", "research", "explore", "review"):
         default = settings["defaults"][category]
         provider = provider_for_model(default["model"])
         build_command(settings["cli"][provider], default["model"], default["effort"], instance)
@@ -294,8 +294,11 @@ class Runner:
             ordered.setdefault(rid, None)
         records = [(rid, read_json(paths[rid])) for rid in ordered]
         plans = [rid for rid, data in records if data['category'] == 'plan']
-        status = plans[-1] if plans and (paths[plans[-1]].parent / 'research-status.md').is_file() else None
-        content = render_index(records, status)
+        # Only the latest plan's files are current; an older copy would mislead.
+        latest = paths[plans[-1]].parent if plans else None
+        status, glossary = (plans[-1] if latest and (latest / name).is_file() else None
+                            for name in ('research-status.md', 'glossary.md'))
+        content = render_index(records, status, glossary)
         path = self.instance / 'knowledge/index.md'
         if not path.exists() or path.read_bytes() != content.encode('utf-8'):
             write_text(path, content)
@@ -465,9 +468,10 @@ class Runner:
 
     def apply_output(self, session, record, output):
         if output["category"] == "plan":
-            for group, category in (("research", "research"), ("reviews", "review")):
+            for group, category, extra in (("research", "research", ("supersedes",)),
+                                           ("explorations", "explore", ()), ("reviews", "review", ("target",))):
                 for index, item in enumerate(output[group]):
-                    keys = ("instructions", "references", "supersedes" if category == "research" else "target")
+                    keys = ("instructions", "references", *extra)
                     task = {key: item[key] for key in keys}
                     selection = {key: item[key] for key in ("model", "effort") if key in item}
                     self.enqueue(f"{record}:{group}:{index}", category, task, record, selection)
@@ -485,6 +489,9 @@ class Runner:
             self.enqueue(record + ":automatic_review", "review", {
                 "instructions": "공개된 연구 산출 전체를 독립 검토하고 각 결과와 확인 범위를 판정하라.",
                 "references": [], "target": {"kind": "research", "record": record}}, record)
+        elif output["category"] == "explore":
+            # Explorations are deliberately unreviewed; the next plan must still hear of them.
+            self.state["events"].append({"kind": "exploration_finished", "record": record})
         else:
             self.state["events"].append({"kind": "review_finished", "record": record})
             if output["target"]["kind"] == "goal" and output["goal"]["verdict"] == "achieved":
@@ -547,7 +554,7 @@ class Runner:
             # A restart is the human's signal that the halt's cause was addressed.
             self.state.update(halted=None, plan_failures=0)
             self.state.setdefault("last_plan", None)  # States written before these fields
-            for name in ("common.md", "protocol.md", "plan.md", "research.md", "review.md", "RUNTIME.md", "check.py"):
+            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "review.md", "RUNTIME.md", "check.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
             self.collect()

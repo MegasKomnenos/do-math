@@ -6,7 +6,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 
-CATEGORIES = ("plan", "research", "review")
+CATEGORIES = ("plan", "research", "explore", "review")
 
 
 class Invalid(ValueError):
@@ -152,17 +152,19 @@ class Checker:
             self.supersedes(task.get("supersedes"), "input.json.task.supersedes")
         elif category == "review":
             self.target(task.get("target"), "input.json.task.target")
-        else:
+        elif category == "plan":
             if task.get("previous_plan") is not None:
                 record = self.record(task["previous_plan"], "input.json.task.previous_plan")
                 need(record.get("category") == "plan", "input.json.task.previous_plan", "expected a plan record")
             for index, event in enumerate(items(task.get("events"), "input.json.task.events")):
                 loc = f"input.json.task.events[{index}]"
                 obj(event, loc)
-                choice(event.get("kind"), ("start", "review_finished", "session_failed", "user_input"), loc + ".kind")
-                if event["kind"] == "review_finished":
+                choice(event.get("kind"), ("start", "review_finished", "exploration_finished",
+                                           "session_failed", "user_input"), loc + ".kind")
+                if event["kind"] in ("review_finished", "exploration_finished"):
+                    expected = {"review_finished": "review", "exploration_finished": "explore"}[event["kind"]]
                     record = self.record(event.get("record"), loc + ".record")
-                    need(record.get("category") == "review", loc, "expected a review record")
+                    need(record.get("category") == expected, loc, f"expected a record of category {expected}")
                 elif event["kind"] == "session_failed":
                     identifier(event.get("session"), loc + ".session")
                     text(event.get("reason"), loc + ".reason")
@@ -176,6 +178,8 @@ class Checker:
             loc = f"output.json.research[{index}]"
             self.request(request, loc)
             self.supersedes(request.get("supersedes"), loc + ".supersedes")
+        for index, request in enumerate(items(data.get("explorations"), "output.json.explorations")):
+            self.request(request, f"output.json.explorations[{index}]")
         for index, request in enumerate(items(data.get("reviews"), "output.json.reviews")):
             loc = f"output.json.reviews[{index}]"
             self.request(request, loc)
@@ -213,6 +217,11 @@ class Checker:
         for index, question in enumerate(items(data.get("open_questions"), "output.json.open_questions")):
             text(question, f"output.json.open_questions[{index}]")
 
+    def explore(self, data):
+        local_file(self.output, data.get("exposition"), "output.json.exposition")
+        for index, question in enumerate(items(data.get("questions"), "output.json.questions")):
+            text(question, f"output.json.questions[{index}]")
+
     @staticmethod
     def judgment(value, choices, where):
         obj(value, where)
@@ -237,6 +246,7 @@ class Checker:
             self.judgment(result.get("assessment"), ("supported", "not_supported", "undetermined"), loc + ".assessment")
             self.judgment(result.get("lean"), ("accepted", "rejected", "not_checked", "not_applicable"), loc + ".lean")
             self.judgment(result.get("alignment"), ("matches", "differs", "not_checked", "not_applicable"), loc + ".alignment")
+            self.judgment(result.get("terminology"), ("conforms", "deviates"), loc + ".terminology")
         need(sorted(reviewed_ids) == sorted(self.result_ids(target, "target record")),
              "output.json.results", "must judge each target result exactly once")
         text(data.get("summary"), "output.json.summary")
@@ -260,6 +270,8 @@ class Checker:
             self.plan(output)
         elif data["category"] == "research":
             self.research(output)
+        elif data["category"] == "explore":
+            self.explore(output)
         else:
             self.review(output, data["task"])
 

@@ -13,8 +13,9 @@ def record_link(record, label=None):
     return f'[{label or record}]({record}/output.json)'
 
 
-def render_index(records, status=None):
-    """records are (id, manifest) pairs in publication order; status is the latest plan id with research-status.md."""
+def render_index(records, status=None, glossary=None):
+    """records are (id, manifest) pairs in publication order; status and glossary are
+    the latest plan id when that plan has research-status.md or glossary.md."""
     by_id = dict(records)
     replaced = defaultdict(list)
     reviews = defaultdict(list)
@@ -23,14 +24,17 @@ def render_index(records, status=None):
             replaced[old].append(rid)
         if data['category'] == 'review' and data['target']['kind'] == 'research':
             reviews[data['target']['record']].append(rid)
-    labels = {'research': '연구', 'review': '검토', 'plan': '계획'}
+    labels = {'research': '연구', 'explore': '탐구', 'review': '검토', 'plan': '계획'}
     lines = ['# 공개 지식 색인', '',
              '실행기가 공개 기록에서 생성한 탐색용 목록이다. 제목·요약은 작성자의 원문이며, '
              '판정은 검토 기록의 명시 범위를 보여 준다. 요약 판정은 각 검토 기록의 `overview_assessment` 값이며 '
              '그 근거와 작성 경위는 해당 검토 기록에서 읽는다. 실제 근거로 사용할 때에는 원문과 현재 검토를 읽는다.', '']
     if status:
-        lines += [f'현재 연구 상태와 주요 정의: [{status}/research-status.md]({status}/research-status.md)'
+        lines += [f'현재 연구 상태: [{status}/research-status.md]({status}/research-status.md)'
                   ' (마지막 계획의 연구 현황)', '']
+    if glossary:
+        lines += [f'용어 정본: [{glossary}/glossary.md]({glossary}/glossary.md)'
+                  ' (마지막 계획이 갱신한 수학적 대상·기호의 정의)', '']
     lines += [f'기록 {len(records)}개 · 공개 순서 · 각 기록의 `output.json`에서 해설·증명·계산 자료로 이동한다.', '']
     for rid, data in records:
         overview = data['overview']
@@ -50,7 +54,8 @@ def render_index(records, status=None):
                 ov = review['overview_assessment']
                 lines.append(f"- {record_link(review_id, '현재 검토 ' + review_id)} · 요약: {ov['verdict']}")
                 judgments['overview'].add(ov['verdict'])
-                for key in ('assessment', 'lean', 'alignment'):
+                # terminology is shown but never forms a conflict: it does not decide acceptance.
+                for key in ('assessment', 'lean', 'alignment', 'terminology'):
                     counts = Counter(r[key]['verdict'] for r in review['results'])
                     values = ', '.join(f'{v} {n}' for v, n in sorted(counts.items())) or '결과 없음'
                     lines.append(f'  {key}: {values}.')
@@ -65,6 +70,8 @@ def render_index(records, status=None):
                 lines += ['', '상충: ' + ', '.join(plain(x) for x in sorted(conflicts)) + '. 현재 검토 원문을 함께 확인한다.']
             if active:
                 lines.append('')
+        elif data['category'] == 'explore':
+            lines += ['탐구 기록: 독립 검토를 받지 않는 탐험이다. 진술은 표시된 인식 지위대로 읽고 근거로 쓰지 않는다.', '']
         elif data['category'] == 'review':
             target = data['target']
             lines += [('대상: ' + record_link(target['record']) if target['kind'] == 'research'

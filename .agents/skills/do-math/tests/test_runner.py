@@ -26,8 +26,11 @@ def fake_session():
         return 1
     if category == "plan":
         kinds = [event["kind"] for event in task["events"]]
-        output.update(reason="Choose the next small step.", research=[], reviews=[], goal_review=None, wait=None)
-        if "start" in kinds:
+        output.update(reason="Choose the next small step.", research=[], explorations=[], reviews=[],
+                      goal_review=None, wait=None)
+        if "start" in kinds and scenario == "explore":
+            output["explorations"] = [{"instructions": "wander", "references": []}]
+        elif "start" in kinds:
             output["research"] = [{"instructions": "fail" if scenario == "failure" else "prove",
                                    "references": [], "supersedes": [], "effort": "low",
                                    "selection_reason": "Small calculation"}]
@@ -38,6 +41,9 @@ def fake_session():
         else:
             output["goal_review"] = {"instructions": "Check the goal", "references": [],
                                      "model": "claude/sonnet", "selection_reason": "Independent CLI"}
+    elif category == "explore":
+        (session / "output/notes.md").write_text("Unreviewed impressions.\n", encoding="utf-8")
+        output.update(exposition="notes.md", questions=[])
     elif category == "research":
         if task["instructions"] == "fail":
             print(json.dumps({"type": "error", "message": "You've hit your usage limit. Try again later."}))
@@ -55,7 +61,8 @@ def fake_session():
             output["overview_assessment"] = {"verdict": "supported", "reason": "Fixture overview matches."}
             output.update(results=[{"result": "r1", "assessment": {"verdict": "supported", "reason": "Fixture"},
                                     "lean": {"verdict": "not_applicable", "reason": "No Lean"},
-                                    "alignment": {"verdict": "not_applicable", "reason": "No Lean"}}],
+                                    "alignment": {"verdict": "not_applicable", "reason": "No Lean"},
+                                    "terminology": {"verdict": "conforms", "reason": "Fixture"}}],
                           summary="Independent fixture review")
     runner.write_json(session / "output/output.json", output)
     # The actual CLI's stdin is a UTF-8 file, even for this fake process.
@@ -74,7 +81,7 @@ class RunnerTests(unittest.TestCase):
         self.instance = self.root / "연구 instance"
         self.skill = self.root / "skill"
         self.skill.mkdir()
-        for name in ("common.md", "protocol.md", "plan.md", "research.md", "review.md", "RUNTIME.md", "check.py"):
+        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "review.md", "RUNTIME.md", "check.py"):
             (self.skill / name).write_text("Temporary test context\n", encoding="utf-8")
         goal = self.root / "goal.md"
         goal.write_text("Synthetic goal\n", encoding="utf-8")
@@ -82,7 +89,7 @@ class RunnerTests(unittest.TestCase):
         runner.write_json(settings, {
             "max_sessions": 2,
             "defaults": {name: {"model": "codex/gpt-6.1-sol", "effort": "high"}
-                         for name in ("plan", "research", "review")},
+                         for name in ("plan", "research", "explore", "review")},
             "cli": {"codex": "codex.exe", "claude": "claude.exe"},
             "limit_wait_seconds": 0.6,
             "lean": {"command": ["lean"], "version_command": ["lean", "--version"], "cwd": None, "env": {}}})
@@ -137,6 +144,19 @@ class RunnerTests(unittest.TestCase):
                 prompt = (self.instance / "sessions" / sid / "prompt.txt").read_text(encoding="utf-8")
                 research_sid = next(k for k, v in state["sessions"].items() if v["category"] == "research")
                 self.assertNotIn(research_sid, json.dumps(data) + prompt)
+
+    def test_exploration_is_unreviewed_and_reaches_next_plan(self):
+        self.scenario = "explore"
+        self.until(lambda: self.engine.state["complete"] and not self.engine.active())
+        state = self.engine.state
+        sessions = list(state["sessions"].values())
+        self.assertEqual([s["category"] for s in sessions], ["plan", "explore", "plan", "review"])
+        explore = sessions[1]
+        self.assertEqual(state["requests"][sessions[0]["record"] + ":explorations:0"]["status"], "finished")
+        self.assertNotIn(explore["record"] + ":automatic_review", state["requests"])
+        second = next(sid for sid, s in state["sessions"].items() if s is sessions[2])
+        events = runner.read_json(self.instance / "sessions" / second / "input.json")["task"]["events"]
+        self.assertEqual(events, [{"kind": "exploration_finished", "record": explore["record"]}])
 
     def test_stop_limit_failure_wait_and_input(self):
         self.scenario = "failure"
@@ -222,7 +242,7 @@ class RunnerTests(unittest.TestCase):
             pass
         self.engine.enqueue("old", "research", {"instructions": "hold", "references": [], "supersedes": []}, "old-plan")
         self.engine.state["events"] = [{"kind": "user_input", "text": "new information"}]
-        self.engine.apply_output({}, "new-plan", {"category": "plan", "research": [], "reviews": [],
+        self.engine.apply_output({}, "new-plan", {"category": "plan", "research": [], "explorations": [], "reviews": [],
                                   "goal_review": None, "wait": {"needed": "old question", "reason": "old reason"}})
         self.assertEqual(self.engine.state["requests"]["old"]["status"], "pending")
         self.assertIsNone(self.engine.state["wait"])

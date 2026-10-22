@@ -73,7 +73,7 @@ class HandoffTests(unittest.TestCase):
         request = {"instructions": "Investigate the goal.", "references": [], "supersedes": [],
                    "model": "codex/example", "effort": "high", "selection_reason": "Example override."}
         plan = self.session("plan", envelope("plan", reason="Start research.", research=[request],
-                            reviews=[], goal_review=None, wait=None), events=[{"kind": "start"}])
+                            explorations=[], reviews=[], goal_review=None, wait=None), events=[{"kind": "start"}])
         self.publish(plan, "p1")
         author, _ = self.research()
         self.publish(author, "k1")
@@ -83,10 +83,11 @@ class HandoffTests(unittest.TestCase):
         review_output = envelope("review", target=target, results=[{
             "result": "r1", "assessment": judgment("undetermined"),
             "lean": judgment("not_checked"), "alignment": judgment("not_checked"),
+            "terminology": judgment("conforms"),
         }], summary="Review is incomplete.")
         review = self.session("review", review_output, target=target)
         self.publish(review, "k2")
-        followup_output = envelope("plan", reason="Need the user's scope clarification.", research=[],
+        followup_output = envelope("plan", reason="Need the user's scope clarification.", research=[], explorations=[],
             reviews=[{"target": target, "instructions": "Check independently.", "references": []}],
             goal_review={"instructions": "Check the goal.", "references": []},
             wait={"needed": "Clarify scope.", "reason": "The goal has two readings."})
@@ -103,6 +104,51 @@ class HandoffTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(SCRIPT), str(goal)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout), {"ok": True, "errors": []})
+
+    def explore(self):
+        output = envelope("explore", exposition="notes.md", questions=["Why does the pattern persist?"])
+        session = self.session("explorer", output)
+        (session / "output" / "notes.md").write_text("Observed small cases; a conjecture, not checked.", encoding="utf-8")
+        return session, output
+
+    def test_exploration_output_plan_request_and_event(self):
+        session, output = self.explore()
+        self.assertEqual(checker.check_session(session), [])
+        for key, value, message in (("questions", None, "output.json.questions"),
+                                    ("exposition", "absent.md", "output.json.exposition")):
+            with self.subTest(key=key):
+                broken = dict(output, **{key: value})
+                write_json(session / "output" / "output.json", broken)
+                self.assertIn(message, checker.check_session(session)[0])
+        write_json(session / "output" / "output.json", output)
+        self.publish(session, "e1")
+        plan_output = envelope("plan", reason="Step back.", research=[], reviews=[], goal_review=None, wait=None,
+                               explorations=[{"instructions": "Get familiar with the objects.", "references": []}])
+        plan = self.session("plan", plan_output, events=[{"kind": "exploration_finished", "record": "e1"}])
+        self.assertEqual(checker.check_session(plan), [])
+        del plan_output["explorations"]
+        write_json(plan / "output" / "output.json", plan_output)
+        self.assertIn("output.json.explorations", checker.check_session(plan)[0])
+        author, _ = self.research()
+        self.publish(author, "k1")
+        plan_output["explorations"] = []
+        wrong = self.session("wrong", plan_output, events=[{"kind": "exploration_finished", "record": "k1"}])
+        self.assertIn("expected a record of category explore", checker.check_session(wrong)[0])
+
+    def test_review_requires_terminology_judgment(self):
+        author, _ = self.research()
+        self.publish(author, "k1")
+        target = {"kind": "research", "record": "k1"}
+        result = {"result": "r1", "assessment": judgment("supported"),
+                  "lean": judgment("not_checked"), "alignment": judgment("not_checked")}
+        review = self.session("review", envelope("review", target=target, results=[result], summary="Checked."),
+                              target=target)
+        self.assertIn("results[0].terminology", checker.check_session(review)[0])
+        for verdict, ok in (("deviates", True), ("supported", False)):
+            with self.subTest(verdict=verdict):
+                write_json(review / "output" / "output.json", envelope(
+                    "review", target=target, results=[dict(result, terminology=judgment(verdict))], summary="Checked."))
+                self.assertEqual(not checker.check_session(review), ok)
 
     def test_missing_structure_and_review_coverage(self):
         author, original = self.research()

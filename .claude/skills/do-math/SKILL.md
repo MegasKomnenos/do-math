@@ -1,11 +1,11 @@
 ---
 name: do-math
-description: 수학 목표를 계획·연구·독립 검토 세션으로 이어 가는 무인 연구를 시작하고, 진행 조회·정지·입력·개별 세션 종료·재기동을 수행한다. Claude Code와 Codex 대화에서 사용한다.
+description: 수학 목표를 계획·연구·탐구·독립 검토 세션으로 이어 가는 무인 연구를 시작하고, 진행 조회·정지·입력·개별 세션 종료·재기동을 수행한다. Claude Code와 Codex 대화에서 사용한다.
 ---
 
 # do-math 사용하기
 
-이 문서는 사용자와 대화하는 세션의 진입점이다. 사용자가 수학 목표를 맡기면 목표 하나의 연구 인스턴스를 준비하고 실행기를 독립 프로세스로 시작한다. 기동을 확인한 뒤 인스턴스 위치를 사용자에게 전달하고 대화를 끝낸다. 이후 계획·연구·검토 세션이 공개 지식을 읽으며 목표 달성까지 연구를 이어 간다. 기존 연구의 조회나 운영 요청이면 해당 인스턴스에 아래 명령을 수행한다.
+이 문서는 사용자와 대화하는 세션의 진입점이다. 사용자가 수학 목표를 맡기면 목표 하나의 연구 인스턴스를 준비하고 실행기를 독립 프로세스로 시작한다. 기동을 확인한 뒤 인스턴스 위치를 사용자에게 전달하고 대화를 끝낸다. 이후 계획·연구·탐구·검토 세션이 공개 지식을 읽으며 목표 달성까지 연구를 이어 간다. 기존 연구의 조회나 운영 요청이면 해당 인스턴스에 아래 명령을 수행한다.
 
 연구의 주 산출물은 사람이 이해할 수 있는 수학 해설이다. Lean 형식 결과는 해설을 뒷받침하고, 계산·반례·문헌 조사·부분 결과·실패한 접근과 남은 질문도 후속 연구에 쓰인다. 독립 검토는 Lean 수용, 해설과 Lean의 일치, 목표 달성을 구분한다. 목표를 달성한 뒤의 투고 원고·외부 재현 자료 꾸러미·외부 심사 대응은 이 연구의 범위 밖이다.
 
@@ -19,7 +19,7 @@ description: 수학 목표를 계획·연구·독립 검토 세션으로 이어 
 3. UTF-8 `settings.json`을 작성한다. [protocol.md](protocol.md) 1절의 JSON 예시와 설명이 필드 정본이다. 사용자가 동시성 상한을 따로 지정하지 않으면 그 절의 기본값을 사용한다. 전체 동시 세션 상한 안에서 계획은 한 번에 하나만 실행한다. 사용할 수 있는 모델·경로를 그때 선택한다. 설정 형식 통과는 로그인이나 실제 모델 접근의 성공을 뜻하지 않는다.
 4. **아직 없는** 인스턴스 경로를 고른다. 저장소 밖이나 상위 Git에서 제외된 `.skill-workspace/` 아래에 둔다. 저장소 안이라면 `git check-ignore` 등으로 제외 여부를 확인한다. `init`이 인스턴스 자체 `.git/`을 만들며, 이 Git이 저장소 본체 Git과 섞이지 않아야 한다.
 
-계획이 연구·추가 검토·목표 검토 요청에 모델이나 노력을 지정하면 해당 필드만 기본값을 덮어쓰고 이유를 남긴다. 계획 자체와 자동 연구 검토에는 범주 기본값이 적용된다. CLI별 노력 값과 인증·무인 호출 방식은 [CLI.md](CLI.md)를 따른다. 세션은 자기 폴더에만 쓰도록 지시받으며 CLI의 무인 권한 옵션이 OS 수준의 폴더 격리를 제공하는 것은 아니다.
+계획이 연구·탐구·추가 검토·목표 검토 요청에 모델이나 노력을 지정하면 해당 필드만 기본값을 덮어쓰고 이유를 남긴다. 계획 자체와 자동 연구 검토에는 범주 기본값이 적용된다. CLI별 노력 값과 인증·무인 호출 방식은 [CLI.md](CLI.md)를 따른다. 세션은 자기 폴더에만 쓰도록 지시받으며 CLI의 무인 권한 옵션이 OS 수준의 폴더 격리를 제공하는 것은 아니다.
 
 Mathlib이 필요하면 `lean.command`를 `["실제 lake.exe 경로", "env", "lean"]`, `cwd`를 사용할 Mathlib 프로젝트 절대 경로로 둔다. `version_command`도 같은 환경에서 판본을 얻도록 `["실제 lake.exe 경로", "env", "lean", "--version"]`으로 둘 수 있다. 필요한 `env.PATH`에는 실제 Lean bin 경로와 기존 PATH를 함께 담는다. JSON 안의 `$env:PATH`는 확장되지 않으므로 준비 시 실제 문자열로 쓴다. Mathlib이 필요 없는 목표는 설치된 core Lean을 직접 쓰면 된다. 컴파일은 세션이 수행하며 설정에 든 경로의 현재 도구를 사용한다.
 
@@ -55,7 +55,7 @@ python "$skill/runner.py" status $instance
 
 ## 진행과 결과 읽기
 
-공개 기록의 목록은 `<instance>/knowledge/index.md`에서 시작한다. 연구의 현재 상태는 머리말에 연결된 마지막 계획의 연구 현황에서 읽는다. 제목·요약으로 필요한 기록을 고르고 연결된 `output.json`, 해설, 현재 검토로 내려간다. 실행기가 공개·검토·대체 때 갱신하며 재기동 때 재구성한다. 실행기가 꺼져 있을 때 색인만 다시 만들려면 `python "$skill/runner.py" index $instance`를 실행한다.
+공개 기록의 목록은 `<instance>/knowledge/index.md`에서 시작한다. 연구의 현재 상태는 머리말에 연결된 마지막 계획의 연구 현황에서, 연구가 쓰는 수학적 대상·기호의 정의는 같은 머리말의 용어 정본에서 읽는다. 제목·요약으로 필요한 기록을 고르고 연결된 `output.json`, 해설, 현재 검토로 내려간다. 실행기가 공개·검토·대체 때 갱신하며 재기동 때 재구성한다. 실행기가 꺼져 있을 때 색인만 다시 만들려면 `python "$skill/runner.py" index $instance`를 실행한다.
 
 ```powershell
 python "$skill/runner.py" status $instance
@@ -63,7 +63,7 @@ python "$skill/runner.py" status $instance
 
 `runner_alive`는 지금 실행기가 살아 있는지, `dispatch_blocks`는 새 파견을 막는 조건을 보여 준다. `state.sessions`에는 범주·모델·상태·요청이 있고 `state.requests`에는 게시된 요청 전체가 `status`(`pending` 미파견, `assigned` 배정, `finished` 반영 완료, `failed` 실패)와 함께 있다. 실행기가 죽어 있으면 저장된 세션 상태는 마지막 수집 시점의 값이다. [RUNTIME.md](RUNTIME.md)의 상태 표에서 필드와 사건의 뜻을 읽는다.
 
-공개 결과는 `knowledge/<기록 ID>/output.json`에서 시작한다. 연구의 `results[].exposition`이 가리키는 해설, `verification`, 해당하는 `lean.sources`를 읽고 `failed_attempts`, `open_questions`도 확인한다. 같은 연구 기록을 `target.record`로 가리키는 `category: "review"` 기록에서 독립 판단과 이유를 읽는다. 공개됐다는 사실은 구조·참조 검사를 통과했다는 뜻이며 수학적 인정은 검토로 판단한다. 검토 전 결과는 작성자의 주장이고 현재 검토가 상충하면 인정된 결과로 쓰지 않는다.
+공개 결과는 `knowledge/<기록 ID>/output.json`에서 시작한다. 연구의 `results[].exposition`이 가리키는 해설, `verification`, 해당하는 `lean.sources`를 읽고 `failed_attempts`, `open_questions`도 확인한다. 같은 연구 기록을 `target.record`로 가리키는 `category: "review"` 기록에서 독립 판단과 이유를 읽는다. 공개됐다는 사실은 구조·참조 검사를 통과했다는 뜻이며 수학적 인정은 검토로 판단한다. 검토 전 결과는 작성자의 주장이고 현재 검토가 상충하면 인정된 결과로 쓰지 않는다. `category: "explore"` 기록은 검토를 받지 않는 탐구다. 문제의 이해와 방향을 읽는 자료이며 인정된 결과가 아니다.
 
 `supersedes`는 기존 기록 전체를 대신한다. 대체 사슬 끝의 본문과 필요한 이력을 읽고, 가지가 갈리면 양쪽을 읽는다. 구 연구의 검토는 새 연구에 자동 승계되지 않는다. 자세한 읽기 규칙은 [common.md](common.md)의 ‘공개 지식을 읽는 판단’과 [protocol.md](protocol.md) 3절에 있다.
 
@@ -107,6 +107,6 @@ python "$skill/runner.py" status $instance
 
 ## 실행 세션이 읽는 문서
 
-실행기의 기동 프롬프트는 자기 세션 폴더·`input.json`·공식 검사 argv를 알려 준다. `input.json.context.common`은 [common.md](common.md), [protocol.md](protocol.md), 인스턴스의 `goal.md`이며 `context.category`는 [plan.md](plan.md), [research.md](research.md), [review.md](review.md) 중 하나다. 작업특정요소는 `task`의 지시·참조와 계획 사건, 연구의 대체 의도, 검토 대상이다.
+실행기의 기동 프롬프트는 자기 세션 폴더·`input.json`·공식 검사 argv를 알려 준다. `input.json.context.common`은 [common.md](common.md), [protocol.md](protocol.md), 인스턴스의 `goal.md`이며 `context.category`는 [plan.md](plan.md), [research.md](research.md), [explore.md](explore.md), [review.md](review.md) 중 하나다. 작업특정요소는 `task`의 지시·참조와 계획 사건, 연구의 대체 의도, 검토 대상이다. 탐구는 지시와 참조만 받는다.
 
 계획은 [RUNTIME.md](RUNTIME.md)의 ‘계획이 읽을 미완료 요청과 사건’을 따라 기존 요청과 실패한 원 과제를 회수한다. 검토는 공개 `knowledge/`와 `task.target`으로 판단하고 작성자 폴더·로그를 근거로 받지 않는다. 세션은 자기 `output/`에 공개 산출 전체를 쓰고 `python <skill>/check.py <자기 세션 폴더>`로 형식·참조를 확인한 뒤 스스로 끝낸다. 실행기도 종료 방식과 무관하게 같은 검사를 다시 수행한다.

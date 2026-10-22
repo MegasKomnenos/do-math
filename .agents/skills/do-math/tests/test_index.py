@@ -36,7 +36,8 @@ class OverviewTests(HandoffTests):
         target = {'kind': 'research', 'record': 'k1'}
         review = envelope('review', overview={'title': 'Review', 'summary': 'A partial result was checked.'},
             target=target, results=[{'result': 'r1', 'assessment': judgment('supported'),
-                'lean': judgment('not_checked'), 'alignment': judgment('not_checked')}], summary='Detailed review.')
+                'lean': judgment('not_checked'), 'alignment': judgment('not_checked'),
+                'terminology': judgment('conforms')}], summary='Detailed review.')
         session = self.session('new-review', review, target=target)
         del review['overview_assessment']
         write_json(session / 'output/output.json', review)
@@ -80,7 +81,8 @@ class IndexTests(RunnerTests):
         self.assertIn('검토 전', self.index())
         review = envelope('review', overview={'title': 'First review', 'summary': 'Checked only the submitted scope.'},
             target={'kind': 'research', 'record': 'k1'}, results=[{'result': 'r1', 'assessment': judgment('supported'),
-            'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable')}],
+            'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable'),
+            'terminology': judgment('conforms')}],
             overview_assessment=judgment('supported'), summary='Detailed judgment')
         self.publish_record('k2', review)
         self.engine.refresh_index()
@@ -136,15 +138,38 @@ class IndexTests(RunnerTests):
         self.engine.refresh_index()
         self.assertNotIn('research-status.md)', self.index())
 
+    def test_index_links_glossary_of_latest_plan_only(self):
+        self.publish_record('p1', envelope('plan'))
+        (self.instance / 'knowledge/p1/glossary.md').write_text('# old\n', encoding='utf-8')
+        self.publish_record('p2', envelope('plan'))
+        (self.instance / 'knowledge/p2/glossary.md').write_text('# new\n', encoding='utf-8')
+        self.engine.refresh_index()
+        header = self.index().split('\n## ', 1)[0]
+        self.assertIn('(p2/glossary.md)', header)
+        self.assertNotIn('p1/glossary.md', self.index())
+        self.publish_record('p3', envelope('plan'))
+        self.engine.refresh_index()
+        self.assertNotIn('glossary.md)', self.index())
+
+    def test_index_marks_exploration_as_unreviewed_by_design(self):
+        self.publish_record('e1', envelope('explore', exposition='notes.md', questions=[]))
+        self.engine.refresh_index()
+        section = self.index().split('\n## ', 1)[1]
+        self.assertIn('탐구 · [e1](e1/output.json)', section)
+        self.assertIn('독립 검토를 받지 않는', section)
+        self.assertNotIn('검토 전', section)
+
     def test_index_shows_overview_verdict_without_reason(self):
         self.publish_record('k1', envelope('research', results=[{'id': 'r1'}], failed_attempts=[], open_questions=[]))
         review = envelope('review', target={'kind': 'research', 'record': 'k1'},
             results=[{'result': 'r1', 'assessment': judgment('supported'),
-                      'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable')}],
+                      'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable'),
+                      'terminology': judgment('deviates')}],
             overview_assessment={'verdict': 'supported', 'reason': 'UNIQUE-REASON-TEXT'}, summary='Detailed')
         self.publish_record('k2', review)
         self.engine.refresh_index()
         self.assertIn('요약: supported', self.index())
+        self.assertIn('terminology: deviates 1.', self.index())
         self.assertNotIn('UNIQUE-REASON-TEXT', self.index())
         self.assertIn('overview_assessment', self.index().split('\n## ', 1)[0])
 
