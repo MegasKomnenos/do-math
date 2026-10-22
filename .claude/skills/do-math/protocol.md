@@ -142,7 +142,7 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 
 ## 4. 연구 산출
 
-공통 세 필드에 `results`, `failed_attempts`, `open_questions` 배열을 더한다. 결과 없이 실패·남은 질문만 낼 수도 있다. 실패한 접근은 버리지 않고 다음 계획의 판단 근거로 남긴다.
+공통 세 필드에 `results`, `failed_attempts`, `open_questions` 배열을 더한다. 연구의 지속과 마무리는 [research.md](research.md)의 원칙을 따른다. 결과 없이 실패·남은 질문만 보존하는 형식도 허용한다. 실패한 접근은 버리지 않고 다음 계획의 판단 근거로 남긴다.
 
 작은 유효 `output/output.json`:
 
