@@ -38,12 +38,17 @@ def fake_session():
             output["wait"] = {"needed": "scope", "reason": "Need user input"}
         elif "user_input" in kinds:
             output["research"] = [{"instructions": "prove", "references": [], "supersedes": []}]
-        else:
+        elif "review_finished" in kinds:
             output["goal_review"] = {"instructions": "Check the goal", "references": [],
                                      "model": "claude/sonnet", "selection_reason": "Independent CLI"}
     elif category == "explore":
         (session / "output/notes.md").write_text("Unreviewed impressions.\n", encoding="utf-8")
         output.update(exposition="notes.md", questions=[])
+    elif category == 'peer':
+        (session / 'output/response.md').write_text('Independent mathematical response.\n', encoding='utf-8')
+        output.update(target=task['target'], exposition='response.md',
+                      results=[{'id': 'p1', 'exposition': 'response.md', 'verification': 'Synthetic new claim', 'lean': None}],
+                      questions=[])
     elif category == "research":
         if task["instructions"] == "fail":
             print(json.dumps({"type": "error", "message": "You've hit your usage limit. Try again later."}))
@@ -57,6 +62,20 @@ def fake_session():
         output["target"] = task["target"]
         if task["target"]["kind"] == "goal":
             output["goal"] = {"verdict": "achieved", "reason": "Synthetic goal fixture"}
+        elif task['target']['kind'] == 'bundle':
+            bundle = [task['target']['work'], task['target']['peer']]
+            (session / 'output/review.md').write_text('Check both original and peer claims.\n', encoding='utf-8')
+            output.update(exposition='review.md', overview_assessments=[], results=[], summary='Both sides checked')
+            for rid in bundle:
+                source = runner.read_json(Path(data['instance']) / 'knowledge' / rid / 'output.json')
+                output['overview_assessments'].append({'record': rid, 'assessment': {'verdict': 'supported', 'reason': 'Fixture'}})
+                for result in source.get('results', []):
+                    output['results'].append({'id': 'c' + str(len(output['results'])),
+                        'source': {'record': rid, 'result': result['id']},
+                        'assessment': {'verdict': 'supported', 'reason': 'Fixture'},
+                        'lean': {'verdict': 'not_applicable', 'reason': 'No Lean'},
+                        'alignment': {'verdict': 'not_applicable', 'reason': 'No Lean'},
+                        'terminology': {'verdict': 'conforms', 'reason': 'Fixture'}})
         else:
             output["overview_assessment"] = {"verdict": "supported", "reason": "Fixture overview matches."}
             output.update(results=[{"result": "r1", "assessment": {"verdict": "supported", "reason": "Fixture"},
@@ -81,7 +100,7 @@ class RunnerTests(unittest.TestCase):
         self.instance = self.root / "연구 instance"
         self.skill = self.root / "skill"
         self.skill.mkdir()
-        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "review.md", "RUNTIME.md", "check.py"):
+        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py"):
             (self.skill / name).write_text("Temporary test context\n", encoding="utf-8")
         goal = self.root / "goal.md"
         goal.write_text("Synthetic goal\n", encoding="utf-8")
@@ -128,12 +147,13 @@ class RunnerTests(unittest.TestCase):
         self.until(lambda: self.engine.state["complete"] and not self.engine.active())
         state = self.engine.state
         sessions = list(state["sessions"].values())
-        self.assertEqual([s["category"] for s in sessions], ["plan", "research", "review", "plan", "review"])
-        self.assertEqual(len(list((self.instance / "knowledge").glob('*/output.json'))), 5)
-        self.assertEqual(int(runner.git(self.instance, "rev-list", "--count", "HEAD")), 6)
+        self.assertEqual([s['category'] for s in sessions if s['category'] != 'plan'],
+                         ['research', 'peer', 'review', 'review'])
+        self.assertEqual(len(list((self.instance / 'knowledge').glob('*/output.json'))), len(sessions))
+        self.assertEqual(int(runner.git(self.instance, "rev-list", "--count", "HEAD")), len(sessions) + 1)
         research = sessions[1]
         self.assertEqual((research["model"], research["effort"], research["exit_code"]), ("codex/gpt-6.1-sol", "low", 7))
-        self.assertEqual((sessions[4]["model"], sessions[4]["effort"]), ("claude/sonnet", "high"))
+        self.assertEqual((sessions[-1]["model"], sessions[-1]["effort"]), ("claude/sonnet", "high"))
         public = self.instance / "knowledge" / research["record"]
         self.assertTrue((public / "supplement.txt").is_file())
         self.assertFalse((public / "private.txt").exists())
@@ -145,18 +165,21 @@ class RunnerTests(unittest.TestCase):
                 research_sid = next(k for k, v in state["sessions"].items() if v["category"] == "research")
                 self.assertNotIn(research_sid, json.dumps(data) + prompt)
 
-    def test_exploration_is_unreviewed_and_reaches_next_plan(self):
-        self.scenario = "explore"
-        self.until(lambda: self.engine.state["complete"] and not self.engine.active())
+    def test_exploration_gets_peer_and_bundle_review(self):
+        self.scenario = 'explore'
+        self.until(lambda: self.engine.state['complete'] and not self.engine.active())
         state = self.engine.state
-        sessions = list(state["sessions"].values())
-        self.assertEqual([s["category"] for s in sessions], ["plan", "explore", "plan", "review"])
-        explore = sessions[1]
-        self.assertEqual(state["requests"][sessions[0]["record"] + ":explorations:0"]["status"], "finished")
-        self.assertNotIn(explore["record"] + ":automatic_review", state["requests"])
-        second = next(sid for sid, s in state["sessions"].items() if s is sessions[2])
-        events = runner.read_json(self.instance / "sessions" / second / "input.json")["task"]["events"]
-        self.assertEqual(events, [{"kind": "exploration_finished", "record": explore["record"]}])
+        sessions = list(state['sessions'].values())
+        self.assertEqual([s['category'] for s in sessions if s['category'] != 'plan'],
+                         ['explore', 'peer', 'review', 'review'])
+        work = next(s for s in sessions if s['category'] == 'explore')
+        peer = next(s for s in sessions if s['category'] == 'peer')
+        self.assertEqual(state['requests'][work['record'] + ':automatic_peer']['status'], 'finished')
+        self.assertEqual(state['requests'][peer['record'] + ':automatic_review']['status'], 'finished')
+        events = [event for sid, session in state['sessions'].items() if session['category'] == 'plan'
+                  for event in runner.read_json(self.instance / 'sessions' / sid / 'input.json')['task']['events']]
+        self.assertIn({'kind': 'exploration_finished', 'record': work['record']}, events)
+        self.assertIn({'kind': 'peer_finished', 'record': peer['record']}, events)
 
     def test_stop_limit_failure_wait_and_input(self):
         self.scenario = "failure"
@@ -280,8 +303,8 @@ class RunnerTests(unittest.TestCase):
         self.engine = runner.Runner(self.instance, self.skill)
         self.engine.hosts.update(old.hosts)
         self.until(lambda: self.engine.state["complete"] and not self.engine.active())
-        self.assertEqual(len(self.engine.state["sessions"]), 5)
-        self.assertEqual(int(real_git(self.instance, "rev-list", "--count", "HEAD")), 6)
+        self.assertEqual(sum(s['category'] == 'peer' for s in self.engine.state['sessions'].values()), 1)
+        self.assertEqual(int(real_git(self.instance, "rev-list", "--count", "HEAD")), len(self.engine.state["sessions"]) + 1)
 
     def test_detached_runner_outlives_start_command(self):
         for name in ("runner.py", "cli_adapter.py", "check.py", "knowledge_index.py"):

@@ -6,7 +6,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 
-CATEGORIES = ("plan", "research", "explore", "review")
+CATEGORIES = ("plan", "research", "explore", "peer", "review")
 
 
 class Invalid(ValueError):
@@ -86,7 +86,9 @@ class Checker:
                 local_file(self.knowledge / ref["record"], ref["file"], loc + ".file")
             if "result" in ref:
                 result_id = identifier(ref["result"], loc + ".result")
-                need(record.get("category") == "research", loc, "result reference needs a research record")
+                need(record.get("category") in ('research', 'peer') or
+                     (record.get('category') == 'review' and record.get('target', {}).get('kind') == 'bundle'),
+                     loc, 'result reference needs research, peer or a bundle review')
                 need(result_id in self.result_ids(record, loc), loc + ".result",
                      "result does not exist in referenced record")
 
@@ -94,14 +96,22 @@ class Checker:
         for index, record_id in enumerate(items(value, where)):
             self.record(record_id, f"{where}[{index}]")
 
-    def target(self, value, where):
+    def target(self, value, where, kinds=('research', 'goal', 'bundle')):
         obj(value, where)
-        choice(value.get("kind"), ("research", "goal"), where + ".kind")
+        choice(value.get("kind"), kinds, where + ".kind")
         if value["kind"] == "goal":
             need("record" not in value, where, "a goal target has no record")
             return None
+        if value['kind'] == 'bundle':
+            work = self.record(value.get('work'), where + '.work')
+            peer = self.record(value.get('peer'), where + '.peer')
+            need(work.get('category') in ('research', 'explore'), where, 'work must be research or explore')
+            need(peer.get('category') == 'peer', where, 'peer must be a peer record')
+            need(peer.get('target') == {'kind': work['category'], 'record': value['work']},
+                 where, 'peer must target this exact work')
+            return {value['work']: work, value['peer']: peer}
         record = self.record(value.get("record"), where + ".record")
-        need(record.get("category") == "research", where, "target must be a research record")
+        need(record.get("category") == value['kind'], where, 'target category must match kind')
         return record
 
     @staticmethod
@@ -152,6 +162,8 @@ class Checker:
             self.supersedes(task.get("supersedes"), "input.json.task.supersedes")
         elif category == "review":
             self.target(task.get("target"), "input.json.task.target")
+        elif category == 'peer':
+            self.target(task.get('target'), 'input.json.task.target', ('research', 'explore'))
         elif category == "plan":
             if task.get("previous_plan") is not None:
                 record = self.record(task["previous_plan"], "input.json.task.previous_plan")
@@ -159,10 +171,10 @@ class Checker:
             for index, event in enumerate(items(task.get("events"), "input.json.task.events")):
                 loc = f"input.json.task.events[{index}]"
                 obj(event, loc)
-                choice(event.get("kind"), ("start", "review_finished", "exploration_finished",
+                choice(event.get("kind"), ("start", "review_finished", "peer_finished", "exploration_finished",
                                            "session_failed", "user_input"), loc + ".kind")
-                if event["kind"] in ("review_finished", "exploration_finished"):
-                    expected = {"review_finished": "review", "exploration_finished": "explore"}[event["kind"]]
+                if event["kind"] in ("review_finished", "peer_finished", "exploration_finished"):
+                    expected = {"review_finished": "review", 'peer_finished': 'peer', "exploration_finished": "explore"}[event["kind"]]
                     record = self.record(event.get("record"), loc + ".record")
                     need(record.get("category") == expected, loc, f"expected a record of category {expected}")
                 elif event["kind"] == "session_failed":
@@ -180,12 +192,15 @@ class Checker:
             self.supersedes(request.get("supersedes"), loc + ".supersedes")
         for index, request in enumerate(items(data.get("explorations"), "output.json.explorations")):
             self.request(request, f"output.json.explorations[{index}]")
+        for index, request in enumerate(items(data.get('peers', []), 'output.json.peers')):
+            loc = f'output.json.peers[{index}]'
+            self.request(request, loc)
+            self.target(request.get('target'), loc + '.target', ('research', 'explore'))
         for index, request in enumerate(items(data.get("reviews"), "output.json.reviews")):
             loc = f"output.json.reviews[{index}]"
             self.request(request, loc)
             target = obj(request.get("target"), loc + ".target")
-            need(target.get("kind") == "research", loc + ".target", "expected a research target")
-            self.target(target, loc + ".target")
+            self.target(target, loc + '.target', ('research', 'bundle'))
         need("goal_review" in data, "output.json.goal_review", "required (use null if not requested)")
         if data["goal_review"] is not None:
             self.request(data["goal_review"], "output.json.goal_review")
@@ -195,7 +210,7 @@ class Checker:
             text(waiting.get("needed"), "output.json.wait.needed")
             text(waiting.get("reason"), "output.json.wait.reason")
 
-    def research(self, data):
+    def authored_results(self, data):
         self.result_ids(data, "output.json")
         for index, result in enumerate(data["results"]):
             loc = f"output.json.results[{index}]"
@@ -209,6 +224,8 @@ class Checker:
                 for n, source in enumerate(sources):
                     local_file(self.output, source, f"{loc}.lean.sources[{n}]")
                 text(lean.get("version"), loc + ".lean.version")
+    def research(self, data):
+        self.authored_results(data)
         for index, attempt in enumerate(items(data.get("failed_attempts"), "output.json.failed_attempts")):
             loc = f"output.json.failed_attempts[{index}]"
             obj(attempt, loc)
@@ -222,6 +239,15 @@ class Checker:
         for index, question in enumerate(items(data.get("questions"), "output.json.questions")):
             text(question, f"output.json.questions[{index}]")
 
+    def peer(self, data, task):
+        self.target(data.get('target'), 'output.json.target', ('research', 'explore'))
+        need(data['target'] == task['target'], 'output.json.target', 'must match input target')
+        need('goal' not in data and 'overview_assessment' not in data,
+             'output.json', 'peer responses do not issue review verdicts')
+        self.explore(data)
+        self.authored_results(data)
+        need(not data['supersedes'], 'output.json.supersedes', 'peer responses do not replace other records')
+
     @staticmethod
     def judgment(value, choices, where):
         obj(value, where)
@@ -230,9 +256,10 @@ class Checker:
 
     def review(self, data, task):
         target = self.target(data.get("target"), "output.json.target")
-        for key in ("kind", "record"):
-            need(data["target"].get(key) == task["target"].get(key),
-                 "output.json.target", "must match input.json.task.target")
+        need(data['target'] == task['target'], 'output.json.target', 'must match input.json.task.target')
+        if data['target']['kind'] == 'bundle':
+            self.bundle_review(data, target)
+            return
         if target is None:
             self.judgment(data.get("goal"), ("achieved", "not_achieved", "undetermined"), "output.json.goal")
             return
@@ -250,6 +277,46 @@ class Checker:
         need(sorted(reviewed_ids) == sorted(self.result_ids(target, "target record")),
              "output.json.results", "must judge each target result exactly once")
         text(data.get("summary"), "output.json.summary")
+
+    def bundle_review(self, data, bundle):
+        local_file(self.output, data.get('exposition'), 'output.json.exposition')
+        self.result_ids(data, 'output.json')
+        for old in data['supersedes']:
+            previous = self.record(old, 'output.json.supersedes')
+            need(previous.get('category') == 'review' and previous.get('target') == data['target'],
+                 'output.json.supersedes', 'only reviews of this exact bundle may be replaced')
+        required = {(rid, result) for rid, record in bundle.items() if record['category'] != 'explore'
+                    for result in self.result_ids(record, rid)}
+        seen = []
+        for i, row in enumerate(data['results']):
+            loc = f'output.json.results[{i}]'
+            source = obj(row.get('source'), loc + '.source')
+            rid = source.get('record')
+            need(isinstance(rid, str) and rid in bundle, loc + '.source', 'source must belong to this work/peer bundle')
+            if 'result' in source:
+                result = identifier(source['result'], loc + '.source.result')
+                need((rid, result) in required, loc + '.source.result', 'unknown authored result')
+                seen.append((rid, result))
+            else:
+                local_file(self.knowledge / rid, source.get('file'), loc + '.source.file')
+                text(source.get('statement'), loc + '.source.statement')
+            for key, choices in (
+                ('assessment', ('supported', 'not_supported', 'undetermined')),
+                ('lean', ('accepted', 'rejected', 'not_checked', 'not_applicable')),
+                ('alignment', ('matches', 'differs', 'not_checked', 'not_applicable')),
+                ('terminology', ('conforms', 'deviates'))):
+                self.judgment(row.get(key), choices, loc + '.' + key)
+        need(sorted(seen) == sorted(required), 'output.json.results',
+             'must judge every authored work/peer result exactly once')
+        overviews = []
+        for i, row in enumerate(items(data.get('overview_assessments'), 'output.json.overview_assessments')):
+            loc = f'output.json.overview_assessments[{i}]'
+            obj(row, loc)
+            overviews.append(row.get('record'))
+            self.judgment(row.get('assessment'), ('supported', 'not_supported', 'undetermined'), loc + '.assessment')
+        need(all(isinstance(rid, str) for rid in overviews) and sorted(overviews) == sorted(bundle),
+             'output.json.overview_assessments', 'must assess both overviews exactly once')
+        text(data.get('summary'), 'output.json.summary')
 
     def run(self):
         data = self.check_input()
@@ -272,6 +339,8 @@ class Checker:
             self.research(output)
         elif data["category"] == "explore":
             self.explore(output)
+        elif data['category'] == 'peer':
+            self.peer(output, data['task'])
         else:
             self.review(output, data["task"])
 

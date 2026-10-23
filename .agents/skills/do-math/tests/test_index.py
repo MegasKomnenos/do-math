@@ -151,13 +151,13 @@ class IndexTests(RunnerTests):
         self.engine.refresh_index()
         self.assertNotIn('glossary.md)', self.index())
 
-    def test_index_marks_exploration_as_unreviewed_by_design(self):
+    def test_index_marks_exploration_claim_scope(self):
         self.publish_record('e1', envelope('explore', exposition='notes.md', questions=[]))
         self.engine.refresh_index()
         section = self.index().split('\n## ', 1)[1]
         self.assertIn('탐구 · [e1](e1/output.json)', section)
-        self.assertIn('독립 검토를 받지 않는', section)
-        self.assertNotIn('검토 전', section)
+        self.assertIn('관측·추측과 검토된 명제를 구분', section)
+        self.assertIn('검토 전', section)
 
     def test_index_shows_overview_verdict_without_reason(self):
         self.publish_record('k1', envelope('research', results=[{'id': 'r1'}], failed_attempts=[], open_questions=[]))

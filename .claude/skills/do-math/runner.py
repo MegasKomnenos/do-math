@@ -181,12 +181,13 @@ def git(instance, *args):
 
 def load_settings(instance):
     settings = read_json(instance / "settings.json")
+    settings['defaults'].setdefault('peer', dict(settings['defaults']['review']))
     if type(settings.get("max_sessions")) is not int or settings["max_sessions"] < 1:
         raise ValueError("max_sessions must be a positive integer")
     seconds = settings.get("limit_wait_seconds")
     if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds <= 0:
         raise ValueError("limit_wait_seconds must be positive and finite")
-    for category in ("plan", "research", "explore", "review"):
+    for category in ("plan", "research", "explore", "peer", "review"):
         default = settings["defaults"][category]
         provider = provider_for_model(default["model"])
         build_command(settings["cli"][provider], default["model"], default["effort"], instance)
@@ -469,8 +470,9 @@ class Runner:
     def apply_output(self, session, record, output):
         if output["category"] == "plan":
             for group, category, extra in (("research", "research", ("supersedes",)),
-                                           ("explorations", "explore", ()), ("reviews", "review", ("target",))):
-                for index, item in enumerate(output[group]):
+                                           ("explorations", "explore", ()), ('peers', 'peer', ('target',)),
+                                           ("reviews", "review", ("target",))):
+                for index, item in enumerate(output.get(group, [])):
                     keys = ("instructions", "references", *extra)
                     task = {key: item[key] for key in keys}
                     selection = {key: item[key] for key in ("model", "effort") if key in item}
@@ -485,13 +487,21 @@ class Runner:
             # Inputs arriving while this plan ran have not been answered by it.
             self.state["wait"] = (None if any(e["kind"] == "user_input" for e in self.state["events"])
                                   else output["wait"])
-        elif output["category"] == "research":
-            self.enqueue(record + ":automatic_review", "review", {
-                "instructions": "공개된 연구 산출 전체를 독립 검토하고 각 결과와 확인 범위를 판정하라.",
-                "references": [], "target": {"kind": "research", "record": record}}, record)
-        elif output["category"] == "explore":
-            # Explorations are deliberately unreviewed; the next plan must still hear of them.
-            self.state["events"].append({"kind": "exploration_finished", "record": record})
+        elif output['category'] in ('research', 'explore'):
+            self.enqueue(record + ':automatic_peer', 'peer', {
+                'instructions': '공개 산출을 독립적인 동료 연구자로서 읽고 그 수학을 자기 손으로 다뤄 보라. '
+                                'peer.md에 따라 자신의 이해와 실제로 살펴본 내용을 남긴다. '
+                                '새로운 결과나 비판을 억지로 만들지 않으며 인증 판정은 뒤의 검토 세션이 맡는다.',
+                'references': [], 'target': {'kind': output['category'], 'record': record}}, record)
+            if output['category'] == 'explore':
+                self.state['events'].append({'kind': 'exploration_finished', 'record': record})
+        elif output['category'] == 'peer':
+            self.enqueue(record + ':automatic_review', 'review', {
+                'instructions': '원 작업과 동료의 공개 산출을 함께 독립 검토하라. '
+                                '양쪽의 주장·근거·비판을 대조하고 사용할 수 있는 정확한 범위를 판정한다.',
+                'references': [], 'target': {'kind': 'bundle', 'work': output['target']['record'],
+                                             'peer': record}}, record)
+            self.state['events'].append({'kind': 'peer_finished', 'record': record})
         else:
             self.state["events"].append({"kind": "review_finished", "record": record})
             if output["target"]["kind"] == "goal" and output["goal"]["verdict"] == "achieved":
@@ -554,7 +564,7 @@ class Runner:
             # A restart is the human's signal that the halt's cause was addressed.
             self.state.update(halted=None, plan_failures=0)
             self.state.setdefault("last_plan", None)  # States written before these fields
-            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "review.md", "RUNTIME.md", "check.py"):
+            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
             self.collect()

@@ -46,13 +46,13 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 ## 계획이 읽을 미완료 요청과 사건
 
-계획의 기동 프롬프트는 이 문서와 **인스턴스의 `runner/state.json`**을 연결한다. `requests`는 이전 계획이 게시한 요청과 연구 뒤 자동 검토를 모두 보존한다. 새 계획은 `pending`과 `assigned` 요청의 지시·대체 의도를 읽고 중복 작업이나 같은 기록을 동시에 대신할 과제를 피한다. 새 계획의 빈 목록은 기존 요청을 취소하지 않는다.
+계획의 기동 프롬프트는 이 문서와 **인스턴스의 `runner/state.json`**을 연결한다. `requests`는 이전 계획이 게시한 요청, 작업 뒤 자동 동료, 동료 뒤 자동 검토를 모두 보존한다. 새 계획은 `pending`과 `assigned` 요청의 지시·대체 의도를 읽고 중복 작업이나 같은 기록을 동시에 대신할 과제를 피한다. 새 계획의 빈 목록은 기존 요청을 취소하지 않는다.
 
 | state 필드 | 의미 |
 |---|---|
-| `requests` | 요청 키 → 요청 객체. 계획 요청 키는 `<공개계획ID>:research:<0부터 인덱스>`, `:explorations:<인덱스>`, `:reviews:<인덱스>`, `:goal_review`. 자동 검토는 `<연구기록ID>:automatic_review`. |
-| 요청의 `category`, `task` | 실제 파견할 범주와 작업특정요소. `task.instructions/references`와 연구의 `supersedes` 또는 검토의 `target`을 보존한다. 탐구는 `instructions/references`만 가진다. |
-| 요청의 `origin`, `selection` | 출처 공개 기록 ID와 요청이 덮어쓴 model/effort만 담은 객체. 선택 이유와 계획의 전체 판단은 `knowledge/<origin>/output.json`에서 읽는다. 자동 검토는 연구 기록이 origin이다. |
+| `requests` | 요청 키 → 요청 객체. 계획 요청 키는 `<공개계획ID>:research:<0부터 인덱스>`, `:explorations:<인덱스>`, `:peers:<인덱스>`, `:reviews:<인덱스>`, `:goal_review`. 자동 동료는 `<작업기록ID>:automatic_peer`, 자동 묶음 검토는 `<동료기록ID>:automatic_review`. 개편 전에 게시된 `<연구기록ID>:automatic_review`도 기존 연구 단독 검토로 보존한다. |
+| 요청의 `category`, `task` | 실제 파견할 범주와 작업특정요소. `task.instructions/references`와 연구의 `supersedes` 또는 동료·검토의 `target`을 보존한다. 탐구는 `instructions/references`만 가진다. |
+| 요청의 `origin`, `selection` | 출처 공개 기록 ID와 요청이 덮어쓴 model/effort만 담은 객체. 선택 이유와 계획의 전체 판단은 `knowledge/<origin>/output.json`에서 읽는다. 자동 동료는 원 작업 기록이 origin이고, 자동 묶음 검토는 동료 기록이 origin이다. |
 | 요청의 `status` | `pending`: 아직 파견하지 않음. `assigned`: 세션 ID에 배정·기동 중이거나 검사·반영 중. `finished`: 유효 산출 반영 완료. `failed`: 기동/산출 실패 처리 완료. |
 | 요청의 `session`, `record` | 배정된 세션 ID(배정 전 null), 반영 후 공개 기록 ID. 실패 요청을 재시도하려면 계획이 새 요청을 낸다. |
 | `sessions` | 세션 ID → 범주·요청 키·최종 model/effort·상태·프로세스·검사 결과. 상태는 `starting`, `running`, `publishing`, `integrated`, `failed`. `request: null`은 사건을 받은 계획이다. |
@@ -64,7 +64,7 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 | `last_plan` | 마지막으로 반영된 계획의 기록 ID 또는 null. 다음 계획의 `task.previous_plan`으로 전달한다. |
 | `plan_failures`, `halted` | 한도 탐지 없이 연달아 실패한 계획 수(계획이 반영되면 0), 그 수가 한도에 이르러 새 파견을 멈춘 표시 `{reason, at}` 또는 null. |
 
-첫 사건은 `start`다. 유효 검토 반영은 `review_finished`, 유효 탐구 반영은 `exploration_finished`, 산출 부재·검사 실패·기동 실패는 `session_failed`, 사용자 원문은 `user_input`이다. 정상 연구 반영 자체는 계획 사건이 되지 않고 자동 검토 요청을 만든다. 새 계획은 빈 슬롯이 생기면 게시 요청보다 먼저 파견되며, 남은 슬롯에는 게시 순서대로 요청을 파견한다. 계획 중 도착한 사건은 다음 계획에 남긴다. 계획이 실패하면 그 계획이 받았던 사건은 실패 사건의 `task.events`에 담겨 다음 계획에 간다. 다음 계획에는 실패 사건과 그 이후 아직 전달하지 않은 사건이 온다.
+첫 사건은 `start`다. 유효 검토 반영은 `review_finished`, 유효 탐구 반영은 `exploration_finished`, 유효 동료 반영은 `peer_finished`, 산출 부재·검사 실패·기동 실패는 `session_failed`, 사용자 원문은 `user_input`이다. 연구·탐구를 반영하면 원 작업을 대상으로 한 자동 동료 요청을 만든다. 동료를 반영하면 원 작업과 그 동료를 묶은 자동 검토 요청을 만든다. 정상 연구 반영 자체는 별도 계획 사건이 되지 않는다. 탐구·동료의 공개 사건은 다음 계획에 전달되므로, 계획은 아직 검토 전이라는 지위를 유지하면서 그 이해를 방향 선택에 쓸 수 있다. 새 계획은 빈 슬롯이 생기면 게시 요청보다 먼저 파견되며, 남은 슬롯에는 게시 순서대로 요청을 파견한다. 계획 중 도착한 사건은 다음 계획에 남긴다. 계획이 실패하면 그 계획이 받았던 사건은 실패 사건의 `task.events`에 담겨 다음 계획에 간다. 다음 계획에는 실패 사건과 그 이후 아직 전달하지 않은 사건이 온다.
 
 `session_failed`에는 실행기가 실패 세션의 `category`, 요청 키 `request`, 받은 `task` 원문, 요청의 `origin`, 탐지한 `limit`, `exit_code`, `launch_error`를 함께 담는다. 계획은 실행 상태의 `sessions` 필드를 뒤지지 않고 이 사건에서 원 지시·대체 의도·검토 대상과 실패 원인의 단서를 읽는다. 사건 형식은 [protocol.md](protocol.md) 2절이 정한다.
 
@@ -72,7 +72,7 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 ## 세션 전달, 반영, 복구
 
-모든 세션의 `input.json.context.common`에는 스킬의 `common.md`, `protocol.md`, 인스턴스의 `goal.md`가 들어간다. `context.category`는 스킬의 `plan.md`, `research.md`, `explore.md`, `review.md` 중 하나이고 `task`가 이번 작업특정요소다. 기동 프롬프트는 자신의 세션 폴더와 input.json, 지식·설정 위치, 실제 Python·공식 검사기 경로를 담은 argv를 알려 준다. 계획에만 실행 상태 읽기 경로를 추가한다. 검토에는 공개 대상 기록과 자기 입력을 전달하며 작성자의 세션 폴더나 로그 경로를 넣지 않는다.
+모든 세션의 `input.json.context.common`에는 스킬의 `common.md`, `protocol.md`, 인스턴스의 `goal.md`가 들어간다. `context.category`는 스킬의 `plan.md`, `research.md`, `explore.md`, `peer.md`, `review.md` 중 하나이고 `task`가 이번 작업특정요소다. 기동 프롬프트는 자신의 세션 폴더와 input.json, 지식·설정 위치, 실제 Python·공식 검사기 경로를 담은 argv를 알려 준다. 계획에만 실행 상태 읽기 경로를 추가한다. 동료와 검토에는 공개 대상 기록과 자기 입력을 전달하며 작성자의 세션 폴더나 로그 경로를 넣지 않는다.
 
 세션은 자기 폴더에만 쓰도록 지시받는다. CLI 권한 옵션은 무인 실행을 위한 것이며 OS 수준의 폴더 쓰기 격리는 아니다. Codex·Claude 모두 새 대화로 기동한다. UTF-8 `prompt.txt`를 stdin 파일로, 각각의 `cli.stdout.jsonl`·`cli.stderr.log`를 출력 파일로 연결하고 shell 없이 실행한다.
 
@@ -82,13 +82,13 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 종료 코드·종료 방식과 관계없이 공식 [check.py](check.py)의 `check_session`으로 재검사한다. 통과하면 `output/` 전체를 새로운 `knowledge/k<고유ID>/`로 복사하고 Git 커밋을 남긴다. `input.json`, 중간 작업, 로그는 공개 지식으로 복사하지 않는다. 복사 도중에는 `runner/stage-<기록ID>/`에 두고 완성된 디렉터리를 공개 위치로 옮긴다. 상태에 먼저 기록 ID를 저장하며, 재기동 시 이미 옮긴 기록과 Git 커밋을 확인해 이어 처리하므로 같은 산출을 새 ID로 다시 반영하지 않는다. 기존 공개 기록은 덮어쓰지 않는다.
 
-반영한 계획의 요청 게시, 연구의 자동 검토, 탐구·검토의 다음 계획 사건과 세션 처리 완료 표시는 하나의 원자적 상태 교체로 저장한다. Windows에서 다른 독자의 열린 파일 때문에 교체가 잠시 거부되면 같은 교체를 최대 1초 동안 재시도한다. 그동안 독자는 이전의 완전한 상태를 읽으며, 계속되는 접근 거부와 다른 저장 오류는 그대로 드러난다. Git·디스크 오류로 실행기가 종료되면 새 시작 로그의 오류를 해결한 뒤 재기동한다. Git 반영 실패를 수학적 세션 실패로 바꾸지 않는다. `runner/`의 내부 파일이나 공개 기록을 손으로 지우거나 되돌리면 이 복구 경로의 전제가 사라지므로 운영 명령을 통해 진행한다.
+반영한 계획의 요청 게시, 작업의 자동 동료, 동료의 자동 묶음 검토, 탐구·동료·검토의 다음 계획 사건과 세션 처리 완료 표시는 하나의 원자적 상태 교체로 저장한다. 같은 공개 기록의 후속 요청 키는 고정되어 있고 enqueue는 이미 있는 키를 덮어쓰지 않는다. 재기동 중 반영 절차를 이어 수행하더라도 자동 후속을 중복 생성하지 않기 위한 구조다. Windows에서 다른 독자의 열린 파일 때문에 교체가 잠시 거부되면 같은 교체를 최대 1초 동안 재시도한다. 그동안 독자는 이전의 완전한 상태를 읽으며, 계속되는 접근 거부와 다른 저장 오류는 그대로 드러난다. Git·디스크 오류로 실행기가 종료되면 새 시작 로그의 오류를 해결한 뒤 재기동한다. Git 반영 실패를 수학적 세션 실패로 바꾸지 않는다. `runner/`의 내부 파일이나 공개 기록을 손으로 지우거나 되돌리면 이 복구 경로의 전제가 사라지므로 운영 명령을 통해 진행한다.
 
 공급자 로그에서는 한도 신호만 읽는다. 한도가 있으면 `limit_until`까지 **전체 범주의 새 파견**을 막으며, 진행 중 세션과 종료 산출 처리는 계속한다. 로그 읽기 OSError는 `log_error`로 남겨도 공식 산출 검사를 계속한다. CLI 로그의 일반 문구·JSON 형식·종료 코드는 공개 산출 승인 조건이 아니다. 한도 만료는 STOP·외부 입력 대기·`halted`·완료를 해제하지 않는다.
 
-재검사·Git 반영된 목표 검토의 `goal.verdict == "achieved"`만 완료를 만든다. 완료 뒤 자동 검토·계획을 포함해 새 파견은 모두 막는다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 정상 종료한다. 이때 미파견 요청과 남은 사건은 이력으로 남는다. 끝나지 않는 기존 세션이 있으면 실행기도 기다리므로 필요하면 `kill-session`을 사용한다.
+재검사·Git 반영된 목표 검토의 `goal.verdict == "achieved"`만 완료를 만든다. 완료 뒤 자동 동료·검토·계획을 포함해 새 파견은 모두 막는다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 정상 종료한다. 이때 미파견 요청과 남은 사건은 이력으로 남는다. 끝나지 않는 기존 세션이 있으면 실행기도 기다리므로 필요하면 `kill-session`을 사용한다.
 
-계획이 공급자 한도 탐지 없이 연달아 `PLAN_FAILURE_LIMIT`(runner.py 상수, 기본 3)번 실패하면 실행기는 `halted`를 기록하고 모든 새 파견을 멈춘다. 로그인 만료, 쓸 수 없는 모델 이름, 깨진 CLI 경로처럼 계획을 다시 띄워도 같은 실패가 반복되는 원인이 실패와 재계획의 무한 고리를 만들지 않게 하는 장치다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 종료한다. 사람이 원인을 고친 뒤 `start`나 `run`으로 재기동하면 `halted`와 실패 수가 풀린다. 연구·검토 실패는 이 수에 들지 않고 사건으로 계획에 간다.
+계획이 공급자 한도 탐지 없이 연달아 `PLAN_FAILURE_LIMIT`(runner.py 상수, 기본 3)번 실패하면 실행기는 `halted`를 기록하고 모든 새 파견을 멈춘다. 로그인 만료, 쓸 수 없는 모델 이름, 깨진 CLI 경로처럼 계획을 다시 띄워도 같은 실패가 반복되는 원인이 실패와 재계획의 무한 고리를 만들지 않게 하는 장치다. 기존 세션은 계속 종료·반영 처리하고, 모두 끝나면 실행기가 종료한다. 사람이 원인을 고친 뒤 `start`나 `run`으로 재기동하면 `halted`와 실패 수가 풀린다. 연구·탐구·동료·검토 실패는 이 수에 들지 않고 사건으로 계획에 간다.
 
 ## 명령 결과와 구현 진입점
 
@@ -96,7 +96,7 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/Runner.run/InstanceLock`은 독립 기동·단일 실행기·재기동 때의 정지 해제, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick`과 `dispatch_blocks`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 PID 재사용을 구별하기 위한 프로세스 식별값이다.
 
-[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 검토 없는 탐구 반영과 그 사건의 전달, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
+[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 연구·탐구의 자동 동료와 묶음 검토, 각 공개 사건의 전달, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
 
 작업맥락 문서는 시험용 임시 문서를 쓰므로 실제 문서의 판단 내용이나 실제 모델의 수행을 검증하는 시험은 아니다. 실제 Codex·Claude 모델 접근과 혼합 완주는 실제 인스턴스의 공개 결과·검토로 별도 확인한다. 다음 명령은 위의 Python 3.12 이상 환경에서 시험 전체를 실행한다. 상태 파일 교체 시험은 Windows에서만 실행된다.
 
@@ -104,3 +104,11 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 $skill = 'C:/math/.agents/skills/do-math' # 실제 설치 경로
 python -B -m unittest discover -s "$skill/tests" -v
 ```
+
+## 동료 단계 추가 이후의 기존 인스턴스
+
+기존 settings.json에 peer 기본값이 없으면 실행기는 review의 모델과 effort를 복사해 peer 기본값으로 사용한다. 명시한 defaults.peer가 있으면 그 값을 사용하고, 계획이 개별 요청에서 지정한 선택은 해당 필드만 덮어쓴다. 모든 역할은 기존 max_sessions 상한을 공유한다. 별도의 상시 서비스나 새로운 프로세스 종류를 두지 않는다.
+
+과거 공개 기록과 완료·실패 상태를 다시 해석하거나 덮어쓰지 않는다. 개편 시 실행 중인 연구·탐구·검토는 자기 입력으로 계속 수행한다. 개편된 실행기가 새로 반영하는 연구·탐구에는 동료를 붙인다. 이미 게시된 구형 연구 단독 검토 요청은 그대로 수행한다. 과거 탐구에 동료를 일괄 소급 배정하지 않으며, 새로 읽을 가치가 있는 옛 작업은 계획이 peers로 요청한다.
+
+운영자가 실행기 코드를 갱신할 때에는 먼저 stop으로 신규 파견을 막는다. 기존 CLI는 독립 호스트에서 계속 실행할 수 있다. 코드 교체 후 실행기 프로세스만 재기동하면 저장된 세션 식별값과 산출을 수집해 이어 처리한다. 입력 파일과 공개 기록은 보존하며, 실행기 상태를 임의 편집해 세션을 다시 시작하지 않는다. start의 새 기동 기록과 status.runner_alive를 확인한 뒤 resume으로 파견을 재개한다.
