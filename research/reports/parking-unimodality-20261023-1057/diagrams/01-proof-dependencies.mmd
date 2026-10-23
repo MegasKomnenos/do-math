@@ -1,0 +1,14 @@
+%%{init: {"flowchart": {"wrappingWidth": 360}}}%%
+flowchart TD
+    A["원 주차 과정의 A와 b<br/>정의·점화식 Lean 수용"] --> S["작은 크기<br/>1 ≤ n < 15의 P: Lean 수용"]
+    A --> L["L: 앞 절반의 증가<br/>일부 범위 수용, 전체 미해결"]
+    A --> U["U: 뒤 절반의 감소 후 재증가 배제<br/>일부 범위 수용, 전체 미해결"]
+    S --> J["P로의 조건부 조립<br/>Lean 연결 수용"]
+    L -. "L 전체 증명 필요" .-> J
+    U -. "U 전체 증명 필요" .-> J
+    J -. "미충족 가정이 모두 해소되면" .-> P["전체 P의 무조건 증명<br/>현재 미달성"]
+    P --> G["원 대상 Lean + 해설 일치<br/>기여·문헌 비교 + 목표 독립 검토"]
+    classDef done fill:#e8f5e9,stroke:#2e7d32,color:#163a18;
+    classDef open fill:#fff3e0,stroke:#ef6c00,color:#663300;
+    class A,S,J done;
+    class L,U,P,G open;

@@ -1,0 +1,1275 @@
+{
+  "report_cutoff": "2026-10-23T10:57:42+09:00",
+  "instance": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261023-014524",
+  "last_plan": "k1223d51b5e5d4388aedff155d690d78d",
+  "record_count": 59,
+  "counts": {
+    "plan": 20,
+    "research": 18,
+    "review": 19,
+    "explore": 2
+  },
+  "glossary_items": 173,
+  "records": [
+    {
+      "id": "k47bedb96d62e487d959c55adc57235c7",
+      "category": "plan",
+      "title": "최대 변위 분포의 첫 연구: 독립 문헌 조사·계수·증명·형식 정의",
+      "summary": "새 인스턴스의 공개 지식과 미완료 요청이 없는 상태에서 출발한다. 원래 주차 과정을 고정한 용어 정본과 연구 현황을 만들고, 문헌의 해결 여부 조사, 독립적인 정확 계수, 전체 단봉성의 구조적 증명 시도, Lean의 원 대상·목표 정의를 연구로 배정한다. 아직 대상에 친숙하지 않으므로 별도의 독립 탐구도 연다. 수학적 해결이나 학술적 새로움은 아직 주장하지 않으며, 검토된 전체 증명 또는 반증과 원 대상에 일치하는 Lean 결과가 갖춰진 뒤 목표 검토를 요청한다.",
+      "published_at": "2026-10-23T01:52:14+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "1916cc692c160cf1b76e1de01876dbf0e51c2c16a9a2bd2b36e4b915706df5da"
+    },
+    {
+      "id": "k746a9db449ff45fd9b973172e4b40861",
+      "category": "research",
+      "title": "원 주차 과정의 최대 변위 분포: n≤18 전체 정확 계수와 독립 전수 검산",
+      "summary": "원래 순차 주차 알고리즘으로 n=1,…,7의 모든 선호 목록 873612개를 먼저 전수 조사하고, 점유 집합에 따른 누적 개수 전이와 최대 변위 직접 전이를 새로 구현하여 n=1,…,18의 모든 b와 A를 정확한 정수로 계산했다. 전수 범위의 전체 b 행·실패 수 및 n≤18의 두 동적 계획 전체 행이 일치했고, 초기값·차분·빈 목록 경계·포화·첫 실패 분할 검사를 통과했다. 가능한 봉우리 전체를 열거한 결과 모두 단봉이고 감소 뒤 재증가는 없다. 코드·입력·전체 표·실제 실행 기록을 공개한다. 이는 배정된 유한 범위의 완료이며 전체 P나 Lean 인증 또는 학술적 새로움을 주장하지 않는다.",
+      "published_at": "2026-10-23T02:01:16+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "3bd846c0159e4b59c47328837d6b6f746d71d66ac91f6189f797b5ec84453054"
+    },
+    {
+      "id": "k342ab0d73a284696bcb1050ba1ce7e00",
+      "category": "research",
+      "title": "원 주차 알고리즘·최대 변위 개수·목표 P의 Lean 기반",
+      "summary": "순서 있는 선호 목록과 오른쪽 첫 빈자리 주차 알고리즘에서 PF, 실제 자리, 변위, 최대 변위, 누적 개수 A와 정확 개수 b를 직접 정의했다. 정확한 전칭 양화의 P를 진술하고 자리·변위 범위, M 상한, A 포화, b 소멸, 차분 및 빈 목록 경계를 증명했다. 같은 정의에서 n=1의 [1], n=2의 [2,1]과 각각 c=0인 단봉성을 커널 검증하고 수동 실행과 대조했다. 요청 범위는 모두 완료했고 전체 P 자체는 증명하지 않았다.",
+      "published_at": "2026-10-23T02:04:37+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "2c3b9a6351c393e5f91b8611b438c8bc0829b8e40ac336b2df598b7d88f7e3a9"
+    },
+    {
+      "id": "k011ca42b4c7845b1b26d4817d55ee1b0",
+      "category": "plan",
+      "title": "독립 검토를 Sol로 재배정하고 유한 계수·Lean 기반의 검토 상태 갱신",
+      "summary": "최신 사용자 지시에 따라 모델 변경으로 종료된 두 Opus 검토를 같은 공개 연구 전체에 대한 GPT 6.1 Sol 새 독립 검토로 재배정한다. n≤18 정확 계수와 원 대상의 Lean 기반은 공개되었으나 검토 전이며 전체 단봉성 P는 미해결이다. 실행 중 문헌 조사·구조 연구·독립 탐구는 유지하고 중복 연구를 내지 않는다. 연구 현황의 사용자 조건과 검토 기대를 갱신하고 새 보조 용어와 Lean 대응을 정본에 반영한다.",
+      "published_at": "2026-10-23T02:14:17+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "774d50cf86c446c13491f2f795d5a7013597b7e6967a8d0a295de658b38e3951"
+    },
+    {
+      "id": "k12c717105e4f436ebbc4a311ae64134a",
+      "category": "research",
+      "title": "마지막 차량·프라임 구간 분해와 최대 변위 단봉성의 남은 부호 문제",
+      "summary": "원 주차 과정의 순서와 변위를 보존하는 두 분해로 누적 개수의 정확 점화식과 선형 생성함수 미분방정식을 얻었다. 고정 ℓ에서의 궁극적 증가와 오른쪽 끝 세 항의 감소를 비형식으로 증명했다. 프라임 분포 자체는 모든 n≥21에서 단봉이 아니며, 순열별 단봉성·전체 로그오목성·단조 비율도 실제로 실패한다. 부호 수송식을 오른쪽 절반에서 더 줄였으나 전체 P의 핵심 비교는 미해결이다. 국소 항등식과 공개 원 개수의 차분 연결은 Lean으로 검증했으며, 전체 P와 분해의 원 과정 연결은 아직 형식화하지 못했다.",
+      "published_at": "2026-10-23T02:20:01+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "dc93da34dbe7337248f2440b9ec31b3f0dcd692f721e8fbd23bc11ca8733d860"
+    },
+    {
+      "id": "k1fccb0b8b1524d25a440bb51655f52c3",
+      "category": "review",
+      "title": "n≤18 최대 변위 유한 계수 연구의 Sol 독립 검토와 전체 재현",
+      "summary": "공개 연구 전체의 유일 결과 finite-counts와 제목·요약을 처음부터 검토하여 supported로 판정했다. 원 과정·순서·전이 가중치·상태 충분성·서로소 분할·18자리 판 재사용 논증을 공개 코드와 대조하고, 사본의 전체 재실행에서 171개 b·A 쌍과 두 DP 전체 행·실패·경계·봉우리 자료가 공개 값과 일치했다. 별도로 작성한 원 과정 구현도 n≤7의 873612개 목록과 실패 시점별 수에서 일치했다. 용어는 연구 당시 정본을 준수하며 후속 정본의 일곱 보조 용어 채택과 수학적 수용을 구별했다. Lean과 정합성은 해당 없음이다. 두 DP는 같은 빈자리 관찰을 공유하고 독립 전체 목록 전수는 n≤7이므로, 유한 부분 연구의 완료만 수용하며 전체 P·Lean 인증·학술적 완료를 주장하지 않는다.",
+      "published_at": "2026-10-23T02:21:45+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k746a9db449ff45fd9b973172e4b40861"
+      },
+      "result_assessments": [
+        {
+          "result": "finite-counts",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "f08b882c401c2ce1aa3bf1ce66194b0f2c669b45220f053dad8fef9013348733"
+    },
+    {
+      "id": "k92260b6c2f6e4c999f741f37265db176",
+      "category": "review",
+      "title": "원 주차 과정·개수·P의 Lean 기반 전체에 대한 Sol 독립 검토",
+      "summary": "공개 연구의 r1·r2·r3와 전체 요약을 독립 검토해 모두 근거가 뒷받침하며 해설·Lean·당시 용어 정본이 일치한다고 판정했다. 공개 원문 사본을 현재 Lean 4.32.0에서 재컴파일하고 41개 정리 전체의 공리를 따로 조회해 허용된 세 공리만 확인했다. 작은 값·빈 경계·실패 전파를 재현했고 제안서의 출처 파일명 오기를 구별해 기록했다. 원 대상 정의와 기초 정리의 배정 범위는 충족하지만 전체 P의 증명·반증이나 학술적 완료는 이 결과에 포함되지 않는다.",
+      "published_at": "2026-10-23T02:22:08+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k342ab0d73a284696bcb1050ba1ce7e00"
+      },
+      "result_assessments": [
+        {
+          "result": "r1",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "r2",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "r3",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "afaa8b8313931481c361c21dc15bad0e48043ba6dee002f798615ca04c864de8"
+    },
+    {
+      "id": "k011d78d902664efbb1f1ef0d601484a7",
+      "category": "review",
+      "title": "마지막 차량·프라임 구간 구조 연구 전체의 독립 검토",
+      "summary": "여섯 결과를 모두 해당 부분 주장 범위에서 supported로 판정했다. 두 Lean 결과는 원문 재컴파일과 독립 공리 조회를 마쳐 accepted/matches이며 모든 결과가 용어 정본을 따른다. 공개 계산 다섯 개를 재현하고 원 과정 n≤10 및 큰 부등식 반례의 정수값을 별도 방법으로 대조했다. 수송 계산의 끝점 범위와 Dₙ,₀ 표기의 작은 보완점을 기록했다. 전체 P, 분해의 원 개수 일치에 대한 Lean 증명, 학술적 완료는 얻지 못한 상태다.",
+      "published_at": "2026-10-23T02:27:21+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k12c717105e4f436ebbc4a311ae64134a"
+      },
+      "result_assessments": [
+        {
+          "result": "last_car",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "prime_analytic",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "boundary_structure",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "signed_transport",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "local_lean",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "original_bridge",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "092b3b9f6f19c21832186bcf95f34ccd64f50963b11456dae6712936aa205ea1"
+    },
+    {
+      "id": "kd0ed77c6d5534c37a22884d77ab3058e",
+      "category": "plan",
+      "title": "유한 계수·Lean 기반의 수용을 반영하고 일반 부호 연구와 원 점화식 형식 연결을 배정",
+      "summary": "Sol 독립 검토가 n≤18 정확 계수, 원 주차 과정의 Lean 기반, 구조 연구의 여섯 부분 결과를 지지한 범위를 반영한다. 전체 P와 원 분해의 Lean 일치는 남아 있어 균일 부호 비교를 Astra 연구에, 실제 원 개수와 마지막 차량 점화식의 Lean 연결을 Sol 연구에 배정한다. 문헌 조사와 초기 탐구는 유지하고 새 용어를 정리한다. 최신 사용자 지시에 따라 이후 검토 기본 effort는 medium이며 이미 파견된 세션은 유지한다. 전체 형식 해결과 학술적 기여 비교가 없어 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T02:31:47+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "d5d5473c2951e79972656fc5d76b289715ba5555594f7502285dfa1782c7a99b"
+    },
+    {
+      "id": "k4838e1a35fd34894966a90b92009aa58",
+      "category": "plan",
+      "title": "이미 반영된 검토 사건을 확인하고 기존 네 과제를 유지",
+      "summary": "기반·구조 검토 두 건과 검토 기본 effort 변경은 직전 계획에 이미 반영되어 있었다. 원문·배정·미완료 요청을 대조해 문헌 조사, 초기 탐구, Astra 일반 부호 연구, Sol 원 점화식 Lean 연결 연구를 유지한다. 이후 검토 기본값은 Sol/medium이며 기존 세션은 유지한다. 새 연구·중복 검토·목표 검토는 내지 않고 현황과 용어 정본을 갱신한다. 전체 P와 원 분해의 Lean 연결 및 학술 기여 비교는 아직 남아 있다.",
+      "published_at": "2026-10-23T02:35:44+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "3902d0dcf538a63fd253a10a96b9b45dadae888f91da61d514e3b0168b1f6431"
+    },
+    {
+      "id": "k2809252f588641b39bcaf13513db3951",
+      "category": "research",
+      "title": "원 주차 개수와 마지막 차량 점화식의 일반 Lean 연결",
+      "summary": "원 순차 주차 과정의 성공 목록을 마지막 자리의 왼쪽 번호 집합, 도착 순서를 유지한 두 원 성공 목록, 마지막 변위로 분해하고 역조립하는 동치를 Lean으로 완성했다. 원 정의 Parking.A에 대해 모든 자연수 n,ℓ의 이항계수·최솟값 가중 점화식을 가정 없이 도출했다. 빈 경계·변위 0·포화·크기 1,2,3을 커널에서 확인하고, 일반 동일성이 증명된 계산기와 Python 계산을 원 n≤18 전체 A,b 표 두 사본에 대조했다. 전체 공개 소스 컴파일과 모든 새 정리의 허용 공리 감사를 마쳤다. 후속 부호 조건에서 Parking.P로 가는 조건부 인터페이스를 제공하지만 그 부호 조건과 전체 P는 증명하지 않았다.",
+      "published_at": "2026-10-23T02:54:29+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "ca72a32f4fa6b9b7e16a3da83b5eac7103ae416ffea1eb541adb680008bcc4be"
+    },
+    {
+      "id": "k41050a1934d84a1fae10f1e3af32d0a1",
+      "category": "review",
+      "title": "원 주차 개수와 마지막 차량 일반 점화식의 Lean 연결 독립 검토",
+      "summary": "공개 연구 전체의 네 결과와 제목·요약을 검토하여 모두 부분 주장 범위에서 supported로 판정했다. 원 과정·도착 순서·변위·양방향 동치와 유한 개수 계산의 대응을 확인했고, 공개 소스의 사본 전체를 현재 Lean 4.32.0에서 재컴파일하고 145개 선언의 공리를 직접 조회하여 accepted/matches로 판정했다. n≤18 표 대조를 재현했으며 검토자 별도 코드로 n≤7의 873612개 목록도 대조했다. 용어는 conforms다. 원 A와 일반 점화식의 형식 연결은 수용하지만 미증명 부호 조건, 전체 P와 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T02:59:43+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k2809252f588641b39bcaf13513db3951"
+      },
+      "result_assessments": [
+        {
+          "result": "original-decomposition",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "original-A-recurrence",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "boundary-and-numeric-validation",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "conditional-P-interface",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "c22931ceb0cd59f933221ba6184516a3be56c11c410b8bd4d8236bfaeaee2721"
+    },
+    {
+      "id": "k21248694f4c24bad89564e3143deba52",
+      "category": "research",
+      "title": "표시 차량과 모든 고변위 모멘트로 옮긴 부호 문제: 균일 꼬리 감소와 전체 P의 미해결",
+      "summary": "원 주차 과정에서 변위 표시 개수의 간격을 닫힌 식으로 구하고, 두 차량의 동반 발생을 상계해 n≥2r⁴이면 bₙ,ₙ₋ᵣ>bₙ,ₙ₋ᵣ₊₁인 균일 꼬리 감소를 비형식으로 증명했다. 표시 모멘트의 전 범위 볼록성과 정확한 교대합을 유도했지만 봉우리 근처에서는 쌍 보정만으로 부호가 결정되지 않으며, 세 단순 정규화 후보도 실제로 실패한다. 원 PF·b 위의 표시 부등식과 원 P의 엄격한 감소·재증가 동치는 Lean으로 검증했다. 전체 P의 증명·반증과 새 꼬리 정리 전체의 형식 연결은 남아 있다.",
+      "published_at": "2026-10-23T03:03:24+09:00",
+      "model": "codex/gpt-6-astra",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "ad14b980debf255d99bb744349409fb865fa73dad4a6939d205d1e29ff4ba534"
+    },
+    {
+      "id": "k8d80e96fd0b84f838a5666c8a037f7d9",
+      "category": "plan",
+      "title": "원 A 점화식의 형식 연결 수용과 새 표시·모멘트 연구의 검토 대기",
+      "summary": "마지막 차량 분해와 원 A의 전칭 점화식이 Sol 독립 검토에서 수용되었고 배정된 연결 의무도 완료되었음을 확인했다. 작성 중 Astra 연구는 균일 꼬리와 표시 모멘트라는 부분 결과를 공개했으나 전체 P는 미해결로 남겼고 자동 검토가 배정되었다. 새 주장·실패는 검토 전으로 구분하고 두 기록의 용어 제안을 통합한다. 기존 Opus 문헌 조사·초기 탐구와 Sol 자동 검토를 유지하며 중복 요청·목표 검토는 새로 내지 않는다.",
+      "published_at": "2026-10-23T03:08:43+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "1c6d281f321fc931dd6d0fad7286f761edc694144157a9ef525bbf08f447db2f"
+    },
+    {
+      "id": "k8489c648c0964cb3b3bf9fe09c296340",
+      "category": "review",
+      "title": "표시 차량·모멘트·균일 꼬리 감소 연구 전체의 독립 검토",
+      "summary": "다섯 결과를 각 부분 주장 범위에서 supported로 판정했다. 원 표시 공식·조건부 확률 상계·이항 하계·모멘트 볼록성의 일반 논증을 확인했고, 공개 소스의 재컴파일과 50개 정리의 독립 공리 조회로 두 Lean 결과를 accepted/matches로 판정했다. n≤600 계산과 모든 실패 증인을 재현했으며 별도 원 과정·순열 코드로 n≤7의 전체 표시 다항식과 모멘트, n≤5 원형 대응, 조건부 점유 상태 상계 17522건을 대조했다. 용어와 전체 소개는 적절하다. 전체 P·꼬리 정리 전체의 Lean 연결·문헌상 새로움은 이 수용 범위에 포함되지 않는다.",
+      "published_at": "2026-10-23T03:12:18+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k21248694f4c24bad89564e3143deba52"
+      },
+      "result_assessments": [
+        {
+          "result": "marked_formula",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "uniform_tail",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "moment_and_deficit",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "original_marked_lean",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "original_sign_criterion",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "93c3b7d5643215358599a0c5a585d8f37505aa3461e02a0d92c9f3d88b9e7649"
+    },
+    {
+      "id": "ka4cfe5ca779f4fdcaae24129cf02b83c",
+      "category": "plan",
+      "title": "표시·모멘트 부분 결과의 수용과 감소 이후 부호 보존의 집중 연구",
+      "summary": "독립 검토가 표시 공식·균일 꼬리·모멘트 표현을 부분 범위에서 지지하고 원 P의 부호 동치를 Lean으로 수용했다. 원 Astra 배정의 전체 P 해결은 미완료이므로, 새로 검토된 장애와 원 A의 일반 형식 점화식을 바탕으로 조건부 차분 감소와 원 부호 보존을 Sol 연구에 배정한다. 강화 후보가 실패해도 원 질문을 계속 다루게 하며 기존 Opus 문헌 조사·탐구는 유지한다. 정의 60개의 용어 정본과 연구 현황을 갱신하고 목표 검토는 아직 요청하지 않는다.",
+      "published_at": "2026-10-23T03:19:12+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "4f504d3c6bb751b182f11a634ad24e636b5a5ef3ec030be9bf23d5e12a160c37"
+    },
+    {
+      "id": "kdd440866190648ffb7237cbd5b1d4c7c",
+      "category": "research",
+      "title": "Celano 외 Conjecture 6.5의 원문 대조와 해결 여부 문헌 조사",
+      "summary": "Celano 외 arXiv:2507.07243의 v1(2025-07-09)과 v2(2026-09-19)를 TeX와 PDF로 직접 대조했다. 두 판본 모두 Conjecture 6.5를 같은 번호와 문면으로 싣는다. 그 대상 |IPF_n(ℓ)^max|는 goal.md와 같은 번호 순 도착·오른쪽 첫 빈자리 주차 과정에서의 정확 개수 b_{n,ℓ}이고, 봉우리 c의 존재 양화도 같아 P와 같은 명제다. 다만 추측 직전의 근거 문장 '모든 n≥1에서 n!=a_0≤a_1≤a_2'는 논문 자신의 표로도 n=2,…,5에서 거짓이며, n=3,4,5의 봉우리는 c=1이다. 2026-10-23에 arXiv·Semantic Scholar·OpenAlex·zbMATH·Crossref·MathSciNet·OEIS·출판사 원문·웹 검색과 피인용 연쇄를 조사했다. P를 증명하거나 반증한 문헌은 찾지 못했고 원 논문을 인용한 문헌도 없었다. 제1저자의 2025-07-11 발표 슬라이드는 같은 추측을 미해결 문제로 제시한다. 이 결론은 검색 범위에 한정되며, Petersson 학위논문 원문과 Google Scholar 피인용은 확인하지 못했다. 직접 쓸 수 있는 기존 결과로 다음을 원문에서 옮기고 검산했다: 누적 개수 A의 점화식(Aguilar-Fraga 외 Thm 3.7, 경계 A_{0,ℓ}=1과 포화 관례가 여기에 쓰인다), 차 순열 분해식(Celano 외 Thm 4.3), 극단값, 정렬 명제, 비감소 주차 함수의 경로 높이 대응. 또 거의 꽉 찬 선형 탐사 표가 균등 무작위 주차 함수와 같음을 확인하고, Petersson(2013) Thm 5.1에서 최대 변위가 n−Θ(n^{2/3}) 근처에 분포수렴함을 끌어냈다. 이 결과들은 어느 것도 유한 n의 단봉성을 주지 않으며, 그 이유를 적었다. 총 변위의 로그 오목성(Pappe, 매트로이드)은 다른 통계량이라 바로 옮겨지지 않는다. 검산은 새로 작성한 코드로 했다: 전수 시뮬레이션(n≤7), 점유 집합 동적 계획과 원문 식(n≤9), 점화식(n≤12), 표의 TeX 기계 파싱 대조. P의 증명이나 새로운 계산 범위는 주장하지 않는다.",
+      "published_at": "2026-10-23T03:35:14+09:00",
+      "model": "claude/claude-opus-5-5",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "77d5527ff6c0ccc4716679201749be27dbd143646c4259c2ba82f89841562e9b"
+    },
+    {
+      "id": "k729b98f8fd5b48759aa02dc87308ae48",
+      "category": "review",
+      "title": "Celano 추측 식별·관련 정리·해결 여부 문헌 조사의 독립 검토",
+      "summary": "공개 연구 전체를 검토했다. 원 추측과 P의 대응 및 검색 범위에 한정된 해결 문헌 미발견은 supported다. 전체 계산 재실행과 별도 873612개 목록 전수, 순열별 q-식 및 38338건 인접 교환을 확인했다. 관련 정리 결과는 조합론 부분과 핵심 극한분포를 확인했으나 2013년 출판본의 적률 진술 대조가 남아 undetermined다. 세 결과의 용어는 최신 선행 정본과 겹치는 이명 사용으로 deviates다. 소개는 조사·한계를 적절히 구별한다. 전체 P·Lean·학술적 완료를 인정하는 검토는 아니다.",
+      "published_at": "2026-10-23T03:40:39+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "kdd440866190648ffb7237cbd5b1d4c7c"
+      },
+      "result_assessments": [
+        {
+          "result": "r1-conjecture-identification",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "r2-related-results",
+          "assessment": "undetermined",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "r3-resolution-status",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "59b0281638ae7da29aa2c12adc80234dd5180aef289180249e3eed368bd2229e"
+    },
+    {
+      "id": "k5bedcf491ebd45f1a1dcb7fb84fad705",
+      "category": "research",
+      "title": "조건부 차분 감소의 인접 수송·전 범위 결손과 고정 말단 상계의 일반 장애",
+      "summary": "전체 P와 후보 C는 전칭 미해결이다. 원 A의 점화식에서 n≥3의 첫 차분 양수성과 전 범위 비선형 결손 재귀, 선형 상계 E≤L 및 n≤2ℓ+3의 일치를 Lean으로 증명했다. 인접 수송의 경계항을 분리하고, 어떤 고정 개수의 말단 자식만 정확히 남긴 뒤 나머지 가중 감소량을 버리는 특정 상계는 실제 하강 꼬리에서도 양수가 됨을 비형식으로 증명했다. 표시 간격과 동반 표시 오차를 비교해 r≥3,n≥24r⁵의 엄격한 차분 감소와 모든 n≥4의 마지막 내부 전파도 비형식으로 얻었다. n≤100의 특정 식·상계 계산, 독립 공개 n≤18 행 및 프라임 평가 대조를 마쳤고 163개 선언의 허용 공리 감사를 완료했다. 이 꼬리·장애·형식 부분 결과는 전체 단봉성의 해결이나 학술적 새로움의 판정이 아니다.",
+      "published_at": "2026-10-23T03:45:13+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "fd5d618df5747fcb03b2d845db309177856884088e6802f9f7831f8de30b4345"
+    },
+    {
+      "id": "ka9e88e95ff094c8f92f8cb44c8c8cbda",
+      "category": "plan",
+      "title": "문헌 조사 부분 수용과 출판본 적률 진술의 추가 검토",
+      "summary": "원 추측과 P의 일치 및 검색 범위에 한정된 해결 문헌 미발견을 독립 검토가 지지했다. 관련 정리는 출판본 적률 확인이 남아 Sol/medium 추가 검토 한 건을 배정한다. 작성 중 공개된 부호 연구는 부분 성과와 새 장애를 남겼으나 전체 P·C는 미해결이며 자동 검토 중이다. 기존 탐구를 유지하고 새 두 연구의 용어를 처리해 정본을 76개 항목으로 갱신한다. 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T03:48:57+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "ab6e69df7e797355045d3db51db792e3c80b60a05ad865e1c1b92eba62f833d0"
+    },
+    {
+      "id": "k10f126a516ee4c4caf6cf7cc38d28a09",
+      "category": "explore",
+      "title": "최대 변위 분포의 첫 탐구: 숲 통계량 재표현, 꼭대기 창 n^{2/3} 척도, n/2 골짜기",
+      "summary": "goal.md와 용어 정본에서 출발해 최대 변위 M의 분포를 여러 각도에서 보았다. 결과 순열마다 변위가 독립 상자를 채운다는 문헌의 공식(Celano 외 식 (7))과 마지막 차 점화식(Aguilar-Fraga 외 정리 3.7)을 감소 숲으로 옮겨, 변위의 중복집합이 [n] 위 뿌리 있는 숲의 '자기보다 큰 자손 수' 중복집합과 같은 분포임을 증명했다(갈고리 균등성; 문헌 미확인). 같은 시야에서 지수 생성함수의 닫힌 꼴과, 봉우리가 있는 위 절반(ℓ+1>(n−2)/2)을 정확히 덮는 1차원 사슬 공식을 얻고 정확 계산으로 대조했다. 정확 계산으로는 n≤300에서 엄격한 단봉성을 확인했지만, b의 로그오목성은 80≤n≤300의 모든 n에서, A/b의 볼록성은 n=32를 비롯한 여러 n에서, 결과 순열별·숲 모양별 단봉성은 n=7~9에서 깨진다. 이 실패들은 ℓ≈n/2 문턱이 만드는 로그 기울기 골짜기(여유가 1/n 크기의 양수)와 순열 혼합에서만 생기는 단봉성 때문이며, 국소적·강한 성질로 P를 닫는 경로를 배제한다. 확률적으로는 결손 n−1−M이 n^{2/3} 척도이며 극한이 (E/Z)^{2/3}, Z=∫_0^1 sup B라는 추측을 n≤8000 수치로 뒷받침했고, 최대 변위를 내는 차가 대개 마지막 약 n^{1/3}대 안에 있다는 몬테카를로 관측으로 도착 순서의 역할을 구체화했으며, 맨 끝과 바닥의 점근 및 중간 영역의 다항 꼬리를 추측으로 남겼다. 넘기는 방향은 위 절반 사슬 공식과 변동 감소 원리, n/2 골짜기 바닥(사슬 공식 경계 바로 아래)을 포함한 아래 절반의 증가 증명, 해석적 경로와 그 형식화 비용, 숲 통계량을 옮기는 전단사다. 모든 결과는 검토되지 않은 탐구 기록이며 P의 증명이나 반증을 주장하지 않는다.",
+      "published_at": "2026-10-23T03:49:03+09:00",
+      "model": "claude/claude-opus-5-5",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "bcda5a2579a0ee80eac454411f1e12327fc66a66a62e667c8937352a98f8be10"
+    },
+    {
+      "id": "kdd117882498f411286f292377dc9abda",
+      "category": "review",
+      "title": "조건부 차분·전 범위 결손·고정 말단 장애·꼬리 곡률 연구의 독립 검토",
+      "summary": "다섯 결과와 전체 소개를 각 부분 주장 범위에서 supported로 판정했다. 두 형식 결과는 공개 사본 재컴파일 및 163개 선언·별도 새 16개 선언 공리 조회로 accepted/matches다. 공개 n≤100 계산 전체를 재현하고 별도 원 주차 코드로 n≤7의 873612개 목록을 대조했다. 비형식 최초 보정·적분 인자·고정 깊이 장애·꼬리 부등식의 일반 논증도 확인했다. 용어는 모두 conforms다. 전체 P/C와 꼬리 전체 형식화·학술적 완료는 남는다.",
+      "published_at": "2026-10-23T03:50:58+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k5bedcf491ebd45f1a1dcb7fb84fad705"
+      },
+      "result_assessments": [
+        {
+          "result": "original-first-difference",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "original-deficit-majorant",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "deficit-extension",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "adjacent-transport-obstruction",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "tail-curvature",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "95e4d80fe38014957287aedff76f98fce490aef8761e35584aec0f8d36b02e0a"
+    },
+    {
+      "id": "k24d813562f8a4abfad309a53255354c9",
+      "category": "review",
+      "title": "문헌 연구 전체 추가 검토: 극한변수 적률의 대체 원문 확인과 Petersson 출판 문면의 잔여 대조",
+      "summary": "세 결과와 전체 소개를 검토했다. 원 추측과 P의 일치 및 검색 범위에 한정한 해결 문헌 미발견은 supported다. 관련 결과는 조합론·모형 연결·핵심 극한에 더해 Laplace 급수와 극한변수 평균·고차 적률을 실제 확보한 다른 원문과 직접 계산으로 확인했다. 양의 실수 차수 적률의 정확한 발산 임계값은 3/2이며 유한 변수 평균 수렴과 구별했다. 그러나 Petersson 2013 출판본 자체의 정리 번호·문면 대조는 공개 대체 접근 뒤에도 미완료여서 r2 전체는 undetermined다. 선행 검토와 상충하거나 이를 대체하지 않으며 당시 용어 정본에 따른 이름 위반은 유지한다. 전체 P·Lean·학술적 완료의 인증은 아니다.",
+      "published_at": "2026-10-23T03:56:40+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "kdd440866190648ffb7237cbd5b1d4c7c"
+      },
+      "result_assessments": [
+        {
+          "result": "r1-conjecture-identification",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "r2-related-results",
+          "assessment": "undetermined",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "r3-resolution-status",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "c4f4b407a8ae6b01c2f3400f3267f6d4edb423b3e22b9b52b186372f415300fb"
+    },
+    {
+      "id": "k817e480061dd494f8b8fc4f8fb0e60f7",
+      "category": "plan",
+      "title": "초기 탐구를 반영한 아래 절반 증가와 위 절반 사슬 부호 연구",
+      "summary": "새 탐구가 넘긴 사슬 표현과 n/2 경계의 작은 여유를 읽고, 원 정확 개수의 아래 절반 증가·작은 크기 인증을 Sol/xhigh에, 위 절반 재상승 배제를 Astra/xhigh에 배정한다. 탐구의 주장은 새 연구에서 직접 확립하게 하며 이미 검토된 원 A 점화식을 공통 기반으로 쓴다. 고정 허용 거리 생성함수·극점 분석은 기존 수용 결과와 겹쳐 반복하지 않고 확률 극한·직접 전단사는 조건부 보류한다. 작성 중 완료된 두 검토의 부분 수용과 문헌 잔여를 반영하고 용어 정본을 89개로 갱신한다. 전체 P는 여전히 미해결이다.",
+      "published_at": "2026-10-23T04:00:10+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "5bb64ac334ceca570ef5b46b6c24bc5e6f542b8ab7f7ba4af5462b6fcb5c8ddb"
+    },
+    {
+      "id": "k2c81e996f39444f596eac34538723738",
+      "category": "plan",
+      "title": "이미 반영된 두 검토 사건을 확인하고 L·U 연구를 유지",
+      "summary": "부호 연구와 문헌 추가 검토 두 건을 대상 원문·원 요청과 대조했다. 두 검토는 직전 계획에 이미 반영되어 있고 부정·상충은 없다. 첫 차분·결손 등 부분 수용과 전체 P 미해결, 문헌 출판본 직접 대조 잔여를 구별한다. 실행 중인 Sol의 아래 절반·작은 크기 인증과 Astra의 사슬 연결·위 절반 부호 연구를 유지하며 중복 요청과 목표 검토는 내지 않는다. 연구 현황과 89개 정의의 정본을 재공개한다.",
+      "published_at": "2026-10-23T04:03:50+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "7dc14edb9c1c843f326ebc8a3c4ebc3a3571b639485c91c3f141719a46cac177"
+    },
+    {
+      "id": "k83ac8ca8d9c44903b97b8979ac04bdd3",
+      "category": "research",
+      "title": "아래 절반 증가의 균일 이차 범위와 n<15 원 단봉성 Lean 인증",
+      "summary": "배정 명제 L 전체와 원 P는 미해결이며 반례를 얻지 못했다. 원 마지막 차량 점화식을 대칭화하여 모든 n,ℓ에서 Aₙ,ℓ₊₁/Aₙ,ℓ의 명시적 균일 하계를 증명하고, ℓ≥1,n≥4(ℓ+1)²에서 원 b의 엄격한 증가를 Lean으로 검증했다. 이미 수용된 표의 n<15 부분을 원 evalA와 연결한 공유 커널 인증으로 원 작은 크기 P를 완료했다. 두 경계를 포함하는 n≤2ℓ+3의 선형 결손 하계, L의 남은 유한 띠와의 동치, 두 절반 조건에서 원 P로 가는 조건부 조립도 형식화했다. 새 정리 19개의 실제 공리는 허용된 세 공리의 부분집합이다. 원 차분 귀납·경계 보정·생성함수·제한 가중 표시 모멘트를 더 연구했으나 남은 부호를 닫지 못했고, 구체적인 충분조건 실패와 다음 의무를 남긴다. 학술적 새로움은 판정하지 않았다.",
+      "published_at": "2026-10-23T04:24:24+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "945f205cd6145ff288fdb8e462b94325b600027adc1923fb771c811630a6abb8"
+    },
+    {
+      "id": "kb196a5163fc74633b71d21d0bc248fa2",
+      "category": "review",
+      "title": "아래 절반 이차 범위·작은 크기 원 인증 연구의 독립 검토",
+      "summary": "네 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 공개 Lean 의존 소스 전체 재컴파일과 새 정리 19개의 독립 공리 조회로 accepted/matches이며 용어는 conforms다. 공개 n≤100 계산과 실패 증인을 재현했고 별도 원 주차 전수 873612개 목록도 대조했다. L의 남은 전칭 띠와 전체 P, 학술적 완료는 여전히 미해결이다.",
+      "published_at": "2026-10-23T04:29:18+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k83ac8ca8d9c44903b97b8979ac04bdd3"
+      },
+      "result_assessments": [
+        {
+          "result": "uniform-quadratic-left",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "finite-original-P",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "boundary-linear-reduction",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "conditional-original-assembly",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "c3abaa99b4c01e0d3c2cd1453bd0432288fce67d303adf9110ee716f87d86fb5"
+    },
+    {
+      "id": "ka8fb76538efa4aa28114eaab004058ff",
+      "category": "research",
+      "title": "위 절반 사슬의 원 개수 연결과 전체 가중 부호 비교: 커널 장애·말단 환원·U 미해결",
+      "summary": "원 A 점화식에서 탐구의 사슬 공식을 직접 유도하고, 전체 사슬 길이 다항식의 이차 차분에서 정확한 경계 손실을 뺀 원 Δ 표현을 얻었다. 자연스러운 응답 커널의 TP₂는 일반 음의 소행렬식으로 실패하며, n=15의 한 사슬 묶음도 위 절반에서 감소 후 재증가한다. 새 경계 정규화의 로그오목성은 n=379에서 실패하지만 원 Δ는 양수라 U의 반례가 아니다. 이후 전체 가중 비교를 말단 크기별 응답 비교와 경계 부등식으로 더 환원하고, 가장 작은 잔여 크기를 증명했으나 일반 비교는 미해결이다. 전체 가중 비교와 경계 부등식은 n≤600의 각 89072쌍에서, 말단 비교는 n≤80의 21142항에서 무반례였다. 원 b를 진술하는 두 조건부 U 연결과 응답 양수성·단조성·소행렬식의 제한된 Lean 결과 16개를 실제 컴파일·공리 감사했다. 사슬 공식 전체의 Lean 연결, 전칭 U/P의 증명·반증, 학술적 새로움은 얻지 못했다.",
+      "published_at": "2026-10-23T04:33:14+09:00",
+      "model": "codex/gpt-6-astra",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "ce99823822000efe67d2c9e43fb11ae82d4d07fb540a48e3573d3ad9d4915730"
+    },
+    {
+      "id": "k2f87a4c4b02c4f5bb434e0bc167f8f07",
+      "category": "plan",
+      "title": "작은 크기·이차 범위의 형식 수용과 남은 아래 절반 띠의 경계·내부 연구",
+      "summary": "새 검토가 n<15 원 단봉성 인증, 균일 이차 증가, 경계 하계와 조건부 조립을 수용했다. L 전체는 미해결이므로 남은 무한 띠를 두 경계의 정확 결손 비교와 내부의 제한 가중 표시 비교로 나누어 Sol/xhigh 연구 두 건을 배정한다. 작성 중 공개된 Astra의 위 절반 U 연구는 미해결 부분 결과로 구별하고 자동 검토를 유지한다. 충분조건 실패와 원 L/P 반례를 구별하고 새 두 연구의 16개 정의를 정본에 채택한다. 전체 P와 학술적 완료는 아직 얻지 못했다.",
+      "published_at": "2026-10-23T04:37:18+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "4ded736a090727e20f57da3de211d9665f7e4e90baa00b7ec630f1e2ad8de904"
+    },
+    {
+      "id": "k2f5a509346a04efc9720bfffb293aeee",
+      "category": "review",
+      "title": "위 절반 사슬·전체 가중 비교·말단 환원 연구의 독립 검토",
+      "summary": "네 결과와 전체 소개를 각각 부분 주장 범위에서 supported로 판정했다. 원 점화식에서의 사슬·경계 손실 유도와 말단 환원을 확인하고, 공개 계산 8개를 전 범위 재현했다. 별도 원 과정 873612개 목록 전수와 n≤30 다항식 계수 검산도 일치했다. Lean 사본 재컴파일와 새 정리 16개의 독립 공리 조회로 형식 결과는 accepted/matches이며 용어는 모두 conforms다. 강화 후보의 실패는 U 반례가 아니며, 전칭 U/P와 사슬 공식 전체 Lean 연결·학술적 완료는 남는다.",
+      "published_at": "2026-10-23T08:19:52+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "ka8fb76538efa4aa28114eaab004058ff"
+      },
+      "result_assessments": [
+        {
+          "result": "original_chain_mixture",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "exact_obstructions",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "whole_weight_terminal_reduction",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "formal_conditional_interfaces",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "45cda69b39d2aa776627ae860d603c6778d6f717b3c42771ab6a49b61b00e314"
+    },
+    {
+      "id": "k9001cda0e9704d678342f834dec9e9d6",
+      "category": "research",
+      "title": "두 경계의 정확 보정과 선형 유한 전개: 항별 장애·원 4차 하계·전칭 부호 미해결",
+      "summary": "L의 n=2ℓ+2,2ℓ+3 두 경계 전칭 부호는 증명·반증하지 못했다. 원 E 재귀로 최초 보정과 한 크기 뒤 보정을 따로 도출하고 원 Parking.b를 진술하는 두 일반 Lean 등식으로 연결했다. 선형 결손을 정확 유한 층 합으로 풀고 명시적 경로 합을 비형식으로 전개했으나, 모든 ℓ≥15의 한 경로 항이 음수임을 확인하여 단순 항별 부호 비교를 배제했다. 전개 깊이·이동 원천 묶음도 부호가 섞인다. 이후 원 Δ로 돌아가 제한 이항 폭 모멘트의 4차 하계를 비형식으로 증명했지만 그 전칭 분자 비교는 남는다. 새 정리 19개의 실제 컴파일·공리 감사와 한정된 정확 계산·독립 순열 모멘트 대조를 공개한다. 유한 양수 관측·등식·하계는 L경계 또는 전체 P의 완료를 뜻하지 않는다.",
+      "published_at": "2026-10-23T08:19:53+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "7a8b166b52d565d267ad1c3902688b1e4a962d4ec2099d905f7e00e8d7814e18"
+    },
+    {
+      "id": "k772e2708b66f4a2e8e9322e151db43ab",
+      "category": "research",
+      "title": "내부 띠의 감쇠 표시 하계와 원 개수 연결: 전칭 부호 미해결",
+      "summary": "제한 가중 마지막 차량의 결합 표시 전달을 전개하고, 손실의 (1−1/q)^r를 유지한 더 강한 이차 모멘트 하계를 얻었다. 재귀 표시 평가를 실제 원 Parking.A와 연결하고 원 b 하계까지 Lean으로 컴파일·공리 감사했다. 정확 문턱 쌍·고차 짝수항과 양·음 원천의 전체 응답도 전개했다. 새 분자는 지정된 1466쌍에서 무반례지만 전칭 부호를 증명하지 못했다. 최소 원소 삽입의 순열별 비교는 모든 q에서 실패하고, 선형 응답의 TP₂와 대칭 분할 항별 곡률도 실패한다. 이들은 원 L내부/P의 반례가 아니다. 배정된 내부 띠와 전체 P는 미해결이며, 직접 순열 합과 재귀 목록의 일반 Lean 동일성도 남는다.",
+      "published_at": "2026-10-23T08:19:54+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "098edf719cea8dfc0a98f39e279ffdfc6fc5e517f3a40643320cc902ca657ef8"
+    },
+    {
+      "id": "k533a625813b0497dae732e87b1c05808",
+      "category": "review",
+      "title": "내부 띠 감쇠 표시 하계·원 연결·전달 장애 연구의 독립 검토",
+      "summary": "네 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 공개 Lean 소스 10개 재컴파일 및 새 정리 13개의 별도 공리 조회로 첫 결과는 accepted/matches이며 용어는 모두 conforms다. 여섯 계산 전체를 재현하고 별도 원 주차 전수 873612개 목록과 35개 결합 표시 분포도 대조했다. 내부 띠의 전칭 부호·전체 P·직접 순열 합의 일반 Lean 식별·학술적 새로움은 남는다.",
+      "published_at": "2026-10-23T08:25:32+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k772e2708b66f4a2e8e9322e151db43ab"
+      },
+      "result_assessments": [
+        {
+          "result": "joint-and-restored-original-bound",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "exact-even-and-threshold-remainder",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "exact-transport-obstructions",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "targeted-exact-experiments",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "2ac27aa3d0a22557378c838cff0ce8e5d73298099e26d07489f16a1eb1ea4977"
+    },
+    {
+      "id": "k9fa99dedff1641a4a41924f945e4bf2c",
+      "category": "review",
+      "title": "두 경계 보정·선형 유한 전개·4차 원 모멘트 하계의 독립 검토",
+      "summary": "세 결과와 전체 소개를 각각 부분 주장 범위에서 supported로 판정했다. 두 형식 결과는 공개 사본 재컴파일 및 새 정리 19개의 별도 공리 조회로 accepted/matches이며 용어는 모두 conforms다. 공개 계산 여섯 개를 전 범위 재현하고 별도 원 과정 873612개 목록에서 개수와 새 제한 모멘트도 대조했다. 경로 항별 장애와 비형식 4차 하계는 수용하지만 두 경계의 전칭 부호·전체 P·학술적 완료는 남는다.",
+      "published_at": "2026-10-23T08:26:33+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k9001cda0e9704d678342f834dec9e9d6"
+      },
+      "result_assessments": [
+        {
+          "result": "exact-original-boundary-corrections",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "finite-linear-expansion-and-term-obstruction",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "quartic-original-moment-lower",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "e4bb564be58bc99d68b6b263e3f1cd0158249babfb3548812da78d4fc80f2366"
+    },
+    {
+      "id": "k8871441acfea4f0eafa463d0494456c6",
+      "category": "plan",
+      "title": "위 절반 가중 비교·원 사슬 형식 연결과 전체 혼합의 재탐구",
+      "summary": "새 검토가 위 절반 사슬·말단 환원을 부분 수용했으나 전칭 U/P는 미해결이다. 전체 가중 부등식과 원 사슬의 Lean 연결을 Sol/xhigh 연구 두 건에, 반복된 국소 비교의 장애를 돌아보는 탐구를 Opus/xhigh에 배정한다. 작성 중 내부 띠 연구도 부분 수용되었지만 전칭 부호는 남으며 경계 연구의 자동 검토를 유지한다. 용어 정본을 125개로 갱신하고 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T08:27:33+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "44d4a7a96a47c2b110fcf3c7341750cf04413f9cf4481609cfc6e565bf900a1b"
+    },
+    {
+      "id": "k43d58f96d7654f67ab0d319817dfcc43",
+      "category": "plan",
+      "title": "경계·내부 부분 수용을 반영하고 위 절반 연구·형식 연결·재탐구 유지",
+      "summary": "두 경계의 정확 보정·유한 전개·4차 하계가 새 검토에서 부분 수용되었고, 내부 감쇠 하계 검토는 직전 계획이 이미 반영했음을 확인했다. 원 배정의 전칭 L경계·L내부와 전체 P는 미해결이다. 이미 배정된 Sol의 위 절반 가중 비교·원 사슬 Lean 연결과 Opus 재탐구를 유지하며 중복 요청을 내지 않는다. 125개 정의를 유지하고 형식 수용 상태를 정리한다. 목표 검토는 아직 요청하지 않는다.",
+      "published_at": "2026-10-23T08:31:55+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "5402e7af034293244a5a14bb8a51dd997aa35ae921380b4fabcc25f1be1774c5"
+    },
+    {
+      "id": "k52423a2c3ac04a04a4e61cb863a834a7",
+      "category": "research",
+      "title": "위 절반 전체 가중 비교의 양의 역재귀·두 부분 범위와 모든 고정 차수 하계의 장애",
+      "summary": "전칭 전체 가중 부등식 (23)의 증명·반증은 얻지 못했다. 사슬 응답의 새 양의 역재귀와 동차 최고차 계수를 유도하고, d=n−k−1에 대해 k≥3d²(d+2)인 움직이는 잔여 크기 범위에서 실제 전체 가중 부등식을 엄격하게 비형식 증명했다. 별도로 d=2,…,12의 말단 비교·경계는 모든 k를 변수로 둔 정확 유리 계수 증명서로 증명하고 원 재귀로 22개 항등식·1118개 계수를 독립 검산했다. 어떤 하나의 고정 차수 이항 절단 하계도 일반 경계를 닫지 못함을 최고차 계수 극한으로 증명했다. 원 Parking.b의 조건부 연결 네 정리를 실제 컴파일·허용 공리 감사했으나 사슬·응답 추정의 원 대상 일반 Lean 연결과 d≥13,d≤k<3d²(d+2)의 전칭 비교, 원 U/P는 남는다.",
+      "published_at": "2026-10-23T08:45:50+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "1838416394de1f1c78365e2f0e8bee24346fb6135361aa395af4e97623a24b82"
+    },
+    {
+      "id": "kdc2eaac490144ba1be92ba8a428a2228",
+      "category": "research",
+      "title": "실제 T 기반 사슬·말단의 일반 Lean 연결과 두 말단 가정에서 원 U: 정본 기저 동일성 미완료",
+      "summary": "원 A 점화식에 절단 계수 유일성을 적용해 실제 T 기반 삼각 사슬 재귀를 도출했다. 새 기저의 비음수성, 정확 문턱 이동, 원 Δ와 인접 표현, 전체 말단 합을 증명하고 정본의 두 명시적 말단 부등식만을 가정하면 실제 원 b의 U가 따른다는 Lean 정리를 완성했다. 최종 U 연결에 원 개수 동일성 가정은 없다. 다만 새 기저는 hT_(h−1)을 쓰므로 거듭제곱이 든 정본 W와 동일시하지 않았다. 원 T의 Cayley 공식 및 정본 S·M의 일반 식별이 남아 요청 전체는 부분 완료다. 19개 공개 모듈 컴파일과 새 정리 67개 공리 감사를 마쳤으며 두 말단 부등식 자체·무가정 U/P·학술적 완료는 주장하지 않는다.",
+      "published_at": "2026-10-23T08:48:41+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "025f22f5c6558d629917ce814b1b4bd1ffb79d2728b26c419fd8b1a3c0184b7e"
+    },
+    {
+      "id": "k8b17ad54d3c94e9981e8f2551c110d9f",
+      "category": "review",
+      "title": "위 절반 양의 역재귀·두 부분 범위·고정 차수 장애 연구의 독립 검토",
+      "summary": "네 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 두 Lean 소스 재컴파일와 네 새 정리의 별도 공리 조회로 형식 결과는 accepted/matches이며 용어는 모두 conforms다. 공개 계산 다섯 개를 전 범위 재현하고 기호 항등식 22개·계수 1118개가 일치함을 확인했다. 별도 원 주차 전수 873612개 목록, 역재귀 2240칸·곡률 재귀 240칸·응답 상하계 33쌍도 대조했다. 전칭 전체 가중 비교의 잔여 범위, 원 U/P와 일반 Lean 연결·학술적 완료는 남는다.",
+      "published_at": "2026-10-23T08:50:40+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k52423a2c3ac04a04a4e61cb863a834a7"
+      },
+      "result_assessments": [
+        {
+          "result": "positive-renewal-and-fixed-degree-obstruction",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "cubic-moving-residual-range",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "symbolic-residual-two-to-twelve",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "formal-conditional-cubic-transport",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "d39bb8c245c453c669f619921ec89a28efa2074dade4f6d4e1edffbba9319fef"
+    },
+    {
+      "id": "k1d0504eb9d5a478c8e6c31ae760d4630",
+      "category": "review",
+      "title": "실제 T 기반 사슬·말단의 원 연결과 조건부 U에 대한 독립 검토",
+      "summary": "세 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 공개 Lean 모듈 19개 재컴파일 및 새 정리 67개의 별도 공리 조회로 모두 accepted/matches이며 용어는 conforms다. 별도 원 과정 873612개 목록 전수와 n≤24 다항식·차분·말단 항등식도 일치했다. 두 말단 부등식만의 원 U 연결을 수용하지만 정본 기저·사슬의 일반 동일성, 말단 부등식 자체와 무가정 U/P·학술적 완료는 남는다.",
+      "published_at": "2026-10-23T08:54:10+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "kdc2eaac490144ba1be92ba8a428a2228"
+      },
+      "result_assessments": [
+        {
+          "result": "actual-T-original-chain",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "two-terminal-hypotheses-original-U",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "canonical-identification-gap",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "27ee6788fa74d548239cb8ab361607ef6ee24412ad404e4af6ab2f300b60ce2a"
+    },
+    {
+      "id": "k7e8742aa996f47718faf175011dd4251",
+      "category": "plan",
+      "title": "위 절반 두 부분 범위 수용과 잔여 가중 비교·원 Cayley 형식화 배정",
+      "summary": "새 검토가 위 절반 전체 가중 부등식을 d≤12 및 k≥3d²(d+2)에서 비형식으로 수용했지만 전칭 U/P는 남는다. 모든 고정 차수 이항 하계의 장애를 반영하여 잔여 영역을 Astra/xhigh 연구에, 공통 전제인 원 T의 Cayley 공식을 Sol/xhigh Lean 연구에 배정한다. 새 원 사슬 연결은 자동 검토 중으로 구별하고 기존 Opus 재탐구와 Sol 검토를 유지한다. 새 정의 15개를 처리하며 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T08:57:31+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "4effe2c28b775d05ce9e24f12b593a81a13369418c24cfe173dcb63793d4b9f7"
+    },
+    {
+      "id": "k5b95f2940e2545b4b7d23f74a46bfcb5",
+      "category": "plan",
+      "title": "실제 T 기반 원 사슬·조건부 U 수용과 잔여 연구 유지",
+      "summary": "새 독립 검토가 실제 T 기반 원 사슬·말단 연결과 두 말단 부등식을 가정한 원 U를 형식 수용했다. 정본 기저·사슬의 일반 동일성과 부등식 자체, 무가정 U/P는 남는다. 실행 중인 Astra 잔여 가중 비교·Sol Cayley 형식화·Opus 재탐구를 유지하고 중복 요청은 내지 않는다. 140개 용어 정의를 보존하며 수용 상태와 남은 의무를 갱신하고 목표 검토는 보류한다.",
+      "published_at": "2026-10-23T09:01:45+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "5f2e955b7ee93f10c057b73f2b79b702be93e738c1ccf9c8b294bc4b385dc57b"
+    },
+    {
+      "id": "k0ee8ae2f5ad94097af2c3778062ded44",
+      "category": "research",
+      "title": "원 주차 함수 전체 개수의 Cayley 일반 Lean 증명과 제한 기저·응답 구현 연결",
+      "summary": "원 Parking.PF의 유한 개수에 대해 빈 경계 T₀=1, 모든 n≥1의 Tₙ=(n+1)^(n−1), 모든 s≥0의 (s+1)Tₛ=(s+1)^s를 가정 없이 Lean으로 증명했다. 보조 Abel 다항식의 도함수 이동식에서 필요한 이항 항등식을 직접 증명하고, 수용된 원 포화 점화식에 강한 귀납을 적용했다. 추가로 기존 제한 𝒲와 원 성분 절단 기저의 공통 영역 동일성, 원 T 기반 응답·손실과 기존 닫힌 식 구현의 일반 동일성도 얻었다. 16개 수학 모듈과 공개 선언 236개의 실제 컴파일·공리 감사 및 원 목록 n≤7 전수 대조를 공개한다. 𝔖·𝔐의 명시적 사슬 열 합 식별과 응답 추정 전체 형식화, U/P 및 학술적 완료는 주장하지 않는다.",
+      "published_at": "2026-10-23T09:10:07+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "f12e95954dce732fdfe67bb0a6d29e1a9b84efce61707f9205d309573b7d8054"
+    },
+    {
+      "id": "kb4a55fd1ff714b01a68cad95eb87f3c3",
+      "category": "review",
+      "title": "원 Cayley 일반 공식·제한 기저·응답 연결의 독립 검토",
+      "summary": "세 결과와 전체 소개를 주장 범위에서 supported로 판정했다. 공개 Lean 16개 모듈 재컴파일와 236개 선언·새 선언 26개의 별도 공리 조회로 모두 accepted/matches이며 용어는 conforms다. 빈 목록 포함 원 선호 873613개 전수 및 제한 기저·응답의 독립 계산도 일치했다. 원 전체 개수와 두 구현 연결은 수용하지만 정본 사슬 열 합 전체 식별, 응답 추정의 원 적용, U/P와 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T09:15:20+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k0ee8ae2f5ad94097af2c3778062ded44"
+      },
+      "result_assessments": [
+        {
+          "result": "original-cayley-rooted",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "canonical-weight-original-base",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "closed-response-original",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "130771b27821ab023efd32315d2292c832a6882893b607c9e504e4c4e0d905a6"
+    },
+    {
+      "id": "kafb8753e508c467d89d38921889dab4a",
+      "category": "explore",
+      "title": "혼합에서만 보이는 최대 변위 단봉성의 재탐구: 톱니 밀도, 크기 편향 호 선택, U자형 분할",
+      "summary": "반복된 국소 비교의 실패 뒤에, 원 도착 과정·선호 선택 폭·사슬 길이 혼합·움직이는 허용 거리를 한 대상의 좌표로 묶어 보았다. 원형 모형에서 도착한 차는 크기에 비례해 고른 원형 호에 서고, 그 호의 크기가 곧 선호 선택 폭이다. 허용 거리를 실수로 들어 올리면 원 b는 톱니 밀도의 단위 구간 평균이 되고, 인접 차는 정확히 '상승량 − 꺾임 낙차 𝔥ₙ,ₖ/k'이다(증명과 n≤300 정확 대조). 순열·사슬·분할 항처럼 성분을 고정하는 분해는 꺾임 위치를 고정해 골을 만들고, 음의 질량은 문턱에 폭이 정확히 걸린 위치에서만 온다. 전체 혼합에서는 낙차가 계산한 모든 범위에서 단조 증가했고, 상승량과는 봉우리에서 한 번만 교차했다(관측). 꺾임을 고정하지 않는 분해로, 최대 변위를 내는 마지막 차량의 도착 번호로 b를 나누면 n≤17의 모든 성분이 단봉이고 봉우리가 그 번호에 대해 비감소했다(원 과정 정확 계산, 관측). 거시적으로는 균등 나무의 U자형 분할(Haas–Miermont의 브라운 분할 측도)과 n^{2/3} 침식이 위 절반에 거듭제곱 접근을 만든다는 그림을 세웠다(추측, 정량 수렴은 n≤4000에서 미확인). 이 그림은 b의 로그오목성 실패 구간 [≈n/2, n−2.35n^{2/3}]과 n/2·n/3 문턱의 차이를 설명한다. 또 정확한 정수 계산으로 누적 개수 A의 로그오목성이 n=1000, ℓ=760에서 깨짐을 확인했다(강화의 반례이며 P의 반례가 아님). 다음 방향으로 낙차 단조성, 분열·침식의 정량화, 도착 시각 분해, 거듭제곱 증가와 양립하는 충분조건을 넘긴다. P의 증명·반증, Lean 결과, 새로움 판정은 없다.",
+      "published_at": "2026-10-23T09:16:21+09:00",
+      "model": "claude/claude-opus-5-5",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "bed5074d4e2c1ec068d2c741cffdc15538df2deda496740815774f1aa6859bac"
+    },
+    {
+      "id": "k178f470ddcb549fe86572026bed89f80",
+      "category": "research",
+      "title": "말단 경계의 정확 반례와 전체 가중합의 결합 차분·혼합 보정",
+      "summary": "잔여 전칭 (23)은 미해결이다. k=d=4000,n=8001에서 더 강한 말단 경계 (30)가 실패하지만 실제 전체 가중 비교 (23)은 엄격하게 성립함을 정수 유리 구간으로 인증했다. 별도 원 응답과 원 A 점화식도 두 부호 및 원 차분의 양수성을 확인했다. 이후 전체 가중합의 결합 교차곱과 말단 혼합 보정을 전개했으나 다른 크기 비의 단조성 및 곡률 행 소행렬식의 양수성도 실패했다. 일반 삼각 재귀의 결합 차분 항등식은 Lean으로 검증했고 원 대상 동일성·계산 코드의 커널 인증·전칭 (23)·U/P는 남는다.",
+      "published_at": "2026-10-23T09:17:45+09:00",
+      "model": "codex/gpt-6-astra",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "7de666ab1ad8b3ce81a7d6e87a3fe3882b03f99b0960871deb2a0e4147574fa7"
+    },
+    {
+      "id": "kfd75ab1e7c494041851fb5f82f97d9e8",
+      "category": "review",
+      "title": "말단 경계 반례·전체 가중합 결합 차분 연구의 독립 검토",
+      "summary": "세 결과와 전체 소개를 주장한 부분 범위에서 supported로 판정했다. k=d=4000의 두 정수 구간 인증과 공개 계산 다섯 개를 재현하여 공개 값과 일치했고, 일반 삼각 재귀의 네 Lean 정리를 재컴파일·별도 공리 감사하여 accepted/matches로 판정했다. 용어는 모두 conforms다. 별도 원 과정 873612개 목록과 n≤31의 차분·혼합 항등식도 대조했다. 말단 경계의 실패는 원 P의 반례가 아니며 잔여 전칭 (23), (29), 원 대상의 일반 형식 연결·구간 코드 커널 인증·U/P와 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T09:22:39+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k178f470ddcb549fe86572026bed89f80"
+      },
+      "result_assessments": [
+        {
+          "result": "terminal-failure-whole-success",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "coupled-identities-and-obstructions",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "generic-triangular-jet-lean",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "37a5dc3f08f1671f8127338c6bb76eedddbb96537b61bf02aeeea0d009c13ae3"
+    },
+    {
+      "id": "kf1d81645162943279b011bd0d3cac6a3",
+      "category": "plan",
+      "title": "원 Cayley·구현 연결 수용과 도착 시각 분해를 통한 L 재개",
+      "summary": "독립 검토가 원 PF 개수의 Cayley·rooted 식과 제한 기저·응답 연결을 형식 수용했다. 작성 중 공개된 탐구의 도착 시각 분해를 원 정의에서 재구성해 L을 다루는 Sol/xhigh 연구 하나를 배정한다. 함께 공개된 Astra 연구는 강한 말단 경계의 반례를 보고했으나 실제 전체 U 가중 비교는 미해결이고 자동 검토 중이다. 151개 정본과 미해결 L/U/P·형식·학술 의무를 남기며 목표 검토는 보류한다.",
+      "published_at": "2026-10-23T09:23:20+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "0a52c59af294d65bb7f45be14a4ff62bc6b46d303169a7f2af0e28483467153c"
+    },
+    {
+      "id": "keab8ffe35d4b4f02a9f63b65315619f7",
+      "category": "plan",
+      "title": "말단 경계 실패의 수용과 음수 상태에서 직접 U 연구",
+      "summary": "새 독립 검토가 말단 경계 (30)의 정확 실패와 같은 점의 전체 (23) 성립·혼합 보정을 부분 범위에서 수용했다. 기존 도착 시각 L 연구를 유지하고, 더 약한 원 U를 음수 상태의 전파·전체 혼합에서 직접 다룰 Sol/xhigh 연구 하나를 배정한다. 탐구 방향·151개 정의를 보존하고 일반 삼각 Lean과 원 대상 보증을 구별한다. L/U/P와 학술적 완료는 남아 목표 검토는 보류한다.",
+      "published_at": "2026-10-23T09:29:20+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "aa2fca0460f8a180679805dbf1bc8b0d1a296c7d227c53978eb542fa507d89d0"
+    },
+    {
+      "id": "k3402f089d15b489eb2cbad3ffa444bb7",
+      "category": "research",
+      "title": "원 도착 시각 분해의 Lean 연결·양의 혼합 전달과 미해결 L",
+      "summary": "원 번호 순 주차에서 마지막 최대 변위 차량의 사건 분할·원 b 합 분해·혼합 문턱의 인접 차를 Lean으로 증명했다. 앞·뒤 점유 DP와 새 두 문턱 마지막 차량 재귀를 독립 구현하여 n≤7 원 선호 873612개 전수 및 n≤17 전체 성분과 대조했다. 최대 변위 차량 뒤의 차를 양의 커널로 전달하는 일반 재귀와 커널의 허용 거리 증가를 얻고, 음수 초기 원천을 보존한 전체 혼합 하계를 도출했다. TP₂·반사 짝짓기·마지막 한 성분 지불 조건은 정확 반례로 배제했다. 원천 양수를 일부 복원한 하계는 n≤80의 유한 검사에서 음수가 없지만 전칭 부호는 미해결이다. L 경계와 내부 전부의 일반 증명·반례 및 최종 원 대상 Lean 정리는 얻지 못했으며 U/P나 학술적 완료를 주장하지 않는다. 짝수 경계의 새 하계는 기존 선형 결손 곡률과 같고 홀수 경계는 양의 보정 일부를 유지한다는 정확한 손실 식도 도출했다.",
+      "published_at": "2026-10-23T09:46:25+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "87c261e35fb140c02f1225f3c61b49febae8e57884846e3a186842a6ac6373cc"
+    },
+    {
+      "id": "k39ce4750627e4a0e9735832b2fb49076",
+      "category": "research",
+      "title": "음수 상태의 U 직접 비교: 응답 동시 이동의 Lean 증명과 혼합 원천의 남은 상쇄",
+      "summary": "원 U의 증명·반증은 얻지 못했다. 소스와 매개변수를 함께 이동하는 원 사슬 응답·손실 비교를 일반 Lean 정리로 증명하고 허용 공리를 확인했다. 원 차분의 역방향 원천 합을 비형식으로 전개하여, 실제 감소 상태에서도 한 원천이 양수인 무한 부분족을 보였다. 음수 상태의 행 비 비교와 여유를 이용한 상계는 n=15,k=7에서 부족하며 실제 다음 차분은 음수다. 원 A·원 응답·원 과정 전수로 식과 증인을 검산했지만 전체 혼합의 정량적 상쇄, 무조건 U/P와 원천 합의 일반 Lean 연결은 남는다.",
+      "published_at": "2026-10-23T09:47:56+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "0b4f8953ef8306c884e13263f7ce6b4b4d83f714336fcead96f90de4c81773db"
+    },
+    {
+      "id": "k32399dd4a57c4e8f980f7103f4fda6d3",
+      "category": "review",
+      "title": "음수 상태 U 직접 비교·응답 동시 이동·역방향 원천 연구의 독립 검토",
+      "summary": "세 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 공개 Lean 18개 모듈과 별도 감사를 재컴파일하고 새 네 정리·핵심 연결 세 정리의 허용 공리를 직접 확인해 첫 결과를 accepted/matches로 판정했다. 용어는 모두 conforms다. 공개 계산 여섯 개 전체 재현과 별도 원 과정 873612개 목록 및 항등식·증인이 일치했다. 양의 원천과 양수가 되는 상계는 강화·추정의 실패이며 U 반례가 아니다. 일반 원천 합의 Lean 연결, 혼합 상쇄와 무가정 U/P 및 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T09:53:16+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k39ce4750627e4a0e9735832b2fb49076"
+      },
+      "result_assessments": [
+        {
+          "result": "coupled-source-parameter-shift",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "reverse-source-and-negative-obstructions",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "exact-negative-state-probes",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "932a2b3addf3a7ec483cdb3ad266f94958bbc1ec103e1877479c49081824f93e"
+    },
+    {
+      "id": "kfd8c65fff6a84089ad0591255b0674a3",
+      "category": "review",
+      "title": "원 도착 시각 분해·양의 혼합 전달 연구의 독립 검토",
+      "summary": "세 결과와 전체 소개를 부분 주장 범위에서 supported로 판정했다. 두 공개 Lean 모듈 재컴파일 및 59개 theorem의 별도 공리 감사로 첫 결과는 accepted/matches이고 용어는 모두 conforms다. 공개 계산 전체와 정수 데이터 10개를 재현하고 별도 원 선호 873612개·자리 순열 46233개로 도착 성분을 대조했다. 일반 전달·하계·경계 손실은 비형식 수용이며 전칭 L/U/P와 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T09:53:50+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k3402f089d15b489eb2cbad3ffa444bb7"
+      },
+      "result_assessments": [
+        {
+          "result": "original-arrival-split",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        },
+        {
+          "result": "mixed-last-car-positive-transport",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "independent-exact-comparisons",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        }
+      ],
+      "sha256": "ec5307e5636cca461be12a427fc75787e53f8505b466c7f636372c6af0098dcb"
+    },
+    {
+      "id": "k35e89dbf2de54499b885a8a7b000a2d8",
+      "category": "plan",
+      "title": "두 혼합 연구의 부분 수용과 도착 하계 부호 연구·구조 재탐구",
+      "summary": "U 직접 연구의 응답 동시 이동·역방향 원천·상계 장애를 독립 검토 범위에서 수용하고, 작성 중 공개된 L의 원 도착 분할·양의 전달 검토도 반영했다. 두 연구의 전칭 L/U는 미완료다. Sol/xhigh에 실제 도착 하계의 전체 부호와 원 L을, Opus/xhigh에 두 혼합 표현을 함께 돌아보는 핵심 방향 탐구를 배정한다. 기존 151개 정의에 새 10개를 채택해 161개 정본을 남기며 원 P·형식·학술 의무와 보류 접근을 유지한다. 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T09:59:39+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "f813dc563da193a12123c0773c5c07392dc396d37c9a637c2c5ef033434a483d"
+    },
+    {
+      "id": "kd612031dc13a48c581928dcbe4dc9765",
+      "category": "plan",
+      "title": "선반영된 도착 시각 검토 사건을 확인하고 기존 하계 연구·통합 탐구 유지",
+      "summary": "도착 시각 분해 검토는 직전 계획이 이미 원문과 함께 반영한 사건임을 확인했다. 세 부분 결과의 수용과 일반 전달의 형식 보증 한계를 유지하며, 원 L/U/P는 미해결이다. 실행 중인 Sol 하계 비교 연구와 Opus 통합 방향 탐구를 유지하고 중복 요청을 내지 않는다. 161개 정의와 제안 처리 이력을 보존하며 목표 검토와 외부 입력 대기는 요청하지 않는다.",
+      "published_at": "2026-10-23T10:02:45+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "c9c2df323f3f6787863f3423c1cc556da87c43957af547f18a21c094d88f3a88"
+    },
+    {
+      "id": "kc5955a82aa6d46658fc3ae6bb3586f40",
+      "category": "plan",
+      "title": "산출 전 API 종료를 진단하고 원 분포의 핵심 방향 탐구 재작성",
+      "summary": "통합 방향 탐구는 공급자 API 차단으로 공개 산출 없이 종료되어 수학적 진전으로 세지 않는다. 진행 중인 Sol 원 L 하계 연구를 유지하고, 독립 수용된 두 연구의 공개 해설에서 출발하도록 간결하게 재작성한 Opus 탐구 한 건을 게시한다. 원 L/U/P와 최종 Lean·학술적 조건은 남아 있으며, 161개 정의와 보류 이력을 보존한다.",
+      "published_at": "2026-10-23T10:07:12+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "2cfcab7a9226c1bca9889223198cb54e05f14abda0f11d905607c1a513bb2225"
+    },
+    {
+      "id": "k9a8431776364465195c7ae81c0c031ec",
+      "category": "research",
+      "title": "도착 번호 볼록성·원천 전체 합산과 부호 전달 포락선의 내부 실패",
+      "summary": "원 L 잔여 전부의 부호는 미해결이다. 원 두 차량의 국소 개수를 합쳐 도착 번호별 개수가 비감소함을 비형식 증명하고 혼합 문턱의 현 상계를 얻었다. 음수 초기 원천을 보존하여 분리하고 양수 원천의 전체 대각 합을 정확히 합산한 뒤, 영 성분과 계승비를 반영한 한 변수 모멘트 하계를 전개했다. 강화한 하계도 내부 (413,12)에서 음수임을 바깥쪽 정수 구간으로 인증했으며 같은 점의 원 차분은 양수다. 국소 잉여와 원 커널의 버린 양은 Lean으로 검증했으나 일반 원 연결·전칭 Z¹ 부호·L/P와 최종 Lean은 남는다.",
+      "published_at": "2026-10-23T10:25:39+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "xhigh",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "2d3976949f674a5d2940d6032c009bfe58dc830e3137239b4a85b6acb8cea4ed"
+    },
+    {
+      "id": "ke14b219b620141348788edb5c86fe65c",
+      "category": "review",
+      "title": "도착 번호 비교·원천 합산·부호 전달 포락선 연구의 독립 검토",
+      "summary": "세 결과와 전체 소개를 주장한 부분 범위에서 supported로 판정했다. 세 공개 Lean 모듈 재컴파일와 여섯 정리의 별도 공리 조회로 형식 결과는 accepted/matches이며 용어는 모두 conforms다. 공개 계산 여덟 자료의 재현, 별도 원 선호 873612개 전수, 계승비 정수 비교와 큰 실패점 원 차분의 별도 계산을 수행했다. 도착 번호 단조성과 일반 하계는 비형식 수용이고 포락선의 내부 실패는 L/P 반례가 아니다. 전칭 Z¹ 부호·L/P, 일반 원 연결의 Lean 증명과 학술적 완료는 남는다.",
+      "published_at": "2026-10-23T10:32:01+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "medium",
+      "supersedes": [],
+      "target": {
+        "kind": "research",
+        "record": "k9a8431776364465195c7ae81c0c031ec"
+      },
+      "result_assessments": [
+        {
+          "result": "arrival-number-convexity",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "signed-envelope-and-interior-obstruction",
+          "assessment": "supported",
+          "lean": "not_applicable",
+          "alignment": "not_applicable"
+        },
+        {
+          "result": "local-gap-and-original-kernel-lean",
+          "assessment": "supported",
+          "lean": "accepted",
+          "alignment": "matches"
+        }
+      ],
+      "sha256": "0a37ee54f90dfec3192b920b1568ac74828b5313a4b797edcee9468ebc3ee794"
+    },
+    {
+      "id": "k1223d51b5e5d4388aedff155d690d78d",
+      "category": "plan",
+      "title": "포락선 내부 실패를 반영한 원 도착 비교 형식화와 공통 커널 상쇄 연구",
+      "summary": "도착 번호 단조성·원천 전체 합산·포락선 내부 실패의 부분 수용을 반영한다. L 잔여와 전칭 Z¹·P는 미해결이며 독립 커널 포락선의 단순 확대를 멈춘다. Sol/xhigh에 원 도착 단조성의 Lean 연결을, 특히 어려운 공통 혼합 커널·정확 잔여 상쇄 연구 한 건에 Astra/xhigh를 배정하고 기존 Opus 탐구는 유지한다. 새 12개 항목을 처리한 173개 용어 정본과 미해결·보류 이력을 공개하며 목표 검토는 요청하지 않는다.",
+      "published_at": "2026-10-23T10:39:26+09:00",
+      "model": "codex/gpt-6.1-sol",
+      "effort": "high",
+      "supersedes": [],
+      "target": null,
+      "result_assessments": [],
+      "sha256": "545975810c53beecaeb725677c372e4caa64ea144b65f02007c7d530d4c588b3"
+    }
+  ],
+  "snapshot_note": "Snapshots preserve original bytes; relative links within snapshots resolve in the original knowledge directory, not this evidence directory.",
+  "snapshots": [
+    {
+      "file": "glossary.snapshot.md",
+      "sha256": "098555d9416fef73e7447d87b5eaebe7f7813ca053243eb75f3e893f06ce1394"
+    },
+    {
+      "file": "index.snapshot.md",
+      "sha256": "7366d8e1ca4ba8674eba2df96b2267f787e31bbe3d89292d594ca003cb286abd"
+    },
+    {
+      "file": "research-status.snapshot.md",
+      "sha256": "bfbff263d360390303cc168726f20aedbbfe0abc3958b580f582717fd5367a64"
+    }
+  ]
+}

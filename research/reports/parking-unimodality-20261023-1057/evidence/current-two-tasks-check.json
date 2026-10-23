@@ -1,0 +1,29 @@
+{
+  "cutoff": "2026-10-23T12:01:38+09:00",
+  "n3_arrival_counts": [
+    [
+      0,
+      0,
+      6
+    ],
+    [
+      0,
+      2,
+      5
+    ],
+    [
+      0,
+      0,
+      3
+    ]
+  ],
+  "n3_mixed_threshold_counts": [
+    6,
+    6,
+    8,
+    13
+  ],
+  "preference_lists_enumerated": 27,
+  "local_links_checked": 12,
+  "mermaid_rendered": true
+}
