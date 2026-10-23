@@ -1,0 +1,275 @@
+{
+  "base": "k3a9e2b2d0e5e4113bd6f6838037fccb8",
+  "entries": 300,
+  "changes": [
+    {
+      "id": 225,
+      "changes": {
+        "관련 표현": {
+          "before": "k2874758a73b749c0b8af17fcc1be6660의 conditional-size-chain-and-transport는 kcc189037a61c4faea0745b876c66fffe에서 supported다. 정수 x≥2,2x>n의 원 가중 법칙·a_x≤n−x·e_x≤1·기울임 및 정규화 기대값/이동식의 명시 범위만 수용한다. 정의의 일반 영역과 실제 전칭 부호·단조성의 미해결은 보존한다. 조건부 확률 법칙 전체의 Lean 인증은 없다.",
+          "after": "실제 감소 숲 G에서 정수 2≤x≤n<2x이면 a_x(G)≤n−x이다. 같은 영역의 정확 적중 수 e_x는 §226과 연결된다. 근거는 k2874758a73b749c0b8af17fcc1be6660/exposition.md의 조건부 크기 사슬 논증이다."
+        }
+      }
+    },
+    {
+      "id": 226,
+      "changes": {
+        "관련 표현": {
+          "before": "k2874758a73b749c0b8af17fcc1be6660의 conditional-size-chain-and-transport는 kcc189037a61c4faea0745b876c66fffe에서 supported다. 정수 x≥2,2x>n의 원 가중 법칙·a_x≤n−x·e_x≤1·기울임 및 정규화 기대값/이동식의 명시 범위만 수용한다. 정의의 일반 영역과 실제 전칭 부호·단조성의 미해결은 보존한다. 조건부 확률 법칙 전체의 Lean 인증은 없다.",
+          "after": "실제 감소 숲 G에서 크기가 같은 x인 부분나무들은 서로 겹치지 않으므로 x·e_x(G)≤n이다. 특히 2≤x≤n<2x이면 e_x(G)≤1이다. 골격 크기와 함께 쓰는 영역은 §225를 따른다."
+        }
+      }
+    },
+    {
+      "id": 134,
+      "changes": {
+        "잘 정의됨": {
+          "before": "유한 정수 차. n≤2k+1의 actualBase_eq_smallCount 및 비음수성은 검토 k1d0504eb9d5a478c8e6c31ae760d4630에서 accepted/matches다.",
+          "after": "유한 정수 차. k,n∈ℕ,n≤2k+1의 actualBase_eq_smallCount 및 비음수성은 검토 k1d0504eb9d5a478c8e6c31ae760d4630에서 accepted/matches다."
+        },
+        "관련 표현": {
+          "before": "k≥1,n≤2k+1에서 §135의 소성분 조립 개수와 같다. k=1,n=4에서는 이 함수가 −11, §135가 1이므로 전역 함수를 합치지 않는다.",
+          "after": "앞 칸의 Lean smallCount는 k=0까지 정의되지만 §135의 정본 영역은 k≥1이다. k≥1,n≤2k+1에서 §135의 소성분 조립 개수와 같다. k=1,n=4에서는 이 함수가 −11, §135가 1이므로 전역 함수를 합치지 않는다."
+        }
+      }
+    },
+    {
+      "id": 85,
+      "changes": {
+        "정의": {
+          "before": "정수 q≥1, q<H≤2q+1에서 𝒴_q(H):=q[J^{cmp}_q(H−1)+Σ(q<H′<H)binom(H−1,H′)T_(H−1−H′)𝒴_q(H′)]∈ℤ.",
+          "after": "정수 q≥1, q<H≤2q+1에서 𝒴_q(H):=q[B^{cmp}_q(H−1)+Σ(q<H′<H)binom(H−1,H′)T_(H−1−H′)𝒴_q(H′)]∈ℤ."
+        },
+        "잘 정의됨": {
+          "before": "더 작은 H′만 참조하는 유한 삼각 재귀다. J^{cmp}의 인수는 자연수이며 제한 영역의 사슬 식에서는 해당 성분 기저와 일치한다.",
+          "after": "더 작은 H′만 참조하는 유한 삼각 재귀다. 기저 B^{cmp}는 §134의 유한합으로 모든 자연수 인수에서 정의된다."
+        }
+      }
+    },
+    {
+      "id": 97,
+      "changes": {
+        "정의": {
+          "before": "위 영역과 \\(\\mathbf H\\in\\mathfrak C_{n,a}\\)에서 \\(\\mathfrak c_{n,a}(\\mathbf H):=\\binom n{H_1}T_{n-H_1}\\prod_{r=1}^{t-1}[\\binom{H_r-1}{H_{r+1}}T_{H_r-1-H_{r+1}}]J^{cmp}_a(H_t-1)\\).",
+          "after": "정수 a≥1,0≤n≤2a+1 및 \\(\\mathbf H\\in\\mathfrak C_{n,a}\\)에서 \\(\\mathfrak c_{n,a}(\\mathbf H):=\\binom n{H_1}T_{n-H_1}\\prod_{r=1}^{t-1}[\\binom{H_r-1}{H_{r+1}}T_{H_r-1-H_{r+1}}]B^{cmp}_a(H_t-1)\\)."
+        },
+        "잘 정의됨": {
+          "before": "유한 곱이다. 마지막 소성분 조립 개수의 인수 H_t−1은 자연수다.",
+          "after": "유한 곱이며 마지막 기저값은 §134의 B^{cmp}_a(H_t−1)다. 원 사슬의 정의역을 바꾸지 않았다."
+        }
+      }
+    },
+    {
+      "id": 118,
+      "changes": {
+        "정의": {
+          "before": "q≥2,a∈{1,2}에서 ℳ_q^(a)(x):=Σ_{n≥0} a! 𝔱^>_{n,q,a} xⁿ/n!∈ℚ[[x]]. 𝔱는 §110의 이항 폭 모멘트다.",
+          "after": "q≥2,a∈{1,2}에서 ℳ_q^(a)(x):=Σ_{n≥0}q^a(∂_U^a Fᵃᵉₙ,q)(q,q)xⁿ/n!∈ℚ[[x]]. 미분은 다항식의 형식 미분이다."
+        },
+        "잘 정의됨": {
+          "before": "§110의 이항 모멘트에 계승 배수를 곱한 계수로 정의하는 형식급수다. 개별 계수와 그 계수들을 모은 급수를 구별한다.",
+          "after": "각 n의 계수는 유한 다항식의 미분·자연수 대입으로 정해진다. 이를 ℚ에 포함하여 형식 지수급수를 만든다. 해석적 수렴을 가정하지 않는다."
+        },
+        "관련 표현": {
+          "before": "없음",
+          "after": "n번째 지수계수는 a!𝔱^>_{n,q,a}와 같다. §110은 순열 정의로 유지하며, 이 관계는 순열과 숲 가중합의 재귀 비교 및 표시 미분으로 얻는다. §119·120·123·124의 정의를 계산할 때에는 위 F 표현을 직접 사용한다."
+        },
+        "현재 형식 대응": {
+          "before": "미형식화. 식 (14)의 첫 두 표시 방정식은 비형식 유도 및 source_probe.py의 유한 검산.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.markedSeries q a가 이 형식급수이며 marked_coeff가 모든 n,q,a의 지수계수를 증명한다. F는 기존 componentPolynomial을 그대로 사용한다. 이번 수리에서 실제 컴파일·공리 확인을 완료했다. 원 b 하계까지 이어지는 정리는 §123과 [검증 설명](verification.md)에 있다."
+        },
+        "출처": {
+          "before": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 식 (14) 앞 정의 처리: k8871441acfea4f0eafa463d0494456c6.",
+          "after": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 식 (14) 앞 정의 처리: k8871441acfea4f0eafa463d0494456c6. 이번 F 정의의 형식 구현과 원 b 연결: [수리 증명](verification.md)."
+        }
+      }
+    },
+    {
+      "id": 119,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "급수 전체는 미형식화. 계수는 `evaluate`의 감쇠 특수값으로 구현.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedValueSeries q가 이 형식급수이며 dampedValue_coeff가 모든 n,q의 지수계수를 evalComponents n q (q−1) q와 연결한다. evalComponents는 F의 자연수 대입이다. 실제 컴파일·공리 확인을 완료했다."
+        },
+        "출처": {
+          "before": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 정의 처리: k8871441acfea4f0eafa463d0494456c6.",
+          "after": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 정의 처리: k8871441acfea4f0eafa463d0494456c6. 이번 F 정의의 형식 구현과 원 b 연결: [수리 증명](verification.md)."
+        }
+      }
+    },
+    {
+      "id": 120,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "급수 전체는 미형식화. 계수는 `dampedThreshold`로 구현.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedSeries q가 이 형식급수이며 damped_coeff가 모든 n,q의 지수계수를 q(∂_Y F)(q−1,q)와 연결한다. 실제 숲 표시 합으로의 전개는 기존 component_Y를 사용한다. 실제 컴파일·공리 확인을 완료했다."
+        },
+        "출처": {
+          "before": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 정의 처리: k8871441acfea4f0eafa463d0494456c6.",
+          "after": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 정의 처리: k8871441acfea4f0eafa463d0494456c6. 이번 F 정의의 형식 구현과 원 b 연결: [수리 증명](verification.md)."
+        }
+      }
+    },
+    {
+      "id": 123,
+      "changes": {
+        "관련 표현": {
+          "before": "없음",
+          "after": "n![x^n]𝓧q=q²[(∂²_U Fᵃᵉₙ,q)(q,q)−(∂_Y Fᵃᵉₙ,q)(q−1,q)]. 두 항은 같은 F에서 얻는다. 계수의 비음수성을 주장하는 식은 아니다."
+        },
+        "현재 형식 대응": {
+          "before": "급수는 미형식화. 계수의 원 b 하계 연결은 Bound.lean으로 형식화.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.numeratorSeries q가 이 급수다. numerator_coeff는 관련 표현의 계수식을, numerator_coeff_original_lower는 모든 n≥1,q≥2에서 n![x^n]𝓧q/q²≤bₙ,q−bₙ,q−1을 증명한다. original_increase_of_numerator_coeff는 이 계수가 비음수일 때 bₙ,q−1≤bₙ,q임을 증명한다. 실제 컴파일·공리 확인을 완료했으며 [검증 설명](verification.md)에 논증·환경·로그를 연결했다. 계수 자체의 전칭 비음수성은 이 정리의 결론이 아니다."
+        },
+        "출처": {
+          "before": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 식 (15) 정의 처리: k8871441acfea4f0eafa463d0494456c6.",
+          "after": "k772e2708b66f4a2e8e9322e151db43ab/exposition.md §4 식 (15) 정의 처리: k8871441acfea4f0eafa463d0494456c6. 이번 F 정의의 형식 구현과 원 b 연결: [수리 증명](verification.md)."
+        }
+      }
+    },
+    {
+      "id": 136,
+      "changes": {
+        "관련 표현": {
+          "before": "이 사슬 다항식은 k,n∈ℕ 전체에서 정의된다. 제한 영역의 사슬 전개에도 같은 함수를 사용하며, 명시적 사슬 합과의 비형식 연결 및 미완료 일반 Lean 범위는 원 연구와 이력에 보존한다.",
+          "after": "k,n∈ℕ 전체에서 정의된 사슬 다항식이다. k≥1,n≤2k+1의 명시적 사슬 전개에도 이 함수를 같은 영역에 제한해 사용한다. 전개의 근거는 kdc2eaac490144ba1be92ba8a428a2228/exposition.md §4와 그곳에 인용된 사슬 분해다."
+        }
+      }
+    },
+    {
+      "id": 148,
+      "changes": {
+        "관련 표현": {
+          "before": "검토 kfd75ab1e7c494041851fb5f82f97d9e8에서 원 응답·결합·혼합 항등식과 특정 입력의 유리수 구간 계산을 비형식 supported로 수용했다. 이 함수의 원 대상 일반 Lean 식별·부호 정리·구간 코드 커널 인증은 미완료다.",
+          "after": "§99의 사슬 응답 다항식에 z를 대입하고 계승·c^j로 정규화한 값이다. c>0이고 j≥0이므로 이 정규화의 분모가 양수다."
+        }
+      }
+    },
+    {
+      "id": 149,
+      "changes": {
+        "관련 표현": {
+          "before": "검토 kfd75ab1e7c494041851fb5f82f97d9e8에서 원 응답·결합·혼합 항등식과 특정 입력의 유리수 구간 계산을 비형식 supported로 수용했다. 이 함수의 원 대상 일반 Lean 식별·부호 정리·구간 코드 커널 인증은 미완료다.",
+          "after": "§105의 말단 크기 곡률 비와 §137의 전체 성분 곡률 비의 차다. 두 분모의 양수성은 정의된 k,n 영역에서 사용한다."
+        }
+      }
+    },
+    {
+      "id": 150,
+      "changes": {
+        "관련 표현": {
+          "before": "검토 kfd75ab1e7c494041851fb5f82f97d9e8가 일반 삼각 해의 네 정리를 재컴파일·별도 공리 감사하여 accepted/matches로 수용했다. 허용 세 공리만 사용한다. 원 사슬과의 일반 형식 동일성이나 원 U/P의 증명은 이 수용 범위에 포함되지 않는다.",
+          "after": "§151은 이 해를 매개변수 z의 인접 값에서 반복해서 빼는 연산이다."
+        },
+        "현재 형식 대응": {
+          "before": "k178f470ddcb549fe86572026bed89f80/CoupledJets.lean의 `CoupledJets.solve`, `solve_rec`.",
+          "after": "k178f470ddcb549fe86572026bed89f80/CoupledJets.lean의 `CoupledJets.solve`, `solve_rec`. 검토 kfd75ab1e7c494041851fb5f82f97d9e8에서 해당 일반 삼각 해 정리들을 재컴파일·공리 확인하여 accepted/matches로 수용했다. 원 사슬과의 일반 Lean 동일성과 원 U/P는 이 수용 범위에 포함되지 않는다."
+        }
+      }
+    },
+    {
+      "id": 151,
+      "changes": {
+        "관련 표현": {
+          "before": "검토 kfd75ab1e7c494041851fb5f82f97d9e8가 일반 삼각 해의 네 정리를 재컴파일·별도 공리 감사하여 accepted/matches로 수용했다. 허용 세 공리만 사용한다. 원 사슬과의 일반 형식 동일성이나 원 U/P의 증명은 이 수용 범위에 포함되지 않는다.",
+          "after": "r=0이면 §150의 해이고, r≥1이면 그 해의 z 방향 r차 전진 차분이다."
+        },
+        "현재 형식 대응": {
+          "before": "k178f470ddcb549fe86572026bed89f80/CoupledJets.lean의 `CoupledJets.jet`, `jet_rec`, `jet_as_solve`.",
+          "after": "k178f470ddcb549fe86572026bed89f80/CoupledJets.lean의 `CoupledJets.jet`, `jet_rec`, `jet_as_solve`. 검토 kfd75ab1e7c494041851fb5f82f97d9e8에서 해당 일반 삼각 해 정리들을 재컴파일·공리 확인하여 accepted/matches로 수용했다. 원 사슬과의 일반 Lean 동일성과 원 U/P는 이 수용 범위에 포함되지 않는다."
+        }
+      }
+    },
+    {
+      "id": 228,
+      "changes": {
+        "관련 표현": {
+          "before": "k2874758a73b749c0b8af17fcc1be6660의 conditional-size-chain-and-transport는 kcc189037a61c4faea0745b876c66fffe에서 supported다. 정수 x≥2,2x>n의 원 가중 법칙·a_x≤n−x·e_x≤1·기울임 및 정규화 기대값/이동식의 명시 범위만 수용한다. 정의의 일반 영역과 실제 전칭 부호·단조성의 미해결은 보존한다. 조건부 확률 법칙 전체의 Lean 인증은 없다.",
+          "after": "정수 y=x≥1에서 분모는 원 Aₙ,x−1이다. 따라서 ζₙ,x(G)=∏_v min(t_v(G),x)/Aₙ,x−1로 쓸 수 있다. 원 A와 실제 숲 합의 연결은 §9에 있다."
+        }
+      }
+    },
+    {
+      "id": 231,
+      "changes": {
+        "관련 표현": {
+          "before": "k2874758a73b749c0b8af17fcc1be6660의 conditional-size-chain-and-transport는 kcc189037a61c4faea0745b876c66fffe에서 supported다. 정수 x≥2,2x>n의 원 가중 법칙·a_x≤n−x·e_x≤1·기울임 및 정규화 기대값/이동식의 명시 범위만 수용한다. 정의의 일반 영역과 실제 전칭 부호·단조성의 미해결은 보존한다. 조건부 확률 법칙 전체의 Lean 인증은 없다.",
+          "after": "§232의 정규화 손실과 빼면 𝔤⁺ₙ,ℓ−𝔤⁻ₙ,ℓ=(ℓ+1)²Δₙ,ℓ/Aₙ,ℓ이다. 양의 인자로 나눈 것이므로 원 Δ와 부호가 같다."
+        }
+      }
+    },
+    {
+      "id": 232,
+      "changes": {
+        "관련 표현": {
+          "before": "k2874758a73b749c0b8af17fcc1be6660의 conditional-size-chain-and-transport는 kcc189037a61c4faea0745b876c66fffe에서 supported다. 정수 x≥2,2x>n의 원 가중 법칙·a_x≤n−x·e_x≤1·기울임 및 정규화 기대값/이동식의 명시 범위만 수용한다. 정의의 일반 영역과 실제 전칭 부호·단조성의 미해결은 보존한다. 조건부 확률 법칙 전체의 Lean 인증은 없다.",
+          "after": "§231의 정규화 이득과의 차가 (ℓ+1)²Δₙ,ℓ/Aₙ,ℓ이며, 이 항목 자체의 단조성은 그 등식에서 따라오지 않는다."
+        }
+      }
+    },
+    {
+      "id": 259,
+      "changes": {
+        "관련 표현": {
+          "before": "k716f5d11dad24f78a224774000d9f0b0/determinant-tail.md (8),(18)의 x=ℓ+1,d=n−x≥2,x≥2d³에서의 𝓜^{step}>0는 k60bb458604ee4921a8ed08021b1ef90d/combined-determinant-cubic-tail에서 비형식 supported다. 마지막 실수 산술 cubic_budget_new만 형식화됐고 실제 행렬식 꼬리 전체는 미형식화다. 새 무조건 U 무한 영역은 없으며 일반 행렬식 부호는 미해결이다.",
+          "after": "§195·196의 이득과 손실, §257·258의 전진 곡률과 적중 보정을 결합한 식이다. 원 Δ 자체가 아니라 인접 문턱 사이의 부호 전달을 비교하는 데 사용한다."
+        }
+      }
+    },
+    {
+      "id": 269,
+      "changes": {
+        "관련 표현": {
+          "before": "정규화 응답과 z=1에서의 동일성은 k60bb458604ee4921a8ed08021b1ef90d가 비형식 supported로 수용했다. z를 유지하는 새 다항식 전체의 Lean은 없다.",
+          "after": "정수 s≥0,n≥s+1에서 𝓑^{blk}_{s+2,n}(c;1)=((s+1)!/n!)𝔎_c(n,s)이다. 변수 z를 1로 두어 한 칸 블록 수 표시를 없앤 식이며, 근거는 k716f5d11dad24f78a224774000d9f0b0/cancellation.md (20)이다."
+        }
+      }
+    },
+    {
+      "id": 271,
+      "changes": {
+        "관련 표현": {
+          "before": "k60bb458604ee4921a8ed08021b1ef90d가 4≤d<x의 1차 계수 음수성을 비형식 supported로 수용했다. z=1에서 계승 배율을 곱한 값은 s=x 말단 원천 괄호이며 전체 𝓜^{step}가 아니다. 전체 원 행렬식·U/P의 반례가 아니다.",
+          "after": "n=x+d에서 (n!/(x+1)!)²𝓓^{blk}_{x,d}(1)은 합친 수송 전개의 s=x 말단 원천 괄호다. 다른 원천까지 더한 전체 §259 행렬식과 구별한다. 정확한 전개는 k716f5d11dad24f78a224774000d9f0b0/cancellation.md (24)다."
+        }
+      }
+    },
+    {
+      "id": 273,
+      "changes": {
+        "관련 표현": {
+          "before": "j=0이면 F^{ae,[0]}ₘ,q(U,Y)=Fᵃᵉₘ,q(0,Y). 큰 성분 수를 보존한 분해는 k9a3297b965b24ea7a87eb1a666b8cd1a/exposition.md §3과 검토 kc0a4185b9ecf4d70b84ed75e8e3caf67의 비형식 수용 범위다.",
+          "after": "j=0이면 F^{ae,[0]}ₘ,q(U,Y)=Fᵃᵉₘ,q(0,Y)이다. m<3(q+1)이면 큰 성분은 많아야 둘이므로 F=F^{ae,[0]}+F^{ae,[1]}+F^{ae,[2]}로 분해한다. 근거는 k9a3297b965b24ea7a87eb1a666b8cd1a/exposition.md §3이다."
+        }
+      }
+    },
+    {
+      "id": 275,
+      "changes": {
+        "정의": {
+          "before": "m∈ℕ,정수 q≥4,0≤m≤2q+3에서, q 고정의 Fᵣ=Fᵃᵉᵣ,q,Eᵣ(Y)=Fᵃᵉᵣ,q(0,Y)는 이 식 안에서만 쓰는 약칭를 써 \\(S^{2cmp}_{m,q}:=E_m(q-1)-E_m(q)+𝒟^{cmp}_qF^{ae,[2]}_{m,q}+\\sum_{s=q+1}^m\\binom ms[E_{m-s}(q)\\{F_{s-1}(q+1,q)-F_{s-1}(q-1,q-1)\\}+(q-1)F_{s-1}(q-1,q-1)\\{E_{m-s}(q-1)-E_{m-s}(q)\\}]\\)∈ℤ.",
+          "after": "m∈ℕ,정수 q≥4,0≤m≤2q+3에서, q 고정의 Fᵣ=Fᵃᵉᵣ,q,Eᵣ(Y)=Fᵃᵉᵣ,q(0,Y)는 이 식 안에서만 쓰는 약칭으로 두고 \\(S^{2cmp}_{m,q}:=E_m(q-1)-E_m(q)+𝒟^{cmp}_qF^{ae,[2]}_{m,q}+\\sum_{s=q+1}^m\\binom ms[E_{m-s}(q)\\{F_{s-1}(q+1,q)-F_{s-1}(q-1,q-1)\\}+(q-1)F_{s-1}(q-1,q-1)\\{E_{m-s}(q-1)-E_{m-s}(q)\\}]\\)∈ℤ."
+        },
+        "관련 표현": {
+          "before": "k9a3297b965b24ea7a87eb1a666b8cd1a/exposition.md (20),(21)의 실제 라벨 분할과 수송은 kc0a4185b9ecf4d70b84ed75e8e3caf67에서 비형식 supported로 수용됐다. 경계의 Sᵉˣᵃᶜᵗ와 같은 대상이 아니며 정의역을 바꾸어 같은 이름으로 쓰지 않는다. 일반 수송 Lean과 원 부호는 미완료다.",
+          "after": "두 큰 성분을 남긴 F^{ae,[2]}의 세 평가 차와 나머지 성분의 전달을 보존하는 원천이다. §265의 경계 원천과 다른 식이며 정의역을 바꾸어 같은 대상으로 사용하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 317,
+      "changes": {
+        "잘 정의됨": {
+          "before": "출처 response.md §3의 Tonelli·변수변환으로 위 변수의 밀도. α=3/2에서 §282의 극한 밀도 f_ν와 같다.",
+          "after": "𝒵와 독립인 평균 1의 지수확률변수 X에 대해 (X/𝒵)^(1/α)의 밀도다. 출처 response.md §3이 Tonelli 정리와 변수변환으로 이를 보인다. α=3/2에서 §282의 극한 밀도 f_ν와 같다."
+        }
+      }
+    }
+  ],
+  "reordered_prerequisites": [
+    98,
+    134
+  ],
+  "formal_evidence": "formal-audit.json",
+  "independent_review_verdict_added": false
+}

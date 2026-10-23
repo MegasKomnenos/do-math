@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+    "env",
+    "lean",
+    "-R",
+    "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+    "-o",
+    "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\lean-build\\Parking.olean",
+    "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Parking.lean"
+  ],
+  "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+  "LEAN_PATH": "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\lean-build",
+  "exit_code": 0
+}

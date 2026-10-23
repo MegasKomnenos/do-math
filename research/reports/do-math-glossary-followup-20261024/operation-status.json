@@ -1,0 +1,10 @@
+{
+  "runner_alive": true,
+  "dispatch_blocks": [
+    "STOP"
+  ],
+  "last_plan": "k183b91f20f754fb6a4b9e34936038adf",
+  "active_sessions": 0,
+  "pending_requests": 5,
+  "stop": true
+}

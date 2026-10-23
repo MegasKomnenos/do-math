@@ -1,0 +1,317 @@
+{
+  "Parking": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Parking.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Parking.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "1185895968a5a32697c72265b4934e3ef0c38358c5838d7351639101f8f5e48e"
+  },
+  "Certificates": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Certificates.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Certificates.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "6e6b8dd64b2edaac0065453077d4d4e3fcfca55e7f9228d421eb55413ac40cc5"
+  },
+  "LastCar": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\LastCar.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\LastCar.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "e3ec4ce2f7fd6c770a649250c59a750deccc0894efccf616461c571da18cb4e2"
+  },
+  "Assembly": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Assembly.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Assembly.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "2804db67208e5f8c17a382109ff8baaa6c2577ea70dc4d0f63965b18916534b4"
+  },
+  "Extraction": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Extraction.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Extraction.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "5fa30e0afd2e7b3aa9d0f7b6a0c8c830be40ed6af27535a87f388eb2790b22ec"
+  },
+  "Equivalence": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Equivalence.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Equivalence.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "d77d8bd43b2fde7fe4658f388e9a69db24822db7ab1137aad4d73e497e6bc27f"
+  },
+  "Recurrence": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Recurrence.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Recurrence.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "8e9eab70e401ccbef8b664ea57a39385dcc3a02ef2cd38bcb382774060e3cd4f"
+  },
+  "PInterface": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\PInterface.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\PInterface.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "520a2559e12d841ca704f9a9bb97f9f105f9183d20973113f2a96314126d7fe2"
+  },
+  "SkeletonAlgebra": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\SkeletonAlgebra.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\SkeletonAlgebra.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "e2add9f7bc5627bcad40a7897680130ec243508801f4c706acd182c7e6bc513b"
+  },
+  "Forest": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\Forest.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\Forest.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "71417d74330f1d8e9b3d5fab4ddd22912a76123a0c57227e5387711e9e638358"
+  },
+  "ForestTransport": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\ForestTransport.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\ForestTransport.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "8754ea851ba1d35c41a0c60f94dfdbc3733a95244e5a768500a4c8b45bf17c3c"
+  },
+  "ForestSplit": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\ForestSplit.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\ForestSplit.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "5d69c97485cab522512fdc53af08ca7c63507ced4a2a2d977ac7ce356fc7f8ad"
+  },
+  "ForestEvaluation": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\ForestEvaluation.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\ForestEvaluation.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "2820f4f776e2f5a50c802b1c0c8568eeb13fa5f722c7060a1ec8dc6db738c1ab"
+  },
+  "CanonicalForest": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\CanonicalForest.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\CanonicalForest.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "a7291a8c5511129dadb54501c51920a8deb36f5a28711f70acf54e4abb12a6fe"
+  },
+  "GainLoss": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\GainLoss.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\GainLoss.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "ab408b891d181d232446994e38adb559b2c66ac658a83768ddfe25b81558d95b"
+  },
+  "BoundaryForest": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\BoundaryForest.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\BoundaryForest.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "b6f83866a185e2939ad8df5f55e0a2883d516085511b98d057ff563d9dbf15e1"
+  },
+  "MarkedComponents": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\MarkedComponents.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\MarkedComponents.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "ae01353c70fc3206036fbe4977bf70c6c7b4be51c6bb8df9b5419f08dbedd19d"
+  },
+  "MarkedLower": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\MarkedLower.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\MarkedLower.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "e4237ffa6dc1dd7d5cb49ad0b185c793df824ab548d7ded21d3be1bc2cfc1503"
+  },
+  "InteriorLower": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\InteriorLower.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\InteriorLower.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "2f119dc5c5757101b523a3691b230ed48c7505b5cd4ce44c3c05921ad99438c9"
+  },
+  "GlossaryRepair": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\GlossaryRepair.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\GlossaryRepair.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "b7583c154ae71cb9c979632a55365936db1af5590b5ef02a92e08f6a7b3e6c18"
+  },
+  "SeriesRepair": {
+    "argv": [
+      "C:/math/.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lake.exe",
+      "env",
+      "lean",
+      "-R",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean",
+      "-o",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\reproduction\\build\\SeriesRepair.olean",
+      "C:\\math\\.skill-workspace\\do-math-glossary-followup-20261024\\publication\\lean\\SeriesRepair.lean"
+    ],
+    "cwd": "C:/math/.skill-workspace/do-math-toolchains/mathlib-4.32.0",
+    "exit_code": 0,
+    "sha256": "8f4a6cd2669713671fb2b2e8acd34613e309667dd4f96442a3292673265073d4"
+  }
+}

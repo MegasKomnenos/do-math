@@ -1,0 +1,6 @@
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\GlossaryRepair.lean:22:15: warning: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+'GlossaryRepair.power_gap_le_derivative' depends on axioms: [propext, Classical.choice, Quot.sound]
+'GlossaryRepair.component_loss_le_Y' depends on axioms: [propext, Classical.choice, Quot.sound]
+'GlossaryRepair.original_delta_F_restored' depends on axioms: [propext, Classical.choice, Quot.sound]

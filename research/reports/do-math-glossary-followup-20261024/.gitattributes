@@ -1,0 +1,2 @@
+# Preserve the exact Lean source bytes recorded in formal-audit.json.
+lean/*.lean -text -whitespace

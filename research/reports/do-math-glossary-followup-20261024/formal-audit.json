@@ -1,0 +1,164 @@
+{
+  "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+  "dependency_source_count": 19,
+  "modules": {
+    "Assembly": {
+      "sha256": "2804db67208e5f8c17a382109ff8baaa6c2577ea70dc4d0f63965b18916534b4",
+      "exit_code": 0
+    },
+    "BoundaryForest": {
+      "sha256": "b6f83866a185e2939ad8df5f55e0a2883d516085511b98d057ff563d9dbf15e1",
+      "exit_code": 0
+    },
+    "CanonicalForest": {
+      "sha256": "a7291a8c5511129dadb54501c51920a8deb36f5a28711f70acf54e4abb12a6fe",
+      "exit_code": 0
+    },
+    "Certificates": {
+      "sha256": "6e6b8dd64b2edaac0065453077d4d4e3fcfca55e7f9228d421eb55413ac40cc5",
+      "exit_code": 0
+    },
+    "Equivalence": {
+      "sha256": "d77d8bd43b2fde7fe4658f388e9a69db24822db7ab1137aad4d73e497e6bc27f",
+      "exit_code": 0
+    },
+    "Extraction": {
+      "sha256": "5fa30e0afd2e7b3aa9d0f7b6a0c8c830be40ed6af27535a87f388eb2790b22ec",
+      "exit_code": 0
+    },
+    "Forest": {
+      "sha256": "71417d74330f1d8e9b3d5fab4ddd22912a76123a0c57227e5387711e9e638358",
+      "exit_code": 0
+    },
+    "ForestEvaluation": {
+      "sha256": "2820f4f776e2f5a50c802b1c0c8568eeb13fa5f722c7060a1ec8dc6db738c1ab",
+      "exit_code": 0
+    },
+    "ForestSplit": {
+      "sha256": "5d69c97485cab522512fdc53af08ca7c63507ced4a2a2d977ac7ce356fc7f8ad",
+      "exit_code": 0
+    },
+    "ForestTransport": {
+      "sha256": "8754ea851ba1d35c41a0c60f94dfdbc3733a95244e5a768500a4c8b45bf17c3c",
+      "exit_code": 0
+    },
+    "GainLoss": {
+      "sha256": "ab408b891d181d232446994e38adb559b2c66ac658a83768ddfe25b81558d95b",
+      "exit_code": 0
+    },
+    "GlossaryRepair": {
+      "sha256": "b7583c154ae71cb9c979632a55365936db1af5590b5ef02a92e08f6a7b3e6c18",
+      "exit_code": 0
+    },
+    "InteriorLower": {
+      "sha256": "2f119dc5c5757101b523a3691b230ed48c7505b5cd4ce44c3c05921ad99438c9",
+      "exit_code": 0
+    },
+    "LastCar": {
+      "sha256": "e3ec4ce2f7fd6c770a649250c59a750deccc0894efccf616461c571da18cb4e2",
+      "exit_code": 0
+    },
+    "MarkedComponents": {
+      "sha256": "ae01353c70fc3206036fbe4977bf70c6c7b4be51c6bb8df9b5419f08dbedd19d",
+      "exit_code": 0
+    },
+    "MarkedLower": {
+      "sha256": "e4237ffa6dc1dd7d5cb49ad0b185c793df824ab548d7ded21d3be1bc2cfc1503",
+      "exit_code": 0
+    },
+    "Parking": {
+      "sha256": "1185895968a5a32697c72265b4934e3ef0c38358c5838d7351639101f8f5e48e",
+      "exit_code": 0
+    },
+    "PInterface": {
+      "sha256": "520a2559e12d841ca704f9a9bb97f9f105f9183d20973113f2a96314126d7fe2",
+      "exit_code": 0
+    },
+    "Recurrence": {
+      "sha256": "8e9eab70e401ccbef8b664ea57a39385dcc3a02ef2cd38bcb382774060e3cd4f",
+      "exit_code": 0
+    },
+    "SeriesRepair": {
+      "sha256": "8f4a6cd2669713671fb2b2e8acd34613e309667dd4f96442a3292673265073d4",
+      "exit_code": 0
+    },
+    "SkeletonAlgebra": {
+      "sha256": "e2add9f7bc5627bcad40a7897680130ec243508801f4c706acd182c7e6bc513b",
+      "exit_code": 0
+    }
+  },
+  "repair_axioms": {
+    "GlossaryRepair.power_gap_le_derivative": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.component_loss_le_Y": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.original_delta_F_restored": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.markedSeries": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.dampedValueSeries": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.dampedSeries": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.numeratorSeries": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.marked_coeff": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.dampedValue_coeff": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.damped_coeff": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.numerator_coeff": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.numerator_coeff_original_lower": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "GlossaryRepair.original_increase_of_numerator_coeff": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "independent_review": false,
+  "clean_reproduction": {
+    "execution": "reproduction-execution.json",
+    "logs": "reproduction-logs",
+    "modules": 21,
+    "axioms_match": true
+  }
+}

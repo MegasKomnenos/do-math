@@ -1,0 +1,22 @@
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\LastCar.lean:39:6: warning: Try `simp at hh` instead of `simpa using hh`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\LastCar.lean:54:4: warning: Try `simp at hz` instead of `simpa using hz`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\LastCar.lean:142:2: warning: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+'ParkingLastCar.certified_restrict' depends on axioms: [propext, Quot.sound]
+'ParkingLastCar.last_barrier' depends on axioms: [propext, Quot.sound]
+'ParkingLastCar.mem_leftSet' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.leftSet_card' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.index_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.index_range' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.index_cases' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.index_lt_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.index_disjoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.card_partition' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.paste_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.paste_left' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.paste_right' depends on axioms: [propext, Classical.choice, Quot.sound]

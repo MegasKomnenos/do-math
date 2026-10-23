@@ -1,0 +1,21 @@
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\InteriorLower.lean:47:69: warning: This simp argument is unused:
+  mul_add
+
+Hint: Omit it from the simp argument list.
+  simp only [Nat.cast_sum, ̲Nat.cast_mul, ̲Nat.cast_pow, ̲mul_a̵d̵d̵,̵m̵u̵l̵_̵sub,
+        Finset.sum_sub_distrib, ̲Finset.sum_add_distrib, ̲Finset.mul_sum]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\InteriorLower.lean:47:77: warning: This simp argument is unused:
+  mul_sub
+
+Hint: Omit it from the simp argument list.
+  simp only [Nat.cast_sum, ̲Nat.cast_mul, ̲Nat.cast_pow, ̲mul_add,m̵u̵l̵_̵s̵u̵b̵,̵
+        Finset.sum_sub_distrib, ̲Finset.sum_add_distrib, ̲Finset.mul_sum]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\InteriorLower.lean:73:5: warning: Variable name `hq` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

@@ -1,0 +1,7 @@
+{
+  "verify_relations.py": {
+    "published_sha256": "670ec7923a40f86686d00cc8afbe54075bc65dbeb807e58320d2f21c9f4d2719",
+    "archived_sha256": "e220ba72a03c7305a99399736bbd733e822f6dfe5dac8db3941e52b63d36f1f6",
+    "change": "Removed trailing empty line and normalized line endings in the root-repository copy only. Published evidence is unchanged."
+  }
+}
