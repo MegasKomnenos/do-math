@@ -1,0 +1,3032 @@
+[
+  {
+    "term": 1,
+    "target_line": 12,
+    "name": "자연수",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "0 포함 관례와 양수 원 문제를 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 2,
+    "target_line": 25,
+    "name": "자리집합",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "[0]=∅; Fin 값에 1을 더함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 3,
+    "target_line": 38,
+    "name": "선호 목록",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "빈 함수 하나; 도착 순서 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 4,
+    "target_line": 51,
+    "name": "주차 과정",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "최소 빈자리와 실패 전파가 결정적.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 5,
+    "target_line": 64,
+    "name": "주차 함수",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "성공 목록 부분집합이며 순열 궤도 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 6,
+    "target_line": 77,
+    "name": "실제 주차 자리",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "성공 조건으로 i번째 자리 존재.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 7,
+    "target_line": 90,
+    "name": "변위",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "s≥a로 Nat 차와 정수 차 일치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k92260b6c2f6e4c999f741f37265db176",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 8,
+    "target_line": 103,
+    "name": "최대 변위",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "n≥1의 달성 최대; 빈 크기 미지정.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k92260b6c2f6e4c999f741f37265db176",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 9,
+    "target_line": 116,
+    "name": "누적 개수",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "A₀,ℓ=1과 Aₙ,−1=0; 표의 유효 사각형 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k41050a1934d84a1fae10f1e3af32d0a1,k93022a6f4bf2430ba692974597fa8f1e,k1d0504eb9d5a478c8e6c31ae760d4630,kb196a5163fc74633b71d21d0bc248fa2,kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 10,
+    "target_line": 129,
+    "name": "정확 개수",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "b는 양수 크기만; 차분의 자연수 잘림은 포함으로 해소.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kb196a5163fc74633b71d21d0bc248fa2,kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 11,
+    "target_line": 142,
+    "name": "단봉성",
+    "definition_source": "goal.md 및 대상의 출처 칸",
+    "checks": "평탄 봉우리 허용; 실수 구현 누락 F3.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 12,
+    "target_line": 155,
+    "name": "선호 접두부 · β",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "k≤N; N=k=0의 빈 접두부.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 13,
+    "target_line": 168,
+    "name": "직전 빈자리 · p_S(s)",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "0을 포함한 max; 내부 prev는 원 직전 빈자리 값.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf60b5d44129f444b9c13cfa739536768",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 14,
+    "target_line": 181,
+    "name": "전이 간격 · g_S(s)",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "s−p≥1; 내부 gap의 한 칸 변환 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf60b5d44129f444b9c13cfa739536768",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 15,
+    "target_line": 194,
+    "name": "전이 가중치 · w_ℓ(S,s)",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "선호가 p+1,…,s에 놓이므로 min(g,ℓ+1).",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf60b5d44129f444b9c13cfa739536768",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 16,
+    "target_line": 207,
+    "name": "제한 점유 접두부 개수 · D_ℓ(S)",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "판 [18] 고정; §153의 제한형이라 편집상 중복 후보 F5.",
+    "issues": [
+      "F5-선택"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 17,
+    "target_line": 220,
+    "name": "정확 점유 접두부 개수 · H(S,m)",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "빈 초기화는 M₀ 정의와 구분됨.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 18,
+    "target_line": 233,
+    "name": "첫 실패 개수 · F_n,k",
+    "definition_source": "k746a9db449ff45fd9b973172e4b40861/glossary-proposals.md",
+    "checks": "첫 실패 뒤 선호도 모두 세는 전체 목록 사건.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 19,
+    "target_line": 246,
+    "name": "점유 자리집합",
+    "definition_source": "k342ab0d73a284696bcb1050ba1ce7e00/glossary-proposals.md",
+    "checks": "점유집합은 순서 없는 상태이며 선호 목록과 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 20,
+    "target_line": 259,
+    "name": "후보 자리집합",
+    "definition_source": "k342ab0d73a284696bcb1050ba1ce7e00/glossary-proposals.md",
+    "checks": "빈 후보와 min 선택의 두 경우.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 21,
+    "target_line": 272,
+    "name": "빈 목록까지 확장한 보조 최대 변위",
+    "definition_source": "k342ab0d73a284696bcb1050ba1ce7e00/glossary-proposals.md",
+    "checks": "빈 sup=0 확장; 양수에서 §8과 같음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 22,
+    "target_line": 285,
+    "name": "봉우리 위치 조건",
+    "definition_source": "k342ab0d73a284696bcb1050ba1ce7e00/glossary-proposals.md",
+    "checks": "c<n 및 마지막 비교 k<n−1 정확.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 23,
+    "target_line": 298,
+    "name": "주차 결과 순열 · π",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "자리→차 번호인 역순열.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 24,
+    "target_line": 311,
+    "name": "선호 선택 폭 · hⱼ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "왼쪽 큰 번호 장벽; h≥1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 25,
+    "target_line": 324,
+    "name": "전체 개수 · Tₙ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "T₀=1; Cayley는 n≥1, rooted 식은 s≥0.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kb4a55fd1ff714b01a68cad95eb87f3c3,k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 26,
+    "target_line": 337,
+    "name": "프라임 주차 함수 · PPFₙ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "n=1의 프라임 조건은 공허함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 27,
+    "target_line": 350,
+    "name": "프라임 누적 개수 · pᵖʳₙ,ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "p₀=0과 PF₀=1을 혼동하지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 28,
+    "target_line": 363,
+    "name": "프라임 정확 개수 · qₙ,ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "프라임 수준 개수의 망원차; b와 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 29,
+    "target_line": 376,
+    "name": "누적 지수 생성함수 · ℱℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "EGF의 n=0 항 1; 해석적 사용 조건부.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 30,
+    "target_line": 389,
+    "name": "프라임 누적 지수 생성함수 · 𝒞ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "상수항 0; 전해석성은 인용한 비형식 판정 범위.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k011d78d902664efbb1f1ef0d601484a7",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 31,
+    "target_line": 402,
+    "name": "포화 보정 다항식 · Vℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "ℓ=0 합은 빈 합 0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 32,
+    "target_line": 415,
+    "name": "보정 원시함수 · Wℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "상수항 0인 V의 원시함수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 33,
+    "target_line": 428,
+    "name": "프라임 정확 지수 생성함수 · ℋℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "ℓ≥1 제한으로 두 C의 영역 적합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 34,
+    "target_line": 441,
+    "name": "양의 단순극 위치 · ρℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "양의 C=1 근; 원 순열 분해의 비형식 보증 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k011d78d902664efbb1f1ef0d601484a7",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 35,
+    "target_line": 454,
+    "name": "점근 계수 · κℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "ρ>0,C′>0이 분모 보장.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k011d78d902664efbb1f1ef0d601484a7",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 36,
+    "target_line": 467,
+    "name": "인접 차분 · Δⱼ,ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "정수 중앙차; n=0 경계와 양수 Lean 제한 구별.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e,k41050a1934d84a1fae10f1e3af32d0a1,kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 37,
+    "target_line": 480,
+    "name": "누적 증분 · eⱼ,ᵣ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "r≥1에서 e₀,r=0; b₀를 만들지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 38,
+    "target_line": 493,
+    "name": "마지막 차량 가중치 · ωₖ,ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "min 가중치는 n=0 자식에도 적합.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k011d78d902664efbb1f1ef0d601484a7",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 39,
+    "target_line": 506,
+    "name": "포화 손실 · Kₙ,ℓ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "두 T 인수 비음수; 포화 가정은 별도.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 40,
+    "target_line": 519,
+    "name": "정규화 전체 계수 · fⱼ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "T/j!의 보통 계수 척도.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 41,
+    "target_line": 532,
+    "name": "단위 허용 거리 정규화 계수 · uₙ",
+    "definition_source": "k12c717105e4f436ebbc4a311ae64134a/glossary-proposals.md",
+    "checks": "Aₙ,₁/n!, 차량 선호와 다른 u.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 42,
+    "target_line": 545,
+    "name": "선착 조건",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "단사·초기점유 배제·선착 증인이 모두 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 43,
+    "target_line": 558,
+    "name": "변위 제한 실행 기록",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "n=0 빈 함수 쌍 하나; M̄ 제한과 동치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 44,
+    "target_line": 571,
+    "name": "왼쪽 차량 번호 집합",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "마지막 차량 제외; |I|=마지막 자리−1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 45,
+    "target_line": 584,
+    "name": "도착 번호 표준화",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "증가 열거로 원 도착 순서 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 46,
+    "target_line": 597,
+    "name": "제한 기록 분해 자료",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "변위 선택 수 min(|I|,ℓ)+1; 빈 자식 포함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 47,
+    "target_line": 610,
+    "name": "원 제한 분해 자료",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "기록쌍과 원 PF의 자료형 차이 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 48,
+    "target_line": 623,
+    "name": "마지막 차량 분해 대응",
+    "definition_source": "k2809252f588641b39bcaf13513db3951/glossary-proposals.md",
+    "checks": "오른쪽에서 |I|+1을 빼고 양쪽 번호 표준화.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 49,
+    "target_line": 636,
+    "name": "원형 주차 확률모형",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "n+1칸에 n대; 유일 빈자리 회전 해석.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 50,
+    "target_line": 649,
+    "name": "정확 변위 차량 수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "Y는 정확 차량 수; 두 변수 급수와 기호 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 51,
+    "target_line": 662,
+    "name": "고변위 차량 수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "≥ℓ 표시이며 Z₀=n.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 52,
+    "target_line": 675,
+    "name": "변위 표시 개수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "다중 차량을 중복 표시; n=0 경계만 0.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 53,
+    "target_line": 688,
+    "name": "동반 표시 개수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "Y=0 또는 Z≥1이라 잘린 차 곱과 정수 곱 같음.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 54,
+    "target_line": 701,
+    "name": "표시 개수 간격",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "정수 R 차; 닫힌 공식의 비형식 범위 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 55,
+    "target_line": 714,
+    "name": "전체 지수 생성함수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "전체 T의 EGF; 제한 F와 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 56,
+    "target_line": 727,
+    "name": "전체 생성함수 보조 급수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "xΨ로 상수항 0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 57,
+    "target_line": 740,
+    "name": "표시 간격 지수 생성함수",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "n≥1 시작; J₀=0과 적합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 58,
+    "target_line": 753,
+    "name": "포화 결손",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "A≤T라 결손 비음수; 차는 정수.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdd117882498f411286f292377dc9abda",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 59,
+    "target_line": 766,
+    "name": "고변위 표시 다항식",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "z=0에서도 z⁰=1; 빈 다항식 값 1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 60,
+    "target_line": 779,
+    "name": "이항 표시 모멘트",
+    "definition_source": "k21248694f4c24bad89564e3143deba52/glossary-proposals.md",
+    "checks": "p=0 빈 모멘트 1; G(1+y) 계수 관계.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k8489c648c0964cb3b3bf9fe09c296340",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 61,
+    "target_line": 792,
+    "name": "ℓ-구간 주차 함수 집합",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "빈 목록에 M̄를 사용해 영역 오류 회피.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 62,
+    "target_line": 805,
+    "name": "최대 변위 수준 집합",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "양수 크기의 수준 집합; 개수가 b.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 63,
+    "target_line": 818,
+    "name": "절단 길이",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "원 t는 pg+1이므로 min(ℓ+1,h).",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 64,
+    "target_line": 831,
+    "name": "총 변위",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "총 변위는 합; 최대값으로 옮기지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 65,
+    "target_line": 844,
+    "name": "비감소 주차 함수 집합",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "비감소 목록만 제한; 일반 PF와 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 66,
+    "target_line": 857,
+    "name": "Fubini 수",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "블록 순서 유지; Fub와 A₁ 연결은 정리.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 67,
+    "target_line": 870,
+    "name": "원형 선형 탐사의 최대 변위",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/glossary-proposals.md",
+    "checks": "v≥1 최대와 v<m 성공 범위; mod 대표 명시.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 68,
+    "target_line": 883,
+    "name": "단위 허용 거리의 블록 구조",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/exposition.md §4.4",
+    "checks": "안정 정렬과 원 발생 번호가 원 §4.4와 일치.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 69,
+    "target_line": 896,
+    "name": "블록 셋째 이후 위치 집합",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/exposition.md §4.4",
+    "checks": "셋째 이후의 원 차량 번호 집합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 70,
+    "target_line": 909,
+    "name": "뒤따르는 블록 둘째 위치 집합",
+    "definition_source": "kdd440866190648ffb7237cbd5b1d4c7c/exposition.md §4.4",
+    "checks": "이전 블록 마지막 번호보다 뒤인 둘째 번호.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 71,
+    "target_line": 922,
+    "name": "선형 결손 상계",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "삼각 재귀; E≤L 및 일치 띠를 분리.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdd117882498f411286f292377dc9abda,k0d67ab01617a4814aae5265ebb219b1a",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 72,
+    "target_line": 935,
+    "name": "수송 자식 가중치",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "j<n이라 자식 Tₙ₋₁₋ⱼ가 정의됨.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 73,
+    "target_line": 948,
+    "name": "인접 수송 경계합",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "n≤2ℓ+1이 두 K의 포화 가정 보장.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 74,
+    "target_line": 961,
+    "name": "말단 항 유지 수송 상계",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "버린 자식 차가 비양수라는 추가 조건을 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 75,
+    "target_line": 974,
+    "name": "고정 끝 거리 표시 간격 극한",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "r=1도 계승0!=1; 극한 성질은 별도.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdd117882498f411286f292377dc9abda",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 76,
+    "target_line": 987,
+    "name": "포화 초과 가중 급수",
+    "definition_source": "k5bedcf491ebd45f1a1dcb7fb84fad705/glossary-proposals.md",
+    "checks": "ℓ=0도 형식 꼬리 정의 가능; EGF 원천과 계승 구분.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k0d67ab01617a4814aae5265ebb219b1a,k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 77,
+    "target_line": 1000,
+    "name": "앞선 큰 값 위치",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "§24와 pg=j−h; 다른 출력 함수라 유지 가능.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 78,
+    "target_line": 1013,
+    "name": "뿌리 있는 숲",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "모든 부모 경로가 0에 도달; 일반 숲과 감소 숲 구분.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 79,
+    "target_line": 1026,
+    "name": "부분나무 크기",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "자기 자신 1과 진자손 개수; 순환 없음 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 80,
+    "target_line": 1039,
+    "name": "감소 숲",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "부모>자식 또는0이 반복 종료 보장.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 192,
+    "target_line": 1052,
+    "name": "골격 · Sk_x(G)",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "실수 x≥0 골격; 자연수 구현 제한 별도.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k34fb712e85cd44ec8192ca96eb115da1",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 225,
+    "target_line": 1065,
+    "name": "골격 크기",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "실수 문턱 정의와 자연수 q 구현 제한 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547,kc0a4185b9ecf4d70b84ed75e8e3caf67",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 226,
+    "target_line": 1078,
+    "name": "문턱 꼭짓점 수",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "같은 크기 부분나무 서로소로 qe≤n.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547,kc0a4185b9ecf4d70b84ed75e8e3caf67",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 260,
+    "target_line": 1091,
+    "name": "소부분나무 기초 가중치",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "빈 곱1; q를 넘는 크기는 이 기초 곱에서 제외.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 252,
+    "target_line": 1104,
+    "name": "소부분나무 가중 결합 계수",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "작은 t만 곱한 계수; q^(a+e) 복원 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 253,
+    "target_line": 1117,
+    "name": "골격·적중 성분 다항식",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "비음수 계수의 F; 원 A 평가와 부호 문제 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547,kc0a4185b9ecf4d70b84ed75e8e3caf67",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 135,
+    "target_line": 1130,
+    "name": "소성분 조립 개수",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "k=0일 때 J₀(n>0)=0; F(0,k)는 k≥2에서만.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 81,
+    "target_line": 1143,
+    "name": "큰 자손 수",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "라벨 큰 진자손만 세며 일반 숲에서 정의.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 82,
+    "target_line": 1156,
+    "name": "최대 큰 자손 수",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "n≥1 필수; 원 M 분포 주장은 정의 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 83,
+    "target_line": 1169,
+    "name": "최대 변위 끝 거리",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "n−1−M≥0; 결손 E와 다른 입력.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 98,
+    "target_line": 1182,
+    "name": "성분 수송 계수 · \\(\\mathfrak I(n,s)\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "s≥n일 때0; ϑ와 이항 윗첨자 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 134,
+    "target_line": 1195,
+    "name": "원 성분 절단 기저",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "k=0 포함; n≤2k+1에서만 J와 같음.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630,kb4a55fd1ff714b01a68cad95eb87f3c3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 85,
+    "target_line": 1208,
+    "name": "사슬 재귀 가중합",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "H′<H 삼각 재귀; B 기저의 수리 유한합 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 86,
+    "target_line": 1221,
+    "name": "최댓값 면적",
+    "definition_source": "k10f126a516ee4c4caf6cf7cc38d28a09/glossary-proposals.md",
+    "checks": "브라운 연속 경로의 적분; 예외 경로0 허용.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 87,
+    "target_line": 1234,
+    "name": "원형 최대 변위 재척도화",
+    "definition_source": "k24d813562f8a4abfad309a53255354c9/glossary-proposals.md",
+    "checks": "m−d_max 전체를 m^(2/3)로 나눔; confined 조건은 분포 조건.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 88,
+    "target_line": 1247,
+    "name": "최댓값 면적 라플라스 변환",
+    "definition_source": "k24d813562f8a4abfad309a53255354c9/glossary-proposals.md",
+    "checks": "s≥0에서 피적분함수≤1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 89,
+    "target_line": 1260,
+    "name": "최대 변위 재척도화 극한분포",
+    "definition_source": "k24d813562f8a4abfad309a53255354c9/glossary-proposals.md",
+    "checks": "독립 지수변수와 면적의 비; 법칙과 실현 변수 구분.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 90,
+    "target_line": 1273,
+    "name": "허용 거리 비교 인자",
+    "definition_source": "k83ac8ca8d9c44903b97b8979ac04bdd3/glossary-proposals.md",
+    "checks": "분모 2ℓ+2>0; 거리비 정리와 정의 구분.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 91,
+    "target_line": 1286,
+    "name": "제한 순열 가중치",
+    "definition_source": "k83ac8ca8d9c44903b97b8979ac04bdd3/glossary-proposals.md",
+    "checks": "n=0 빈 곱1; q≥1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 92,
+    "target_line": 1299,
+    "name": "큰 선택 폭 위치 수",
+    "definition_source": "k83ac8ca8d9c44903b97b8979ac04bdd3/glossary-proposals.md",
+    "checks": ">q인 폭 수; 차량 고변위 수와 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 93,
+    "target_line": 1312,
+    "name": "문턱 선택 폭 위치 수",
+    "definition_source": "k83ac8ca8d9c44903b97b8979ac04bdd3/glossary-proposals.md",
+    "checks": "=q인 폭 수; ≥와 >의 차.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 96,
+    "target_line": 1325,
+    "name": "큰 크기 사슬 집합 · \\(\\mathfrak C_{n,a}\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "엄격 감소 크기열; n≤a이면 공집합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 97,
+    "target_line": 1338,
+    "name": "사슬 계수 · \\(\\mathfrak c_{n,a}\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "모든 T 인수≥0; 마지막 B와 원 기저의 유한합 일치.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 99,
+    "target_line": 1351,
+    "name": "사슬 응답 다항식 · \\(\\mathfrak K_z(n,s)\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "n≤s 경계0과 자연수 매개변수 연결 범위 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630,kb4a55fd1ff714b01a68cad95eb87f3c3,k32399dd4a57c4e8f980f7103f4fda6d3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 100,
+    "target_line": 1364,
+    "name": "사슬 경계 손실 다항식 · \\(\\mathfrak D_{n,k}(z)\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "Tₖ 곱; UpperRatio 잘린 영역을 동일시하지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630,kb4a55fd1ff714b01a68cad95eb87f3c3,k32399dd4a57c4e8f980f7103f4fda6d3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 103,
+    "target_line": 1377,
+    "name": "사슬 곡률 비율 · \\(\\mathfrak R_{n,k}\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "k+2≤n에서 양수 손실 분모; 사슬 전개 형식 한계 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k2f5a509346a04efc9720bfffb293aeee,kb4a55fd1ff714b01a68cad95eb87f3c3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 104,
+    "target_line": 1390,
+    "name": "사슬 이동 손실 · \\(\\mathfrak H_{n,k}\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "양수성은 응답 단조성과 추가 손실; n≥k+3.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630,kb4a55fd1ff714b01a68cad95eb87f3c3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 105,
+    "target_line": 1403,
+    "name": "말단 크기 곡률 다항식 · \\(\\mathfrak N_{n,s}(u)\\)",
+    "definition_source": "ka8fb76538efa4aa28114eaab004058ff/glossary-proposals.md",
+    "checks": "u≥0 양수성과 다항식의 전체 정의를 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 106,
+    "target_line": 1416,
+    "name": "선형 결손 오차",
+    "definition_source": "k9001cda0e9704d678342f834dec9e9d6/glossary-proposals.md",
+    "checks": "L−E 정수 차; 전칭 부호와 별개.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k9fa99dedff1641a4a41924f945e4bf2c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 107,
+    "target_line": 1429,
+    "name": "선형 원천",
+    "definition_source": "k9001cda0e9704d678342f834dec9e9d6/glossary-proposals.md",
+    "checks": "n=0 원천0; (k−ℓ)₊ 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k9fa99dedff1641a4a41924f945e4bf2c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 108,
+    "target_line": 1442,
+    "name": "선형 전이 연산자",
+    "definition_source": "k9001cda0e9704d678342f834dec9e9d6/glossary-proposals.md",
+    "checks": "g의 정의역 전체 ℕ; n=0 출력0.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k9fa99dedff1641a4a41924f945e4bf2c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 109,
+    "target_line": 1455,
+    "name": "선형 전개 층",
+    "definition_source": "k9001cda0e9704d678342f834dec9e9d6/glossary-proposals.md",
+    "checks": "r차 전이 반복; n차 재귀와 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k9fa99dedff1641a4a41924f945e4bf2c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 110,
+    "target_line": 1468,
+    "name": "제한 이항 폭 모멘트",
+    "definition_source": "k9001cda0e9704d678342f834dec9e9d6/glossary-proposals.md",
+    "checks": "이항 모멘트 p=0 포함; 계승 모멘트에는 p! 인자.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 116,
+    "target_line": 1481,
+    "name": "순열별 제한 곡률",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "세 min 곱의 정수 차; 빈 순열에서0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 118,
+    "target_line": 1494,
+    "name": "제한 표시 지수 급수",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "q^a 미분 인자 복원; n=0 계수도 검사.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": true
+  },
+  {
+    "term": 119,
+    "target_line": 1507,
+    "name": "감쇠 제한 지수 급수",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "감쇠 평가는 F(q−1,q); 상수항1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": true
+  },
+  {
+    "term": 120,
+    "target_line": 1520,
+    "name": "감쇠 문턱 지수 급수",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "q∂Y 인자 필수; 빈 계수0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": true
+  },
+  {
+    "term": 121,
+    "target_line": 1533,
+    "name": "전체 계수 절단 다항식",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "§162의 q≥2 제한형; 중복 정리 제안 F5.",
+    "issues": [
+      "F5-선택"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 122,
+    "target_line": 1546,
+    "name": "제한 표시 전달 계수 쌍",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "q=2일 때 V₀=0으로 정의 가능.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 123,
+    "target_line": 1559,
+    "name": "감쇠 표시 분자 급수",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "q² 두 미분 차; 조건부 증가와 전칭 부호 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": true
+  },
+  {
+    "term": 124,
+    "target_line": 1572,
+    "name": "감쇠 표시 원천 급수",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "모든 급수의 q≥2 영역 맞음; 전달식 Lean 미완료 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 125,
+    "target_line": 1585,
+    "name": "제한 표시 응답 커널",
+    "definition_source": "k772e2708b66f4a2e8e9322e151db43ab/glossary-proposals.md",
+    "checks": "선형 ODE의 상수항0이 형식해를 유일하게 함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 126,
+    "target_line": 1598,
+    "name": "역급수 계수",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "m=1의0⁰=1; 분모 m!>0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 127,
+    "target_line": 1611,
+    "name": "사슬 응답 지수급수",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "n>s인 응답만 합하며 다항식 계수환 명시.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 128,
+    "target_line": 1624,
+    "name": "동차 응답 다항식",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "두 역급수 상수항1이라 가역.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 129,
+    "target_line": 1637,
+    "name": "말단 경계 요구 비",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "n=k+d+1,d≥2로 두 양수 응답 분모 보장.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 130,
+    "target_line": 1650,
+    "name": "이항 절단 비 하계",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "min(p,k)까지 이항합; 분모(k+1)^j>0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 131,
+    "target_line": 1663,
+    "name": "응답 1차 차분",
+    "definition_source": "k52423a2c3ac04a04a4e61cb863a834a7/glossary-proposals.md",
+    "checks": "u 변수 다항식의 한 차분; Δ와 다른 객체.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 132,
+    "target_line": 1676,
+    "name": "원 성분 계수",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "q≥1로 Aᵢ,q−1 유효; q=0 보조 확장 제외.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 133,
+    "target_line": 1689,
+    "name": "전체 성분 계수",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "모든 i≥0의 (i+1)Tᵢ; Cayley 연결 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630,kb4a55fd1ff714b01a68cad95eb87f3c3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 136,
+    "target_line": 1702,
+    "name": "원 성분 사슬 다항식",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "n≤k의 빈 합으로 Tₙ; 전역 다항식과 제한 사슬 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 137,
+    "target_line": 1715,
+    "name": "원 성분 곡률 다항식",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "세 다항식 평가의 정수 계수 차분.",
+    "issues": [
+      "F4"
+    ],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 138,
+    "target_line": 1728,
+    "name": "절단 계수 일치 관계",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "i<N의 엄격 절단; i≤N 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 139,
+    "target_line": 1741,
+    "name": "일반 지수 정규화 연산",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "EGF 계승 정규화; ℚ 입력.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 140,
+    "target_line": 1754,
+    "name": "적분 성분 원천 연산",
+    "definition_source": "kdc2eaac490144ba1be92ba8a428a2228/glossary-proposals.md",
+    "checks": "c(h−1)/h!이므로 도함수 egf(c).",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1d0504eb9d5a478c8e6c31ae760d4630",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 141,
+    "target_line": 1767,
+    "name": "보조 Abel 다항식",
+    "definition_source": "k0ee8ae2f5ad94097af2c3778062ded44/glossary-proposals.md",
+    "checks": "r=0 값1; 다음 지수 r의 Abel 다항식.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kb4a55fd1ff714b01a68cad95eb87f3c3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 142,
+    "target_line": 1780,
+    "name": "실수 허용 거리 누적 함수",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "빈 순열 값1과 양수 n의 x=0 값0 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k011d78d902664efbb1f1ef0d601484a7",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 143,
+    "target_line": 1793,
+    "name": "연속 최대 변위",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "v∈[0,1)라 floor 최대=M; 확률은 T로 나눔.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 144,
+    "target_line": 1806,
+    "name": "원형 호",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "빈자리 e마다 역방향 점유호가 분할을 이룸.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 145,
+    "target_line": 1819,
+    "name": "톱니 상승량",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "단위 구간 볼록성과 점프의 1/k 인자 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 146,
+    "target_line": 1832,
+    "name": "마지막 최대 변위 차량",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "최대 달성 차량 중 가장 큰 번호; Fin 값+1.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfd8c65fff6a84089ad0591255b0674a3",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 147,
+    "target_line": 1845,
+    "name": "도착 시각별 정확 개수",
+    "definition_source": "kafb8753e508c467d89d38921889dab4a/glossary-proposals.md",
+    "checks": "τ별 사건은 서로소·전부; 합이 b.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfd8c65fff6a84089ad0591255b0674a3,kf60b5d44129f444b9c13cfa739536768,kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 148,
+    "target_line": 1858,
+    "name": "정규화 사슬 응답",
+    "definition_source": "k178f470ddcb549fe86572026bed89f80/glossary-proposals.md",
+    "checks": "j=0,c>0 분모; §99의 정규화 제한.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 149,
+    "target_line": 1871,
+    "name": "말단 혼합 보정",
+    "definition_source": "k178f470ddcb549fe86572026bed89f80/glossary-proposals.md",
+    "checks": "두 곡률의 양수 영역 k+3≤n≤2k+1 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 150,
+    "target_line": 1884,
+    "name": "일반 삼각 해 연산",
+    "definition_source": "k178f470ddcb549fe86572026bed89f80/glossary-proposals.md",
+    "checks": "모든 자식 j<n으로 존재·유일.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfd75ab1e7c494041851fb5f82f97d9e8",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 151,
+    "target_line": 1897,
+    "name": "일반 삼각 해의 매개변수 차분",
+    "definition_source": "k178f470ddcb549fe86572026bed89f80/glossary-proposals.md",
+    "checks": "전방 차분의 z+1과 r 단계 정의 일치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfd75ab1e7c494041851fb5f82f97d9e8",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 152,
+    "target_line": 1910,
+    "name": "혼합 문턱 개수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "앞≤ℓ·뒤<ℓ; n=0,ℓ=0 경계1 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf60b5d44129f444b9c13cfa739536768,kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 153,
+    "target_line": 1923,
+    "name": "앞부분 개수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "판 매개변수 전역화; Dℓ는 n=18 제한형 F5.",
+    "issues": [
+      "F5-선택"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 154,
+    "target_line": 1936,
+    "name": "뒷부분 개수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "엄격 문턱; 완료 상태 [n]의 빈 접미부1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 155,
+    "target_line": 1949,
+    "name": "도착 원천 개수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "크기 h+1 마지막 차를 대입; b₀ 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 156,
+    "target_line": 1962,
+    "name": "도착 전달 커널",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "ℓ+min(m+1,ℓ) 인자와 mixed 첨자 j≤m.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 157,
+    "target_line": 1975,
+    "name": "혼합 문턱 이변수 급수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "h!r! EGF 정규화, 문턱 ℓ≥1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 158,
+    "target_line": 1988,
+    "name": "도착 표시 이변수 급수",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "크기 h+r+1, 표시 차 h+1의 지수급수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 159,
+    "target_line": 2001,
+    "name": "도착 인접 차",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "원 Δ와 다른 도착별 정수 차.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 160,
+    "target_line": 2014,
+    "name": "도착 부호 전달 하계",
+    "definition_source": "k3402f089d15b489eb2cbad3ffa444bb7/glossary-proposals.md",
+    "checks": "r−1−b<r로 재귀 종료; 음수 초기값 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kd5aa5110d39449359578cdc2287a86a9",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 161,
+    "target_line": 2027,
+    "name": "역방향 차분 원천",
+    "definition_source": "k39ce4750627e4a0e9735832b2fb49076/glossary-proposals.md",
+    "checks": "j=k+1 별도 가지; 거듭제곱 밑0 문제 회피.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 162,
+    "target_line": 2040,
+    "name": "문턱 1까지 확장한 전체 계수 절단 다항식",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "q=1 추가값1; §121과 중복 검토 F5.",
+    "issues": [
+      "F5-선택"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 163,
+    "target_line": 2053,
+    "name": "두 차량 국소 계수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "두 간격은 실제 적용에서≥1; 국소 식과 일반 원 연결 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: ke14b219b620141348788edb5c86fe65c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 164,
+    "target_line": 2066,
+    "name": "도착 초기 음수 급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "비음수 급수가 음의 원천으로 쓰임; 이름이 부호 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 165,
+    "target_line": 2079,
+    "name": "도착 초기 양수 급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "포화와 문턱 단조성으로 각 인자 계수 비음수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 166,
+    "target_line": 2092,
+    "name": "도착 부호 전달 지수급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "Z¹의 EGF이며 새 개수 정의 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 167,
+    "target_line": 2105,
+    "name": "부호 분리 전달 급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "y차수 귀납으로 유일; X−Y는 Ẑ 관계.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 168,
+    "target_line": 2118,
+    "name": "도착 대각 적분",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "beta 적분으로 분모 n!; h+r=n−1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 169,
+    "target_line": 2131,
+    "name": "계승비 커널 보정 급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "m−ℓ−1>0 및 m−p≥0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 170,
+    "target_line": 2144,
+    "name": "양수 전달 하한 급수",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "ℱℓ₋₁는 ℓ=1에도 F₀로 유효.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 171,
+    "target_line": 2157,
+    "name": "음수 전달 상한 모멘트",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "무한 d족도 차수 귀납이 유일; 최소차수 ℓ+d+1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 172,
+    "target_line": 2170,
+    "name": "부호 전달 포락선",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "포락선의 차; 원 Δ 재정의 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 173,
+    "target_line": 2183,
+    "name": "끝점·현 포락선",
+    "definition_source": "k9a8431776364465195c7ae81c0c031ec/glossary-proposals.md",
+    "checks": "R 분자 상수항0; q=1에는 P⁺ 사용.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 174,
+    "target_line": 2196,
+    "name": "혼합 역분모 자료",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "W 상수항0,F 상수항1로 지수·역급수 가능.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 175,
+    "target_line": 2209,
+    "name": "도착 원천 지수급수",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "S의 마지막 차 크기 h+1; Fq(Fq−P⁺q)와 적합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 176,
+    "target_line": 2222,
+    "name": "도착 전달 커널 지수급수",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "m<q−1의 포화 보정이 Vq−1.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 177,
+    "target_line": 2235,
+    "name": "원 공통 동차 전달자",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "u는 x만의 급수; y 초기값 명시.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 178,
+    "target_line": 2248,
+    "name": "원 공통 강제 전달자",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "강제항은 x,y 급수; 동차 전달자와 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 179,
+    "target_line": 2261,
+    "name": "정확 버린 원천 급수",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "원 커널 차에서 mixed 하나 제거; 비음수 잔여.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 180,
+    "target_line": 2274,
+    "name": "최소 원천 분리 원시함수",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "모든 역분모 상수항1; k∈{0,1,2}.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 181,
+    "target_line": 2287,
+    "name": "삼각 적분 차 연산",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "정해진 상수항0 적분 두 항의 차.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 182,
+    "target_line": 2300,
+    "name": "대각 커널 부호 보정",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "대각 적분의 영역 적합; 부호 있는 원천 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 183,
+    "target_line": 2313,
+    "name": "공통 분모 곡률 분자",
+    "definition_source": "k1e30f22632294be9991c2e6b0dba5d04/glossary-proposals.md",
+    "checks": "세 F의 상수항1; 분모 곱 가역.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 184,
+    "target_line": 2326,
+    "name": "조건별 한 차량 선호 개수",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "s 점유 시0; 빈자리에서는 원 선호 섬유 개수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 185,
+    "target_line": 2339,
+    "name": "순서 있는 두 자리 선호쌍 개수",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "첫 자리 점유를 갱신한 뒤 두 번째 가중치 곱.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 186,
+    "target_line": 2352,
+    "name": "조건별 한 단계 합산 연산",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "점유 자리는 weight=0이라 합에 넣어도 무방.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 187,
+    "target_line": 2365,
+    "name": "조건 목록을 만족하는 부분 실행",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "길이 k 조건 목록; 빈 경우 공허 성공.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 188,
+    "target_line": 2378,
+    "name": "조건 목록의 완료 개수",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "빈 조건 완료 개수1; step 재귀는 원 개수와 별도 동일성.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 189,
+    "target_line": 2391,
+    "name": "도착 성분 부분합",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "j=0 합0; ℓ≥1에서 mixed−A와 연결.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 190,
+    "target_line": 2404,
+    "name": "정수 Green 가중치",
+    "definition_source": "k3c8d00ecefb9486697fd5692a47dad49/glossary-proposals.md",
+    "checks": "0≤r,s≤D일 때만 비음수 Green 곱.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 191,
+    "target_line": 2417,
+    "name": "도착 숲 · G_α",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "오른쪽 가장 가까운 큰 차량이 부모; 종료·개별 전단사 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k34fb712e85cd44ec8192ca96eb115da1",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 193,
+    "target_line": 2430,
+    "name": "Cayley 분할 핵 · Spl(t,s)",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "엄격 과반 성분만; 동률로 연장하지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 195,
+    "target_line": 2443,
+    "name": "골격 곡률 이득 · Γ⁺ₙ,ℓ",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "고정 q F의 세 U 평가; 원 Γ⁺와 연결.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 196,
+    "target_line": 2456,
+    "name": "꽉 찬 상자 손실 · Γ⁻ₙ,ℓ",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "F(q−1,q)−F(q−1,q−1); 양수성 n≥ℓ+1.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e,k60bb458604ee4921a8ed08021b1ef90d",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 197,
+    "target_line": 2469,
+    "name": "상반부 형상 함수 · Φ₁(u)",
+    "definition_source": "kb555148741aa4c0687e60906bd144e43/glossary-proposals.md",
+    "checks": "형상 식은 정의이나 극한 성질은 추측으로 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 198,
+    "target_line": 2482,
+    "name": "일반 가중 재귀 평가기",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "자연수와 NNReal 구분은 맞지만 새 미검토 구현 누락 F3.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e,k60bb458604ee4921a8ed08021b1ef90d",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 199,
+    "target_line": 2495,
+    "name": "비교 가능한 표시 합",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "T−L 동일성에 c=x 조건이 빠짐 F1.",
+    "issues": [
+      "F1"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 200,
+    "target_line": 2508,
+    "name": "맨 위 뿌리 표시 합",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "뿌리를 반드시 표시; s≤x이면 빈 합0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 201,
+    "target_line": 2521,
+    "name": "비교 불가능 표시 보정",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "숲 합과 경계 대수식의 형식 식별을 구분해야 함 F2.",
+    "issues": [
+      "F2"
+    ],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 202,
+    "target_line": 2534,
+    "name": "전체 급수 원시함수",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "Ψ의 상수항0 원시함수; 계승(s!) 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 203,
+    "target_line": 2547,
+    "name": "지수 원천 계수",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "원천 계수의 부호와 원 Δ 부호를 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 204,
+    "target_line": 2560,
+    "name": "반복 원시함수 커널",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "각 반복 적분 상수항0, 지수 계수 정수.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 205,
+    "target_line": 2573,
+    "name": "원천 지수 층",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "I의 최소차수로 각 n에서 r합이 유한.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 206,
+    "target_line": 2586,
+    "name": "짝지은 4차 하계 분자",
+    "definition_source": "k526e621123a64cee8d48c8b3c7c79a04/glossary-proposals.md",
+    "checks": "모멘트의 >,≥ 및 2 계수 보존; 하계 범위 제한.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 207,
+    "target_line": 2599,
+    "name": "조건별 변위 제한 실행 기록",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "실행 기록의 조건별 부분집합; 원 번호와 Fin 차이.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 208,
+    "target_line": 2612,
+    "name": "조건별 제한 분해 자료",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "자식 조건을 증가 열거에 당겨와 도착 번호 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 209,
+    "target_line": 2625,
+    "name": "조건별 마지막 차량 조립 대응",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "조립 방향 Ξ→Tr; 제한의 보존 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 210,
+    "target_line": 2638,
+    "name": "문턱 앞 선택 수",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "원 i≤j는 내부 i.val<j.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 211,
+    "target_line": 2651,
+    "name": "혼합 분해 유효 첨자집합",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "r=a+c 재매개화; 유한 직사각형.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 212,
+    "target_line": 2664,
+    "name": "이항 이변수 합성",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "두 이항계수의 배열 합성; 차량 순서 변경 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 213,
+    "target_line": 2677,
+    "name": "배열 이동·차 연산",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "배열 이동은 미분 EGF 대응; 값 차는 ℤ.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 214,
+    "target_line": 2690,
+    "name": "도착 커널 증가량",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "m,j 영역 유지; kernelGain의 부호 근거 있음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 215,
+    "target_line": 2703,
+    "name": "도착 전달 잔여",
+    "definition_source": "ke2436447b98547689b08023d2935b621/glossary-proposals.md",
+    "checks": "J−Z¹ 잔여; 전칭 Δ 부호는 결론 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 216,
+    "target_line": 2716,
+    "name": "대칭 폭 원천",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "q≤r≤2q에서만 양수 원천 분해.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 217,
+    "target_line": 2729,
+    "name": "대칭 폭 원천의 전체 항",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "분모 r+1은 계승 정규화와 양립.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 218,
+    "target_line": 2742,
+    "name": "대칭 폭 원천의 가운데 항",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "r=2q의 안쪽 합은 실제 빈 합.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 219,
+    "target_line": 2755,
+    "name": "폭 원천 전이 응답",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "일반 j,S 정의와 j=0 정수 원천 형식 보증 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k0d67ab01617a4814aae5265ebb219b1a,k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 220,
+    "target_line": 2768,
+    "name": "폭 원천 4차 이득 함수",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "j=1,…,4 응답 선형결합; 원 부호 자체 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 221,
+    "target_line": 2781,
+    "name": "대칭 폭 원천의 끝띠 하계",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "양 끝띠의 합집합이라 중복 한 번만 셈.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 222,
+    "target_line": 2794,
+    "name": "끝띠 폭 비교값",
+    "definition_source": "kcee4fdfe71574e5ab1b3a1c16c325818/glossary-proposals.md",
+    "checks": "분기 보정 Binc 포함; m 충분히 클 때만 4차 하계 동일.",
+    "issues": [
+      "F4"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 223,
+    "target_line": 2807,
+    "name": "폭 전이의 매개변수 계수",
+    "definition_source": "k4ae9589f84b84e11861e1ef456c2e3b5/glossary-proposals.md",
+    "checks": "계승 포함 적분 계수; n<r+a+1 소멸.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k1f431a6ad115453aaebaecc30aa9445b",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 224,
+    "target_line": 2820,
+    "name": "정확 손실 정규화 폭 비교비",
+    "definition_source": "k4ae9589f84b84e11861e1ef456c2e3b5/glossary-proposals.md",
+    "checks": "q−1 응답 분모 양수; 대각 q 단조성 실패 지위 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 227,
+    "target_line": 2833,
+    "name": "골격 잎 수",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "골격 잎=큰 자식 없는 큰 꼭짓점; 빈 골격 동치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfaeb6535dad54592857b1f726417d954",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 228,
+    "target_line": 2846,
+    "name": "조건부 도착 숲 법칙",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "분모 양수; 정수 y에서 원 A로 정규화.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 229,
+    "target_line": 2859,
+    "name": "Gibbs 성분 가중",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "성분 크기 s의 s! 정규화; A₀=1 사용.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 230,
+    "target_line": 2872,
+    "name": "골격 잎 수별 차분 기여",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "같은 숲의 세 가중치를 한 λ 부류에서 뺌.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfaeb6535dad54592857b1f726417d954",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 231,
+    "target_line": 2885,
+    "name": "정규화 이득",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "q²Γ⁺/A; 양수 분모로 부호 보존.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 232,
+    "target_line": 2898,
+    "name": "정규화 손실",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "q²Γ⁻/A; 단조성은 항등식만으로 안 나옴.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 233,
+    "target_line": 2911,
+    "name": "부분나무 크기 묶음별 정확 개수",
+    "definition_source": "ka1c3633303ca4d7fb91d8a309579022b/glossary-proposals.md",
+    "checks": "숲 크기 중복집합으로 원 PF를 분류.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 234,
+    "target_line": 2924,
+    "name": "단항 원천 응답 매개변수 다항식",
+    "definition_source": "k41df00b303bc4da78d9d610e8bcf85ae/glossary-proposals.md",
+    "checks": "X 계수 추출 κ; 재귀의 두 T 인자 역할 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 235,
+    "target_line": 2937,
+    "name": "절단 전 대칭 폭 원천",
+    "definition_source": "k41df00b303bc4da78d9d610e8bcf85ae/glossary-proposals.md",
+    "checks": "q=0 포함 형식 정의; 원천 양수성의 제한과 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 236,
+    "target_line": 2950,
+    "name": "가중 폭 원천 유한 합",
+    "definition_source": "k41df00b303bc4da78d9d610e8bcf85ae/glossary-proposals.md",
+    "checks": "r≤n−2,a≤n−r−1의 두 유한 합 끝점.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 237,
+    "target_line": 2963,
+    "name": "유한 순서 라벨 감소 숲",
+    "definition_source": "k1b4bb39af602435783a027a919ef8943/glossary-proposals.md",
+    "checks": "Option 가상 뿌리와 원 0 표현이 동치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 238,
+    "target_line": 2976,
+    "name": "부모 함수 조상 관계",
+    "definition_source": "k1b4bb39af602435783a027a919ef8943/glossary-proposals.md",
+    "checks": "반사 폐포여서 자기 자신 포함.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 239,
+    "target_line": 2989,
+    "name": "자손 닫힘 성질",
+    "definition_source": "k1b4bb39af602435783a027a919ef8943/glossary-proposals.md",
+    "checks": "부모 폐쇄 아닌 자손 폐쇄; 제한 크기 보존 조건.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 240,
+    "target_line": 3002,
+    "name": "유한 순서 라벨 감소 숲 가중합",
+    "definition_source": "k1b4bb39af602435783a027a919ef8943/glossary-proposals.md",
+    "checks": "자연수 w의 실제 숲 합; NNReal Eq와 계수환 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 241,
+    "target_line": 3015,
+    "name": "최대 라벨 분해 자료",
+    "definition_source": "k1b4bb39af602435783a027a919ef8943/glossary-proposals.md",
+    "checks": "최대 라벨 자손 집합과 그 여집합의 양방향 분해.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k93022a6f4bf2430ba692974597fa8f1e",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 243,
+    "target_line": 3028,
+    "name": "적중 축약 경로 인자",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "균등 일반 숲·독립 균등 부착점; d=0 빈 곱1.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 244,
+    "target_line": 3041,
+    "name": "균등 부착점 평균 깊이",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "경로에서 가상 뿌리 제외; d=0 깊이0.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 245,
+    "target_line": 3054,
+    "name": "균등 숲 문턱 표시 수",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "일반 숲 위 문턱 표시 수; 감소 숲 합과 다른 가중치.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 246,
+    "target_line": 3067,
+    "name": "균등 숲 순서쌍 표시 수",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "순서쌍이라 a(a−1); 사슬 해석에는 x>n/2 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 247,
+    "target_line": 3080,
+    "name": "Cayley 보조 계수",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "양의 정수 j만; 음수 보조0은 본 영역 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 248,
+    "target_line": 3093,
+    "name": "골격 크기별 정규화 이득 값",
+    "definition_source": "k2874758a73b749c0b8af17fcc1be6660/glossary-proposals.md",
+    "checks": "정규화 q²; Eζ 관계의 2x>n 제한 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kcc189037a61c4faea0745b876c66fffe",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 249,
+    "target_line": 3106,
+    "name": "자손 집합",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "자기 자신 포함 자손 집합; 크기가 t_v.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfaeb6535dad54592857b1f726417d954",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 250,
+    "target_line": 3119,
+    "name": "골격 잎 집합",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "자연수 문턱 골격 잎; 일반 실수 λ 정의와 제한 관계.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfaeb6535dad54592857b1f726417d954",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 251,
+    "target_line": 3132,
+    "name": "한 숲의 차분 기여",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "세 곱의 차는 정수; n=0 구현0을 b₀와 동일시 안 함.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kfaeb6535dad54592857b1f726417d954,kc0a4185b9ecf4d70b84ed75e8e3caf67",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 255,
+    "target_line": 3145,
+    "name": "거듭제곱 중앙차",
+    "definition_source": "k0c2f8df2c56e4828bbf691cacca83b2a/glossary-proposals.md",
+    "checks": "a=0,1의 계승 인자0; 음의 지수 표기는 유리수 해석.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547,kc0a4185b9ecf4d70b84ed75e8e3caf67",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 256,
+    "target_line": 3158,
+    "name": "골격·연속 적중 동시 표시 다항식",
+    "definition_source": "kb29a863507944e8d9442e6cd0a3f1d8f/glossary-proposals.md",
+    "checks": "e_(q+1) 추가 정보; m<2q 영역 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf0625227f0b24a178ad0ee9a63601def",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 257,
+    "target_line": 3171,
+    "name": "현재 골격의 전진 곡률",
+    "definition_source": "kb29a863507944e8d9442e6cd0a3f1d8f/glossary-proposals.md",
+    "checks": "현재 q를 고정한 U 전진 차분; 다음 Γ와 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf0625227f0b24a178ad0ee9a63601def",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 258,
+    "target_line": 3184,
+    "name": "다음 정확 적중 보정",
+    "definition_source": "kb29a863507944e8d9442e6cd0a3f1d8f/glossary-proposals.md",
+    "checks": "F(q+2,q)와 Aₙ,q+1 차; 다음 문턱을 섞지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf0625227f0b24a178ad0ee9a63601def,k60bb458604ee4921a8ed08021b1ef90d",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 259,
+    "target_line": 3197,
+    "name": "합친 수송 행렬식",
+    "definition_source": "kb29a863507944e8d9442e6cd0a3f1d8f/glossary-proposals.md",
+    "checks": "hM≥0은 명시 가정; 무조건 U 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kf0625227f0b24a178ad0ee9a63601def",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 261,
+    "target_line": 3210,
+    "name": "표시 2차 이득",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "U 두 번 미분; a(a−1)의 계승 인자.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 262,
+    "target_line": 3223,
+    "name": "표시 정확 손실",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "Y=0에서 적중1,2만 남음; 1/2는 짝수 계수로 정수.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 263,
+    "target_line": 3236,
+    "name": "표시 2차 하계",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "원 부등식은 2Δ≥2L; 비음수 L은 미증명.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 264,
+    "target_line": 3249,
+    "name": "표시 원천",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "자식 s−1≤m−1로 L 정의역 안; F(0,q) 대체 적합.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 265,
+    "target_line": 3262,
+    "name": "원 차분 전달 원천",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "s−1≥q와 q≥2로 모든 A 인수 유효.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 266,
+    "target_line": 3275,
+    "name": "원 차분 전달 핵",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "자식 n<r은 보조0; n=r에서1.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 267,
+    "target_line": 3288,
+    "name": "비절단 문턱 표시합",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "표시 꼭짓점 인자만 제거; 절단 없는 나머지 곱.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 268,
+    "target_line": 3301,
+    "name": "대칭 홀수 잔여",
+    "definition_source": "k7a6fb5f6105e475dab570454a8d5ef85/glossary-proposals.md",
+    "checks": "홀수 이항항의 첫 미분 제거라 잔여 비음수.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kdaa41390eadc4ac381e275adac86f547",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 269,
+    "target_line": 3314,
+    "name": "연속 블록 표시 다항식",
+    "definition_source": "k716f5d11dad24f78a224774000d9f0b0/glossary-proposals.md",
+    "checks": "빈 구간1; z=1에서 정규화 응답.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 270,
+    "target_line": 3327,
+    "name": "첫 칸 복원 표시 다항식",
+    "definition_source": "k716f5d11dad24f78a224774000d9f0b0/glossary-proposals.md",
+    "checks": "삭제 뒤 한 칸 수 표시; 전체 분할 z표시와 다름.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 271,
+    "target_line": 3340,
+    "name": "블록 층 말단 행렬식",
+    "definition_source": "k716f5d11dad24f78a224774000d9f0b0/glossary-proposals.md",
+    "checks": "계승 배율 필요; 말단 괄호와 전체 행렬식 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 272,
+    "target_line": 3353,
+    "name": "큰 연결 성분 수",
+    "definition_source": "k9a3297b965b24ea7a87eb1a666b8cd1a/glossary-proposals.md",
+    "checks": "뿌리의 t>q는 큰 연결 성분 개수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 273,
+    "target_line": 3366,
+    "name": "큰 연결 성분 수별 성분 다항식",
+    "definition_source": "k9a3297b965b24ea7a87eb1a666b8cd1a/glossary-proposals.md",
+    "checks": "j=0 iff 큰 부분나무0; m<3(q+1)에서 세 부류.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 274,
+    "target_line": 3379,
+    "name": "성분 세 평가 차 연산",
+    "definition_source": "k9a3297b965b24ea7a87eb1a666b8cd1a/glossary-proposals.md",
+    "checks": "일반 다항식 선형 평가 차; 1에 적용하면0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 275,
+    "target_line": 3392,
+    "name": "두 큰 성분 보존 원천",
+    "definition_source": "k9a3297b965b24ea7a87eb1a666b8cd1a/glossary-proposals.md",
+    "checks": "m≤2q+3; 두 큰 성분 보존항과 원천 부호 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 276,
+    "target_line": 3405,
+    "name": "문턱 지수",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "n=0 빈 합0; Λ₀=∞는 양수 크기만.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 277,
+    "target_line": 3418,
+    "name": "복제 문턱 함수",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "∏t/T 숲 법칙의 확률; W와 T 인자 구별.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 278,
+    "target_line": 3431,
+    "name": "복제 최대 변위 분포",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "ℓ=0 별도 차분; 합1이며 r=1에 b/T.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 279,
+    "target_line": 3444,
+    "name": "연속 문턱 창 개수",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "A연속 창 차; 확률은 다시 T로 나눔.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 280,
+    "target_line": 3457,
+    "name": "로그–로그 오목성",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "끝거리 로그 좌표의 기울기 방향 확인; 단봉 함의 옳음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 281,
+    "target_line": 3470,
+    "name": "최댓값 면적 밀도",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "면적 밀도 U표현은 원 제안과 같음; 외부 논문 새 대조 안 함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 282,
+    "target_line": 3483,
+    "name": "극한 최대 변위 밀도",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "Laplace 도함수와 (3/2)y^(1/2) 인자.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 283,
+    "target_line": 3496,
+    "name": "로그 시계 핵",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "exp 변수치환으로 적분 Γ(1/3), log곡률 −e^u.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 284,
+    "target_line": 3509,
+    "name": "연속 약단봉성",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "열린 구간 내부 최대점 존재를 요구하는 정의.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 285,
+    "target_line": 3522,
+    "name": "연속 엄격 단봉성",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "엄격 단봉 정의에 이계도함수 조건은 없음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 286,
+    "target_line": 3535,
+    "name": "극한분포 보조변수",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "ν의 한 실현 변수; 법칙 자체와 중복 객체 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 287,
+    "target_line": 3548,
+    "name": "기울인 면적 함수",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "x^c 기울임, 확률밀도 정규화 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 299,
+    "target_line": 3561,
+    "name": "브라운 최댓값과정",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "t=0에도 sup0=0; 경로 [0,∞) 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 300,
+    "target_line": 3574,
+    "name": "최댓값 면적과정",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "적분 위끝 t; t=1에서 Z.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 301,
+    "target_line": 3587,
+    "name": "척도 격자간격",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "(n+1) 척도 사용; n으로 조용히 대체 안 함.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 302,
+    "target_line": 3600,
+    "name": "끝거리 좌표",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "n+1−ℓ 전체에 δ 곱; 실제 자리와 다른 좌표.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 303,
+    "target_line": 3613,
+    "name": "최대 변위 점확률",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "원 점확률 b/T; 양수 T.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 304,
+    "target_line": 3626,
+    "name": "밀도 근사 잔차",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "잔차의 작음은 정의에 포함하지 않음.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 310,
+    "target_line": 3639,
+    "name": "극한 밀도 최대점",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "다른 좌표의 최대점에서 단조 변수변환; 비형식 수용 범위.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: k2cea33c2e2f44c98aecbef2a1135ff33",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 311,
+    "target_line": 3652,
+    "name": "역면적 시계",
+    "definition_source": "k79ddad1bf51547cd86cce1308aac35c1/glossary-proposals.md",
+    "checks": "거의 확실한 면적의 엄격 증가·발산으로 도달시간 유일.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 312,
+    "target_line": 3665,
+    "name": "가장 큰 성분 크기",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "모든 t의 max는 뿌리 성분 max; 새 구현 누락 F3.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 313,
+    "target_line": 3678,
+    "name": "숲 조건부 복제 누적함수",
+    "definition_source": "kb0b4ce4e999f41b3821a41a4d3bbe87f/glossary-proposals.md",
+    "checks": "0의 누적값0, y≥n에서1; 숲 고정 법칙.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 314,
+    "target_line": 3691,
+    "name": "숲 조건부 복제 행",
+    "definition_source": "kb0b4ce4e999f41b3821a41a4d3bbe87f/glossary-proposals.md",
+    "checks": "숲별 누적차; 혼합에는 ∏t/T 가중 필요.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 315,
+    "target_line": 3704,
+    "name": "시계 조건부 최대 변위 분포",
+    "definition_source": "kb0b4ce4e999f41b3821a41a4d3bbe87f/glossary-proposals.md",
+    "checks": "Λℓ+1≤τ<Λℓ 반열린 구간이 분할.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 316,
+    "target_line": 3717,
+    "name": "거듭제곱 면적 시계 변수",
+    "definition_source": "k897ef751296e4645b92f7c47695977cd/glossary-proposals.md",
+    "checks": "α=3/2에 ν 변수; 독립성 유지.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 317,
+    "target_line": 3730,
+    "name": "거듭제곱 면적 시계 밀도",
+    "definition_source": "k897ef751296e4645b92f7c47695977cd/glossary-proposals.md",
+    "checks": "변수변환의 Jacobian αy^(α−1); α>0 전체.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 323,
+    "target_line": 3743,
+    "name": "경로 역면적 시계 밀도",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "경로 조건부 밀도; 모든 연속 경로의 정규화 주장 아님.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: ke330047776da47ba92abe22d49ec3865",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 324,
+    "target_line": 3756,
+    "name": "시계 고정 극한 밀도",
+    "definition_source": "k2d51fc12f1254808a99f42f03fe5224b/glossary-proposals.md",
+    "checks": "τ고정 Jacobian으로 τ^(−2/3) 인자 확인.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: ke330047776da47ba92abe22d49ec3865",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 325,
+    "target_line": 3769,
+    "name": "복제 비정규화 누적합",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "(0,0) 미지정 보존; 새 실제 숲 구현 누락 F3.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 326,
+    "target_line": 3782,
+    "name": "복제 뿌리 인수",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "s=0 별도0; 음수 거듭제곱 밑0 회피.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 327,
+    "target_line": 3795,
+    "name": "복제 인접 차",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "ℓ=0은 b₁−b₀; Δₙ,₀를 만들지 않음.",
+    "issues": [
+      "F3"
+    ],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 328,
+    "target_line": 3808,
+    "name": "복제 마지막 차 볼록화",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "c,b,d>0; r 모든 실수의 지수합.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 329,
+    "target_line": 3821,
+    "name": "복제 마지막 차 영점",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "유일 양의 영점; ρ>1은 별도 수용 결과.",
+    "issues": [],
+    "existing_formal_review_scope": "판정·선언 범위 대조: kb60d0f9d760c4878b61f88cdef869a3c",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 331,
+    "target_line": 3834,
+    "name": "복제 차의 이중 누적 핵",
+    "definition_source": "k46d25e2fa94842ba880225ee0a0666b9/glossary-proposals.md",
+    "checks": "각 숲의 log밑=−Λ; ℓ=0 마지막 경첩항 제거.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 334,
+    "target_line": 3847,
+    "name": "갱신 정규화 전체 계수",
+    "definition_source": "k4b37ac60c05b499ab584ccb775bc7267/glossary-proposals.md",
+    "checks": "j=0 값1; T/(j+1)! 척도.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 335,
+    "target_line": 3860,
+    "name": "끝거리 누적확률",
+    "definition_source": "k4b37ac60c05b499ab584ccb775bc7267/glossary-proposals.md",
+    "checks": "N≥3,m≤floor(N/2)에서 문턱≥0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 336,
+    "target_line": 3873,
+    "name": "갱신 교대층",
+    "definition_source": "k4b37ac60c05b499ab584ccb775bc7267/glossary-proposals.md",
+    "checks": "R_i≤m라 분모 양수; β 인수 모두 양수.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 337,
+    "target_line": 3886,
+    "name": "균질 갱신층",
+    "definition_source": "k4b37ac60c05b499ab584ccb775bc7267/glossary-proposals.md",
+    "checks": "k=0 모든 정수 m에1; k≥1의 음수 m만0.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  },
+  {
+    "term": 338,
+    "target_line": 3899,
+    "name": "갱신층 계수",
+    "definition_source": "k4b37ac60c05b499ab584ccb775bc7267/glossary-proposals.md",
+    "checks": "k=0 빈 곱1; 양수 계수와 극한 주장 분리.",
+    "issues": [],
+    "existing_formal_review_scope": "공개 정의·구현 기술 대조; 별도 재수용 아님",
+    "new_lean_recompiled": false
+  }
+]

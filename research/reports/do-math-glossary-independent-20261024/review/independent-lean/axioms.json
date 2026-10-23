@@ -1,0 +1,67 @@
+{
+  "GlossaryRepair.power_gap_le_derivative": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.component_loss_le_Y": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.original_delta_F_restored": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.markedSeries": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.dampedValueSeries": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.dampedSeries": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.numeratorSeries": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.marked_coeff": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.dampedValue_coeff": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.damped_coeff": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.numerator_coeff": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.numerator_coeff_original_lower": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "GlossaryRepair.original_increase_of_numerator_coeff": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ]
+}

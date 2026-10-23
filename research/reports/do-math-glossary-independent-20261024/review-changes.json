@@ -1,0 +1,208 @@
+{
+  "base": "k4dfeca2d4d014a23877e5aaa8f5cf457",
+  "review": "k936e0b5b3dff46fcbf2208c4e6a7988f",
+  "before_entries": 300,
+  "after_entries": 298,
+  "retired": [
+    16,
+    121
+  ],
+  "moved_before_124": 162,
+  "changes": [
+    {
+      "id": 11,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "자연수 값 수열에 대한 `Parking.Unimodal`; 일반 실수 값 구현은 없다 (k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean). k21248694f4c24bad89564e3143deba52/Criterion.lean의 `ParkingCriterion.unimodal_iff_no_drop_rise`는 자연수 유한열에서 엄격한 감소 뒤 재증가 없음과의 동치를 증명하며 검토 k8489c648c0964cb3b3bf9fe09c296340에서 accepted/matches다.",
+          "after": "자연수 값 수열에 대한 `Parking.Unimodal` (k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean). k21248694f4c24bad89564e3143deba52/Criterion.lean의 `ParkingCriterion.unimodal_iff_no_drop_rise`는 자연수 유한열에서 엄격한 감소 뒤 재증가 없음과의 동치를 증명하며 검토 k8489c648c0964cb3b3bf9fe09c296340에서 accepted/matches다. 실수 수열 구현 ParkingReplica.Unimodal은 kb383160bb81746ce99bd620a97ee8da9/lean/Replica.lean에 공개되어 있다. 이 후속 연구는 독립 검토 전이며 구현의 존재가 모든 행의 단봉성을 뜻하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 36,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "n,ℓ≥1의 구현은 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean의 ParkingForest.delta다. delta_gain_loss·delta_normalized와 세 부호 동치는 검토 k93022a6f4bf2430ba692974597fa8f1e에서 accepted/matches다. n=0 계수 경계까지 확장한 선언은 아니다. 원 b 중앙차 연결은 k2809252f588641b39bcaf13513db3951/PInterface.lean의 b_curvature(검토 k41050a1934d84a1fae10f1e3af32d0a1), 성분 다항식 연결은 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean의 original_delta_components(검토 kdaa41390eadc4ac381e275adac86f547)에서 수용됐다. 사슬·폭 응답·경계 분해 및 하계의 별도 영역은 이력에 연결한 원 결과에서 읽는다. 원 L 영역의 증가와 U 영역의 감소 후 재상승 배제는 아직 전칭으로 해결되지 않았다.",
+          "after": "n,ℓ≥1의 구현은 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean의 ParkingForest.delta다. delta_gain_loss·delta_normalized와 세 부호 동치는 검토 k93022a6f4bf2430ba692974597fa8f1e에서 accepted/matches다. n=0 계수 경계까지 확장한 선언은 아니다. 원 b 중앙차 연결은 k2809252f588641b39bcaf13513db3951/PInterface.lean의 b_curvature(검토 k41050a1934d84a1fae10f1e3af32d0a1), 성분 다항식 연결은 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean의 original_delta_components(검토 kdaa41390eadc4ac381e275adac86f547)에서 수용됐다. 사슬·폭 응답·경계 분해 및 하계의 별도 영역은 이력에 연결한 원 결과에서 읽는다. 원 L 영역의 증가와 U 영역의 감소 후 재상승 배제는 아직 전칭으로 해결되지 않았다. kb383160bb81746ce99bd620a97ee8da9/lean/Replica.lean의 D_one_delta는 양수 n,ℓ에서 복제 차분의 r=1과 원 delta의 실수 포함값을 연결하는 공개 정리이며 독립 검토 전이다."
+        }
+      }
+    },
+    {
+      "id": 118,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "**독립 검토 전.** 아래 컴파일·공리 확인은 작성자가 수행했으며 아직 accepted/matches 수용 판정은 없다. [SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.markedSeries q a가 이 형식급수이며 marked_coeff가 모든 n,q,a의 지수계수를 증명한다. F는 기존 componentPolynomial을 그대로 사용한다. 이번 수리에서 실제 컴파일·공리 확인을 완료했다. 원 b 하계까지 이어지는 정리는 §123과 [검증 설명](verification.md)에 있다.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.markedSeries q a가 이 형식급수이며 marked_coeff가 모든 n,q,a의 지수계수를 증명한다. F는 기존 componentPolynomial을 그대로 사용한다.  원 b 하계까지 이어지는 정리는 §123과 [검증 설명](verification.md)에 있다. [독립 검토 k936e0b5b3dff46fcbf2208c4e6a7988f](../k936e0b5b3dff46fcbf2208c4e6a7988f/review.md)의 series-coefficients에서 supported/accepted/matches로 수용됐다. 검토자는 공개 의존 원문 포함 21모듈을 직접 재컴파일하고 새 선언 13개의 공리와 해설·타입의 일치를 확인했다."
+        }
+      }
+    },
+    {
+      "id": 119,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "**독립 검토 전.** 아래 컴파일·공리 확인은 작성자가 수행했으며 아직 accepted/matches 수용 판정은 없다. [SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedValueSeries q가 이 형식급수이며 dampedValue_coeff가 모든 n,q의 지수계수를 evalComponents n q (q−1) q와 연결한다. evalComponents는 F의 자연수 대입이다. 실제 컴파일·공리 확인을 완료했다.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedValueSeries q가 이 형식급수이며 dampedValue_coeff가 모든 n,q의 지수계수를 evalComponents n q (q−1) q와 연결한다. evalComponents는 F의 자연수 대입이다.  [독립 검토 k936e0b5b3dff46fcbf2208c4e6a7988f](../k936e0b5b3dff46fcbf2208c4e6a7988f/review.md)의 series-coefficients에서 supported/accepted/matches로 수용됐다. 검토자는 공개 의존 원문 포함 21모듈을 직접 재컴파일하고 새 선언 13개의 공리와 해설·타입의 일치를 확인했다."
+        }
+      }
+    },
+    {
+      "id": 120,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "**독립 검토 전.** 아래 컴파일·공리 확인은 작성자가 수행했으며 아직 accepted/matches 수용 판정은 없다. [SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedSeries q가 이 형식급수이며 damped_coeff가 모든 n,q의 지수계수를 q(∂_Y F)(q−1,q)와 연결한다. 실제 숲 표시 합으로의 전개는 기존 component_Y를 사용한다. 실제 컴파일·공리 확인을 완료했다.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.dampedSeries q가 이 형식급수이며 damped_coeff가 모든 n,q의 지수계수를 q(∂_Y F)(q−1,q)와 연결한다. 실제 숲 표시 합으로의 전개는 기존 component_Y를 사용한다.  [독립 검토 k936e0b5b3dff46fcbf2208c4e6a7988f](../k936e0b5b3dff46fcbf2208c4e6a7988f/review.md)의 series-coefficients에서 supported/accepted/matches로 수용됐다. 검토자는 공개 의존 원문 포함 21모듈을 직접 재컴파일하고 새 선언 13개의 공리와 해설·타입의 일치를 확인했다."
+        }
+      }
+    },
+    {
+      "id": 123,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "**독립 검토 전.** 아래 컴파일·공리 확인은 작성자가 수행했으며 아직 accepted/matches 수용 판정은 없다. [SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.numeratorSeries q가 이 급수다. numerator_coeff는 관련 표현의 계수식을, numerator_coeff_original_lower는 모든 n≥1,q≥2에서 n![x^n]𝓧q/q²≤bₙ,q−bₙ,q−1을 증명한다. original_increase_of_numerator_coeff는 이 계수가 비음수일 때 bₙ,q−1≤bₙ,q임을 증명한다. 실제 컴파일·공리 확인을 완료했으며 [검증 설명](verification.md)에 논증·환경·로그를 연결했다. 계수 자체의 전칭 비음수성은 이 정리의 결론이 아니다.",
+          "after": "[SeriesRepair.lean](lean/SeriesRepair.lean)의 GlossaryRepair.numeratorSeries q가 이 급수다. numerator_coeff는 관련 표현의 계수식을, numerator_coeff_original_lower는 모든 n≥1,q≥2에서 n![x^n]𝓧q/q²≤bₙ,q−bₙ,q−1을 증명한다. original_increase_of_numerator_coeff는 이 계수가 비음수일 때 bₙ,q−1≤bₙ,q임을 증명한다. [검증 설명](verification.md)에 논증·환경·로그를 연결했다. 계수 자체의 전칭 비음수성은 이 정리의 결론이 아니다. [독립 검토 k936e0b5b3dff46fcbf2208c4e6a7988f](../k936e0b5b3dff46fcbf2208c4e6a7988f/review.md)의 series-coefficients와 original-lower-bound에서 supported/accepted/matches로 수용됐다. 검토자는 공개 의존 원문 포함 21모듈을 직접 재컴파일하고 새 선언 13개의 공리와 해설·타입의 일치를 확인했다."
+        }
+      }
+    },
+    {
+      "id": 124,
+      "changes": {
+        "정의": {
+          "before": "q≥2에서 $\\mathcal G_q:=2q(\\mathcal M_q^{(1)})^2+2q(2\\mathcal F_{q-1}-\\mathcal P_q)\\mathcal M_q^{(1)}+q(\\mathcal K_q-\\widetilde{\\mathcal K}_q)\\widehat{\\mathcal H}_q-q^2f_{q-1}x^{q-1}\\widetilde{\\mathcal F}_q$.",
+          "after": "q≥2에서 $\\mathcal G_q:=2q(\\mathcal M_q^{(1)})^2+2q(2\\mathcal F_{q-1}-\\mathcal P^+_q)\\mathcal M_q^{(1)}+q(\\mathcal K_q-\\widetilde{\\mathcal K}_q)\\widehat{\\mathcal H}_q-q^2f_{q-1}x^{q-1}\\widetilde{\\mathcal F}_q$."
+        }
+      }
+    },
+    {
+      "id": 137,
+      "changes": {
+        "관련 표현": {
+          "before": "§136의 두 번째 차분이다. k≥1,n≤2k+1의 사슬 곡률도 이 함수를 제한해서 쓴다. 명시적 사슬 합의 일반 Lean 연결은 남는다.",
+          "after": "§136의 두 번째 차분이다. k≥1,n≤2k+1의 사슬 곡률도 이 함수를 제한해서 쓴다."
+        },
+        "현재 형식 대응": {
+          "before": "검토 k1d0504eb9d5a478c8e6c31ae760d4630에서 해당 결과 accepted/matches: kdc2eaac490144ba1be92ba8a428a2228의 구현. `ParkingChain.curvature n k u`는 유리수 대입값.",
+          "after": "검토 k1d0504eb9d5a478c8e6c31ae760d4630에서 해당 결과 accepted/matches: kdc2eaac490144ba1be92ba8a428a2228의 구현. `ParkingChain.curvature n k u`는 유리수 대입값. 명시적 사슬 곡률 합과 이 구현의 일반 Lean 연결은 미완료다."
+        }
+      }
+    },
+    {
+      "id": 153,
+      "changes": {
+        "관련 표현": {
+          "before": "없음",
+          "after": "판 크기 18의 제한 점유 접두부 계산에는 Fᵖʳᵉ₁₈,ℓ(S)를 사용한다. S⊆[18]와 ℓ≥0에서 선호 목록, 도착 과정, 변위 제한과 빈 접두부의 값 1을 그대로 보존한다."
+        },
+        "출처": {
+          "before": "k3402f089d15b489eb2cbad3ffa444bb7/exposition.md §3 (10) 앞 정의. 기존 Dℓ(S)는 [18]에 제한된 대상이므로 이 전역 판 크기 매개변수의 새 대상과 구별한다. [구현·상태 경위](glossary-history.md#term-153).",
+          "after": "k3402f089d15b489eb2cbad3ffa444bb7/exposition.md §3 (10) 앞 정의. [구현·상태 경위](glossary-history.md#term-153)."
+        }
+      }
+    },
+    {
+      "id": 162,
+      "changes": {
+        "잘 정의됨": {
+          "before": "유한 합이다. f₀=1이므로 𝓟⁺₁=1. q≥2에서 §121의 𝓟q와 값이 같지만 정의역이 다른 함수다. q=0은 포함하지 않는다.",
+          "after": "유한 합이다. f₀=1이므로 𝓟⁺₁=1이다. q=0은 포함하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 165,
+      "changes": {
+        "정의": {
+          "before": "ℓ≥1에서 Uˢʳᶜℓ:=(ℱℓ₊₁+ℱℓ−𝓟ℓ₊₁)(ℱℓ₊₁−ℱℓ)∈ℚ[[z]].",
+          "after": "ℓ≥1에서 Uˢʳᶜℓ:=(ℱℓ₊₁+ℱℓ−𝓟⁺ℓ₊₁)(ℱℓ₊₁−ℱℓ)∈ℚ[[z]]."
+        },
+        "잘 정의됨": {
+          "before": "§121의 𝓟의 기존 정의역 ℓ+1≥2에서 정의된다. 포화와 A의 문턱 단조성으로 계수별 비음수다.",
+          "after": "§162의 𝓟⁺를 ℓ+1≥2에서 사용한다. 포화와 A의 문턱 단조성으로 계수별 비음수다."
+        }
+      }
+    },
+    {
+      "id": 198,
+      "changes": {
+        "관련 표현": {
+          "before": "§240 실제 숲 가중합과 같은 초기값·재귀를 만족한다. 자연수 가중치의 일반 연결은 형식 수용되었으며 비음수 실수 가중치 전체의 형식 연결은 별도다.<br>[가족별 관계와 보증 범위](glossary-relations.md).",
+          "after": "§240의 실제 숲 가중합과 같은 초기값·재귀로 연결된다. 근거는 k526e621123a64cee8d48c8b3c7c79a04/exposition.md §5의 최대 라벨 분해다. [가족별 관계](glossary-relations.md)."
+        },
+        "현재 형식 대응": {
+          "before": "모든 자연수 n,w:ℕ→ℕ의 실제 부모 함수 합=weightedEval은 k1b4bb39af602435783a027a919ef8943의 parent_forest_sum_eq_weightedEval(검토 k93022a6f4bf2430ba692974597fa8f1e)에서 accepted/matches다. 영 가중치·빈 숲을 포함하며 원 A는 weightedEval_original로 연결된다. k716f5d11dad24f78a224774000d9f0b0의 weightedEval_pos·weightedEval_strict는 자연수 가중치의 명시된 양수성·엄격 비교 조건에서 수용됐다(검토 k60bb458604ee4921a8ed08021b1ef90d). 비음수 실수 가중치 전체의 Lean 연결은 별도다.",
+          "after": "모든 자연수 n,w:ℕ→ℕ의 실제 부모 함수 합=weightedEval은 k1b4bb39af602435783a027a919ef8943의 parent_forest_sum_eq_weightedEval(검토 k93022a6f4bf2430ba692974597fa8f1e)에서 accepted/matches다. 영 가중치·빈 숲을 포함하며 원 A는 weightedEval_original로 연결된다. k716f5d11dad24f78a224774000d9f0b0의 weightedEval_pos·weightedEval_strict는 자연수 가중치의 명시된 양수성·엄격 비교 조건에서 수용됐다(검토 k60bb458604ee4921a8ed08021b1ef90d).  비음수 실수 가중치의 공개 구현·연결은 kb383160bb81746ce99bd620a97ee8da9/lean/ScalarForest.lean의 ParkingForestScalar.eval과 parentSum_nnreal이다. 이 후속 연구는 독립 검토 전이며 기존 자연수 결과의 수용을 승계하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 199,
+      "changes": {
+        "잘 정의됨": {
+          "before": "유한합. 전체 숲의 경로 모양만 합한 것과 다르다. (15),(16)의 별도 평가식과 Tₙ−ℒₙ,ₓ₋₁ 동일성을 본문에서 비형식으로 증명했다.",
+          "after": "숲과 표시 집합이 유한하고 표시한 꼭짓점의 부분나무 크기는 양수이므로 합이 정의된다. 전체 숲 중 경로 모양만 합한 것과는 다르다."
+        },
+        "관련 표현": {
+          "before": "없음",
+          "after": "정수 n,x≥1에서 c=x를 대입하면 Ŵᶜᵐᵖₙ(x;x)=Tₙ−ℒₙ,x−1이다. 근거는 k526e621123a64cee8d48c8b3c7c79a04/exposition.md §8 식 (23)과 같은 기록 sign-research.md §1이다. n=0도 빈 표시 합으로 양변이 1이다. 임의 c에 대한 식은 아니며, 예를 들어 n=2,x=1에서는 Ŵᶜᵐᵖ₂(1;c)=1+c지만 T₂−ℒ₂,₀=2다. 일반 c의 평가식은 원 글 (15),(16)을 따른다."
+        }
+      }
+    },
+    {
+      "id": 201,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "k41df00b303bc4da78d9d610e8bcf85ae의 evenBranch_grouped·oddBranch_grouped가 정본 함수의 두 경계 대입값을 다룬다. 같은 기록 formal-verification.md의 선언 대응과 검토 k1f431a6ad115453aaebaecc30aa9445b에서 해당 범위가 accepted/matches다. 이 항목의 형식 대응을 원 Δ의 전칭 부호 증명으로 확대하지 않는다.",
+          "after": "실제 일반 라벨 숲과 표시 집합으로 정의한 ℬⁱⁿᶜ 자체의 Lean 식별은 미완료다. x=q−1,c=x,q≥2에서 n=2q,2q+1의 두 닫힌 식과 숲 합의 연결은 k526e621123a64cee8d48c8b3c7c79a04/exposition.md §7 식 (17)–(21) 및 검토 k34fb712e85cd44ec8192ca96eb115da1의 비형식 범위다. k41df00b303bc4da78d9d610e8bcf85ae/lean/BranchAlignment.lean의 evenBranch_grouped·oddBranch_grouped는 그 닫힌 식의 구현 evenBranch·oddBranch와 묶인 이항계수 식 사이의 대수적 동일성이다. 이 대수와 해당 원 b 경계 연결은 검토 k1f431a6ad115453aaebaecc30aa9445b에서 accepted/matches다. 그 수용을 일반 숲 합의 형식 식별이나 임의 c의 인증으로 확대하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 222,
+      "changes": {
+        "관련 표현": {
+          "before": "없음",
+          "after": "원 분자 𝔅ᵖᵃⁱʳ와는 m에 의존하는 다른 하계이며, 정본의 영역에서 m≥ceil(q/2)이면 𝔅ᵖᵃⁱʳ/q⁴와 같다. 근거는 kcee4fdfe71574e5ab1b3a1c16c325818/exposition.md §6 식 (24)다."
+        },
+        "현재 형식 대응": {
+          "before": "미형식화. 원 분자 𝔅ᵖᵃⁱʳ와는 m에 의존하는 다른 하계이며 m≥ceil(q/2)에서만 𝔅ᵖᵃⁱʳ/q⁴와 같다.",
+          "after": "미형식화."
+        }
+      }
+    },
+    {
+      "id": 312,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "미형식화",
+          "after": "ka1754fb43f214d76ae4cd96762da033f/lean/Largest.lean의 ParkingLargest.mass 안에 Finset.univ.sup (fun v => subtreeSize G v)로 구현되어 있다. 양수 크기에서 이 최댓값이 L_max이며 n=0의 sup=0은 보조 확장이다. 별도 L_max 선언으로 정의한 것은 아니고, 해당 후속 연구도 독립 검토 전이다."
+        }
+      }
+    },
+    {
+      "id": 325,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "미형식화. 자연수 가중치 제한의 기존 Eval_w 형식 결과와 구별한다.",
+          "after": "kb383160bb81746ce99bd620a97ee8da9/lean/Replica.lean의 ParkingReplica.W는 실제 ParentForest 가중합이다. W_empty·W_zero_threshold·W_one·W_recurrence가 공개되어 있으나 해당 후속 연구는 독립 검토 전이다. 정본의 n≥1,y>0,r>0 및 별도 경계를 적용하며, 구현이 추가로 값을 갖는 (n,y)=(0,0)을 정본 정의에 넣지 않는다. 정규화 확률 ϱ 전체의 Lean 식별을 이 구현의 존재로 대신하지 않는다."
+        }
+      }
+    },
+    {
+      "id": 326,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "미형식화. 정본 Eval_w의 특수 입력이다.",
+          "after": "kb383160bb81746ce99bd620a97ee8da9/lean/Replica.lean의 ParkingReplica.rootWeight와 rootWeightNNReal은 s=0을 별도 0으로 둔 공개 구현이다. 정본의 y,r>0에서 사용하며 해당 후속 연구는 독립 검토 전이다."
+        }
+      }
+    },
+    {
+      "id": 327,
+      "changes": {
+        "현재 형식 대응": {
+          "before": "원 숲 함수 전체는 미형식화. `ReplicaShape`의 볼록성 정리가 마지막 차의 인수화 뒤 적용된다.",
+          "after": "kb383160bb81746ce99bd620a97ee8da9/lean/Replica.lean의 ParkingReplica.D를 정본 영역에 제한한다. D_one_canonical·D_one_integer는 r=1의 원 차분 연결이고, ℓ=0은 D_one_first, ℓ≥1은 D_one_delta로 구별한다. 이 공개 구현과 정리들은 독립 검토 전이다. 기존 ReplicaShape의 볼록성 정리는 별도의 인수화 뒤 적용되는 대수 결과다."
+        }
+      }
+    }
+  ]
+}

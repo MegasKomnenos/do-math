@@ -1,0 +1,435 @@
+{
+  "category": "review",
+  "overview": {
+    "title": "용어 정본 300항목의 조건·형식 대응 보완과 새 급수 증명의 독립 수용",
+    "summary": "정본 전문과 원 정의·검토 범위를 항목별로 대조해 §199의 조건 누락, §201의 형식 보증 설명 및 현행 구현 누락을 지적했다. 전체 정본 편집 결과는 보완이 필요하다. 공개 의존 원문 포함 21모듈을 실제 재컴파일하고 새 정리9개·급수 정의4개의 공리를 직접 조회하여 계수식과 원 b 하계·조건부 증가를 수용한다. 분자의 전칭 비음수성과 전체 P는 미해결이다."
+  },
+  "references": [
+    {
+      "record": "k011d78d902664efbb1f1ef0d601484a7",
+      "file": "output.json"
+    },
+    {
+      "record": "k0c2f8df2c56e4828bbf691cacca83b2a",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k0d67ab01617a4814aae5265ebb219b1a",
+      "file": "output.json"
+    },
+    {
+      "record": "k0ee8ae2f5ad94097af2c3778062ded44",
+      "file": "CanonicalBridge.lean"
+    },
+    {
+      "record": "k0ee8ae2f5ad94097af2c3778062ded44",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k10f126a516ee4c4caf6cf7cc38d28a09",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k12c717105e4f436ebbc4a311ae64134a",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k178f470ddcb549fe86572026bed89f80",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k1b4bb39af602435783a027a919ef8943",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k1d0504eb9d5a478c8e6c31ae760d4630",
+      "file": "output.json"
+    },
+    {
+      "record": "k1e30f22632294be9991c2e6b0dba5d04",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k1f431a6ad115453aaebaecc30aa9445b",
+      "file": "output.json"
+    },
+    {
+      "record": "k21248694f4c24bad89564e3143deba52",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k24d813562f8a4abfad309a53255354c9",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k24d813562f8a4abfad309a53255354c9",
+      "file": "review.md"
+    },
+    {
+      "record": "k2809252f588641b39bcaf13513db3951",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k2874758a73b749c0b8af17fcc1be6660",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k2cea33c2e2f44c98aecbef2a1135ff33",
+      "file": "output.json"
+    },
+    {
+      "record": "k2d51fc12f1254808a99f42f03fe5224b",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k2f5a509346a04efc9720bfffb293aeee",
+      "file": "output.json"
+    },
+    {
+      "record": "k32399dd4a57c4e8f980f7103f4fda6d3",
+      "file": "output.json"
+    },
+    {
+      "record": "k3402f089d15b489eb2cbad3ffa444bb7",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k342ab0d73a284696bcb1050ba1ce7e00",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k34fb712e85cd44ec8192ca96eb115da1",
+      "file": "output.json"
+    },
+    {
+      "record": "k39ce4750627e4a0e9735832b2fb49076",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k3c8d00ecefb9486697fd5692a47dad49",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k41050a1934d84a1fae10f1e3af32d0a1",
+      "file": "output.json"
+    },
+    {
+      "record": "k41df00b303bc4da78d9d610e8bcf85ae",
+      "file": "formal-verification.md"
+    },
+    {
+      "record": "k41df00b303bc4da78d9d610e8bcf85ae",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k41df00b303bc4da78d9d610e8bcf85ae",
+      "file": "lean/BranchAlignment.lean"
+    },
+    {
+      "record": "k46d25e2fa94842ba880225ee0a0666b9",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k4a876a6088f14bf090cb7da8b6e40a37",
+      "file": "exposition.md"
+    },
+    {
+      "record": "k4a876a6088f14bf090cb7da8b6e40a37",
+      "file": "glossary-relations.md"
+    },
+    {
+      "record": "k4a876a6088f14bf090cb7da8b6e40a37",
+      "file": "glossary.md"
+    },
+    {
+      "record": "k4a876a6088f14bf090cb7da8b6e40a37",
+      "file": "verification.md"
+    },
+    {
+      "record": "k4ae9589f84b84e11861e1ef456c2e3b5",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k4b37ac60c05b499ab584ccb775bc7267",
+      "file": "exposition.md"
+    },
+    {
+      "record": "k4b37ac60c05b499ab584ccb775bc7267",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k4dfeca2d4d014a23877e5aaa8f5cf457",
+      "file": "glossary.md"
+    },
+    {
+      "record": "k52423a2c3ac04a04a4e61cb863a834a7",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k526e621123a64cee8d48c8b3c7c79a04",
+      "file": "exposition.md"
+    },
+    {
+      "record": "k526e621123a64cee8d48c8b3c7c79a04",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k5bedcf491ebd45f1a1dcb7fb84fad705",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k60bb458604ee4921a8ed08021b1ef90d",
+      "file": "output.json"
+    },
+    {
+      "record": "k716f5d11dad24f78a224774000d9f0b0",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k729b98f8fd5b48759aa02dc87308ae48",
+      "file": "review.md"
+    },
+    {
+      "record": "k746a9db449ff45fd9b973172e4b40861",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k772e2708b66f4a2e8e9322e151db43ab",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k79ddad1bf51547cd86cce1308aac35c1",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k7a6fb5f6105e475dab570454a8d5ef85",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k83ac8ca8d9c44903b97b8979ac04bdd3",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k8489c648c0964cb3b3bf9fe09c296340",
+      "file": "output.json"
+    },
+    {
+      "record": "k897ef751296e4645b92f7c47695977cd",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k9001cda0e9704d678342f834dec9e9d6",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k92260b6c2f6e4c999f741f37265db176",
+      "file": "output.json"
+    },
+    {
+      "record": "k93022a6f4bf2430ba692974597fa8f1e",
+      "file": "output.json"
+    },
+    {
+      "record": "k9a3297b965b24ea7a87eb1a666b8cd1a",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k9a8431776364465195c7ae81c0c031ec",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "k9fa99dedff1641a4a41924f945e4bf2c",
+      "file": "output.json"
+    },
+    {
+      "record": "ka1754fb43f214d76ae4cd96762da033f",
+      "file": "lean/Largest.lean"
+    },
+    {
+      "record": "ka1c3633303ca4d7fb91d8a309579022b",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "ka8fb76538efa4aa28114eaab004058ff",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kafb8753e508c467d89d38921889dab4a",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kb0b4ce4e999f41b3821a41a4d3bbe87f",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kb196a5163fc74633b71d21d0bc248fa2",
+      "file": "output.json"
+    },
+    {
+      "record": "kb29a863507944e8d9442e6cd0a3f1d8f",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kb383160bb81746ce99bd620a97ee8da9",
+      "file": "lean/Replica.lean"
+    },
+    {
+      "record": "kb383160bb81746ce99bd620a97ee8da9",
+      "file": "lean/ScalarForest.lean"
+    },
+    {
+      "record": "kb4a55fd1ff714b01a68cad95eb87f3c3",
+      "file": "output.json"
+    },
+    {
+      "record": "kb555148741aa4c0687e60906bd144e43",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kb60d0f9d760c4878b61f88cdef869a3c",
+      "file": "output.json"
+    },
+    {
+      "record": "kc0a4185b9ecf4d70b84ed75e8e3caf67",
+      "file": "output.json"
+    },
+    {
+      "record": "kcc189037a61c4faea0745b876c66fffe",
+      "file": "output.json"
+    },
+    {
+      "record": "kcee4fdfe71574e5ab1b3a1c16c325818",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kd5aa5110d39449359578cdc2287a86a9",
+      "file": "output.json"
+    },
+    {
+      "record": "kdaa41390eadc4ac381e275adac86f547",
+      "file": "output.json"
+    },
+    {
+      "record": "kdc2eaac490144ba1be92ba8a428a2228",
+      "file": "ChainPositivity.lean"
+    },
+    {
+      "record": "kdc2eaac490144ba1be92ba8a428a2228",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "kdd117882498f411286f292377dc9abda",
+      "file": "output.json"
+    },
+    {
+      "record": "kdd440866190648ffb7237cbd5b1d4c7c",
+      "file": "exposition.md"
+    },
+    {
+      "record": "kdd440866190648ffb7237cbd5b1d4c7c",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "ke14b219b620141348788edb5c86fe65c",
+      "file": "output.json"
+    },
+    {
+      "record": "ke2436447b98547689b08023d2935b621",
+      "file": "glossary-proposals.md"
+    },
+    {
+      "record": "ke330047776da47ba92abe22d49ec3865",
+      "file": "output.json"
+    },
+    {
+      "record": "kf0625227f0b24a178ad0ee9a63601def",
+      "file": "output.json"
+    },
+    {
+      "record": "kf60b5d44129f444b9c13cfa739536768",
+      "file": "output.json"
+    },
+    {
+      "record": "kfaeb6535dad54592857b1f726417d954",
+      "file": "output.json"
+    },
+    {
+      "record": "kfd75ab1e7c494041851fb5f82f97d9e8",
+      "file": "output.json"
+    },
+    {
+      "record": "kfd8c65fff6a84089ad0591255b0674a3",
+      "file": "output.json"
+    }
+  ],
+  "supersedes": [],
+  "target": {
+    "kind": "research",
+    "record": "k4a876a6088f14bf090cb7da8b6e40a37"
+  },
+  "exposition": "review.md",
+  "overview_assessment": {
+    "verdict": "supported",
+    "reason": "소개는 고정된 300항목과 새 증명을 검토 대상으로 공개하며 독립 검토 전·전체 의미 보존 미판정임을 명시한다. 전체 P나 전칭 부호를 해결했다는 과장이 없다. 편집 결함은 개별 결과에서 구분했다."
+  },
+  "results": [
+    {
+      "result": "glossary-snapshot",
+      "assessment": {
+        "verdict": "not_supported",
+        "reason": "300항목 전문과 관계 안내를 읽고 항목별 근거·영역·경계를 entry-review.md 및 entry-audit.json에 기록했다. §199는 T−ℒ 동일성의 c=x 조건을 누락한다(원 k526 식23, n=2,x=1,c=2 반례). §201은 실제 숲 합의 비형식 식별과 BranchAlignment의 경계 대수 수용을 명료히 분리해야 한다. §11·198·312·325–327 등에는 이미 공개된 미검토 구현도 빠졌다. review.md F1–F4와 proposed-edits.md 참조. 미형식화 자체나 제한형 중복은 수학 오류로 세지 않았다."
+      },
+      "lean": {
+        "verdict": "not_applicable",
+        "reason": "이 결과는 glossary.md와 glossary-relations.md의 편집·의미 보존 결과로 lean:null이다. 개별 기존 형식 대응의 범위는 판정·선언에 대조했으며 새 두 파일의 재컴파일은 아래 두 결과에서 판정한다."
+      },
+      "alignment": {
+        "verdict": "not_applicable",
+        "reason": "전체 정본 편집 결과에 대응하는 단일 Lean 정리는 없다. 항목별 보증 범위 문제는 assessment와 review.md F2·F3에 명시했다."
+      },
+      "terminology": {
+        "verdict": "conforms",
+        "reason": "적용 판본 k183b91f20f754fb6a4b9e34936038adf에서 원 이름·기호·대상의 조용한 변경은 발견하지 않았다. 조건 누락·보증 설명·상태 편집 결함을 수학적 근거 문제로 별도 판정했다. 최신 정본 k4dfeca2와 대상 본문은 같다."
+      }
+    },
+    {
+      "result": "series-coefficients",
+      "assessment": {
+        "verdict": "supported",
+        "reason": "q≥2,a∈{1,2}의 네 급수는 같은 실제 숲 다항식 F의 미분·평가로 정의되며 marked_coeff,dampedValue_coeff,damped_coeff,numerator_coeff가 계승·q 인자까지 일치한다. n=0의 지수계수는0,1,0,0이다. 순열–숲 최대 라벨 재귀와 표시 미분으로 옛 의미 보존을 확인했다. Nat q−1인 구현 보조 확장을 음수 평가로 확대하지 않는다. review.md 새 급수 절 참조."
+      },
+      "lean": {
+        "verdict": "accepted",
+        "reason": "공개 두 파일과 의존19개 사본21모듈을 현재 Lean4.32.0·설정 cwd/env로 직접 재컴파일하여 모두 종료0을 회수했다. 네 계수 정리와 네 급수 정의를 포함한13개 직접 #print axioms는 모두 propext,Classical.choice,Quot.sound만 출력했다. execution-evidence.json, independent-lean/execution.json, axioms.json 및 logs/SeriesRepair.log에 실제 실행과 공리를 공개했다."
+      },
+      "alignment": {
+        "verdict": "matches",
+        "reason": "Bool false=U,true=Y이다. n!배 보통 계수는 q^a∂U^aF(q,q),F(q−1,q),q∂YF(q−1,q),q²(∂UU F(q,q)−∂YF(q−1,q))이며 모든 n을 포함한다. 더 넓은 자연수 q,a 타입과 정본 q≥2,a=1,2 영역의 차이를 명시한 해설과 일치한다."
+      },
+      "terminology": {
+        "verdict": "conforms",
+        "reason": "§118·119·120·123의 이름·정의와 F의 문턱·정규화를 유지한다. §110 순열 모멘트와는 a! 인자를 포함한 관계이며 다른 이름으로 재정의하지 않았다."
+      }
+    },
+    {
+      "result": "original-lower-bound",
+      "assessment": {
+        "verdict": "supported",
+        "reason": "q^e−(q−1)^e≤e q^(e−1)을 각 실제 숲 항에 합하여 정확 Y 손실≤∂YF(q−1,q)를 얻는다. 수용된 original_delta_finite_loss_lower에서 손실을 더 큰 값으로 교체하는 하계 방향이 옳다. 계수식을 대입한 n![x^n]𝓧q/q²≤bₙ,q−bₙ,q−1과 계수≥0을 가정한 원 증가가 모든 n≥1,q≥2에서 성립한다. 전칭 계수 부호나 P는 결론이 아니다."
+      },
+      "lean": {
+        "verdict": "accepted",
+        "reason": "GlossaryRepair의 세 새 정리와 SeriesRepair의 원 하계·조건부 증가를 직접 재컴파일·공리 조회했다. 원 Parking.b까지의 필요한 공개 의존21모듈 모두 종료0이며13개 조회에 허용 세 공리만 있다. 로그와 환경·해시·명령은 execution-evidence.json 및 independent-lean/에 있다. 작성자 과거 로그만으로 수용하지 않았다."
+      },
+      "alignment": {
+        "verdict": "matches",
+        "reason": "n,l:ℕ+와 q=l+1은 n≥1,q≥2 전부를 덮는다. b의 두 자연수 값을 먼저 ℚ로 포함해 차를 취하며 분모 q²는 양수다. n=0 계수 정리가 원 b₀ 하계로 확대되지 않는다. original_increase_of_numerator_coeff에는 계수 비음수 가정이 정확히 남아 있다. 원 next/run/PF/M/b 정의와 최종 타입을 직접 대조했다."
+      },
+      "terminology": {
+        "verdict": "conforms",
+        "reason": "원 번호 순·오른쪽 첫 빈자리 Parking.b와 §36의 양수 문턱 Δ를 사용한다. 원 b·분자 급수·조건부 부호를 다른 대상으로 바꾸거나 전체 P로 개명하지 않았다."
+      }
+    }
+  ],
+  "summary": "300항목별 편집 검토의 누락 번호는 없다. review.md·entry-review.md에 실제 원 정의·관계·형식 범위와 한계를, proposed-edits.md에 정확한 수정 문구를 남겼다. 정본에는 보완이 필요하지만 새 두 형식 결과는 독립 재컴파일·공리 감사와 명제 대조로 수용한다. 기존 일반 연구 정리 모두의 재증명·전체 기존 Lean 재컴파일·외부 논문 전체의 재전사 검토는 하지 않았다. 같은 대상의 선행 검토나 supersedes는 없다. 원 연구의 failed_attempts는 없고 분자 부호·전체 P 및 정본의 의미 보존 질문은 형식 수용과 별개다. 기존 원 연구·검토의 수학적 결함을 새로 확정한 판정은 아니며 F1·F2는 그 정확한 조건·비형식 연결을 정본에 복원하라는 지적이다."
+}

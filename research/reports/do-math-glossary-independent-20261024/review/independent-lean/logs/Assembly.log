@@ -1,0 +1,19 @@
+C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261023-014524\sessions\sd406bd3870224ea48645598e3f3ae83c\output\lean\Assembly.lean:85:8: warning: Try `simp at hh` instead of `simpa using hh`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+C:\math\.skill-workspace\do-math\parking-unimodality-fresh-20261023-014524\sessions\sd406bd3870224ea48645598e3f3ae83c\output\lean\Assembly.lean:107:8: warning: Try `simp at hh` instead of `simpa using hh`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+'ParkingLastCar.paste_injective' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.paste_certified' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_left_a' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_left_p' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_right_a' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_right_p' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_last_a' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_last_p' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_displacement_left' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_displacement_right' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_displacement_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ParkingLastCar.assemble_success' depends on axioms: [propext, Classical.choice, Quot.sound]

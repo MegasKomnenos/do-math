@@ -1,0 +1,1219 @@
+§3 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+abbrev Pref (n : ℕ)
+
+
+§4 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def next {n : ℕ} (a : Fin n) (occupied : Finset (Fin n)) : Option (Fin n)
+
+
+§4 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def run {n : ℕ} : List (Fin n) → Finset (Fin n) → Option (List (Fin n))
+
+
+§4 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def park {n : ℕ} (a : Pref n) : Option (List (Fin n))
+
+
+§5 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def Success {n : ℕ} (a : Pref n) : Prop
+
+
+§5 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+abbrev PF (n : ℕ)
+
+
+§6 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def slot {n : ℕ} (a : PF n) (i : Fin n) : Fin n
+
+
+§7 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+theorem pref_le_slot {n : ℕ} (a : PF n) (i : Fin n) : a.val i ≤ slot a i
+
+
+§7 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def displacement {n : ℕ} (a : PF n) (i : Fin n) : ℕ
+
+
+§7 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+theorem displacement_original {n : ℕ} (a : PF n) (i : Fin n) :
+    (displacement a i : ℤ) =
+      ((slot a i).val + 1 : ℤ) - ((a.val i).val + 1 : ℤ)
+
+
+§8 k92260b6c2f6e4c999f741f37265db176/independent/ParkingAudit.lean
+def M {n : ℕ} (a : PF n) : ℕ
+
+
+§8 k92260b6c2f6e4c999f741f37265db176/independent/ParkingAudit.lean
+theorem M_attained {n : ℕ} (hn : 1 ≤ n) (a : PF n) :
+    ∃ i : Fin n, M a = displacement a i
+
+
+§9 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def A (n l : ℕ) : ℕ
+
+
+§9 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def Aint (n : ℕ) (l : ℤ) : ℕ
+
+
+§9 k2809252f588641b39bcaf13513db3951/Evaluator.lean
+theorem evalA_eq_original (l m : ℕ) : evalA l m = A m l
+
+
+§9 k2809252f588641b39bcaf13513db3951/Recurrence.lean
+theorem A_recurrence (n l : ℕ) :
+    A (n+1) l = ∑ k ∈ Finset.range (n+1),
+      n.choose k * min (k+1) (l+1) * A k l * A (n-k) l
+
+
+§9 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+theorem original_A_parent_sum (n l : ℕ) :
+    Parking.A n l = ∑ G : ParentForest n, ∏v : Fin n, min (subtreeSize G v) (l+1)
+
+
+§9 kdc2eaac490144ba1be92ba8a428a2228/OriginalChain.lean
+def aq (q n : ℕ) : ℚ
+
+
+§9 kb196a5163fc74633b71d21d0bc248fa2/Finite.lean
+def entry (n l : ℕ) : ℕ
+
+
+§9 kb196a5163fc74633b71d21d0bc248fa2/Finite.lean
+theorem certificate_eq_original (n l : ℕ) (hn : n < 15) (hl : l < 14) :
+    entry n l = A n l
+
+
+§9 kcc189037a61c4faea0745b876c66fffe/lean/FiniteUpper.lean
+theorem certificate_eq_original (n l : ℕ) (hn : n < 19) (hl : l < 18) :
+    entry n l = A n l
+
+
+§10 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def b (n : ℕ+) (l : ℕ) : ℕ
+
+
+§10 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def P : Prop
+
+
+§10 kb196a5163fc74633b71d21d0bc248fa2/Finite.lean
+def exactEntry (n : ℕ+) (l : ℕ) : ℕ
+
+
+§10 kb196a5163fc74633b71d21d0bc248fa2/Finite.lean
+theorem b_eq_exactEntry (n : ℕ+) (hn : (n : ℕ) < 15)
+    (l : ℕ) (hl : l < 14) : b n l = exactEntry n l
+
+
+§10 kcc189037a61c4faea0745b876c66fffe/lean/FiniteUpper.lean
+theorem b_eq_exactEntry (n : ℕ+) (hn : (n : ℕ) < 19)
+    (l : ℕ) (hl : l < 18) : b n l = exactEntry n l
+
+
+§11 k342ab0d73a284696bcb1050ba1ce7e00/Parking.lean
+def Unimodal (m : ℕ) (x : ℕ → ℕ) : Prop
+
+
+§11 k21248694f4c24bad89564e3143deba52/Criterion.lean
+theorem unimodal_iff_no_drop_rise (m : ℕ) (x : ℕ → ℕ) :
+    Unimodal m x ↔
+      ∀ i j : ℕ, i < j → j < m → x (i+1) < x i → x (j+1) ≤ x j
+
+
+§13 k3c8d00ecefb9486697fd5692a47dad49/lean/Gap.lean
+def prev {n : ℕ} (o : Finset (Fin n)) (s : Fin n) : ℕ
+
+
+§14 k3c8d00ecefb9486697fd5692a47dad49/lean/Gap.lean
+def gap {n : ℕ} (o : Finset (Fin n)) (s : Fin n) : ℕ
+
+
+§14 k3c8d00ecefb9486697fd5692a47dad49/lean/Gap.lean
+theorem next_interval {n : ℕ} (o : Finset (Fin n)) (a s : Fin n) :
+    next a o = some s ↔ s ∉ o ∧ prev o s ≤ a.val ∧ a ≤ s
+
+
+§14 k3c8d00ecefb9486697fd5692a47dad49/lean/Gap.lean
+theorem gaps_pair {n : ℕ} (o : Finset (Fin n)) (p q : Fin n)
+    (hp : p ∉ o) (hpq : p < q) :
+    gap (insert q o) p = gap o p ∧
+    (if prev o q = p.val+1 then
+      gap o q = q.val-p.val ∧ gap (insert p o) q = gap o p + (q.val-p.val)
+     else gap (insert p o) q = gap o q)
+
+
+§15 k3c8d00ecefb9486697fd5692a47dad49/lean/Gap.lean
+theorem weight_le {n : ℕ} (o : Finset (Fin n)) (s : Fin n) (l : ℕ) (hs : s ∉ o) :
+    weight o s (· ≤ l) = min (gap o s) (l+1)
+
+
+§22 k21248694f4c24bad89564e3143deba52/Criterion.lean
+theorem original_P_iff_no_drop_rise : Parking.P ↔
+    ∀ n : ℕ+, ∀ i j : ℕ, i < j → j < (n : ℕ)-1 →
+      b n (i+1) < b n i → b n (j+1) ≤ b n j
+
+
+§22 k21248694f4c24bad89564e3143deba52/Parking.lean
+def UnimodalAt (n : ℕ+) (c : ℕ) : Prop
+
+
+§25 k0ee8ae2f5ad94097af2c3778062ded44/Cayley.lean
+theorem totalCount_zero : totalCount 0 = 1
+
+
+§25 k0ee8ae2f5ad94097af2c3778062ded44/Cayley.lean
+theorem totalCount_cayley (n : ℕ) (hn : 1 ≤ n) :
+    totalCount n = (n+1)^(n-1)
+
+
+§25 k0ee8ae2f5ad94097af2c3778062ded44/Cayley.lean
+theorem totalCount_rooted (s : ℕ) : (s+1)*totalCount s = (s+1)^s
+
+
+§25 k0ee8ae2f5ad94097af2c3778062ded44/Deficit.lean
+def totalCount (n : ℕ) : ℕ
+
+
+§25 k0ee8ae2f5ad94097af2c3778062ded44/OriginalChain.lean
+def tq (n : ℕ) : ℚ
+
+
+§25 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthSource.lean
+theorem totalCount_convolution (m : ℕ) :
+    (m+2 : ℚ) * (∑ j ∈ Finset.range (m+1), totalPair m j) =
+      2 * (totalCount (m+1) : ℚ)
+
+
+§25 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthSource.lean
+theorem totalCount_pos (n : ℕ) : 0 < totalCount n
+
+
+§36 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+def delta (n l : ℕ+) : ℤ
+
+
+§36 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem delta_gain_loss (n l : ℕ+) :
+    delta n l = canonicalGammaPlus n l - canonicalGammaMinus n l
+
+
+§36 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem delta_normalized (n l : ℕ+) :
+    (delta n l : ℚ) = ((A n l : ℚ) / ((l.val+1 : ℚ)^2)) *
+      (normalizedGain n l - normalizedLoss n l)
+
+
+§36 k1b4bb39af602435783a027a919ef8943/lean/PInterface.lean
+theorem b_curvature (n : ℕ+) (l : ℕ) (hl : 1 ≤ l) :
+    (b n (l+1) : ℤ) - (b n l : ℤ) =
+      (A n (l+1) : ℤ) - 2*(A n l : ℤ) + (A n (l-1) : ℤ)
+
+
+§36 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+theorem original_delta_components (n l : ℕ+) :
+    delta n l = (evalComponents n.val (l.val+1) (l.val+2) (l.val+1) : ℤ) -
+      2 * (evalComponents n.val (l.val+1) (l.val+1) (l.val+1) : ℤ) +
+      (evalComponents n.val (l.val+1) l.val l.val : ℤ)
+
+
+§38 k12c717105e4f436ebbc4a311ae64134a/Curvature.lean
+def weight (k ell : ℕ) : ℤ
+
+
+§42 k2809252f588641b39bcaf13513db3951/Certificates.lean
+def Certified {m n : ℕ} (o : Finset (Fin n)) (a p : Fin m → Fin n) : Prop
+
+
+§43 k2809252f588641b39bcaf13513db3951/Certificates.lean
+abbrev Trace (n l : ℕ)
+
+
+§43 k2809252f588641b39bcaf13513db3951/Certificates.lean
+def traceEquiv (n l : ℕ) : {a : PF n // M a ≤ l} ≃ Trace n l where
+  toFun
+
+
+§43 k2809252f588641b39bcaf13513db3951/Certificates.lean
+theorem card_trace (n l : ℕ) : Fintype.card (Trace n l) = A n l
+
+
+§43 ke2436447b98547689b08023d2935b621/Profile.lean
+def profileOriginalEquiv (n l : ℕ) (p : Fin n → ℕ → Prop) :
+    {a : {a : PF n // M a ≤ l} // ∀ i, p i (displacement a.val i)} ≃
+      ProfileTrace n l p
+
+
+§44 k2809252f588641b39bcaf13513db3951/LastCar.lean
+def leftSet {n l : ℕ} (x : Trace (n+1) l) : Finset (Fin n)
+
+
+§45 k2809252f588641b39bcaf13513db3951/LastCar.lean
+def index {n : ℕ} (I : Finset (Fin n)) : Fin I.card ↪o Fin (n+1) where
+  toFun i
+
+
+§46 k2809252f588641b39bcaf13513db3951/Assembly.lean
+abbrev Pieces (n l : ℕ)
+
+
+§47 k2809252f588641b39bcaf13513db3951/Equivalence.lean
+abbrev OriginalPieces (n l : ℕ)
+
+
+§47 k2809252f588641b39bcaf13513db3951/Equivalence.lean
+def piecesOriginalEquiv (n l : ℕ) : Pieces n l ≃ OriginalPieces n l
+
+
+§48 k2809252f588641b39bcaf13513db3951/Equivalence.lean
+def originalLastCarEquiv (n l : ℕ) :
+    {a : PF (n+1) // M a ≤ l} ≃ OriginalPieces n l
+
+
+§50 k21248694f4c24bad89564e3143deba52/Marked.lean
+def exactCars {n : ℕ} (a : PF n) (l : ℕ) : ℕ
+
+
+§51 k21248694f4c24bad89564e3143deba52/Marked.lean
+def highCars {n : ℕ} (a : PF n) (l : ℕ) : ℕ
+
+
+§52 k21248694f4c24bad89564e3143deba52/Marked.lean
+def markedCount (n : ℕ+) (l : ℕ) : ℕ
+
+
+§53 k21248694f4c24bad89564e3143deba52/Marked.lean
+def overlapCount (n : ℕ+) (l : ℕ) : ℕ
+
+
+§54 k21248694f4c24bad89564e3143deba52/Marked.lean
+theorem original_signed_gap_lower_bound (n : ℕ+) (l : ℕ) :
+    (markedCount n l : ℤ) - markedCount n (l+1) - overlapCount n l ≤
+      (b n l : ℤ) - b n (l+1)
+
+
+§58 k5bedcf491ebd45f1a1dcb7fb84fad705/Deficit.lean
+def deficit (n l : ℕ) : ℤ
+
+
+§71 k5bedcf491ebd45f1a1dcb7fb84fad705/LinearDeficit.lean
+def linearDeficit (l : ℕ) (m : ℕ) : ℤ
+
+
+§71 k4ae9589f84b84e11861e1ef456c2e3b5/lean/WidthResponse.lean
+theorem widResponse_excess (l n : ℕ) :
+    widResponse (l+1) (excessSource l) n = linearDeficit l n
+
+
+§76 k4ae9589f84b84e11861e1ef456c2e3b5/lean/WidthResponse.lean
+def excessSource (l k : ℕ) : ℤ
+
+
+§76 k41df00b303bc4da78d9d610e8bcf85ae/lean/SourceIntegration.lean
+theorem sourceSeries_excess_tail (q : ℕ) (hq : 1 ≤ q) :
+    sourceSeries (excessSource (q-1)) =
+      X*derivative ℚ (sourceSeries (tailSource q)) +
+        C (1-(q : ℚ))*sourceSeries (tailSource q)
+
+
+§78 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+def ParentForest (n : ℕ)
+
+
+§78 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+theorem parent_reaches_zero {n : ℕ} (P : ParentForest n) (v : Fin (n+1)) (hv : v ≠ 0) :
+    ∃ k : ℕ, 1 ≤ k ∧ P.val^[k] v = 0
+
+
+§79 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+def subtreeSize {n : ℕ} (P : ParentForest n) (v : Fin n) : ℕ
+
+
+§79 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+theorem subtreeSize_encode {n : ℕ} (G : Forest (Fin n)) (v : Fin n) :
+    subtreeSize (encode G) v = size G v
+
+
+§80 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+def parentEquiv (n : ℕ) : Forest (Fin n) ≃ ParentForest n where
+  toFun
+
+
+§225 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+def largeCount {n : ℕ} (P : ParentForest n) (q : ℕ) : ℕ
+
+
+§225 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem three_cap_hit_bounds {n : ℕ} (P : ParentForest n) (q : ℕ)
+    (hq : 1 ≤ q) (hn : n < 3*q) : hitCount P q ≤ 2
+
+
+§225 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem interior_hit_bounds {n : ℕ} (P : ParentForest n) (q : ℕ)
+    (hq : 4 ≤ q) (hn : n ≤ 2*q+3) :
+    hitCount P q ≤ 2 ∧ (hitCount P q = 2 → largeCount P q ≤ n-2*q)
+
+
+§226 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+def hitCount {n : ℕ} (P : ParentForest n) (q : ℕ) : ℕ
+
+
+§260 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+def smallBase {n : ℕ} (P : ParentForest n) (q : ℕ) : ℕ
+
+
+§252 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+def smallWeightedCoefficient (n q a e : ℕ) : ℕ
+
+
+§252 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+theorem componentPolynomial_coefficient (n q a e : ℕ) :
+    MvPolynomial.coeff (aeExponent a e) (componentPolynomial n q) =
+      smallWeightedCoefficient n q a e
+
+
+§253 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+def componentPolynomial (n q : ℕ) : MvPolynomial Bool ℕ
+
+
+§253 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem original_delta_finite_loss_lower (n l : ℕ+) :
+    (MvPolynomial.eval (fun b : Bool => if b then l.val+1 else l.val+1)
+      (MvPolynomial.pderiv false (MvPolynomial.pderiv false
+        (componentPolynomial n.val (l.val+1)))) : ℕ) -
+      ((evalComponents n.val (l.val+1) l.val (l.val+1) : ℤ) -
+       (evalComponents n.val (l.val+1) l.val l.val : ℤ)) ≤ delta n l
+
+
+§253 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem original_delta_two_hits_lower (n l : ℕ+) (hn : n.val < 3*(l.val+1)) :
+    2*delta n l ≥
+    2*(MvPolynomial.eval (fun b : Bool => if b then l.val+1 else l.val+1)
+      (MvPolynomial.pderiv false (MvPolynomial.pderiv false
+        (componentPolynomial n.val (l.val+1)))) : ℕ) -
+    2*(MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+      (MvPolynomial.pderiv true (componentPolynomial n.val (l.val+1))) : ℕ) -
+    (2*((l.val+1 : ℕ) : ℤ)-1)*
+      (MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+        (MvPolynomial.pderiv true (MvPolynomial.pderiv true
+          (componentPolynomial n.val (l.val+1)))) : ℕ)
+
+
+§253 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem evalComponents_eq_weightedEval (n q U Y : ℕ) :
+    evalComponents n q U Y = ParkingSkeleton.weightedEval
+      (fun s => if s < q then s else if s = q then Y else U) n
+
+
+§253 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem evalComponents_succ (n q U Y : ℕ) :
+    evalComponents (n+1) q U Y = ∑ k : Fin (n+1),
+      n.choose k.val * (if k.val+1 < q then k.val+1 else if k.val+1 = q then Y else U) *
+        evalComponents k.val q U Y * evalComponents (n-k.val) q U Y
+
+
+§135 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainPositivity.lean
+def smallCount (a : ℕ) (n : ℕ) : ℕ
+
+
+§135 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainPositivity.lean
+theorem actualBase_eq_smallCount (a n : ℕ) (hn : n≤2*a+1) :
+    actualBase a n = (smallCount a n : ℚ)
+
+
+§98 kdc2eaac490144ba1be92ba8a428a2228/OriginalChain.lean
+def transport (n s : ℕ) : ℚ
+
+
+§134 k1d0504eb9d5a478c8e6c31ae760d4630/sources/OriginalChain.lean
+def actualBase (a n : ℕ) : ℚ
+
+
+§134 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem actualBase_eq_canonicalWeight (k n : ℕ) (hk : 1 ≤ k) (hn : n ≤ 2*k+1) :
+    actualBase k n = canonicalWeight k n hk hn
+
+
+§99 kdc2eaac490144ba1be92ba8a428a2228/ChainAlgebra.lean
+def response (z : ℚ) (n s : ℕ) : ℚ
+
+
+§99 kdc2eaac490144ba1be92ba8a428a2228/ChainPolynomials.lean
+def responsePolynomial (n s : ℕ) : Polynomial ℚ
+
+
+§99 kdc2eaac490144ba1be92ba8a428a2228/ChainPolynomials.lean
+theorem responsePolynomial_eval (z : ℚ) (n s : ℕ) :
+    (responsePolynomial n s).eval z = response z n s
+
+
+§99 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem response_eq_closed (q s d : ℕ) :
+    ParkingChain.response (q : ℚ) (s+1+d) s =
+      (ParkingUpperRatio.response q s d : ℚ)
+
+
+§99 k39ce4750627e4a0e9735832b2fb49076/ShiftCompare.lean
+theorem actual_response_source_parameter_shift (q s d : ℕ) (hq : q≤s+2) :
+    (s+d+2 : ℕ)*ParkingChain.response (q : ℚ) (s+d+1) s ≤
+      (s+2 : ℕ)*ParkingChain.response ((q+1 : ℕ) : ℚ) (s+d+2) (s+1)
+
+
+§100 kdc2eaac490144ba1be92ba8a428a2228/ChainAlgebra.lean
+def loss (z : ℚ) (n k : ℕ) : ℚ
+
+
+§100 kdc2eaac490144ba1be92ba8a428a2228/ChainPolynomials.lean
+def lossPolynomial (n k : ℕ) : Polynomial ℚ
+
+
+§100 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem boundaryLoss_eq_original (n k : ℕ) (hn : k+1 ≤ n) :
+    (ParkingUpperRatio.boundaryLoss n k : ℚ) = ParkingChain.loss (k+2) n k
+
+
+§100 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem shiftedLoss_eq_original (n k : ℕ) (hn : k+1 ≤ n) :
+    (ParkingUpperRatio.shiftedLoss n k : ℚ) = ParkingChain.loss (k+3) n k
+
+
+§100 k39ce4750627e4a0e9735832b2fb49076/ShiftCompare.lean
+theorem actual_boundary_loss_shift (k d : ℕ) :
+    (k+d+2 : ℕ)*ParkingChain.tq (k+1)*
+        ParkingChain.loss (k+2) (k+d+1) k ≤
+      (k+2 : ℕ)*ParkingChain.tq k*
+        ParkingChain.loss (k+3) (k+d+2) (k+1)
+
+
+§103 k2f5a509346a04efc9720bfffb293aeee/UpperRatio.lean
+def normalized (n : ℕ+) (k : ℕ) : ℚ
+
+
+§104 kdc2eaac490144ba1be92ba8a428a2228/ChainAlgebra.lean
+def shiftedLoss (n k : ℕ) : ℚ
+
+
+§104 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem transportLoss_eq_original (n k : ℕ) (hn : k+2 ≤ n) :
+    ParkingUpperRatio.transportLoss n k = ParkingChain.shiftedLoss n k
+
+
+§104 k0ee8ae2f5ad94097af2c3778062ded44/UpperRatio.lean
+def transportLoss (n k : ℕ) : ℚ
+
+
+§105 kdc2eaac490144ba1be92ba8a428a2228/ChainPolynomials.lean
+def terminalPolynomial (n s : ℕ) : Polynomial ℚ
+
+
+§105 kdc2eaac490144ba1be92ba8a428a2228/ChainPolynomials.lean
+theorem terminalPolynomial_eval (u : ℚ) (n s : ℕ) :
+    (terminalPolynomial n s).eval u = terminal n s u
+
+
+§105 kdc2eaac490144ba1be92ba8a428a2228/Terminal.lean
+def terminal (n s : ℕ) (u : ℚ) : ℚ
+
+
+§106 k9001cda0e9704d678342f834dec9e9d6/BoundaryCorrections.lean
+def linearGap (n l : ℕ) : ℤ
+
+
+§107 k9001cda0e9704d678342f834dec9e9d6/LinearExpansion.lean
+def linearForcing (l n : ℕ) : ℤ
+
+
+§108 k9001cda0e9704d678342f834dec9e9d6/LinearExpansion.lean
+def linearStep (l : ℕ) (f : ℕ → ℤ) (n : ℕ) : ℤ
+
+
+§109 k9001cda0e9704d678342f834dec9e9d6/LinearExpansion.lean
+def linearLayer (l : ℕ) : ℕ → ℕ → ℤ
+
+
+§132 k1d0504eb9d5a478c8e6c31ae760d4630/sources/OriginalChain.lean
+def component (q i : ℕ) : ℚ
+
+
+§133 k1d0504eb9d5a478c8e6c31ae760d4630/sources/OriginalChain.lean
+def totalComponent (i : ℕ) : ℚ
+
+
+§133 k0ee8ae2f5ad94097af2c3778062ded44/CanonicalBridge.lean
+theorem totalComponent_eq_power (s : ℕ) :
+    totalComponent s = ((s+1)^s : ℕ)
+
+
+§136 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainAlgebra.lean
+def chain (z : ℚ) (k n : ℕ) : ℚ
+
+
+§136 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainPolynomials.lean
+def actualChainPolynomial (k n : ℕ) : Polynomial ℚ
+
+
+§136 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainPolynomials.lean
+theorem actualChainPolynomial_eval (z : ℚ) (k n : ℕ) :
+    (actualChainPolynomial k n).eval z = chain z k n
+
+
+§137 k1d0504eb9d5a478c8e6c31ae760d4630/sources/ChainAlgebra.lean
+def curvature (n k : ℕ) (u : ℚ) : ℚ
+
+
+§138 k1d0504eb9d5a478c8e6c31ae760d4630/sources/Jets.lean
+def Jet (N : ℕ) (f g : PS) : Prop
+
+
+§139 k1d0504eb9d5a478c8e6c31ae760d4630/sources/Jets.lean
+def egf (f : ℕ → ℚ) : PS
+
+
+§140 k1d0504eb9d5a478c8e6c31ae760d4630/sources/Jets.lean
+def source (c : ℕ → ℚ) : PS
+
+
+§140 k1d0504eb9d5a478c8e6c31ae760d4630/sources/Jets.lean
+theorem der_source (c : ℕ → ℚ) : der (source c) = egf c
+
+
+§141 k0ee8ae2f5ad94097af2c3778062ded44/Abel.lean
+def abelPoly : ℕ → ℚ[X]
+
+
+§146 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+def tau (n : ℕ+) (a : PF n) : Fin n
+
+
+§146 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem tau_attains (n : ℕ+) (a : PF n) : displacement a (tau n a) = M a
+
+
+§146 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem le_tau (n : ℕ+) (a : PF n) (i : Fin n) (hi : displacement a i = M a) :
+    i ≤ tau n a
+
+
+§147 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem arrival_event_iff (n : ℕ+) (a : PF n) (t : Fin n) (l : ℕ) :
+    ArrivalEvent n a t l ↔ M a = l ∧ tau n a = t
+
+
+§147 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+def bArrival (n : ℕ+) (t : Fin n) (l : ℕ) : ℕ
+
+
+§147 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem sum_bArrival (n : ℕ+) (l : ℕ) : ∑ t : Fin n, bArrival n t l = b n l
+
+
+§147 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem mixed_jump (n : ℕ+) (t : Fin n) (l : ℕ) :
+    mixed n (t.val+1) l - mixed n t.val l = bArrival n t l
+
+
+§147 k3c8d00ecefb9486697fd5692a47dad49/lean/Monotonicity.lean
+theorem bArrival_adjacent (n : ℕ+) (t : Fin n) (ht : t.val+1 < n) (l : ℕ) :
+    bArrival n t l ≤ bArrival n ⟨t.val+1,ht⟩ l
+
+
+§147 k3c8d00ecefb9486697fd5692a47dad49/lean/Monotonicity.lean
+theorem bArrival_monotone (n : ℕ+) (l : ℕ) : Monotone (fun t : Fin n => bArrival n t l)
+
+
+§147 k3c8d00ecefb9486697fd5692a47dad49/lean/Monotonicity.lean
+theorem bArrival_original_indices (n : ℕ) (hn : 2 ≤ n) (t l : ℕ)
+    (ht : 1 ≤ t) (htn : t < n) :
+    bArrival ⟨n,by omega⟩ ⟨t-1,by change t-1 < n; omega⟩ l ≤
+      bArrival ⟨n,by omega⟩ ⟨t,htn⟩ l
+
+
+§147 ke2436447b98547689b08023d2935b621/Marked.lean
+theorem arrival_recurrence (h k l : ℕ) :
+    arrival h (k+1) l =
+      ∑ a ∈ Finset.range (h+1), ∑ c ∈ Finset.range (k+1),
+        h.choose a * k.choose c * arrivalKernel (a+c) a l * arrival (h-a) (k-c) l
+
+
+§150 k178f470ddcb549fe86572026bed89f80/CoupledJets.lean
+def solve (a : ℕ → ℕ → ℚ) (z : ℚ) (w : ℕ → ℚ) (n : ℕ) : ℚ
+
+
+§150 k178f470ddcb549fe86572026bed89f80/CoupledJets.lean
+theorem solve_rec (a : ℕ → ℕ → ℚ) (z : ℚ) (w : ℕ → ℚ) (n : ℕ) :
+    solve a z w n = w n + z * ∑ j ∈ Finset.range n, a n j * solve a z w j
+
+
+§151 k178f470ddcb549fe86572026bed89f80/CoupledJets.lean
+def jet (a : ℕ → ℕ → ℚ) (w : ℕ → ℚ) (z : ℚ) : ℕ → ℕ → ℚ
+
+
+§151 k178f470ddcb549fe86572026bed89f80/CoupledJets.lean
+theorem jet_rec (a : ℕ → ℕ → ℚ) (w : ℕ → ℚ) (r : ℕ) (z : ℚ) (n : ℕ) :
+    jet a w z (r+1) n =
+      (z+(r+1 : ℕ)) * ∑ j ∈ Finset.range n, a n j * jet a w z (r+1) j +
+      (r+1 : ℕ) * ∑ j ∈ Finset.range n, a n j * jet a w z r j
+
+
+§151 k178f470ddcb549fe86572026bed89f80/CoupledJets.lean
+theorem jet_as_solve (a : ℕ → ℕ → ℚ) (w : ℕ → ℚ) (r : ℕ) (z : ℚ) (n : ℕ) :
+    jet a w z (r+1) n =
+      solve a (z+(r+1 : ℕ))
+        (fun m => (r+1 : ℕ) * ∑ j ∈ Finset.range m, a m j * jet a w z r j) n
+
+
+§152 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+def MixedPred {n : ℕ} (a : PF n) (j l : ℕ) : Prop
+
+
+§152 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+def mixed (n j l : ℕ) : ℕ
+
+
+§152 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem mixed_full (n l : ℕ) : mixed n n l = A n l
+
+
+§152 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem mixed_zero_threshold (n : ℕ+) (j : ℕ) (hj : j < n) : mixed n j 0 = 0
+
+
+§152 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem mixed_no_high (n l : ℕ) : mixed n 0 (l+1) = A n l
+
+
+§152 k3c8d00ecefb9486697fd5692a47dad49/lean/Chords.lean
+theorem mixed_chord (n : ℕ+) (l : ℕ) (hl : 1 ≤ l) (j : ℕ) (hj : j ≤ n) :
+    (n : ℕ) * (mixed n j l - A n (l-1)) ≤ j * b n l
+
+
+§152 k3c8d00ecefb9486697fd5692a47dad49/lean/Chords.lean
+theorem mixed_chord_sharp (n : ℕ+) (l : ℕ) (hl : 1 ≤ l) (j : ℕ)
+    (hlj : l ≤ j) (hjn : j ≤ n) :
+    ((n : ℕ)-l) * (mixed n j l - A n (l-1)) ≤ (j-l) * b n l
+
+
+§152 k3c8d00ecefb9486697fd5692a47dad49/lean/Chords.lean
+theorem mixed_difference_zero (n : ℕ+) (l : ℕ) (hl : 1 ≤ l) (j : ℕ)
+    (hj : j ≤ n) (hjl : j ≤ l) : mixed n j l - A n (l-1) = 0
+
+
+§152 ke2436447b98547689b08023d2935b621/MixedRecurrence.lean
+theorem mixed_recurrence_original (n j l : ℕ) (hj : j < n) :
+    mixed n j l = ∑ p ∈ validSplits j (n-1-j),
+      j.choose p.2 * (n-1-j).choose (p.1-p.2) * min (p.1+1) l *
+        mixed p.1 p.2 l * mixed (n-1-p.1) (j-p.2) l
+
+
+§152 ke2436447b98547689b08023d2935b621/MixedRecurrence.lean
+theorem mixed_empty (l : ℕ) : mixed 0 0 l = 1
+
+
+§152 ke2436447b98547689b08023d2935b621/MixedRecurrence.lean
+theorem mixed_recurrence_full (n l : ℕ) :
+    mixed (n+1) (n+1) l = ∑ k ∈ Finset.range (n+1),
+      n.choose k * min (k+1) (l+1) * A k l * A (n-k) l
+
+
+§155 ke2436447b98547689b08023d2935b621/Source.lean
+theorem source_recurrence (h l : ℕ) :
+    bArrival ⟨h+1,by omega⟩ (Fin.last h) l =
+      ∑ k ∈ (Finset.range (h+1)).filter (fun k => l ≤ k),
+        h.choose k * A k l * A (h-k) l
+
+
+§155 ke2436447b98547689b08023d2935b621/Source.lean
+theorem source_zero_above (h l : ℕ) (hl : h < l) :
+    bArrival ⟨h+1,by omega⟩ (Fin.last h) l = 0
+
+
+§156 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+def arrivalKernel (m j l : ℕ) : ℕ
+
+
+§156 k3402f089d15b489eb2cbad3ffa444bb7/lean/Arrival.lean
+theorem kernel_threshold_gain (m j l : ℕ) :
+    arrivalKernel m j l + mixed m j l ≤ arrivalKernel m j (l+1)
+
+
+§156 ke2436447b98547689b08023d2935b621/Marked.lean
+theorem marked_root_saturation (l a c : ℕ) :
+    ((min (a+c+2) l : ℕ) : ℤ) * markedArray l a c = l * markedArray l a c
+
+
+§159 ke2436447b98547689b08023d2935b621/Bounds.lean
+theorem J_recurrence (l : ℕ+) (h r : ℕ) :
+    J l h (r+1) = ∑ a ∈ Finset.range (h+1), ∑ c ∈ Finset.range (r+1),
+      (h.choose a : ℤ) * (r.choose c : ℤ) *
+        ((arrivalKernel (a+c) a (l+1) : ℤ) * J l (h-a) (r-c) +
+          kernelGain l (a+c) a * markedArray l (h-a) (r-c))
+
+
+§160 ke2436447b98547689b08023d2935b621/Bounds.lean
+theorem Z_order (l : ℕ+) (h r : ℕ) : Z false l h r ≤ Z true l h r
+
+
+§160 ke2436447b98547689b08023d2935b621/Bounds.lean
+theorem Z_le_J (l : ℕ+) (h r : ℕ) : Z true l h r ≤ J l h r
+
+
+§160 ke2436447b98547689b08023d2935b621/Initial.lean
+theorem Z_row_Delta (l : ℕ+) (n : ℕ) :
+    (∑ t : Fin (n+1), Z true l t.val (n-t.val)) ≤ Delta (n+1) l
+
+
+§163 k9a8431776364465195c7ae81c0c031ec/lean/PairGap.lean
+def adjacentSource (g d l : ℕ) : ℕ
+
+
+§163 k9a8431776364465195c7ae81c0c031ec/lean/PairGap.lean
+def adjacentTarget (g d l : ℕ) : ℕ
+
+
+§163 k9a8431776364465195c7ae81c0c031ec/lean/PairGap.lean
+def separatedSource (g d l : ℕ) : ℕ
+
+
+§163 k9a8431776364465195c7ae81c0c031ec/lean/PairGap.lean
+def separatedTarget (g d l : ℕ) : ℕ
+
+
+§179 k9a8431776364465195c7ae81c0c031ec/lean/PairGap.lean
+theorem original_kernel_residual (m j l : ℕ) :
+    (arrivalKernel m j (l+1) : ℤ) - arrivalKernel m j l - mixed m j l =
+      (if l ≤ m then (mixed m j l : ℤ) else 0) +
+      ((l+1+min (m+1) (l+1) : ℕ) : ℤ) *
+        ((mixed m j (l+1) : ℤ) - mixed m j l)
+
+
+§195 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+def canonicalGammaPlus (n l : ℕ+) : ℤ
+
+
+§195 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem canonicalGammaPlus_eq (n l : ℕ+) :
+    canonicalGammaPlus n l = gammaPlus n l
+
+
+§195 k1b4bb39af602435783a027a919ef8943/lean/SkeletonAlgebra.lean
+def gammaPlus (n l : ℕ) : ℤ
+
+
+§196 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+def canonicalGammaMinus (n l : ℕ+) : ℤ
+
+
+§196 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem canonicalGammaMinus_eq (n l : ℕ+) :
+    canonicalGammaMinus n l = gammaMinus n l
+
+
+§196 k716f5d11dad24f78a224774000d9f0b0/lean/StrictCorrections.lean
+theorem canonicalGammaMinus_pos (n l : ℕ+) (hn : l.val+1 ≤ n.val) :
+    0 < canonicalGammaMinus n l
+
+
+§198 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+theorem parent_forest_sum_eq_weightedEval (w : ℕ → ℕ) (n : ℕ) :
+    (∑ G : ParentForest n, ∏v : Fin n, w (subtreeSize G v)) = ParkingSkeleton.weightedEval w n
+
+
+§198 k1b4bb39af602435783a027a919ef8943/lean/SkeletonAlgebra.lean
+def weightedEval (w : ℕ → ℕ) (m : ℕ) : ℕ
+
+
+§198 k1b4bb39af602435783a027a919ef8943/lean/SkeletonAlgebra.lean
+theorem weightedEval_original (l m : ℕ) :
+    weightedEval (fun s => min s (l+1)) m = A m l
+
+
+§198 k716f5d11dad24f78a224774000d9f0b0/lean/StrictCorrections.lean
+theorem weightedEval_pos (w : ℕ → ℕ) (hw : 0 < w 1) (n : ℕ) :
+    0 < weightedEval w n
+
+
+§198 k716f5d11dad24f78a224774000d9f0b0/lean/StrictCorrections.lean
+theorem weightedEval_strict (w v : ℕ → ℕ) (hw : 0 < w 1)
+    (h : ∀ s, w s ≤ v s) (s n : ℕ) (hs : 0 < s) (hsn : s ≤ n)
+    (hlt : w s < v s) : weightedEval w n < weightedEval v n
+
+
+§201 k41df00b303bc4da78d9d610e8bcf85ae/lean/BranchAlignment.lean
+theorem evenBranch_grouped (q : ℕ) (hq : 2 ≤ q) :
+    evenBranch q = (1/2 : ℚ)*(Nat.choose (2*q) q : ℚ)*(totalCount (q-1) : ℚ)^2
+
+
+§201 k41df00b303bc4da78d9d610e8bcf85ae/lean/BranchAlignment.lean
+theorem oddBranch_grouped (q : ℕ) (hq : 2 ≤ q) :
+    oddBranch q = (3*(q : ℚ)/2)*(Nat.choose (2*q) q : ℚ)*(totalCount (q-1) : ℚ)^2 +
+      (Nat.choose (2*q+1) q : ℚ)*(2*(totalCount (q-1) : ℚ)*(totalCount q : ℚ)+
+        ((q-1 : ℕ) : ℚ)*(totalCount (q-1) : ℚ)^2)
+
+
+§202 k41df00b303bc4da78d9d610e8bcf85ae/lean/BranchAlignment.lean
+theorem coeff_totalPrimitive_succ (n : ℕ) :
+    coeff (n+1) totalPrimitive = (totalCount n : ℚ)/((n+1).factorial : ℚ)
+
+
+§202 k41df00b303bc4da78d9d610e8bcf85ae/lean/Kappa.lean
+def totalPrimitive : PowerSeries ℚ
+
+
+§204 k41df00b303bc4da78d9d610e8bcf85ae/lean/EGF.lean
+theorem egfCoeff_iteratedKernel (r a n : ℕ) :
+    egfCoeff (iteratedKernel r a) n = (iteratedEGF r a n : ℚ)
+
+
+§204 k41df00b303bc4da78d9d610e8bcf85ae/lean/Kappa.lean
+theorem canonicalKernel_eq_iteratedKernel (r a : ℕ) :
+    canonicalKernel r a = iteratedKernel r a
+
+
+§216 k41df00b303bc4da78d9d610e8bcf85ae/lean/BranchAlignment.lean
+theorem sourceSeries_widSource (q : ℕ) (hq : 2 ≤ q) :
+    sourceSeries (widSource q) = widSourceSeries q
+
+
+§216 k41df00b303bc4da78d9d610e8bcf85ae/lean/EGF.lean
+def widSourceSeries (q : ℕ) : PowerSeries ℚ
+
+
+§216 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthSource.lean
+theorem widSource_split (q r : ℕ) (hq : 2 ≤ q) (hqr : q ≤ r) (hrq : r ≤ 2*q) :
+    (widSourceInt q r : ℚ) = (totalCount r : ℚ)/(r+1) +
+      (r : ℚ)/2 * ∑ j ∈ Finset.Ico (r-q) q, totalPair (r-1) j
+
+
+§216 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthSource.lean
+theorem widSource_pos (q r : ℕ) (hq : 2 ≤ q) (hqr : q ≤ r) (hrq : r ≤ 2*q) :
+    0 < widSourceInt q r
+
+
+§218 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthSource.lean
+theorem widSource_middle_empty (q : ℕ) :
+    (∑ j ∈ Finset.Ico (2*q-q) q, totalPair (2*q-1) j) = 0
+
+
+§219 k4ae9589f84b84e11861e1ef456c2e3b5/lean/WidthResponse.lean
+def widResponse (c : ℕ) (S : ℕ → ℤ) (m : ℕ) : ℤ
+
+
+§219 k41df00b303bc4da78d9d610e8bcf85ae/lean/ResponseExpansion.lean
+theorem widResponse_expansion (c n : ℕ) (S : ℕ → ℤ) :
+    (widResponse c S n : ℚ) = ∑ r ∈ Finset.range n, (S r : ℚ) *
+      ∑ a ∈ Finset.range (n-r), (c : ℚ)^a * widKappa n r a
+
+
+§219 k41df00b303bc4da78d9d610e8bcf85ae/lean/SourceIntegration.lean
+theorem responseSeries_ode (c : ℕ) (S : ℕ → ℤ) :
+    derivative ℚ (responseSeries c S) =
+      responseHomogeneous c * responseSeries c S + sourceSeries S * totalSeries
+
+
+§219 k41df00b303bc4da78d9d610e8bcf85ae/lean/SourceIntegration.lean
+theorem response_tail_integration (c q : ℕ) (hq : 1 ≤ q) :
+    responseSeries c (fun r => excessSource (q-1) r - ((c : ℤ)-(q : ℤ))*tailSource q r +
+      (c : ℤ)*fullWidSource q r) =
+      totalSeries*(X*sourceSeries (tailSource q))
+
+
+§223 k41df00b303bc4da78d9d610e8bcf85ae/lean/BoundaryTheorems.lean
+theorem widKappa_integer (n r a : ℕ) : ∃ k : ℕ, widKappa n r a = (k : ℚ)
+
+
+§223 k41df00b303bc4da78d9d610e8bcf85ae/lean/EGF.lean
+theorem widKappa_eq_nat (n r a : ℕ) : widKappa n r a = (widKappaNat n r a : ℚ)
+
+
+§223 k41df00b303bc4da78d9d610e8bcf85ae/lean/Kappa.lean
+def widKappa (n r a : ℕ) : ℚ
+
+
+§223 k41df00b303bc4da78d9d610e8bcf85ae/lean/Kappa.lean
+theorem widKappa_iterated (n r a : ℕ) : widKappa n r a =
+    (n.factorial : ℚ) * coeff n (totalSeries * iteratedKernel r a)
+
+
+§223 k41df00b303bc4da78d9d610e8bcf85ae/lean/WidthResponse.lean
+theorem widResponse_leading (c r : ℕ) (S : ℕ → ℤ)
+    (hS : ∀ k < r, S k = 0) : widResponse c S (r+1) = S r
+
+
+§227 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def canonicalLeafCount {n : ℕ} (P : ParentForest n) (q : ℕ) : ℕ
+
+
+§227 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+theorem canonicalLeafCount_le_one {n : ℕ} (P : ParentForest n) (q : ℕ)
+    (hn : n ≤ 2*q+1) : canonicalLeafCount P q ≤ 1
+
+
+§227 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+theorem canonicalLeafCount_zero_iff {n : ℕ} (P : ParentForest n) (q : ℕ) :
+    canonicalLeafCount P q = 0 ↔ ∀v, subtreeSize P v ≤ q
+
+
+§230 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def canonicalClassContribution (n l : ℕ+) (k : ℕ) : ℤ
+
+
+§230 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+theorem original_delta_empty_path (n l : ℕ+) (hn : n.val ≤ 2*(l.val+1)+1) :
+    delta n l = canonicalClassContribution n l 0 + canonicalClassContribution n l 1
+
+
+§231 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+def normalizedGain (n l : ℕ+) : ℚ
+
+
+§231 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem normalizedGain_eq (n l : ℕ+) :
+    normalizedGain n l = ((l.val+1 : ℚ)^2) * (gammaPlus n l : ℚ) / (A n l : ℚ)
+
+
+§232 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+def normalizedLoss (n l : ℕ+) : ℚ
+
+
+§232 k1b4bb39af602435783a027a919ef8943/lean/GainLoss.lean
+theorem normalizedLoss_eq (n l : ℕ+) :
+    normalizedLoss n l = ((l.val+1 : ℚ)^2) * (gammaMinus n l : ℚ) / (A n l : ℚ)
+
+
+§237 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+abbrev Forest (V : Type*) [LT V]
+
+
+§238 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+def Anc {V : Type*} [LT V] (G : Forest V) : V → V → Prop
+
+
+§238 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+theorem anc_iterate {V : Type*} [LT V] (G : Forest V) (u v : V) :
+    Anc G u v ↔ ∃ k : ℕ, (up G)^[k] (some u) = some v
+
+
+§239 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+def Closed {V : Type*} [LT V] (G : Forest V) (S : Set V) : Prop
+
+
+§239 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+theorem closed_anc {V : Type*} [LT V] (G : Forest V) (S : Set V)
+    (hc : Closed G S) {u v : V} (h : Anc G u v) (hv : v ∈ S) : u ∈ S
+
+
+§239 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+theorem restrict_anc {V : Type*} [LT V] (G : Forest V) (S : Set V)
+    (hc : Closed G S) (u v : S) :
+    Anc (restrict G S) u v ↔ Anc G u.val v.val
+
+
+§239 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+theorem restrict_size {V : Type*} [LT V] [Fintype V] (G : Forest V)
+    (S : Set V) (hc : Closed G S) (v : S) :
+    size (restrict G S) v = size G v.val
+
+
+§240 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+def size {V : Type*} [LT V] (G : Forest V) (v : V) : ℕ
+
+
+§240 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+def weight {V : Type*} [LT V] [Fintype V] (w : ℕ → ℕ) (G : Forest V) : ℕ
+
+
+§240 k1b4bb39af602435783a027a919ef8943/lean/Forest.lean
+def total {V : Type*} [LT V] [Fintype V] (w : ℕ → ℕ) : ℕ
+
+
+§240 k1b4bb39af602435783a027a919ef8943/lean/ForestEvaluation.lean
+theorem total_eq_eval (w : ℕ → ℕ) (n : ℕ) :
+    ∀ (V : Type u) [LinearOrder V] [Fintype V], Fintype.card V = n →
+      total (V
+
+
+§241 k1b4bb39af602435783a027a919ef8943/lean/CanonicalForest.lean
+def canonicalMaxSplitEquiv (n : ℕ) : ParentForest (n+1) ≃ Parts (Fin.last n)
+
+
+§241 k1b4bb39af602435783a027a919ef8943/lean/ForestSplit.lean
+abbrev Parts (r : V)
+
+
+§241 k1b4bb39af602435783a027a919ef8943/lean/ForestSplit.lean
+def splitEquiv (r : V) (hr : ∀u, u ≤ r) : Forest V ≃ Parts r where
+  toFun
+
+
+§249 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def descendants {V : Type*} [LT V] [Fintype V] (G : Forest V) (v : V) : Finset V
+
+
+§250 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def skeletonLeaves {V : Type*} [LT V] [Fintype V] (G : Forest V) (q : ℕ) : Finset V
+
+
+§250 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def canonicalSkeletonLeaves {n : ℕ} (P : ParentForest n) (q : ℕ) : Finset (Fin n)
+
+
+§250 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+theorem canonicalLeaves_encode {n : ℕ} (G : Forest (Fin n)) (q : ℕ) :
+    canonicalSkeletonLeaves (encode G) q = skeletonLeaves G q
+
+
+§251 k0c2f8df2c56e4828bbf691cacca83b2a/lean/BoundaryForest.lean
+def forestCurvature {n : ℕ} (P : ParentForest n) (l : ℕ+) : ℤ
+
+
+§251 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem curvature_two_hits_negative (q : ℤ) (a : ℕ) (hq : 6 ≤ q)
+    (ha : a ≤ 3) : (q+1)^a*q^2-2*q^(a+2)+(q-1)^(a+2) < 0
+
+
+§251 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem two_hit_subsum_nonpos (n q : ℕ) (hq : 6 ≤ q) (hn : n ≤ 2*q+3) :
+    (∑ P : ParentForest n, if hitCount P q = 2 then
+      (smallBase P q : ℤ) * (((q+1 : ℕ) : ℤ)^largeCount P q*(q : ℤ)^2 -
+        2*(q : ℤ)^(largeCount P q+2) + ((q-1 : ℕ) : ℤ)^(largeCount P q+2))
+      else 0) ≤ 0
+
+
+§255 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedLower.lean
+theorem central_power_lower (q a : ℕ) (hq : 2 ≤ q) :
+    (a*(a-1)*q^(a-2) : ℕ) ≤
+      ((q+1 : ℕ) : ℤ)^a - 2*(q : ℤ)^a + ((q-1 : ℕ) : ℤ)^a
+
+
+§255 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedLower.lean
+theorem central_power_lower_int (q : ℤ) (a : ℕ) (hq : 1 ≤ q) :
+    (a*(a-1) : ℕ) * q^(a-2) ≤ (q+1)^a - 2*q^a + (q-1)^a
+
+
+§255 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem curvature_finite_loss_lower (q : ℤ) (a e : ℕ) (hq : 1 ≤ q) :
+    (a*(a-1) : ℕ)*q^(a-2)*q^e -
+      (q^e-(q-1)^e)*(q-1)^a ≤
+    (q+1)^a*q^e-2*q^(a+e)+(q-1)^(a+e)
+
+
+§255 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem monomial_finite_loss_lower (B q a e : ℕ) (hq : 2 ≤ q) :
+    (B*a*(a-1)*q^(a-2)*q^e : ℕ) -
+      ((B*(q-1)^a*q^e : ℕ) - (B*(q-1)^a*(q-1)^e : ℕ) : ℤ) ≤
+    ((B*(q+1)^a*q^e : ℕ) - 2*(B*q^a*q^e : ℕ) +
+      (B*(q-1)^a*(q-1)^e : ℕ) : ℤ)
+
+
+§255 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem curvature_two_hits_lower (q : ℤ) (a e : ℕ) (hq : 1 ≤ q)
+    (he : e ≤ 2) :
+    2*((q+1)^a*q^e-2*q^(a+e)+(q-1)^(a+e)) ≥
+    2*(a*(a-1) : ℕ)*q^(a-2)*q^e -
+      2*(e : ℤ)*(q-1)^a*(0 : ℤ)^(e-1) -
+      (2*q-1)*(e*(e-1) : ℕ)*(q-1)^a*(0 : ℤ)^(e-2)
+
+
+§255 k9a3297b965b24ea7a87eb1a666b8cd1a/lean/InteriorLower.lean
+theorem monomial_two_hits_lower (B q a e : ℕ) (hq : 2 ≤ q) (he : e ≤ 2) :
+    2*((B*(q+1)^a*q^e : ℕ) - 2*(B*q^a*q^e : ℕ) +
+      (B*(q-1)^a*(q-1)^e : ℕ) : ℤ) ≥
+    2*(B*a*(a-1)*q^(a-2)*q^e : ℕ) -
+      2*(B*e*(q-1)^a*0^(e-1) : ℕ) -
+      (2*(q : ℤ)-1)*(B*e*(e-1)*(q-1)^a*0^(e-2) : ℕ)
+
+
+§257 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+def forwardGain (n l : ℕ+) : ℤ
+
+
+§257 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+theorem forward_delta (n l : ℕ+) :
+    delta n (l+1) = forwardGain n l - nextCorrection n l
+
+
+§257 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+theorem forwardGain_nonneg (n l : ℕ+) : 0 ≤ forwardGain n l
+
+
+§258 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+def nextCorrection (n l : ℕ+) : ℤ
+
+
+§258 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+theorem nextCorrection_nonneg (n l : ℕ+) : 0 ≤ nextCorrection n l
+
+
+§258 k716f5d11dad24f78a224774000d9f0b0/lean/StrictCorrections.lean
+theorem nextCorrection_pos (n l : ℕ+) (hn : l.val+2 ≤ n.val) :
+    0 < nextCorrection n l
+
+
+§259 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+theorem determinant_step (n l : ℕ+)
+    (hL : 0 < canonicalGammaMinus n l)
+    (hM : canonicalGammaPlus n l * nextCorrection n l -
+      forwardGain n l * canonicalGammaMinus n l ≥ 0)
+    (hd : delta n l ≤ 0) : delta n (l+1) ≤ 0
+
+
+§259 kb29a863507944e8d9442e6cd0a3f1d8f/lean/CombinedTransport.lean
+theorem determinant_strict_step (n l : ℕ+)
+    (hL : 0 < canonicalGammaMinus n l)
+    (hH : 0 < nextCorrection n l)
+    (hM : canonicalGammaPlus n l * nextCorrection n l -
+      forwardGain n l * canonicalGammaMinus n l ≥ 0)
+    (hd : delta n l < 0) : delta n (l+1) < 0
+
+
+§261 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+theorem component_UU (n q U Y : ℕ) :
+    MvPolynomial.eval (fun b : Bool => if b then Y else U)
+      (pderiv false (pderiv false (componentPolynomial n q))) =
+    ∑ P : ParentForest n, smallBase P q * largeCount P q * (largeCount P q-1) *
+      U ^ (largeCount P q-2) * Y ^ hitCount P q
+
+
+§262 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+theorem component_Y (n q U Y : ℕ) :
+    MvPolynomial.eval (fun b : Bool => if b then Y else U)
+      (pderiv true (componentPolynomial n q)) =
+    ∑ P : ParentForest n, smallBase P q * hitCount P q *
+      U ^ largeCount P q * Y ^ (hitCount P q-1)
+
+
+§262 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedComponents.lean
+theorem component_YY (n q U Y : ℕ) :
+    MvPolynomial.eval (fun b : Bool => if b then Y else U)
+      (pderiv true (pderiv true (componentPolynomial n q))) =
+    ∑ P : ParentForest n, smallBase P q * hitCount P q * (hitCount P q-1) *
+      U ^ largeCount P q * Y ^ (hitCount P q-2)
+
+
+§262 k7a6fb5f6105e475dab570454a8d5ef85/lean/MarkedLower.lean
+theorem original_delta_marked_lower (n l : ℕ+) (hn : n.val ≤ 2*(l.val+1)+1) :
+    2*delta n l ≥
+    2*(MvPolynomial.eval (fun b : Bool => if b then l.val+1 else l.val+1)
+      (MvPolynomial.pderiv false (MvPolynomial.pderiv false
+        (componentPolynomial n.val (l.val+1)))) : ℕ) -
+    2*(MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+      (MvPolynomial.pderiv true (componentPolynomial n.val (l.val+1))) : ℕ) -
+    (2*((l.val+1 : ℕ) : ℤ)-1)*
+      (MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+        (MvPolynomial.pderiv true (MvPolynomial.pderiv true
+          (componentPolynomial n.val (l.val+1)))) : ℕ)
+
+
+§262 kdaa41390eadc4ac381e275adac86f547/lean/MarkedLower.lean
+theorem original_delta_marked_lower (n l : ℕ+) (hn : n.val ≤ 2*(l.val+1)+1) :
+    2*delta n l ≥
+    2*(MvPolynomial.eval (fun b : Bool => if b then l.val+1 else l.val+1)
+      (MvPolynomial.pderiv false (MvPolynomial.pderiv false
+        (componentPolynomial n.val (l.val+1)))) : ℕ) -
+    2*(MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+      (MvPolynomial.pderiv true (componentPolynomial n.val (l.val+1))) : ℕ) -
+    (2*((l.val+1 : ℕ) : ℤ)-1)*
+      (MvPolynomial.eval (fun b : Bool => if b then 0 else l.val)
+        (MvPolynomial.pderiv true (MvPolynomial.pderiv true
+          (componentPolynomial n.val (l.val+1)))) : ℕ)
