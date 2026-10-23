@@ -1,0 +1,23 @@
+{
+  "current_entries": 300,
+  "retired_entries": 38,
+  "file_links_checked": 241,
+  "errors": [],
+  "unit_tests": {
+    "count": 57,
+    "exit_code": 0,
+    "seconds": 69.452
+  },
+  "math_checks": "verify_relations.json",
+  "scope": "Structural checks and exact finite comparisons; not new mathematical certification.",
+  "final_files": {
+    "glossary-history.md": "2d287f4d5587e8c562e05c48dc834791d473049c7da3b734ebd45fbfb9acbe0d",
+    "glossary-relations.md": "752ee6c3af12b6f282e945dd943d1461fb1bccb55eba937e30c095ada6dcc1a5",
+    "glossary.md": "229e1df7010d73f33bed60b93b1d005e071b3a1082af6cc8b3c2134e8e89a167",
+    "research-history.md": "9ef0a0896da9a74f7a625c3997888b15fff015d0f2f53e98804f880bcba14cb1",
+    "research-status.md": "d2bb160e3a6c878048373badaa0b58d2b25bd6cf569f5ee5c87571225c6ba329",
+    "verification.md": "ed781739571773e382e0b2e2506b26ad77d671725e1a022ccf714801d1cada8b"
+  },
+  "single_current_format": true,
+  "old_public_records_modified": false
+}

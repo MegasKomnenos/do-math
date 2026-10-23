@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 from pathlib import Path, PurePosixPath
+from glossary import check_glossary
 
 
 CATEGORIES = ("plan", "research", "explore", "peer", "review")
@@ -335,6 +336,8 @@ class Checker:
                  "publish a regular file/directory, not a filesystem link")
         if data["category"] == "plan":
             self.plan(output)
+            problems = check_glossary(self.output)
+            need(not problems, 'glossary', '; '.join(problems))
         elif data["category"] == "research":
             self.research(output)
         elif data["category"] == "explore":

@@ -78,7 +78,7 @@
 
 운영 조건과 모델 지시를 보존해야 하면 별도 운영 메모에 두고 수학 본문에 반복하지 않는다.
 
-계산을 했으면 코드·입력·결과를 `output/`에 두고 본문에서 재현 방법과 함께 연결한다. 정본에 없는 대상을 새로 썼으면 [common.md](common.md)의 '용어 정본'에 따라 `output/glossary-proposals.md`로 제안한다.
+계산을 했으면 코드·입력·결과를 `output/`에 두고 본문에서 재현 방법과 함께 연결한다. 새 표기가 필요하면 먼저 기존 정의를 재사용할 수 있는지 본다. 탐구 안에서만 쓰는 보조 기호는 뜻과 범위를 그 자리에서 설명하고, 연구 전체에서 공유할 필요가 있는 새 대상만 [common.md](common.md)의 기준에 따라 `output/glossary-proposals.md`로 제안한다.
 
 `output/output.json`은 [protocol.md](protocol.md) 4절의 '탐구 산출' 형식으로 쓴다. `category`는 `"explore"`, `supersedes`는 `[]`다. `exposition`에는 탐구 본문 파일의 `output/` 기준 상대 경로를, `questions`에는 탐구 중 떠오른 질문을 구체적인 문자열로 적는다. 없으면 `[]`다. `references`에는 실제로 사용한 공개 기록을 적는다. `overview`는 [protocol.md](protocol.md) 3절에 따라 탐구 전체를 소개한다. 들여다본 각도, 바뀐 이해, 넘기는 방향이 드러나게 쓴다.
 

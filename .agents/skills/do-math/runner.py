@@ -564,7 +564,7 @@ class Runner:
             # A restart is the human's signal that the halt's cause was addressed.
             self.state.update(halted=None, plan_failures=0)
             self.state.setdefault("last_plan", None)  # States written before these fields
-            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py"):
+            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
             self.collect()

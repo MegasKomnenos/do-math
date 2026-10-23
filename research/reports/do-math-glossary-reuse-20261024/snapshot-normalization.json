@@ -1,0 +1,68 @@
+[
+  {
+    "file": "consolidation-evidence.json",
+    "source_copy_sha256": "8567822d9930445df4aecec525b9f096ed9b3f88c484afc6ad758ada629285f7",
+    "tracked_sha256": "a78e57e710ccda698ebf31d327f88d0ed0163433dfc6e85234a0b03330c0afa9",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "glossary-history.snapshot.md",
+    "source_copy_sha256": "2d287f4d5587e8c562e05c48dc834791d473049c7da3b734ebd45fbfb9acbe0d",
+    "tracked_sha256": "a8ec5a4935061e9995c6fbfb78b45154ffaeae84588578409c291cebe2883bd6",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "glossary-relations.snapshot.md",
+    "source_copy_sha256": "752ee6c3af12b6f282e945dd943d1461fb1bccb55eba937e30c095ada6dcc1a5",
+    "tracked_sha256": "aed73a7bbb6698ca60e962ec994e00bcc1e66d2405498ced27e045eba484420f",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "glossary.snapshot.md",
+    "source_copy_sha256": "229e1df7010d73f33bed60b93b1d005e071b3a1082af6cc8b3c2134e8e89a167",
+    "tracked_sha256": "020a26db9b5b9f4f6f9d7ca45da3cbc231fe0ef7e219e5e3bb7afd2f0b2bfe24",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "official-check.json",
+    "source_copy_sha256": "c4762dbec12207aab9b1d516d99eb49bc83fffddee4dfe8e450a836a2fbcbf1a",
+    "tracked_sha256": "292a7c7e173b510a35503a5f2122bcb0906644e8dcd779b86796546dab24d9af",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "publication-receipt.json",
+    "source_copy_sha256": "bcb899e8d0a4c095be862f7326ccb9cd72130fa9c9c3c237558574b48f0dbaa5",
+    "tracked_sha256": "c5ac2c2f5055d1daf78a57cf25d67bd6d6a926e9b1a49fe841222b47ffb1903d",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "reader-decision.json",
+    "source_copy_sha256": "6cfb53942f7b5502ccf42b0a12cbca34020f3b136778c4992abb182f171b9c42",
+    "tracked_sha256": "3b58cddabfbc4a918a3667a1f147be8b39e2b3ac2e5289a8227d9d10805fd562",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "reader-final.json",
+    "source_copy_sha256": "fc817cf50693e7069e9db1d73c8879fd5e1ff7cf4cfaab8030ce0715e74a1104",
+    "tracked_sha256": "4dcb29df614f22e80ba4a9704372996d088abceb6f7400549c3c0fbdabe0a5a6",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "validation.json",
+    "source_copy_sha256": "6d75ed23f93c35d700ebc331851cd0e1415f3bb5705af36e21e5ba2c4d06d315",
+    "tracked_sha256": "80cff5874ef7f1e498fb6bbc3b2091729b1414468b11b74751939f7c702e0084",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "verify_relations.json",
+    "source_copy_sha256": "a966fb9f70c5f37db2571d6aa8607442594bbed071c0a64bb5e4dc34d4c6e71c",
+    "tracked_sha256": "70b199fdf83e80a755776281dcc7f5eae5600bc3ae70ab417c0412234b3f14a8",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  },
+  {
+    "file": "verify_relations.py",
+    "source_copy_sha256": "08ef54cc8365715d3e649520ebac75cc6ff2f29a188b760b9927e783ee8c7e9b",
+    "tracked_sha256": "161833c2703b866fa1075535d451a8df7f94d27232c7160dd633d226cd25a851",
+    "change": "Line endings/trailing whitespace/final blank lines only; source publication remains unchanged."
+  }
+]

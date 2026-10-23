@@ -12,6 +12,7 @@ import unittest
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "check.py"
+sys.path.insert(0, str(SCRIPT.parent))
 spec = importlib.util.spec_from_file_location("do_math_check", SCRIPT)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -51,6 +52,14 @@ class HandoffTests(unittest.TestCase):
             "task": task,
         })
         write_json(session / "output" / "output.json", output)
+        if output['category'] == 'plan':
+            from glossary import FIELDS
+            lines = ['<!-- do-math-glossary -->', '[History](glossary-history.md)',
+                     '<a id="term-1"></a>', '## 1. Fixture', '| 칸 | 내용 |', '|---|---|']
+            lines += [f'| {field} | Fixture |' for field in FIELDS]
+            (session / 'output/glossary.md').write_text('\n'.join(lines)+'\n', encoding='utf-8')
+            (session / 'output/glossary-history.md').write_text('History', encoding='utf-8')
+            (session / 'output/research-status.md').write_text('Status', encoding='utf-8')
         return session
 
     def research(self):

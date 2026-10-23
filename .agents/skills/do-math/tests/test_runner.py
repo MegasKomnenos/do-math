@@ -25,6 +25,13 @@ def fake_session():
     if category == "plan" and scenario == "plan_failure":
         return 1
     if category == "plan":
+        from glossary import FIELDS
+        lines = ['<!-- do-math-glossary -->', '[History](glossary-history.md)',
+                 '<a id="term-1"></a>', '## 1. Fixture', '| 칸 | 내용 |', '|---|---|']
+        lines += [f'| {field} | Fixture |' for field in FIELDS]
+        (session / 'output/glossary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        (session / 'output/glossary-history.md').write_text('No previous terms.\n', encoding='utf-8')
+        (session / 'output/research-status.md').write_text('Fixture status.\n', encoding='utf-8')
         kinds = [event["kind"] for event in task["events"]]
         output.update(reason="Choose the next small step.", research=[], explorations=[], reviews=[],
                       goal_review=None, wait=None)
@@ -100,7 +107,7 @@ class RunnerTests(unittest.TestCase):
         self.instance = self.root / "연구 instance"
         self.skill = self.root / "skill"
         self.skill.mkdir()
-        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py"):
+        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
             (self.skill / name).write_text("Temporary test context\n", encoding="utf-8")
         goal = self.root / "goal.md"
         goal.write_text("Synthetic goal\n", encoding="utf-8")
@@ -307,7 +314,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(int(real_git(self.instance, "rev-list", "--count", "HEAD")), len(self.engine.state["sessions"]) + 1)
 
     def test_detached_runner_outlives_start_command(self):
-        for name in ("runner.py", "cli_adapter.py", "check.py", "knowledge_index.py"):
+        for name in ("runner.py", "cli_adapter.py", "check.py", "glossary.py", "knowledge_index.py"):
             shutil.copyfile(runner.SKILL / name, self.skill / name)
         (self.instance / "control/STOP").touch()
         launched = subprocess.run([sys.executable, "-B", str(self.skill / "runner.py"), "start", str(self.instance)],
