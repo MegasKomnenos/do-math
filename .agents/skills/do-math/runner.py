@@ -44,8 +44,8 @@ def write_text(path, content):
         stream.flush()
         os.fsync(stream.fileno())
     # Windows readers may briefly hold the destination without delete sharing.
-    # Retry only that replacement; keep the old complete state until it succeeds.
-    deadline = time.monotonic() + 1.0
+    # Retry that replacement for up to a minute; keep the old complete state.
+    deadline = time.monotonic() + 60.0
     while True:
         try:
             os.replace(temp, path)

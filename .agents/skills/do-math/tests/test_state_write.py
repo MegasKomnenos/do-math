@@ -19,7 +19,7 @@ class StateWriteTests(unittest.TestCase):
             path = Path(directory) / "state.json"
             runner.write_json(path, {"generation": 1})
             reader = path.open("rb")
-            release = threading.Timer(0.15, reader.close)
+            release = threading.Timer(1.15, reader.close)
             try:
                 # Reproduce the exact OS failure before exercising the fix.
                 probe = path.with_name("probe.json")
@@ -39,9 +39,12 @@ class StateWriteTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"
             runner.write_json(path, {"generation": 1})
-            with path.open("rb"), patch.object(runner.time, "monotonic", side_effect=[0, 2]):
+            with path.open("rb"), patch.object(
+                runner.time, "monotonic", side_effect=[0, 2, 59.95, 60]
+            ), patch.object(runner.time, "sleep") as sleep:
                 with self.assertRaises(OSError):
                     runner.write_json(path, {"generation": 2})
+            self.assertEqual(sleep.call_count, 2)
             self.assertEqual(runner.read_json(path), {"generation": 1})
 
 
