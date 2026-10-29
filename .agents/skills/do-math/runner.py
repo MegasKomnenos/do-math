@@ -4,7 +4,9 @@ import argparse
 from contextlib import AbstractContextManager
 import ctypes
 import gc
+import hashlib
 import json
+import lzma
 import math
 import os
 from pathlib import Path
@@ -12,6 +14,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import time
 import uuid
 
@@ -25,6 +28,10 @@ SCRIPT = Path(__file__).resolve()
 # Consecutive failed plans before dispatch halts; limit-detected failures wait instead.
 # Raise it if transient CLI failures halt healthy instances; restart resets the count.
 PLAN_FAILURE_LIMIT = 3
+# xz preset for finished sessions' work/. On Lean work trees 9 gave ~9% smaller archives
+# than 6 for ~11% more time; its compressor needs ~674 MiB. Lower it if memory is short.
+ARCHIVE_PRESET = 9
+FINISHED = ("integrated", "failed")
 WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
@@ -332,6 +339,86 @@ def session_host(session):
     return 0
 
 
+def _digest(stream):
+    digest = hashlib.sha256()
+    while chunk := stream.read(1024 * 1024):
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _work_entries(session):
+    """Archive name -> SHA-256 of each file, None for each directory. Links are refused."""
+    entries = {"work": None}
+    for top, dirs, files in os.walk(session / "work"):
+        dirs.sort()
+        for name in dirs + sorted(files):
+            path = os.path.join(top, name)
+            if os.path.islink(path) or os.path.isjunction(path):
+                raise ValueError(f"work/ contains a link; left unarchived: {path}")
+            arcname = Path(path).relative_to(session).as_posix()
+            if name in files:
+                with open(path, "rb") as stream:
+                    entries[arcname] = _digest(stream)
+            else:
+                entries[arcname] = None
+    return entries
+
+
+def _archive_entries(archive):
+    entries = {}
+    with tarfile.open(archive, "r|xz") as tar:
+        for member in tar:
+            entries[member.name] = (_digest(tar.extractfile(member)) if member.isfile()
+                                    else None if member.isdir() else "not a file or directory")
+    return entries
+
+
+def archive_work(session):
+    """Replace a finished session's work/ with work.tar.xz, verified file by file.
+
+    work/ is removed only after every file in it is found intact in the archive.
+    An existing archive is never overwritten: work/ left by an interrupted removal
+    must already be inside it, otherwise both are kept and the mismatch is raised.
+    """
+    work, archive = session / "work", session / "work.tar.xz"
+    if not work.is_dir():
+        return False
+    entries = _work_entries(session)
+    if archive.exists():
+        stored = _archive_entries(archive)
+    else:
+        part = session / "work.tar.xz.part"
+        try:
+            with tarfile.open(part, "w:xz", preset=ARCHIVE_PRESET) as tar:
+                for name in entries:
+                    tar.add(session / name, arcname=name, recursive=False)
+            stored = _archive_entries(part)
+            if stored == entries:
+                os.replace(part, archive)
+        finally:
+            part.unlink(missing_ok=True)
+    if any(stored.get(name, "missing") != value for name, value in entries.items()):
+        raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
+    shutil.rmtree(work)
+    return True
+
+
+def archive_finished(instance):
+    """Archive work/ of every finished session. One archiver per instance; others yield."""
+    try:
+        with InstanceLock(instance / "runner/archive-lock"):
+            for sid, s in read_json(instance / "runner/state.json")["sessions"].items():
+                if s["status"] in FINISHED:
+                    try:
+                        archive_work(instance / "sessions" / sid)
+                    except (OSError, ValueError, RuntimeError, tarfile.TarError, lzma.LZMAError, EOFError) as exc:
+                        print(json.dumps({"session": sid, "error": str(exc)}, ensure_ascii=False),
+                              file=sys.stderr, flush=True)
+    except RuntimeError:  # Only the lock raises here: another archiver is running.
+        pass
+    return 0
+
+
 class Runner:
     def __init__(self, instance, skill=SKILL):
         self.instance = Path(instance).resolve()
@@ -344,6 +431,8 @@ class Runner:
         self.identity = process_identity(os.getpid())
         self.hosts = {}
         self.reserve = None
+        self.archiver = None
+        self.archive_due = False
 
     def save(self):
         try:
@@ -520,6 +609,7 @@ class Runner:
                         self.state["halted"] = {"reason": f"{PLAN_FAILURE_LIMIT} consecutive plan failures; last: {reason}",
                                                 "at": time.time()}
                 self.save()
+                self.archive_due = True
                 return
             s.update(status="publishing", record="k" + uuid.uuid4().hex)
             self.save()
@@ -550,6 +640,24 @@ class Runner:
         if s["request"]:
             self.state["requests"][s["request"]].update(status="finished", record=record)
         self.save()
+        self.archive_due = True
+
+    def archive(self):
+        """Keep at most one detached archiver for finished sessions' work/."""
+        if not self.archive_due or (self.archiver is not None and self.archiver.poll() is None):
+            return
+        self.archive_due = False
+        if not any((self.session_dir(sid) / "work").is_dir()
+                   for sid, s in self.state["sessions"].items() if s["status"] in FINISHED):
+            return
+        try:
+            with (self.instance / "runner/archive.log").open("ab") as log:
+                self.archiver = subprocess.Popen(
+                    [sys.executable, "-B", str(SCRIPT), "_archive", str(self.instance)],
+                    cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                    **popen_options(detached=True))
+        except OSError as exc:
+            os.write(2, f"Archiver launch failed: {exc}\n".encode("utf-8", "replace"))
 
     def apply_output(self, session, record, output):
         if output["category"] == "plan":
@@ -627,6 +735,7 @@ class Runner:
 
     def tick(self):
         self.collect()
+        self.archive()
         self.ingest_inputs()
         if self.blocked():
             return
@@ -652,6 +761,8 @@ class Runner:
             # A restart is the human's signal that the halt's cause was addressed.
             self.state.update(halted=None, plan_failures=0)
             self.reserve = EmergencyMemory()
+            # Also covers sessions finished before a runner death or before archiving existed.
+            self.archive_due = True
             self.state.setdefault("last_plan", None)  # States written before these fields
             for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
                 if not (self.skill / name).is_file():
@@ -756,7 +867,7 @@ def submit_input(instance, source):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("init", "start", "run", "status", "stop", "resume", "input", "index", "kill-session", "_session"):
+    for name in ("init", "start", "run", "status", "stop", "resume", "input", "index", "kill-session", "_session", "_archive"):
         sub = commands.add_parser(name)
         sub.add_argument("instance", type=Path)
         if name == "init":
@@ -774,6 +885,8 @@ def main(argv=None):
         result = {"instance": str(instance)}
         if args.command == "_session":
             return session_host(instance)
+        if args.command == "_archive":
+            return archive_finished(instance)
         if args.command == "init":
             initialize(instance, args.goal, args.settings)
         elif args.command == "start":

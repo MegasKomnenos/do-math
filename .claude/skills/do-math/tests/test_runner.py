@@ -1,10 +1,14 @@
 """Small real-process flows with the official checker and a temporary Git repo."""
 
+import errno
 import json
+import os
 from pathlib import Path
+import random
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import unittest
@@ -20,6 +24,9 @@ def fake_session():
     session = Path.cwd()
     data = runner.read_json(session / "input.json")
     category, task = data["category"], data["task"]
+    if scenario == "work":
+        (session / "work/nested").mkdir(parents=True)
+        (session / "work/nested/scratch.txt").write_text("Private intermediate " + category + "\n", encoding="utf-8")
     output = {"category": category, "references": [], "supersedes": [],
               "overview": {"title": "Fixture " + category, "summary": "Synthetic bounded fixture, not a mathematical claim."}}
     if category == "plan" and scenario == "plan_failure":
@@ -132,6 +139,8 @@ class RunnerTests(unittest.TestCase):
             (directory / "CANCEL").touch()
         for host in self.engine.hosts.values():
             host.wait(timeout=10)
+        if self.engine.archiver is not None:
+            self.engine.archiver.wait(timeout=60)
         self.temp.cleanup()
 
     def command(self, cli, model, effort, cwd):
@@ -309,6 +318,40 @@ class RunnerTests(unittest.TestCase):
         self.assertIsNone(self.engine.state["wait"])
         self.assertEqual(len(self.engine.state["events"]), 1)
 
+    def test_runner_archives_work_of_finished_sessions(self):
+        self.scenario = "work"
+        self.until(lambda: self.engine.state["complete"] and not self.engine.active())
+        sessions = [self.instance / "sessions" / sid for sid in self.engine.state["sessions"]]
+        self.until(lambda: all((s / "work.tar.xz").is_file() and not (s / "work").exists() for s in sessions))
+        for session in sessions:
+            with tarfile.open(session / "work.tar.xz") as tar:
+                text = tar.extractfile("work/nested/scratch.txt").read().decode("utf-8")
+            self.assertTrue(text.startswith("Private intermediate "))
+
+    def test_only_finished_sessions_are_archived(self):
+        statuses = ("starting", "running", "publishing", "integrated", "failed")
+        for status in statuses:
+            work = self.instance / "sessions" / ("s-" + status) / "work"
+            work.mkdir(parents=True)
+            (work / "file.txt").write_text(status, encoding="utf-8")
+            self.engine.state["sessions"]["s-" + status] = {"status": status}
+        self.engine.save()
+        self.assertEqual(runner.archive_finished(self.instance), 0)
+        for status in statuses:
+            session = self.instance / "sessions" / ("s-" + status)
+            finished = status in ("integrated", "failed")
+            self.assertEqual((session / "work.tar.xz").is_file(), finished, status)
+            self.assertEqual((session / "work").is_dir(), not finished, status)
+
+    def test_archiver_yields_to_a_running_archiver(self):
+        work = self.instance / "sessions/s-done/work"
+        work.mkdir(parents=True)
+        self.engine.state["sessions"]["s-done"] = {"status": "integrated"}
+        self.engine.save()
+        with runner.InstanceLock(self.instance / "runner/archive-lock"):
+            self.assertEqual(runner.archive_finished(self.instance), 0)
+            self.assertTrue(work.is_dir())
+
     def test_missing_cli_provider_is_a_launch_failure(self):
         self.engine.state["events"] = []
         del self.engine.settings["cli"]["claude"]
@@ -372,6 +415,102 @@ class RunnerTests(unittest.TestCase):
             deadline = time.monotonic() + 5
             while runner.alive(identity) and time.monotonic() < deadline:
                 time.sleep(0.025)
+
+
+def tree(root):
+    """Relative POSIX path -> file bytes, or None for a directory."""
+    return {p.relative_to(root).as_posix(): p.read_bytes() if p.is_file() else None for p in root.rglob("*")}
+
+
+class WorkArchiveTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.session = self.root / "세션"
+        work = self.session / "work"
+        (work / "build/깊은/하위").mkdir(parents=True)
+        (work / "empty").mkdir()
+        (work / "build/깊은/하위/Module.olean").write_bytes(random.Random(0).randbytes(300_000))
+        (work / "build/notes.lean").write_text("theorem t : 1 = 1 := rfl\n" * 5000, encoding="utf-8")
+        (work / "zero").write_bytes(b"")
+        self.original = tree(work)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def leftovers(self):
+        return sorted(p.name for p in self.session.iterdir() if p.name != "work")
+
+    def archived(self):
+        return (self.session / "work.tar.xz").read_bytes()
+
+    def test_work_is_replaced_by_an_identical_archive(self):
+        self.assertTrue(runner.archive_work(self.session))
+        self.assertFalse((self.session / "work").exists())
+        self.assertEqual(self.leftovers(), ["work.tar.xz"])
+        with tarfile.open(self.session / "work.tar.xz") as tar:
+            tar.extractall(self.root / "restored", filter="data")
+        self.assertEqual(tree(self.root / "restored/work"), self.original)
+
+    def test_session_without_work_is_left_alone(self):
+        shutil.rmtree(self.session / "work")
+        self.assertFalse(runner.archive_work(self.session))
+        self.assertEqual(self.leftovers(), [])
+
+    def test_write_failure_keeps_work_and_leaves_no_archive(self):
+        def disk_full(*args, **kwargs):
+            raise OSError(errno.ENOSPC, "No space left on device")
+        with patch.object(tarfile.TarFile, "addfile", disk_full):
+            with self.assertRaises(OSError):
+                runner.archive_work(self.session)
+        self.assertEqual(tree(self.session / "work"), self.original)
+        self.assertEqual(self.leftovers(), [])
+
+    def test_stale_partial_archive_is_replaced(self):
+        # An archiver killed mid-write leaves its partial file behind.
+        (self.session / "work.tar.xz.part").write_bytes(b"truncated")
+        self.assertTrue(runner.archive_work(self.session))
+        self.assertEqual(self.leftovers(), ["work.tar.xz"])
+
+    def test_linked_directory_is_neither_followed_nor_archived(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "keep.txt").write_text("keep", encoding="utf-8")
+        link = self.session / "work/link"
+        try:
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(outside), str(link))
+            else:
+                os.symlink(outside, link, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"cannot create a directory link: {exc}")
+        with self.assertRaises(ValueError):
+            runner.archive_work(self.session)
+        self.assertTrue(os.path.lexists(link))
+        self.assertEqual((outside / "keep.txt").read_text(encoding="utf-8"), "keep")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_leftover_work_already_in_archive_is_removed(self):
+        # Removal interrupted after the archive was published leaves a subset of work/.
+        self.assertTrue(runner.archive_work(self.session))
+        archived = self.archived()
+        with tarfile.open(self.session / "work.tar.xz") as tar:
+            tar.extractall(self.session, filter="data")
+        shutil.rmtree(self.session / "work/build")
+        self.assertTrue(runner.archive_work(self.session))
+        self.assertFalse((self.session / "work").exists())
+        self.assertEqual(self.archived(), archived)
+
+    def test_work_differing_from_existing_archive_keeps_both(self):
+        self.assertTrue(runner.archive_work(self.session))
+        archived = self.archived()
+        (self.session / "work").mkdir()
+        (self.session / "work/new.txt").write_text("not archived", encoding="utf-8")
+        with self.assertRaises(RuntimeError):
+            runner.archive_work(self.session)
+        self.assertEqual((self.session / "work/new.txt").read_text(encoding="utf-8"), "not archived")
+        self.assertEqual(self.archived(), archived)
 
 
 if __name__ == "__main__":

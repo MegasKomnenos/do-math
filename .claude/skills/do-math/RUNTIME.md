@@ -82,6 +82,12 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 종료 코드·종료 방식과 관계없이 공식 [check.py](check.py)의 `check_session`으로 재검사한다. 통과하면 `output/` 전체를 새로운 `knowledge/k<고유ID>/`로 복사하고 Git 커밋을 남긴다. `input.json`, 중간 작업, 로그는 공개 지식으로 복사하지 않는다. 복사 도중에는 `runner/stage-<기록ID>/`에 두고 완성된 디렉터리를 공개 위치로 옮긴다. 상태에 먼저 기록 ID를 저장하며, 재기동 시 이미 옮긴 기록과 Git 커밋을 확인해 이어 처리하므로 같은 산출을 새 ID로 다시 반영하지 않는다. 기존 공개 기록은 덮어쓰지 않는다.
 
+반영(`integrated`)이나 실패(`failed`)로 처리가 끝난 세션의 `work/`는 같은 세션 폴더의 `work.tar.xz`로 압축하고 원본 디렉터리를 지운다. 아직 실행 중이거나 공개 중인 세션의 `work/`는 건드리지 않는다. 압축은 실행기와 분리된 보관 프로세스(`runner.py _archive <instance>`)가 맡으므로, 압축이 오래 걸려도 실행기의 수집·파견은 멈추지 않는다. 실행기는 세션 처리를 끝낼 때와 기동할 때 보관 프로세스를 띄운다. 이미 돌고 있으면 그 프로세스가 끝난 뒤 다시 띄운다. 보관 프로세스는 실행 상태에서 끝난 세션을 모두 찾아 처리한다. 그래서 실행기가 꺼져 있던 동안 끝난 세션이나 이 기능이 생기기 전에 끝난 세션의 `work/`도 다음 기동에서 압축된다. `runner/archive-lock` 잠금으로 인스턴스마다 하나만 실행되며, 세션별 오류는 `runner/archive.log`에 JSON 한 줄씩 남는다.
+
+원본은 압축본이 검증된 뒤에만 지운다. 보관 프로세스는 먼저 `work.tar.xz.part`에 xz 압축 tar를 쓴다. 압축 수준은 runner.py 상수 `ARCHIVE_PRESET`(기본 9, 압축기 메모리 약 674MiB)이다. 다 쓴 압축본은 끝까지 다시 읽어, `work/`의 모든 디렉터리와 파일이 같은 이름과 SHA-256으로 들어 있는지 대조한다. 대조가 맞을 때만 `work.tar.xz`로 이름을 바꾸고 `work/`를 지운다. 쓰기나 대조가 실패하면 `.part`만 지우고 `work/`를 그대로 두며, 다음 보관 실행에서 다시 시도한다. 이미 있는 `work.tar.xz`는 덮어쓰지 않는다. 삭제가 중간에 끊겨 `work/`가 남았으면, 남은 내용이 압축본에 같은 해시로 들어 있을 때만 지운다. 다르면 둘 다 보존하고 오류를 남긴다. `work/` 안에 심볼릭 링크나 정션이 있으면 링크 너머를 압축하거나 지우지 않도록 그 세션은 압축하지 않는다.
+
+압축된 세션에는 `work/` 경로가 없다. 원본이 필요하면 세션 폴더에서 Python `tarfile`이나 xz를 지원하는 `tar -xf work.tar.xz`로 풀어 `work/`를 되살린다.
+
 반영한 계획의 요청 게시, 작업의 자동 동료, 동료의 자동 묶음 검토, 탐구·동료·검토의 다음 계획 사건과 세션 처리 완료 표시는 하나의 원자적 상태 교체로 저장한다. 같은 공개 기록의 후속 요청 키는 고정되어 있고 enqueue는 이미 있는 키를 덮어쓰지 않는다. 재기동 중 반영 절차를 이어 수행하더라도 자동 후속을 중복 생성하지 않기 위한 구조다. Windows에서 다른 독자의 열린 파일 때문에 교체가 잠시 거부되면 같은 교체를 최대 60초 동안 재시도한다. 그동안 독자는 이전의 완전한 상태를 읽으며, 계속되는 접근 거부와 다른 저장 오류는 그대로 드러난다. Git·디스크 오류로 실행기가 종료되면 새 시작 로그의 오류를 해결한 뒤 재기동한다. Git 반영 실패를 수학적 세션 실패로 바꾸지 않는다. `runner/`의 내부 파일이나 공개 기록을 손으로 지우거나 되돌리면 이 복구 경로의 전제가 사라지므로 운영 명령을 통해 진행한다.
 
 실행기는 상태가 바뀐 지점에서 저장한다. 변화가 없는 0.25초 조회 반복에서는 상태 파일을 다시 쓰지 않는다. JSON은 전체 문서 문자열로 만들지 않고 항목별로 인코딩하여 미리 확보한 64KiB 쓰기 버퍼로 임시 파일에 기록한다. 모든 쓰기와 fsync가 끝난 뒤 파일을 원자적으로 교체한다. 실패한 임시 파일은 제거하고 이전 완성본은 보존한다. JSON 문자열 하나를 인코딩하는 등의 작은 동적 할당까지 없앤 구현은 아니다.
@@ -100,9 +106,9 @@ Python 3.12 이상, Git, 실제 사용할 Codex·Claude CLI가 필요하다. CLI
 
 명령 성공은 종료 코드 0과 stdout JSON이다. `run`은 시작 JSON을 출력하고 실행을 계속하며, 완료나 `halted` 뒤 남은 세션을 배출하면 0으로 종료한다. 명령 실행 오류는 stderr의 `{"error":"설명"}`과 종료 코드 1, 잘못된 인자 사용은 argparse 설명과 종료 코드 2다. `status`는 실행기가 꺼져 있거나 연구가 대기 중이어도 읽기에 성공하면 0이다. `stop/resume/input`은 파일을 전달한 성공이며 세션이 이미 처리했다는 확인은 `status`에서 한다.
 
-실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/Runner.run/InstanceLock`은 독립 기동·단일 실행기·재기동 때의 정지 해제, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.ingest_inputs/tick`과 `dispatch_blocks`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 PID 재사용을 구별하기 위한 프로세스 식별값이다.
+실제 정의는 모두 [runner.py](runner.py)에 있다. `initialize/load_settings`는 초기화·설정, `start/Runner.run/InstanceLock`은 독립 기동·단일 실행기·재기동 때의 정지 해제, `Runner.dispatch/session_host`는 입력·CLI 프로세스 전달, `Runner.collect/finish/apply_output`은 종료·검사·Git·후속 흐름, `Runner.archive/archive_finished/archive_work`는 끝난 세션 `work/`의 압축, `Runner.ingest_inputs/tick`과 `dispatch_blocks`는 사건·파견·대기, `status/submit_input/terminate_process/main`은 운영 명령이다. `process_identity`의 Windows 생성 시각 및 Linux boot ID+생성 tick은 PID 재사용을 구별하기 위한 프로세스 식별값이다.
 
-[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 연구·탐구의 자동 동료와 묶음 검토, 각 공개 사건의 전달, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
+[tests/test_runner.py](tests/test_runner.py)는 가짜 CLI 프로세스와 실제 공식 검사기·Git으로 작은 완주, 연구·탐구의 자동 동료와 묶음 검토, 각 공개 사건의 전달, 비정상 종료 산출 반영, 실패·STOP·사용자 입력·합성 한도, 연속 계획 실패 정지와 재기동, 단일 실행기 잠금, 복구·완료 뒤 기존 세션 반영과 독립 기동을 확인한다. 끝난 세션 `work/`의 압축은 실행기를 통한 자동 압축, 끝난 상태만의 선택, 보관 프로세스의 단일 실행, 압축본의 왕복 동일성, 쓰기 실패·남은 `.part`·링크·중단된 삭제·불일치에서의 원본 보존을 확인한다. [tests/test_state_write.py](tests/test_state_write.py)는 Windows에서 상태 파일 교체 재시도와 지속되는 거부의 오류·이전 상태 보존을 확인한다. [tests/test_check.py](tests/test_check.py)는 산출 구조·참조를, [tests/test_cli_adapter.py](tests/test_cli_adapter.py)는 CLI 명령 생성·한도 탐지를 확인한다.
 
 작업맥락 문서는 시험용 임시 문서를 쓰므로 실제 문서의 판단 내용이나 실제 모델의 수행을 검증하는 시험은 아니다. 실제 Codex·Claude 모델 접근과 혼합 완주는 실제 인스턴스의 공개 결과·검토로 별도 확인한다. 다음 명령은 위의 Python 3.12 이상 환경에서 시험 전체를 실행한다. 상태 파일 교체 시험은 Windows에서만 실행된다.
 
