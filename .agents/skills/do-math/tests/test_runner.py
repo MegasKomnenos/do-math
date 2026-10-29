@@ -158,6 +158,7 @@ class RunnerTests(unittest.TestCase):
                          ['research', 'peer', 'review', 'review'])
         self.assertEqual(len(list((self.instance / 'knowledge').glob('*/output.json'))), len(sessions))
         self.assertEqual(int(runner.git(self.instance, "rev-list", "--count", "HEAD")), len(sessions) + 1)
+
         research = sessions[1]
         self.assertEqual((research["model"], research["effort"], research["exit_code"]), ("codex/gpt-6.1-sol", "low", 7))
         self.assertEqual((sessions[-1]["model"], sessions[-1]["effort"]), ("claude/sonnet", "high"))
@@ -171,6 +172,36 @@ class RunnerTests(unittest.TestCase):
                 prompt = (self.instance / "sessions" / sid / "prompt.txt").read_text(encoding="utf-8")
                 research_sid = next(k for k, v in state["sessions"].items() if v["category"] == "research")
                 self.assertNotIn(research_sid, json.dumps(data) + prompt)
+
+    def test_unchanged_stopped_tick_does_not_write_state(self):
+        (self.instance / "control/STOP").touch()
+        with patch.object(self.engine, "save") as save:
+            self.engine.tick()
+            self.engine.tick()
+            save.assert_not_called()
+        # Input ingestion still commits a real change before returning.
+        (self.instance / "control/inputs/test.txt").write_text("new input", encoding="utf-8")
+        self.engine.tick()
+        self.assertIn("test.txt", runner.read_json(self.engine.state_path)["seen_inputs"])
+
+    def test_run_survives_memory_error_and_waits_before_rearming(self):
+        calls = []
+        def tick():
+            calls.append(True)
+            if len(calls) == 1:
+                self.engine.state["partial_mutation"] = True
+                raise MemoryError("injected tick failure")
+            self.assertNotIn("partial_mutation", self.engine.state)
+            self.engine.state["complete"] = "fixture-complete"
+        with patch.object(self.engine, "collect"), patch.object(self.engine, "refresh_index"), \
+                patch.object(self.engine, "tick", tick), \
+                patch.object(runner, "available_memory", side_effect=[0, 1024**3]) as memory, \
+                patch.object(runner.time, "sleep") as sleep:
+            self.engine.run("memory-test")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(memory.call_count, 2)
+        self.assertGreaterEqual(sleep.call_count, 2)
+        self.assertIsNotNone(self.engine.reserve.buffer)
 
     def test_exploration_gets_peer_and_bundle_review(self):
         self.scenario = 'explore'

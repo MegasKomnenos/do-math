@@ -3,6 +3,7 @@
 import argparse
 from contextlib import AbstractContextManager
 import ctypes
+import gc
 import json
 import math
 import os
@@ -24,6 +25,44 @@ SCRIPT = Path(__file__).resolve()
 # Consecutive failed plans before dispatch halts; limit-detected failures wait instead.
 # Raise it if transient CLI failures halt healthy instances; restart resets the count.
 PLAN_FAILURE_LIMIT = 3
+WRITE_BUFFER = bytearray(64 * 1024)
+WRITE_VIEW = memoryview(WRITE_BUFFER)
+JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
+
+
+def available_memory():
+    """Commit headroom on Windows; available physical memory on Linux."""
+    if os.name != "nt":
+        fields = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
+        return int(fields["MemAvailable"].split()[0]) * 1024
+    class MemoryStatus(ctypes.Structure):
+        _fields_ = [("length", wintypes.DWORD), ("load", wintypes.DWORD)] + [
+            (name, ctypes.c_ulonglong) for name in
+            ("total_phys", "avail_phys", "total_page", "avail_page", "total_virtual", "avail_virtual", "extended")]
+    status = MemoryStatus()
+    status.length = ctypes.sizeof(status)
+    if not WIN.GlobalMemoryStatusEx(ctypes.byref(status)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return status.avail_page
+
+
+class EmergencyMemory:
+    """Committed headroom for the runner, released before a failed save retry."""
+    def __init__(self, size=64 * 1024 * 1024):
+        self.size = size
+        self.buffer = bytearray(size)
+
+    def release(self):
+        if self.buffer is None:
+            return False
+        self.buffer = None
+        gc.collect()
+        os.write(2, b"Runner memory reserve released; dispatch will wait for recovery.\n")
+        return True
+
+    def restore(self):
+        if self.buffer is None:
+            self.buffer = bytearray(self.size)
 
 
 def read_json(path):
@@ -32,17 +71,48 @@ def read_json(path):
 
 def write_json(path, value):
     """Replace one state file atomically; readers see either complete version."""
-    write_text(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+    def chunks():
+        yield from JSON_ENCODER.iterencode(value)
+        yield "\n"
+    _write_chunks(path, chunks())
 
 
 def write_text(path, content):
     """Publish a complete UTF-8 file with the same Windows sharing retry."""
+    _write_chunks(path, (content,))
+
+
+def _write_chunks(path, chunks):
+    """No whole-document JSON/UTF-8 copy. Single-threaded runner buffer."""
     path = Path(path)
     temp = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
-    with temp.open("w", encoding="utf-8", newline="\n") as stream:
-        stream.write(content)
-        stream.flush()
-        os.fsync(stream.fileno())
+    try:
+        with temp.open("wb", buffering=0) as stream:
+            used = 0
+            def flush_buffer(length):
+                offset = 0
+                while offset < length:
+                    written = stream.write(WRITE_VIEW[offset:length])
+                    if not written:
+                        raise OSError("State write made no progress")
+                    offset += written
+            for chunk in chunks:
+                # UTF-8 takes at most four bytes per Unicode code point.
+                for start in range(0, len(chunk), 16384):
+                    data = chunk[start:start + 16384].encode("utf-8")
+                    if used + len(data) > len(WRITE_BUFFER):
+                        flush_buffer(used)
+                        used = 0
+                    WRITE_VIEW[used:used + len(data)] = data
+                    used += len(data)
+            flush_buffer(used)
+            os.fsync(stream.fileno())
+        _replace_file(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+
+
+def _replace_file(temp, path):
     # Windows readers may briefly hold the destination without delete sharing.
     # Retry that replacement for up to a minute; keep the old complete state.
     deadline = time.monotonic() + 60.0
@@ -273,9 +343,16 @@ class Runner:
         self.state = read_json(self.state_path)
         self.identity = process_identity(os.getpid())
         self.hosts = {}
+        self.reserve = None
 
     def save(self):
-        write_json(self.state_path, self.state)
+        try:
+            write_json(self.state_path, self.state)
+        except MemoryError:
+            if self.reserve is None or not self.reserve.release():
+                raise
+            # The incomplete temporary file has been removed; old state is intact.
+            write_json(self.state_path, self.state)
 
     def session_dir(self, sid):
         return self.instance / "sessions" / sid
@@ -323,7 +400,8 @@ class Runner:
         paths = [p for p in (self.instance / "control/inputs").iterdir()
                  if not p.name.startswith(".") and p.name not in self.state["seen_inputs"]]
         # Report only the current scan's input failures.
-        self.state["input_errors"] = {}
+        errors = {}
+        changed = False
         for path in sorted(paths, key=lambda p: (p.stat().st_mtime_ns, p.name)):
             if not path.is_file():
                 continue
@@ -332,11 +410,17 @@ class Runner:
                 if not text.strip():
                     raise ValueError("input must contain nonempty UTF-8 text")
             except (OSError, UnicodeError, ValueError) as exc:
-                self.state["input_errors"][path.name] = str(exc)
+                errors[path.name] = str(exc)
                 continue
             self.state["seen_inputs"].append(path.name)
             self.state["events"].append({"kind": "user_input", "text": text})
             self.state["wait"] = None
+            changed = True
+        if errors != self.state["input_errors"]:
+            self.state["input_errors"] = errors
+            changed = True
+        if changed:
+            self.save()
 
     def dispatch(self, category, task, request=None):
         sid = "s" + uuid.uuid4().hex
@@ -524,9 +608,11 @@ class Runner:
             process_file = session / "process.json"
             if process_file.exists():
                 data = read_json(process_file)
-                s["cli"] = data["process"]
-                s["pid"] = data["pid"]
-                s["cli_started_at"] = data["started_at"]
+                update = {"cli": data["process"], "pid": data["pid"],
+                          "cli_started_at": data["started_at"]}
+                if any(s.get(k) != v for k, v in update.items()):
+                    s.update(update)
+                    self.save()
             if alive(s.get("host")) or alive(s.get("cli")):
                 continue
             if (session / "exit.json").exists():
@@ -534,12 +620,14 @@ class Runner:
             self.finish(sid, s)
 
     def blocked(self):
-        return dispatch_blocks(self.instance, self.state)
+        reasons = dispatch_blocks(self.instance, self.state)
+        if self.reserve is not None and self.reserve.buffer is None:
+            reasons.append("memory_recovery")
+        return reasons
 
     def tick(self):
         self.collect()
         self.ingest_inputs()
-        self.save()
         if self.blocked():
             return
         active = self.active()
@@ -563,17 +651,41 @@ class Runner:
             self.state = read_json(self.state_path)
             # A restart is the human's signal that the halt's cause was addressed.
             self.state.update(halted=None, plan_failures=0)
+            self.reserve = EmergencyMemory()
             self.state.setdefault("last_plan", None)  # States written before these fields
             for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
-            self.collect()
-            self.refresh_index()
-            write_json(self.instance / "runner/process.json", {
-                "process": self.identity, "started_at": time.time(), "token": token})
-            print(json.dumps({"started": self.identity, "instance": str(self.instance), "token": token}), flush=True)
+            ready = False
+            recovery = False
             while True:
-                self.tick()
+                try:
+                    if self.reserve.buffer is None:
+                        if available_memory() < 512 * 1024 * 1024:
+                            time.sleep(5)
+                            continue
+                        self.reserve.restore()
+                    if recovery:
+                        # Discard partial mutations from an interrupted operation.
+                        # Publication/dispatch replay follows the same durable
+                        # intent and fixed request keys as process restart.
+                        self.state = read_json(self.state_path)
+                        recovery = False
+                    if not ready:
+                        self.collect()
+                        self.refresh_index()
+                        self.save()
+                        write_json(self.instance / "runner/process.json", {
+                            "process": self.identity, "started_at": time.time(), "token": token})
+                        print(json.dumps({"started": self.identity, "instance": str(self.instance), "token": token}), flush=True)
+                        ready = True
+                    self.tick()
+                except MemoryError:
+                    self.reserve.release()
+                    recovery = True
+                    os.write(2, b"Runner paused after MemoryError; retrying in 5 seconds.\n")
+                    time.sleep(5)
+                    continue
                 if (self.state["complete"] or self.state["halted"]) and not self.active():
                     return
                 time.sleep(0.25)
