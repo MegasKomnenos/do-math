@@ -1,5 +1,6 @@
 """Small real-process flows with the official checker and a temporary Git repo."""
 
+import ctypes
 import errno
 import json
 import os
@@ -415,6 +416,25 @@ class RunnerTests(unittest.TestCase):
             deadline = time.monotonic() + 5
             while runner.alive(identity) and time.monotonic() < deadline:
                 time.sleep(0.025)
+
+
+@unittest.skipUnless(os.name == "nt", "OpenProcess access denial is Windows-specific")
+class AccessDeniedPidTests(unittest.TestCase):
+    """A recorded PID reused by another account's process cannot be opened (WinError 5)."""
+
+    @staticmethod
+    def denied(*args):
+        ctypes.set_last_error(5)  # ERROR_ACCESS_DENIED, as the real OpenProcess reports it
+        return None
+
+    def test_denied_pid_is_not_alive(self):
+        with patch.object(runner.WIN, "OpenProcess", self.denied):
+            self.assertFalse(runner.alive({"pid": 15260, "birth": "134371426382443405"}))
+
+    def test_recording_an_identity_still_refuses_a_denied_pid(self):
+        with patch.object(runner.WIN, "OpenProcess", self.denied):
+            with self.assertRaises(PermissionError):
+                runner.process_identity(15260)
 
 
 def tree(root):

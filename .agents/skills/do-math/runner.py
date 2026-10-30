@@ -207,7 +207,15 @@ def process_identity(pid):
 
 
 def alive(identity):
-    return bool(identity) and process_identity(identity["pid"]) == identity
+    if not identity:
+        return False
+    try:
+        return process_identity(identity["pid"]) == identity
+    except PermissionError:
+        # ponytail: 기록된 프로세스는 모두 같은 권한을 물려받은 자손이라 늘 열린다. 거부는 다른 계정의
+        # 프로세스가 PID를 재사용했다는 뜻이다. 관리자 승격 실행과 섞으면 이 전제가 깨질 수 있다(RUNTIME.md).
+        # 섞어 써야 하면 시스템 프로세스 목록의 생성 시각으로 대조하도록 올린다.
+        return False
 
 
 def terminate_process(identity):
