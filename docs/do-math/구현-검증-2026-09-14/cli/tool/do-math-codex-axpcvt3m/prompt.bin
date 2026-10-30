@@ -1,1 +1,0 @@
-Run exactly one shell command: Get-Location. Return the location it prints. Do not modify files or request elevation.

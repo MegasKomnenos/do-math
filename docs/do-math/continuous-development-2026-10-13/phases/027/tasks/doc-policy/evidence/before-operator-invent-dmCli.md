@@ -1,1 +1,0 @@
-`$dmCli operator invent`

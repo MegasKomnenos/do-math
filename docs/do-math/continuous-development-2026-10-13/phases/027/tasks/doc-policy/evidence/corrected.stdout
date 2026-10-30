@@ -1,9 +1,0 @@
-Open known defects: 0
-[structure] 2 tests
-[sim] 1 tests
-Over budget: 0 tests
-{"complete": true, "successful": true, "counts": {"passed": 3}, "group_seconds": {"structure": 1.4, "sim": 4.7}, "total_seconds": 6.1}
-    1.375s passed             structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist
-    0.891s passed             sim.test_initialization_controls.InitialAdoptionTests.test_default_review_policy_is_generated_from_current_config_and_saved
-    0.016s passed             structure.test_doc_code.DocumentCodeTests.test_preparation_partial_examples_use_their_exact_extension_branch
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\027\tasks\doc-policy\evidence\f2\report.json

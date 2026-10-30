@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\018\tasks\job-cleanup\evidence\observe_job.py", line 66, in <module>
-    directory.rmdir()
-  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1351, in rmdir
-    os.rmdir(self)
-FileNotFoundError: [WinError 2] 지정된 파일을 찾을 수 없습니다: 'C:\\Users\\wogud\\AppData\\Local\\Temp\\dm018-6ey8cifk\\cwd-contrast-6y1t6yhq'

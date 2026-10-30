@@ -1,8 +1,0 @@
-test_bad_capacity_and_missing_tier_model_are_rejected (test_session_scheduler.SessionPolicyTests.test_bad_capacity_and_missing_tier_model_are_rejected) ... ok
-test_defaults_and_max_of_difficulty_and_importance (test_session_scheduler.SessionPolicyTests.test_defaults_and_max_of_difficulty_and_importance) ... ok
-test_model_names_extend_without_closed_catalogue (test_session_scheduler.SessionPolicyTests.test_model_names_extend_without_closed_catalogue) ... ok
-
-----------------------------------------------------------------------
-Ran 3 tests in 0.005s
-
-OK

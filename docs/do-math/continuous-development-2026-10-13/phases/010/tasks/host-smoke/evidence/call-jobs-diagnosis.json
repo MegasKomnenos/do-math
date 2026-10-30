@@ -1,7 +1,0 @@
-{
-  "signature": "(command: 'list[str]', cwd: 'Path', *, should_stop=None, on_started=None, on_finished=None, job_name=None, jobs, clock, env=None, evidence_dir=None, decode_errors='replace', environment, preserve_os_error=False)",
-  "observed_direct_type_error": "_job_run() missing 2 required keyword-only arguments: 'clock' and 'environment'",
-  "boundary_error": "KeyError: -1",
-  "cause": "The unchanged test passes jobs but omits clock and environment. ModelCalls.collect converts TypeError to a failed-result dict; tuple indexing then hides the initial failure.",
-  "source_unchanged": true
-}

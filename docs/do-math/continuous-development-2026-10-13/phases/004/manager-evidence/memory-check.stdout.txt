@@ -1,1 +1,0 @@
-[validate_memory_index] 정합: 파일 573개 = 색인 213 + 아카이브 360줄

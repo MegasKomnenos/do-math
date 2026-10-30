@@ -1,8 +1,0 @@
---- capabilities/codex-surface-0.txt
-
-+++ capabilities/codex-20261013-0.txt
-
-@@ -1 +1 @@
-
--codex-cli 0.160.0
-+codex-cli 0.162.1

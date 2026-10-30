@@ -1,7 +1,0 @@
-Open known defects: 0
-[sim] 1 tests
-Over budget: 1 tests
-      2.766s > 2.0s sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage
-{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"sim": 6.4}, "total_seconds": 6.4}
-    2.766s failed             sim.test_role_input_context.PreparedInputTests.test_installed_tools_match_the_final_role_input_and_reject_damage
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\020\tasks\document-tools\evidence\augmented\report.json

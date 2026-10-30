@@ -1,6 +1,0 @@
-Open known defects: 0
-[structure] 1 tests
-Over budget: 0 tests
-{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"structure": 0.2}, "total_seconds": 0.2}
-    0.187s failed             structure.test_doc_code.DocumentCodeTests.test_result_fields_require_their_actual_input_owner
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\019\tasks\document-results\evidence\red\report.json

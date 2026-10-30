@@ -1,7 +1,0 @@
-Open known defects: 0
-[unit] 1 tests
-Over budget: 1 tests
-      9.656s > 0.2s unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs
-{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"unit": 9.7}, "total_seconds": 9.7}
-    9.656s failed             unit.test_adapter_coverage.NativeAdapterTests.test_t4_observes_in_process_and_owned_worker_without_writing_t3_outputs
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\015\tasks\t4-adapter-report\evidence\green-adapter-02\report.json

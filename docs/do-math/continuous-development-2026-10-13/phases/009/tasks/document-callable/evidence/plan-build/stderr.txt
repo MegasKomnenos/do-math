@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\009\tasks\document-callable\evidence\mirror_plan.py", line 27, in <module>
-    assert (ROOT / '.agents/diff/_manifest.json').read_bytes() == manifest_bytes
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

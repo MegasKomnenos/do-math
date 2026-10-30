@@ -1,6 +1,0 @@
-{
-  "status": "skipped_by_user",
-  "instruction": "그냥 독해 스킵",
-  "final_reading_accepted": false,
-  "math_verification": "21 Lean modules recompiled from source in a clean work directory; 13 repair declarations audited; semantic statements directly checked."
-}

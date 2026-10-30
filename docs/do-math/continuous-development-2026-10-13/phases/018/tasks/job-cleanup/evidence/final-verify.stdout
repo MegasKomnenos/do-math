@@ -1,7 +1,0 @@
-canonical-related {'passed': 27} exit 0
-mirror-related {'passed': 27} exit 0
-canonical-exact-job {'passed': 1} exit 0
-canonical-t4-short {'passed': 295} exit 0
-mirror-t4-short {'passed': 295} exit 0
-preservation 2675 changes ['.claude/skills/do-math/scripts/tests/.timings-t3.json', '.claude/skills/do-math/scripts/tests/.timings.json', '.claude/skills/do-math/scripts/tests/시험-지침.md', '.claude/skills/do-math/scripts/tests/support/port_contracts/jobs.py', '.agents/skills/do-math/scripts/tests/.timings-t3.json', '.agents/skills/do-math/scripts/tests/.timings.json', '.agents/skills/do-math/scripts/tests/시험-지침.md', '.agents/skills/do-math/scripts/tests/support/port_contracts/jobs.py'] corpus 144 explicit_sha 150
-Final suites all passed; 017 previous nonpassed mappings 8 per tree; previous raw unchanged 5917

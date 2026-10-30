@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\016\tasks\t4-fixture-repair\evidence\fixture_audit.py", line 64, in <module>
-    code=child.poll()
-         ^^^^^^^^^^
-AttributeError: 'WindowsJob' object has no attribute 'poll'

@@ -1,7 +1,0 @@
-'ParkingLastCar.leftSet_assemble' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.assemble_injective' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.extract_assemble' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.lastCarEquiv' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.piecesOriginalEquiv' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.originalTracePiecesEquiv' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.originalLastCarEquiv' depends on axioms: [propext, Classical.choice, Quot.sound]

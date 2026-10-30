@@ -1,8 +1,0 @@
-Open known defects: 0
-[smoke] 1 tests
-  isolated: smoke.test_scheduler_live.SchedulerLiveTests
-  {'error': 1}
-Over budget: 0 tests; T5 ran 31.8s of 600s
-{"complete": true, "successful": false, "counts": {"error": 1}, "group_seconds": {"smoke": 31.8}, "total_seconds": 31.8}
-   31.203s error              smoke.test_scheduler_live.SchedulerLiveTests.test_held_pythonw_tasks_start_wake_and_uninstall
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\013\tasks\scheduler-smoke\evidence\live-02\report.json

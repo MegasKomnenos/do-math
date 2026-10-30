@@ -1,7 +1,0 @@
-AMS 통합 전 코드 검토에서 세 기준을 아직 충족하지 못한 구체적인 로컬 제한과 경로 변경을 확인했다. USER-CRITERIA.md의 재현·전후 판독·실수 검토·기술 수리 기준을 그대로 적용하고, 기존 결과와 사본을 보존해 다음 사항을 해결한다.
-
-1. basic_expression.term은 [A-Za-z0-9]+만 허용한다. 이것은 로컬 정규식이며 자료원이 ASCII만 지원한다는 근거가 아니다. Gödel, Schrödinger 같은 단일 Unicode 검색어를 원 basic 필드와 expression 경로에서 대조한다. 안전하게 같은 의미로 보낼 수 있는 값은 허용한다. 여러 단어·구문·문장부호는 기본 필드의 원 의미와 contains의 의미를 구별해 검토하고, 아직 매핑하지 못한 것을 provider_feature_unavailable이라는 제공자 불가 주장으로 표현하지 않는다.
-2. OR(Title algebra, OR(Title topology, Title analysis))처럼 같은 OR의 중첩은 평탄화해도 의미가 같다. 현재 any(non-leaf) 거부로 막힌 이런 로컬 compiler 사례를 고친다. 현재 검증된 Title OR와 서로 다른 필드 AND를 결합한 AND(OR(Title algebra, Title topology), Author smith)도 원 두 basic 필드로 동일하게 표현할 수 있는지 실제 입력·요청·결과로 검증한다. Author OR 같은 추가 형태도 원 제어가 보장하는 의미의 범위에서 확인한다. 의미를 바꾸거나 가짜 양성으로 완료하지 않는다.
-3. 새 search 코드는 expression이 아닌 일반 검색에도 항상 https://pubs.ams.org/AdvancedSearch로 이동한다. 원래의 gateway 도착 호스트를 보존하던 경로가 왜 함께 바뀌어야 하는지 근거가 없으면 복구한다. public_page(self.source)가 기관용 self.source 페이지 캐시와 같은 키를 쓰는지도 실제 구현에서 확인한다. 별도 공개 expression 경로가 일반 검색·이후 PDF의 기관 경로를 오염시키지 않게 한다. 동일 자료원의 정상 경로 선택이며 실패 후 다른 자료원·브라우저 자동 전환을 넣지 않는다.
-
-각 새 로컬 결함은 실패 회귀를 먼저 확인한 뒤 최소 수정하고, 새 화면을 직접 읽고 실제 SDK로 검증한다. 기존 일반 검색·XLSX·문헌/PDF 경로의 회귀를 확인한다. criteria-review.json에 root-ams-unicode, root-ams-nested-basic-expression, root-ams-route-isolation 행을 추가하고 미완료이면 계속한다. 숨은 legacy builder의 관측500과 아직 구현하지 않은 로컬 매핑을 구별한다. 원본·공유 인증·Git index는 수정하지 않는다.

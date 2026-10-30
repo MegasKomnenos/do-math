@@ -1,1 +1,0 @@
-{"identity":"DESKTOP\\CodexSandboxOffline","external_tcp_allowed":false,"error":"Exception calling \"Wait\" with \"1\" argument(s): \"One or more errors occurred.\""}

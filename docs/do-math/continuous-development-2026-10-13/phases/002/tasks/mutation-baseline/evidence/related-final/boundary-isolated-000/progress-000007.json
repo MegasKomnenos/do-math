@@ -1,5 +1,0 @@
-{
-  "sequence": 7,
-  "test_id": "boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure",
-  "phase": "test"
-}

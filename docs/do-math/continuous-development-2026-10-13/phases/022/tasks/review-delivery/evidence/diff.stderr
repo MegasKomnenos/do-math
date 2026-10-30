@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\022\tasks\review-delivery\evidence\save_diff.py", line 22, in <module>
-    assert hashlib.sha256(original).hexdigest()==start[path]['sha256'],path
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: .agents/skills/do-math/scripts/do_math/review_cycle.py

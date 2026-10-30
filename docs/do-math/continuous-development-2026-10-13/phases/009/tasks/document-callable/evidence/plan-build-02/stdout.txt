@@ -1,1 +1,0 @@
-{"outputs": 1305, "created": [], "deleted": [], "changed": [".agents/skills/do-math/references/CLI-실행-계약.md", ".agents/skills/do-math/scripts/tests/.timings.json"], "manifest_unchanged": true}

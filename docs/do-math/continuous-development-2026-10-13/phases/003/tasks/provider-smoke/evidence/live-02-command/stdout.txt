@@ -1,8 +1,0 @@
-Open known defects: 0
-[smoke] 1 tests
-  isolated: smoke.test_provider_live.ProviderLiveTests
-  {'passed': 1}
-Over budget: 0 tests; T5 ran 16.6s of 600s
-{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"smoke": 16.6}, "total_seconds": 16.6}
-   16.297s passed             smoke.test_provider_live.ProviderLiveTests.test_claude_maintenance_files_and_termination
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\003\tasks\provider-smoke\evidence\live-02\report.json

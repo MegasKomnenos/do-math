@@ -1,6 +1,0 @@
-Open known defects: 0
-[flows] 1 tests
-Over budget: 0 tests
-{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"flows": 18.7}, "total_seconds": 18.7}
-   12.938s passed             flows.test_provider_raw_ingress.RawIngressTests.test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\007\tasks\provider-consumers\evidence\raw-green\report.json

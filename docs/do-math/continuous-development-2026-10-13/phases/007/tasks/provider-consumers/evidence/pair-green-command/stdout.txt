@@ -1,7 +1,0 @@
-Open known defects: 0
-[contracts] 1 tests
-Over budget: 1 tests
-      0.563s > 0.2s contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped
-{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"contracts": 0.6}, "total_seconds": 0.6}
-    0.563s passed             contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\007\tasks\provider-consumers\evidence\pair-green\report.json

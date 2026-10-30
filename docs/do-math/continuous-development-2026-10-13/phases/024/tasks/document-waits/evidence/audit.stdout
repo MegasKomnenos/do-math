@@ -1,2 +1,0 @@
-{'red': {'selected': 1, 'counts': {'failed': 1}, 'exit_code': 1}, 'focus': {'selected': 45, 'counts': {'passed': 42, 'failed': 2, 'error': 1}, 'exit_code': 1}, 'corrected': {'selected': 4, 'counts': {'passed': 3, 'failed': 1}, 'exit_code': 1}, 'c': {'selected': 254, 'counts': {'passed': 148, 'error': 19, 'not_run': 62, 'failed': 25}, 'exit_code': 1}, 'c2': {'selected': 254, 'counts': {'passed': 254}, 'exit_code': 0}, 'm': {'selected': 254, 'counts': {'passed': 254}, 'exit_code': 0}}
-Authorized changes 30 final source count 2675 resource cwd records 0

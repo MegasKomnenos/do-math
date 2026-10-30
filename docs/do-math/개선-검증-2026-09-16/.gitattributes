@@ -1,3 +1,0 @@
-# Preserve captured evidence bytes; Markdown remains an editable report.
-*.json -text -whitespace
-*.txt -text -whitespace

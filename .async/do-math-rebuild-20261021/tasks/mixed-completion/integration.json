@@ -1,8 +1,0 @@
-{
-  "task": "mixed-completion",
-  "files": [
-    ".claude/skills/do-math/tests/test_state_write.py",
-    ".claude/skills/do-math/RUNTIME.md",
-    ".claude/skills/do-math/runner.py"
-  ]
-}

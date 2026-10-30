@@ -1,4 +1,0 @@
-{
-  "raw_reference_failure": "'str' object has no attribute 'get'",
-  "resolved_reference_success": true
-}

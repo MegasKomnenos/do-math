@@ -1,7 +1,0 @@
-{
-  "task": "storage-metadata",
-  "files": [
-    ".agents/skills/do-math/scripts/tests/unit/test_record_family_storage.py",
-    ".claude/skills/do-math/scripts/tests/unit/test_record_family_storage.py"
-  ]
-}

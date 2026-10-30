@@ -1,9 +1,0 @@
-{
-  "exit_code": 0,
-  "elapsed_seconds": 43.26517200469971,
-  "source_manifest": "manifest.json",
-  "tests": 45,
-  "skipped": 0,
-  "failed": 0,
-  "source_scope": "Final planning delta and academic/lifecycle/purpose consumers; explicit HTTP fixture diagnosis retained separately"
-}

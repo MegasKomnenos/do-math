@@ -1,9 +1,0 @@
-test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema (sim.test_provider_final_contract.ProviderFinalContractTests.test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema) ... ok
-test_a_valid_burst_is_delivered_whole_and_completes (sim.test_provider_runner.ObservationBurstTests.test_a_valid_burst_is_delivered_whole_and_completes) ... ok
-test_completed_only_after_schema (sim.test_provider_runner.ResultTests.test_completed_only_after_schema) ... ok
-test_noncanonical_final_number_is_an_output_validation_failure_after_collection (sim.test_provider_runner_gaps.RunnerGapTests.test_noncanonical_final_number_is_an_output_validation_failure_after_collection) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.542s
-
-OK

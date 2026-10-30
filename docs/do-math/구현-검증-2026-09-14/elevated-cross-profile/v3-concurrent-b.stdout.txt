@@ -1,1 +1,0 @@
-{"label":"b","observed_at":"2026-09-14T01:00:07.8135093+00:00","results":{"own":{"state":"read","content":"CONTROLLED_B_75af20","error_type":null,"message":null},"other":{"state":"read","content":"CONTROLLED_A_d41c8b","error_type":null,"message":null}}}

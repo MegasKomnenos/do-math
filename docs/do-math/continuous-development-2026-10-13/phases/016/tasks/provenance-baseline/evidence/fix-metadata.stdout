@@ -1,7 +1,0 @@
-commit bbe64043f49d46fb7c3b6e768b99a8acbaa125cf
-Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
-AuthorDate: Sun Oct 4 09:45:24 2026 +0900
-Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
-CommitDate: Sun Oct 4 09:45:24 2026 +0900
-
-    실행기 전체 비용과 공유 입력 provenance 및 변이 증거 판정을 통합한다

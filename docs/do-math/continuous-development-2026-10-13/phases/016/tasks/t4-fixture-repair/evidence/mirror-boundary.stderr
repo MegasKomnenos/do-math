@@ -1,7 +1,0 @@
-test_imported_record_query_has_snapshot_evidence (boundary.test_knowledge_formal_consumer.ImportedRecordQueryTests.test_imported_record_query_has_snapshot_evidence)
-The query half of the legacy import test: the imported record's row names the published head and bytes. ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 12.321s
-
-OK

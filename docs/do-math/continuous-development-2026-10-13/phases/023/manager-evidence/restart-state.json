@@ -1,9 +1,0 @@
-{
-  "previous_log_sha256": "90a94e5e8426e9d2318a007ed3ea75a30b24391dd6d922ae752bade159b9a3c6",
-  "previous_log_bytes": 40966,
-  "prior_manager_submission_exists": false,
-  "prior_manager_evidence_existed": false,
-  "restart_log": "run:phases/023/logs/manager-restart-001.log",
-  "task_reexecuted": false,
-  "head": "ca1434c29a9423fb779835b349fe99572796d3a1"
-}

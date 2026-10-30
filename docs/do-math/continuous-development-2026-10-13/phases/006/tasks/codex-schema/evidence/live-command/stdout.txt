@@ -1,8 +1,0 @@
-Open known defects: 0
-[smoke] 1 tests
-  isolated: smoke.test_provider_live.ProviderLiveTests
-  {'passed': 1}
-Over budget: 0 tests
-{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"smoke": 45.3}, "total_seconds": 45.3}
-   44.922s passed             smoke.test_provider_live.ProviderLiveTests.test_codex_maintenance_files_and_termination
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\006\tasks\codex-schema\evidence\live\report.json

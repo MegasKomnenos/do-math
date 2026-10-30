@@ -1,4 +1,0 @@
-[
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill"
-]

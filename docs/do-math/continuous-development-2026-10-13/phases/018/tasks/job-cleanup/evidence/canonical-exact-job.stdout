@@ -1,8 +1,0 @@
-Open known defects: 0
-[boundary] 1 tests
-  isolated: boundary.test_port_jobs.WindowsJobsContract
-  {'passed': 1}
-Over budget: 0 tests
-{"complete": true, "successful": true, "counts": {"passed": 1}, "group_seconds": {"boundary": 0.5}, "total_seconds": 0.5}
-    0.078s passed             boundary.test_port_jobs.WindowsJobsContract.test_a_job_resumes_only_once
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\018\tasks\job-cleanup\evidence\cj\report.json

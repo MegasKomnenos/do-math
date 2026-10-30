@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\016\tasks\t4-fixture-repair\evidence\verify_evidence.py", line 86, in <module>
-    for row in host:
-               ^^^^
-TypeError: 'int' object is not iterable

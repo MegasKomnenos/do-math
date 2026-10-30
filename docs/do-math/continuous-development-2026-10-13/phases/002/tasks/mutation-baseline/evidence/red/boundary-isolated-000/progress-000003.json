@@ -1,5 +1,0 @@
-{
-  "sequence": 3,
-  "test_id": "boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill",
-  "phase": "test"
-}

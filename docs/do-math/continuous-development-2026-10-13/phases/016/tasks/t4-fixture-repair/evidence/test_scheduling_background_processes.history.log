@@ -1,2 +1,0 @@
-bd3ae53f7e1f50d72ba1feb52bffc430c43a628d do-math 마지막 시험·공통 하네스·포트 수축을 보존 감사와 전체 T2 뒤 통합
-23cc4df3c3389fd26633b1060bdb11f29db506dd do-math 시험 재편 1f 옮기기 묶음 scheduling.2: host_resources·machine_parallel·windows_job 등 옛 시험 79개 가운데 72개를 합치고, Jobs 대역의 실행 중 모드가 wait 폴링에서 교착하던 것을 고침

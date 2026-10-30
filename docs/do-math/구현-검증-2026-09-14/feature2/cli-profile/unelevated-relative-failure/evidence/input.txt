@@ -1,1 +1,0 @@
-This is a bounded filesystem capability test. Use your shell tool to write the exact text do-math-file-ok into probe.txt in your current workspace, then read it back using a shell tool. Return read_back with the actual content. If tools fail return the actual error; do not claim the file exists.

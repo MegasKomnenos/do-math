@@ -1,6 +1,0 @@
-test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage (flows.test_provider_raw_ingress.RawIngressTests.test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 18.670s
-
-OK

@@ -1,7 +1,0 @@
-test_blocked_periodic_and_invalid_checkpoint (test_observations.Tests.test_blocked_periodic_and_invalid_checkpoint) ... ok
-test_idle_is_due_not_math_failure_and_hash_change_only (test_observations.Tests.test_idle_is_due_not_math_failure_and_hash_change_only) ... ok
-
-----------------------------------------------------------------------
-Ran 2 tests in 0.261s
-
-OK

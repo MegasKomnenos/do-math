@@ -1,5 +1,0 @@
-{
-  "sequence": 3,
-  "test_id": "boundary.test_provider_worker_roots.WorkerRootTests.test_worker_remains_importable_as_its_direct_job_root",
-  "phase": "test"
-}

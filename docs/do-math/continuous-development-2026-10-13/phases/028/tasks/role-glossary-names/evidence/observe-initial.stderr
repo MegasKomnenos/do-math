@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\028\tasks\role-glossary-names\evidence\observe.py", line 49, in <module>
-    normal_checkpoint=observations.checkpoint_value(fence)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\math\.claude\skills\do-math\scripts\do_math\observations.py", line 414, in checkpoint_value
-    value = strict_json_loads(raw.decode("utf-8-sig"))
-                              ^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'decode'. Did you mean: 'encode'?

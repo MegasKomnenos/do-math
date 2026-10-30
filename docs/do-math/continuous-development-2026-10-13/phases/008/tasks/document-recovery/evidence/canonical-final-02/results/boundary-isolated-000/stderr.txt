@@ -1,7 +1,0 @@
-test_frozen_entry_reports_original_installation_and_exact_verified_manifest (boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_entry_reports_original_installation_and_exact_verified_manifest) ... ok
-test_frozen_location_without_manifest_fails_before_reporting_live_mode (boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_location_without_manifest_fails_before_reporting_live_mode) ... ok
-
-----------------------------------------------------------------------
-Ran 2 tests in 7.386s
-
-OK

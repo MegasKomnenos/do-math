@@ -1,9 +1,0 @@
-{
-  "task": "r04",
-  "files": [
-    ".claude/skills/do-math/scripts/tests/contracts/test_pairs.py",
-    ".agents/skills/do-math/scripts/tests/contracts/test_pairs.py",
-    ".agents/skills/do-math/scripts/tests/contracts/pairs.py",
-    ".claude/skills/do-math/scripts/tests/contracts/pairs.py"
-  ]
-}

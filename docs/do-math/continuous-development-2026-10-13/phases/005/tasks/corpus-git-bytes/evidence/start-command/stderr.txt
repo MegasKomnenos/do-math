@@ -1,7 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\005\tasks\corpus-git-bytes\evidence\audit.py", line 213, in <module>
-    observe(sys.argv[1])
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\005\tasks\corpus-git-bytes\evidence\audit.py", line 158, in observe
-    assert current['git_differences'] == expected and not compared['phase004_source_changes']
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

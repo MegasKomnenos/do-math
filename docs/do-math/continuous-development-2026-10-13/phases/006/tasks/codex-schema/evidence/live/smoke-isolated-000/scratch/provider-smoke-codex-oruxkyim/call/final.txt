@@ -1,1 +1,0 @@
-{"output_json":"{\"summary\": \"Provider smoke complete.\", \"used_sources\": [\"probe-evidence.txt\", \"checkpoint.json\"], \"questions\": [], \"report\": \"74856b42c29d5ffaa43e4a99e6229ed9\", \"remaining_work\": []}"}

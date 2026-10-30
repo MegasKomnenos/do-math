@@ -1,3 +1,0 @@
-* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
-# 행 번호 뒤의 공백도 실제 모델 입력의 일부이므로 원문 바이트를 보존한다.
-readings/**/prompt.txt -whitespace

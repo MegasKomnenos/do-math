@@ -1,6 +1,0 @@
-'ParkingLastCar.sum_subsets_card' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.A_recurrence' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.A_recurrence_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
-'ParkingLastCar.zero_distance_choices' depends on axioms: [propext, Quot.sound]
-'ParkingLastCar.saturated_choices' depends on axioms: [propext, Quot.sound]
-'ParkingLastCar.A_recurrence_distance_zero' depends on axioms: [propext, Classical.choice, Quot.sound]

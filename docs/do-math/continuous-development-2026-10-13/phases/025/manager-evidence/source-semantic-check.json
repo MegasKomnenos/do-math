@@ -1,5 +1,0 @@
-{
-  "native_git_queries_match_original": 3,
-  "lake_workspace_source_sha_matches": true,
-  "scope": "Actual Git source identity compared with current native query outputs; installed Lake augmentation source preserves the independently specified search paths."
-}

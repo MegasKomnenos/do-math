@@ -1,6 +1,0 @@
-{"snapshot_files": 979, "baseline_changes": 0, "head": "77b8f132c056bcb222e7b6ee431742aa4dc1f27e", "integration_records": 134, "report_files": 100, "raw_reports_read": 39}
-Traceback (most recent call last):
-  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\001\tasks\closure-map\evidence\build_mapping.py", line 388, in <module>
-    question = k_questions[rid]
-               ~~~~~~~~~~~^^^^^
-KeyError: 'K-24'

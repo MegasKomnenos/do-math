@@ -1,6 +1,0 @@
-B110 {} keys ['id', 'scope', 'state', 'memory_node', 'reports', 'namespaces', 'checked_occurrences', 'checked_distinct_fields', 'unbound_dotted_occurrences', 'limits', 'reading_boundary']
-B111 {} keys ['id', 'scope', 'state', 'memory_node', 'report', 'namespaces', 'classified', 'pending_dotted_references', 'counts', 'pending_count', 'limits', 'source_composition']
-B112 {} keys ['id', 'scope', 'state', 'memory_node', 'report', 'namespaces', 'classified', 'pending', 'counts', 'pending_count', 'limits', 'source_composition', 'budget_note']
-B113 {} keys ['id', 'scope', 'state', 'memory_node', 'report', 'namespaces', 'classified', 'counts', 'pending', 'pending_count', 'limits', 'owner_evidence', 'budget_note']
-B114 {} keys ['id', 'scope', 'state', 'memory_node', 'reports', 'counts', 'namespaces', 'added_references', 'pending_dotted_count', 'failure_correction', 'boundary', 'limits', 'next_candidate_evidence', 'budget_note']
-mirror plan 15

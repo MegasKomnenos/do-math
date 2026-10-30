@@ -1,6 +1,0 @@
-test_runner_samples_cover_success_bound_incomplete_and_stopped (contracts.test_pairs.ContractPairTests.test_runner_samples_cover_success_bound_incomplete_and_stopped) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.555s
-
-OK

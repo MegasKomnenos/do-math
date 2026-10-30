@@ -1,8 +1,0 @@
-{
-  "task": "protocol-checker",
-  "files": [
-    ".claude/skills/do-math/tests/test_check.py",
-    ".claude/skills/do-math/check.py",
-    ".claude/skills/do-math/protocol.md"
-  ]
-}

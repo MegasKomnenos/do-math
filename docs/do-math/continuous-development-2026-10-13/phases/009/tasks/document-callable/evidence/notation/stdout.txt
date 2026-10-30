@@ -1,1 +1,0 @@
-Existing callable and field checks pass; one notation replaced, all other bytes preserved.

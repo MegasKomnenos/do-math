@@ -15,7 +15,7 @@ Python 3.10 이상과 PATH에서 실행 가능한 Codex CLI가 필요합니다. 
 - [protocol.md](protocol.md): 준비·task·manager의 절차와 파일 형식.
 - [시작 예제](examples/linecount/): 처리 함수와 CLI를 병렬 구현하도록 준비된 작은 프로젝트와 첫 배정.
 
-[설계](../../docs/continuous-development/design.md)와 [상세 형식 예시](../../docs/continuous-development/examples.md)에서 설계 이유와 보고 흐름을 볼 수 있습니다. 실제 수행 규격의 정본은 protocol.md입니다.
+수행 규격의 정본은 [protocol.md](protocol.md)입니다.
 
 ## 실제 프로젝트 시작
 

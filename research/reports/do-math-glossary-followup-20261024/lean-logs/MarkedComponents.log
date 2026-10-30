@@ -1,7 +1,0 @@
-C:\math\.skill-workspace\do-math-glossary-followup-20261024\publication\lean\MarkedComponents.lean:67:62: warning: This simp argument is unused:
-  one_mul
-
-Hint: Omit it from the simp argument list.
-  simp only [X_pow_eq_monomial, C_mul_monomial, monomial_mul, o̵n̵e̵_̵mul,̵ ̵m̵u̵l̵_one]
-
-Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

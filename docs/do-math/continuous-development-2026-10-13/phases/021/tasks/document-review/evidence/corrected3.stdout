@@ -1,7 +1,0 @@
-Open known defects: 0
-[unit] 2 tests
-Over budget: 0 tests
-{"complete": true, "successful": false, "counts": {"error": 2}, "group_seconds": {"unit": 0.6}, "total_seconds": 0.6}
-    0.157s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_review_stage_documents_reach_the_final_seat_input
-    0.093s error              unit.test_review_research_owner_contract.ResearchOwnerContractTests.test_fixed_question_context_keeps_original_bytes_after_unrelated_publication
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\021\tasks\document-review\evidence\corrected3\report.json

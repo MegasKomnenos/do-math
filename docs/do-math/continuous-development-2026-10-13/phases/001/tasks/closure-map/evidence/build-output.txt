@@ -1,2 +1,0 @@
-{"snapshot_files": 979, "baseline_changes": 0, "head": "77b8f132c056bcb222e7b6ee431742aa4dc1f27e", "integration_records": 134, "report_files": 100, "raw_reports_read": 39}
-{"requirements": 103, "tracking_tasks": 109, "prior_review_units": 25, "classification_counts_by_population": {"stage1": {"판정 질문 필요": 15, "최종 판본 연결만 필요": 2, "현재 근거 부족": 1, "확정된 수리 필요": 1}, "stage2": {"판정 질문 필요": 10, "최종 판본 연결만 필요": 1}, "preservation": {"판정 질문 필요": 57, "현재 근거 부족": 4}, "p2": {"판정 질문 필요": 11, "현재 근거 부족": 1}}, "task_orphans": []}

@@ -1,8 +1,0 @@
-Open known defects: 0
-[unit] 2 tests
-Over budget: 1 tests
-      0.344s > 0.2s unit.test_submission_checks.CheckHistoryTests.test_documented_pass_is_bound_to_the_actual_candidate_and_check
-{"complete": true, "successful": true, "counts": {"passed": 2}, "group_seconds": {"unit": 1.0}, "total_seconds": 1.0}
-    0.344s passed             unit.test_submission_checks.CheckHistoryTests.test_documented_pass_is_bound_to_the_actual_candidate_and_check
-    0.093s passed             unit.test_review_engine_stages.InitialStageTests.test_new_revision_restarts_all_slots_and_retains_own_conversation
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\022\tasks\review-delivery\evidence\corrected\report.json

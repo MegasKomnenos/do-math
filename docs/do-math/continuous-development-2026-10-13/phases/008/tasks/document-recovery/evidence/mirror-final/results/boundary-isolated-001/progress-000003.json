@@ -1,5 +1,0 @@
-{
-  "sequence": 3,
-  "test_id": "boundary.test_operator_bootstrap_info.BootstrapInfoTests.test_frozen_location_without_manifest_fails_before_reporting_live_mode",
-  "phase": "test"
-}

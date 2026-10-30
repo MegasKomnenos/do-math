@@ -1,7 +1,0 @@
-{
-  "task": "r06",
-  "files": [
-    ".claude/skills/do-math/scripts/tests/unit/test_producer_record_storage.py",
-    ".agents/skills/do-math/scripts/tests/unit/test_producer_record_storage.py"
-  ]
-}

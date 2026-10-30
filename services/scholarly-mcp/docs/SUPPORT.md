@@ -1,6 +1,4 @@
-49개 자료원의 지원 범위를 나타낸다. `partial`은 그 자료원의 일부 기능을 지원한다는 뜻이며 이번에 확인한 수리가 미완료라는 뜻으로 일괄 해석하지 않는다. `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력은 `describe_source`, 검증 근거는 [검증 기록](history/VALIDATION.md), 남은 개별 조건은 [후속 인계](history/CONTINUATION.md)를 따른다.
-
-2026-09-14 KST의 [추가 재검토](history/PARTIAL-REVIEW.md)에서는 인계의19항목과 13개 사이트의 실제 화면·가이드·이용 동선을 대조했다. 새로 확인한 AMS Title OR 변환 오류까지 수정한 뒤639검사가 통과했다. Semantic Scholar batch 가용성을 확인하고, 원 Vault 작업과 별도로 Software Heritage 객체의 압축물을 재구성했다. UI에서 확보한 외부 원고·제품 목록은 해당 MCP 기능의 성공과 구별한다. 아래48개 partial 표지는 요청 실패 건수에서 계산한 상태가 아니다.
+49개 자료원의 지원 범위를 나타낸다. `partial`은 그 자료원의 일부 기능을 지원한다는 뜻이며 이번에 확인한 수리가 미완료라는 뜻으로 일괄 해석하지 않는다. `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력은 `describe_source`가 제공한다.
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
@@ -54,10 +52,8 @@
 | 일반 웹 후보 발견 | general-web | api (Mwmbl public search) | partial | source_guide, search, export | live_mcp_public_api_candidates_csv_extract_empty_result |
 | APS 기관 구독 접근 | aps-institutional | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement |
 
-개별 구독은 KUDOS의 KNU 개별전자저널·KNU P+O Journal 보유 목록으로 구체화했다. 목록 기재와 실제 원문 권한은 구별한다. 학회 저널·저자 또는 기관 공개본은 지정 URL을, 일반 웹은 공개 후보 검색을 제공한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다. [접근 조건 조사](history/ACCESS-RESEARCH.md)는 창 모드·실행 방식·기관 경로의 비교 근거를 담는다.
+개별 구독은 KUDOS의 KNU 개별전자저널·KNU P+O Journal 보유 목록으로 구체화했다. 목록 기재와 실제 원문 권한은 구별한다. 학회 저널·저자 또는 기관 공개본은 지정 URL을, 일반 웹은 공개 후보 검색을 제공한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다.
 
-
-2026-09-13 KST의 전수조사는 [49개 자료원 재검토표](history/AUDIT-MATRIX.md)와 [실패 지점 분석](history/LIMITATIONS-AUDIT.md)에 정리했다.24개 CLI 과제와 root의 추가 검토에서 확인한 수리를 원본에 통합했고, 최종 전체633검사가 통과했다. 새 원본 SDK, 실제 전후 이미지, 저장 응답 재생의 범위를 검증 기록에서 구별한다. 현재 자료원 오류·문헌별 미제공·접근 제한은 구현 수리와 별개로 남긴다.
 
 DBLP의 원본 재검증은 `data/access-research/user-criteria-dblp/root-sdk.json`과 `root-limits.json`에 있다. 검색·7형식 추출13호출과1,000개 고유 문헌 회수가 성공했다. 원 API의 현재100건 응답 크기를 전체 요청 범위의 한계로 쓰지 않으며, 중간 제한 때 부분 결과와 다음 위치를 보존한다.
 

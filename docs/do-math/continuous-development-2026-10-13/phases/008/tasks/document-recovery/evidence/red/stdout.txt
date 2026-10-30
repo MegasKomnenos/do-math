@@ -1,7 +1,0 @@
-Open known defects: 0
-[structure] 2 tests
-Over budget: 0 tests
-{"complete": true, "successful": false, "counts": {"failed": 2}, "group_seconds": {"structure": 0.3}, "total_seconds": 0.3}
-    0.281s failed             structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner
-    0.016s failed             structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\008\tasks\document-recovery\evidence\red\results\report.json

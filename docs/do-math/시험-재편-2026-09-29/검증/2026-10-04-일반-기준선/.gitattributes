@@ -1,3 +1,0 @@
-report.json -text
-# Unified patches contain a space on blank context lines; preserve their syntax.
-*.patch -text -whitespace

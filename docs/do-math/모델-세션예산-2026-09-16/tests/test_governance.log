@@ -1,9 +1,0 @@
-test_goal_change_keeps_goal_independent_queue_actions (test_governance.Tests.test_goal_change_keeps_goal_independent_queue_actions) ... ok
-test_goal_policy_and_idempotence (test_governance.Tests.test_goal_policy_and_idempotence) ... ok
-test_grant_expiry_revoke_and_operations_survive (test_governance.Tests.test_grant_expiry_revoke_and_operations_survive) ... ok
-test_transfer_merges_criteria_revisions_and_rejects_live_execution (test_governance.Tests.test_transfer_merges_criteria_revisions_and_rejects_live_execution) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.002s
-
-OK

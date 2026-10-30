@@ -1,1 +1,0 @@
-{"read_back":"Set-Content: Access to the path 'C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\workspace\\probe.txt' is denied.\nGet-Content: The path could not be found because 'C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\workspace\\probe.txt' does not exist."}

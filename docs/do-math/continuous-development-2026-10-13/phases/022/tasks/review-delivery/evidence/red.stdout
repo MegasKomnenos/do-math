@@ -1,7 +1,0 @@
-Open known defects: 0
-[sim] 1 tests
-Over budget: 1 tests
-     15.078s > 2.0s sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
-{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"sim": 19.5}, "total_seconds": 19.5}
-   15.078s failed             sim.test_submission_review_inputs.ReviewInputTests.test_review_stage_documents_reach_the_final_seat_input
-Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\022\tasks\review-delivery\evidence\red\report.json

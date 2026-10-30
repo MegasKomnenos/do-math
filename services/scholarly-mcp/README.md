@@ -9,8 +9,6 @@
 | 자료원별 지원 기능과 제한 | [지원표](docs/SUPPORT.md) |
 | 호출 인자·결과 상태·추출 형식·자료원별 상세 설명 | [사용 안내](docs/USAGE.md) |
 | 코드 구성·검증·데이터 관리 | [개발 안내](docs/DEVELOPMENT.md) |
-| 완료한 구현과 남은 제한의 기준 기록 | [구현 정리](docs/history/FINAL-IMPLEMENTATION.md) |
-| 과거 실서비스 검증·조사·인계 근거 | [기록 색인](docs/history/README.md) |
 
 ## 지원 범위
 
@@ -83,4 +81,4 @@ DjVu 텍스트·이미지 추출이 필요하면 MSVC C++ 컴파일러, Windows 
 & services/scholarly-mcp/.venv/Scripts/python.exe -m unittest discover -s services/scholarly-mcp/tests -p 'test_*.py'
 ```
 
-이 검사의 성공은 외부 사이트의 현재 접근 가능성을 보증하지 않습니다. 실서비스 검증은 [개발 안내](docs/DEVELOPMENT.md)의 별도 절차를 따르며, 과거 성공의 대상·시점은 [검증 기록](docs/history/VALIDATION.md)에서 확인합니다.
+이 검사의 성공은 외부 사이트의 현재 접근 가능성을 보증하지 않습니다. 실서비스 검증은 [개발 안내](docs/DEVELOPMENT.md)의 별도 절차를 따릅니다.

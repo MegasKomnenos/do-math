@@ -1,2 +1,0 @@
-warning: in the working copy of 'docs/do-math/continuous-development-2026-10-13/plan.md', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'docs/do-math/continuous-development-2026-10-13/seams.md', LF will be replaced by CRLF the next time Git touches it

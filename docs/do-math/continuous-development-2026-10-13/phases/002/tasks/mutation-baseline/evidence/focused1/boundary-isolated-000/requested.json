@@ -1,8 +1,0 @@
-[
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_a_written_passing_result_cannot_hide_an_abnormal_normal_exit",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_actual_normal_pass_certifies_the_mutant_failure",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_cli_and_t3_consume_actual_normal_evidence_with_the_same_verdict",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_missing_normal_child_result_never_certifies_a_kill",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_normal_skip_and_fixture_events_are_evidence_errors",
-  "boundary.test_mutation_baseline.ActualBaselineTests.test_real_load_failure_is_a_kill_only_when_the_normal_batch_passes"
-]

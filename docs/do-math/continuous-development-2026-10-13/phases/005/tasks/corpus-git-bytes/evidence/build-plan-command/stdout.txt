@@ -1,1 +1,0 @@
-{"changed": [".agents/skills/do-math/scripts/tests/corpus/.gitattributes"], "outputs": 1297, "check_ok": false, "messages": ["[.agents] 드리프트(내용 불일치): skills/do-math/scripts/tests/corpus/.gitattributes"], "overlay_manifest_bytes_unchanged": true, "changes_since_start": [".claude/skills/do-math/scripts/tests/corpus/.gitattributes"]}

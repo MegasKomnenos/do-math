@@ -2,9 +2,7 @@
 
 [공식 진입점](../README.md)에서 설치와 첫 호출을 시작할 수 있습니다. 이 문서는 결과 해석·추출 형식과 자료원별 세부 동작을 설명합니다. 자료원별 실서비스 관측은 2026-09-14까지의 기록이며, 실행 중인 서버의 정확한 입력 계약은 `describe_source`에서 확인합니다.
 
-학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 완료한 구현·수리와 남은 외부 조건은 [최종 구현 정리](history/FINAL-IMPLEMENTATION.md), 자료원별 기능은 [지원표](SUPPORT.md), 검증 근거는 [검증 기록](history/VALIDATION.md), 현행 계약과 작업 인계는 [후속 인계](history/CONTINUATION.md)를 따른다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`다.
-
-2026-09-14 KST의 [partial 재검토](history/PARTIAL-REVIEW.md)는 잔여19항목과 13개 사이트의 실제 UI·가이드·기관 동선에서 확인한 원인 및 해결 시도를 기록한다. AMS Title OR의 잘못된 문자열 변환을 거부하고, ScienceDirect 새 세션의 제목 후보를 원 ISSN·ISBN으로 좁힌다. API HTTP 오류의 정제한 원 응답은 `evidence` artifact에서 `extract`로 확인할 수 있다. 수정 후 전체639검사가 통과했다.
+학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 자료원별 기능은 [지원표](SUPPORT.md)를 따른다.
 
 2026-09-09 사용자 교정에 따라 **공개 API는 별도 API 이용 자격 없이 호출할 수 있는 API**를 뜻한다. 별도 키·승인·계약을 요구하는 API는 구현 경로에서 제외한다. 그런 공개 API가 없는 인증 자료원은 KUDOS 로그인 → 검색 → 학술DB → 해당 바로가기 → 기관 프록시의 Playwright 경로를 사용한다. 어댑터 경로는 개발 시 정하며, 실행 중 API 오류를 이유로 브라우저로 전환하지 않는다. 기관 로그인 정보는 보호된 `.credentials/kudos.md`에서 서버가 직접 읽는다.
 
@@ -82,7 +80,7 @@ Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 �
 
 오프라인 계약 검사는 `python -m unittest discover -s output/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
 
-현재 실서비스 근거는 로컬 `data/validation/`과 [검증 기록](history/VALIDATION.md)에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
+실서비스 근거는 로컬 `data/validation/`에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
 
 Scopus 문헌의 native RIS·BibTeX는 별도 웹 계정 경로를 사용자 지시에 따라 보류한다. 검색 결과·원 JSON·기계적 CSV와 개인 계정이 필요 없는 `facet-counts` 원 CSV는 제공한다. 필터 건수 CSV의 `extract`는 `facet_group`·`label`·`count` 행이며 `selection=raw`로 원 설명문과 줄을 읽는다. 문헌 RIS·BibTeX 요청에는 `export_deferred`와 보존 결과를 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
 
@@ -234,5 +232,3 @@ IOP 검색도 export=bibtex/ris를 받는다. 선택한 검색 창의 문헌마�
 
 Software Heritage의 files 항목은 Vault 준비 중에도 원 directory/content 객체를 회수한다. 경로별 manifest의 artifact로 원 파일을 추출하며, 디렉터리 Git tree와 파일 해시·길이를 검증한다. 같은 data-dir의 검증된 객체를 재사용하므로 호출 제한 뒤 재개할 때 이미 받은 파일을 다시 받지 않는다. 심볼릭 링크는 따라가지 않고 원 바이트를 보존하며 하위 revision은 참조로 남긴다. 캐시 재사용 수와 원 수신 시점을 표시한다. 관측한 익명 한도는 시간당120회였으며 현재 응답의 제한 정보를 따른다. 첫429에서 중단한 부분 결과도 보존한다.
 
-
-2026-09-13 KST의 전수조사와 [사용자 세 기준](history/dispatch/remaining-20260913/USER-CRITERIA.md) 재검토를 마쳤다.24개 CLI 과제와 root의 추가 오류를 수리·통합한 최종 전체633검사가 통과했다. 원본 SDK·실제 전후 화면·저장 응답 재생의 구별은 [검증 기록](history/VALIDATION.md)에 있다. 현재 접근·미제공·부분 결과와 미확정 가용성은 [후속 인계](history/CONTINUATION.md)의 개별 표를 따른다.

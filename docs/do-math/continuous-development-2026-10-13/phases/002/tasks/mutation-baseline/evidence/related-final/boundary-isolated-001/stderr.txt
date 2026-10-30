@@ -1,7 +1,0 @@
-test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside (boundary.test_mutation_baseline.LazyBaselineTests.test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside)
-No union baseline: a mutant's failing test counts only if it passes unmutated (D9). ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.445s
-
-OK
