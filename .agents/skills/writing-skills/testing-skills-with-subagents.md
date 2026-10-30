@@ -4,7 +4,7 @@
 > (원본 해시 a5acfeac86f34c7bc625d064e10c8a2f8180b696, 각색 일자 2026-07-02).
 > 각색 범위는 아래 REQUIRED BACKGROUND 문단의 로컬 관할 지도 치환 하나이고,
 > 그 외 본문(압박 유형 표, 시나리오 예시 등 실측 산물)은 문언 정밀도 보존을 위해 원형이다.
-> 이 방법론은 로컬판 writing-skills SKILL.md의 검증 3형태 중 형태 1(압박 시나리오 테스트)의 상세다.
+> 이 방법론은 로컬판 writing-skills SKILL.md의 검증 2형태 중 형태 1(압박 시나리오 테스트)의 상세다.
 > 근거 기록: `references/원본_대조.md` W-31.
 
 **Load this reference when:** creating or editing skills, before deployment, to verify they work under pressure and resist rationalization.
@@ -17,7 +17,7 @@ You run scenarios without the skill (RED - watch agent fail), write skill addres
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill prevents the right failures.
 
-**계보와 관할 (로컬 치환):** 이 방법론의 원리(실패의 직접 관찰 선행)는 재현 우선 코드 수정과 같은 뿌리이고, 그 코드판이 로컬판 `test-driven-development` 스킬이다. 다만 그 스킬의 관할은 코드 수정이고 스킬 문서(산문)의 검증은 이 방법론의 관할이므로, 그 스킬의 로드는 요구하지 않는다. 이 문서는 스킬 특유의 테스트 형식(압박 시나리오, 합리화 표)을 제공한다. RED-GREEN-REFACTOR 어휘는 그 계보의 원어 표기다.
+**계보와 관할 (로컬 치환):** 이 방법론의 원리(실패의 직접 관찰 선행)는 재현 우선 코드 수정과 같은 뿌리다. 이 방법론의 관할은 스킬 문서(산문)의 검증이며, 코드 TDD 스킬의 로드는 요구하지 않는다. 이 문서는 스킬 특유의 테스트 형식(압박 시나리오, 합리화 표)을 제공한다. RED-GREEN-REFACTOR 어휘는 그 계보의 원어 표기다.
 
 **Complete worked example:** See examples/CLAUDE_MD_TESTING.md for a full test campaign testing CLAUDE.md documentation variants.
 

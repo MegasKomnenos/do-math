@@ -129,7 +129,6 @@ cd가 필요한 명령은 같은 호출 안에서 끝내고, 세션의 작업 �
 
 ## 프리셋
 
-do-dag의 모델_프리셋 기본값은 mixed. 검증런_모델_프리셋 기본값은 do-dag의 모델_프리셋과 같게.
 verify-rounds의 모델_프리셋 기본값은 mixed.
 
 ## do-math graphify

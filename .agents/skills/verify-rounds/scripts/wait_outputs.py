@@ -6,9 +6,7 @@
 「대기:」로 내고 exit 3 — 부르는 쪽이 같은 호출을 다시 낸다. 인자가 없으면 exit 2.
 호출 하나가 Bash 도구 기본 timeout 120초를 넘으므로 부르는 쪽이 `timeout: 600000`을 준다.
 
-호출 계약의 정본은 둘이다 — verify-rounds는 `SKILL.md` §5.6, do-dag는
-`references/서식.md` 「Codex 일반 파견」이다. 두 스킬이 이 파일을 바이트 동일로 공유하고
-`do-dag/scripts/tests/test_verify_rounds_interface.py`가 그 동일성을 붙든다.
+호출 계약의 정본은 verify-rounds `SKILL.md` §5.6이다.
 """
 
 import pathlib

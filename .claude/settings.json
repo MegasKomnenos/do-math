@@ -2,10 +2,7 @@
   "$comment": "Committed project policy. CLAUDE.md is advisory; the HARD guards live here. Personal overrides go in .claude/settings.local.json (gitignored). Hook 경로는 $CLAUDE_PROJECT_DIR(프로젝트 루트, Claude Code가 문자열 치환) 기준 절대경로로 통일한다 — 절대경로 하드코딩(클론·이동 시 조용한 실패)과 상대경로(hook 실행 CWD 드리프트) 두 함정을 함께 제거한다.",
   "permissions": {
     "defaultMode": "bypassPermissions",
-    "allow": [
-      "Bash(python .claude/skills/extract-documents/scripts/extract_all.py *)",
-      "Bash(python3 .claude/skills/extract-documents/scripts/extract_all.py *)"
-    ],
+    "allow": [],
     "deny": [
       "PowerShell",
       "EndConversation",
@@ -25,52 +22,10 @@
   "disableBundledSkills": true,
   "disableWorkflows": true,
   "disableArtifact": true,
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR\"/.claude/skills/do-dag/scripts/hooks/dag_session_note.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR\"/.claude/skills/ponytail/scripts/inject_ponytail.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR\"/.claude/skills/ponytail/scripts/inject_ponytail.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR\"/.claude/skills/do-dag/scripts/hooks/dag_session_note.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
-  },
   "worktree": {
     "bgIsolation": "none"
   },
-  "$comment2": "mattpocock-skills 플러그인은 2026-07-31에 껐다. 쓰던 5종(grill-me·grill-with-docs·grilling·handoff·domain-modeling)은 `.claude/skills/`로 옮겼고, 나머지 17종은 로컬 정본과 겹쳐(tdd↔test-driven-development, code-review↔내장 review) 자동 발동 시 로컬 규범을 우회시켰다.",
-  "$comment3": "ponytail 플러그인은 2026-08-17에 껐다. 스킬 4종(ponytail·ponytail-review·ponytail-audit·ponytail-debt)을 adapt-skill로 각색해 `.claude/skills/`에 두었고, 상시 full 모드는 위 SessionStart·SubagentStart의 inject_ponytail.py가 각색본 본문을 주입해 승계한다. gain·help 2종과 lite/ultra 레벨 전환은 미사용이라 버렸다. 대조표: .claude/skills/ponytail/references/원본_대조.md",
+  "$comment2": "mattpocock-skills 플러그인은 2026-07-31에 껐다. 쓰는 2종(grill-me·grilling)은 `.claude/skills/`로 옮겼고, 나머지는 로컬 정본과 겹쳐(tdd·code-review 등) 자동 발동 시 로컬 규범을 우회시켰다.",
   "enabledPlugins": {
     "mattpocock-skills@mattpocock": false,
     "ponytail@ponytail": false
