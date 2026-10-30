@@ -7,7 +7,7 @@ __pycache__/
 
 .claude/settings.local.json
 
-# 외부 서비스 로그인 크리덴셜. PII 규율상 저장소·런 디렉토리에 싣지 않는다.
+# 외부 서비스 로그인 크리덴셜. 저장소·런 디렉토리에 싣지 않는다.
 /.credentials/
 
 # Claude Code가 남기는 API 요청·응답 로그. 머신별 산출물이므로 추적하지 않는다.
@@ -15,37 +15,18 @@ __pycache__/
 
 .vscode
 .playwright-mcp/
+
+# do-math 연구 인스턴스와 로컬 실행 기반.
 .skill-workspace/
 
-# 세션별 작문 실행 상태와 독해 원문. 검증 사례는 별도로 선별해 보존한다.
+# 세션별 작문 실행 상태와 독해 원문.
 /.codex/writing-flow/
 
-# Raw review runs are local scratch; selected reports and source evidence live in docs/do-math/review-evidence/.
+# 원시 검토 실행 출력.
 /.codex/reviews/
 
 # 일반적인 빌드 산출물.
 /build/
-
-# wayfinder가 `gh issue create --body-file`에 넘기려고 만드는 임시 본문 파일.
-# 지도와 티켓의 정본은 이슈 트래커이므로 그 사본을 추적하지 않는다.
-.wayfinder-tmp/
-
-# 로컬 문헌 추출물과 작업 중간 산출물. 정본 문서는 research/에 둔다.
-/l17.txt
-/math_l16_tmp.txt
-/nul
-
-# P vs NP 초기 문헌 조사의 원시 DB export와 원문·코드·데이터 실물.
-# 추적 manifest와 AI가 정규화한 조사 기록만 Git에 둔다.
-/research/pvsnp/literature-baseline/intake/
-/research/pvsnp/literature-baseline/originals/
-
-# do-dag 실행 때 생성하는 원시 대화 로그와 별도 작업트리 채록.
-.sdd/dag/**/_로그*
-.sdd/dag/**/worktree채록/
-
-/임시/protoinput-research/
-/임시/windows-driver-samples-ref/
 
 # 임시/ 아래 작업 디렉터리의 내용은 기본으로 무시한다. 보존할 증거는 `git add -f`로 추적한다.
 # 이미 추적된 파일은 이 규칙의 영향을 받지 않는다. 디렉터리가 아니라 내용을 무시해야 아래 부정 규칙이 작동한다.
@@ -55,27 +36,5 @@ __pycache__/
 !/임시/*/장부.md
 !/임시/*/종료보고.md
 
-# 자동 회수 근거는 로컬 보존한다. 별도 백업·이관 시 경로와 해시를 확인한다.
-/research/pvsnp/literature-baseline/catalog/version-review-evidence/
-
-# 실행·묶음 배정 기록은 로컬 보존하며 별도 백업·이관에 포함한다.
-/research/pvsnp/literature-baseline/runs/
-/research/pvsnp/literature-baseline/manifests/version-review-v2-batch-*.json
-
-# 로컬 출력.
-/-
-
-# 수행계획서 작성·첨삭의 원자료, 중간 판본, 추출물과 도구를 로컬 보관한다.
-/임시/보관/수행계획서_2026-09-15/
-
 # do-math graphify local graph, semantic cache, and execution records.
 /.claude/graphify/
-
-# do-math 시험 선택 색인. T3 실행이 작업 트리마다 만드는 생성물이다(시험-재편 설계 5.3).
-/.*/skills/do-math/scripts/tests/.selection-index*
-# do-math 병렬 실행의 모듈별 시간 기록. 실행기가 작업 트리마다 갱신한다(시험-재편 설계 5.4).
-/.*/skills/do-math/scripts/tests/.timings.json
-# 측정한 T3의 시간 기록은 따로 둔다(시험-재편 설계 A29, 결함 D11).
-/.*/skills/do-math/scripts/tests/.timings-t3.json
-# do-math T3 증분 측정의 저장소. 실행기가 작업 트리마다 만든다(시험-재편 설계 A29).
-/.*/skills/do-math/scripts/tests/.t3-store/

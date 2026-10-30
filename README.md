@@ -1,30 +1,100 @@
-# 수학 연구 작업 공간
+# do-math
 
-이 저장소에는 수학 연구 공간과 do-math 실행 스킬, 지원 서비스, 설계·검증 문서, 작업 기억을 둔다. 2026-09-14에는 이전 연구 실행 상태를 정리했다. 그 뒤 시작하는 새 연구는 과거 탐사·수집·실험의 결과, 완료 판정과 대기 작업을 자동으로 이어받지 않는다.
+do-math runs long, unattended math research with Claude Code and Codex. You give it one mathematical goal, and a Python runner keeps launching planning, research, exploration, peer and review sessions until an independent review judges the goal achieved. A small example goal is: "Prove in Lean that n + 0 = n for every natural number n, and write an explanation faithful to that proof."
 
-## 진입점
+This repository holds do-math, the Claude Code skills I use to develop and operate it, and standalone tools I built alongside it.
 
-- [연구 공간과 보존 입력](research/README.md)
-- [do-math 사용 안내](.claude/skills/do-math/README.md)
-- [학술자료 MCP](services/scholarly-mcp/README.md)
-- [Jev CLI 사용 안내](services/jev-cli/README.md)
-- [do-math 교육 자료](docs/learning/do-math/MISSION.md)
-- [보편 연구 개념](CONTEXT.md)과 [도구 통합 설계](docs/do-math/통합-설계.md)
-- [작업 기억 색인](기억/색인.md)
-- [키 반복 도구](virtual-f-key-repeater/README.md)
+## What it does
 
-## 현재 디렉터리의 역할
+- **Five session roles.** A plan session decides what to work on next. Research sessions attack an assigned mathematical question; explore sessions instead get familiar with the problem and widen the understanding of it, looking for unexpected connections. A peer session then works through each finished piece as an independent fellow researcher. A review session, independent of both the author and the peer, judges what the work and the peer's response actually establish and which results later sessions may use. A review session is also what finally judges whether the goal has been achieved. Peer and review sessions never see the author's working files.
+- **A shared knowledge base per research goal.** Each research instance keeps the records its sessions publish, an index of those records, and a glossary that fixes the objects and notation the research uses. All sessions of the instance read them; nothing is published outside the instance.
+- **Formal proof by default.** A goal that asks for a proof or disproof counts as achieved only when a Lean theorem within the allowed axioms passes independent review, and the review judges the written explanation to be the same mathematics as the Lean proof. The allowed axioms are defined in [common.md](.claude/skills/do-math/common.md).
+- **Restart-safe.** If the runner or the machine stops, the same `start` command resumes the instance. The runner checks recorded sessions by process ID and OS creation time, processes what they left behind, and never relaunches a finished session.
+- **Official CLIs only.** Sessions run through `claude --print` and `codex exec` on your own logins and subscriptions. do-math does not call model APIs directly.
 
-- `.claude/skills/`는 스킬의 수기 편집 정본이고 `.agents/skills/`는 Codex용 생성 사본이다. 사본은 [생성 절차](.claude/skills/writing-skills/references/멀티런타임_동기화.md)에 따라 동기화한다.
-- `docs/`에는 설계, 구현 경과와 검증 기록을 둔다. 선별해 보존한 do-math 정적 검토 보고서와 그 고정 소스 근거는 `docs/do-math/review-evidence/`에 있다.
-- `research/`에는 연구 입력과 결과를, `services/`에는 독립 도구를, `기억/`에는 커밋과 결합한 작업 기억을 둔다.
-- `임시/`에는 Git이 추적하는 검증 자료와 Git에서 제외한 로컬 근거가 함께 있다. `docs/do-math/implementation-v5/traceability.json`이 가리키는 역사적 실행 사본은 해시 검사를 위해 이 저장소의 `임시/`에 유지한다.
-- `.skill-workspace/`는 도구체인과 로컬 실행 기반을 담는다. `.codex/reviews/`의 원시 검토 실행 출력은 Git에서 제외하며, 보존할 보고서와 근거는 `docs/`로 선별한다. `.credentials/`는 로컬 인증 정보다.
+## Who it's for
 
-## 2026-09-14 정리 이력
+I built do-math for my own math research. It is also meant for anyone who already uses Claude Code or Codex and wants to run one research goal across many sessions with independent checking, or wants a working example of that kind of long-running agent loop.
 
-당시의 `dag/`, `experiments/`, `.sdd/`, `임시/`와 연구 수집·판독·실행 디렉터리를 작업 트리에서 제거했다. 공통 스킬·서비스·설계·검증 기록·작업 기억은 보존했다. 교육 자료는 `docs/learning/do-math/`에 모았다. 현재 `임시/`의 검증 자료와 로컬 근거는 그 뒤에 생긴 것이다.
+## Built with
 
-일괄 삭제가 자동 승인 정책에 의해 거부되어, 제거 대상의 실물은 이 호스트의 `C:\math-retired-20260914`에 원래 상대 경로로 보관했다. 이 폴더는 Git 커밋·푸시에 포함되지 않으며 디스크 공간은 회수하지 않았다. 과거 문서의 연구·임시 파일 경로는 이 보관 폴더 또는 정리 전 Git 이력의 좌표다.
+- Python 3.12 or later, standard library only (runner and checker)
+- Claude Code CLI and/or Codex CLI
+- Lean 4, optionally with Mathlib
+- Git (each research instance keeps its own repository)
+- scholarly-mcp: Python with the MCP Python SDK, httpx and Playwright, pinned in [requirements.txt](services/scholarly-mcp/requirements.txt)
 
-인증 정보와 서비스 자료·검증 근거, Lean 도구체인은 로컬에 유지한다. 실행 중인 서비스의 Python 환경도 유지한다. 2026-09-14 당시 `.skill-workspace/`에 있던 도구체인 외 과거 실행 자료는 위 보관 폴더로 옮겼다.
+I develop and run it on Windows 11, and the commands below use PowerShell. Other operating systems are untested.
+
+## Repository layout
+
+```
+.claude/
+  skills/do-math/     the runner, checker, session instructions and tests
+  skills/...          11 supporting skills (listed below)
+  agents/             fixed model and effort subagent definitions
+  CLAUDE.md           project instructions for Claude Code
+.agents/              generated copy of the skills for Codex
+.codex/               Codex configuration
+services/             standalone tools (listed below)
+기억/                 the project's commit-linked working memory
+ROADMAP.md            planned work
+```
+
+## Running do-math
+
+The usual way is to open Claude Code or Codex in this repository and ask it to start research on a goal. The do-math skill then prepares the instance, starts the runner as a detached process, and tells you where to read the results.
+
+To do the same by hand:
+
+1. Check that `python` (3.12 or later), `git`, and the CLIs you want to use (`claude`, `codex`) are installed and logged in, and that Lean runs.
+2. Write the goal, its required conditions and permissions to a UTF-8 `goal.md`. Write a UTF-8 `settings.json` with the models, CLI paths, concurrency limit and Lean command. Section 1 of [protocol.md](.claude/skills/do-math/protocol.md) defines every field and gives an example.
+3. Create and start an instance. Choose a path that does not exist yet, outside this repository or under the ignored `.skill-workspace/` folder, because each instance gets its own Git repository.
+
+```powershell
+$skill = 'C:/path/to/do-math/.claude/skills/do-math'
+$instance = 'C:/path/to/do-math/.skill-workspace/do-math/add-zero'
+python "$skill/runner.py" init $instance --goal C:/path/to/goal.md --settings C:/path/to/settings.json
+python "$skill/runner.py" start $instance
+python "$skill/runner.py" status $instance
+```
+
+4. Read the results from `<instance>/knowledge/index.md`. `python "$skill/runner.py" stop $instance` stops new dispatches and lets running sessions finish.
+
+[SKILL.md](.claude/skills/do-math/SKILL.md) and [RUNTIME.md](.claude/skills/do-math/RUNTIME.md) cover the remaining commands: sending input to a running instance, ending a single session, and restarting.
+
+## Standalone tools
+
+None of these is required to run do-math. Research and explore sessions use scholarly-mcp as their default literature search tool when it is configured, and the current version of do-math was built with async-development.
+
+- [services/scholarly-mcp](services/scholarly-mcp/README.md): a local MCP server that searches 49 academic sources and saves bibliographic data, abstracts, full text and supplements. Some of its sources currently go through one university library's access proxy.
+- [services/continuous-development](services/continuous-development/README.md): runs a development goal as phases of parallel Codex task sessions, with a manager session that plans each next phase.
+- [services/async-development](services/async-development/README.md): a manager session reviews each Codex worker's result, merges accepted work and assigns the next tasks as soon as their inputs are ready.
+- [services/jev-cli](services/jev-cli/README.md): a command-line client for TypeSafe's Jev judgment API.
+
+## Supporting skills
+
+| Skill | Purpose |
+|---|---|
+| graphify | A knowledge graph of do-math's own documents and scripts, for finding where a rule or procedure comes from |
+| verify-rounds | Rounds in which several agents review a finished artifact and fix what they find |
+| write-for-reader | Designing, writing and revising text that a person or an AI will act on, and interviewing the user when a decision is missing |
+| grilling, grill-me | An interview that stress-tests a plan one question at a time |
+| skill-creator | Creating, improving and benchmarking skills |
+| writing-skills | Principles for writing skill descriptions, structure and tests |
+| simplify | A short self-check: is this the simplest way to do what I am trying to do? |
+| memory-harness | The structure and rules of the working-memory graph in `기억/` |
+| commit-harness | The commit procedure that pairs every commit with a memory node |
+| dream-harness | On request, synthesizes accumulated memory nodes into current principles and conventions |
+
+## Language
+
+Most documentation, skill text and commit messages are in Korean. Porting the skills to English with their behavior kept identical is planned; see the roadmap.
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md).
+
+## License
+
+This project is licensed under the [Mozilla Public License 2.0](LICENSE). Four skill directories are adapted from third-party projects and keep their original licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
