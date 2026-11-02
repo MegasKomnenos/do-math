@@ -27,6 +27,7 @@ def main(argv):
         return 0
     threads = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--threads=")), None)
     source = argv[-1]
+    olean = next((argv[i + 1] for i, arg in enumerate(argv[:-1]) if arg == "-o"), None)
     with open(source, encoding="utf-8") as stream:
         lines = stream.read().splitlines()
     imports = [line for line in lines if line.startswith("import ")]
@@ -34,6 +35,15 @@ def main(argv):
     if missing:
         print(f"{source}:1:0: error: unknown module prefix 'Missing'")
         return 1
+    # Like Lean, a module outside the library is found only as <entry>/<path>.olean on LEAN_PATH.
+    search = [p for p in os.environ.get("LEAN_PATH", "").split(os.pathsep) if p]
+    for line in imports:
+        name = line.split()[1]
+        if name.split(".")[0] in ("Mathlib", "Init", "Std", "Lean"):
+            continue
+        if not any(os.path.isfile(os.path.join(entry, *name.split(".")) + ".olean") for entry in search):
+            print(f"{source}:1:0: error: unknown module prefix '{name}'")
+            return 1
     options = {}
     for line in lines:
         if line.startswith("-- fake:"):
@@ -55,7 +65,11 @@ def main(argv):
         print(f"{source}:1:0: warning: declaration uses 'sorry'")
     sys.stdout.flush()
     del held
-    return int(options.get("exit", 0))
+    code = int(options.get("exit", 0))
+    if olean and code == 0:  # like Lean, an .olean appears only for a compile that succeeded
+        with open(olean, "w", encoding="utf-8") as stream:
+            stream.write(f"fake olean of {source}\n")
+    return code
 
 
 if __name__ == "__main__":

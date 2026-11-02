@@ -115,6 +115,25 @@ class BrokerFixture(unittest.TestCase):
         with patch.object(lean_broker, "ensure_broker", return_value={}):
             return lean_broker.submit(self.paths, path, expect_mb, session)["job"]
 
+    def build(self, root, targets, expect_mb=60, session="s1"):
+        with patch.object(lean_broker, "ensure_broker", return_value={}):
+            return lean_broker.build(self.paths, root, targets, expect_mb, session)["build"]
+
+    def tree(self, session="s1", **overrides):
+        """A, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
+        root = self.instance / "sessions" / session / "work" / "lean"
+        plan = {"A": (("Mathlib.Data.Nat.Basic",), {"sleep": 0.3}), "B": (("A",), {"sleep": 0.5}),
+                "C": (("A",), {"sleep": 0.5}), "D": (("B", "C"), {"marker": "TARGET-D"})}
+        for name, (imports, fake) in plan.items():
+            source(root / f"{name}.lean", imports=imports, **overrides.get(name, fake))
+        return root
+
+    def build_record(self, build_id):
+        return self.broker.state["builds"][build_id]
+
+    def module_job(self, build_id, name):
+        return self.broker.state["jobs"][self.build_record(build_id)["modules"][name]["job"]]
+
     def jobs(self, *statuses):
         return [j for j in self.broker.state["jobs"].values() if j["status"] in statuses]
 
@@ -583,6 +602,108 @@ class BrokerTests(BrokerFixture):
         self.assertTrue(self.broker.should_exit())
 
 
+class BuildTests(BrokerFixture):
+    def test_build_follows_imports_caches_and_rebuilds_only_what_changed(self):
+        self.start_broker()
+        root = self.tree()
+        first = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(first)["status"] in lean_broker.FINISHED)
+        record = self.build_record(first)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertEqual(list(record["modules"]), ["A", "B", "C", "D"])  # dependency order
+        self.assertTrue(all(m["status"] == "finished" and m["exit_code"] == 0 for m in record["modules"].values()))
+        a, b, c, d = (self.module_job(first, n) for n in "ABCD")
+        self.assertLessEqual(a["finished_at"], min(b["started_at"], c["started_at"]))
+        self.assertLess(max(b["started_at"], c["started_at"]), min(b["finished_at"], c["finished_at"]))  # side by side
+        self.assertLessEqual(max(b["finished_at"], c["finished_at"]), d["started_at"])
+        self.assertEqual(b["deps"], [a["id"]])
+        self.assertIn("-R", runner.read_json(self.paths.job(d["id"]) / "launch.json")["argv"])
+        self.assertTrue((Path(record["lib"]) / "D.olean").is_file())
+        self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 4)
+        # External imports alone key the calibration: B's closure is the empty one, not "A".
+        self.assertEqual(b["closure"], lean_broker.closure_key(self.broker.state["version"], []))
+        # The same bytes again: every module comes from the cache, no compile runs, the output is replayed.
+        jobs_before = len(self.broker.state["jobs"])
+        second = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(second)["status"] in lean_broker.FINISHED)
+        self.assertTrue(all(m["status"] == "cached" for m in self.build_record(second)["modules"].values()))
+        self.assertEqual(len(self.broker.state["jobs"]), jobs_before)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = lean_broker.report_build(self.paths, self.build_record(second))
+        self.assertEqual(code, 0)
+        self.assertIn("TARGET-D", out.getvalue())
+        summary = json.loads(err.getvalue().split("lean-broker: ", 1)[1])
+        self.assertEqual(summary["status"], "finished")
+        self.assertTrue(all(m["cached"] for m in summary["modules"]))
+        # A change in B reaches D through the keys; A and C stay cached.
+        with (root / "B.lean").open("a", encoding="utf-8") as stream:
+            stream.write("-- changed\n")
+        third = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(third)["status"] in lean_broker.FINISHED)
+        statuses = {n: m["status"] for n, m in self.build_record(third)["modules"].items()}
+        self.assertEqual(statuses, {"A": "cached", "B": "finished", "C": "cached", "D": "finished"})
+        self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 6)
+
+    def test_failed_module_fails_its_dependents_with_the_reason(self):
+        self.start_broker()
+        root = self.tree(A={"exit": 1})
+        build_id = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "failed")
+        self.assertEqual(record["modules"]["A"]["status"], "finished")
+        self.assertEqual(record["modules"]["A"]["exit_code"], 1)
+        for name in "BC":
+            self.assertEqual(record["modules"][name]["status"], "failed")
+            self.assertIn("dependency A ended with exit code 1", record["modules"][name]["reason"])
+        self.assertIn("dependency", record["modules"]["D"]["reason"])
+        self.assertIn("module B failed", record["reason"])
+        self.assertFalse(list(self.paths.cache.glob("*.olean")))
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lean_broker.report_build(self.paths, record), 3)
+
+    def test_build_rejects_bad_targets_cycles_and_shadowing(self):
+        self.start_broker()
+        root = self.tree()
+        with self.assertRaisesRegex(ValueError, "not in the subpath|not a module path"):
+            self.build(root, [self.instance / "goal.md"])
+        with self.assertRaisesRegex(ValueError, "does not exist"):
+            self.build(root, [root / "Nope.lean"])
+        source(root / "X.lean", imports=("Y",))
+        source(root / "Y.lean", imports=("X",))
+        cyclic = self.build(root, [root / "X.lean"])
+        self.until(lambda: self.build_record(cyclic)["status"] in lean_broker.FINISHED)
+        self.assertIn("import cycle", self.build_record(cyclic)["reason"])
+        source(root / "Mathlib" / "Foo.lean", imports=())
+        source(root / "Shadow.lean", imports=("Mathlib.Foo", "Mathlib.Data.Nat.Basic"))
+        shadowing = self.build(root, [root / "Shadow.lean"])
+        self.until(lambda: self.build_record(shadowing)["status"] in lean_broker.FINISHED)
+        self.assertIn("shadow", self.build_record(shadowing)["reason"])
+        self.assertFalse(self.jobs("queued", "running"))
+
+    def test_state_written_before_builds_existed_still_accepts_a_build(self):
+        runner.write_json(self.paths.state, {"jobs": {}, "version": None})  # no "builds": an older broker's state
+        self.start_broker()
+        root = self.tree()
+        build_id = self.build(root, [root / "A.lean"])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        self.assertEqual(self.build_record(build_id)["status"], "finished")
+
+    def test_cancelling_a_build_stops_its_queue(self):
+        self.start_broker()
+        root = self.tree(A={"sleep": 30})
+        build_id = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
+        lean_broker.cancel(self.paths, build_id)
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "cancelled")
+        self.assertEqual(record["modules"]["A"]["status"], "cancelled")
+        self.assertTrue(all(m["status"] in ("cancelled", "failed") for m in record["modules"].values()))
+        self.assertFalse(runner.alive(self.module_job(build_id, "A").get("lean")))
+
+
 class ClientAndLifecycleTests(BrokerFixture):
     def cli(self, *args, timeout=60):
         return subprocess.run([sys.executable, "-B", str(lean_broker.SCRIPT), *args],
@@ -719,6 +840,31 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertNotEqual(second["process"], first["process"])
         runner.terminate_process(second["process"])
         engine.broker.wait(timeout=10)
+
+    def test_build_command_relays_the_target_and_waits_on_a_build_id(self):
+        root = self.tree()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = lean_broker.main(["build", str(self.instance), str(root), "D.lean",
+                                     "--session", "s1", "--expect-mb", "60"])
+        self.assertEqual(code, 0, err.getvalue())
+        self.assertIn("TARGET-D", out.getvalue())
+        summary = json.loads(err.getvalue().strip().splitlines()[-1].split("lean-broker: ", 1)[1])
+        self.assertEqual(summary["status"], "finished")
+        self.assertEqual([m["module"] for m in summary["modules"]], ["A", "B", "C", "D"])
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.assertEqual(lean_broker.main(["build", str(self.instance), str(root), "D.lean",
+                                               "--session", "s1", "--expect-mb", "60", "--no-wait"]), 0)
+        build_id = json.loads(out.getvalue())["build"]
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.assertEqual(lean_broker.main(["wait", str(self.instance), build_id, "--timeout", "60"]), 0)
+        self.assertIn("TARGET-D", out.getvalue())  # replayed from the cache: nothing was compiled again
+        self.assertIn('"cached": true', err.getvalue())
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(lean_broker.main(["result", str(self.instance), build_id]), 0)
+        self.assertIn("builds", json.dumps(lean_broker.broker_status(self.paths)))
 
 
 if __name__ == "__main__":

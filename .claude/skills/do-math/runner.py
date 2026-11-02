@@ -657,7 +657,10 @@ class Runner:
                   f"Lean runs only through the instance's Lean broker, which queues every compile of this instance within one memory budget "
                   f"and returns its measured cost; {self.skill / 'LEAN.md'} explains the commands and the estimate it asks for. "
                   f"To compile a file, run the following argv with the file's absolute path and your estimate of its peak memory in MiB:\n"
-                  f"{json.dumps([sys.executable, str(self.skill / 'lean_broker.py'), 'run', str(self.instance), '<file.lean>', '--session', sid, '--expect-mb', '<MiB>'], ensure_ascii=False)}\n")
+                  f"{json.dumps([sys.executable, str(self.skill / 'lean_broker.py'), 'run', str(self.instance), '<file.lean>', '--session', sid, '--expect-mb', '<MiB>'], ensure_ascii=False)}\n"
+                  f"To compile a file that imports your own modules, give the module root (the folder under which <root>/Foo/Bar.lean is the module Foo.Bar) "
+                  f"and the target files; the broker compiles every module they import first, in dependency order, and reuses modules it has built before:\n"
+                  f"{json.dumps([sys.executable, str(self.skill / 'lean_broker.py'), 'build', str(self.instance), '<root>', '<target.lean>', '--session', sid, '--expect-mb', '<MiB>'], ensure_ascii=False)}\n")
         if category == "plan":
             prompt += (f"Read already-posted unfinished requests and supersession intents from requests in {self.state_path}. "
                        f"Follow {self.skill / 'RUNTIME.md'} for how to read them and what the statuses mean.\n")

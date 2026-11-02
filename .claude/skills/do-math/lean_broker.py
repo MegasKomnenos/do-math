@@ -21,6 +21,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -45,6 +46,10 @@ KEEP_FINISHED = 200  # finished job records kept in the broker state; result.jso
 READY_SECONDS = 20.0
 IMPORT = re.compile(r"^import\s+(\S+)")
 JOB_ID = re.compile(r"^[jc][0-9a-f]{32}$")  # a job folder name; anything else never touches the file system
+BUILD_ID = re.compile(r"^b[0-9a-f]{32}$")
+MODULE_PART = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")  # one component of a module name, as a file name
+# Modules of the toolchain itself; a local module under these names would shadow them for every compile.
+TOOLCHAIN_ROOTS = ("Init", "Lean", "Std", "Lake")
 
 
 # ----------------------------------------------------------------------------- files
@@ -60,14 +65,19 @@ class Paths:
         self.queue = self.root / "queue"
         self.jobs = self.root / "jobs"
         self.sources = self.root / "calibration"
+        self.builds = self.root / "builds"
+        self.cache = self.root / "cache"  # one .olean per module key; written once, never changed
         self.log = self.root / "broker.log"
 
     def ensure(self):
-        for directory in (self.root, self.queue, self.jobs, self.sources):
+        for directory in (self.root, self.queue, self.jobs, self.sources, self.builds, self.cache):
             directory.mkdir(parents=True, exist_ok=True)
 
     def job(self, job_id):
         return self.jobs / job_id
+
+    def build(self, build_id):
+        return self.builds / build_id
 
 
 def read_imports(path):
@@ -95,6 +105,72 @@ def read_imports(path):
 def closure_key(version, imports):
     """One key per (Lean version, import set); a new Lean makes old baselines invisible."""
     return hashlib.sha256(((version or "") + "\n" + "\n".join(imports)).encode("utf-8")).hexdigest()[:16]
+
+
+# ------------------------------------------------------------------- module trees
+
+def module_name(root, path):
+    """`<root>/Foo/Bar.lean` is the module `Foo.Bar`, exactly as `lean -R <root>` names it."""
+    relative = Path(path).resolve().relative_to(Path(root).resolve())
+    parts = relative.with_suffix("").parts
+    if relative.suffix != ".lean" or not all(MODULE_PART.match(p) for p in parts):
+        raise ValueError(f"not a module path under the root: {path}")
+    return ".".join(parts)
+
+
+def module_path(root, name):
+    return Path(root).joinpath(*name.split(".")).with_suffix(".lean")
+
+
+def discover_modules(root, targets):
+    """The targets and every local module they import, directly or not, in dependency order.
+
+    An import is local when `<root>/<its path>.lean` exists; anything else is external
+    (Mathlib, the toolchain). Returns [(name, {"source", "imports", "local", "external"})]
+    with every module after the ones it imports. Rejects an import cycle, an unreadable
+    file, and a local module that would shadow the toolchain or an external import."""
+    root = Path(root).resolve()
+    modules, order, visiting = {}, [], []
+
+    def visit(name):
+        if name in modules:
+            return
+        if name in visiting:
+            cycle = visiting[visiting.index(name):] + [name]
+            raise ValueError("import cycle: " + " -> ".join(cycle))
+        visiting.append(name)
+        source = module_path(root, name)
+        imports = read_imports(source)  # OSError if the file cannot be read
+        local = [i for i in imports if module_path(root, i).is_file()]
+        for dep in local:
+            visit(dep)
+        visiting.pop()
+        modules[name] = {"source": str(source), "imports": imports, "local": local,
+                         "external": [i for i in imports if i not in local]}
+        order.append(name)
+
+    for target in targets:
+        visit(module_name(root, target))
+    external_roots = {i.split(".")[0] for m in modules.values() for i in m["external"]} | set(TOOLCHAIN_ROOTS)
+    for name in order:
+        if name.split(".")[0] in external_roots:
+            raise ValueError(f"local module {name} would shadow a library module of the same name")
+    return [(name, modules[name]) for name in order]
+
+
+def module_keys(version, modules):
+    """The cache key of each module: Lean version, module name, source bytes and the keys of its local imports.
+
+    A change anywhere below a module changes its key, so a stale .olean can never be
+    reached; the same bytes built by two sessions get the same key and the same .olean."""
+    keys = {}
+    for name, module in modules:
+        digest = hashlib.sha256()
+        for part in [version or "", name, Path(module["source"]).read_bytes()] + [keys[d] for d in module["local"]]:
+            digest.update(part if isinstance(part, bytes) else part.encode("utf-8"))
+            digest.update(b"\n")
+        keys[name] = digest.hexdigest()[:32]
+    return keys
 
 
 # ---------------------------------------------------------------------- processes
@@ -390,6 +466,7 @@ class Broker:
         self.settings_stamp = None
         self.state = read_json(self.paths.state) if self.paths.state.exists() else {}
         self.state.setdefault("jobs", {})
+        self.state.setdefault("builds", {})
         self.state.setdefault("version", None)
         self.calibration = Calibration(self.paths.calibration)
         self.hosts = {}
@@ -497,20 +574,28 @@ class Broker:
                 continue
             job_id = path.stem
             try:
-                if not JOB_ID.match(job_id):
+                if not JOB_ID.match(job_id) and not BUILD_ID.match(job_id):
                     raise ValueError(f"not a job ID: {job_id}")
                 request = read_json(path)
                 if request.get("id") != job_id:
                     raise ValueError("the request's id does not match its file name")
-                source = request["source"]
                 expect = request["expect_mb"]
-                if type(expect) is not int or expect < 1 or not isinstance(source, str):
-                    raise ValueError("expect_mb must be a positive integer and source a path")
+                if type(expect) is not int or expect < 1:
+                    raise ValueError("expect_mb must be a positive integer")
+                if BUILD_ID.match(job_id):
+                    self.ingest_build(job_id, request)
+                    path.unlink(missing_ok=True)
+                    continue
+                source = request["source"]
+                if not isinstance(source, str):
+                    raise ValueError("source must be a path")
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
-                if JOB_ID.match(job_id):
-                    self.paths.job(job_id).mkdir(exist_ok=True)
-                    write_json(self.paths.job(job_id) / "result.json",
+                folder = self.paths.build(job_id) if BUILD_ID.match(job_id) else \
+                    self.paths.job(job_id) if JOB_ID.match(job_id) else None
+                if folder is not None:
+                    folder.mkdir(exist_ok=True)
+                    write_json(folder / "result.json",
                                {"id": job_id, "status": "failed", "reason": f"request rejected: {exc}"})
                 path.unlink(missing_ok=True)
                 continue
@@ -528,20 +613,104 @@ class Broker:
             except OSError as exc:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
-            job = {"id": job_id, "kind": "compile", "session": request.get("session") or "unknown",
-                   "source": source, "cwd": self.lean_cwd(request.get("session")),
-                   "expect_mb": expect, "imports": imports,
-                   "closure": closure_key(self.state["version"], imports),
-                   "threads": self.config["threads"], "submitted_at": request.get("submitted_at", now),
-                   "status": "queued", "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None,
-                   "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
-                   "exit_code": None, "launch_error": None, "reason": None}
+            job = self.new_job(job_id, request, source, imports, imports)
             write_json(job_dir / "job.json", job)
             self.state["jobs"][job_id] = job
             self.dirty = True
             self.save()
             path.unlink(missing_ok=True)
             self.log(event="queued", job=job_id, session=job["session"], expect_mb=expect, imports=len(imports))
+
+    def ingest_build(self, build_id, request):
+        """Expand a build request into one job per module that is not already in the cache.
+
+        Modules are discovered from the targets' import headers; cached ones are copied
+        into the build's own lib folder, the rest become jobs chained by `deps`. A build
+        whose modules are all cached is complete at once. Any error here fails the
+        whole build with its reason (an import cycle, a shadowing name, an unreadable
+        file), since no module compile could make it right."""
+        root, targets, session = request["root"], request["targets"], request.get("session") or "unknown"
+        folder = self.paths.build(build_id)
+        folder.mkdir(exist_ok=True)
+        lib = folder / "lib"
+        build = {"id": build_id, "session": session, "root": root, "targets": [], "lib": str(lib),
+                 "expect_mb": request["expect_mb"], "submitted_at": request.get("submitted_at", time.time()),
+                 "status": "queued", "modules": {}, "finished_at": None, "reason": None}
+        jobs = {}
+        try:
+            build["targets"] = [module_name(root, t) for t in targets]
+            duplicate = next((b for b in self.state["builds"].values() if b["status"] in ACTIVE
+                              and b["session"] == session and b["root"] == root
+                              and b["targets"] == build["targets"]), None)
+            if duplicate:
+                write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
+                return
+            modules = discover_modules(root, targets)
+            keys = module_keys(self.state["version"], modules)
+            for name, module in modules:
+                olean = lib.joinpath(*name.split(".")).with_suffix(".olean")
+                entry = {"key": keys[name], "source": module["source"], "job": None, "status": None,
+                         "exit_code": None, "olean": str(olean)}
+                cached = self.paths.cache / (keys[name] + ".olean")
+                if cached.is_file():
+                    olean.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(cached, olean)
+                    entry.update(status="cached", exit_code=0)
+                else:
+                    job_id = "j" + uuid.uuid4().hex
+                    deps = [jobs[d] for d in module["local"] if d in jobs]
+                    job = self.new_job(job_id, request, module["source"], module["imports"], module["external"],
+                                       build=build_id, module=name, root=root, lib=str(lib), olean=str(olean),
+                                       deps=deps, key=keys[name])
+                    self.paths.job(job_id).mkdir(exist_ok=True)
+                    write_json(self.paths.job(job_id) / "job.json", job)
+                    self.state["jobs"][job_id] = job
+                    jobs[name] = job_id
+                    entry.update(job=job_id, status="queued")
+                build["modules"][name] = entry
+        except (OSError, ValueError) as exc:
+            build.update(status="failed", reason=str(exc), finished_at=time.time())
+            for job_id in jobs.values():
+                self.cancel(self.state["jobs"][job_id], f"build {build_id} failed: {exc}")
+            self.log(event="build_failed", build=build_id, session=session, reason=str(exc))
+        self.state["builds"][build_id] = build
+        write_json(folder / "build.json", build)
+        self.dirty = True
+        if build["status"] == "queued":
+            self.log(event="build_queued", build=build_id, session=session, modules=len(build["modules"]),
+                     cached=sum(m["status"] == "cached" for m in build["modules"].values()))
+            self.settle_build(build)
+        else:
+            write_json(folder / "result.json", build)
+        self.save()
+
+    def settle_build(self, build):
+        """Close the build once no module of it is queued or running any more."""
+        modules = build["modules"]
+        if any(m["status"] in ACTIVE for m in modules.values()):
+            return
+        broken = next((n for n, m in modules.items() if m["status"] == "failed"), None) \
+            or next((n for n, m in modules.items() if m["status"] == "cancelled"), None)
+        if broken is None:
+            build["status"] = "finished"
+        else:
+            build["status"] = modules[broken]["status"]
+            build["reason"] = f"module {broken} {modules[broken]['status']}: {modules[broken].get('reason')}"
+        build["finished_at"] = time.time()
+        write_json(self.paths.build(build["id"]) / "result.json", build)
+        self.dirty = True
+        self.log(event="build_" + build["status"], build=build["id"], session=build["session"], reason=build["reason"])
+
+    def new_job(self, job_id, request, source, imports, external, **extra):
+        """A queued compile job; `external` imports alone key its calibration closure."""
+        session = request.get("session") or "unknown"
+        return {"id": job_id, "kind": "compile", "session": session, "source": source,
+                "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
+                "external": external, "closure": closure_key(self.state["version"], external),
+                "threads": self.config["threads"], "submitted_at": request.get("submitted_at", time.time()),
+                "status": "queued", "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None,
+                "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
+                "exit_code": None, "launch_error": None, "reason": None, **extra}
 
     def calibration_job(self, closure, imports):
         """An imports-only compile whose peak is the closure's baseline; real jobs wait for it."""
@@ -588,7 +757,10 @@ class Broker:
                 self.hosts.pop(job_id, None)
             receipt = job_dir / "process.json"
             if job.get("lean") is None and receipt.exists():
-                data = read_json(receipt)
+                try:
+                    data = read_json(receipt)
+                except (OSError, ValueError):
+                    continue  # the host is still writing it (Windows refuses a read mid-replace); next poll
                 job.update(lean=data["process"], pid=data["pid"], started_at=data["started_at"])
                 self.dirty = True
             if job.get("cancel_requested") and not job.get("terminated") and job.get("pid") and alive(job.get("lean")):
@@ -636,18 +808,83 @@ class Broker:
             job["reason"] = job["launch_error"] or "no exit code was recorded"
         else:
             job["status"] = "finished"
+        if job.get("build"):
+            self.finish_module(job)
         write_json(self.paths.job(job["id"]) / "result.json", job)
         self.dirty = True
         self.log(event=job["status"], job=job["id"], session=job["session"], exit_code=job["exit_code"],
                  measured=measured)
         self.prune()
 
+    def finish_module(self, job):
+        """Record a module's outcome in its build, keep a successful .olean in the cache, settle the build."""
+        if job["status"] == "finished" and job["exit_code"] == 0:
+            if Path(job["olean"]).is_file():
+                self.cache_module(job["key"], Path(job["olean"]), self.paths.job(job["id"]))
+            else:
+                job.update(status="failed", reason="Lean exited with code 0 but wrote no .olean")
+        build = self.state["builds"].get(job["build"])
+        if build is None:
+            return
+        build["modules"][job["module"]].update(status=job["status"], exit_code=job["exit_code"],
+                                               reason=job.get("reason"), measured=job.get("measured"))
+        self.settle_build(build)
+
+    def cache_module(self, key, olean, job_dir):
+        """Copy a built .olean and its Lean output into the cache under the module key, written once.
+
+        The same key means the same bytes, so an entry that already exists is left alone,
+        and so is one that Windows will not let us replace because a compile has it open."""
+        for suffix, source in ((".olean", olean), (".stdout.log", job_dir / "stdout.log"),
+                               (".stderr.log", job_dir / "stderr.log")):
+            target = self.paths.cache / (key + suffix)
+            if target.exists() or not source.is_file():
+                continue
+            temporary = self.paths.cache / f".{key}{suffix}.{uuid.uuid4().hex}"
+            try:
+                shutil.copyfile(source, temporary)
+                os.replace(temporary, target)
+            except OSError as exc:
+                temporary.unlink(missing_ok=True)
+                self.log(event="cache_skipped", key=key, file=target.name, error=str(exc))
+
     def prune(self):
-        """Keep the KEEP_FINISHED most recently finished jobs in the state; result.json files stay."""
-        finished = sorted((j for j in self.state["jobs"].values() if j["status"] in FINISHED),
+        """Keep the KEEP_FINISHED most recently finished jobs and builds in the state; result.json files stay.
+
+        A finished job that a queued job still imports is kept, whatever its age. A
+        pruned build loses its lib folder, which no compile reads once the build is over."""
+        needed = {d for j in self.state["jobs"].values() if j["status"] in ACTIVE for d in j.get("deps", [])}
+        finished = sorted((j for j in self.state["jobs"].values() if j["status"] in FINISHED and j["id"] not in needed),
                           key=lambda j: j["finished_at"] or 0)
         for job in finished[:-KEEP_FINISHED] if len(finished) > KEEP_FINISHED else []:
             del self.state["jobs"][job["id"]]
+        builds = sorted((b for b in self.state["builds"].values() if b["status"] in FINISHED),
+                        key=lambda b: b["finished_at"] or 0)
+        for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
+            del self.state["builds"][build["id"]]
+            shutil.rmtree(build["lib"], ignore_errors=True)
+
+    def deps_done(self, job):
+        """True when every module this job imports has been compiled with exit code 0."""
+        return all(self.state["jobs"].get(d, {}).get("status") == "finished"
+                   and self.state["jobs"][d].get("exit_code") == 0 for d in job.get("deps", []))
+
+    def propagate(self):
+        """A queued job whose import ended without a usable .olean cannot compile; close it with the reason."""
+        for job in list(self.state["jobs"].values()):
+            if job["status"] != "queued":
+                continue
+            for dep_id in job.get("deps", []):
+                dep = self.state["jobs"].get(dep_id)
+                usable = dep is not None and (dep["status"] not in FINISHED
+                                              or (dep["status"] == "finished" and dep["exit_code"] == 0))
+                if usable:
+                    continue
+                why = "is unknown" if dep is None else dep["status"] if dep["status"] != "finished" \
+                    else f"ended with exit code {dep['exit_code']}"
+                self.finish(job, {"exit_code": None,
+                                  "launch_error": f"dependency {dep.get('module', dep_id) if dep else dep_id} {why}"})
+                break
 
     def cancel(self, job, reason):
         job["cancel_requested"] = True
@@ -657,6 +894,8 @@ class Broker:
             job["finished_at"] = time.time()
             job["status"] = "cancelled"
             job["measured"] = job["measured"] or {"peak_mb": 0.0, "current_mb": 0.0, "seconds": 0.0}
+            if job.get("build"):
+                self.finish_module(job)
             write_json(self.paths.job(job["id"]) / "result.json", job)
             self.log(event="cancelled", job=job["id"], reason=reason)
             return
@@ -731,11 +970,13 @@ class Broker:
                 job["waiting_for"] = None
                 continue
             if job["closure"] not in pending_calibration:
-                created = self.calibration_job(job["closure"], job["imports"])
+                # Only the external imports are calibrated: a local module's .olean exists in no
+                # calibration, and its cost is small beside the library's and is measured as excess.
+                created = self.calibration_job(job["closure"], job.get("external", job["imports"]))
                 pending_calibration[job["closure"]] = created["id"]
                 queued.insert(0, created)
             job["waiting_for"] = pending_calibration[job["closure"]]
-        eligible = [j for j in queued if not j.get("waiting_for")]
+        eligible = [j for j in queued if not j.get("waiting_for") and self.deps_done(j)]
         if not eligible:
             return
         try:
@@ -755,15 +996,28 @@ class Broker:
     def launch(self, job):
         job_dir = self.paths.job(job["id"])
         lean = self.settings["lean"]
-        argv = list(lean["command"]) + [f"--threads={job['threads']}", job["source"]]
+        argv = list(lean["command"]) + [f"--threads={job['threads']}"]
+        env = dict(lean["env"])
+        if job.get("olean"):
+            # A module of a build: named from its root, written as .olean into the build's lib,
+            # which goes on the search path so that the modules built before it are found.
+            argv += ["-R", job["root"], "-o", job["olean"]]
+            env["LEAN_PATH"] = os.pathsep.join(
+                p for p in (job["lib"], env.get("LEAN_PATH") or os.environ.get("LEAN_PATH")) if p)
+        argv.append(job["source"])
         job["measured"] = {"peak_mb": 0.0, "current_mb": 0.0, "seconds": None}
         job["status"] = "running"
         job["started_at"] = time.time()
+        if job.get("build") in self.state["builds"]:
+            build = self.state["builds"][job["build"]]
+            build["modules"][job["module"]]["status"] = build["status"] = "running"
         self.dirty = True
         try:
             if not Path(job["source"]).is_file():
                 raise OSError(f"source does not exist: {job['source']}")
-            write_json(job_dir / "launch.json", {"argv": argv, "cwd": job["cwd"], "env": lean["env"],
+            if job.get("olean"):
+                Path(job["olean"]).parent.mkdir(parents=True, exist_ok=True)
+            write_json(job_dir / "launch.json", {"argv": argv, "cwd": job["cwd"], "env": env,
                                                  "priority": self.config["priority"], "broker": self.identity})
             with (job_dir / "host.log").open("ab") as log:
                 host = subprocess.Popen([sys.executable, "-B", str(SCRIPT), "_job", str(job_dir)],
@@ -827,6 +1081,7 @@ class Broker:
         self.collect()
         self.ingest()
         self.cancel_orphans()
+        self.propagate()
         self.schedule()
         self.save()
 
@@ -834,6 +1089,7 @@ class Broker:
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
         self.state = read_json(self.paths.state) if self.paths.state.exists() else self.state
         self.state.setdefault("jobs", {})
+        self.state.setdefault("builds", {})  # a state written before builds existed
         self.state.setdefault("version", None)
         self.reload_settings()
         if self.config is None:
@@ -905,13 +1161,43 @@ def submit(paths, source, expect_mb, session):
     return {"job": job_id, "dir": str(paths.job(job_id)), "session": session, "expect_mb": expect_mb}
 
 
+def build(paths, root, targets, expect_mb, session):
+    """Queue a build of the targets and the local modules they import; the broker reads the headers."""
+    root = Path(root).resolve()
+    if not root.is_dir():
+        raise ValueError(f"module root is not a folder: {root}")
+    names = []
+    for target in targets:
+        target = Path(target)
+        target = (target if target.is_absolute() else root / target).resolve()
+        if not target.is_file():
+            raise ValueError(f"target does not exist: {target}")
+        names.append(module_name(root, target))  # also rejects a target outside the root
+    if not names:
+        raise ValueError("at least one target file is required")
+    if type(expect_mb) is not int or expect_mb < 1:
+        raise ValueError("--expect-mb must be a positive integer: the probable peak private memory of one module compile in MiB")
+    if not isinstance(session, str) or not session.strip():
+        raise ValueError("--session must be your session ID")
+    ensure_broker(paths)
+    build_id = "b" + uuid.uuid4().hex
+    request = {"id": build_id, "kind": "build", "root": str(root), "targets": [str(module_path(root, n)) for n in names],
+               "expect_mb": expect_mb, "session": session, "submitted_at": time.time()}
+    temporary = paths.queue / ("." + build_id)
+    write_json(temporary, request)
+    temporary.rename(paths.queue / (build_id + ".json"))
+    return {"build": build_id, "dir": str(paths.build(build_id)), "session": session, "expect_mb": expect_mb,
+            "targets": names}
+
+
 def job_record(paths, job_id):
-    """The job's current record from the result or the broker state, or None if unknown."""
-    result = paths.job(job_id) / "result.json"
+    """The job's or build's current record from the result or the broker state, or None if unknown."""
+    is_build = BUILD_ID.match(job_id) is not None
+    result = (paths.build(job_id) if is_build else paths.job(job_id)) / "result.json"
     if result.exists():
         return read_json(result)
     if paths.state.exists():
-        record = read_json(paths.state).get("jobs", {}).get(job_id)
+        record = read_json(paths.state).get("builds" if is_build else "jobs", {}).get(job_id)
         if record:
             return record
     if (paths.queue / (job_id + ".json")).exists():
@@ -940,17 +1226,10 @@ def wait(paths, job_id, timeout=None):
                               "hint": f"the job continues; run wait {job_id} again"}), file=sys.stderr, flush=True)
             return 124
         time.sleep(POLL)
+    if BUILD_ID.match(job_id):
+        return report_build(paths, record)
     job_dir = paths.job(job_id)
-    for name, stream in (("stdout.log", sys.stdout), ("stderr.log", sys.stderr)):
-        path = job_dir / name
-        if path.exists():
-            stream.flush()
-            data = path.read_bytes()
-            if getattr(stream, "buffer", None) is not None:
-                stream.buffer.write(data)  # Lean's bytes, unchanged
-            else:
-                stream.write(data.decode("utf-8", errors="replace"))
-            stream.flush()
+    relay(job_dir / "stdout.log", job_dir / "stderr.log")
     summary = {"job": job_id, "status": record["status"], "exit_code": record.get("exit_code"),
                "reason": record.get("reason"), "expect_mb": record.get("expect_mb"),
                "measured": record.get("measured"), "dir": str(job_dir)}
@@ -960,11 +1239,55 @@ def wait(paths, job_id, timeout=None):
     return 3 if record["status"] == "failed" else 4
 
 
+def relay(stdout_log, stderr_log):
+    """Lean's bytes, unchanged, on our own streams."""
+    for path, stream in ((stdout_log, sys.stdout), (stderr_log, sys.stderr)):
+        if path.exists():
+            stream.flush()
+            data = path.read_bytes()
+            if getattr(stream, "buffer", None) is not None:
+                stream.buffer.write(data)
+            else:
+                stream.write(data.decode("utf-8", errors="replace"))
+            stream.flush()
+
+
+def report_build(paths, build):
+    """Relay each target's Lean output, cached or fresh, then one summary line for the whole build."""
+    modules = build.get("modules", {})
+    for name in build.get("targets", []):
+        entry = modules.get(name) or {}
+        if entry.get("job"):
+            relay(paths.job(entry["job"]) / "stdout.log", paths.job(entry["job"]) / "stderr.log")
+        elif entry.get("status") == "cached":
+            relay(paths.cache / (entry["key"] + ".stdout.log"), paths.cache / (entry["key"] + ".stderr.log"))
+    rows = [{"module": name, "status": m.get("status"), "exit_code": m.get("exit_code"),
+             "cached": m.get("status") == "cached", "reason": m.get("reason"),
+             "measured": {k: (m.get("measured") or {}).get(k) for k in ("peak_mb", "seconds")}}
+            for name, m in modules.items()]
+    exit_codes = [m.get("exit_code") for m in modules.values() if m.get("exit_code") is not None]
+    summary = {"build": build["id"], "status": build["status"], "exit_code": max(exit_codes, default=0),
+               "reason": build.get("reason"), "targets": build.get("targets", []), "modules": rows,
+               "dir": str(paths.build(build["id"]))}
+    print("lean-broker: " + json.dumps(summary, ensure_ascii=False), file=sys.stderr, flush=True)
+    if build["status"] == "finished":
+        return summary["exit_code"]
+    return 3 if build["status"] == "failed" else 4
+
+
 def cancel(paths, job_id):
     queued = paths.queue / (job_id + ".json")
     if queued.exists():
         queued.unlink()
         return {"job": job_id, "cancelled": "before the broker read it"}
+    if BUILD_ID.match(job_id):
+        build = job_record(paths, job_id)
+        if build is None:
+            raise ValueError(f"unknown build: {job_id}")
+        jobs = [m["job"] for m in build.get("modules", {}).values() if m.get("job") and m.get("status") in ACTIVE]
+        for job in jobs:
+            (paths.job(job) / "CANCEL").touch()
+        return {"build": job_id, "cancelled": f"requested for {len(jobs)} module compiles"}
     if not paths.job(job_id).is_dir():
         raise ValueError(f"unknown job: {job_id}")
     (paths.job(job_id) / "CANCEL").touch()
@@ -984,7 +1307,12 @@ def broker_status(paths):
                         for j in jobs.values() if j["status"] == "running"],
             "finished": [{k: j.get(k) for k in ("id", "kind", "session", "status", "exit_code", "expect_mb", "measured")}
                          for j in jobs.values() if j["status"] in FINISHED][-20:],
-            "calibration": str(paths.calibration)}
+            "builds": [{"id": b["id"], "session": b["session"], "status": b["status"], "targets": b["targets"],
+                        "modules": {s: sum(m["status"] == s for m in b["modules"].values())
+                                    for s in ("cached", "queued", "running", "finished", "failed", "cancelled")}}
+                       for b in state.get("builds", {}).values() if b["status"] in ACTIVE
+                       or b["finished_at"] and b["finished_at"] > time.time() - 600],
+            "calibration": str(paths.calibration), "cache": str(paths.cache)}
 
 
 def version(paths):
@@ -1001,7 +1329,7 @@ def version(paths):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("submit", "run", "wait", "result", "status", "cancel", "version", "serve", "_job"):
+    for name in ("submit", "run", "build", "wait", "result", "status", "cancel", "version", "serve", "_job"):
         sub = commands.add_parser(name)
         if name == "_job":
             sub.add_argument("job_dir", type=Path)
@@ -1009,13 +1337,18 @@ def main(argv=None):
         sub.add_argument("instance", type=Path)
         if name in ("submit", "run"):
             sub.add_argument("source", type=Path)
+        if name == "build":
+            sub.add_argument("root", type=Path, help="the module root: <root>/Foo/Bar.lean is the module Foo.Bar")
+            sub.add_argument("targets", type=Path, nargs="+", help="the files to compile, with everything they import under the root")
+            sub.add_argument("--no-wait", action="store_true", help="print the build ID and return; wait <build> later")
+        if name in ("submit", "run", "build"):
             sub.add_argument("--expect-mb", type=int, required=True,
-                             help="your probable peak private memory of this compile in MiB (LEAN.md)")
+                             help="your probable peak private memory of one compile in MiB (LEAN.md)")
             sub.add_argument("--session", required=True, help="your session ID, as given in your launch prompt")
         if name in ("wait", "result", "cancel"):
-            sub.add_argument("job")
-        if name in ("run", "wait"):
-            sub.add_argument("--timeout", type=float, help="seconds to wait before returning 124; the job continues")
+            sub.add_argument("job", help="a job ID or a build ID")
+        if name in ("run", "build", "wait"):
+            sub.add_argument("--timeout", type=float, help="seconds to wait before returning 124; the work continues")
         if name == "serve":
             sub.add_argument("--token")
     args = parser.parse_args(argv)
@@ -1034,6 +1367,13 @@ def main(argv=None):
                 return 0
             print("lean-broker: " + json.dumps(receipt, ensure_ascii=False), file=sys.stderr, flush=True)
             return wait(paths, receipt["job"], args.timeout)
+        if args.command == "build":
+            receipt = build(paths, args.root, args.targets, args.expect_mb, args.session)
+            if args.no_wait:
+                print(json.dumps(receipt, ensure_ascii=False))
+                return 0
+            print("lean-broker: " + json.dumps(receipt, ensure_ascii=False), file=sys.stderr, flush=True)
+            return wait(paths, receipt["build"], args.timeout)
         if args.command == "wait":
             return wait(paths, args.job, args.timeout)
         if args.command == "result":
