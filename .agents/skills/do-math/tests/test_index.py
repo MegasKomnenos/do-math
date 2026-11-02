@@ -3,6 +3,7 @@
 import copy
 import json
 from pathlib import Path
+import shutil
 import sys
 import subprocess
 import unittest
@@ -61,24 +62,40 @@ class IndexTests(RunnerTests):
     def index(self):
         return (self.instance / 'knowledge/index.md').read_text(encoding='utf-8')
 
+    def module(self, name):
+        return (self.instance / 'knowledge/index' / (name + '.md')).read_text(encoding='utf-8')
+
     def test_publication_produces_index_and_new_prompt(self):
         self.until(lambda: self.engine.state['complete'] and not self.engine.active())
         self.assertTrue((self.instance / 'knowledge/index.md').exists())
-        content = self.index()
+        # The last plan filed the reviewed work into a module; everything else is in the general module.
+        content = self.index() + self.module('reviewed').replace('(../', '(')
+        plans = [s['record'] for s in self.engine.state['sessions'].values() if s['category'] == 'plan']
         for sid, session in self.engine.state['sessions'].items():
-            self.assertIn(f'({session["record"]}/output.json)', content)
+            if session['category'] == 'plan':
+                self.assertEqual(f'({session["record"]}/output.json)' in content, session['record'] == plans[-1])
+            else:
+                self.assertIn(f'({session["record"]}/output.json)', content)
             data = runner.read_json(self.instance / 'sessions' / sid / 'input.json')
             self.assertNotIn('output_contract', data)
-            self.assertIn('knowledge', (self.instance / 'sessions' / sid / 'prompt.txt').read_text(encoding='utf-8'))
-            self.assertIn('index.md', (self.instance / 'sessions' / sid / 'prompt.txt').read_text(encoding='utf-8'))
+            prompt = (self.instance / 'sessions' / sid / 'prompt.txt').read_text(encoding='utf-8')
+            self.assertIn('knowledge', prompt)
+            self.assertIn('index.md', prompt)
+            self.assertIn('general module', prompt)
         self.assertIn('overview', runner.read_json(self.instance / 'knowledge' / session['record'] / 'output.json'))
+        self.assertIn(f'Latest plan: [{plans[-1]}]({plans[-1]}/output.json)', self.index())
+        self.assertIn('| [Reviewed work](index/reviewed.md) | Work whose bundle review is in. | 1 | 0 | 0 |', self.index())
+        self.assertIn('(../index.md)', self.module('reviewed'))
+        # The module file is part of the publication commit, not a loose file.
+        self.assertEqual(runner.git(self.instance, 'status', '--porcelain', '--', 'knowledge'), '')
+        self.assertIn('knowledge/index/reviewed.md', runner.git(self.instance, 'ls-files', '--', 'knowledge/index'))
 
     def test_review_supersession_conflict_and_rebuild(self):
         research = envelope('research', overview={'title': 'A [partial] result', 'summary': 'Proved one case. General P is open.'},
                             results=[{'id': 'r1'}], failed_attempts=[], open_questions=['P?'])
         self.publish_record('k1', research)
         self.engine.refresh_index()
-        self.assertIn('검토 전', self.index())
+        self.assertIn('Unreviewed', self.index())
         review = envelope('review', overview={'title': 'First review', 'summary': 'Checked only the submitted scope.'},
             target={'kind': 'research', 'record': 'k1'}, results=[{'result': 'r1', 'assessment': judgment('supported'),
             'lean': judgment('not_applicable'), 'alignment': judgment('not_applicable'),
@@ -86,23 +103,23 @@ class IndexTests(RunnerTests):
             overview_assessment=judgment('supported'), summary='Detailed judgment')
         self.publish_record('k2', review)
         self.engine.refresh_index()
-        self.assertIn('요약 판정: supported', self.index())
+        self.assertIn('overview assessment: supported', self.index())
         negative = copy.deepcopy(review)
         negative['results'][0]['assessment'] = judgment('not_supported')
         self.publish_record('k3', negative)
         self.engine.refresh_index()
-        self.assertIn('상충: r1/assessment', self.index())
+        self.assertIn('Conflict: r1/assessment', self.index())
         replacement = copy.deepcopy(review)
         replacement['supersedes'] = ['k3']
         self.publish_record('k4', replacement)
         self.engine.refresh_index()
         first_section = self.index().split('## ', 2)[1]
-        self.assertNotIn('상충:', first_section)
+        self.assertNotIn('Conflict:', first_section)
         research['supersedes'] = ['k1']
         self.publish_record('k5', research)
         self.engine.refresh_index()
-        self.assertIn('대체됨', self.index())
-        self.assertIn('검토 전', self.index().split('## ')[-1])
+        self.assertIn('Superseded by', self.index())
+        self.assertIn('Unreviewed', self.index().split('## ')[-1])
         before = self.index()
         commits = runner.git(self.instance, 'rev-list', '--count', 'HEAD')
         self.engine.refresh_index()
@@ -138,6 +155,131 @@ class IndexTests(RunnerTests):
         self.engine.refresh_index()
         self.assertNotIn('research-status.md)', self.index())
 
+    def test_plan_records_have_no_entries(self):
+        self.publish_record('p1', envelope('plan', overview={'title': 'FIRST-PLAN-TITLE', 'summary': 'Planned.'}))
+        self.publish_record('p2', envelope('plan', overview={'title': 'SECOND-PLAN-TITLE', 'summary': 'Planned again.'}))
+        self.publish_record('k1', envelope('research', results=[], failed_attempts=[], open_questions=[]))
+        self.engine.refresh_index()
+        content = self.index()
+        self.assertNotIn('FIRST-PLAN-TITLE', content)
+        self.assertNotIn('SECOND-PLAN-TITLE', content)
+        self.assertNotIn('(p1/output.json)', content)
+        self.assertIn('Latest plan: [p2](p2/output.json)', content)
+        self.assertIn('3 published records · 1 index entry (plan, peer and review records not listed separately)', content)
+        self.assertEqual(content.count('\n## '), 1)
+
+    def plan_with_modules(self, modules):
+        return envelope('plan', index={'modules': modules})
+
+    def test_modules_render_general_complement_counts_and_links(self):
+        for rid in ('k1', 'k2', 'k3'):
+            self.publish_record(rid, envelope('research', overview={'title': 'Title ' + rid, 'summary': 'Summary ' + rid},
+                                              results=[{'id': 'r1'}], failed_attempts=[], open_questions=[]))
+        self.publish_record('e1', envelope('explore', exposition='notes.md', questions=[]))
+        negative = envelope('review', target={'kind': 'research', 'record': 'k2'}, overview_assessment=judgment('supported'),
+            results=[{'result': 'r1', 'assessment': judgment('not_supported'), 'lean': judgment('not_applicable'),
+                      'alignment': judgment('not_applicable'), 'terminology': judgment('conforms')}], summary='Detailed')
+        positive = copy.deepcopy(negative)
+        positive['results'][0]['assessment'] = judgment('supported')
+        self.publish_record('v1', negative)
+        self.publish_record('v2', positive)
+        self.publish_record('p1', self.plan_with_modules([
+            {'name': 'general', 'title': 'Base context', 'description': 'CUSTOM-GENERAL-DESCRIPTION', 'records': ['k3']},
+            {'name': 'closed-route', 'title': 'Closed route', 'description': 'Closed by |k3|; open if revisited.',
+             'records': ['k2', 'k1']}]))
+        self.engine.refresh_index()
+        main = self.index()
+        self.assertIn('**Base context**: CUSTOM-GENERAL-DESCRIPTION', main)
+        # A separator inside a description must not split the table row.
+        self.assertIn('| [Closed route](index/closed-route.md) | Closed by \\|k3\\|; open if revisited. | 2 | 1 | 1 |', main)
+        self.assertIn('7 published records · 4 index entries', main)
+        self.assertIn('2 in the general module · 2 filed in 1 other module', main)
+        general = main.split('**Modules filed by the last plan**', 1)[1]
+        self.assertIn('## Title k3', general)
+        self.assertIn('(e1/output.json)', general)
+        self.assertNotIn('## Title k1', general)
+        self.assertNotIn('## Title k2', general)
+        module = self.module('closed-route')
+        self.assertTrue(module.startswith('# Closed route\n\nClosed by |k3|; open if revisited.\n'))
+        self.assertIn('2 records · 1 unreviewed · 1 with conflicting reviews', module)
+        # Publication order inside the module, whatever order the plan listed.
+        self.assertLess(module.index('## Title k1'), module.index('## Title k2'))
+        self.assertIn('(../k1/output.json)', module)
+        self.assertIn('[current review v1](../v1/output.json)', module)
+        self.assertIn('Conflict: r1/assessment', module)
+        self.assertNotIn('(k1/output.json)', module.replace('(../k1/output.json)', ''))
+        self.assertIn('knowledge/index/closed-route.md', runner.git(self.instance, 'ls-files', '--', 'knowledge/index'))
+
+    def test_later_layout_replaces_stale_module_files(self):
+        self.publish_record('k1', envelope('research', results=[], failed_attempts=[], open_questions=[]))
+        self.publish_record('p1', self.plan_with_modules([
+            {'name': 'old', 'title': 'Old', 'description': 'To be retired.', 'records': ['k1']}]))
+        self.engine.refresh_index()
+        self.assertTrue((self.instance / 'knowledge/index/old.md').is_file())
+        commits = runner.git(self.instance, 'rev-list', '--count', 'HEAD')
+        self.engine.refresh_index()
+        self.assertEqual(runner.git(self.instance, 'rev-list', '--count', 'HEAD'), commits)
+        self.publish_record('p2', self.plan_with_modules([
+            {'name': 'new', 'title': 'New', 'description': 'Replaces old.', 'records': ['k1']}]))
+        self.engine.refresh_index()
+        self.assertFalse((self.instance / 'knowledge/index/old.md').exists())
+        self.assertTrue((self.instance / 'knowledge/index/new.md').is_file())
+        self.assertEqual(runner.git(self.instance, 'ls-files', '--', 'knowledge/index'), 'knowledge/index/new.md')
+        self.assertEqual(runner.git(self.instance, 'status', '--porcelain', '--', 'knowledge'), '')
+        # A plan without a layout (or an old plan) leaves only the general module.
+        self.publish_record('p3', envelope('plan'))
+        self.engine.refresh_index()
+        self.assertFalse((self.instance / 'knowledge/index').exists())
+        self.assertEqual(runner.git(self.instance, 'ls-files', '--', 'knowledge/index'), '')
+        self.assertNotIn('Modules filed', self.index())
+        self.assertNotIn('**', self.index().split('published record', 1)[1])  # no declared general: no heading line
+        self.assertIn('(k1/output.json)', self.index())
+        # An uncommitted leftover module file is removed without a Git error.
+        (self.instance / 'knowledge/index').mkdir()
+        (self.instance / 'knowledge/index/leftover.md').write_text('stale', encoding='utf-8')
+        self.engine.refresh_index()
+        self.assertFalse((self.instance / 'knowledge/index').exists())
+
+    def test_publication_commit_carries_index_changes(self):
+        self.publish_record('k1', envelope('research', results=[], failed_attempts=[], open_questions=[]))
+        self.publish_record('p1', self.plan_with_modules([
+            {'name': 'old', 'title': 'Old', 'description': 'To be retired.', 'records': ['k1']}]))
+        self.engine.refresh_index()
+        # A newly copied plan that retires the module, not yet committed, as finish() sees it.
+        folder = self.instance / 'knowledge/p2'
+        folder.mkdir()
+        runner.write_json(folder / 'output.json', self.plan_with_modules([
+            {'name': 'new', 'title': 'New', 'description': 'Replaces old.', 'records': ['k1']}]))
+        commits = int(runner.git(self.instance, 'rev-list', '--count', 'HEAD'))
+        self.engine.refresh_index(publish='p2')
+        self.assertEqual(int(runner.git(self.instance, 'rev-list', '--count', 'HEAD')), commits + 1)
+        self.assertEqual(runner.git(self.instance, 'log', '-1', '--format=%s'), 'Publish p2')
+        changed = runner.git(self.instance, 'show', '--name-status', '--no-renames', '--format=', 'HEAD').splitlines()
+        self.assertIn('A\tknowledge/p2/output.json', changed)
+        self.assertIn('A\tknowledge/index/new.md', changed)
+        self.assertIn('D\tknowledge/index/old.md', changed)
+        self.assertIn('M\tknowledge/index.md', changed)
+        self.assertEqual(runner.git(self.instance, 'status', '--porcelain', '--', 'knowledge'), '')
+
+    def test_index_command_and_restart_rebuild_modules(self):
+        self.publish_record('k1', envelope('research', results=[], failed_attempts=[], open_questions=[]))
+        self.publish_record('p1', self.plan_with_modules([
+            {'name': 'lean', 'title': 'Lean layer', 'description': 'Formal results.', 'records': ['k1']}]))
+        self.engine.refresh_index()
+        expected = (self.instance / 'knowledge/index/lean.md').read_bytes()
+        shutil.rmtree(self.instance / 'knowledge/index')
+        (self.instance / 'knowledge/index.md').unlink()
+        result = subprocess.run([sys.executable, str(runner.SCRIPT), 'index', str(self.instance)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.instance / 'knowledge/index/lean.md').read_bytes(), expected)
+        shutil.rmtree(self.instance / 'knowledge/index')
+        engine = runner.Runner(self.instance, self.skill)
+        with patch.object(engine, 'tick', side_effect=RuntimeError('end startup test')):
+            with self.assertRaisesRegex(RuntimeError, 'end startup test'):
+                engine.run()
+        self.assertEqual((self.instance / 'knowledge/index/lean.md').read_bytes(), expected)
+
     def test_index_links_glossary_of_latest_plan_only(self):
         self.publish_record('p1', envelope('plan'))
         (self.instance / 'knowledge/p1/glossary.md').write_text('# old\n', encoding='utf-8')
@@ -155,9 +297,9 @@ class IndexTests(RunnerTests):
         self.publish_record('e1', envelope('explore', exposition='notes.md', questions=[]))
         self.engine.refresh_index()
         section = self.index().split('\n## ', 1)[1]
-        self.assertIn('탐구 · [e1](e1/output.json)', section)
-        self.assertIn('관측·추측과 검토된 명제를 구분', section)
-        self.assertIn('검토 전', section)
+        self.assertIn('exploration · [e1](e1/output.json)', section)
+        self.assertIn('distinguish observations and conjectures from reviewed propositions', section)
+        self.assertIn('Unreviewed', section)
 
     def test_index_shows_overview_verdict_without_reason(self):
         self.publish_record('k1', envelope('research', results=[{'id': 'r1'}], failed_attempts=[], open_questions=[]))
@@ -168,9 +310,9 @@ class IndexTests(RunnerTests):
             overview_assessment={'verdict': 'supported', 'reason': 'UNIQUE-REASON-TEXT'}, summary='Detailed')
         self.publish_record('k2', review)
         self.engine.refresh_index()
-        self.assertIn('요약 판정: supported', self.index())
+        self.assertIn('overview assessment: supported', self.index())
         self.assertNotIn('terminology:', self.index())
-        self.assertNotIn('\n검토 · ', self.index())
+        self.assertNotIn('\nreview · ', self.index())
         self.assertIn('(k2/output.json)', self.index())
         self.assertNotIn('UNIQUE-REASON-TEXT', self.index())
         self.assertIn('overview_assessment', self.index().split('\n## ', 1)[0])

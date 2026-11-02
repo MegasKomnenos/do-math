@@ -35,6 +35,15 @@ def judgment(verdict):
     return {"verdict": verdict, "reason": "Illustrative judgment, not a mathematical check."}
 
 
+def local_glossary(entries=1):
+    from glossary import LOCAL_FIELDS, LOCAL_MARKER
+    lines = [LOCAL_MARKER, 'Local glossary of this record. Global glossary applied: none yet.']
+    for n in range(1, entries + 1):
+        lines += [f'<a id="local-{n}"></a>', f'## {n}. Fixture {n}', '| Field | Content |', '|---|---|']
+        lines += [f'| {field} | Fixture |' for field in LOCAL_FIELDS]
+    return '\n'.join(lines) + '\n'
+
+
 class HandoffTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -55,11 +64,13 @@ class HandoffTests(unittest.TestCase):
         if output['category'] == 'plan':
             from glossary import FIELDS
             lines = ['<!-- do-math-glossary -->', '[History](glossary-history.md)',
-                     '<a id="term-1"></a>', '## 1. Fixture', '| 칸 | 내용 |', '|---|---|']
+                     '<a id="term-1"></a>', '## 1. Fixture', '| Field | Content |', '|---|---|']
             lines += [f'| {field} | Fixture |' for field in FIELDS]
             (session / 'output/glossary.md').write_text('\n'.join(lines)+'\n', encoding='utf-8')
             (session / 'output/glossary-history.md').write_text('History', encoding='utf-8')
             (session / 'output/research-status.md').write_text('Status', encoding='utf-8')
+        elif output['category'] in ('research', 'explore', 'peer'):
+            (session / 'output/glossary-local.md').write_text(local_glossary(), encoding='utf-8')
         return session
 
     def research(self):
@@ -173,6 +184,73 @@ class HandoffTests(unittest.TestCase):
         target = {"kind": "research", "record": "k1"}
         review = self.session("review", envelope("review", target=target, results=[], summary="Forgot r1."), target=target)
         self.assertIn("each target result exactly once", checker.check_session(review)[0])
+
+    def test_local_glossary_required_for_authored_outputs(self):
+        for name, (session, output) in (("research", self.research()), ("explore", self.explore())):
+            with self.subTest(category=name):
+                self.assertEqual(checker.check_session(session), [])
+                (session / "output/glossary-local.md").unlink()
+                self.assertIn("glossary-local", checker.check_session(session)[0])
+                (session / "output/glossary-local.md").write_text(local_glossary(0), encoding="utf-8")
+                self.assertEqual(checker.check_session(session), [])
+                (session / "output/glossary-local.md").write_text("An undeclared format", encoding="utf-8")
+                self.assertIn("glossary-local", checker.check_session(session)[0])
+        author, _ = self.research()
+        self.publish(author, "k1")
+        target = {"kind": "research", "record": "k1"}
+        peer = self.session("peer", envelope("peer", target=target, exposition="response.md", results=[], questions=[]),
+                            target=target)
+        (peer / "output/response.md").write_text("Worked the claim.", encoding="utf-8")
+        self.assertEqual(checker.check_session(peer), [])
+        (peer / "output/glossary-local.md").unlink()
+        self.assertIn("glossary-local", checker.check_session(peer)[0])
+        # Reviews define nothing and publish no local glossary.
+        review = self.session("review", envelope("review", target=target, results=[{
+            "result": "r1", "assessment": judgment("supported"), "lean": judgment("not_checked"),
+            "alignment": judgment("not_checked"), "terminology": judgment("conforms")}], summary="Checked."), target=target)
+        self.assertEqual(checker.check_session(review), [])
+
+    def test_plan_index_layout(self):
+        author, _ = self.research()
+        self.publish(author, "k1")
+        explorer, _ = self.explore()
+        self.publish(explorer, "e1")
+        target = {"kind": "research", "record": "k1"}
+        review = self.session("review", envelope("review", target=target, results=[{
+            "result": "r1", "assessment": judgment("supported"), "lean": judgment("not_checked"),
+            "alignment": judgment("not_checked"), "terminology": judgment("conforms")}], summary="Checked."), target=target)
+        self.publish(review, "v1")
+        module = {"name": "closed-route", "title": "Closed route", "description": "Closed; open if revisited.",
+                  "records": ["k1", "e1"]}
+        base = envelope("plan", reason="Organize.", research=[], explorations=[], reviews=[], goal_review=None, wait=None)
+        general = {"name": "general", "title": "General", "description": "Base context.", "records": ["e1"]}
+        plan = self.session("plan", dict(base, index={"modules": [general, dict(module, records=["k1"])]}),
+                            events=[{"kind": "start"}])
+        self.assertEqual(checker.check_session(plan), [])
+        write_json(plan / "output/output.json", dict(base, index={"modules": [module]}))
+        self.assertEqual(checker.check_session(plan), [])
+        write_json(plan / "output/output.json", base)  # omission: general only, as for older plans
+        self.assertEqual(checker.check_session(plan), [])
+        cases = [
+            ({"modules": [dict(module, records=["absent"])]}, "record does not exist"),
+            ({"modules": [dict(module, records=["k1", "k1"])]}, "already filed"),
+            ({"modules": [module, dict(module, name="other", records=["k1"])]}, "already filed"),
+            ({"modules": [module, dict(module, records=[])]}, "duplicate module name"),
+            ({"modules": [module, dict(module, name="Closed-Route", records=["e1"])]}, "letter case"),
+            ({"modules": [dict(module, records=[])]}, "at least one record"),
+            ({"modules": [dict(module, name="closed route")]}, "identifier"),
+            ({"modules": [dict(module, records=["v1"])]}, "only research and explore"),
+            ({"modules": [dict(module, description=" ")]}, "description"),
+            ({"modules": [dict(module, title="a\nb")]}, "single-line"),
+            ({"modules": module}, "array"),
+            ([module], "object"),
+        ]
+        for layout, message in cases:
+            with self.subTest(layout=layout):
+                write_json(plan / "output/output.json", dict(base, index=layout))
+                errors = checker.check_session(plan)
+                self.assertTrue(errors and "output.json.index" in errors[0], errors)
+                self.assertIn(message, errors[0])
 
     def test_unreadable_json_returns_diagnostics(self):
         author, _ = self.research()

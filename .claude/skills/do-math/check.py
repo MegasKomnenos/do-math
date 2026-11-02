@@ -4,7 +4,8 @@ import argparse
 import json
 import re
 from pathlib import Path, PurePosixPath
-from glossary import check_glossary
+from glossary import check_glossary, check_local_glossary
+from knowledge_index import GENERAL, INDEXED
 
 
 CATEGORIES = ("plan", "research", "explore", "peer", "review")
@@ -210,6 +211,35 @@ class Checker:
             waiting = obj(data["wait"], "output.json.wait")
             text(waiting.get("needed"), "output.json.wait.needed")
             text(waiting.get("reason"), "output.json.wait.reason")
+        # Plans published before index modules existed have no layout: general only.
+        if "index" in data:
+            self.index_layout(data["index"], "output.json.index")
+
+    def index_layout(self, layout, where):
+        """Modules the runner renders under knowledge/index/; general is implicit."""
+        obj(layout, where)
+        names = set()
+        filed = {}
+        for index, module in enumerate(items(layout.get("modules"), where + ".modules")):
+            loc = f"{where}.modules[{index}]"
+            obj(module, loc)
+            name = identifier(module.get("name"), loc + ".name")
+            # Names become file names; case-insensitive file systems would merge "Lean" and "lean".
+            need(name.lower() not in names, loc + ".name", "duplicate module name (letter case does not distinguish names)")
+            names.add(name.lower())
+            title = text(module.get("title"), loc + ".title")
+            need("\n" not in title and "\r" not in title, loc + ".title", "expected a single-line title")
+            text(module.get("description"), loc + ".description")
+            records = items(module.get("records"), loc + ".records")
+            need(bool(records) or name == GENERAL, loc + ".records",
+                 "a module needs at least one record; drop a module that has none")
+            for n, record_id in enumerate(records):
+                record = self.record(record_id, f"{loc}.records[{n}]")
+                need(record.get("category") in INDEXED, f"{loc}.records[{n}]",
+                     "only research and explore records have index entries")
+                need(record_id not in filed, f"{loc}.records[{n}]",
+                     f"record already filed in module {filed.get(record_id)}")
+                filed[record_id] = name
 
     def authored_results(self, data):
         self.result_ids(data, "output.json")
@@ -338,14 +368,17 @@ class Checker:
             self.plan(output)
             problems = check_glossary(self.output)
             need(not problems, 'glossary', '; '.join(problems))
-        elif data["category"] == "research":
-            self.research(output)
-        elif data["category"] == "explore":
-            self.explore(output)
-        elif data['category'] == 'peer':
-            self.peer(output, data['task'])
-        else:
+        elif data["category"] == "review":
             self.review(output, data["task"])
+        else:
+            if data["category"] == "research":
+                self.research(output)
+            elif data["category"] == "explore":
+                self.explore(output)
+            else:
+                self.peer(output, data['task'])
+            problems = check_local_glossary(self.output)
+            need(not problems, 'glossary-local', '; '.join(problems))
 
 
 def check_session(session):

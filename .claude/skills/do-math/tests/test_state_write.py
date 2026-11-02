@@ -15,7 +15,7 @@ import runner
 
 class StreamingWriteTests(unittest.TestCase):
     def test_unicode_and_escaping_match_existing_format(self):
-        value = {"한글😀": ["\"\\\n\t" * 20000, "끝", True, None, 1.5]}
+        value = {"ünïcode 数学😀": ["\"\\\n\t" * 20000, "end 終", True, None, 1.5]}  # non-ASCII and astral on purpose: chunked UTF-8 encoding must match json.dumps
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"
             expected = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")

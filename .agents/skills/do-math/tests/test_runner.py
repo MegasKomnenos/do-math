@@ -32,10 +32,15 @@ def fake_session():
               "overview": {"title": "Fixture " + category, "summary": "Synthetic bounded fixture, not a mathematical claim."}}
     if category == "plan" and scenario == "plan_failure":
         return 1
+    if category in ("research", "explore", "peer"):
+        from glossary import LOCAL_FIELDS, LOCAL_MARKER
+        lines = [LOCAL_MARKER, 'Local glossary of this record.', '<a id="local-1"></a>', '## 1. Fixture',
+                 '| Field | Content |', '|---|---|'] + [f'| {field} | Fixture |' for field in LOCAL_FIELDS]
+        (session / 'output/glossary-local.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     if category == "plan":
         from glossary import FIELDS
         lines = ['<!-- do-math-glossary -->', '[History](glossary-history.md)',
-                 '<a id="term-1"></a>', '## 1. Fixture', '| 칸 | 내용 |', '|---|---|']
+                 '<a id="term-1"></a>', '## 1. Fixture', '| Field | Content |', '|---|---|']
         lines += [f'| {field} | Fixture |' for field in FIELDS]
         (session / 'output/glossary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
         (session / 'output/glossary-history.md').write_text('No previous terms.\n', encoding='utf-8')
@@ -56,6 +61,12 @@ def fake_session():
         elif "review_finished" in kinds:
             output["goal_review"] = {"instructions": "Check the goal", "references": [],
                                      "model": "claude/sonnet", "selection_reason": "Independent CLI"}
+            # File the reviewed work into a module, so the flow exercises index/<name>.md.
+            review = next(event for event in task["events"] if event["kind"] == "review_finished")
+            reviewed = runner.read_json(Path(data["instance"]) / "knowledge" / review["record"] / "output.json")
+            work = reviewed["target"].get("work") or reviewed["target"].get("record")
+            output["index"] = {"modules": [{"name": "reviewed", "title": "Reviewed work",
+                                            "description": "Work whose bundle review is in.", "records": [work]}]}
     elif category == "explore":
         (session / "output/notes.md").write_text("Unreviewed impressions.\n", encoding="utf-8")
         output.update(exposition="notes.md", questions=[])
@@ -112,10 +123,11 @@ class RunnerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
-        self.instance = self.root / "연구 instance"
+        self.instance = self.root / "instance 研究 é"  # non-ASCII plus a space on purpose: path coverage for Git, input.json, the prompt and the host cwd
         self.skill = self.root / "skill"
         self.skill.mkdir()
-        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
+        for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md",
+                     "LEAN.md", "check.py", "glossary.py", "lean_broker.py"):
             (self.skill / name).write_text("Temporary test context\n", encoding="utf-8")
         goal = self.root / "goal.md"
         goal.write_text("Synthetic goal\n", encoding="utf-8")
@@ -132,9 +144,13 @@ class RunnerTests(unittest.TestCase):
         self.scenario = "flow"
         self.patch = patch.object(runner, "build_command", self.command)
         self.patch.start()
+        # The Lean broker has its own suite (test_lean_broker.py); this skill stub cannot host one.
+        self.broker_patch = patch.object(runner.Runner, "ensure_broker", autospec=True)
+        self.ensure_broker = self.broker_patch.start()
 
     def tearDown(self):
         self.patch.stop()
+        self.broker_patch.stop()
         for directory in (self.instance / "sessions").iterdir():
             (directory / "release").touch()
             (directory / "CANCEL").touch()
@@ -178,10 +194,17 @@ class RunnerTests(unittest.TestCase):
         for sid, session in state["sessions"].items():
             data = runner.read_json(self.instance / "sessions" / sid / "input.json")
             self.assertEqual(len(data["context"]["common"]), 3)
+            prompt = (self.instance / "sessions" / sid / "prompt.txt").read_text(encoding="utf-8")
+            # Every session is told the broker argv with its own session ID, never a direct Lean command.
+            self.assertIn(json.dumps([sys.executable, str(self.skill / "lean_broker.py"), "run", str(self.instance),
+                                      "<file.lean>", "--session", sid, "--expect-mb", "<MiB>"], ensure_ascii=False), prompt)
+            self.assertIn(str(self.skill / "LEAN.md"), prompt)
             if session["category"] == "review":
-                prompt = (self.instance / "sessions" / sid / "prompt.txt").read_text(encoding="utf-8")
                 research_sid = next(k for k, v in state["sessions"].items() if v["category"] == "research")
                 self.assertNotIn(research_sid, json.dumps(data) + prompt)
+        # The runner keeps tabs on the broker every tick, before any dispatch decision.
+        self.assertTrue(self.ensure_broker.called)
+        self.assertIn("lean", runner.status(self.instance))
 
     def test_unchanged_stopped_tick_does_not_write_state(self):
         (self.instance / "control/STOP").touch()
@@ -249,7 +272,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual((events[0]["category"], events[0]["task"]["instructions"]), ("research", "fail"))
         self.assertTrue(events[0]["limit"] and events[0]["origin"])
         source = self.root / "answer.txt"
-        source.write_bytes("자연수에는 0을 포함합니다.\n".encode("utf-8"))
+        source.write_bytes("Natural numbers include 0. 自然数 é\n".encode("utf-8"))  # non-ASCII on purpose: bytes must round-trip through control/inputs/
         submitted = Path(runner.submit_input(self.instance, source))
         stop.touch()
         self.engine.tick()
@@ -389,7 +412,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(int(real_git(self.instance, "rev-list", "--count", "HEAD")), len(self.engine.state["sessions"]) + 1)
 
     def test_detached_runner_outlives_start_command(self):
-        for name in ("runner.py", "cli_adapter.py", "check.py", "glossary.py", "knowledge_index.py"):
+        for name in ("runner.py", "cli_adapter.py", "check.py", "glossary.py", "knowledge_index.py", "lean_broker.py"):
             shutil.copyfile(runner.SKILL / name, self.skill / name)
         (self.instance / "control/STOP").touch()
         launched = subprocess.run([sys.executable, "-B", str(self.skill / "runner.py"), "start", str(self.instance)],
@@ -412,10 +435,15 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(len(state["seen_inputs"]), 1)
             self.assertFalse(state["sessions"])
         finally:
-            runner.terminate_process(identity)
-            deadline = time.monotonic() + 5
-            while runner.alive(identity) and time.monotonic() < deadline:
-                time.sleep(0.025)
+            # The runner is terminated, and so is the Lean broker it launched: the broker outlives the
+            # runner by design, and on Windows it would hold broker.log open against the cleanup.
+            broker = self.instance / "runner/lean/process.json"
+            for victim in [identity] + ([runner.read_json(broker)["process"]] if broker.exists() else []):
+                if runner.alive(victim):
+                    runner.terminate_process(victim)
+                deadline = time.monotonic() + 5
+                while runner.alive(victim) and time.monotonic() < deadline:
+                    time.sleep(0.025)
 
 
 @unittest.skipUnless(os.name == "nt", "OpenProcess access denial is Windows-specific")
@@ -446,11 +474,11 @@ class WorkArchiveTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
-        self.session = self.root / "세션"
+        self.session = self.root / "session é"  # non-ASCII on purpose: archive name encoding
         work = self.session / "work"
-        (work / "build/깊은/하위").mkdir(parents=True)
+        (work / "build/深い/階層 é").mkdir(parents=True)  # non-ASCII on purpose: tar headers, os.walk and the SHA-256 cross-check
         (work / "empty").mkdir()
-        (work / "build/깊은/하위/Module.olean").write_bytes(random.Random(0).randbytes(300_000))
+        (work / "build/深い/階層 é/Module.olean").write_bytes(random.Random(0).randbytes(300_000))
         (work / "build/notes.lean").write_text("theorem t : 1 = 1 := rfl\n" * 5000, encoding="utf-8")
         (work / "zero").write_bytes(b"")
         self.original = tree(work)

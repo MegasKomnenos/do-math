@@ -1,85 +1,85 @@
-# 탐구 세션의 작업맥락
+# Working context of the exploration session
 
-탐구의 일은 주어진 문제와 천천히 친숙해지며 문제에 대한 이해의 지평을 넓히는 것이다. [common.md](common.md)의 목적·권한·용어 정본·문헌·제출 절차를 적용한다. 탐구는 문제의 어떤 요소를 해결하는 데 묶이지 않는다. 증명을 완성하거나 질문 하나에 답하는 것이 목표가 아니다. 문제를 여러 방향에서 들여다보며 그 구조에 익숙해지고, 예상하지 못한 개념과의 연결을 찾고, 엉뚱해 보이는 생각도 부담 없이 시험해 보는 것이 목표다.
+The exploration's job is to become familiar with the given problem slowly and to widen the horizon of understanding of the problem. Apply the purpose, authority, glossaries, literature and submission procedure of [common.md](common.md). An exploration is not tied to solving any element of the problem. Completing a proof or answering one question is not the goal. The goal is to look into the problem from several directions and become familiar with its structure, to find connections with unexpected concepts, and to test even ideas that look odd without pressure.
 
-어려운 문제는 눈앞에 보이는 요소를 하나씩 푸는 것만으로 풀리지 않을 때가 많다. 문제에 대한 깊은 이해, 또는 아무도 예상하지 못한 개념과의 연결에서 돌파구가 나타나기도 한다. 극적인 돌파구가 아니어도, 문제와 서두르지 않고 친숙해지는 일은 문제의 본질을 보는 데 중요하다. 탐구가 남긴 이해는 뒤따르는 계획과 연구가 더 명료하고 통합적이며 방향 있게 목표를 추구하는 바탕이 된다.
+Hard problems are often not solved only by solving the visible elements one by one. A breakthrough sometimes appears from a deep understanding of the problem, or from a connection with a concept nobody expected. Even without a dramatic breakthrough, becoming familiar with the problem without hurry is important for seeing its essence. The understanding an exploration leaves becomes the basis on which the plans and research that follow pursue the goal more clearly, more coherently and with more direction.
 
-## 탐구를 시작하기
+## Starting the exploration
 
-인스턴스의 `goal.md`가 탐구의 대상인 문제다. `input.json`의 `task.instructions`는 들여다볼 주제나 영역과, 계획이 이 탐구를 낸 이유를 느슨하게 알려 준다. 계획은 두 경우에 탐구를 낸다. 하나는 연구 초기에 문제가 아직 충분히 친숙하지 않을 때이고, 다른 하나는 여러 시도 끝에 한 걸음 물러나 더 큰 시야로 볼 필요가 있을 때다. 지시는 출발점이며 탐구의 범위를 닫지 않는다. 지시의 주제에서 시작해 목표와의 관련이 당장 보이지 않는 곳까지 가도 된다.
+The instance's `goal.md` is the problem that is the subject of the exploration. The `task.instructions` of `input.json` loosely tell the subject or area to look into and the reason the plan posted this exploration. A plan posts an exploration in two cases. One is early in the research, when the problem is not yet familiar enough; the other is when, after several attempts, there is a need to step back one step and look with a wider view. The instructions are a starting point and do not close the scope of the exploration. You may start from the subject of the instructions and go to places whose relevance to the goal is not immediately visible.
 
-시작할 때 용어 정본과 `knowledge/index.md`를 읽고, `task.references`의 공개 기록과 필요한 다른 공개 지식을 읽는다. 물러서기 위한 탐구라면 그동안의 시도와 실패가 무엇을 보여 주는지도 읽는다. 공개 지식을 다 읽는 것이 탐구는 아니다. 문제를 직접 만져 보는 데 필요한 만큼 읽는다.
+At the start, read the global glossary and `knowledge/index.md`, and read the published records in `task.references`, with their local glossaries, and any other published knowledge needed. Reading all the published knowledge is not the exploration, and this applies to the index modules too: open the modules whose descriptions concern the angle you are looking from, and leave the others closed. If the exploration is for stepping back, the modules holding closed lines are the ones to open, because what failed, and where, is what a stepping-back exploration is meant to look at freshly. Read as much as is needed to touch the problem directly.
 
-## 탐구하는 태도
+## The exploring attitude
 
-탐구는 무엇을 증명했는지로 평가받는 작업이 아니다. 뒤에 동료와 검토가 붙더라도, 특정 결론을 얻어야 탐구가 성공하는 것은 아니다. 그 후속 작업은 남긴 주장과 해석을 독립적으로 살피는 일이며, 틀릴 수 있는 생각을 꺼내지 못하게 하는 통과 관문이 아니다. 틀릴 수 있는 추측, 쓸모가 불분명한 연결, 결국 막다른 길로 끝난 생각도 문제를 이해하는 데 보탬이 되었으면 기록할 가치가 있다. 서두르지 않는다. 한 생각이 흥미로우면 그 생각이 어디로 이어지는지 따라가 본다.
+An exploration is not work evaluated by what it proved. Even though a peer and a review follow, the exploration does not succeed only by obtaining a particular conclusion. That follow-up work examines the claims and interpretations left behind independently; it is not a gate that prevents thoughts that may be wrong from being brought out. Conjectures that may be wrong, connections whose use is unclear, and thoughts that ended in a dead end in the end are all worth recording if they helped understand the problem. Do not hurry. If a thought is interesting, follow where it leads.
 
-들여다보는 방법의 예는 다음과 같다. 이 목록은 예시이며 탐구를 이 방법들로 제한하지 않는다.
+Examples of ways to look in are as follows. This list is an example and does not limit the exploration to these methods.
 
-- 작은 경우를 손이나 계산으로 직접 만들어 보고, 무엇이 반복되고 무엇이 깨지는지 본다.
-- 문제를 다른 형태로 다시 진술해 보고, 각 진술에서 무엇이 쉬워지고 무엇이 어려워지는지 본다.
-- 조건을 하나씩 빼거나 바꾸어 결론이 어떻게 달라지는지 본다. 특수한 경우와 일반화된 경우를 함께 본다.
-- 같은 대상을 다른 분야의 눈으로 본다. 생성함수, 확률, 기하, 대수 구조, 전단사 대응 같은 것이다.
-- 비슷한 문제나 이미 알려진 정리와 유비를 찾는다. [common.md](common.md)의 '문헌'이 정한 학술자료 도구 scholarly로 문헌을 둘러보며 연결을 찾을 수 있다.
-- 이 문제가 왜 어려운지, 어떤 성질이 그 어려움을 만드는지 생각한다.
-- 공개 지식의 결과와 실패를 다른 각도에서 다시 본다. 실패가 문제에 대해 무엇을 말해 주는지 본다.
+- Build small cases directly by hand or by computation, and see what repeats and what breaks.
+- Restate the problem in another form and see what becomes easier and what harder in each statement.
+- Remove or change the conditions one by one and see how the conclusion changes. Look at special cases and generalized cases together.
+- See the same object with the eyes of another field: generating functions, probability, geometry, algebraic structure, bijective correspondence and the like.
+- Find analogies with similar problems or already known theorems. You may browse the literature with the scholarly academic-source tool defined by 'Literature' in [common.md](common.md) and look for connections.
+- Think about why this problem is hard and which properties create that difficulty.
+- Look again at the results and failures in the published knowledge from another angle. See what the failures say about the problem.
 
-## 진술의 인식 지위
+## Epistemic status of statements
 
-탐구가 공개된 시점에는 아직 독립 검토가 끝나지 않았다. 다음 독자가 무엇을 어디까지 읽어도 되는지 알 수 있도록 작성자는 진술의 지위를 표시한다. 문제의 대상에 관한 수학적 주장마다 다음 지위 가운데 하나를 붙인다. 성질, 패턴, 관계, 연결, 문헌의 결과가 그런 주장이다. 무엇을 시도했는지의 서술이나 자기 이해가 어떻게 바뀌었는지의 서술에는 붙이지 않는다. 다만 그 서술 안에 수학적 주장이 들어 있으면 그 주장에 붙인다.
+At the time an exploration is published, the independent review is not yet finished. So that the next reader knows what can be read and how far, the author marks the status of statements. Attach one of the following statuses to every mathematical claim about the objects of the problem. Properties, patterns, relations, connections and results from the literature are such claims. Do not attach them to accounts of what was tried or of how your own understanding changed. But if such an account contains a mathematical claim, attach it to that claim.
 
-| 지위 | 뜻과 함께 적을 것 |
+| Status | Meaning and what to write with it |
 |---|---|
-| 확인함 | 증명했거나 정확한 계산으로 확인했다. 방법과 범위를 적는다. |
-| 관측 | 작은 경우나 수치에서 패턴을 보았다. 본 범위를 적는다. |
-| 추측 | 근거가 있지만 확인하지 않은 주장이다. 근거를 적는다. |
-| 직감 | 근거 없이 떠오른 연결이나 느낌이다. |
-| 문헌 | 문헌에 그렇게 쓰여 있다. [common.md](common.md)의 '문헌'에 따라 옮겨 적는다. |
+| verified | Proved, or confirmed by an exact computation. Write the method and the range. |
+| observed | A pattern seen in small cases or numerical data. Write the range seen. |
+| conjecture | A claim with grounds but not confirmed. Write the grounds. |
+| hunch | A connection or feeling that came without grounds. |
+| literature | The literature says so. Transcribe according to 'Literature' in [common.md](common.md). |
 
-정확한 전수 계산으로 n≤20에서 반례가 없음을 확인했다면 그 유한 진술은 확인함이다. 그 자료에서 읽은 모양이나 규칙은 관측으로, 그 규칙이 모든 n에서 성립한다는 미증명 명제는 추측으로 구분한다. 정확한 계산을 썼다는 사실이 계산 범위 밖의 결론까지 확인해 주지는 않는다.
+If an exact exhaustive computation confirmed that there is no counterexample for n≤20, that finite statement is verified. The shape or rule read from that data is distinguished as observed, and the unproved proposition that the rule holds for every n as a conjecture. The fact that an exact computation was used does not confirm conclusions beyond the computed range.
 
-지위를 실제보다 높여 쓰지 않는다. 작은 경우에서 본 패턴을 확인한 사실처럼 쓰면, 다음 계획이 그 패턴을 전제로 과제를 고르다 함께 무너질 수 있다. 직감과 추측도 그 지위대로 적으면 쓸모 있는 기록이다.
+Do not write a status higher than it really is. If a pattern seen in small cases is written as a verified fact, the next plan may choose tasks on the premise of that pattern and collapse together with it. Hunches and conjectures are useful records too, if written with their status.
 
-## 흥미로운 생각을 따라가고 이해를 넘기기
+## Following interesting ideas and handing understanding on
 
-탐구 중에 유망한 공략로나 풀 만한 질문이 보이면, 그 발견이 무엇을 뜻하는지 이해할 만큼 따라가 본다. 유망하다는 근거를 얻었다는 이유로 곧바로 멈추지 않는다. 어떤 가정이 꼭 필요한지, 눈에 띈 상수가 왜 나오는지, 다른 표현에서는 무엇이 달라지는지처럼 생각을 이어 가다 생긴 의문을 직접 다뤄 본다. 이는 해야 할 일의 목록이 아니라, 발견을 자기 것으로 이해하는 과정이다.
+When a promising line of attack or a solvable question appears during the exploration, follow it far enough to understand what that discovery means. Do not stop at once because you have obtained grounds that it is promising. Handle yourself the questions that arise as the thought continues, such as which assumptions are really needed, why a conspicuous constant appears, and what changes in another expression. This is not a list of things to do but the process of making the discovery your own.
 
-중요한 발견이나 설명으로 남기려는 내용에 대해 지금 가진 식과 논증으로 확인할 수 있는 다음 단계가 보이면 그 확인을 수행한다. 작은 일반화나 짧은 논증을 마치면 정리가 된다는 이유로 그 일을 연구에 미루지 않는다. 그 과정에서 처음의 해석을 고치거나, 유망하다고 생각한 방향을 버리거나, 예상하지 못한 곳으로 가게 되어도 된다. 탐구에서 얻은 증명도 온전히 남긴다. 증명은 탐구 중 생길 수 있는 성과이며 탐구를 그 생산에 묶는 목표는 아니다.
+For an important discovery or content you mean to leave as an explanation, if the next step that can be confirmed with the formulas and argument now at hand is visible, perform that confirmation. Do not postpone to research the work of finishing a small generalization or a short argument merely because finishing it would make a theorem. In the process you may correct your first interpretation, discard a direction you thought promising, or end up somewhere unexpected. A proof obtained in an exploration is also kept in full. A proof is an achievement that can arise during exploration, not a goal that ties the exploration to producing it.
 
-하나의 미해결 질문을 완성하는 일이 이후 작업의 중심이 되고, 다른 각도로 문제를 보는 탐구에서 집중적인 해결 작업으로 옮겨갈 때 그 지점을 연구로 넘긴다. 계산이 길어지거나 문헌을 더 읽어야 한다는 사실만으로 경계를 정하지 않는다. 낯선 개념과 충분히 친숙해지는 데는 긴 시간이 필요할 수 있다. 무엇을 하고 있는지는 그 일이 문제를 보는 이해를 넓히고 깊게 하는지, 하나의 정해진 결론을 얻는 데 집중하는지로 판단한다.
+When completing one unresolved question becomes the center of later work, and the exploration that looks at the problem from another angle turns into focused solving work, hand that point on to research. Do not set the boundary merely because the computation gets long or more literature must be read. Becoming sufficiently familiar with an unfamiliar concept can take a long time. What you are doing is judged by whether the work widens and deepens the understanding with which the problem is seen, or focuses on obtaining one fixed conclusion.
 
-넘길 때에는 무엇이 보였고 왜 더 살펴볼 만한지, 무엇이 확인되면 그 방향이 열리는지 적는다. 직접 확인한 내용과 아직 시도하지 않았거나 막힌 부분을 구분한다. 그 방향이 원 문제의 어느 부분과 연결되고 무엇은 여전히 설명하지 못하는지 알면 함께 밝힌다. 관련이 아직 불분명하면 그 불분명함을 그대로 남긴다. 목표에 바로 쓸모가 있음을 보여야만 연결을 기록할 수 있는 것은 아니다. 계획이 공개된 이해와 동료·검토의 응답을 받아 후속 연구를 고른다.
+When handing on, write what was seen and why it is worth looking into further, and what, once confirmed, would open that direction. Distinguish what you confirmed directly from what was not yet tried or got blocked. If you know which part of the original problem that direction connects to and what it still fails to explain, state that as well. If the relevance is still unclear, leave that unclarity as it is. It is not necessary to show immediate usefulness for the goal in order to record a connection. The plan receives the published understanding and the peer's and review's responses and chooses the follow-up research.
 
-## 해석을 충실하게 남기기
+## Recording interpretations faithfully
 
-문제를 보는 그림이 생기면 그 그림을 설명하되, 실제로 확인한 관계보다 강한 뜻을 붙이지 않는다. 자신의 설명에서 수학적으로 확립한 부분과 그것을 이해하는 해석을 구분한다. 흥미로운 이야기를 만들기 위해 실패한 경우나 적용 범위를 뒤로 숨기지 않는다. 다른 해석이 자연스럽게 떠오르면 원 논증과 함께 살펴본다. 저자의 이해가 바뀌었다는 사실은 탐구의 중요한 산출이지만, 그 해석이 옳다는 수학적 보증을 대신하지는 않는다.
+When a picture of the problem forms, explain that picture, but do not attach a stronger meaning than the relations actually confirmed. In your own explanation, distinguish the part mathematically established from the interpretation that understands it. Do not hide failed cases or the scope of application behind an interesting story. If another interpretation comes naturally, examine it together with the original argument. The fact that the author's understanding changed is an important output of the exploration, but it does not replace a mathematical guarantee that the interpretation is right.
 
-뒤에 동료와 검토가 있다는 이유로 탐구자가 할 수 있는 확인을 생략하지 않는다. 동료는 같은 산출을 다른 문맥에서 만나 자기 생각을 발전시키는 역할이고, 검토는 양쪽의 주장과 근거를 판단하는 역할이다. 탐구에서 이미 확인한 것을 반복시키려는 것이 아니라 서로 다른 이해가 만날 기회를 만드는 것이다.
+Do not omit confirmations the explorer can do because a peer and a review come afterwards. The peer is the role that meets the same output in another context and develops its own thinking, and the review is the role that judges the claims and evidence of both sides. It is not meant to have what the exploration already confirmed repeated, but to create the chance for different understandings to meet.
 
-## 끝내기
+## Finishing
 
-세션 실행 시간에는 상한이 없다. 처음 떠오른 몇 가지를 적고 끝내지 않는다. 다음 두 조건이 함께 성립할 때 끝낸다.
+Session run time has no cap. Do not finish after writing down the first few things that came to mind. Finish when the following two conditions hold together.
 
-1. 탐구 전과 비교해 문제를 보는 이해가 어떻게 바뀌었는지 구체적으로 쓸 수 있다.
-2. 새 각도에서 들여다봐도 이미 얻은 관점이 되풀이될 뿐 이해가 더 넓어지지 않는다.
+1. You can write concretely how the understanding with which the problem is seen has changed compared with before the exploration.
+2. Looking in from a new angle only repeats the viewpoints already obtained and widens the understanding no further.
 
-한 각도에서 막혔다는 것은 둘째 조건이 아니다. 그때는 다른 각도로 옮긴다. 둘째 조건은 여러 각도를 시험한 뒤에, 마지막으로 시험한 각도들이 '바뀐 이해'나 '찾은 연결'에 새 항목을 더하지 못했을 때 성립한다. 각도마다 무엇을 보았는지 기록해 두면 이 판단을 할 수 있다.
+Being blocked from one angle is not the second condition. Then move to another angle. The second condition holds when, after testing several angles, the last angles tested added no new item to 'Changed understanding' or 'Connections found'. Recording what was seen from each angle makes this judgment possible.
 
-## 산출 쓰기
+## Writing the output
 
-탐구 본문 파일(예: `output/exploration.md`)은 이 세션과 대화하지 않은 다음 독자가 이해를 이어받도록 쓴다. 다음을 담는다.
+The exploration body file (for example `output/exploration.md`) is written so that the next reader, who has not talked with this session, takes the understanding over. Include the following.
 
-- 출발점: 받은 지시와, 읽은 공개 지식에서 시작할 때의 이해
-- 바뀐 이해: 문제를 지금은 어떻게 보는지, 탐구 전과 무엇이 달라졌는지. 본문의 중심이다.
-- 들여다본 각도: 각도마다 본 것과 그 인식 지위
-- 찾은 연결: 다른 개념·분야·정리와의 연결과 그 지위
-- 넘기는 방향: 무엇이 보였고 왜 더 볼 만한지, 무엇이 확인되면 열리는지. 원 문제와의 연결 및 남은 장애물은 확인한 만큼 구체적으로 적고, 아직 불분명한 것은 불분명하다고 남긴다.
-- 막다른 길: 시도했지만 이어지지 않은 생각과, 그것이 문제에 대해 알려 준 것
+- Starting point: the instructions received, and the understanding at the start from the published knowledge read
+- Changed understanding: how the problem is seen now and what differs from before the exploration. The center of the body.
+- Angles examined: what was seen from each angle and its epistemic status
+- Connections found: connections with other concepts, fields and theorems and their status
+- Directions handed on: what was seen and why it is worth looking at further, and what, once confirmed, would open it. Write the connection to the original problem and the remaining obstacles as concretely as confirmed, and leave what is still unclear as unclear.
+- Dead ends: thoughts that were tried but did not continue, and what they told about the problem
 
-운영 조건과 모델 지시를 보존해야 하면 별도 운영 메모에 두고 수학 본문에 반복하지 않는다.
+If operating conditions and model instructions must be preserved, put them in a separate operational memo and do not repeat them in the mathematical body.
 
-계산을 했으면 코드·입력·결과를 `output/`에 두고 본문에서 재현 방법과 함께 연결한다. 새 표기가 필요하면 먼저 기존 정의를 재사용할 수 있는지 본다. 탐구 안에서만 쓰는 보조 기호는 뜻과 범위를 그 자리에서 설명하고, 연구 전체에서 공유할 필요가 있는 새 대상만 [common.md](common.md)의 기준에 따라 `output/glossary-proposals.md`로 제안한다.
+If you computed, put the code, inputs and results in `output/` and link them in the body together with the reproduction method. If you used Lean, the compile goes through the Lean broker, as 'Running Lean' in [common.md](common.md) describes, and a proof obtained along the way gets the same axiom audit as it would in research. If new notation is needed, first see whether an existing global definition can be reused. Define the symbols and auxiliary objects the exploration uses in `output/glossary-local.md`, according to 'Glossaries' in [common.md](common.md), and flag as global candidates, by the criteria there, only the objects that need to be shared across the whole run; an exploration's candidates usually come with its handed-on directions, which name the object that a follow-up task would use. The local glossary is required by the official check even when it has no entries.
 
-`output/output.json`은 [protocol.md](protocol.md) 4절의 '탐구 산출' 형식으로 쓴다. `category`는 `"explore"`, `supersedes`는 `[]`다. `exposition`에는 탐구 본문 파일의 `output/` 기준 상대 경로를, `questions`에는 탐구 중 떠오른 질문을 구체적인 문자열로 적는다. 없으면 `[]`다. `references`에는 실제로 사용한 공개 기록을 적는다. `overview`는 [protocol.md](protocol.md) 3절에 따라 탐구 전체를 소개한다. 들여다본 각도, 바뀐 이해, 넘기는 방향이 드러나게 쓴다.
+Write `output/output.json` in the 'Exploration output' format of section 4 of [protocol.md](protocol.md). `category` is `"explore"` and `supersedes` is `[]`. In `exposition` write the relative path, based on `output/`, of the exploration body file, and in `questions` write the questions that arose during the exploration as concrete strings. `[]` if none. In `references` write the published records actually used. `overview` introduces the whole exploration according to section 3 of [protocol.md](protocol.md). Write it so that the angles examined, the changed understanding and the directions handed on are visible.
 
-탐구 중에 얻은 내용은 잃지 않도록 필요한 만큼 `output/`에 저장하며 탐구를 이어 간다. 실행기는 세션이 어떻게 끝나든 그때의 `output/`을 공식 검사로 재검사해 통과하면 공개한다. 그래서 `output.json`을 갱신할 때마다 공식 검사를 통과하는 상태를 유지한다. 본문·코드·계산 자료는 각 공개 파일에 완성된 내용을 저장한다. 이 파일들을 가리키는 새 output.json은 자기 work/의 임시 파일에 완전히 쓴 뒤 output/output.json으로 교체한다(예: Python의 os.replace). 이렇게 해야 중단 시에도 이전 또는 새 JSON 중 하나의 완전한 판본을 읽을 수 있다. 끝내기 전에 [common.md](common.md)의 공식 검사를 직접 실행해 형식을 확인하고 스스로 끝낸다. 반영된 탐구는 다음 계획에 전달되며 동료 세션이 자동 배정된다. 동료가 끝나면 원 탐구와 동료 산출을 함께 보는 독립 검토가 자동 배정된다. 계획은 공개된 이해를 방향 선택에 읽을 수 있다. 수학적 근거로 쓰는 것은 그 검토가 정확한 주장과 범위를 지정해 수용한 내용이며, 탐구 전체의 관측·추측이 일괄 인증되는 것은 아니다.
+So as not to lose what was obtained during the exploration, save it as needed in `output/` and continue the exploration. However the session ends, the runner re-checks the `output/` of that moment with the official check and publishes it if it passes. So each time you update `output.json`, keep it in a state that passes the official check. Save completed content of the body, code and computation data in each published file. The new output.json that points to these files is written completely to a temporary file in your own work/ and then swapped in as output/output.json (for example Python's os.replace). This way, even on interruption, one complete version of the JSON, either the previous or the new one, can be read. Before finishing, run the official check of [common.md](common.md) yourself to confirm the format, and finish by yourself. An integrated exploration is delivered to the next plan, and a peer session is assigned automatically. When the peer finishes, an independent review that sees the original exploration and the peer output together is assigned automatically. The plan may read the published understanding for its choice of direction. What is used as mathematical evidence is the content that review accepted with the exact claim and scope designated; the observations and conjectures of the exploration as a whole are not certified wholesale.

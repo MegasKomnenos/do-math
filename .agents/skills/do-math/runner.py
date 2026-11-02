@@ -20,7 +20,7 @@ import uuid
 
 from check import check_session
 from cli_adapter import build_command, detect_usage_limit, provider_for_model
-from knowledge_index import render_index
+from knowledge_index import render_index, render_index_files
 
 
 SKILL = Path(__file__).resolve().parent
@@ -32,16 +32,27 @@ PLAN_FAILURE_LIMIT = 3
 # than 6 for ~11% more time; its compressor needs ~674 MiB. Lower it if memory is short.
 ARCHIVE_PRESET = 9
 FINISHED = ("integrated", "failed")
+# Optional keys of settings.json's lean block, applied by the Lean broker (LEAN.md).
+LEAN_DEFAULTS = {"memory_budget_mb": None, "confidence": 1.3, "min_free_memory_mb": 2048,
+                 "cpu_threads_budget": None, "threads": 2, "priority": "below_normal",
+                 "max_passes": 3, "calibration_expect_mb": 2048, "default_spread": 0.5}
+LEAN_PRIORITIES = ("below_normal", "normal", "idle")
+# Seconds between attempts to relaunch a Lean broker that keeps exiting at once.
+BROKER_RETRY = 10.0
 WRITE_BUFFER = bytearray(64 * 1024)
 WRITE_VIEW = memoryview(WRITE_BUFFER)
 JSON_ENCODER = json.JSONEncoder(ensure_ascii=False, indent=2)
 
 
-def available_memory():
-    """Commit headroom on Windows; available physical memory on Linux."""
+def memory_status():
+    """(total physical, headroom) in bytes: commit headroom on Windows, MemAvailable on Linux.
+
+    Both headroom figures count private memory only; file-backed mappings such as
+    Lean's .olean files are page cache and never reduce them (LEAN.md)."""
     if os.name != "nt":
         fields = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
-        return int(fields["MemAvailable"].split()[0]) * 1024
+        return (int(fields["MemTotal"].split()[0]) * 1024,
+                int(fields["MemAvailable"].split()[0]) * 1024)
     class MemoryStatus(ctypes.Structure):
         _fields_ = [("length", wintypes.DWORD), ("load", wintypes.DWORD)] + [
             (name, ctypes.c_ulonglong) for name in
@@ -50,7 +61,12 @@ def available_memory():
     status.length = ctypes.sizeof(status)
     if not WIN.GlobalMemoryStatusEx(ctypes.byref(status)):
         raise ctypes.WinError(ctypes.get_last_error())
-    return status.avail_page
+    return status.total_phys, status.avail_page
+
+
+def available_memory():
+    """Commit headroom on Windows; available physical memory on Linux."""
+    return memory_status()[1]
 
 
 class EmergencyMemory:
@@ -212,9 +228,10 @@ def alive(identity):
     try:
         return process_identity(identity["pid"]) == identity
     except PermissionError:
-        # ponytail: 기록된 프로세스는 모두 같은 권한을 물려받은 자손이라 늘 열린다. 거부는 다른 계정의
-        # 프로세스가 PID를 재사용했다는 뜻이다. 관리자 승격 실행과 섞으면 이 전제가 깨질 수 있다(RUNTIME.md).
-        # 섞어 써야 하면 시스템 프로세스 목록의 생성 시각으로 대조하도록 올린다.
+        # ponytail: every recorded process is a descendant that inherited the same privileges, so it can
+        # always be opened. A refusal means a process of another account reused the PID. Mixing with
+        # elevated runs can break this premise (RUNTIME.md). If mixing is unavoidable, upgrade to
+        # comparing creation times from the system process list.
         return False
 
 
@@ -286,7 +303,48 @@ def load_settings(instance):
     if not isinstance(lean["env"], dict) or not all(
             isinstance(k, str) and isinstance(v, str) for k, v in lean["env"].items()):
         raise ValueError("lean.env must be a string mapping")
+    # Broker settings are optional; a settings.json written before the broker keeps working.
+    for key, default in LEAN_DEFAULTS.items():
+        lean.setdefault(key, default)
+    def positive_int(key, nullable=False):
+        value = lean[key]
+        if value is None and nullable:
+            return
+        if type(value) is not int or value < 1:
+            raise ValueError(f"lean.{key} must be a positive integer" + (" or null" if nullable else ""))
+    positive_int("memory_budget_mb", nullable=True)
+    positive_int("cpu_threads_budget", nullable=True)
+    positive_int("threads")
+    positive_int("calibration_expect_mb")
+    for key in ("min_free_memory_mb", "max_passes"):
+        if type(lean[key]) is not int or lean[key] < 0:
+            raise ValueError(f"lean.{key} must be a non-negative integer")
+    for key in ("confidence", "default_spread"):
+        value = lean[key]
+        if type(value) not in (int, float) or isinstance(value, bool) or not math.isfinite(value) or value < 0:
+            raise ValueError(f"lean.{key} must be a non-negative finite number")
+    if lean["priority"] not in LEAN_PRIORITIES:
+        raise ValueError("lean.priority must be one of " + ", ".join(LEAN_PRIORITIES))
     return settings
+
+
+def lean_config(settings):
+    """The broker configuration in force: settings plus the values derived on this host.
+
+    A null memory budget is the physical memory minus the machine gate and a
+    512 MiB allowance per AI session; a null thread budget is twice the logical
+    core count, since a compile is CPU-bound only during elaboration (LEAN.md)."""
+    lean = settings["lean"]
+    config = {key: lean[key] for key in LEAN_DEFAULTS}
+    total_mb = memory_status()[0] // (1024 * 1024)
+    if config["memory_budget_mb"] is None:
+        config["memory_budget_mb"] = max(
+            1024, total_mb - lean["min_free_memory_mb"] - 512 * settings["max_sessions"])
+    if config["cpu_threads_budget"] is None:
+        config["cpu_threads_budget"] = 2 * (os.cpu_count() or 1)
+    config["derived"] = {"total_memory_mb": total_mb, "logical_cores": os.cpu_count() or 1,
+                         "max_sessions": settings["max_sessions"]}
+    return config
 
 
 def initialize(instance, goal, settings):
@@ -441,6 +499,8 @@ class Runner:
         self.reserve = None
         self.archiver = None
         self.archive_due = False
+        self.broker = None
+        self.broker_attempt = float("-inf")
 
     def save(self):
         try:
@@ -454,13 +514,19 @@ class Runner:
     def session_dir(self, sid):
         return self.instance / "sessions" / sid
 
-    def refresh_index(self, commit=True):
+    def refresh_index(self, publish=None):
+        """Rebuild every index file from the records and the latest plan's layout.
+
+        With publish=<record ID>, the new record and the index files go into one
+        `Publish <ID>` commit. Otherwise changed index files get a `Refresh
+        knowledge index` commit of their own. Returns the general module's path.
+        """
         paths = {p.parent.name: p for p in (self.instance / 'knowledge').glob('*/output.json')}
         # Publication commits preserve order across rebuilds, copies and restarts.
         history = git(self.instance, 'log', '--reverse', '--format=%s', '--', 'knowledge')
         ordered = dict.fromkeys(line[8:] for line in history.splitlines()
                                 if line.startswith('Publish ') and line[8:] in paths)
-        if commit:
+        if publish is None:
             for rid in paths.keys() - ordered.keys():
                 if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + rid):
                     raise RuntimeError('Uncommitted publication; start the runner to recover before rebuilding the index')
@@ -468,24 +534,73 @@ class Runner:
         for rid in sorted(paths, key=lambda r: (paths[r].parent.stat().st_mtime_ns, r)):
             ordered.setdefault(rid, None)
         records = [(rid, read_json(paths[rid])) for rid in ordered]
-        plans = [rid for rid, data in records if data['category'] == 'plan']
-        # Only the latest plan's files are current; an older copy would mislead.
-        latest = paths[plans[-1]].parent if plans else None
-        status, glossary = (plans[-1] if latest and (latest / name).is_file() else None
+        plans = [(rid, data) for rid, data in records if data['category'] == 'plan']
+        # Only the latest plan's files and layout are current; an older copy would mislead.
+        latest, layout = plans[-1] if plans else (None, {})
+        status, glossary = (latest if latest and (paths[latest].parent / name).is_file() else None
                             for name in ('research-status.md', 'glossary.md'))
-        content = render_index(records, status, glossary)
-        path = self.instance / 'knowledge/index.md'
-        if not path.exists() or path.read_bytes() != content.encode('utf-8'):
-            write_text(path, content)
-        if commit:
-            git(self.instance, 'add', '--', 'knowledge/index.md')
-            if git(self.instance, 'diff', '--cached', '--name-only', '--', 'knowledge/index.md'):
-                git(self.instance, 'commit', '--only', '-m', 'Refresh knowledge index', '--', 'knowledge/index.md')
-        return path
+        modules = (layout.get('index') or {}).get('modules', [])
+        files = render_index_files(records, status, glossary, latest, modules)
+        knowledge = self.instance / 'knowledge'
+        index_dir = knowledge / 'index'
+        stale = [p for p in index_dir.glob('*.md') if 'index/' + p.name not in files] if index_dir.is_dir() else []
+        for path in stale:
+            path.unlink()
+        for name, content in files.items():
+            path = knowledge / name
+            path.parent.mkdir(exist_ok=True)
+            if not path.exists() or path.read_bytes() != content.encode('utf-8'):
+                write_text(path, content)
+        if index_dir.is_dir() and not any(index_dir.iterdir()):
+            index_dir.rmdir()
+        # A stale file is staged for removal only if Git knows it; an uncommitted
+        # leftover is simply deleted, since Git rejects a pathspec matching nothing.
+        tracked = set(git(self.instance, 'ls-files', '--', 'knowledge/index').splitlines())
+        staged = ['knowledge/' + name for name in files] + [
+            'knowledge/index/' + p.name for p in stale if 'knowledge/index/' + p.name in tracked]
+        if publish:
+            staged.append('knowledge/' + publish)
+        git(self.instance, 'add', '-A', '-f', '--', *staged)
+        if publish or git(self.instance, 'diff', '--cached', '--name-only', '--', *staged):
+            message = 'Publish ' + publish if publish else 'Refresh knowledge index'
+            git(self.instance, 'commit', '--only', '-m', message, '--', *staged)
+        return knowledge / 'index.md'
 
     def active(self):
         return [(sid, s) for sid, s in self.state["sessions"].items()
                 if s["status"] in ("starting", "running", "publishing")]
+
+    def ensure_broker(self):
+        """Keep one Lean broker alive for as long as this runner runs.
+
+        A broker found alive by identity is adopted, whoever launched it; only
+        the one this runner launched is reaped. The broker outlives the runner
+        and exits by its own rule (LEAN.md), so it is never terminated here, and
+        it is not relaunched on the runner's own last tick.
+        """
+        if self.broker is not None and self.broker.poll() is not None:
+            self.broker = None
+        if (self.state["complete"] or self.state.get("halted")) and not self.active():
+            return
+        receipt = self.instance / "runner/lean/process.json"
+        try:
+            if receipt.exists() and alive(read_json(receipt)["process"]):
+                return
+        except (OSError, ValueError, KeyError):
+            pass
+        if time.monotonic() - self.broker_attempt < BROKER_RETRY:
+            return
+        self.broker_attempt = time.monotonic()
+        directory = self.instance / "runner/lean"
+        directory.mkdir(exist_ok=True)
+        try:
+            with (directory / "broker.log").open("ab") as log:
+                self.broker = subprocess.Popen(
+                    [sys.executable, "-B", str(self.skill / "lean_broker.py"), "serve", str(self.instance)],
+                    cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                    **popen_options(detached=True))
+        except OSError as exc:
+            os.write(2, f"Lean broker launch failed: {exc}\n".encode("utf-8", "replace"))
 
     def enqueue(self, key, category, task, origin, selection=None):
         self.state["requests"].setdefault(key, {
@@ -529,18 +644,23 @@ class Runner:
                 "context": {"common": [str(p) for p in common],
                             "category": str(self.skill / (category + ".md"))}, "task": task}
         write_json(session / "input.json", data)
-        prompt = (f"당신은 do-math의 {category} 세션이다. 자기 세션 폴더: {session}\n"
-                  f"{session / 'input.json'}의 context.common, context.category, task를 모두 읽고 수행하라.\n"
-                  f"축적 지식의 진입점은 {self.instance / 'knowledge/index.md'}다. "
-                  f"필요한 원문과 검토는 {self.instance / 'knowledge'}에서 읽는다. "
-                  f"Lean 등 설정은 {self.instance / 'settings.json'}에서 읽는다.\n"
-                  "새 파일과 수정 파일은 자기 세션 폴더 안에만 둔다. "
-                  "공개할 산출 전체는 output/에 작성하라.\n"
-                  f"산출을 정리한 뒤 다음 argv의 공식 검사 명령을 실행하고 오류를 고친 뒤 끝내라:\n"
-                  f"{json.dumps([sys.executable, str(self.skill / 'check.py'), str(session)], ensure_ascii=False)}\n")
+        prompt = (f"You are a do-math {category} session. Your session folder: {session}\n"
+                  f"Read and carry out context.common, context.category and task in {session / 'input.json'}.\n"
+                  f"The entry point of the accumulated knowledge is {self.instance / 'knowledge/index.md'}, the general module of the index; "
+                  f"it lists the other modules, rendered under {self.instance / 'knowledge/index'}, with a description of each. "
+                  f"Read the source texts and reviews you need in {self.instance / 'knowledge'}. "
+                  f"The model and tool settings are in {self.instance / 'settings.json'}.\n"
+                  "Put new and modified files only inside your session folder. "
+                  "Write the whole output to be published in output/.\n"
+                  f"After organizing your output, run the official check command with the following argv, fix any errors, then finish:\n"
+                  f"{json.dumps([sys.executable, str(self.skill / 'check.py'), str(session)], ensure_ascii=False)}\n"
+                  f"Lean runs only through the instance's Lean broker, which queues every compile of this instance within one memory budget "
+                  f"and returns its measured cost; {self.skill / 'LEAN.md'} explains the commands and the estimate it asks for. "
+                  f"To compile a file, run the following argv with the file's absolute path and your estimate of its peak memory in MiB:\n"
+                  f"{json.dumps([sys.executable, str(self.skill / 'lean_broker.py'), 'run', str(self.instance), '<file.lean>', '--session', sid, '--expect-mb', '<MiB>'], ensure_ascii=False)}\n")
         if category == "plan":
-            prompt += (f"이미 게시된 미완료 요청과 대체 의도는 {self.state_path}의 requests에서 읽는다. "
-                       f"읽는 법과 상태 의미는 {self.skill / 'RUNTIME.md'}를 따른다.\n")
+            prompt += (f"Read already-posted unfinished requests and supersession intents from requests in {self.state_path}. "
+                       f"Follow {self.skill / 'RUNTIME.md'} for how to read them and what the statuses mean.\n")
         (session / "prompt.txt").write_bytes(prompt.encode("utf-8"))
         selected = dict(self.settings["defaults"][category])
         if request:
@@ -634,13 +754,11 @@ class Runner:
                 shutil.rmtree(staging)
             shutil.copytree(session / "output", staging)
             staging.rename(destination)
-        relative = "knowledge/" + record
-        self.refresh_index(commit=False)
-        if not git(self.instance, "log", "-1", "--format=%H", "--", relative):
-            git(self.instance, "add", "-f", "--", relative, "knowledge/index.md")
-            git(self.instance, "commit", "--only", "-m", "Publish " + record, "--", relative, "knowledge/index.md")
-        else:
+        # A restart after the commit but before the effects below only refreshes the index.
+        if git(self.instance, "log", "-1", "--format=%H", "--", "knowledge/" + record):
             self.refresh_index()
+        else:
+            self.refresh_index(publish=record)
         output = read_json(destination / "output.json")
         # Effects and the processed marker share one atomic state replacement.
         self.apply_output(s, record, output)
@@ -689,16 +807,16 @@ class Runner:
                                   else output["wait"])
         elif output['category'] in ('research', 'explore'):
             self.enqueue(record + ':automatic_peer', 'peer', {
-                'instructions': '공개 산출을 독립적인 동료 연구자로서 읽고 그 수학을 자기 손으로 다뤄 보라. '
-                                'peer.md에 따라 자신의 이해와 실제로 살펴본 내용을 남긴다. '
-                                '새로운 결과나 비판을 억지로 만들지 않으며 인증 판정은 뒤의 검토 세션이 맡는다.',
+                'instructions': 'Read the published output as an independent fellow researcher and work its mathematics with your own hands. '
+                                'Following peer.md, record your understanding and what you actually examined. '
+                                'Do not force new results or criticism; certification verdicts belong to the later review session.',
                 'references': [], 'target': {'kind': output['category'], 'record': record}}, record)
             if output['category'] == 'explore':
                 self.state['events'].append({'kind': 'exploration_finished', 'record': record})
         elif output['category'] == 'peer':
             self.enqueue(record + ':automatic_review', 'review', {
-                'instructions': '원 작업과 동료의 공개 산출을 함께 독립 검토하라. '
-                                '양쪽의 주장·근거·비판을 대조하고 사용할 수 있는 정확한 범위를 판정한다.',
+                'instructions': 'Independently review the published outputs of the original work and the peer together. '
+                                'Cross-check both sides\' claims, evidence and criticism and determine the exact scope that can be used.',
                 'references': [], 'target': {'kind': 'bundle', 'work': output['target']['record'],
                                              'peer': record}}, record)
             self.state['events'].append({'kind': 'peer_finished', 'record': record})
@@ -744,13 +862,14 @@ class Runner:
     def tick(self):
         self.collect()
         self.archive()
+        self.ensure_broker()
         self.ingest_inputs()
         if self.blocked():
             return
         active = self.active()
         slots = self.settings["max_sessions"] - len(active)
         if slots > 0 and self.state["events"] and not any(s["category"] == "plan" for _, s in active):
-            self.dispatch("plan", {"instructions": "사건과 축적 지식을 읽고 다음 연구·검토를 계획하라.",
+            self.dispatch("plan", {"instructions": "Read the events and the accumulated knowledge and plan the next research and reviews.",
                                    "references": [], "events": list(self.state["events"]),
                                    "previous_plan": self.state["last_plan"]})
             slots -= 1
@@ -772,7 +891,8 @@ class Runner:
             # Also covers sessions finished before a runner death or before archiving existed.
             self.archive_due = True
             self.state.setdefault("last_plan", None)  # States written before these fields
-            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md", "RUNTIME.md", "check.py", "glossary.py"):
+            for name in ("common.md", "protocol.md", "plan.md", "research.md", "explore.md", "peer.md", "review.md",
+                         "RUNTIME.md", "LEAN.md", "check.py", "glossary.py", "lean_broker.py"):
                 if not (self.skill / name).is_file():
                     raise ValueError(f"Missing session context/tool: {self.skill / name}")
             ready = False
@@ -849,6 +969,25 @@ def dispatch_blocks(instance, state):
     return reasons
 
 
+def lean_status(instance):
+    """The Lean broker as recorded: liveness, configuration in force and its jobs."""
+    directory = instance / "runner/lean"
+    receipt = directory / "process.json"
+    broker = read_json(receipt) if receipt.exists() else None
+    state = read_json(directory / "state.json") if (directory / "state.json").exists() else {}
+    jobs = state.get("jobs", {})
+    def summary(job):
+        return {key: job.get(key) for key in ("id", "kind", "session", "expect_mb", "waiting_for", "passed",
+                                              "started_at", "reserve", "measured")}
+    return {"broker": broker, "broker_alive": bool(broker and alive(broker["process"])),
+            "config": state.get("config"), "config_error": state.get("config_error"),
+            "version": state.get("version"), "version_error": state.get("version_error"),
+            "queued": [summary(j) for j in jobs.values() if j["status"] == "queued"],
+            "running": [summary(j) for j in jobs.values() if j["status"] == "running"],
+            "finished": sum(j["status"] not in ("queued", "running") for j in jobs.values()),
+            "log": str(directory / "broker.log")}
+
+
 def status(instance):
     state = read_json(instance / "runner/state.json")
     path = instance / "runner/process.json"
@@ -856,7 +995,7 @@ def status(instance):
     reasons = dispatch_blocks(instance, state)
     return {"instance": str(instance), "knowledge": str(instance / "knowledge"),
             "runner": runner, "runner_alive": bool(runner and alive(runner["process"])),
-            "dispatch_blocks": reasons, "state": state}
+            "dispatch_blocks": reasons, "lean": lean_status(instance), "state": state}
 
 
 def submit_input(instance, source):

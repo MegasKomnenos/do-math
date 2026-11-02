@@ -6,13 +6,13 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from glossary import check_glossary, FIELDS
+from glossary import check_glossary, check_local_glossary, FIELDS, LOCAL_FIELDS, LOCAL_MARKER
 from check import check_session
 
 def snapshot():
     return '\n'.join(['<!-- do-math-glossary -->',
         '[History](glossary-history.md)', '<a id="term-1"></a>', '## 1. Term',
-        '| 칸 | 내용 |', '|---|---|']+[f'| {field} | Value |' for field in FIELDS])+'\n'
+        '| Field | Content |', '|---|---|']+[f'| {field} | Value |' for field in FIELDS])+'\n'
 
 class GlossaryTests(unittest.TestCase):
     def setUp(self):
@@ -29,7 +29,7 @@ class GlossaryTests(unittest.TestCase):
         (self.out/'glossary.md').write_text(s,encoding='utf-8')
 
     def test_valid_with_expression_pipes_and_current_scope(self):
-        self.write(snapshot().replace('| 정의 | Value |','| 정의 | A={x: |x|<1}; q≥2. |'))
+        self.write(snapshot().replace('| Definition | Value |','| Definition | A={x: |x|<1}; q≥2. |'))
         self.assertEqual(check_glossary(self.out),[])
 
     def test_missing_files_and_format(self):
@@ -40,24 +40,24 @@ class GlossaryTests(unittest.TestCase):
         self.assertTrue(check_glossary(self.out))
 
     def test_duplicate_status_and_appended_history_rejected(self):
-        for tail in ['| Lean 추가 대응 | A later accepted result |\n',
-                     '| 현재 형식 대응 | Another status |\n',
-                     '현재 형식 수용 보완: later state.\n']:
+        for tail in ['| Additional Lean correspondence | A later accepted result |\n',
+                     '| Current formal correspondence | Another status |\n',
+                     'Current formal acceptance supplement: later state.\n']:
             self.write(snapshot()+tail)
             self.assertTrue(check_glossary(self.out),tail)
 
     def test_empty_field_duplicate_id_and_missing_anchor_rejected(self):
-        for s in [snapshot().replace('| 출처 | Value |','| 출처 |  |'),
+        for s in [snapshot().replace('| Provenance | Value |','| Provenance |  |'),
                   snapshot()+snapshot()[snapshot().index('<a id='):],
                   snapshot().replace('<a id="term-1"></a>','')]:
             self.write(s);self.assertTrue(check_glossary(self.out))
 
     def test_relation_links(self):
-        self.write(snapshot().replace('| 관련 표현 | Value |','| 관련 표현 | [self](#term-1) |'))
+        self.write(snapshot().replace('| Related expressions | Value |','| Related expressions | [self](#term-1) |'))
         self.assertEqual(check_glossary(self.out),[])
-        self.write(snapshot().replace('| 관련 표현 | Value |','| 관련 표현 | [missing](#term-2) |'))
+        self.write(snapshot().replace('| Related expressions | Value |','| Related expressions | [missing](#term-2) |'))
         self.assertTrue(check_glossary(self.out))
-        self.write(snapshot().replace('| 관련 표현 | Value |','| 관련 표현 | [family](glossary-relations.md) |'))
+        self.write(snapshot().replace('| Related expressions | Value |','| Related expressions | [family](glossary-relations.md) |'))
         self.assertTrue(check_glossary(self.out))
         (self.out/'glossary-relations.md').write_text('Family',encoding='utf-8')
         self.assertEqual(check_glossary(self.out),[])
@@ -88,8 +88,59 @@ class GlossaryTests(unittest.TestCase):
         self.assertTrue(self.fixture())
 
     def test_aliases_belong_in_archive_not_current_entries(self):
-        self.write(snapshot()+'| 기록별 이명 | Historical name |\n')
+        self.write(snapshot()+'| Per-record aliases | Historical name |\n')
         self.assertTrue(check_glossary(self.out))
+
+
+def local(entries=1, candidate='None'):
+    lines = [LOCAL_MARKER, 'Local glossary of this record. Global glossary applied: k1 (glossary.md).']
+    for n in range(1, entries + 1):
+        lines += [f'<a id="local-{n}"></a>', f'## {n}. Term {n}', '| Field | Content |', '|---|---|']
+        lines += [f'| {field} | {candidate if field == "Global candidate" else "Value"} |' for field in LOCAL_FIELDS]
+    return '\n'.join(lines) + '\n'
+
+
+class LocalGlossaryTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.out = Path(self.temp.name)
+
+    def write(self, s):
+        (self.out / 'glossary-local.md').write_text(s, encoding='utf-8')
+
+    def test_entries_zero_entries_and_candidates_are_valid(self):
+        for source in (local(2), local(0), local(1, 'Needed by the formalization task posted next.')):
+            self.write(source)
+            self.assertEqual(check_local_glossary(self.out), [], source)
+
+    def test_missing_empty_or_unmarked_file_rejected(self):
+        self.assertTrue(check_local_glossary(self.out))
+        self.write('  \n')
+        self.assertTrue(check_local_glossary(self.out))
+        self.write(local(1).replace(LOCAL_MARKER, ''))
+        self.assertTrue(check_local_glossary(self.out))
+        self.write(local(1).replace(LOCAL_MARKER, '<!-- do-math-glossary -->'))
+        self.assertTrue(check_local_glossary(self.out))
+
+    def test_fields_once_in_order_including_candidate(self):
+        for source in (local(1).replace('| Global candidate | None |\n', ''),
+                       local(1).replace('| Kind | Value |\n', ''),
+                       local(1) + '| Global candidate | Again |\n',
+                       local(1).replace('| Global candidate | None |', '| Global candidate |  |'),
+                       local(1) + 'Later note outside the fields.\n'):
+            self.write(source)
+            self.assertTrue(check_local_glossary(self.out), source)
+
+    def test_anchors_and_links_use_local_prefix(self):
+        self.write(local(1).replace('local-1', 'term-1'))
+        self.assertTrue(check_local_glossary(self.out))
+        self.write(local(2).replace('<a id="local-2"></a>\n', ''))
+        self.assertTrue(check_local_glossary(self.out))
+        self.write(local(2).replace('| Related expressions | Value |', '| Related expressions | [first](#local-1) |', 1))
+        self.assertEqual(check_local_glossary(self.out), [])
+        self.write(local(1).replace('| Related expressions | Value |', '| Related expressions | [missing](#local-2) |'))
+        self.assertTrue(check_local_glossary(self.out))
 
 if __name__=='__main__':
     unittest.main()

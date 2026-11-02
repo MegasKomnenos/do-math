@@ -63,6 +63,9 @@ class PeerTests(unittest.TestCase):
         (session / 'input.json').write_text(json.dumps(inp), encoding='utf-8')
         (output / 'output.json').write_text(json.dumps(data), encoding='utf-8')
         (output / 'note.md').write_text('Evidence', encoding='utf-8')
+        if data['category'] != 'review':
+            from glossary import LOCAL_MARKER
+            (output / 'glossary-local.md').write_text(LOCAL_MARKER + '\nNo local terms.\n', encoding='utf-8')
         return check_session(session)
 
     def test_peer_and_bundle_valid(self):
@@ -139,7 +142,7 @@ class PeerTests(unittest.TestCase):
         index = render_index([('work', self.work), ('peer', self.peer), ('old', old), ('new', new)])
         self.assertIn('(peer/output.json)', index)
         self.assertIn('(new/output.json)', index)
-        self.assertIn('상충: r1/assessment', index)
+        self.assertIn('Conflict: r1/assessment', index)
         self.assertNotIn('## peer', index)
         self.assertNotIn('## review', index)
         self.assertNotIn('  assessment:', index)

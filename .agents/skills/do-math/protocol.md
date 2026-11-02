@@ -1,45 +1,49 @@
-# do-math의 인스턴스와 산출 계약
+# do-math instance and output contract
 
-이 문서는 실행기와 계획·연구·탐구·동료·검토 세션이 파일을 주고받는 계약이다. 목표 하나를 연구하는 **인스턴스** 안에서 세션은 자기 폴더에 결과를 쓰고, 실행기가 공개 산출만 **축적 지식**으로 복사한다. 다음 세션은 이 지식을 읽고 연구를 이어 간다. 사람이 읽는 수학 해설이 주 산출물이며 Lean 원문은 해당하는 결과의 근거다.
+This document is the contract by which the runner and the plan, research, exploration, peer and review sessions exchange files. Inside an **instance** that researches one goal, sessions write their results in their own folders, and the runner copies only the published output into the **accumulated knowledge**. The next session reads this knowledge and carries the research on. The human-readable mathematical exposition is the primary deliverable, and Lean sources are the evidence for the results concerned.
 
-구현의 진입점은 [check.py](check.py)의 `check_session`과 `main`이다. 이 문서의 형식과 작은 예시는 해당 검사기의 계약이다. 연구 방법과 판단 원리는 범주별 작업맥락에서 다루며, 실행기의 사용자 명령과 프로세스 상태 내부 형식은 실행기에서 정한다.
+The implementation entry points are `check_session` and `main` in [check.py](check.py). The formats and small examples in this document are the contract of that checker. Research methods and judging principles are handled in the per-category working contexts, and the runner's user commands and the internal format of process state are decided by the runner.
 
-## 1. 인스턴스와 파일 책임
+## 1. Instance and file responsibilities
 
-인스턴스는 저장소 본체 Git에서 제외되는 폴더(예: `.skill-workspace/do-math/<이름>/`)나 저장소 밖에 둔다. 인스턴스 자체의 Git은 실행기의 `init` 명령이 인스턴스를 만들 때 그 루트에 함께 만든다. 상위 저장소를 인스턴스 Git으로 사용하지 않는다.
+An instance is placed in a folder excluded from the main repository's Git (for example `.skill-workspace/do-math/<name>/`) or outside the repository. The instance's own Git is created at its root by the runner's `init` command when it creates the instance. The parent repository is not used as the instance Git.
 
 ```text
 INSTANCE/
-  .git/                     인스턴스 자체의 기록
-  goal.md                   사용자의 목표, 필수조건, 허가
-  settings.json             실행 설정
+  .git/                     the instance's own history
+  goal.md                   the user's goal, requirements and permissions
+  settings.json             run settings
   knowledge/
-    index.md                실행기가 갱신하는 제목·요약·검토 색인
-    k0001/                  실행기가 새로 부여한 기록 ID
-      output.json           공개 산출의 분류와 참조
-      exposition.md         산출이 제공한 파일(이름은 자유)
+    index.md                the general module of the index the runner renders: preamble, module table, entries
+    index/                  the other index modules the last plan declared, one file each
+      closed-route.md
+    k0001/                  a record ID newly assigned by the runner
+      output.json           classification and references of the published output
+      exposition.md         a file the output provided (name is free)
+      glossary-local.md     the record's local glossary (research, explore and peer)
       Proof.lean
   sessions/
-    s0001/                  실행기가 새로 부여한 세션 ID
-      input.json            실행기가 주는 세 층 작업맥락과 작업 대상
-      output/               세션이 공개할 모든 파일
+    s0001/                  a session ID newly assigned by the runner
+      input.json            the three-layer working context and the task target the runner gives
+      output/               every file the session will publish
         output.json
-      work/                 선택적인 중간 작업 디렉터리
-      work.tar.xz           세션이 끝난 뒤 실행기가 work/를 옮겨 담은 압축본
-      ...                   CLI 로그 등 실행기·세션의 기록
-  runner/                   실행기 상태, 사건 대기열, 프로세스 정보
+      work/                 optional intermediate work directory
+      work.tar.xz           the archive into which the runner moved work/ after the session ended
+      ...                   records of the runner and the session, such as CLI logs
+  runner/                   runner state, event queue, process information
+    lean/                   the Lean broker: lock, state, calibration table, queue and jobs
   control/
-    STOP                    존재하면 새 세션 파견을 멈추는 표시
-    inputs/                 사용자 입력을 고유 이름의 UTF-8 텍스트 파일로 추가
+    STOP                    when present, a mark that stops dispatch of new sessions
+    inputs/                 user inputs added as uniquely named UTF-8 text files
 ```
 
-세션은 자기 `sessions/<ID>/` 안에만 쓴다. `input.json`은 실행기가 준비하고 세션이 읽는다. 세션의 `output/` 밖 파일은 공개 산출에 포함되지 않는다. 실행기만 `knowledge/`에 새 기록을 추가하고 반영마다 Git 커밋을 남긴다. `runner/`의 내부 스키마와 입력 소비 추적은 실행기의 책임이다. 예외는 `runner/state.json`의 `requests` 하나다. 계획은 이미 게시된 일과 겹치지 않으려고 이 필드를 읽으며, 그 형식과 뜻은 [RUNTIME.md](RUNTIME.md)의 '계획이 읽을 미완료 요청과 사건'이 정하는 계약이다. 계획은 그 밖의 실행 상태 필드에 기대지 않는다. `control/inputs/`의 입력 원문은 보존하고, 실행기가 아직 넘기지 않은 내용을 다음 계획의 사건에 담는다. `STOP`은 이미 돌고 있는 세션을 종료시키지 않는다.
+A session writes only inside its own `sessions/<ID>/`. `input.json` is prepared by the runner and read by the session. Files outside the session's `output/` are not part of the published output. Only the runner adds new records to `knowledge/` and leaves a Git commit for every integration. The internal schema of `runner/` and the tracking of input consumption are the runner's responsibility. The one exception is `requests` in `runner/state.json`. A plan reads this field so as not to overlap with work already posted, and its format and meaning are the contract defined by 'Unfinished requests and events a plan reads' in [RUNTIME.md](RUNTIME.md). A plan does not rely on any other runner-state field. The raw input texts in `control/inputs/` are preserved, and what the runner has not yet handed over is put into the next plan's events. `STOP` does not terminate sessions already running.
 
-JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설명을 담을 수 있다. ID는 영문·숫자로 시작하고 영문·숫자·`_`·`-`만 사용한다. 세션 ID와 기록 ID는 서로 다른 이름 공간이며 실행기가 각각 인스턴스 안에서 중복 없이 부여한다. 결과 ID는 해당 연구·동료·묶음 검토 기록 하나 안에서 고유하다. 서로 다른 기록의 같은 결과 ID는 다른 결과다. 배열의 빈 값은 `[]`, 선택 결과의 부재는 아래에 지정한 `null`로 쓴다. 필수 설명 문자열은 비어 있지 않아야 한다. 알 수 없는 추가 JSON 필드는 무시한다. 추가 필드만으로 새 실행 동작이 생기지는 않는다.
+JSON is UTF-8 (a BOM is also read). Strings other than paths may contain human-readable explanation. IDs begin with a letter or digit and use only letters, digits, `_` and `-`. Session IDs and record IDs are separate namespaces, each assigned by the runner without duplication within the instance. A result ID is unique within one research, peer or bundle-review record. The same result ID in different records is a different result. An empty array value is `[]`, and the absence of an optional result is the `null` specified below. Required explanatory strings must be nonempty. Unknown additional JSON fields are ignored. Additional fields alone never create new runner behavior.
 
-### 설정
+### Settings
 
-`settings.json`은 다음 필드를 제공한다. 공식 산출 검사는 이 파일을 검사하지 않으며, 실행기는 설정을 읽어 사용한다.
+`settings.json` provides the following fields. The official output check does not check this file; the runner reads and uses the settings.
 
 ```json
 {
@@ -57,20 +61,29 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
     "command": ["C:/tools/lean.exe"],
     "version_command": ["C:/tools/lean.exe", "--version"],
     "cwd": null,
-    "env": {}
+    "env": {},
+    "memory_budget_mb": null,
+    "confidence": 1.3,
+    "min_free_memory_mb": 2048,
+    "cpu_threads_budget": null,
+    "threads": 2,
+    "priority": "below_normal",
+    "max_passes": 3,
+    "calibration_expect_mb": 2048,
+    "default_spread": 0.5
   }
 }
 ```
 
-위 경로·모델은 형식 예시이며 사용 가능한 설치·모델을 설정한다. `defaults`에는 plan, research, explore, review 기본값이 있어야 한다. 새 설정에는 peer도 명시한다. 기존 설정에 peer가 없으면 review의 모델·effort를 복사해 사용한다. `max_sessions`는 모든 범주를 합친 양의 정수 상한이다. 사용자가 동시성 상한을 따로 지정하지 않으면 새 인스턴스의 `settings.json`에 기본값 8을 명시한다. `limit_wait_seconds`는 공급자 한도 해제 시각이 없을 때 기다릴 양수 초다. 모델 문자열은 `codex/<CLI에 넘길 모델>` 또는 `claude/<CLI에 넘길 모델>`이다. 실행기는 앞부분으로 CLI를 고르고 `/` 뒤 전체를 모델 인자로 넘긴다. 노력은 비어 있지 않은 문자열이며 `claude/` 모델에는 `low`, `medium`, `high`, `xhigh`, `max` 중 하나를 쓴다. `codex/` 모델에는 문자열을 그대로 전달하며 지원 여부는 CLI와 모델이 정한다. 모델·노력을 지정할 때는 기본값과 합쳐 실제로 사용할 두 값을 함께 확인한다. 전달 방식은 [CLI.md](CLI.md)에 있다.
+The paths and models above are a format example; configure the available installations and models. `defaults` must contain the plan, research, explore and review defaults. New settings also state peer explicitly. If existing settings have no peer, the review model and effort are copied and used. `max_sessions` is a positive-integer cap over all categories together. If the user does not specify a concurrency cap separately, state the default 8 explicitly in the new instance's `settings.json`. `limit_wait_seconds` is the positive number of seconds to wait when there is no provider limit reset time. A model string is `codex/<model to pass to the CLI>` or `claude/<model to pass to the CLI>`. The runner chooses the CLI by the prefix and passes everything after the `/` as the model argument. Effort is a nonempty string; for a `claude/` model use one of `low`, `medium`, `high`, `xhigh`, `max`. For a `codex/` model the string is passed as it is, and whether it is supported is decided by the CLI and the model. When specifying a model or effort, confirm both values that will actually be used after merging with the defaults. The way they are passed is in [CLI.md](CLI.md).
 
-계획이 게시한 요청에 `model` 또는 `effort`가 있으면 그 필드만 범주 기본값을 덮어쓴다. 하나라도 지정하면 `selection_reason`에 이유를 적는다. 계획 세션, 자동 동료, 자동 묶음 검토는 각각 plan, peer, review 범주 기본값을 쓴다. 개편 전에 게시된 자동 연구 단독 검토도 review 기본값을 쓴다.
+If a request a plan posted has `model` or `effort`, only that field overrides the category default. If either is specified, write the reason in `selection_reason`. The plan session, automatic peers and automatic bundle reviews use the plan, peer and review category defaults respectively. Automatic standalone research reviews posted before the reorganization also use the review defaults.
 
-`lean.command`는 원문 파일의 절대 경로를 마지막 인자로 붙여 실행할 명령 배열이다. `version_command`의 출력이 산출의 `lean.version`에 들어간다. `cwd`는 절대 작업 폴더 또는 `null`(검사를 수행하는 세션 폴더), `env`는 상속 환경에 덮어쓸 문자열 환경변수다. Mathlib을 쓴다면 `command`를 `[".../lake.exe", "env", "lean"]`, `cwd`를 Mathlib 프로젝트로 두고 필요하면 `env.PATH`에 Lean bin과 기존 PATH를 포함한다. 세션이 이 설정을 읽어 컴파일한다. 설치 상태는 실행 시점의 것을 사용한다.
+`lean.command` is the command that compiles a Lean file. It is run by the instance's Lean broker, not by the sessions, with a `--threads` flag and the absolute path of the source file appended as the last arguments. The output of `version_command` is what the broker's `version` command reports, and it goes into the output's `lean.version`. `cwd` is an absolute working folder, or `null` for the folder of the session that submitted the compile. `env` holds string environment variables that override the inherited environment. If you use Mathlib, set `command` to `[".../lake.exe", "env", "lean"]`, set `cwd` to the Mathlib project, and if needed include the Lean bin and the existing PATH in `env.PATH`. The remaining nine keys are optional; they configure the broker's memory budget, thread budget, machine gate, process priority, queue order and calibration, and a file without them is valid. Their meaning and defaults are defined by 'Settings' in [LEAN.md](LEAN.md). The broker reads these settings again whenever the file changes. The installation state used is that at run time.
 
-## 2. 실행기가 세션에 주는 input.json
+## 2. The input.json the runner gives a session
 
-`input.json`은 세션 폴더의 고정 이름이다. 다음 공통 필드는 모두 필수다.
+`input.json` is a fixed name in the session folder. All of the following common fields are required.
 
 ```json
 {
@@ -81,26 +94,26 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
     "category": "C:/skill/research.md"
   },
   "task": {
-    "instructions": "모든 자연수 n에 대해 n + 0 = n을 증명하고 해설하라.",
+    "instructions": "Prove that n + 0 = n for every natural number n and write an exposition.",
     "references": [],
     "supersedes": []
   }
 }
 ```
 
-`instance`는 존재하는 인스턴스의 절대 경로다. 검사기는 여기서 `knowledge/`를 찾는다. `category`는 `plan`, `research`, `explore`, `peer`, `review` 중 하나다. `context.common`은 공통요소 문서와 목표·조건 파일의 절대 경로 목록, `context.category`는 해당 범주의 작업공통요소 파일 절대 경로다. 이 경로의 파일은 존재해야 한다. **작업특정요소는 이 input.json의 `task` 객체**다. `task.instructions`는 이번 지시, `task.references`는 사용할 공개 지식의 참조 목록이다(3절).
+`instance` is the absolute path of an existing instance. The checker looks for `knowledge/` here. `category` is one of `plan`, `research`, `explore`, `peer`, `review`. `context.common` is the list of absolute paths of the common-elements documents and the goal and conditions file, and `context.category` is the absolute path of the task-common-elements file of that category. The files at these paths must exist. **The task-specific elements are the `task` object of this input.json.** `task.instructions` is this round's instructions, and `task.references` is the list of references to the published knowledge to use (section 3).
 
-범주별로 `task`에 다음 항목을 더한다.
+Per category, the following items are added to `task`.
 
-| 범주 | 실행기가 주는 항목과 의미 |
+| Category | Items the runner gives and their meaning |
 |---|---|
-| research | `supersedes`: 이번 과제가 대신할 기존 기록 ID 목록. 없으면 `[]`. 계획의 연구 요청에서 복사한다. |
-| explore | 더하는 항목이 없다. 계획의 탐구 요청에서 `instructions`, `references`를 복사한다. |
-| peer | `target`: `{"kind":"research","record":"k0001"}` 또는 `{"kind":"explore","record":"k0001"}`. 공개 작업을 직접 다루는 독립 동료다. |
-| review | `target`: `{"kind":"research","record":"k0001"}` 또는 `{"kind":"bundle","work":"k0001","peer":"k0002"}`, 또는 `{"kind":"goal"}`. 묶음은 원 작업과 그 작업에 대한 동료다. 단독 연구 검토와 목표 검토도 유지한다. |
-| plan | `events`: 이번 계획이 받는 사건 객체 목록. 아래 여섯 종류를 사용한다. `previous_plan`: 직전에 반영된 계획의 기록 ID이며 아직 없으면 `null`이다. 실행기는 이 필드를 항상 넣는다. 검사기는 필드 생략과 `null`을 모두 허용하고, 그 밖의 값이면 실재하는 계획 기록 ID인지 확인한다. |
+| research | `supersedes`: the list of existing record IDs this task is to supersede. `[]` if none. Copied from the plan's research request. |
+| explore | No items added. `instructions` and `references` are copied from the plan's exploration request. |
+| peer | `target`: `{"kind":"research","record":"k0001"}` or `{"kind":"explore","record":"k0001"}`. An independent peer that works the published work directly. |
+| review | `target`: `{"kind":"research","record":"k0001"}` or `{"kind":"bundle","work":"k0001","peer":"k0002"}`, or `{"kind":"goal"}`. A bundle is the original work and the peer on that work. Standalone research reviews and goal reviews are kept as well. |
+| plan | `events`: the list of event objects this plan receives. The six kinds below are used. `previous_plan`: the record ID of the plan integrated immediately before, or `null` if there is none yet. The runner always includes this field. The checker allows both omission and `null`, and for any other value confirms that it is an existing plan record ID. |
 
-계획 사건의 구조 예시다. 검사기는 모든 사건의 `kind`와, `review_finished`·`peer_finished`·`exploration_finished`의 `record`, `session_failed`의 `session`·`reason`, `user_input`의 `text`를 확인한다. 실패 사건의 나머지 필드는 실행기가 함께 담는 사실이다.
+An example of the structure of plan events. The checker confirms the `kind` of every event, the `record` of `review_finished`, `peer_finished` and `exploration_finished`, the `session` and `reason` of `session_failed`, and the `text` of `user_input`. The remaining fields of a failure event are facts the runner includes with it.
 
 ```json
 [
@@ -108,45 +121,47 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
   {"kind": "review_finished", "record": "k0002"},
   {"kind": "exploration_finished", "record": "k0004"},
   {"kind": "peer_finished", "record": "k0005"},
-  {"kind": "session_failed", "session": "s0003", "reason": "output/output.json이 없음",
+  {"kind": "session_failed", "session": "s0003", "reason": "output/output.json is missing",
    "category": "research", "request": "k0001:research:0",
    "task": {"instructions": "...", "references": [], "supersedes": []},
    "origin": "k0001", "limit": null, "exit_code": 1, "launch_error": null},
-  {"kind": "user_input", "text": "자연수에는 0을 포함합니다."}
+  {"kind": "user_input", "text": "Natural numbers include 0."}
 ]
 ```
 
-이 목록은 사건 종류의 예시다. 실제 첫 계획에는 시작 사건만 있을 수 있다. `review_finished.record`는 재검사를 통과해 반영된 검토 기록이고, `exploration_finished.record`와 `peer_finished.record`는 같은 방식으로 반영된 탐구·동료 기록이다. 실패는 산출이 없거나 재검사에 실패한 세션이며 계획·검토 실패도 포함한다. 실패 사건에는 실행기가 아는 사실을 함께 담는다. `category`와 `request`는 실패한 세션의 범주와 요청 키이고, 사건을 받은 계획이면 `request`가 `null`이다. `task`는 그 세션이 받은 작업특정요소 원문이다. 실패한 계획의 `task.events`에는 그 계획이 받았다가 처리하지 못한 사건이 그대로 들어 있다. `origin`은 요청을 만든 공개 기록 ID이고 계획이면 `null`이다. `limit`은 탐지한 공급자 한도 `{retry_at, source, provider}`, `exit_code`는 알 수 있는 CLI 종료 코드, `launch_error`는 기동 실패 문구이며, 해당하지 않으면 `null`이다. 실행기는 아직 어느 계획에도 주지 않은 사건 전부를 한 계획에 전달하고, 그 계획 실행 중 생긴 사건은 다음 계획에 전달한다. 연구 반영은 자동 동료 요청을 만들며 그 자체는 계획 사건이 아니다. 탐구 반영은 자동 동료 요청과 exploration_finished 사건을 함께 만든다. 동료 반영은 작업·동료 묶음의 자동 검토 요청과 peer_finished 사건을 함께 만든다. 검토 반영은 review_finished 사건이 된다. 사건이 먼저 전달되어도 뒤의 검토가 끝났다는 뜻은 아니므로 계획은 해당 주장의 현재 지위를 구분한다.
+This list is an example of the event kinds. The actual first plan may have only the start event. `review_finished.record` is a review record that passed the re-check and was integrated, and `exploration_finished.record` and `peer_finished.record` are exploration and peer records integrated in the same way. A failure is a session with no output or one that failed the re-check, and includes plan and review failures. A failure event includes the facts the runner knows. `category` and `request` are the failed session's category and request key, and `request` is `null` for a plan that received events. `task` is the task-specific elements that session received, as given. The `task.events` of a failed plan contains, as they were, the events that plan received and could not process. `origin` is the ID of the published record that created the request, and `null` for a plan. `limit` is the detected provider limit `{retry_at, source, provider}`, `exit_code` is the CLI exit code if known, and `launch_error` is the launch-failure text; each is `null` when not applicable. The runner delivers to one plan all events not yet given to any plan, and events that arise while that plan runs are delivered to the next plan. Integration of a research record creates an automatic peer request and is not itself a plan event. Integration of an exploration creates an automatic peer request together with an exploration_finished event. Integration of a peer creates an automatic review request for the work–peer bundle together with a peer_finished event. Integration of a review becomes a review_finished event. That an event was delivered first does not mean the later review has finished, so the plan distinguishes the current standing of the claim concerned.
 
-실행기는 기동 프롬프트에서 세션 폴더, 이 `input.json`, 공식 검사 명령의 위치를 알려 준다. 검토 입력이나 기동 프롬프트에는 작성자 세션의 폴더·로그·중간 파일 위치를 넣지 않는다. 검토는 `knowledge/` 전체와 공개된 대상 기록을 읽는다. 이는 전달 규칙이며 파일 읽기를 감시하는 장치가 아니다.
+In the launch prompt the runner tells the session folder, this `input.json` and the location of the official check command. The review input and the launch prompt do not include the author session's folder, logs or intermediate-file locations. A review reads the whole of `knowledge/` and the published target record. This is a delivery rule, not a device that monitors file reads.
 
-## 3. 공개 파일, 참조, 대체 기록
+## 3. Published files, references and superseding records
 
-각 세션은 `output/output.json`에 산출을 쓰고 그 안에서 가리키는 자기 파일도 `output/` 아래에 둔다. 해설·Lean·계산 자료의 이름과 하위 폴더는 자유다. 출력 안의 파일 경로는 그 `output/`를 기준으로 한 `/` 구분 상대 경로다. 절대 경로, `..`, 파일시스템 링크는 공개 파일 참조로 쓰지 않는다. 반영 후 같은 경로는 `knowledge/<기록 ID>/` 기준이 된다.
+Each session writes its output in `output/output.json` and also puts the files of its own that it points to under `output/`. The names and subfolders of expositions, Lean and computation data are free. File paths in the output are `/`-separated relative paths based on that `output/`. Absolute paths, `..` and filesystem links are not used as published file references. After integration the same paths are based on `knowledge/<record ID>/`.
 
-모든 범주의 `output.json`에 다음 네 항목이 필수다.
+The following four items are required in the `output.json` of every category.
 
 ```json
 {
   "category": "research",
   "overview": {
-    "title": "자연수의 오른쪽 영 덧셈",
-    "summary": "자연수 덧셈의 정의로 모든 n에서 n + 0 = n을 증명했다. Lean의 rfl로 같은 명제를 확인했다. 이 결과의 범위는 이 등식이다."
+    "title": "Right addition of zero on the natural numbers",
+    "summary": "Using the definition of natural-number addition, proved n + 0 = n for every n. Confirmed the same proposition with Lean's rfl. The scope of this result is this equation."
   },
   "references": [],
   "supersedes": []
 }
 ```
 
-`overview`는 해당 세션의 산출물 전체를 소개하는 글이다. 후속 독자가 무엇을 다뤘고 어디까지 알아냈으며 어떤 부분을 더 읽어야 하는지 판단할 수 있게 쓴다. `title`은 비어 있지 않은 한 줄 제목이며, 가장 강한 성과 하나보다 산출 전체의 주제를 대표한다. `summary`는 그 제목을 풀어 설명하는 간결한 산문이다. 제목과 요약은 평문이며 원문·검토 링크는 실행기가 붙인다.
+`overview` is the text that introduces the whole deliverable of the session. Write it so that a later reader can judge what was dealt with, how far it got, and which parts to read further. `title` is a nonempty single-line title that represents the subject of the whole output rather than its single strongest achievement. `summary` is concise prose that expands on that title. The title and summary are plain text; the runner attaches the links to sources and reviews.
 
-요약은 처음 다룬 질문과 접근에서 출발해, 실제 시도로 무엇이 밝혀졌는지와 무엇이 남았는지를 연결한다. 증명·반증·계산·문헌 조사·형식화의 결과뿐 아니라 중요한 실패, 배제한 접근, 실행하거나 검증하지 못한 부분도 산출의 의미를 바꾸는 만큼 담는다. 실패가 중심인 세션은 실패와 그 이유·적용 범위를 중심으로 소개한다. 실패한 강화 후보와 원 질문의 반례, 유한 확인과 전칭 증명, 비형식 논증과 Lean 보증을 구분한다. 예를 들어 보조 명제만 반증했다면 그 반증으로 어떤 경로가 배제됐고 원 문제는 어디까지 남았는지 함께 설명한다.
+The summary starts from the question and approach first addressed and connects what the actual attempts revealed with what remains. Include not only the results of proofs, disproofs, computations, literature searches and formalization but also important failures, excluded approaches, and parts not run or not verified, as far as they change the meaning of the output. A session centered on failure is introduced around the failure, its reasons and its scope of application. Distinguish a failed strengthening candidate from a counterexample to the original question, a finite confirmation from a universal proof, and an informal argument from Lean assurance. For example, if only an auxiliary proposition was disproved, explain together which route that disproof excluded and how far the original problem remains.
 
-여러 결과가 있으면 주요 결과들이 같은 질문에 어떻게 기여하는지 묶어 설명한다. 나머지 항목을 전부 나열할 필요는 없지만, 빠뜨리면 세션 전체를 잘못 이해하게 되는 성과·실패·한계는 포함한다. 정리 개수나 검사 통과만으로 연구 내용을 대신하지 않는다. 연구에서는 `results`, `failed_attempts`, `open_questions`와 해설 전체를 대조해 요약을 쓴다. 계획에서는 선택한 방향과 이유, 보류·변경한 접근 중 중요한 것과 다음 행동을, 탐구에서는 들여다본 각도와 바뀐 이해, 넘긴 방향을, 검토에서는 대상 전체의 판정 범위, 결함·판단 유보·검증 한계를 소개한다. 산출에 없는 성공이나 실패를 추가하지 않고 작성 당시의 지식과 확인 범위를 유지한다.
+If there are several results, explain in a group how the main results contribute to the same question. The remaining items need not all be listed, but include the achievements, failures and limitations whose omission would lead to a misunderstanding of the whole session. The number of theorems or a passing check does not stand in for the research content. In research, write the summary by cross-checking `results`, `failed_attempts`, `open_questions` and the whole exposition. In a plan, introduce the chosen direction and reasons, the important approaches among those deferred or changed, and the next action; in an exploration, the angles examined, the changed understanding and the directions handed on; in a review, the scope of verdicts over the whole target, and the defects, withheld judgments and limits of verification. Do not add successes or failures that are not in the output, and keep the knowledge and confirmed scope as of the time of writing.
 
-실행기는 공개 기록의 `overview`를 `knowledge/index.md`에 모은다. 동료·검토 기록은 독립 제목·요약 항목에서 제외하고 원 작업 아래 연결한다. 동료는 제목과 원문 링크로 찾으며 새 내용의 인증 지위를 혼동하지 않는다. 연구에는 현재 검토 링크와 `overview_assessment`의 판정 값, 상충 여부를 표시하며 결과별 판정 개수는 출력하지 않는다. 목표 검토는 머리말에 링크와 판정을 남기고 대체 기록에는 연결을 붙인다. 판정 근거는 색인에 옮기지 않으며 검토 기록에서 읽는다. 마지막 계획 기록에 `research-status.md`나 `glossary.md`가 있으면 색인 머리말에 각각의 연결을 둔다. 탐구에는 관측·추측과 개별적으로 검토된 주장을 구분하라는 안내를 붙인다. 검토가 공개되거나 기록이 대체되면 기존 항목도 갱신한다. 공개됐지만 검토가 없는 연구는 검토 전으로 표시한다. 색인은 탐색용 파생 파일이고 기록·검토 원문이 근거의 정본이다. 기록 공개와 색인 갱신은 같은 인스턴스 Git 커밋에 담으며, 재기동 때 공개 기록에서 색인을 재구성한다. 세션은 색인을 직접 수정하지 않는다.
+The runner gathers the `overview` of published research and exploration records into the index. Plan, peer and review records have no entries of their own: peers and reviews are linked under the original work, so that a peer is found by its title and source link and the certification status of its new content is not confused, and the latest plan is linked in the preamble. For research, the current review links, the verdict value of `overview_assessment` and whether there is a conflict are shown, and per-result verdict counts are not output. A goal review leaves its link and verdict in the preamble, and a superseding record gets a link. The grounds of verdicts are not transferred to the index; they are read in the review record. If the last plan record has `research-status.md` or `glossary.md`, a link to each is placed in the index preamble. An exploration gets a note telling the reader to distinguish observations and conjectures from individually reviewed claims. When a review is published or a record is superseded, the existing entries are updated too. Published research without a review is marked unreviewed.
 
-`category`는 입력과 같아야 한다. `references`는 실제로 사용한 축적 지식의 참조 배열이다. 각 참조는 `record`가 필수이며 `file`, `result`는 선택 항목이다. 둘을 함께 쓸 수도 있다.
+The index is split into modules according to the `index` field of the last plan record (section 6). `knowledge/index.md` is the general module: it holds the preamble, the links above, a table of the other modules with each one's title, description and counts of records, unreviewed records and records with conflicting reviews, and the entries of every research and exploration record that the last plan did not file into another module. Each other module is rendered as `knowledge/index/<name>.md`, with the module's title and description at the top and its records' entries below, in publication order and with the same review marks; record links inside a module file are relative to `knowledge/index/`. A module file whose name the latest plan no longer declares is removed. If the last plan has no `index` field, every entry is in the general module. The index is a derived navigation file, and the record and review texts are the authoritative source of evidence. Record publication and the update of every index file are put in the same instance Git commit, and on restart all index files are rebuilt from the published records. Sessions do not modify the index directly.
+
+`category` must equal the input. `references` is the array of references to the accumulated knowledge actually used. Each reference requires `record`, and `file` and `result` are optional. Both may be used together.
 
 ```json
 [
@@ -156,30 +171,30 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 ]
 ```
 
-`record`는 `knowledge/<ID>/output.json`이 있는 기록, `file`은 그 기록 폴더 안의 실제 파일, `result`는 지정한 연구·동료·묶음 검토 기록의 `results[].id`다. 해당 기록 안에서 고유한 ID를 쓰며, 다른 기록의 같은 ID와 구별한다. 같은 인스턴스의 기록을 참조한다. 자기 산출 파일은 결과의 `exposition`·`lean.sources`나 해설의 상대 링크로 연결한다. 추가 증거 파일도 `output/`에 두고 해설에서 읽는 경로를 설명한다. 공개 해설에 사용한 기존 지식의 의존은 `references`에도 적는다. 웹 문헌은 해설에 서지·인용 URL을 적는다. 검사기는 해설 본문과 Markdown 링크·웹 URL을 해석하지 않으므로, 그 근거의 충분성과 실제 사용 가능성은 작성자와 검토자가 확인한다. 검토자가 작성자의 `work/`나 로컬 절대 경로를 찾아가야 하는 산출은 전달을 마친 것이 아니다.
+`record` is a record that has `knowledge/<ID>/output.json`, `file` is an actual file inside that record folder, and `result` is a `results[].id` of the designated research, peer or bundle-review record. Use the ID that is unique within that record, and distinguish it from the same ID in other records. References are to records of the same instance. Your own output files are linked by a result's `exposition` and `lean.sources` or by relative links in the exposition. Put additional evidence files in `output/` too and explain in the exposition the path to read. Dependence on existing knowledge used in a published exposition is also written in `references`. For web literature, write the bibliography and the cited URL in the exposition. The checker does not interpret the exposition body, Markdown links or web URLs, so the sufficiency of that evidence and whether it can actually be used are confirmed by the author and the reviewer. An output that would make a reviewer go to the author's `work/` or a local absolute path has not finished its delivery.
 
-`supersedes`는 이 새 기록이 **전체를 대신하는** 기존 기록 ID 목록이다. 부분 수정이라면 새 기록에 유지할 결과·근거까지 포함해 읽을 수 있는 전체 산출을 만들고 원 기록을 참조한다. 과제의 `supersedes`는 계획 의도, 산출의 `supersedes`는 실제 대체 선언이다. 실제 연구 결과에 따라 달라질 수 있으며 검사기는 둘을 같게 강제하지 않는다.
+`supersedes` is the list of existing record IDs that this new record **supersedes in their entirety**. For a partial correction, produce a whole output that can be read including the results and evidence to keep in the new record, and reference the original record. A task's `supersedes` is the plan's intent, and an output's `supersedes` is the actual supersession declaration. It may differ according to the actual research results, and the checker does not force the two to be equal.
 
-현재 내용을 읽는 규칙은 다음과 같다. 같은 주제의 기록 A를 B가 `supersedes`로 대신하면 본문은 B에서 시작하고 A는 이력·근거로 읽는다. B를 C가 대신하면 C에서 시작한다. 다른 주제의 기록은 함께 현재 지식으로 남는다. 같은 기록을 대신하는 가지가 둘이면 어느 쪽도 자동 선택하지 않고 둘 다 읽어 다음 계획이 정리한다. 시간·ID의 크기로 승자를 고르지 않는다. 계획은 같은 기록을 대신할 과제 둘을 동시에 배정하지 않는다. 색인은 명시된 `supersedes` 관계에서 대체되지 않은 검토를 현재 검토로 표시하고, 같은 결과·항목의 긍정과 부정 판정이 함께 있으면 상충으로 표시한다. 이 표시는 기록의 관계와 판정값을 모은 것이며, 근거의 결함 전파나 가지 사이의 수학적 타당성은 세션이 원문을 읽어 판단한다.
+The rules for reading the current content are as follows. If B supersedes record A on the same subject with `supersedes`, the body starts at B and A is read as history and evidence. If C supersedes B, start at C. Records on different subjects remain together as current knowledge. If two branches supersede the same record, neither is chosen automatically; both are read and the next plan sorts it out. The winner is not chosen by time or by the size of the ID. A plan does not assign two tasks that supersede the same record at the same time. The index marks reviews not superseded in the explicit `supersedes` relation as current reviews, and marks a conflict when positive and negative verdicts on the same result and item exist together. This marking gathers the relations and verdict values of records; the propagation of defects in evidence and the mathematical validity between branches are judged by sessions reading the texts.
 
-대체와 수학적 인정은 다르다. 새 결과는 검토 전에는 작성자의 주장이다. 구 기록의 검토가 새 기록으로 자동 승계되지 않는다. 연구 기록 R의 검토는 category=review인 단독 연구 검토 또는 R을 work로 지정한 묶음 검토에서 찾는다. 동료와 탐구의 주장은 묶음 검토의 source를 따라 확인한다. 검토가 대체됐다면 그 이력을 따라 현재 검토를 읽는다. 한 결과의 같은 항목에 현재 검토들의 긍정 판정과 부정 판정이 함께 있으면(상충) 인정된 결과로 쓰지 않는다. 상충의 정의와 확인을 마치지 못한 판정을 읽는 방법은 [common.md](common.md)의 '공개 지식을 읽는 판단'이 정한다. 계획은 추가 검토 또는 수정 연구를 정한다. Lean 수용, 해설과 Lean의 일치, 목표 충족은 서로 대신하는 판단이 아니다.
+Supersession and mathematical establishment are different. A new result is the author's claim until reviewed. The reviews of an old record are not passed on to the new record automatically. The reviews of a research record R are found in standalone research reviews with category=review or in bundle reviews that designate R as work. The claims of peers and explorations are confirmed by following the source of a bundle review. If a review has been superseded, follow that history and read the current review. If, for the same item of one result, positive and negative verdicts of current reviews exist together (a conflict), the result is not used as an established result. The definition of conflict and the way to read verdicts whose confirmation was not finished are defined by 'Judging published knowledge' in [common.md](common.md). The plan decides on an additional review or revision research. Lean acceptance, agreement between exposition and Lean, and goal satisfaction are not judgments that substitute for one another.
 
-## 4. 연구 산출
+## 4. Research output
 
-공통 네 필드에 `results`, `failed_attempts`, `open_questions` 배열을 더한다. 연구의 지속과 마무리는 [research.md](research.md)의 원칙을 따른다. 결과 없이 실패·남은 질문만 보존하는 형식도 허용한다. 실패한 접근은 버리지 않고 다음 계획의 판단 근거로 남긴다.
+To the four common fields, add the arrays `results`, `failed_attempts` and `open_questions`, and publish the local glossary `output/glossary-local.md` ('Glossaries' below). Continuing and finishing the research follow the principles of [research.md](research.md). A format that preserves only failures and open questions without results is also allowed. Failed approaches are not discarded but left as grounds for the next plan's judgment.
 
-작은 유효 `output/output.json`:
+A small valid `output/output.json`:
 
 ```json
 {
   "category": "research",
-  "overview": {"title": "자연수의 오른쪽 영 덧셈", "summary": "모든 자연수 n의 n + 0 = n을 정의에 따라 Lean으로 증명했다."},
+  "overview": {"title": "Right addition of zero on the natural numbers", "summary": "Proved n + 0 = n for every natural number n in Lean by the definition."},
   "references": [],
   "supersedes": [],
   "results": [{
     "id": "r1",
     "exposition": "exposition.md",
-    "verification": "core Lean 파일을 컴파일했다. #print axioms add_zero_example은 공리에 의존하지 않는다고 출력했다. 자연수 전칭 명제이며 Mathlib은 사용하지 않았다.",
+    "verification": "Compiled the core Lean file through the Lean broker (estimate 64 MiB; measured peak 38 MiB, 2 s) with #print axioms add_zero_example appended, which printed that it depends on no axioms. A universal proposition over the natural numbers; Mathlib was not used.",
     "lean": {"sources": ["Proof.lean"], "version": "Lean (version 4.32.0)"}
   }],
   "failed_attempts": [],
@@ -187,14 +202,14 @@ JSON은 UTF-8(BOM도 읽음)이다. 경로 외 문자열은 사람이 읽는 설
 }
 ```
 
-이 예시의 `output/exposition.md`:
+The `output/exposition.md` of this example:
 
 ```markdown
-# 자연수의 오른쪽 영 덧셈
-자연수 n은 0을 포함한다. 주장: 모든 자연수 n에 대해 n + 0 = n.
-Lean의 Nat 덧셈에서 오른쪽 인자가 0인 경우는 n으로 계산된다.
-따라서 두 변은 정의에 의해 같으며, Proof.lean의 rfl이 이 사실을 증명한다.
-이 해설이 주장하는 것은 자연수 덧셈에 관한 명제다.
+# Right addition of zero on the natural numbers
+The natural numbers n include 0. Claim: for every natural number n, n + 0 = n.
+In Lean's Nat addition, the case where the right argument is 0 computes to n.
+Therefore the two sides are equal by definition, and the rfl in Proof.lean proves this fact.
+What this exposition claims is a proposition about natural-number addition.
 ```
 
 `output/Proof.lean`:
@@ -203,190 +218,237 @@ Lean의 Nat 덧셈에서 오른쪽 인자가 0인 경우는 n으로 계산된다
 theorem add_zero_example (n : Nat) : n + 0 = n := by rfl
 ```
 
-위 확인·판본 문자열은 작성 형식 예시다. 실제 산출에는 직접 수행한 확인과 도구의 실제 출력 문자열을 적는다. `verification`에는 명령·입력 범위·관측 결과·확인하지 못한 범위를 사람이 이해하도록 적는다. 해설에는 정의·가정·주장·논증이 있어야 한다. 검사기는 파일 존재와 문자열 형식만 확인한다.
+The verification and version strings above are writing-format examples. In an actual output, write the confirmations you actually performed and the tools' actual output strings. In `verification`, write the commands, the input range, the observed results and the scope not confirmed so that a person understands. The exposition must contain definitions, assumptions, claims and argument. The checker confirms only file existence and string format.
 
-Lean을 쓰지 않은 계산·문헌 결과의 `lean`은 `null`이다. Lean을 쓴 경우 `sources`는 하나 이상의 공개 원문 경로, `version`은 그때의 `lean --version` 문자열이다. 의존하는 자체 원문도 함께 공개하거나 지식 참조로 연결하고 컴파일 방법을 해설에 남긴다. 세션은 원문을 컴파일하며, 컴파일하지 못했거나 실패했다면 그 사실을 `verification`에 적는다. 버전 문자열은 정보이며 실행을 차단하는 비교 값이 아니다.
+For computation or literature results that do not use Lean, `lean` is `null`. If Lean is used, `sources` is one or more published source paths, and `version` is the version string the broker's `version` command reported at that time. Publish your own dependency sources together too, or link them as knowledge references, and leave how to compile in the exposition. The session compiles the source through the instance's Lean broker ([LEAN.md](LEAN.md)). If it could not compile, or the compile failed, it writes that fact in `verification`, together with the estimate it gave and the cost the broker measured. The version string is information, not a comparison value that blocks execution.
 
-`failed_attempts`의 항목은 `{"description":"시도와 실패 내용", "verification":"어디까지 실제로 확인했고 무엇은 모르는가"}`다. `open_questions`는 남은 질문 문자열 목록이다. 빈 목록은 해당 산출에 기록할 항목이 없다는 뜻이다.
+An item of `failed_attempts` is `{"description":"the attempt and what failed", "verification":"how far was actually confirmed and what is unknown"}`. `open_questions` is a list of strings of the questions that remain. An empty list means there are no items to record in that output.
 
-### 탐구 산출
+### Exploration output
 
-탐구는 공통 네 필드에 `exposition`과 `questions`를 더한다. `exposition`은 탐구 본문 파일의 `output/` 기준 상대 경로이고, `questions`는 탐구 중 떠오른 질문 문자열 목록이다. 탐구 기록은 다른 기록을 대신하지 않으므로 `supersedes`는 `[]`로 쓴다. 탐구에는 자동 동료가 붙고, 동료가 끝나면 원 탐구와 동료를 함께 보는 자동 검토가 붙는다. 본문에 담을 내용은 [explore.md](explore.md)가 정한다.
+An exploration adds `exposition` and `questions` to the four common fields and publishes `glossary-local.md` like research. `exposition` is the relative path, based on `output/`, of the exploration body file, and `questions` is the list of strings of the questions that arose during the exploration. An exploration record does not supersede other records, so `supersedes` is written as `[]`. An exploration gets an automatic peer, and when the peer finishes, an automatic review that sees the original exploration and the peer together. What the body contains is defined by [explore.md](explore.md).
 
 ```json
 {
   "category": "explore",
-  "overview": {"title": "작은 경우로 본 주차 함수의 구조", "summary": "n ≤ 6의 주차 함수를 직접 나열해 차량 순서와 빈자리의 관계를 여러 표현으로 보았다. 관측한 대칭은 추측으로 남겼고, 생성함수 표현에서 보인 방향을 넘긴다."},
+  "overview": {"title": "The structure of parking functions seen in small cases", "summary": "Listed the parking functions for n ≤ 6 directly and saw the relation between car order and empty spots in several expressions. The observed symmetry is left as a conjecture, and the direction seen in the generating-function expression is handed on."},
   "references": [],
   "supersedes": [],
   "exposition": "exploration.md",
-  "questions": ["관측한 대칭이 모든 n에서 성립하는가?"]
+  "questions": ["Does the observed symmetry hold for every n?"]
 }
 ```
 
-연구·탐구·동료·검토 세션은 새 용어를 `output/glossary-proposals.md`로 제안할 수 있고, 계획은 `output/glossary.md`에 현재 유효한 용어 정본을, `output/glossary-history.md`에 제안 처리·보류·폐기 이력을 공개한다. 세 파일의 형식은 [common.md](common.md)의 '용어 정본'과 [plan.md](plan.md)의 '용어 정본 갱신하기'가 정한다. 계획 산출은 현재의 단일 정본 형식을 따른다. 검사기는 glossary.md·glossary-history.md·research-status.md가 비어 있지 않은지, 정본 표지·고유 번호와 바로 앞 앵커·일곱 칸의 순서와 중복·표 밖 덧붙임·국소 항목 링크·가족 파일의 존재와 정본 링크가 맞는지 확인한다. 제안 내용과 관계의 수학적 타당성은 기계 검사 대상이 아니다. 가족 설명은 선택 파일 glossary-relations.md로 함께 공개할 수 있다.
+### Glossaries
 
-### 동료 산출
+A plan publishes the global glossary currently in force in `output/glossary.md`, and the history of candidate processing, holds and retirements in `output/glossary-history.md`, together with `output/research-status.md`. Every research, exploration and peer session publishes its local glossary in `output/glossary-local.md`: the names, symbols and auxiliary objects the record uses internally, in the same entry format as the global glossary plus a `Global candidate` field by which the author flags entries the run should share. The format of both glossaries and the rule for flagging candidates are defined by 'Glossaries' in [common.md](common.md), and the plan's handling of candidates by 'Updating the global glossary' in [plan.md](plan.md).
 
-`category: "peer"`는 원 작업을 직접 다루는 동료 응답이다. `target`은 입력과 같은 연구 또는 탐구 기록이다. `exposition`은 자족적인 응답 본문, `questions`는 실제로 남은 질문, `results`는 동료가 새로 작성한 증명·반례·계산 결과다. 결과 형식은 연구의 `id/exposition/verification/lean`과 같고 새 결과가 없으면 빈 배열이다. 동료는 `overview_assessment`나 `goal` 판정을 발급하지 않는다. `supersedes`는 빈 배열이다.
+A minimal valid `glossary-local.md` with one entry:
+
+```markdown
+<!-- do-math-local-glossary -->
+Local glossary of this record. Global glossary applied: k0003 (glossary.md). Local entries of other records used as they are: none.
+
+<a id="local-1"></a>
+## 1. Right-zero identity
+
+| Field | Content |
+|---|---|
+| Name and symbol | right-zero identity, RZ(n) |
+| Kind | property or relation |
+| Definition | RZ(n) :⇔ n + 0 = n, for a natural number n |
+| Well-definedness | Not applicable |
+| Related expressions | The instance n = 0 is the base case of the goal |
+| Current formal correspondence | `add_zero_example` in Proof.lean |
+| Provenance | exposition.md, first paragraph |
+| Global candidate | None |
+```
+
+A record that introduces no name of its own publishes the marker and the preamble sentences with no entries. The checker confirms, for a plan, that glossary.md, glossary-history.md and research-status.md are nonempty and that the glossary marker, the unique numbers with their immediately preceding `term-N` anchors, the order and non-duplication of the seven fields, additions outside the table, local entry links, and the existence of family files and their glossary links are correct. For a research, exploration or peer output it confirms that glossary-local.md is nonempty, carries the local marker, and has the same entry structure with `local-N` anchors and the eight fields. The mathematical validity of entries and relations, collisions between local and global names, and the merit of a candidate are not subject to machine checking. A family description may be published with the global glossary as the optional file glossary-relations.md.
+
+### Peer output
+
+`category: "peer"` is a peer response that works the original work directly. `target` is the same research or exploration record as in the input. `exposition` is the self-contained response body, `questions` are the questions genuinely left open, and `results` are the proofs, counterexamples and computation results the peer newly wrote. The result format is the same `id/exposition/verification/lean` as research, and the array is empty if there are no new results. A peer publishes `glossary-local.md` like research; it usually adopts the work's local entries by reference in the preamble and lists only the names it introduces itself. A peer does not issue an `overview_assessment` or a `goal` verdict. `supersedes` is an empty array.
 
 ```json
 {
   "category": "peer",
-  "overview": {"title": "주차 숲 표현을 읽고 다룬 응답", "summary": "조건부 분포의 의미를 다시 확인하고, 매개변수 변화에서 생긴 질문을 남겼다."},
+  "overview": {"title": "A response that read and worked the parking-forest expression", "summary": "Re-confirmed the meaning of the conditional distribution and left the questions that arose under parameter changes."},
   "references": [], "supersedes": [],
   "target": {"kind": "explore", "record": "k0001"},
   "exposition": "response.md", "results": [], "questions": []
 }
 ```
 
-결과 참조의 `result`는 연구·동료의 명시된 결과 ID 또는 묶음 검토의 결과 ID를 가리킬 수 있다. 참조 가능하다는 것은 수학적 수용을 뜻하지 않는다. 검토의 판정 범위와 원 출처를 따라야 한다.
+The `result` of a result reference may point to an explicit result ID of a research record or a peer, or to a result ID of a bundle review. Being referenceable does not mean mathematical acceptance. Follow the review's verdict scope and the original source.
 
-## 5. 검토 산출
+## 5. Review output
 
-검토 대상은 입력의 `task.target`과 일치해야 한다. 연구 검토는 연구 세션 하나의 공개 산출 전체를 대상으로 하고 그 안의 모든 결과 ID를 정확히 한 번씩 판단한다. 연구 검토에는 `overview_assessment: {"verdict": "supported | not_supported | undetermined", "reason": "판정 근거"}`도 필수다. 대상의 제목·요약이 성공과 실패를 포함한 산출 전체의 타당한 소개인지, 중요한 누락이나 과장이 없는지 판단한다. 결과가 없어도 제목·요약을 판단하고 `results: []`와 `summary`로 실패 접근·남은 질문에 대한 검토를 남긴다. 목표 검토에는 `overview_assessment`를 요구하지 않는다.
+The review target must match the input's `task.target`. A research review targets the whole published output of one research session and judges every result ID in it exactly once. A research review also requires `overview_assessment: {"verdict": "supported | not_supported | undetermined", "reason": "grounds of the verdict"}`. Judge whether the target's title and summary are a valid introduction of the whole output including successes and failures, without important omissions or exaggerations. Even if there are no results, judge the title and summary and leave a review of the failed approaches and open questions with `results: []` and `summary`. A goal review does not require `overview_assessment`.
 
-앞의 연구가 `knowledge/k0001/`에 반영됐을 때의 유효 예시:
+A valid example when the preceding research has been integrated into `knowledge/k0001/`:
 
 ```json
 {
   "category": "review", "references": [], "supersedes": [],
-  "overview": {"title": "오른쪽 영 덧셈 결과 검토", "summary": "원 명제와 Lean 증명의 대응 및 허용 공리를 확인했다. 제출된 제목과 요약도 그 범위와 일치한다."},
-  "overview_assessment": {"verdict": "supported", "reason": "제목과 요약이 실제 자연수 등식과 형식 검증 범위를 정확히 설명한다."},
+  "overview": {"title": "Review of the right-addition-of-zero result", "summary": "Confirmed the correspondence between the original proposition and the Lean proof and the allowed axioms. The submitted title and summary also match that scope."},
+  "overview_assessment": {"verdict": "supported", "reason": "The title and summary accurately describe the actual natural-number equation and the scope of formal verification."},
   "target": {"kind": "research", "record": "k0001"},
   "results": [{
     "result": "r1",
-    "assessment": {"verdict": "supported", "reason": "자연수 오른쪽 영 덧셈 주장이 제시한 정의와 증명으로 성립한다."},
-    "lean": {"verdict": "accepted", "reason": "공개된 Proof.lean의 사본을 다시 컴파일해 종료 코드 0을 확인했고, #print axioms add_zero_example이 공리에 의존하지 않는다고 출력했다."},
-    "alignment": {"verdict": "matches", "reason": "해설과 Lean 모두 모든 자연수 n의 n + 0 = n을 말한다."},
-    "terminology": {"verdict": "conforms", "reason": "해설의 자연수와 덧셈은 goal.md의 정의와 같은 이름·뜻으로 쓰였다."}
+    "assessment": {"verdict": "supported", "reason": "The claim of right addition of zero on the natural numbers holds by the definition and proof presented."},
+    "lean": {"verdict": "accepted", "reason": "Recompiled a copy of the published Proof.lean through the Lean broker and confirmed exit code 0, and the appended #print axioms add_zero_example printed that it depends on no axioms."},
+    "alignment": {"verdict": "matches", "reason": "Both the exposition and Lean say n + 0 = n for every natural number n."},
+    "terminology": {"verdict": "conforms", "reason": "The natural numbers and addition in the exposition are used with the same names and meanings as the definitions in goal.md."}
   }],
-  "summary": "이 연구 산출의 결과 r1과 확인 범위를 검토했다."
+  "summary": "Reviewed result r1 of this research output and its confirmed scope."
 }
 ```
 
-각 판단은 `verdict`와 비어 있지 않은 `reason`을 가진다. 예시의 판정은 실제 검토를 대신하지 않는다.
+Each judgment has a `verdict` and a nonempty `reason`. The verdicts in the example do not stand in for an actual review.
 
-| 항목 | 허용 verdict | 의미 |
+| Item | Allowed verdicts | Meaning |
 |---|---|---|
-| `assessment` | `supported`, `not_supported`, `undetermined` | 주장하는 결과를 제시한 근거가 뒷받침함 / 뒷받침하지 못함 / 판단을 마치지 못함 |
-| `lean` | `accepted`, `rejected`, `not_checked`, `not_applicable` | 공개 원문 재컴파일과 [common.md](common.md)의 공리 기준 통과 / 컴파일 실패 또는 허용 밖 공리 / 미확인 / Lean 없는 결과 |
-| `alignment` | `matches`, `differs`, `not_checked`, `not_applicable` | 해설과 Lean의 수학이 일치 / 다름 / 미확인 / Lean 없는 결과 |
-| `terminology` | `conforms`, `deviates` | 용어 정본을 따름 / 이름 위반이나 의미 위반이 있음. 결과의 인정 여부와 상충 판단에 들지 않는다. |
+| `assessment` | `supported`, `not_supported`, `undetermined` | The evidence presented supports the claimed result / does not support it / the judgment was not finished |
+| `lean` | `accepted`, `rejected`, `not_checked`, `not_applicable` | Recompilation of the published source and the axiom criteria of [common.md](common.md) passed / compile failure or an axiom outside the allowed ones / not confirmed / a result without Lean |
+| `alignment` | `matches`, `differs`, `not_checked`, `not_applicable` | The mathematics of the exposition and Lean agree / differ / not confirmed / a result without Lean |
+| `terminology` | `conforms`, `deviates` | Follows the global and local glossaries / there is a name violation or a meaning violation. Does not enter into the establishment of the result or the judgment of conflict. |
 
-검토자는 Lean 수용만으로 결과나 해설이 맞다고 결론 내리지 않는다. 계산은 재현하거나 방법을 점검하고 문헌은 원문과 대조해 `assessment.reason`에 근거와 한계를 적는다. 검토자가 만든 보충 자료 역시 자기 `output/`에 두어 함께 공개할 수 있다.
+A reviewer does not conclude from Lean acceptance alone that the result or the exposition is correct. Reproduce computations or inspect their method, cross-check literature against the source, and write the grounds and limits in `assessment.reason`. Supplementary material the reviewer produced may also be put in its own `output/` and published together.
 
-### 작업·동료 묶음 검토
+### Work–peer bundle review
 
-`target: {"kind":"bundle","work":"k0001","peer":"k0002"}`에서 work는 연구 또는 탐구이고, peer는 그 정확한 work를 대상으로 한 동료 기록이어야 한다. 검토자는 두 산출의 본문 전체와 근거를 읽는다. 결과 ID가 있는 연구·동료의 결과는 각각 정확히 한 번 판정한다. 탐구와 산문 속 추가 주장은 공개 위치와 정확한 진술을 지정한다. 추측이 미해결인 것을 결함으로 판정하지 않는다.
+In `target: {"kind":"bundle","work":"k0001","peer":"k0002"}`, work is a research record or an exploration, and peer must be the peer record that targets exactly that work. The reviewer reads the whole bodies and evidence of both outputs. The results of research and peer records that have result IDs are each judged exactly once. For explorations and additional claims in prose, designate the published location and the exact statement. Do not judge it a defect that a conjecture is unresolved.
 
-묶음 검토는 `exposition`, `overview_assessments`, `results`, `summary`를 둔다. 소개 판정은 원 작업과 동료 각각 하나씩이며, 결과마다 검토의 고유 ID와 원 출처 및 기존 네 판정을 둔다.
+A bundle review has `exposition`, `overview_assessments`, `results` and `summary`. There is one overview assessment each for the original work and the peer, and each result has the review's own unique ID, the original source and the existing four verdicts.
 
 ```json
 {
   "category": "review",
-  "overview": {"title": "작업과 동료 응답의 독립 검토", "summary": "두 본문을 대조하고 명시된 주장의 확인 범위를 판정했다."},
+  "overview": {"title": "Independent review of the work and the peer response", "summary": "Cross-checked the two bodies and judged the confirmed scope of the stated claims."},
   "references": [], "supersedes": [],
   "target": {"kind": "bundle", "work": "k0001", "peer": "k0002"},
   "exposition": "review.md",
   "overview_assessments": [
-    {"record": "k0001", "assessment": {"verdict": "supported", "reason": "소개가 본문의 주장 범위를 보존한다."}},
-    {"record": "k0002", "assessment": {"verdict": "supported", "reason": "미확인 부분을 구분한다."}}
+    {"record": "k0001", "assessment": {"verdict": "supported", "reason": "The overview preserves the scope of the body's claims."}},
+    {"record": "k0002", "assessment": {"verdict": "supported", "reason": "Distinguishes the unconfirmed parts."}}
   ],
   "results": [{
     "id": "c1", "source": {"record": "k0001", "result": "r1"},
-    "assessment": {"verdict": "supported", "reason": "원 r1의 정확한 가정과 논증을 확인했다."},
-    "lean": {"verdict": "not_applicable", "reason": "Lean 없는 결과다."},
-    "alignment": {"verdict": "not_applicable", "reason": "Lean 없는 결과다."},
-    "terminology": {"verdict": "conforms", "reason": "정본의 정의와 일치한다."}
+    "assessment": {"verdict": "supported", "reason": "Confirmed the exact assumptions and argument of the original r1."},
+    "lean": {"verdict": "not_applicable", "reason": "A result without Lean."},
+    "alignment": {"verdict": "not_applicable", "reason": "A result without Lean."},
+    "terminology": {"verdict": "conforms", "reason": "Matches the glossary's definitions."}
   }],
-  "summary": "동료의 새 결과가 없는 예시다. 실제 원 작업과 동료의 모든 명시된 결과를 판정해야 한다."
+  "summary": "An example in which the peer has no new results. In reality every stated result of the original work and the peer must be judged."
 }
 ```
 
-결과 ID가 없는 탐구·산문 주장의 source는 `{"record":"k0001","file":"exploration.md","statement":"정의·가정·양화·결론을 특정한 정확한 진술"}`로 쓴다. source는 묶음의 두 기록 중 하나여야 한다. 검토자가 새로 만든 핵심 논증을 원 작성자의 주장으로 돌려 수용하지 않는다. 근거로 쓰는 외부 기록의 결함은 summary에 기록하고 계획에 별도 검토를 넘긴다.
+The source of an exploration or prose claim without a result ID is written as `{"record":"k0001","file":"exploration.md","statement":"an exact statement specifying the definitions, assumptions, quantification and conclusion"}`. The source must be one of the two records of the bundle. Do not accept a key argument newly created by the reviewer by attributing it to the original author's claim. A defect in an external record used as evidence is recorded in the summary and handed to the plan for a separate review.
 
-동일한 work/peer 쌍의 검토만 supersedes로 대체한다. 서로 다른 묶음이나 과거 단독 검토의 판정은 원 source를 대조해 상충을 처리한다. 옛 연구 단독 검토·목표 검토 형식과 기존 판정은 변경하지 않는다. 탐구·동료 전체가 일괄 인증되는 것은 아니다.
+Only a review of the identical work/peer pair is superseded with supersedes. Verdicts of different bundles or of past standalone reviews are handled as conflicts by cross-checking the original source. The formats and existing verdicts of old standalone research reviews and goal reviews are not changed. An exploration or a peer is not certified as a whole.
 
-목표 검토는 특정 결과가 아닌 인스턴스 전체를 대상으로 한다. 같은 review 범주에서 다음 형식을 쓴다. `results`와 `summary` 대신 `goal`이 필수다.
+A goal review targets the whole instance, not a specific result. It uses the following format in the same review category. `goal` is required instead of `results` and `summary`.
 
 ```json
 {
   "category": "review",
-  "overview": {"title": "목표 달성 검토", "summary": "공개 증명과 독립 검토를 대조해 목표 명제가 충족됐음을 판단했다."},
+  "overview": {"title": "Goal-achievement review", "summary": "Cross-checked the published proofs and independent reviews and judged that the goal proposition is satisfied."},
   "references": [{"record": "k0001"}, {"record": "k0002"}],
   "supersedes": [],
   "target": {"kind": "goal"},
-  "goal": {"verdict": "achieved", "reason": "목표의 자연수 전칭 명제가 공개 증명과 해설로 충족됐고 독립 검토도 일치한다."}
+  "goal": {"verdict": "achieved", "reason": "The goal's universal proposition over the natural numbers is satisfied by the published proof and exposition, and the independent reviews agree."}
 }
 ```
 
-`goal.verdict`는 `achieved`, `not_achieved`, `undetermined` 중 하나다. 실행기는 **반영된 목표 검토의 `goal.verdict == "achieved"`**를 읽어 완료한다. 연구 검토의 `supported`나 `accepted`로 완료하지 않는다. 목표 검토자는 목표·사용자 조건과 축적 지식 전체를 대조하고 근거를 `references`와 `reason`에 남긴다.
+`goal.verdict` is one of `achieved`, `not_achieved`, `undetermined`. The runner completes by reading **`goal.verdict == "achieved"` of an integrated goal review**. It does not complete on the `supported` or `accepted` of a research review. The goal reviewer cross-checks the goal, the user's conditions and the whole accumulated knowledge, and leaves the grounds in `references` and `reason`.
 
-## 6. 계획 산출과 파견
+## 6. Plan output and dispatch
 
-공통 네 필드 외에 `reason`, `research`, `explorations`, `reviews`, `goal_review`, `wait`가 필수다. 추가 동료 요청은 `peers`에 둔다. 새 계획은 빈 경우에도 `peers: []`를 쓰며, 기존 계획과 호환되도록 생략은 빈 배열로 읽는다. 아래는 첫 연구 하나를 게시하는 유효 예시다.
+Besides the four common fields, `reason`, `research`, `explorations`, `reviews`, `goal_review` and `wait` are required. Additional peer requests go in `peers`, and the index layout goes in `index`. A new plan writes `peers: []` and `index: {"modules": []}` even when empty, and for compatibility with existing plans an omission of either is read as empty. Below is a valid example that posts one first research request.
 
 ```json
 {
   "category": "plan", "references": [], "supersedes": [],
-  "overview": {"title": "첫 등식의 증명 배정", "summary": "목표의 기본 등식을 Lean으로 증명하고 설명하는 연구를 시작한다. 결과를 검토한 뒤 다음 과제를 정한다."},
-  "reason": "목표의 기본 명제부터 증명과 해설을 얻는다.",
+  "overview": {"title": "Assigning the proof of the first equation", "summary": "Starts research that proves and explains the goal's basic equation in Lean. The next task is decided after the result is reviewed."},
+  "reason": "Obtain a proof and exposition starting from the goal's basic proposition.",
   "research": [{
-    "instructions": "모든 자연수 n에 대해 n + 0 = n을 Lean으로 증명하고 충실한 해설을 써라.",
+    "instructions": "Prove in Lean that n + 0 = n for every natural number n and write a faithful exposition.",
     "references": [], "supersedes": []
   }],
   "explorations": [],
   "peers": [],
   "reviews": [],
   "goal_review": null,
-  "wait": null
+  "wait": null,
+  "index": {"modules": []}
 }
 ```
 
-배열 항목의 정체성은 **계획 기록 ID + 배열 이름 + 0부터 시작하는 위치**로 식별할 수 있다. 실행기는 각 요청을 한 번씩 새 세션으로 파견하고, 세션이 끝나 실패했을 때 다시 할지는 다음 계획이 새 요청으로 정한다. 이후 계획의 빈 목록이 이미 게시된 다른 요청을 취소하지 않는다.
+The identity of an array item can be identified by **plan record ID + array name + 0-based position**. The runner dispatches each request once as a new session, and whether to do it again after the session ended in failure is decided by the next plan as a new request. An empty list in a later plan does not cancel other requests already posted.
 
-`research[]`는 `instructions`, `references`, `supersedes`를 가진다. 실행기는 이 세 필드를 연구의 `task`로 복사한다. `explorations[]`는 `instructions`, `references`를 가지며, 실행기는 이 두 필드를 탐구의 `task`로 복사한다. `peers[]`는 `instructions`, `references`, 연구 또는 탐구 `target`을 가진다. `reviews[]`는 `instructions`, `references`, 연구 단독 또는 작업·동료 묶음 `target`을 가진다. 이미 반영된 연구 산출의 추가 검토 요청이다. `goal_review`는 `null` 또는 `instructions`, `references`를 가진 객체이고, 실행기가 `target: {"kind":"goal"}`을 붙여 검토를 만든다. 다섯 종류 요청 모두 선택적으로 `model`, `effort`, 그리고 지정 이유 `selection_reason`을 가질 수 있다. 예:
+`research[]` has `instructions`, `references` and `supersedes`. The runner copies these three fields into the research `task`. `explorations[]` has `instructions` and `references`, and the runner copies these two fields into the exploration `task`. `peers[]` has `instructions`, `references` and a research or exploration `target`. `reviews[]` has `instructions`, `references` and a standalone research or work–peer bundle `target`. It is a request for an additional review of an already integrated research output. `goal_review` is `null` or an object with `instructions` and `references`, and the runner creates the review by attaching `target: {"kind":"goal"}`. All five kinds of request may optionally have `model`, `effort` and the reason for the specification `selection_reason`. Example:
 
 ```json
 {
-  "instructions": "기존 검토와 별개로 해설의 전칭 범위를 확인하라.",
+  "instructions": "Independently of the existing review, confirm the universal scope of the exposition.",
   "references": [{"record": "k0002"}],
   "target": {"kind": "research", "record": "k0001"},
   "model": "claude/sonnet",
-  "selection_reason": "다른 모델에서 같은 범위를 독립적으로 확인한다."
+  "selection_reason": "Confirm the same scope independently on a different model."
 }
 ```
 
-연구·탐구가 공개되면 실행기가 동료를 자동 배정하고, 동료가 공개되면 작업·동료 묶음의 검토를 자동 배정한다. 계획은 이 후속 작업을 peers나 reviews에 중복 게시하지 않는다. 실패로 후속이 끝났거나 별도의 확인이 필요한 경우에는 현재 요청과 결과를 확인한 뒤 추가 요청을 낸다. 추가 검토는 계획이 필요하다고 판단할 때 요청한다.
+When a research record or an exploration is published, the runner assigns a peer automatically, and when the peer is published, it assigns a review of the work–peer bundle automatically. A plan does not post these follow-ups again in peers or reviews. If a follow-up ended in failure or a separate confirmation is needed, confirm the current requests and results and then issue an additional request. An additional review is requested when the plan judges it necessary.
 
-`wait`는 `null` 또는 `{"needed":"사용자가 줄 입력", "reason":"왜 그것이 필요한가"}`다. 대기가 선언되면 실행기는 모든 새 파견을 멈춘다. 같은 산출에 요청이 있더라도 게시된 채 대기하고, 기존 실행 중 세션은 끝까지 둔다. 사용자 입력이 들어오면 대기를 풀고 입력 사건을 다음 계획에 전달한다. 계획은 대기 중 예상 작업이 필요하면 요청을 남길 수 있지만 실제로 수행할 의미가 있는지 스스로 판단해야 한다. 검사는 그 연구 가치를 판단하지 않는다.
+### Index layout
 
-## 7. 공식 검사와 반영 순서
+`index` declares how the runner splits the index into modules. It is an object with a `modules` array; each module has `name`, `title`, `description` and `records`.
 
-Python 3.12 이상, 표준 라이브러리만 사용한다. 세션은 다음 명령을 실행하고, 실행기는 아래의 `check_session` 함수로 **같은 검사**를 다시 수행한다. 인자는 인스턴스나 `output/`가 아닌 **세션 폴더 하나**다.
+```json
+"index": {
+  "modules": [
+    {"name": "general", "title": "General",
+     "description": "Base context of the run: the bijective approach, the lemmas it rests on and the open obstacles.",
+     "records": []},
+    {"name": "generating-functions", "title": "Generating-function route (closed)",
+     "description": "Closed by the counterexample k0007; the partial identities for small n remain valid. Open this if a task revisits generating functions.",
+     "records": ["k0002", "k0004", "k0007"]}
+  ]
+}
+```
+
+`name` is an identifier (letters, digits, `_`, `-`), unique within the plan, and becomes the file name `knowledge/index/<name>.md`. `title` is a nonempty single line. `description` is nonempty prose telling a reader what the records inside have in common, what state that line of work is in, and which kind of task should open the module. `records` lists research and exploration records only, a record appears in at most one module, and a module other than `general` has at least one record (a module that has run empty is dropped). Module names are file names, so two names that differ only by letter case are rejected. The name `general` is reserved for the general module, which always exists and is rendered inside `knowledge/index.md`: every research and exploration record not named in another module belongs to it. A plan lists `general` only to give it a title and description of its own, which are then shown above its entries; records listed under it are redundant. The latest plan's layout is the one in force, so a plan carries the previous layout forward and republishes it, edited, every round. The checker confirms the structure, the existence and category of the records and that no record is filed twice; how the records are grouped is the plan's judgment ('Organizing the index' in [plan.md](plan.md)).
+
+`wait` is `null` or `{"needed":"the input the user is to give", "reason":"why it is needed"}`. When a wait is declared, the runner stops all new dispatch. Even if the same output has requests, they wait as posted, and sessions already running are left to finish. When user input comes in, the wait is released and the input event is delivered to the next plan. A plan may leave requests if work is expected to be needed during the wait, but must judge for itself whether actually performing them is meaningful. The check does not judge that research value.
+
+## 7. Official check and integration order
+
+Python 3.12 or later, standard library only. The session runs the following command, and the runner performs **the same check** again with the `check_session` function below. The argument is **one session folder**, not the instance or `output/`.
 
 ```powershell
 python C:/path/to/skill/check.py C:/research/example/sessions/s0001
 ```
 
-성공은 종료 코드 `0`, 표준 출력 `{"ok":true,"errors":[]}`다. 형식·참조 실패는 종료 코드 `1`, 표준 출력에 `{"ok":false,"errors":["output.json.results[0].exposition: ..."]}`처럼 첫 오류의 위치·이유를 담는다. 그 오류를 고치고 같은 명령을 다시 실행한다. 명령 인자 사용 오류는 argparse의 설명과 종료 코드 `2`다. 검사 결과는 파일을 변경하지 않는다.
+Success is exit code `0` and standard output `{"ok":true,"errors":[]}`. A format or reference failure is exit code `1`, with the location and reason of the first error in standard output such as `{"ok":false,"errors":["output.json.results[0].exposition: ..."]}`. Fix that error and run the same command again. A command-argument usage error is argparse's explanation and exit code `2`. The check result changes no files.
 
-Python 소비자는 `check_session(session: str | pathlib.Path) -> list[str]`을 호출할 수 있다. 빈 목록은 통과, 원소 하나의 목록은 첫 실패 이유다. JSON 해석·인코딩·일반 파일 접근 오류도 이 진단으로 돌아온다. 프로그래밍 오류까지 삼키지는 않는다. CLI와 함수는 `Checker.run()`의 동일 검사를 사용한다.
+Python consumers can call `check_session(session: str | pathlib.Path) -> list[str]`. An empty list is a pass, and a one-element list is the reason of the first failure. JSON parsing, encoding and ordinary file-access errors also return as this diagnosis. It does not swallow programming errors. The CLI and the function use the identical check of `Checker.run()`.
 
-검사기는 입력·산출 필수 항목과 형식, 범주의 일치, 파일·기록·결과 참조의 존재, 연구 검토의 대상 및 결과별 항목 완결성을 확인한다. 모든 계획 산출은 앞 절의 정본 파일·항목 구조도 확인한다. 정의의 수학적 의미, 대상 간 동일성, 수용 범위의 정확성, 산출의 정본 준수 여부는 판단하지 않는다. 제안 파일 자체의 서식은 검사하지 않는다. 참조한 기록 전체를 재귀 검사하거나 기존 기록의 현재성을 판단하지 않는다. Lean을 실행하지 않고, 해설·근거의 옳고 그름, 목표 충족, 검토 판정 사이의 수학적 타당성, 계획의 가치를 판단하지 않는다. 사용한 지식을 빠짐없이 참조했는지는 세션의 책임이다.
+The checker confirms the required items and format of input and output, the agreement of categories, the existence of file, record and result references, and the target of a research review and the completeness of its per-result items. Every plan output is also checked for the global glossary files and entry structure and for the index layout of the preceding sections, and every research, exploration and peer output for its local glossary. It does not judge the mathematical meaning of definitions, the identity of objects, the accuracy of the scope of acceptance, whether the output conforms to the glossaries, whether a local name collides with a global one, whether a candidate deserves adoption, or whether records are grouped into the right modules. It does not recursively check referenced records as a whole or judge the currency of existing records. It does not run Lean, and does not judge the correctness of expositions and evidence, goal satisfaction, the mathematical validity between review verdicts, or the value of a plan. Whether the knowledge used was referenced without omission is the session's responsibility.
 
-실행기는 다음 순서로 이 계약을 소비한다.
+The runner consumes this contract in the following order.
 
-1. `input.json`을 준비하고 새 세션을 띄운다. 세션은 공개 산출을 작성하고 위 검사로 확인한 뒤 끝난다. 별도 승인·종료 필드는 없다.
-2. 프로세스가 끝나면 종료 코드나 종료 방식과 무관하게 위 검사를 다시 실행한다. 산출이 없거나 실패하면 반영하지 않고 `session_failed` 사건으로 다음 계획에 넘긴다.
-3. 통과하면 새로운 기록 ID를 부여하고 **`sessions/<ID>/output/`의 내용 전부**를 새 `knowledge/<기록 ID>/`에 복사한다. `output.json`도 함께 복사하며 내부 경로를 바꾸지 않는다. 대상 디렉터리는 새것이어야 하며 기존 파일은 덮어쓰지 않는다. 입력·작업 폴더·로그는 복사하지 않으며 세션 폴더에 남긴다. 새 기록을 인스턴스 Git에 커밋한다.
-4. 반영된 계획에서 요청을 읽는다. 반영된 연구·탐구에는 기본 동료 하나를 붙이고, 동료 반영 뒤에는 작업·동료 묶음의 검토 하나를 붙인다. 탐구·동료·검토의 반영은 각각 계획 사건이 된다. 반영된 목표 검토가 달성이면 완료한다. 완료 뒤에는 자동 동료·검토·계획을 포함해 새 세션을 띄우지 않지만, 이미 돌던 세션의 산출은 종료 시 같은 재검사·반영을 거친다.
+1. Prepares `input.json` and launches a new session. The session writes the published output, confirms it with the check above, and ends. There is no separate approval or completion field.
+2. When the process ends, runs the check above again regardless of the exit code and the manner of exit. If there is no output or it fails, does not integrate it and hands it to the next plan as a `session_failed` event.
+3. If it passes, assigns a new record ID and copies **the entire contents of `sessions/<ID>/output/`** into a new `knowledge/<record ID>/`. `output.json` is copied too, and internal paths are not changed. The target directory must be new, and existing files are not overwritten. The input, the work folder and the logs are not copied and remain in the session folder. Commits the new record to the instance Git.
+4. Reads the requests from an integrated plan. Attaches one default peer to an integrated research record or exploration, and after a peer is integrated, one review of the work–peer bundle. The integration of an exploration, a peer or a review each becomes a plan event. If an integrated goal review says achieved, completes. After completion no new sessions are launched, including automatic peers, reviews and plans, but the outputs of sessions already running go through the same re-check and integration when they end.
 
-반영이나 실패로 처리가 끝난 세션의 `work/`는 실행기가 같은 세션 폴더의 `work.tar.xz`로 압축하고, 압축본을 검증한 뒤 원본 디렉터리를 지운다. 그 뒤로는 `work/` 경로로 파일을 읽을 수 없고 압축본을 풀어야 한다. 압축의 시점과 실패 시 보존 규칙은 [RUNTIME.md](RUNTIME.md)가 정한다.
+The `work/` of a session whose processing ended in integration or failure is compressed by the runner into `work.tar.xz` in the same session folder, and after the archive is verified the original directory is deleted. After that the files cannot be read at the `work/` path and the archive must be extracted. The timing of compression and the preservation rules on failure are defined by [RUNTIME.md](RUNTIME.md).
 
-실행기는 단일 실행기, 동시 상한, 한 번에 하나의 계획을 지킨다. 사용자 정지, 외부 입력 대기, 공급자 한도 대기, 연속 계획 실패 정지 중에는 새 세션을 띄우지 않는다. 종료한 세션을 그대로 재기동하지 않는다. 각 정지의 해제 조건, 프로세스 관리·재기동과 상태 저장은 [RUNTIME.md](RUNTIME.md)가 정한다.
+The runner keeps a single runner, the concurrency cap and one plan at a time. During a user stop, an external-input wait, a provider-limit wait or a halt after consecutive plan failures, no new sessions are launched. A session that has ended is not relaunched as it is. The release condition of each stop, process management, restart and state saving are defined by [RUNTIME.md](RUNTIME.md).
 
-## 기존 인스턴스의 이어받기
+## Carrying over existing instances
 
-과거 네 범주의 공개 기록과 입력·검토 형식은 계속 읽는다. 과거 기록의 판정은 바꾸지 않는다. 기존 settings에 peer 기본값이 없으면 review의 모델·effort를 복사해 사용하며 명시한 peer 기본값이나 계획의 선택이 우선한다. 아직 실행 중인 세션의 입력·모델은 바꾸지 않는다. 개편 뒤 새로 반영되는 연구·탐구부터 자동 동료를 배정한다. 이미 게시된 구형 자동 연구 검토 요청은 그 의미대로 수행한다. 과거 탐구에 자동으로 소급 배정하지 않으며 필요하면 계획이 peers로 요청한다.
+The published records of the former four categories and their input and review formats continue to be read. The verdicts of past records are not changed. If existing settings have no peer defaults, the review model and effort are copied and used, and explicit peer defaults or a plan's selection take precedence. The inputs and models of sessions still running are not changed. Automatic peers are assigned starting with the research records and explorations newly integrated after the reorganization. Legacy automatic research review requests already posted are performed in their meaning. Past explorations are not assigned retroactively and automatically; if needed, a plan requests them in peers. For an instance created before the English port, the last plan's `glossary.md` still carries the former Korean field labels (이름·기호 … 출처, header 칸/내용); the next plan rewrites them into the current English labels, because the checker accepts only the current labels. `knowledge/index.md` is rebuilt with English labels automatically at the next start.
+
+For an instance created before index modules and local glossaries existed, the index is rebuilt at the next start without plan entries and with every record in the general module, since no plan has declared a layout yet; the next plan declares one. Records published before the change have no `glossary-local.md` and are read as before, with their names defined in their expositions and, where they exist, in their `glossary-proposals.md`. The next plan harvests candidates both from such legacy proposals files and from the local glossaries of new records. Published records are not modified to add a local glossary.

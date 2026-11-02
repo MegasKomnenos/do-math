@@ -39,7 +39,7 @@ class AdapterTests(unittest.TestCase):
                                   fallback_seconds=600, local_timezone=KST, **kwargs)
 
     def test_commands_preserve_paths_and_explicit_selection(self):
-        workdir = self.root / "연구 세션"
+        workdir = self.root / "session 研究 é"  # non-ASCII on purpose: cwd must survive resolve() and argv
         codex = build_command(self.root / "program files" / "codex.exe",
                               "codex/gpt-6.1-sol", "high", workdir)
         self.assertEqual(codex.provider, "codex")
