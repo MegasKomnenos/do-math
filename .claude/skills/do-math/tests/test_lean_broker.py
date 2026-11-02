@@ -704,6 +704,41 @@ class BuildTests(BrokerFixture):
         self.assertFalse(runner.alive(self.module_job(build_id, "A").get("lean")))
 
 
+class LauncherTests(BrokerFixture):
+    LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
+
+    def test_lake_env_is_asked_once_and_lean_then_runs_directly(self):
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)],
+                            version_command=self.LAKE + [sys.executable, "-B", str(FAKE), "--version"])
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        self.assertEqual(self.broker.direct["argv"], [sys.executable, "-B", str(FAKE)])
+        self.assertEqual(self.broker.direct["env"]["FAKE_LAKE"], "1")
+        self.assertTrue(self.broker.direct["env"]["LEAN_PATH"].startswith("fake-lake-lib"))
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        self.until(lambda: self.finished(job_id))
+        job = self.broker.state["jobs"][job_id]
+        self.assertEqual(job["exit_code"], 0)
+        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
+        self.assertEqual(launch["env"]["FAKE_LAKE"], "1")
+        # Baselines measured directly are keyed apart from those measured through lake.
+        self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state["version"], job["imports"], True))
+        self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state["version"], job["imports"]))
+        self.assertIn("launcher", lean_broker.broker_status(self.paths))
+
+    def test_a_lake_that_fails_leaves_the_configured_command_in_force(self):
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)], env={"FAKE_LAKE_FAIL": "1"})
+        self.start_broker()
+        self.assertFalse(self.broker.state["launcher"]["direct"])
+        self.assertIn("exit code 7", self.broker.state["launcher"]["reason"])
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        self.until(lambda: self.finished(job_id))
+        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
+        self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 7)  # what the configured lake does
+
+
 class ClientAndLifecycleTests(BrokerFixture):
     def cli(self, *args, timeout=60):
         return subprocess.run([sys.executable, "-B", str(lean_broker.SCRIPT), *args],

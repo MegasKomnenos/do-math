@@ -102,9 +102,13 @@ def read_imports(path):
     return sorted(imports)
 
 
-def closure_key(version, imports):
-    """One key per (Lean version, import set); a new Lean makes old baselines invisible."""
-    return hashlib.sha256(((version or "") + "\n" + "\n".join(imports)).encode("utf-8")).hexdigest()[:16]
+def closure_key(version, imports, direct=False):
+    """One key per (Lean version, import set, launch mode); a new Lean makes old baselines invisible.
+
+    A compile launched directly, without `lake env` in front of it, costs about a gigabyte
+    less on this machine, so its baselines are kept apart from those measured through lake."""
+    text = (version or "") + "\n" + "\n".join(imports) + ("\ndirect" if direct else "")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 # ------------------------------------------------------------------- module trees
@@ -463,6 +467,7 @@ class Broker:
         self.settings = None
         self.config = None
         self.config_error = None
+        self.direct = None  # {"argv", "env"} to run lean without lake in front of it, once lake's environment is known
         self.settings_stamp = None
         self.state = read_json(self.paths.state) if self.paths.state.exists() else {}
         self.state.setdefault("jobs", {})
@@ -525,6 +530,38 @@ class Broker:
         self.state.update(config=config, config_error=None)
         self.dirty = True
         self.log(event="settings_applied", config=config)
+        self.capture_environment()
+
+    def capture_environment(self):
+        """With `lake env lean …` configured, ask lake once for the environment it gives lean.
+
+        Every later compile then runs lean directly in that environment, sparing the
+        workspace load that lake repeats per compile (LEAN.md). If this fails, the
+        configured command stays in force, so no compile depends on it working."""
+        command = list(self.settings["lean"]["command"])
+        self.direct = None
+        split = command.index("env") if "env" in command[1:] else 0  # lake and its options before, lean after
+        if not split or split == len(command) - 1:
+            self.state["launcher"] = {"direct": False, "reason": "the command is not of the form lake [options] env lean"}
+            return
+        probe = command[:split + 1] + [sys.executable, "-c", "import json, os; print(json.dumps(dict(os.environ)))"]
+        given = self.lean_env()
+        try:
+            result = subprocess.run(probe, cwd=self.lean_cwd(None), env=given, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, encoding="utf-8", errors="replace", timeout=300,
+                                    **popen_options())
+            if result.returncode:
+                raise RuntimeError(f"exit code {result.returncode}: {result.stderr.strip()[:500]}")
+            captured = json.loads(result.stdout)
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+            self.state["launcher"] = {"direct": False, "reason": str(exc)}
+            self.log(event="environment_failed", error=str(exc))
+            return
+        delta = {k: v for k, v in captured.items() if given.get(k) != v}
+        self.direct = {"argv": command[split + 1:], "env": delta}
+        self.state["launcher"] = {"direct": True, "argv": command[split + 1:], "variables": sorted(delta),
+                                  "captured_at": time.time()}
+        self.log(event="environment_captured", variables=sorted(delta))
 
     def read_version(self):
         """The version string every calibration entry is tagged with; None if not obtained."""
@@ -706,7 +743,7 @@ class Broker:
         session = request.get("session") or "unknown"
         return {"id": job_id, "kind": "compile", "session": session, "source": source,
                 "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
-                "external": external, "closure": closure_key(self.state["version"], external),
+                "external": external, "closure": closure_key(self.state["version"], external, self.direct is not None),
                 "threads": self.config["threads"], "submitted_at": request.get("submitted_at", time.time()),
                 "status": "queued", "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None,
                 "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
@@ -996,8 +1033,11 @@ class Broker:
     def launch(self, job):
         job_dir = self.paths.job(job["id"])
         lean = self.settings["lean"]
-        argv = list(lean["command"]) + [f"--threads={job['threads']}"]
-        env = dict(lean["env"])
+        if self.direct:  # lean itself, in the environment lake gave once; see capture_environment
+            command, env = self.direct["argv"], {**lean["env"], **self.direct["env"]}
+        else:
+            command, env = lean["command"], dict(lean["env"])
+        argv = list(command) + [f"--threads={job['threads']}"]
         if job.get("olean"):
             # A module of a build: named from its root, written as .olean into the build's lib,
             # which goes on the search path so that the modules built before it are found.
@@ -1301,6 +1341,7 @@ def broker_status(paths):
     return {"instance": str(paths.instance), "broker": info, "broker_alive": bool(info),
             "config": state.get("config"), "config_error": state.get("config_error"),
             "version": state.get("version"), "version_error": state.get("version_error"),
+            "launcher": state.get("launcher"),
             "queued": [{k: j.get(k) for k in ("id", "kind", "session", "expect_mb", "waiting_for", "passed", "reserve")}
                        for j in jobs.values() if j["status"] == "queued"],
             "running": [{k: j.get(k) for k in ("id", "kind", "session", "expect_mb", "started_at", "reserve", "measured")}
