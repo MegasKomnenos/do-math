@@ -203,11 +203,40 @@ class FormalEvidenceTests(InstanceCase):
         with self.assertRaisesRegex(Invalid, 'submitted compile'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def test_review_compile_must_be_the_candidate_bytes_plus_axiom_commands(self):
+        # The broker compiled exactly this copy; a repaired or extended copy is not the final source.
+        candidate, working, check, solution = self.evidence()
+        result = self.instance / 'runner/lean/jobs' / check['job'] / 'result.json'
+        original = (candidate / 'Proof.lean').read_bytes()
+        for copied, message in (
+                (original.replace(b'by trivial', b'by exact True.intro') + b'\n#print axioms target\n',
+                 'unchanged copy'),
+                (original + b'\ntheorem extra : True := by trivial\n#print axioms target\n',
+                 'only axiom inspection commands')):
+            with self.subTest(message=message):
+                working.write_bytes(copied)
+                write_json(result, {**read_json(result), 'source_sha256': hashlib.sha256(copied).hexdigest()})
+                with self.assertRaisesRegex(Invalid, message):
+                    audit_formal(self.instance, 'sreview', check, solution, candidate)
+
     def test_placeholder_axiom_is_rejected_despite_exit_zero(self):
         candidate, _, check, solution = self.evidence(axiom_line="'target' depends on axioms: [sorryAx]")
         check['axioms'] = ['sorryAx']
         with self.assertRaisesRegex(Invalid, 'unapproved axiom'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
+
+    def test_failed_single_file_review_compile_is_not_formal_evidence(self):
+        candidate, _, check, solution = self.evidence()
+        result = self.instance / 'runner/lean/jobs' / check['job'] / 'result.json'
+        receipt = read_json(result)
+        # Lean still prints the target's axioms when another declaration fails, so
+        # only the compiler's exit code can reject this job. -9 is how Python
+        # reports a compiler ended by a signal after its output was written.
+        for code in (1, -9):
+            with self.subTest(exit_code=code):
+                write_json(result, {**receipt, 'exit_code': code})
+                with self.assertRaisesRegex(Invalid, 'review compile failed'):
+                    audit_formal(self.instance, 'sreview', check, solution, candidate)
 
     def test_formal_axiom_policy_is_the_reviewers_launch_snapshot(self):
         candidate, _, check, solution = self.evidence(axiom_line="'target' depends on axioms: [custom_assumption]")
@@ -277,6 +306,42 @@ class FormalEvidenceTests(InstanceCase):
         check['source_hashes']['Basis.lean'] = hashlib.sha256(changed).hexdigest()
         with self.assertRaisesRegex(Invalid, 'submitted compile'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
+
+    def publish(self, check):
+        stage = self.root / 'stage'
+        (stage / 'review').mkdir(parents=True)
+        write_json(stage / 'review/assessment.json', {'solutions': [{'level': 'formal', 'formal_check': check}]})
+        runtime.Runner(self.instance, self.skill).copy_formal_evidence(stage, 'sreview')
+        return stage / 'review/lean-evidence' / check['job']
+
+    def test_duplicate_submission_id_is_audited_and_published_as_its_original_job(self):
+        candidate, _, check, solution = self.evidence()
+        original = check['job']
+        duplicate = 'j' + 'b' * 32
+        directory = self.instance / 'runner/lean/jobs' / duplicate
+        directory.mkdir(parents=True)
+        # The broker's answer to the same submission repeated while the first was still running.
+        write_json(directory / 'result.json', {'id': duplicate, 'status': 'duplicate', 'duplicate_of': original})
+        check['job'] = duplicate
+        audit_formal(self.instance, 'sreview', check, solution, candidate)
+        evidence = self.publish(check)
+        self.assertEqual(read_json(evidence / 'result.json')['id'], original)
+        self.assertIn("'target' does not depend on any axioms",
+                      (evidence / original / 'stdout.log').read_text(encoding='utf-8'))
+
+    def test_published_build_evidence_keeps_module_logs_without_environment(self):
+        _, _, check, _, receipt, _ = self.build_evidence()
+        target_job = receipt['modules']['Proof']['job']
+        write_json(self.instance / 'runner/lean/jobs' / target_job / 'launch.json',
+                   {'argv': ['lean', 'Proof.lean'], 'cwd': 'work', 'env': {'PRIVATE_TOKEN': 'not for publication'}})
+        evidence = self.publish(check)
+        self.assertEqual(read_json(evidence / 'result.json'), receipt)
+        module = evidence / target_job
+        self.assertEqual(read_json(module / 'result.json')['source_sha256'],
+                         receipt['modules']['Proof']['source_sha256'])
+        self.assertIn("'target' does not depend on any axioms",
+                      (module / 'stdout.log').read_text(encoding='utf-8'))
+        self.assertEqual(read_json(module / 'launch.json'), {'argv': ['lean', 'Proof.lean'], 'cwd': 'work'})
 
 
 if __name__ == '__main__':

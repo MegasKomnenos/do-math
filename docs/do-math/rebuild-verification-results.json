@@ -171,8 +171,55 @@
     ],
     "closure_scope": "The post-repair observation satisfies all four checks for this Windows/core Lean two-module path. It does not establish every Lean or Mathlib project or repeat the earlier runtime suite or live research."
   },
+  "follow_up_consumer_observations": {
+    "evidence_scope": "Actual runtime consumers with controlled inputs, recorded before and after approved repairs. No new Lean compile, Linux execution, full-suite rerun or live research. Inspected for this report update without rerunning the probes.",
+    "formal_theorem_name": {
+      "consumer": "check.audit_formal",
+      "observation_local": "임시/do-math_검증_20261105/sources/formal-name-observation.json",
+      "reproduction_local": "임시/do-math_검증_20261105/sources/formal-name-probe.py",
+      "before": {
+        "check_sha256": "b3313722ab539d862146b7e50ada8ed9b0383b6c98adfded4802d9ddba632e8a",
+        "accepted": ["target", "not_target", "Namespace.target"]
+      },
+      "after_round_3": {
+        "check_sha256": "0e500ebcd8c34269ff20bf748d92686c5180a7bc5de342952e4716dc5a0f32ea",
+        "accepted": ["target"],
+        "rejected": ["not_target", "Namespace.target"],
+        "reason": "review compile did not print target axiom dependencies"
+      }
+    },
+    "broker_cancellation": {
+      "consumer": "lean_broker cancellation and request ingestion",
+      "reproduction_local": "임시/do-math_검증_20261105/sources/broker-outcomes-probe.py",
+      "before": {
+        "observation_local": "임시/do-math_검증_20261105/sources/broker-outcomes-observation.json",
+        "lean_broker_sha256": "d1259195ec5ea7b5f38f2d3d2d9646b7dbaf02288501eb80cbae359838378408",
+        "result": "A cancellation before ingestion was acknowledged but left no final outcome. Cancellations after the request was read, or during a cached restore, were acknowledged but ended finished; the builds returned 0."
+      },
+      "after_round_5": {
+        "observation_local": "임시/do-math_검증_20261105/sources/broker-outcomes-after-repair.json",
+        "lean_broker_sha256": "e940dee15054fd7d2dfb9f5c4513a8162f8079c8acca52e0a9436756cc8985b6",
+        "result": "Each cancellation ended cancelled with no new compile, and each cancelled build returned 4. A compiler exit of 1 still finished and returned 1."
+      }
+    },
+    "build_exit_code": {
+      "consumer": "lean_broker.report_build",
+      "reproduction_local": "임시/do-math_검증_20261105/sources/exit-code-probe.py",
+      "before": {
+        "observation_local": "임시/do-math_검증_20261105/sources/exit-code-observation.json",
+        "lean_broker_sha256": "e940dee15054fd7d2dfb9f5c4513a8162f8079c8acca52e0a9436756cc8985b6",
+        "target_returncode_to_report": {"0": 0, "1": 1, "-9": 0}
+      },
+      "after_round_6": {
+        "observation_local": "임시/do-math_검증_20261105/sources/exit-code-after-repair.json",
+        "lean_broker_sha256": "ffbd7a4ab7ea163eb62bc983d5e2bc1974478638053244eb159035cf647f3343",
+        "target_returncode_to_report": {"0": 0, "1": 1, "-9": -9}
+      }
+    }
+  },
   "limits": [
     "The initial actual Lean 4.32.0 module-cache probe failed its fresh-target compile before the formal-evidence check. A separate post-repair actual-Lean observation closes that failure for the tested Windows/core Lean two-module path; broader compiler integration remains outside this observation's scope.",
+    "The later theorem-name, cancellation and build exit-code observations ran actual consumers on controlled inputs; they are not Lean compiles or Linux executions. The broker identity of the post-repair module-cache observation predates the round 5 and round 6 broker changes.",
     "Windows verification only for this rebuild; Linux process paths not exercised.",
     "No new Mathlib research run; real core Lean and controlled broker tests were used.",
     "Elementary live run confirms workflow and evidence handoffs, not effectiveness on difficult mathematics.",

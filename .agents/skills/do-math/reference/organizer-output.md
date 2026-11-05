@@ -25,4 +25,4 @@ A global term ID refers to its published local definition. Promotion retains tha
 
 Node merges preserve references through aliases. Explain the mathematical identity in `reason`; the runner does not establish identity by comparing strings. If both original nodes are occupied, both preexisting attempts continue against the merged identity.
 
-The runner checks IDs, references, permissible dispositions and the exact batch. You judge whether the grouping helps readers, a term deserves shared status, and definitions or statements are actually identical. Read the resulting arrangement from that perspective, run the check command on your own session directory, and end.
+The runner checks IDs, references, permissible dispositions and the exact batch. You judge whether the grouping helps readers, a term deserves shared status, and definitions or statements are actually identical. Read the resulting arrangement from that perspective, run the transport check on your own session directory, and end.

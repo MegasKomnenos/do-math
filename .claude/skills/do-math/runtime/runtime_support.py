@@ -14,7 +14,7 @@ def memory_status():
     """(total physical, headroom) in bytes: commit headroom on Windows, MemAvailable on Linux.
 
     Both headroom figures count private memory only; file-backed mappings such as
-    Lean's .olean files are page cache and never reduce them (LEAN.md)."""
+    Lean's .olean files are page cache and never reduce them (reference/lean.md)."""
     if os.name != "nt":
         fields = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         return (int(fields["MemTotal"].split()[0]) * 1024,
@@ -219,10 +219,11 @@ def alive(identity):
     try:
         return process_identity(identity["pid"]) == identity
     except PermissionError:
-        # ponytail: every recorded process is a descendant that inherited the same privileges, so it can
+        # Every recorded process is a descendant that inherited the same privileges, so it can
         # always be opened. A refusal means a process of another account reused the PID. Mixing with
-        # elevated runs can break this premise (RUNTIME.md). If mixing is unavoidable, upgrade to
-        # comparing creation times from the system process list.
+        # elevated runs can break this premise, which is why reference/operations.md asks operators to
+        # use shells of one privilege level. If mixing becomes unavoidable, compare creation times from
+        # the system process list instead.
         return False
 
 
@@ -281,7 +282,7 @@ def lean_config(settings):
 
     A null memory budget is the physical memory minus the machine gate and a
     512 MiB allowance per AI session; a null thread budget is twice the logical
-    core count, since a compile is CPU-bound only during elaboration (LEAN.md)."""
+    core count, since a compile is CPU-bound only during elaboration (reference/lean.md)."""
     lean = settings["lean"]
     config = {key: lean[key] for key in LEAN_DEFAULTS}
     total_mb = memory_status()[0] // (1024 * 1024)

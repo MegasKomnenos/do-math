@@ -44,9 +44,7 @@ class BrokerFixture(unittest.TestCase):
         self.settings_path = self.root / "settings.json"
         self.settings = {
             "max_sessions": 2,
-            "defaults": {name: {"model": "codex/gpt-6.1-sol", "effort": "high"}
-                         for name in ("plan", "research", "explore", "review")},
-            "cli": {"codex": "codex.exe", "claude": "claude.exe"}, "limit_wait_seconds": 5,
+            "cli": {"codex": "codex.exe", "claude": "claude.exe"},
             "lean": {"command": [sys.executable, "-B", str(FAKE)],
                      "version_command": [sys.executable, "-B", str(FAKE), "--version"], "cwd": None, "env": {},
                      "memory_budget_mb": self.budget, "min_free_memory_mb": 0, "threads": 1,
@@ -267,9 +265,7 @@ class SettingsTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.instance = Path(self.temp.name)
-        self.base = {"max_sessions": 3,
-                     "defaults": {name: {"model": "codex/m", "effort": "high"} for name in ("plan", "research", "explore", "review")},
-                     "cli": {"codex": "codex"}, "limit_wait_seconds": 1,
+        self.base = {"max_sessions": 3, "cli": {"codex": "codex"},
                      "lean": {"command": ["lean"], "version_command": ["lean", "--version"], "cwd": None, "env": {}}}
 
     def load(self, **lean):
@@ -482,7 +478,7 @@ class BrokerTests(BrokerFixture):
     def test_orphaned_job_is_cancelled_and_its_process_tree_terminated(self):
         self.start_broker()
         state = runner.read_json(self.instance / "runner/state.json")
-        state["sessions"]["s1"] = {"category": "research", "status": "running", "host": None, "cli": None}
+        state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
         runner.write_json(self.instance / "runner/state.json", state)
         job_id = self.submit(self.session_file("s1", sleep=30), expect_mb=40)
         self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running" and self.broker.state["jobs"][job_id].get("pid"))
@@ -507,8 +503,8 @@ class BrokerTests(BrokerFixture):
         dead = {"pid": int(gone.stdout), "birth": "a process that has exited"}
         live = runner.process_identity(os.getpid())
         state = runner.read_json(self.instance / "runner/state.json")
-        state["sessions"]["s1"] = {"category": "research", "status": "running", "host": dead, "cli": live}
-        state["sessions"]["s2"] = {"category": "research", "status": "running", "host": dead, "cli": dead}
+        state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": dead, "cli": live}
+        state["sessions"]["s2"] = {"role": "attempt", "status": "running", "host": dead, "cli": dead}
         runner.write_json(self.instance / "runner/state.json", state)
         kept = self.submit(self.session_file("s1", sleep=2), expect_mb=40, session="s1")
         dropped = self.submit(self.session_file("s2", sleep=30), expect_mb=40, session="s2")
@@ -531,6 +527,19 @@ class BrokerTests(BrokerFixture):
         self.assertEqual(sum(j["kind"] == "calibration" for j in self.broker.state["jobs"].values()), 1)
         self.assertEqual(job["reserve"]["certain_mb"], 40)  # no baseline: the whole estimate is reserved
         self.assertIn("unknown module", (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8"))
+
+    def test_unrunnable_calibration_releases_its_waiting_job(self):
+        # A Lean that cannot start gives no calibration verdict; the waiting compile must still reach its own outcome.
+        self.write_settings(command=[str(self.root / "no-such-lean")])
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        self.until(lambda: self.finished(job_id))
+        job = self.broker.state["jobs"][job_id]
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual([(j["status"], j["exit_code"]) for j in calibrations], [("failed", None)])
+        self.assertIsNone(self.broker.calibration.entry(job["closure"]))  # nothing recorded: a later compile calibrates again
+        self.assertEqual((job["status"], job["exit_code"]), ("failed", None))
+        self.assertTrue(job["launch_error"])
 
     def test_failed_and_cancelled_jobs_report_their_own_exit_codes(self):
         self.start_broker()
@@ -664,8 +673,8 @@ class BrokerTests(BrokerFixture):
         self.start_broker()
         self.assertFalse(self.broker.should_exit())
         state = runner.read_json(self.instance / "runner/state.json")
-        state["complete"] = "k1"
-        state["sessions"]["s1"] = {"category": "research", "status": "running", "host": None, "cli": None}
+        state["complete"] = True
+        state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
         runner.write_json(self.instance / "runner/state.json", state)
         self.assertFalse(self.broker.should_exit())
         state["sessions"]["s1"]["status"] = "integrated"
@@ -941,14 +950,6 @@ class BuildTests(BrokerFixture):
         self.until(lambda: self.build_record(shadowing)["status"] in lean_broker.FINISHED)
         self.assertIn("shadow", self.build_record(shadowing)["reason"])
         self.assertFalse(self.jobs("queued", "running"))
-
-    def test_state_written_before_builds_existed_still_accepts_a_build(self):
-        runner.write_json(self.paths.state, {"jobs": {}, "version": None})  # no "builds": an older broker's state
-        self.start_broker()
-        root = self.tree()
-        build_id = self.build(root, [root / "A.lean"])
-        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
-        self.assertEqual(self.build_record(build_id)["status"], "finished")
 
     def test_cancelling_a_build_stops_its_queue(self):
         self.start_broker()

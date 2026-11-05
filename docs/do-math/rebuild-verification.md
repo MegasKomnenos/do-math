@@ -62,6 +62,18 @@ A separate actual-broker observation, `임시/do-math_검증_20261105/sources/le
 
 The JSON results distinguish the two observations and record the later broker and checker SHA-256 identities separately from the earlier rebuild source hashes. These supplied observations and the reproduction program were inspected for this report update; the probe was not rerun for the update. Their paths identify local inputs, not evidence distributed with a clone. The later success does not establish behavior for every Lean or Mathlib project or repeat the earlier full runtime suite or live research. The earlier results and their source identities retain their original scope.
 
+## Follow-up broker and checker observations
+
+Three later development observations ran actual runtime consumers on controlled inputs instead of compiling with Lean. Each was recorded before and after an approved repair. The observation files and their reproduction programs are local verification inputs in `임시/do-math_검증_20261105/sources/`.
+
+The theorem-name observation called the actual `audit_formal` checker with the existing controlled formal-evidence fixture. Only the theorem name in the printed axiom line varied. With the checker identity recorded in the original rebuild results, output naming `target`, `not_target` or `Namespace.target` was accepted as evidence for the theorem `target`. After the round 3 repairs, the checker accepted only `target`. It rejected the other two because the review compile had not printed the target's axiom dependencies (`formal-name-observation.json`).
+
+The cancellation observation used the actual broker functions and files with a controlled compiler process. Test hooks chose deterministic interleavings around request ingestion. Before the round 5 repairs, a cancellation sent before ingestion was acknowledged but left no final outcome. A cancellation sent after the broker had read the request was acknowledged as made "before the broker read it", yet the job or build still compiled and finished; the build returned 0. A cancellation during a cached restore also ended as a finished build returning 0 (`broker-outcomes-observation.json`). After the round 5 repairs, each of those cancellations ended with status `cancelled` and started no new compile, and each cancelled build returned 4. The cached module row kept its completed outcome. A build whose compiler exited with 1 still finished and returned 1 (`broker-outcomes-after-repair.json`).
+
+The exit-code observation called the actual `report_build` consumer with controlled result records. Each record had a cached dependency with code 0 and a target whose compiler returned 0, 1 or -9. Python reports a process ended by a POSIX signal as a negative return code. Before the round 6 repairs, the successful dependency masked the target's -9, and the build report returned 0 (`exit-code-observation.json`). After those repairs it returned -9, and the results for 0 and 1 were unchanged (`exit-code-after-repair.json`). This checks the consumer with controlled records; it is not a Linux execution or a new Lean compile.
+
+These observations were inspected for this report update; their probes were not rerun for it. The broker identity recorded with the post-repair module-cache observation above predates the round 5 and round 6 broker changes. The JSON results record the broker or checker identity of each observation separately. None of these observations repeats the earlier full runtime suite or the live research.
+
 ## Recovery
 
 The live test runner was terminated and restarted while one worker remained active. That worker's recorded host and CLI identities were preserved. The run subsequently finished.

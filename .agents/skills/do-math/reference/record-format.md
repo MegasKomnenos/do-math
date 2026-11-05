@@ -55,4 +55,4 @@ For a reduction from a proposed Q to an existing P, add the precise Q under `nod
 
 Put the exposition and all evidence needed by later readers in `output/`. The review sees the originals as well, so preserve attribution to the producer's report, conversation or artifacts where relevant. Those private references help review reconstruct the producer's work; the public account must still stand with its published evidence.
 
-Run the check command on the peer session directory. A passing check establishes structural usability, not mathematical validity. When the peer ends, the runner copies the candidate to a fixed location and gives that location, its file hashes and the producing originals to a fresh reviewer. The reviewer writes its assessment in its own output folder.
+Run the transport check on the peer session directory. A passing check establishes structural usability, not mathematical validity. When the peer ends, the runner copies the candidate to a fixed location and gives that location, its file hashes and the producing originals to a fresh reviewer. The reviewer writes its assessment in its own output folder.

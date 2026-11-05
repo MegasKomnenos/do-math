@@ -47,6 +47,6 @@ The available external tools are the servers explicitly configured in this insta
 
 ## Checking and ending
 
-Run `commands.check` against your own session directory before finishing. Exit code 0 with `ok: true` means the transport structure and references passed. A failure identifies a field or missing file to fix. The check does not prove mathematical claims or evaluate the quality of the exposition.
+Run the transport check, `commands.check`, against your own session directory before finishing. Exit code 0 with `ok: true` means the transport structure and references passed. A failure identifies a field or missing file to fix. The check does not prove mathematical claims or evaluate the quality of the exposition.
 
 Producing sessions retain useful partial work even if interrupted before their final report is complete. Peers, reviewers and organizers need structurally usable outputs for the runner to apply their decisions. If one of those sessions is interrupted, the runner preserves its partial material and starts a fresh session for that stage. A missing output is an unfinished stage, not a mathematical rejection.

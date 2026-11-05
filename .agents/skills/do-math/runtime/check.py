@@ -138,6 +138,11 @@ def audit_formal(instance, session, check, solution, candidate):
     job = text(check.get('job'), 'formal_check.job')
     need(JOB_ID.fullmatch(job) or BUILD_ID.fullmatch(job), 'invalid broker job ID')
     receipt = job_record(Paths(instance), job)
+    if receipt and receipt['status'] == 'duplicate':
+        # A repeated submission names the job already doing the work; waiting on either ID gives
+        # the same result (lean.md), so the audit follows it to that job as well.
+        job = receipt['duplicate_of']
+        receipt = job_record(Paths(instance), job)
     need(receipt and receipt['status'] == 'finished' and receipt['session'] == session,
          'formal check must be a finished job of this reviewing session')
     need(check.get('alignment') == 'matches', 'formal acceptance requires exact mathematical correspondence')

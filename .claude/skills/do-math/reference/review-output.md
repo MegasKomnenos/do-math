@@ -78,4 +78,4 @@ For a comprehensive assignment, `assessment.json` contains `feedback`, `index_as
 
 If you introduce notation needed to explain your assessment, add a `glossary` array in the local entry format of [Record format](record-format.md), and use it in the feedback. No entries are needed when you introduce no terms. These local definitions explain your output; they do not create new mathematical proof claims.
 
-Run the check command on your session directory before finishing. A completed assessment can state uncertainty; an interrupted assessment has not finished the stage. The runner preserves partial work and supplies it, with the original assignment, to a replacement reviewer.
+Run the transport check on your session directory before finishing. A completed assessment can state uncertainty; an interrupted assessment has not finished the stage. The runner preserves partial work and supplies it, with the original assignment, to a replacement reviewer.

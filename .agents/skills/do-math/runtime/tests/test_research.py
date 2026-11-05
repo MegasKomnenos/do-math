@@ -388,6 +388,7 @@ class RunnerTests(InstanceCase):
 
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()
+        self.assertEqual(runner.settings['max_sessions'], 8)
         self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
         self.assertEqual(runner.selection('review')['model'], 'claude/opus')
@@ -609,9 +610,27 @@ class RunnerTests(InstanceCase):
         self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
         self.assertEqual(runner.state['attempt_dispatches'], 0)
 
+    def test_spare_capacity_explores_when_every_node_is_informally_solved(self):
+        # Spare capacity requests exploration whether nodes are occupied or none remain unresolved.
+        self.publish('rsolved', record([claim_row('p')],
+                                      solutions=[solution('p', 'root', 'p')]))
+        runner = self.runner()
+        runner.settings['max_sessions'] = 2
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['formalizer', 'explore'])
+        self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
+        self.assertEqual(runner.state['attempt_dispatches'], 0)
+        self.assertFalse(runner.state['explore_requested'])
+
     def test_organizer_batch_excludes_arrivals_during_processing(self):
-        for i in range(4): self.publish('r' + str(i), record())
+        for i in range(3): self.publish('r' + str(i), record())
         runner = self.runner(); runner.populate()
+        # The settled default waits for the fourth new research record.
+        self.assertFalse(any(j['role'] == 'organizer' for j in runner.state['jobs'].values()))
+        self.publish('r3', record())
+        runner.model = replay(self.instance); runner.populate()
         job = next(j for j in runner.state['jobs'].values() if j['role'] == 'organizer')
         self.assertEqual(len(job['task']['batch']), 4)
         for i in range(4, 6): self.publish('r' + str(i), record())
@@ -658,9 +677,29 @@ class RunnerTests(InstanceCase):
         with self.assertRaisesRegex(ValueError, 'new instance'):
             self.runner()
 
+    def test_rejected_settings_edit_keeps_the_last_valid_settings(self):
+        runner = self.runner()
+        runner.reload_settings()
+        (self.instance / 'settings.json').write_text('{not json', encoding='utf-8')
+        runner.reload_settings()
+        self.assertEqual(runner.settings['max_sessions'], 8)
+        self.assertIn('error', runner.state['settings_error'])
+        config = defaults(); config['max_sessions'] = 3
+        write_json(self.instance / 'settings.json', config)
+        runner.reload_settings()
+        self.assertEqual(runner.settings['max_sessions'], 3)
+        self.assertIsNone(runner.state['settings_error'])
+
     def test_sorry_axiom_cannot_be_enabled(self):
         config = defaults(); config['lean']['allowed_axioms'].append('sorryAx')
         with self.assertRaises(ValueError): validate(config)
+
+    def test_legacy_or_misspelled_settings_are_rejected(self):
+        legacy = {**defaults(), 'limit_wait_seconds': 5}
+        misspelled = defaults(); misspelled['lean']['memory_budget'] = 4096
+        for name, config in (('legacy', legacy), ('misspelled', misspelled)):
+            with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
+                validate(config)
 
     def test_board_can_show_a_producer_waiting_for_its_first_model(self):
         runner = self.runner()
@@ -669,9 +708,13 @@ class RunnerTests(InstanceCase):
         self.assertEqual(rows[0]['stage'], 'queued')
         self.assertIsNone(rows[0]['session'])
         self.assertEqual(runner.available_nodes(), (['root'], 1))
-        render(self.instance, replay(self.instance), rows)
+        runner.producer('explore')
+        render(self.instance, replay(self.instance), board(self.instance, runner.state))
         visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
         self.assertIn('producer: (not launched)', visible)
+        # Only the attempt can still choose a node; an exploration occupies none.
+        self.assertIn('· attempt · queued · nodes: (choosing)', visible)
+        self.assertIn('· explore · queued · nodes: (none)', visible)
 
 
 if __name__ == '__main__':

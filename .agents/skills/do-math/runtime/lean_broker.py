@@ -877,9 +877,15 @@ class Broker:
                                                  measured["peak_mb"], measured["seconds"])
             elif job["exit_code"] is not None and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
-                # A launch error or a cancellation records nothing, so the next compile calibrates again.
                 self.calibration.record_failure(job["closure"], job["imports"], self.state["version"],
                                                 job["exit_code"], "the calibration compile failed; see its stdout.log")
+            else:
+                # A launch error or a cancellation records nothing, so the next compile calibrates again.
+                # The compiles that waited for this one go ahead on their own estimates rather than
+                # wait for another calibration that would fail the same way.
+                for waiting in self.state["jobs"].values():
+                    if waiting["status"] == "queued" and waiting.get("waiting_for") == job["id"]:
+                        waiting["uncalibrated"] = job["id"]
             measured["baseline_mb"] = measured["peak_mb"]
         elif baseline is not None:
             measured["baseline_mb"] = baseline
@@ -1083,7 +1089,7 @@ class Broker:
         pending_calibration = {j["closure"]: j["id"] for j in jobs.values()
                                if j["kind"] == "calibration" and j["status"] in ACTIVE}
         for job in queued:
-            if job["kind"] != "compile" or self.calibration.known(job["closure"]):
+            if job["kind"] != "compile" or self.calibration.known(job["closure"]) or job.get("uncalibrated"):
                 job["waiting_for"] = None
                 continue
             if job["closure"] not in pending_calibration:
@@ -1166,7 +1172,7 @@ class Broker:
 
     def should_exit(self):
         state = self.runner_sessions()
-        if not state or not (state.get("finished") or state.get("halted")):
+        if not state or not state.get("finished"):
             return False
         if any(s["status"] in ("starting", "running", "publishing") for s in state.get("sessions", {}).values()):
             return False

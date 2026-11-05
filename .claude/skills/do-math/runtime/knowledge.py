@@ -453,7 +453,9 @@ def render(instance, model, board):
     board_lines = ['# Live board', '', f"Research revision: {model['sequence']}", '']
     for row in board:
         producer = row.get('session') or '(not launched)'
-        board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {', '.join(row['nodes']) or '(choosing)'}"]
+        # Only an attempt that is still producing can yet declare a node; other rows hold none.
+        holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
+        board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
         for nid in row['nodes']:
             node = model['nodes'].get(canonical(model, nid), {})
             if node.get('concerns') or node.get('concern_history') or node.get('possible_concerns'):

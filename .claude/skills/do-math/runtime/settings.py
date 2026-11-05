@@ -30,6 +30,14 @@ def validate(raw):
     value.update(raw)
     value['cli'] = {**defaults()['cli'], **raw.get('cli', {})}
     value['lean'] = {**defaults()['lean'], **raw.get('lean', {})}
+    known = defaults()
+    raw_lean = raw.get('lean', {})
+    unknown = ([key for key in raw if key not in known]
+               + (['lean.' + key for key in raw_lean if key not in known['lean']]
+                  if isinstance(raw_lean, dict) else []))
+    if unknown:
+        # A misspelled or earlier-runtime key would otherwise leave its default silently in force.
+        raise ValueError('unknown setting: ' + ', '.join(unknown))
     for key in ('max_sessions', 'explore_every', 'organizer_every_records',
                 'retry_seconds', 'retry_max_seconds'):
         if type(value[key]) is not int or value[key] < 1:

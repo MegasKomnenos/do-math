@@ -142,6 +142,8 @@ class ContextTests(InstanceCase):
         folder = self.session('isolated')
         server = {'explicit': {'command': sys.executable, 'args': ['server.py']}}
         codex = worker_command('codex', 'codex/gpt-6.1-sol', 'xhigh', folder, server)
+        # Retention copies the CLI's native transcript, so the worker session must persist.
+        self.assertNotIn('--ephemeral', codex.argv)
         self.assertIn('--ignore-user-config', codex.argv)
         self.assertIn('project_doc_max_bytes=0', codex.argv)
         self.assertIn('skip_host_skill_discovery', codex.argv)
@@ -150,6 +152,7 @@ class ContextTests(InstanceCase):
         for name in ('hooks', 'memories', 'plugins', 'apps', 'multi_agent'):
             self.assertTrue(any(codex.argv[i:i+2] == ['--disable', name] for i in range(len(codex.argv))))
         claude = worker_command('claude', 'claude/opus', 'xhigh', folder, server)
+        self.assertNotIn('--no-session-persistence', claude.argv)
         self.assertNotIn('--bare', claude.argv)
         self.assertEqual(claude.argv[claude.argv.index('--setting-sources') + 1], '')
         self.assertIn('--strict-mcp-config', claude.argv)

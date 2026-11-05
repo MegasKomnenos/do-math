@@ -354,10 +354,13 @@ class Runner:
                 continue
             jid = item['formal_check']['job']
             receipt = job_record(paths, jid)
+            if receipt['status'] == 'duplicate':  # the audit followed it to the original submission
+                receipt = job_record(paths, receipt['duplicate_of'])
+            # The folder keeps the ID the reviewer recorded, so formal_check.job still leads here.
             directory = stage / 'review/lean-evidence' / jid
             directory.mkdir(parents=True, exist_ok=True)
             write_json(directory / 'result.json', receipt)
-            jobs = [m['job'] for m in receipt['modules'].values() if m.get('job')] if BUILD_ID.match(jid) else [jid]
+            jobs = [m['job'] for m in receipt['modules'].values() if m.get('job')] if BUILD_ID.match(jid) else [receipt['id']]
             for job_id in jobs:
                 target = directory / job_id
                 target.mkdir(exist_ok=True)
@@ -562,13 +565,29 @@ class Runner:
                                                 cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                                 **popen_options(detached=True))
 
+    def reload_settings(self):
+        """Apply settings.json when it changes; keep the last valid settings if an edit is rejected."""
+        try:
+            stamp = file_stamp(self.instance / 'settings.json')
+            if stamp == self.settings_stamp and not self.state.get('settings_error'):
+                return
+            self.settings_stamp = stamp
+            self.settings = load_settings(self.instance)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            # As in the Lean broker, a file caught mid-write may not change its stamp again,
+            # so a rejected edit is read again on every tick until it is accepted.
+            if (self.state.get('settings_error') or {}).get('error') != str(exc):
+                self.state['settings_error'] = {'at': time.time(), 'error': str(exc)}
+                self.save()
+            return
+        if self.state.get('settings_error'):
+            self.state['settings_error'] = None
+            self.save()
+
     def tick(self):
         self.collect()
         self.archive()
-        stamp = file_stamp(self.instance / 'settings.json')
-        if stamp != self.settings_stamp:
-            self.settings = load_settings(self.instance)
-            self.settings_stamp = stamp
+        self.reload_settings()
         complete = root_solved(self.model)
         if self.state['complete'] != complete:
             self.state['complete'] = complete

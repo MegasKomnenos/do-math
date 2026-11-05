@@ -40,7 +40,7 @@ An example settings file is:
 }
 ```
 
-Replace the executable paths with the actual installations. A role-specific ordered model list under `roles`, such as `"review": [{"model": "claude/opus", "effort": "xhigh"}]`, replaces the common list for that role. An omitted setting receives its default. The runner checks structure; actual login and model availability are confirmed by execution.
+Replace the executable paths with the actual installations. A role-specific ordered model list under `roles`, such as `"review": [{"model": "claude/opus", "effort": "xhigh"}]`, replaces the common list for that role. An omitted setting receives its default. An unrecognized key, such as a misspelling or a setting carried over from the earlier do-math runtime, is rejected by name rather than ignored, because ignoring it would leave the default in force without notice. The runner checks structure; actual login and model availability are confirmed by execution.
 
 To use Mathlib, configure `lean.command` as `["<lake executable>", "env", "lean"]`, its version command with `"--version"` appended, and `cwd` as the Mathlib project. Supply any necessary PATH value through `lean.env`; JSON does not expand shell variables. The broker handles compilation and dependency builds. [Lean](lean.md) explains resource settings and estimates. When several instances share a machine, set their broker memory budgets explicitly rather than letting each derive a budget for the whole host.
 

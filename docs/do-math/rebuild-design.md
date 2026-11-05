@@ -76,8 +76,8 @@ meeting one of those needs.
 The presence of a form, an additional role, a checkpoint, or a script is not itself an improvement. For example,
 a live board that tells attempts which nodes are occupied, together with an instruction to respect that
 occupancy, solves a concrete coordination problem through informed behavior. Building a strict enforcement mechanism
- that forces sessions to only work through certain tools which enables access only when occupancy rules are satisfied
-does farm more harm than its alternatives. The design must provide the useful function in a way that is actually useful.
+that forces sessions to work only through certain tools, which enable access only when occupancy rules are satisfied,
+does far more harm than its alternatives. The design must provide the useful function in a way that is actually useful.
 
 The same principle applies to simplification. Removing a planning role must not accidentally remove the
 knowledge that let researchers distinguish an actual counterexample from a failed technique. Shortening
