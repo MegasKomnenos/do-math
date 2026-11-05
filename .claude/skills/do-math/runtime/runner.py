@@ -212,23 +212,23 @@ class Runner:
         job = self.state['jobs'][s['job']]
         session = self.session_dir(sid)
         if not s.get('retained'):
+            # File errors leave this stage incomplete for restart recovery.
+            retention = capture(session, s['provider'])
             signal = refusal(session, s['provider'], s['model'], s['started_at'], self.settings['retry_seconds'])
             if signal:
                 previous = self.state['blocks'].get(signal['key'], {})
                 signal['attempts'] = previous.get('attempts', 0) + 1
                 if signal['source'] in ('fallback', 'backoff'):
                     signal['until'] = time.time() + min(self.settings['retry_max_seconds'], self.settings['retry_seconds'] * 2 ** min(signal['attempts'] - 1, 20))
-                if previous.get('until', 0) <= signal['until']:
-                    self.state['blocks'][signal['key']] = signal
-                s['refusal'] = signal
-            try:
-                s['retention'] = capture(session, s['provider'])
-            except OSError as exc:
-                s['retention'] = {'cli_activity': True, 'limitation': str(exc)}
-            s['retained'] = True
             write_json(session / 'termination.json', {'cause': 'refusal' if signal else 'launch_error' if s.get('launch_error') else 'process_exit',
                                                       'exit_code': s.get('exit_code'), 'refusal': signal,
                                                       'at': time.time()})
+            if signal:
+                if previous.get('until', 0) <= signal['until']:
+                    self.state['blocks'][signal['key']] = signal
+                s['refusal'] = signal
+            s['retention'] = retention
+            s['retained'] = True
             self.save()
         if s['role'] in PRODUCERS:
             material = (s['retention'].get('cli_activity') or s['retention'].get('native_activity')
@@ -473,8 +473,16 @@ class Runner:
                     changed = True
                     continue
                 job['task']['proofs'] = ready
-            if job['role'] == 'attempt' and any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
-                continue
+            if job['role'] == 'attempt':
+                if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
+                    continue
+                exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
+                                  for p in self.state['pipelines'].values())
+                if not exploration and self.selection('explore') and (
+                        self.state['explore_requested'] or not self.available_nodes()[0]):
+                    # schedule() creates eligible exploration after this pass.
+                    # Leave capacity for it before launching another attempt.
+                    continue
             if job['role'] == 'review' and job['task'].get('kind') == 'comprehensive' and any(
                     other['status'] == 'running' and other['role'] == 'review' and other['task'].get('kind') == 'comprehensive'
                     for other in self.state['jobs'].values()):

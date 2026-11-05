@@ -203,6 +203,22 @@ class ImportClosureTests(unittest.TestCase):
         self.assertNotEqual(same, lean_broker.closure_key("Lean 4.2", ["A.One", "B.Two"]))
         self.assertNotEqual(same, lean_broker.closure_key("Lean 4.1", ["A.One"]))
 
+    def test_module_header_import_modifiers_preserve_local_dependencies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("PublicDep", "MetaDep", "AllDep", "BothDep"):
+                (root / (name + ".lean")).write_text("module\n", encoding="utf-8")
+            target = root / "Target.lean"
+            target.write_text("module\npublic import PublicDep\nmeta import MetaDep\n"
+                              "import all AllDep\npublic meta import BothDep\n"
+                              "theorem t : True := by trivial\nimport Late\n", encoding="utf-8")
+            expected = ["AllDep", "BothDep", "MetaDep", "PublicDep"]
+            self.assertEqual(lean_broker.read_imports(target), expected)
+            modules = lean_broker.discover_modules(root, [target])
+            self.assertEqual([name for name, _ in modules], expected + ["Target"])
+            self.assertEqual(modules[-1][1]["local"], expected)
+            self.assertEqual(modules[-1][1]["external"], [])
+
 
 class SettingsTests(unittest.TestCase):
     def setUp(self):

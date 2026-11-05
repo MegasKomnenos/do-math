@@ -77,6 +77,50 @@ class ContextTests(InstanceCase):
         self.publish('r1', data)
         self.assertEqual(updates(first)['root_state'], 'informal_proved')
 
+    def test_every_role_receives_the_complete_current_glossary_at_launch(self):
+        terms = [
+            {'id': 'pending', 'name': 'Pending object', 'symbol': 'Ω',
+             'definition': 'For every n in ℕ, Ω(n) is n + 1, including n = 0.',
+             'global_candidate': True},
+            {'id': 'permanent', 'name': 'Permanent object', 'symbol': 'Λ',
+             'definition': 'Λ is the set of natural numbers greater than zero.',
+             'global_candidate': True},
+        ]
+        self.publish('rterms', record(glossary=terms))
+        self.event('oterms', 'organization', {
+            'batch': ['rterms'], 'modules': [], 'shared_context': ['rterms'],
+            'promote': ['rterms/permanent']})
+        render(self.instance, replay(self.instance), [])
+        glossary = (self.instance / 'knowledge/glossary.md').read_text(encoding='utf-8')
+        self.assertIn('Membership: candidate', glossary)
+        self.assertIn('Membership: permanent', glossary)
+        for term in terms:
+            self.assertIn(term['definition'], glossary)
+        roles = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
+        saved = {}
+        for role in roles:
+            with self.subTest(role=role, launch='initial'):
+                folder = self.session('initial-' + role)
+                self.pack(folder, role)
+                self.assertIn(glossary, (folder / 'pack.md').read_text(encoding='utf-8'))
+                saved[role] = (folder / 'pack.md').read_bytes()
+
+        self.publish('rnew', record(glossary=[{
+            'id': 'later', 'name': 'Later object', 'symbol': 'Ξ',
+            'definition': 'Ξ is the singleton set containing zero.',
+            'global_candidate': True}]))
+        render(self.instance, replay(self.instance), [])
+        current = (self.instance / 'knowledge/glossary.md').read_text(encoding='utf-8')
+        self.assertIn('Ξ is the singleton set containing zero.', current)
+        self.assertNotEqual(current, glossary)
+        for role in roles:
+            with self.subTest(role=role, launch='later'):
+                old = self.instance / 'sessions' / ('initial-' + role)
+                self.assertEqual((old / 'pack.md').read_bytes(), saved[role])
+                folder = self.session('later-' + role)
+                self.pack(folder, role)
+                self.assertIn(current, (folder / 'pack.md').read_text(encoding='utf-8'))
+
     def test_references_are_snapshots_and_pack_contains_only_assigned_role(self):
         first = self.session('first')
         self.pack(first, 'peer', {'source': '/retained/source'})
@@ -158,6 +202,34 @@ class ContextTests(InstanceCase):
             engine.tick()
         self.assertFalse(engine.state['complete'])
         schedule.assert_called_once()
+
+    def test_every_role_receives_its_ordered_guides_and_output_contract(self):
+        references = {
+            'attempt': ['retained-work.md'],
+            'explore': ['retained-work.md'],
+            'formalizer': ['retained-work.md', 'lean.md'],
+            'peer': ['record-format.md'],
+            'review': ['record-format.md', 'review-output.md'],
+            'organizer': ['organizer-output.md'],
+        }
+        for role, specialized in references.items():
+            with self.subTest(role=role):
+                folder = self.session('reading-' + role)
+                inp = self.pack(folder, role)
+                expected = ['reference/common.md', 'roles/' + role + '.md',
+                            'reference/writing.md', 'reference/tools.md']
+                expected += ['reference/' + name for name in specialized]
+                self.assertEqual(inp['documents'], expected)
+                body = (folder / 'pack.md').read_text(encoding='utf-8')
+                previous_end = -1
+                for name in expected:
+                    begin = body.index('<!-- begin ' + name + ' -->')
+                    self.assertGreater(begin, previous_end)
+                    previous_end = body.index('<!-- end ' + name + ' -->', begin)
+                    self.assertEqual((folder / 'context' / name).read_bytes(),
+                                     (self.skill / name).read_bytes())
+                self.assertEqual([p.name for p in (folder / 'context/roles').iterdir()],
+                                 [role + '.md'])
 
 
 if __name__ == '__main__':

@@ -438,7 +438,8 @@ def render(instance, model, board):
     write_text(base / 'index.md', '\n'.join(index) + '\n')
     board_lines = ['# Live board', '', f"Research revision: {model['sequence']}", '']
     for row in board:
-        board_lines += [f"- {row['pipeline']} · {row['role']} · {row['stage']} · nodes: {', '.join(row['nodes']) or '(choosing)'}"]
+        producer = row.get('session') or '(not launched)'
+        board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {', '.join(row['nodes']) or '(choosing)'}"]
         for nid in row['nodes']:
             node = model['nodes'].get(canonical(model, nid), {})
             if node.get('concerns') or node.get('concern_history') or node.get('possible_concerns'):

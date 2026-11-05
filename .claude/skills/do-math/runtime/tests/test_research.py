@@ -261,6 +261,42 @@ class RunnerTests(InstanceCase):
         self.assertEqual(session['status'], 'ended')
         self.assertEqual(runner.state['jobs'][pipeline['id'] + ':peer']['task']['source'], str(runner.session_dir(sid)))
 
+    def test_retention_file_error_retries_preservation_after_restart(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        with patch('runner.capture', side_effect=OSError('native transcript temporarily unreadable')):
+            with self.assertRaisesRegex(OSError, 'temporarily unreadable'):
+                runner.finish(sid, session)
+        self.assertFalse(session.get('retained'))
+        self.assertEqual(job['status'], 'running')
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        runner.save()
+        recovered = self.runner()
+        recovered.finish(sid, recovered.state['sessions'][sid])
+        self.assertTrue(recovered.state['sessions'][sid]['retained'])
+        self.assertTrue((runner.session_dir(sid) / 'retention.json').is_file())
+        self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['task']['source'],
+                         str(runner.session_dir(sid)))
+
+    def test_termination_file_error_does_not_persist_a_retained_marker(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        def fail_termination(path, value):
+            if Path(path).name == 'termination.json':
+                raise OSError('termination receipt temporarily unwritable')
+            return write_json(path, value)
+        with patch('runner.write_json', side_effect=fail_termination):
+            with self.assertRaisesRegex(OSError, 'temporarily unwritable'):
+                runner.finish(sid, session)
+        self.assertFalse(session.get('retained'))
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        runner.save()
+        recovered = self.runner()
+        recovered.finish(sid, recovered.state['sessions'][sid])
+        self.assertTrue(recovered.state['sessions'][sid]['retained'])
+        self.assertEqual(read_json(runner.session_dir(sid) / 'termination.json')['exit_code'], 42)
+        self.assertEqual(recovered.state['jobs'][job['pipeline'] + ':peer']['status'], 'pending')
+
     def test_native_only_research_reaches_peer(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -310,9 +346,16 @@ class RunnerTests(InstanceCase):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
         claim(runner.session_dir(sid), 'root')
-        runner.finish(sid, session)
-        self.assertEqual(board(self.instance, runner.state)[0]['nodes'], ['root'])
-        self.assertEqual(board(self.instance, runner.state)[0]['stage'], 'peer')
+        for stage in ('producing', 'peer'):
+            if stage == 'peer':
+                runner.finish(sid, session)
+            rows = board(self.instance, runner.state)
+            self.assertEqual(rows[0]['nodes'], ['root'])
+            self.assertEqual(rows[0]['stage'], stage)
+            render(self.instance, replay(self.instance), rows)
+            visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+            self.assertIn(f'producer: {sid}', visible)
+            self.assertIn(f'· {stage} · nodes: root', visible)
 
     def test_claim_overlap_informs_instead_of_rejecting(self):
         runner = self.runner()
@@ -329,6 +372,35 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
         self.assertEqual(runner.selection('review')['model'], 'claude/opus')
+
+    def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
+        runner = self.runner()
+        self.assertEqual(runner.settings['explore_every'], 3)
+        self.assertEqual(runner.state['attempt_dispatches'], 0)
+        self.assertIs(runner.state['explore_requested'], False)
+        with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
+            for expected in (1, 2):
+                self.assertTrue(runner.dispatch(runner.producer('attempt')))
+                self.assertEqual(runner.state['attempt_dispatches'], expected)
+                self.assertIs(runner.state['explore_requested'], False)
+
+            runner = self.runner()
+            self.assertEqual(runner.state['attempt_dispatches'], 2)
+            self.assertIs(runner.state['explore_requested'], False)
+            for expected in (3, 4, 5, 6):
+                self.assertTrue(runner.dispatch(runner.producer('attempt')))
+                self.assertEqual(runner.state['attempt_dispatches'], expected)
+                self.assertIs(runner.state['explore_requested'], True)
+
+            runner = self.runner()
+            self.assertEqual(runner.state['attempt_dispatches'], 6)
+            self.assertIs(runner.state['explore_requested'], True)
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            self.assertEqual(runner.state['attempt_dispatches'], 6)
+            self.assertIs(runner.state['explore_requested'], False)
+            self.assertTrue(runner.dispatch(runner.producer('attempt')))
+            self.assertEqual(runner.state['attempt_dispatches'], 7)
+            self.assertIs(runner.state['explore_requested'], False)
 
     def test_retry_extends_short_blocks_and_preserves_long_blocks(self):
         for deadline, expected_until, expected_model in (
@@ -396,6 +468,44 @@ class RunnerTests(InstanceCase):
         runner.schedule()
         self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
 
+    def test_eligible_exploration_precedes_a_pending_attempt_retry(self):
+        runner = self.runner()
+        runner.settings['max_sessions'] = 1
+        sid, session, job = self.ended(runner, 'attempt')
+        runner.retry(job, session, 'launch ended without research')
+        job['not_before'] = 0
+        runner.state['explore_requested'] = True
+        self.assertIsNotNone(runner.selection('attempt'))
+        self.assertIsNotNone(runner.selection('explore'))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual(runner.state['attempt_dispatches'], 0)
+        self.assertFalse(runner.state['explore_requested'])
+        self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
+                             for p in runner.state['pipelines'].values()), 1)
+
+    def test_exploration_still_in_peer_does_not_hold_a_pending_attempt(self):
+        runner = self.runner()
+        runner.settings['max_sessions'] = 1
+        previous = runner.producer('explore')
+        runner.state['jobs'][previous]['status'] = 'done'
+        pipeline = runner.state['pipelines'][runner.state['jobs'][previous]['pipeline']]
+        pipeline.update(stage='peer', producer='sprevious')
+        attempt = runner.producer('attempt')
+        runner.state['explore_requested'] = True
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertEqual([s['role'] for _, s in runner.active()], ['attempt'])
+        self.assertEqual(runner.state['jobs'][attempt]['status'], 'running')
+        self.assertEqual(pipeline['stage'], 'peer')
+        self.assertTrue(runner.state['explore_requested'])
+        self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
+                             for p in runner.state['pipelines'].values()), 1)
+
     def test_organizer_batch_excludes_arrivals_during_processing(self):
         for i in range(4): self.publish('r' + str(i), record())
         runner = self.runner(); runner.populate()
@@ -456,6 +566,9 @@ class RunnerTests(InstanceCase):
         self.assertEqual(rows[0]['stage'], 'queued')
         self.assertIsNone(rows[0]['session'])
         self.assertEqual(runner.available_nodes(), (['root'], 1))
+        render(self.instance, replay(self.instance), rows)
+        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+        self.assertIn('producer: (not launched)', visible)
 
 
 if __name__ == '__main__':

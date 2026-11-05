@@ -44,7 +44,7 @@ P90 = 1.2816  # the standard-normal 90th percentile: an estimate is read as a pr
 HISTORY = 20  # samples kept per import closure
 KEEP_FINISHED = 200  # finished job records kept in the broker state; result.json files stay
 READY_SECONDS = 20.0
-IMPORT = re.compile(r"^import\s+(\S+)")
+IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)")
 JOB_ID = re.compile(r"^[jc][0-9a-f]{32}$")  # a job folder name; anything else never touches the file system
 BUILD_ID = re.compile(r"^b[0-9a-f]{32}$")
 MODULE_PART = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")  # one component of a module name, as a file name
@@ -94,7 +94,7 @@ def read_imports(path):
             if "-/" in stripped:
                 in_block = False
             continue
-        if not stripped or stripped.startswith("--") or stripped == "prelude":
+        if not stripped or stripped.startswith("--") or stripped in ("prelude", "module"):
             continue
         if stripped.startswith("/-"):
             in_block = "-/" not in stripped

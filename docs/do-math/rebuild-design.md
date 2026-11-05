@@ -283,10 +283,13 @@ connection looks promising, and what remains unproved. A later attempt may inves
 initiative. It need not wait for \(Q\) to become a shared node before investigating the idea. Creating the
 node still requires the connection to be established and validated by review.
 
-The discussion established this implication case and the rule against speculative node creation. It did not
-define every permitted kind of connection, such as multi-premise reductions or equivalences. Those details
-remain to be specified; v2's entire node-operation language is not an agreed substitute. Every represented
-connection must preserve the mathematics and conditions that review actually validated.
+The implication above illustrates the rule against speculative node creation. The implementation represents
+reviewed implications with explicit premises and a conclusion, each identifying a node and whether its
+statement or negation is required. All premises must hold in their specified directions. Separate relations
+represent alternative implications or the two directions of an equivalence. [Record format](../../.claude/skills/do-math/reference/record-format.md)
+specifies this representation. It records judgments supplied by sessions; it does not adopt v2's entire
+node-operation language or authorize a general inference engine. Every represented connection must preserve
+the mathematics and conditions that review actually validated.
 
 ### 4.2 A solution has a polarity and an assurance level
 

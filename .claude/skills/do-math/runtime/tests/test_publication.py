@@ -204,6 +204,64 @@ class FormalEvidenceTests(InstanceCase):
         self.assertNotIn('custom_assumption', read_json(self.instance / 'settings.json')['lean']['allowed_axioms'])
         audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def build_evidence(self):
+        candidate, working, check, solution = self.evidence()
+        target = b'import Basis\n' + (candidate / 'Proof.lean').read_bytes()
+        (candidate / 'Proof.lean').write_bytes(target)
+        working.write_bytes(target + b'\n#print axioms target\n')
+        check['source_hashes']['Proof.lean'] = hashlib.sha256(target).hexdigest()
+        target_job = check['job']
+        job_path = self.instance / 'runner/lean/jobs' / target_job / 'result.json'
+        compiled = read_json(job_path)
+        compiled['source_sha256'] = hashlib.sha256(working.read_bytes()).hexdigest()
+        write_json(job_path, compiled)
+        dependency = b'theorem basis : True := by trivial\n'
+        (candidate / 'Basis.lean').write_bytes(dependency)
+        copied = working.with_name('Basis.lean')
+        copied.write_bytes(dependency)
+        build_id = 'b' + 'a' * 32
+        receipt = {
+            'id': build_id, 'session': 'sreview', 'status': 'finished',
+            'targets': ['Proof'], 'modules': {
+                'Basis': {'source': str(copied),
+                          'source_sha256': hashlib.sha256(dependency).hexdigest(),
+                          'status': 'cached', 'exit_code': 0, 'job': None},
+                'Proof': {'source': str(working),
+                          'source_sha256': hashlib.sha256(working.read_bytes()).hexdigest(),
+                          'status': 'finished', 'exit_code': 0, 'job': target_job},
+            },
+        }
+        directory = self.instance / 'runner/lean/builds' / build_id
+        directory.mkdir(parents=True)
+        write_json(directory / 'result.json', receipt)
+        check['job'] = build_id
+        check['source_hashes']['Basis.lean'] = hashlib.sha256(dependency).hexdigest()
+        check['source_files']['Basis.lean'] = 'work/Basis.lean'
+        solution['lean']['sources'].insert(0, 'Basis.lean')
+        return candidate, copied, check, solution, receipt, directory
+
+    def test_formal_build_allows_cached_dependencies_but_requires_a_fresh_successful_target(self):
+        candidate, _, check, solution, receipt, directory = self.build_evidence()
+        audit_formal(self.instance, 'sreview', check, solution, candidate)
+        target = receipt['modules']['Proof'].copy()
+        for changes in ({'status': 'cached', 'job': None},
+                        {'exit_code': 1}, {'job': None}):
+            with self.subTest(changes=changes):
+                receipt['modules']['Proof'] = {**target, **changes}
+                write_json(directory / 'result.json', receipt)
+                with self.assertRaisesRegex(Invalid, 'freshly compile targets'):
+                    audit_formal(self.instance, 'sreview', check, solution, candidate)
+
+    def test_formal_build_rejects_changed_bytes_of_a_cached_dependency(self):
+        candidate, copied, check, solution, _, _ = self.build_evidence()
+        audit_formal(self.instance, 'sreview', check, solution, candidate)
+        changed = copied.read_bytes() + b'-- changed after the build\n'
+        copied.write_bytes(changed)
+        (candidate / 'Basis.lean').write_bytes(changed)
+        check['source_hashes']['Basis.lean'] = hashlib.sha256(changed).hexdigest()
+        with self.assertRaisesRegex(Invalid, 'submitted compile'):
+            audit_formal(self.instance, 'sreview', check, solution, candidate)
+
 
 if __name__ == '__main__':
     unittest.main()
