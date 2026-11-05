@@ -9,7 +9,7 @@ Write these decisions in `output/organization.json`. The runner uses them to ren
 | `batch` | The exact list from your assignment. It identifies the publications this session processes. |
 | `modules` | Array of `{id, title, description, records}`. `records` lists published research record IDs. A record may appear in several modules. |
 | `shared_context` | Published research record IDs to display in the general index as shared context. |
-| `promote` | Published local term IDs to promote permanently, written `<publication-id>/<term-id>`. |
+| `promote` | Published local term IDs to promote permanently. Use the exact keys in the `terms` object of `knowledge/state.json`: `<publication-id>/<term-id>` for a research record, standalone comprehensive review or organizer output, and `<record-id>/review/<term-id>` for terminology introduced by that record's candidate reviewer. Follow each entry's `location` to confirm its source definition. |
 | `refuse` | Current global candidate IDs to remove from the global glossary. |
 | `merge_terms` | Array of `{keep, others, reason}`. Keep the primary entry's definition and append other entries' names and aliases. |
 | `merge_nodes` | Array of `{from, into, reason}` identifying duplicate node statements. |

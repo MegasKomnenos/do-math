@@ -233,6 +233,28 @@ class AdmissionRuleTests(unittest.TestCase):
 
 
 class ImportClosureTests(unittest.TestCase):
+    def test_comments_preserve_local_dependencies_and_cache_invalidation(self):
+        headers = (
+            "module\npublic import Basis\n",
+            "module\n/- header -/ public import Basis\n",
+            "module\n/- outer\n/- inner -/\nstill outer\n-/\npublic import Basis\n",
+            "module\npublic /- interface -/ import Basis/- end -/\n",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            basis, target = root / "Basis.lean", root / "Target.lean"
+            for header in headers:
+                with self.subTest(header=header):
+                    basis.write_text("module\npublic theorem basis : True := by trivial\n", encoding="utf-8")
+                    target.write_text(header + "public theorem target : True := basis\n", encoding="utf-8")
+                    modules = lean_broker.discover_modules(root, [target])
+                    self.assertEqual([name for name, _ in modules], ["Basis", "Target"])
+                    self.assertEqual(modules[-1][1]["local"], ["Basis"])
+                    before = lean_broker.module_keys("fixture", modules)["Target"]
+                    basis.write_text("module\npublic theorem basis : True := True.intro\n", encoding="utf-8")
+                    after = lean_broker.module_keys("fixture", lean_broker.discover_modules(root, [target]))["Target"]
+                    self.assertNotEqual(before, after)
+
     def test_imports_are_read_from_the_header_only_and_key_the_version(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "A.lean"
@@ -351,6 +373,65 @@ class JobHostTests(unittest.TestCase):
 
 
 class BrokerTests(BrokerFixture):
+    def test_ingestion_restart_preserves_registration_and_duplicate_outcomes(self):
+        for kind in ("job", "build"):
+            for boundary in ("registration", "duplicate"):
+                with self.subTest(kind=kind, boundary=boundary):
+                    self.start_broker()
+                    root = self.instance / "sessions/s1/work" / f"{kind}-{boundary}"
+                    target = source(root / "Target.lean", imports=(), marker=f"{kind}-{boundary}")
+                    def enqueue():
+                        return self.submit(target) if kind == "job" else self.build(root, [target])
+                    original = enqueue()
+                    identity = original
+                    if boundary == "duplicate":
+                        self.broker.ingest()
+                        identity = enqueue()
+                    request = self.paths.queue / (identity + ".json")
+                    unlink = Path.unlink
+                    def stop_before_ack(path, *args, **kwargs):
+                        if path == request:
+                            raise SystemExit("broker stopped before queue acknowledgement")
+                        return unlink(path, *args, **kwargs)
+                    with patch.object(Path, "unlink", stop_before_ack), self.assertRaises(SystemExit):
+                        self.broker.ingest()
+                    self.assertTrue(request.exists())
+                    saved = runner.read_json(self.paths.state)
+                    folder = self.paths.job(identity) if kind == "job" else self.paths.build(identity)
+                    if boundary == "duplicate":
+                        outcome = runner.read_json(folder / "result.json")
+                        self.assertEqual(outcome["duplicate_of"], original)
+                        # Replay must keep this receipt even when the content no
+                        # longer matches the request to which it was redirected.
+                        source(target, imports=(), marker=f"{kind}-{boundary}-edited")
+                    self.start_broker()
+                    self.broker.ingest()
+                    self.assertFalse(request.exists())
+                    self.assertEqual(self.broker.state["jobs"], saved["jobs"])
+                    self.assertEqual(self.broker.state["builds"], saved["builds"])
+                    if boundary == "duplicate":
+                        self.assertEqual(lean_broker.job_record(self.paths, identity), outcome)
+                    else:
+                        self.assertFalse((folder / "result.json").exists())
+                        self.assertEqual(lean_broker.job_record(self.paths, identity)["status"], "queued")
+                        with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                                contextlib.redirect_stderr(io.StringIO()):
+                            self.assertEqual(lean_broker.wait(self.paths, identity, timeout=0), 124)
+                    self.until(lambda: lean_broker.job_record(self.paths, original)["status"] in lean_broker.FINISHED)
+                    final = lean_broker.job_record(self.paths, original)
+                    if boundary == "duplicate":
+                        self.assertEqual(final["status"], "failed")
+                        self.assertIn("source changed", final["reason"])
+                    else:
+                        self.assertEqual(final["status"], "finished")
+                    out = io.StringIO()
+                    with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                            contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                        self.assertEqual(lean_broker.wait(self.paths, identity, timeout=1),
+                                         3 if boundary == "duplicate" else 0)
+                    if boundary == "registration":
+                        self.assertIn(f"{kind}-{boundary}", out.getvalue())
+
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
         self.start_broker()
         path = self.session_file("s1", alloc_mb=200, marker="OUT-A", sleep=1)

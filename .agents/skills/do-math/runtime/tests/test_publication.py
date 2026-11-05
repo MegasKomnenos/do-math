@@ -8,7 +8,57 @@ import runner as runtime
 from check import Invalid, audit_formal, check_session
 from knowledge import replay
 from runtime_support import read_json, write_json
-from test_research import InstanceCase, assessment, claim_row, record, solution
+from test_research import InstanceCase, assessment, claim_row, implication, record, solution
+
+
+class ProposalIdentityTests(InstanceCase):
+    def peer_candidate(self, sid, node_id, statement):
+        folder = self.instance / 'sessions' / sid
+        output = folder / 'output'
+        output.mkdir(parents=True)
+        data = record([claim_row('connection')],
+                      nodes=[{'id': node_id, 'statement': statement, 'connection': 'connection'}],
+                      relations=[implication('connection', node_id)])
+        write_json(output / 'record.json', data)
+        (output / 'record.md').write_text('The conditional argument and its definitions.', encoding='utf-8')
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid,
+                                           'role': 'peer', 'task': {}})
+        return folder, data
+
+    def test_peer_rejects_unscoped_new_node_ids_before_candidate_freeze(self):
+        sid = 's' + '1' * 32
+        folder, data = self.peer_candidate(sid, 'q', 'First question.')
+        errors = check_session(folder)
+        self.assertTrue(any('peer session prefix' in error for error in errors), errors)
+        data['nodes'][0]['id'] = sid + '-q'
+        data['relations'][0]['premises'][0]['node'] = sid + '-q'
+        write_json(folder / 'output/record.json', data)
+        self.assertEqual(check_session(folder), [])
+
+    def test_same_local_node_label_from_two_peers_cannot_collide_during_review(self):
+        first_sid, second_sid = 's' + '1' * 32, 's' + '2' * 32
+        first_id, second_id = first_sid + '-q', second_sid + '-q'
+        first, first_data = self.peer_candidate(first_sid, first_id, 'First question.')
+        second, second_data = self.peer_candidate(second_sid, second_id, 'Different question.')
+        self.assertEqual(check_session(first), [])
+        self.assertEqual(check_session(second), [])
+        # Both candidates passed before either publication; then the first is admitted.
+        self.publish('rfirst', first_data)
+        reviewer = self.instance / 'sessions/sreview'
+        output = reviewer / 'output'
+        output.mkdir(parents=True)
+        candidate = second / 'output'
+        hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.iterdir()}
+        write_json(reviewer / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
+            'role': 'review', 'task': {'kind': 'candidate', 'candidate': str(candidate),
+                                     'candidate_hashes': hashes}})
+        write_json(output / 'assessment.json', assessment(second_data))
+        (output / 'feedback.md').write_text('The distinct question and connection are supported.', encoding='utf-8')
+        self.assertEqual(check_session(reviewer), [])
+        self.publish('rsecond', second_data)
+        model = replay(self.instance)
+        self.assertEqual(model['nodes'][first_id]['statement'], 'First question.')
+        self.assertEqual(model['nodes'][second_id]['statement'], 'Different question.')
 
 
 class PublicationTests(InstanceCase):
@@ -307,7 +357,7 @@ class FormalEvidenceTests(InstanceCase):
         with self.assertRaisesRegex(Invalid, 'submitted compile'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
 
-    def publish(self, check):
+    def stage_formal_evidence(self, check):
         stage = self.root / 'stage'
         (stage / 'review').mkdir(parents=True)
         write_json(stage / 'review/assessment.json', {'solutions': [{'level': 'formal', 'formal_check': check}]})
@@ -324,7 +374,7 @@ class FormalEvidenceTests(InstanceCase):
         write_json(directory / 'result.json', {'id': duplicate, 'status': 'duplicate', 'duplicate_of': original})
         check['job'] = duplicate
         audit_formal(self.instance, 'sreview', check, solution, candidate)
-        evidence = self.publish(check)
+        evidence = self.stage_formal_evidence(check)
         self.assertEqual(read_json(evidence / 'result.json')['id'], original)
         self.assertIn("'target' does not depend on any axioms",
                       (evidence / original / 'stdout.log').read_text(encoding='utf-8'))
@@ -334,7 +384,7 @@ class FormalEvidenceTests(InstanceCase):
         target_job = receipt['modules']['Proof']['job']
         write_json(self.instance / 'runner/lean/jobs' / target_job / 'launch.json',
                    {'argv': ['lean', 'Proof.lean'], 'cwd': 'work', 'env': {'PRIVATE_TOKEN': 'not for publication'}})
-        evidence = self.publish(check)
+        evidence = self.stage_formal_evidence(check)
         self.assertEqual(read_json(evidence / 'result.json'), receipt)
         module = evidence / target_job
         self.assertEqual(read_json(module / 'result.json')['source_sha256'],

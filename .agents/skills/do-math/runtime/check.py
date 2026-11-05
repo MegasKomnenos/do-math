@@ -60,7 +60,7 @@ def unique(rows, key='id'):
     return set(ids)
 
 
-def record_check(data, root, model):
+def record_check(data, root, model, proposal_owner=None):
     for path in Path(root).iterdir():
         need(path.name.casefold() not in ('review', 'provenance.json'),
              'candidate top-level names review and provenance.json are reserved for publication attachments')
@@ -79,6 +79,10 @@ def record_check(data, root, model):
                  'unknown dependency claim')
     nodes = array(data.get('nodes', []), 'nodes')
     proposed = unique(nodes)
+    if proposal_owner is not None:
+        prefix = identifier(proposal_owner) + '-'
+        need(all(node.startswith(prefix) and len(node) > len(prefix) for node in proposed),
+             'new node proposals must use their peer session prefix: ' + prefix)
     need(not proposed.intersection(set(model['nodes']) | set(model['aliases'])), 'new node proposal ID already exists; use existing node directly')
     known = set(model['nodes']) | set(model['aliases']) | proposed
     for node in nodes:
@@ -360,14 +364,14 @@ def check_session(session, verify_jobs=True):
             regular_tree(output)
             return []  # retained material, including partial material, always reaches peer
         if role == 'peer':
-            record_check(read_json(output / 'record.json'), output, model)
+            record_check(read_json(output / 'record.json'), output, model, session.name)
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
             if 'candidate_hashes' in task:
                 actual = {p.relative_to(candidate).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.rglob('*') if p.is_file()}
                 need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
             record = read_json(candidate / 'record.json')
-            record_check(record, candidate, model)
+            record_check(record, candidate, model, candidate.parent.name)
             assessment_check(read_json(output / 'assessment.json'), output, record, candidate, model,
                              instance, inp['session'], verify_jobs)
         elif role == 'review':

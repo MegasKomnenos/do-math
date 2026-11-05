@@ -6,6 +6,11 @@ This report records the execution and documentation checks performed during the 
 
 ## Automated tests
 
+The subsequent nine-round verification and final personal audit are recorded in the
+[final verification report](../../임시/do-math_검증_20261105/종료보고.md). That report contains the later
+test counts, issue dispositions, actual-tool checks and removal of the obsolete v1/v2 installation material.
+The results below retain their original scope and dates.
+
 The full runtime suite passed **84 tests**. It uses scripted CLI workers, the runtime's actual structural output checker and Git, and a controlled program standing in for Lean. It tests the orchestration and interpretation of explicit outputs without asking a model to invent the test scenario. This count, like the other test counts in this section, describes the suite as it was run during the rebuild. Tests added during later verification, including broker tests that call the fresh-target build option, are not part of it, and this report does not record their runs.
 
 The tests cover work selection and occupancy, role scheduling, interrupted work, provider fallback, publication and restart recovery, local and global glossary decisions, record grouping, formal-proof evidence, instruction snapshots and compilation management. Mathematical-state tests distinguish proving a statement from proving its negation. For example, if a recorded implication requires A and not-B, a proof of A and a refutation of B satisfy its premises. A refutation of Q alone does not settle P through Q implies P. Other tests preserve alternative proofs when one supporting argument is withdrawn.

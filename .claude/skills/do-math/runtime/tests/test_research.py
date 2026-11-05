@@ -88,6 +88,88 @@ class InstanceCase(unittest.TestCase):
 
 
 class KnowledgeTests(InstanceCase):
+    def test_node_merge_preserves_old_evidence_and_relation_references(self):
+        data = record(
+            [claim_row('from_a'), claim_row('from_b')],
+            [{'id': node, 'statement': 'The same precise proposition.', 'connection': link}
+             for node, link in (('A', 'from_a'), ('B', 'from_b'))],
+            [implication('from_a', 'A'), implication('from_b', 'B')])
+        nodes = self.publish('rnodes', data)
+        proof = self.publish('rproof', record([claim_row('p')],
+                                             solutions=[solution('p', 'A', 'p')]))
+        saved = {p: p.read_bytes() for folder in (nodes, proof)
+                 for p in folder.rglob('*') if p.is_file()}
+        before = replay(self.instance)
+        self.assertEqual(before['nodes']['B']['state'], 'unresolved')
+        self.assertNotIn('rnodes/from_b', before['proofs'])
+        organization = {'batch': ['rnodes', 'rproof'], 'modules': [],
+                        'shared_context': ['rnodes', 'rproof'],
+                        'merge_nodes': [{'from': 'A', 'into': 'B',
+                                         'reason': 'The statements and definitions are identical.'}]}
+        with self.assertRaisesRegex(Invalid, 'merge needs existing nodes'):
+            organization_check({**organization, 'merge_nodes': [
+                {'from': 'A', 'into': 'missing', 'reason': 'No such node.'}]},
+                before, organization['batch'])
+        organization_check(organization, before, organization['batch'])
+        self.event('omerge', 'organization', organization)
+        model = replay(self.instance)
+        self.assertEqual(canonical(model, 'A'), 'B')
+        self.assertEqual(model['proofs']['rproof/p']['node'], 'B')
+        for node in ('A', 'B', 'root'):
+            self.assertEqual(model['nodes'][node]['state'], 'informal_proved')
+        for link in ('from_a', 'from_b'):
+            self.assertEqual(model['proofs']['rnodes/' + link]['premise_proofs'], ['rproof/p'])
+        render(self.instance, model, [])
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        self.assertNotIn('\n## A\n', frontier)
+        self.assertIn('\n## B\n', frontier)
+        self.assertIn('Aliases: A', frontier)
+        self.assertEqual({p: p.read_bytes() for p in saved}, saved)
+        self.assertEqual(replay(self.instance), model)
+
+    def test_node_merge_keeps_both_attempts_occupied_until_both_pipelines_end(self):
+        self.publish('rnodes', record(
+            [claim_row('from_a'), claim_row('from_b')],
+            [{'id': node, 'statement': 'The same precise proposition.', 'connection': link}
+             for node, link in (('A', 'from_a'), ('B', 'from_b'))],
+            [implication('from_a', 'A'), implication('from_b', 'B')]))
+        engine = Runner(self.instance, self.skill)
+        sessions, pipelines, declarations = [], [], {}
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            for node in ('A', 'B'):
+                key = engine.producer('attempt')
+                self.assertTrue(engine.dispatch(key))
+                job = engine.state['jobs'][key]
+                sid = job['session']
+                sessions.append(sid)
+                pipelines.append(job['pipeline'])
+                self.assertEqual(claim(engine.session_dir(sid), node)['warnings'], [])
+                path = engine.session_dir(sid) / 'declaration.json'
+                declarations[path] = path.read_bytes()
+        organization = {'batch': ['rnodes'], 'modules': [], 'shared_context': ['rnodes'],
+                        'merge_nodes': [{'from': 'A', 'into': 'B',
+                                         'reason': 'The statements and definitions are identical.'}]}
+        organization_check(organization, engine.model, ['rnodes'])
+        self.event('omerge', 'organization', organization)
+        engine = Runner(self.instance, self.skill)
+        self.assertCountEqual([sid for sid, _ in engine.active()], sessions)
+        self.assertEqual({row['session']: row['nodes'] for row in board(self.instance)},
+                         {sid: ['B'] for sid in sessions})
+        self.assertEqual(engine.available_nodes(), (['root'], 0))
+        self.assertEqual({p: p.read_bytes() for p in declarations}, declarations)
+        # Publication and exclusion have lifecycle tests; here release each occupancy
+        # to check that the other pipeline still holds the merged identity.
+        engine.state['pipelines'][pipelines[0]]['stage'] = 'done'
+        engine.save()
+        self.assertEqual([(row['session'], row['nodes']) for row in board(self.instance)],
+                         [(sessions[1], ['B'])])
+        self.assertEqual(engine.available_nodes(), (['root'], 0))
+        engine.state['pipelines'][pipelines[1]]['stage'] = 'done'
+        engine.save()
+        self.assertEqual(board(self.instance), [])
+        self.assertCountEqual(engine.available_nodes()[0], ['root', 'B'])
+
     def test_informal_propagation_and_formal_readiness_are_separate(self):
         self.publish('r1', self.reduction())
         self.publish('r2', record([claim_row('q')], solutions=[solution('qproof', 'Q', 'q')]))
@@ -251,6 +333,68 @@ class RunnerTests(InstanceCase):
     def runner(self):
         return Runner(self.instance, self.skill)
 
+    def test_invalid_processing_output_delays_only_its_job(self):
+        runner = self.runner()
+        key = runner.enqueue('organizer', {'batch': []})
+        sid = 'sbadoutput'
+        folder = runner.session_dir(sid)
+        (folder / 'output').mkdir(parents=True)
+        (folder / 'work').mkdir()
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid,
+                                           'role': 'organizer', 'task': {'batch': []}})
+        (folder / 'cli.stdout.jsonl').write_text(json.dumps(
+            {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'Organization attempted.'}}), encoding='utf-8')
+        (folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+        session = {'id': sid, 'role': 'organizer', 'job': key, 'status': 'running',
+                   'provider': 'codex', 'model': 'codex/gpt-6.1-sol', 'started_at': 900, 'exit_code': 0}
+        runner.state['sessions'][sid] = session
+        job = runner.state['jobs'][key]
+        job.update(status='running', session=sid)
+        runner.save()
+        # The actual output checker rejects the missing organization.json.
+        with patch('runner.time.time', return_value=1000):
+            runner.finish(sid, session)
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual(job['not_before'], 1060)
+        self.assertIn('organization.json', job['last_error'])
+        self.assertEqual(runner.state['blocks'], {})
+        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(job['task']['previous_partial_sessions'], [str(folder)])
+
+    def test_successful_post_backoff_launch_resets_availability_history(self):
+        runner = self.runner()
+        sid, session, _ = self.ended(runner, 'attempt', exit_code=0)
+        session['started_at'] = 1001
+        for key in ('provider:codex', 'model:codex/gpt-6.1-sol'):
+            runner.state['blocks'][key] = {'until': 1000, 'attempts': 5, 'source': 'backoff'}
+        with patch('runner.time.time', return_value=1002):
+            runner.finish(sid, session)
+        self.assertEqual(runner.state['blocks'], {})
+        self.assertEqual(self.runner().state['blocks'], {})
+
+        later, limited, _ = self.ended(runner, 'explore', exit_code=0)
+        limited['started_at'] = 2001
+        (runner.session_dir(later) / 'cli.stdout.jsonl').write_text(json.dumps(
+            {'type': 'error', 'message': "You've hit your usage limit. Try again later."}), encoding='utf-8')
+        with patch('runner.time.time', return_value=2002):
+            runner.finish(later, limited)
+        block = runner.state['blocks']['provider:codex']
+        self.assertEqual(block['attempts'], 1)
+        self.assertEqual(block['until'], 2062)
+
+    def test_old_inflight_success_does_not_erase_newer_availability_blocks(self):
+        runner = self.runner()
+        sid, session, _ = self.ended(runner, 'attempt', exit_code=0)
+        session['started_at'] = 1000
+        expected = {
+            'provider:codex': {'until': 2000, 'attempts': 5, 'source': 'backoff'},
+            'model:codex/gpt-6.1-sol': {'until': 4000, 'attempts': 2, 'source': 'backoff'},
+        }
+        runner.state['blocks'].update({key: dict(value) for key, value in expected.items()})
+        with patch('runner.time.time', return_value=3000):
+            runner.finish(sid, session)
+        self.assertEqual(runner.state['blocks'], expected)
+
     def ended(self, runner, role, output=None, exit_code=42):
         key = runner.producer(role)
         job = runner.state['jobs'][key]
@@ -375,6 +519,29 @@ class RunnerTests(InstanceCase):
         self.assertFalse(work.exists())
         self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
 
+    def test_final_archive_request_is_dispatched_before_runner_exit(self):
+        data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
+        self.publish('rfinal', data, assessment(data, ['p']))
+        runner = self.runner()
+        self.assertTrue(root_solved(runner.model))
+        with patch('runner.subprocess.Popen') as launch:
+            # An earlier archiver is still processing its older state snapshot
+            # when the final publication requests another archive pass.
+            runner.archiver = launch.return_value
+            runner.archiver.poll.return_value = None
+            runner.archive_due = True
+            self.assertFalse(runner.tick())
+            self.assertTrue(runner.state['finished'])
+            self.assertTrue(runner.archive_due)
+            launch.assert_not_called()
+
+            runner.archiver.poll.return_value = 0
+            self.assertTrue(runner.tick())
+            self.assertFalse(runner.archive_due)
+            launch.assert_called_once()
+            self.assertEqual(launch.call_args.args[0][-2:],
+                             ['_archive', str(self.instance)])
+
     def test_occupancy_survives_producer_exit(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -448,7 +615,7 @@ class RunnerTests(InstanceCase):
                 previous = {'until': deadline, 'reason': 'model_capacity', 'source': 'backoff'}
                 runner.state['blocks'][block_key] = dict(previous)
                 with patch('runner.time.time', return_value=1000):
-                    runner.retry(runner.state['jobs'][key], session, 'incomplete output')
+                    runner.retry(runner.state['jobs'][key], session, 'operational launch failure')
                 self.assertEqual(runner.state['blocks'][block_key]['until'], expected_until)
                 self.assertEqual(runner.state['jobs'][key]['status'], 'pending')
                 if deadline > 1060:
@@ -681,7 +848,7 @@ class RunnerTests(InstanceCase):
             with self.subTest(role=role):
                 key = runner.enqueue(role, task)
                 session = {'id': 's' + role, 'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'status': 'running'}
-                runner.retry(runner.state['jobs'][key], session, 'incomplete output')
+                runner.retry(runner.state['jobs'][key], session, 'incomplete output', availability=False)
                 self.assertEqual(runner.state['jobs'][key]['task']['previous_partial_sessions'],
                                  [str(runner.session_dir('s' + role))])
                 self.assertEqual(runner.state['jobs'][key]['status'], 'pending')

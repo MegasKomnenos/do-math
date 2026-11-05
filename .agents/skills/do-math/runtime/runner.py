@@ -185,14 +185,19 @@ class Runner:
             self.save()
         return True
 
-    def retry(self, job, session, reason):
+    def retry(self, job, session, reason, *, availability=True):
         job['retries'] += 1
         delay = min(self.settings['retry_max_seconds'], self.settings['retry_seconds'] * 2 ** min(job['retries'] - 1, 20))
-        job.update(status='pending', session=None, not_before=time.time() + min(delay, 1), last_error=reason)
+        now = time.time()
+        job.update(status='pending', session=None,
+                   not_before=now + (min(delay, 1) if availability else delay), last_error=reason)
         job['task']['previous_error'] = reason
         block_key = 'model:' + session['model']
-        if self.state['blocks'].get('provider:' + session['provider'], {}).get('until', 0) <= time.time():
-            until = time.time() + delay
+        # A typed refusal already recorded its own scope and backoff history.
+        # Invalid output is a job failure, not evidence that its model is unavailable.
+        if availability and not session.get('refusal') and self.state['blocks'].get(
+                'provider:' + session['provider'], {}).get('until', 0) <= now:
+            until = now + delay
             if self.state['blocks'].get(block_key, {}).get('until', 0) < until:
                 self.state['blocks'][block_key] = {'until': until, 'reason': reason, 'source': 'retry'}
         session.update(status='failed', reason=reason)
@@ -230,6 +235,17 @@ class Runner:
             s['retention'] = retention
             s['retained'] = True
             self.save()
+        if (s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error')
+                and (s['retention'].get('cli_activity') or s['retention'].get('native_activity'))):
+            # A successful request launched after the wait establishes recovery.
+            # An older in-flight success must not erase a later refusal's block.
+            recovered = [key for key in ('provider:' + s['provider'], 'model:' + s['model'])
+                         if key in self.state['blocks']
+                         and s['started_at'] >= self.state['blocks'][key]['until']]
+            for key in recovered:
+                del self.state['blocks'][key]
+            if recovered:
+                self.save()
         if s['role'] in PRODUCERS:
             material = (s['retention'].get('cli_activity') or s['retention'].get('native_activity')
                         or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
@@ -247,7 +263,8 @@ class Runner:
             return
         errors = check_session(session)
         if errors:
-            self.retry(job, s, '; '.join(errors))
+            self.retry(job, s, '; '.join(errors),
+                       availability=bool(s.get('refusal') or s.get('launch_error')))
             return
         if s['role'] == 'peer':
             candidate = session / 'candidate'
@@ -603,7 +620,9 @@ class Runner:
             self.save()
         if not self.state['finished']:
             self.ensure_broker()
-        return self.state['finished']
+        # A running archiver uses an earlier state snapshot. Dispatch any later
+        # archive request before exiting; the final detached archiver can finish alone.
+        return self.state['finished'] and not self.archive_due
 
     def run(self, token=None):
         with InstanceLock(self.instance / 'runner/lock'):

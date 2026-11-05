@@ -21,8 +21,9 @@ records that evidence and its limits.
 
 The rebuild targets **fresh research instances only**. Legacy support and compatibility are excluded. The new
 runner does not need to resume an old instance, accept old schemas or role names, migrate a plan's request
-queue, or import historical research into the new protocol. Historical source material remains useful for
-understanding the design; excluding compatibility does not authorize deleting that material.
+queue, or import historical research into the new protocol. The user subsequently requested removal of the
+v1 installation and the separate v2 draft. The installed skill now contains only the replacement. Historical
+research records and the reconstruction evidence remain separate from the installation.
 
 The existing do-math was read in full, excluding tests and compiled caches, before the design interview. Its
 instruction documents and implementation supplied concrete examples of useful governance, mathematical
@@ -41,7 +42,7 @@ mathematics. Implementation choices must preserve the settled responsibilities a
 Read sections 2–4 first for the governing principles, vocabulary, and solution model. Sections 5–9 explain
 what each mathematical role does and how the work becomes reviewed knowledge. Sections 10–14 explain shared
 information, organization, correction, dispatch, and completion. Sections 15–18 cover the writing standards,
-preservation requirements, connected examples, and decisions still to make.
+preservation requirements, connected examples, and the boundary between settled decisions and implementation choices.
 
 - [2. Governing principles](#2-the-governing-principles)
 - [3. Research objects and roles](#3-the-research-objects-and-the-six-roles)
@@ -59,7 +60,7 @@ preservation requirements, connected examples, and decisions still to make.
 - [15. Writing standards supplied to sessions](#15-deliver-the-users-writing-standards-to-the-sessions)
 - [16. Preservation and implementation](#16-what-to-preserve-from-current-do-math-and-how-to-use-its-implementation)
 - [17. Worked scenarios](#17-worked-scenarios-that-connect-the-rules)
-- [18. Remaining decisions](#18-decisions-still-to-make-and-what-implementation-may-choose)
+- [18. Settled decisions and implementation responsibilities](#18-settled-decisions-and-implementation-responsibilities)
 - [Appendix A. Revisions](#appendix-a-important-revisions-and-their-final-meaning)
 - [Appendix B. Decision locator](#appendix-b-decision-locator)
 - [Appendix C. Source basis](#appendix-c-source-basis-and-limits-of-this-document)
@@ -2106,7 +2107,7 @@ A reader can discover the record through either module, then inspect its mathema
 and review. Organization improves the path to the evidence; it neither duplicates the source record nor
 changes the mathematical standing of its claims.
 
-## 18. Decisions still to make, and what implementation may choose
+## 18. Settled decisions and implementation responsibilities
 
 The initial design left operational questions for the implementation discussion. Subsequent user decisions
 settled the policies summarized in section 18.2. The section distinguishes those decisions from implementation
@@ -2119,14 +2120,16 @@ that faithfully realize the design. Those choices must preserve immutable record
 declared lifecycle, and the user's delegation of semantic coordination to sessions. A familiar implementation
 pattern is not sufficient justification for adding enforcement or an extra role.
 
-The producing-session template and the packaging of shared writing guidance also need concrete design. The
-purpose, required substance, quality standards, and role boundaries are settled. The glossary's local scope,
+The producing-session template and the packaging of shared writing guidance are implementation responsibilities.
+Their purpose, required substance, quality standards, and role boundaries are settled. The glossary's local scope,
 global lifecycle, substantive entry content, and upfront delivery are also settled, as are the index's three
-general sections, overlapping modules, and description ownership. Their literal headings, machine fields,
-reference layout, and working-file conventions are not. Those details should be developed for the reader and
-consumer, with examples showing how the structure improves retention and communication.
+general sections, overlapping modules, and description ownership. The current [retained-work guide](../../.claude/skills/do-math/reference/retained-work.md),
+[record format](../../.claude/skills/do-math/reference/record-format.md), and [writing guide](../../.claude/skills/do-math/reference/writing.md)
+specify their concrete formats and reading paths. These implementation details can evolve within the contract;
+their structure and examples should continue to improve the reader's understanding, retention, and communication.
 
-The choice of how to preserve and render recorded feedback is similarly open at the storage level. Ordinary
+Preserving and rendering recorded feedback is likewise an implementation responsibility, described by the current
+[review-output guide](../../.claude/skills/do-math/reference/review-output.md) and operating interfaces. Ordinary
 review supplies the short index-facing assessment and the full feedback. Concern-related feedback additionally
 has the agreed placement in the frontier, separate index annotations, and compact board pointers, grounded in
 the source review. The implementer should not introduce a separate authored state narrative or rewrite
@@ -2278,31 +2281,27 @@ The conversation and the user's corrections are the source of the agreed redesig
 read to understand the current system and identify substantive guidance and capabilities worth preserving.
 They are not additional hidden requirements a reader must reconstruct to understand this document.
 
-The full current-source reading covered these 17 non-test files under
-[`.claude/skills/do-math/`](../../.claude/skills/do-math/):
+The pre-rebuild source reading covered 17 non-test files then installed under
+`.claude/skills/do-math/`. Those v1 paths are historical, not current interfaces:
 
-- Entry and operation: [SKILL.md](../../.claude/skills/do-math/SKILL.md),
-  [RUNTIME.md](../../.claude/skills/do-math/RUNTIME.md),
-  [CLI.md](../../.claude/skills/do-math/CLI.md), and [LEAN.md](../../.claude/skills/do-math/LEAN.md).
-- Shared and role contexts: [common.md](../../.claude/skills/do-math/common.md),
-  [protocol.md](../../.claude/skills/do-math/protocol.md),
-  [plan.md](../../.claude/skills/do-math/plan.md),
-  [research.md](../../.claude/skills/do-math/research.md),
-  [explore.md](../../.claude/skills/do-math/explore.md),
-  [peer.md](../../.claude/skills/do-math/peer.md), and
-  [review.md](../../.claude/skills/do-math/review.md).
-- Implementation: [runner.py](../../.claude/skills/do-math/runner.py),
-  [check.py](../../.claude/skills/do-math/check.py),
-  [cli_adapter.py](../../.claude/skills/do-math/cli_adapter.py),
-  [knowledge_index.py](../../.claude/skills/do-math/knowledge_index.py),
-  [glossary.py](../../.claude/skills/do-math/glossary.py), and
-  [lean_broker.py](../../.claude/skills/do-math/lean_broker.py).
+- Entry and operation: `SKILL.md`, `RUNTIME.md`, `CLI.md` and `LEAN.md`.
+- Shared and role contexts: `common.md`, `protocol.md`, `plan.md`, `research.md`, `explore.md`,
+  `peer.md` and `review.md`.
+- Implementation: `runner.py`, `check.py`, `cli_adapter.py`, `knowledge_index.py`, `glossary.py`
+  and `lean_broker.py`.
+
+The obsolete files and their tests were removed at the user's request after verification of the replacement.
+The tracked v1 files remain recoverable from Git history before the cleanup commit; the current `SKILL.md`
+belongs to the replacement. Current operation is documented in
+[Operations](../../.claude/skills/do-math/reference/operations.md), with the implementation under
+[`runtime/`](../../.claude/skills/do-math/runtime/).
 
 The Codex mirror was compared with that source. Tests and compiled caches were excluded from the requested
 full reading. This is evidence of the scope read, not a new execution test of the current system.
 
-The reference reading covered all 19 files in [`v2/`](../../v2/):
-[DESIGN.md](../../v2/DESIGN.md), its ten role documents, and its eight reference documents. Its proposed
+The reference reading covered all 19 files in the former, untracked `v2/` draft:
+`DESIGN.md`, its ten role documents, and its eight reference documents. That draft was also removed at the
+user's request; its contents are not recoverable from this repository's Git history. Its proposed
 architecture and descriptions of historical runs were treated as reference material. The conversation did
 not adopt them wholesale, and this documentation work does not independently validate their performance
 measurements or analyses of historical runs.

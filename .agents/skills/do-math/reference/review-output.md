@@ -18,7 +18,8 @@ The assessment has these fields:
 | `nodes` | Exactly one `{proposal, node, reason}` for each proposed node. `node` is the proposal ID when admitted, an existing node ID when identified with that node, or null when declined. |
 | `relations` | Exactly one `{proposal, accepted, reason}` for each relation. `accepted` is Boolean. |
 | `solutions` | Exactly one `{proposal, level, reason}` for each solution. `level` is `none`, `informal` or `formal`. |
-| `glossary_approved` | Boolean: approval of the local glossary, including the consistency check of globally flagged entries. |
+| `glossary_approved` | Boolean: approval of the candidate's local glossary, including the consistency check of globally flagged entries. |
+| `glossary` | Local terminology you introduce to explain your own assessment. Each entry has `id`, `name`, `definition`, and optional `symbol`, using the local entry format in [Record format](record-format.md). Include the definitions and their use in your feedback; omit this field or use an empty array when you introduce no terms. These entries explain your assessment and do not create new mathematical proof claims. |
 | `concerns` | New concerns about identified claims, or an empty array. |
 | `findings` | Findings on existing evidence or concerns, or an empty array. |
 

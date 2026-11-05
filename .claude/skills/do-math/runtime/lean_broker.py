@@ -85,19 +85,33 @@ class Paths:
 
 
 def read_imports(path):
-    """The sorted import lines of a Lean source; they must precede every other command."""
+    """Read header imports, preserving code around ordinary and nested comments."""
     imports = set()
-    in_block = False
+    depth = 0
     for line in Path(path).read_text(encoding="utf-8-sig", errors="replace").splitlines():
-        stripped = line.strip()
-        if in_block:
-            if "-/" in stripped:
-                in_block = False
-            continue
-        if not stripped or stripped.startswith("--") or stripped in ("prelude", "module"):
-            continue
-        if stripped.startswith("/-"):
-            in_block = "-/" not in stripped
+        code = []
+        index = 0
+        while index < len(line):
+            if depth:
+                if line.startswith("/-", index):
+                    depth += 1
+                    index += 2
+                elif line.startswith("-/", index):
+                    depth -= 1
+                    index += 2
+                else:
+                    index += 1
+            elif line.startswith("--", index):
+                break
+            elif line.startswith("/-", index):
+                code.append(" ")
+                depth = 1
+                index += 2
+            else:
+                code.append(line[index])
+                index += 1
+        stripped = "".join(code).strip()
+        if not stripped or stripped in ("prelude", "module"):
             continue
         match = IMPORT.match(stripped)
         if not match:
@@ -621,13 +635,20 @@ class Broker:
             try:
                 if not JOB_ID.match(job_id) and not BUILD_ID.match(job_id):
                     raise ValueError(f"not a job ID: {job_id}")
+                folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
+                # Registration or a final outcome can be durable while its queue
+                # file remains after a crash. Acknowledge it without registering
+                # again, replacing its outcome or redirecting the ID to itself.
+                if job_id in self.state["jobs"] or job_id in self.state["builds"] \
+                        or (folder / "result.json").exists():
+                    path.unlink(missing_ok=True)
+                    continue
                 request = read_json(path)
                 if request.get("id") != job_id:
                     raise ValueError("the request's id does not match its file name")
                 expect = request["expect_mb"]
                 if type(expect) is not int or expect < 1:
                     raise ValueError("expect_mb must be a positive integer")
-                folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 if (folder / "CANCEL").exists():
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
