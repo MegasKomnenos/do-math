@@ -191,9 +191,19 @@ class ContextTests(InstanceCase):
         self.publish('r1', data, assessment(data, ['p']))
         engine.model = replay(self.instance); engine.state['complete'] = True
         self.assertEqual(claim(folder, 'Q')['nodes'], ['Q'])
-        with patch.object(engine, 'populate'), patch.object(engine, 'dispatch_pending'), patch.object(engine, 'producer') as producer:
+        queued = [engine.producer(role) for role in ('attempt', 'explore')]
+        review = engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
+        with patch.object(engine, 'populate'), patch.object(engine, 'dispatch') as dispatch, \
+             patch.object(engine, 'producer') as producer:
             engine.schedule()
             producer.assert_not_called()
+        self.assertEqual([call.args[0] for call in dispatch.call_args_list], [review])
+        for key in queued:
+            self.assertEqual(engine.state['jobs'][key]['status'], 'cancelled')
+            pipeline = engine.state['jobs'][key]['pipeline']
+            self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'done')
+        self.assertEqual(engine.state['sessions'][sid]['status'], 'running')
+        self.assertEqual(engine.state['jobs'][engine.state['sessions'][sid]['job']]['status'], 'running')
         self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Support withdrawn.',
             'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
         engine.model = replay(self.instance)

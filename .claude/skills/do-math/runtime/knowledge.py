@@ -71,11 +71,23 @@ def settle(model):
         if proof['node'] in conflicts:
             proof['concerns'].append('conflict:' + proof['node'])
             proof['concerned'] = True
+    def uses_route(pid, target):
+        pending, visited = [pid], set()
+        while pending:
+            current = pending.pop()
+            if current == target:
+                return True
+            if current in visited:
+                continue
+            visited.add(current)
+            pending.extend(proofs.get(current, {}).get('premise_proofs', []))
+        return False
+
     changed = True
     while changed:
         changed = False
         for rid, relation in model['relations'].items():
-            if rid in proofs or model['claims'].get(relation['claim'], {}).get('status') != 'supported':
+            if (rid in proofs and not proofs[rid]['concerned']) or model['claims'].get(relation['claim'], {}).get('status') != 'supported':
                 continue
             conclusion = canonical(model, relation['conclusion']['node'])
             selected = []
@@ -83,7 +95,7 @@ def settle(model):
             for index, premise in enumerate(relation['premises']):
                 candidates = [(pid, p) for pid, p in proofs.items()
                               if p['node'] == canonical(model, premise['node'])
-                              and p['outcome'] == premise['outcome']]
+                              and p['outcome'] == premise['outcome'] and not uses_route(pid, rid)]
                 previous_ids = previous.get('premise_proofs', [])
                 preferred = previous_ids[index] if index < len(previous_ids) else None
                 candidates.sort(key=lambda row: (row[1]['concerned'], row[0] != preferred, row[0]))
@@ -98,7 +110,7 @@ def settle(model):
                     if cleared['relation'] != rid:
                         continue
                     ids = cleared['premise_proofs']
-                    if len(ids) != len(relation['premises']) or any(pid not in proofs for pid in ids):
+                    if len(ids) != len(relation['premises']) or any(pid not in proofs or uses_route(pid, rid) for pid in ids):
                         continue
                     alternative = [(pid, proofs[pid]) for pid in ids]
                     if all(p['node'] == canonical(model, premise['node'])
@@ -118,6 +130,8 @@ def settle(model):
             if not eligible:
                 continue
             flagged, selected, claims, concerns = min(eligible, key=lambda row: (row[0], len(row[3])))
+            if rid in proofs and flagged:
+                continue
             premise_ids = [pid for pid, _ in selected]
             proofs[rid] = {'id': rid, 'node': conclusion, 'outcome': relation['conclusion']['outcome'],
                            'level': 'informal', 'claim': relation['claim'], 'claims': claims,

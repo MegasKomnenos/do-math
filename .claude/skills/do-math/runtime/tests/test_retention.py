@@ -12,6 +12,32 @@ from runtime_support import archive_work
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_transient_directory_scan_failure_keeps_unarchived_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            nested = session / 'work/nested'
+            nested.mkdir(parents=True)
+            notes = nested / 'notes.md'
+            payload = b'Mathematics that must survive a failed directory scan'
+            notes.write_bytes(payload)
+            original_scandir = os.scandir
+            failed = False
+
+            def scan(path):
+                nonlocal failed
+                if path == str(nested) and not failed:
+                    failed = True
+                    raise PermissionError('temporary directory scan failure')
+                return original_scandir(path)
+
+            with patch('runtime_support.os.scandir', side_effect=scan):
+                with self.assertRaisesRegex(PermissionError, 'temporary directory scan failure'):
+                    archive_work(session)
+            self.assertTrue(failed)
+            self.assertEqual(notes.read_bytes(), payload)
+            self.assertFalse((session / 'work.tar.xz').exists())
+            self.assertFalse((session / 'work.tar.xz.part').exists())
+
     def test_archived_work_preserves_bytes_and_directories_before_removing_originals(self):
         with tempfile.TemporaryDirectory() as tmp:
             session = Path(tmp)
@@ -49,6 +75,32 @@ class ArchiveTests(unittest.TestCase):
 
 
 class RetentionTests(unittest.TestCase):
+    def test_native_reasoning_preserves_readable_content_with_and_without_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rows = [
+                {'type': 'response_item', 'payload': {'type': 'reasoning', 'summary': [],
+                 'content': [{'type': 'reasoning_text', 'text': 'An argument without a summary.'}]}},
+                {'type': 'response_item', 'payload': {'type': 'reasoning',
+                 'summary': [{'type': 'summary_text', 'text': 'A short summary.'}],
+                 'content': [{'type': 'reasoning_text', 'text': 'The necessary hypothesis absent from that summary.'}],
+                 'encrypted_content': 'OPAQUE_TRANSPORT'}},
+                {'type': 'response_item', 'payload': {'type': 'reasoning', 'summary': [],
+                 'encrypted_content': 'OPAQUE_ONLY'}},
+            ]
+            source = root / 'native.jsonl'
+            raw = ('\n'.join(json.dumps(row) for row in rows) + '\n').encode('utf-8')
+            source.write_bytes(raw)
+            destination = root / 'conversation.md'
+            self.assertEqual(conversation(source, destination, True), 2)
+            body = destination.read_text(encoding='utf-8')
+            self.assertIn('An argument without a summary.', body)
+            self.assertIn('A short summary.', body)
+            self.assertIn('The necessary hypothesis absent from that summary.', body)
+            self.assertNotIn('OPAQUE_TRANSPORT', body)
+            self.assertNotIn('OPAQUE_ONLY', body)
+            self.assertEqual(source.read_bytes(), raw)
+
     def test_native_messages_and_tool_output_are_not_truncated_or_duplicated(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

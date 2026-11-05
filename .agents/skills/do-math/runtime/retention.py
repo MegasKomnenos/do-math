@@ -42,8 +42,8 @@ def conversation(source, destination, native):
                 if not isinstance(item, dict):
                     continue
                 if item.get('type') == 'reasoning':
-                    if item.get('summary'):
-                        payload = item['summary']
+                    payload = {key: item[key] for key in ('summary', 'content')
+                               if item.get(key)} or None
                 else:
                     payload = item
             elif native and kind == 'compacted':

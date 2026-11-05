@@ -8,7 +8,7 @@ from cli_adapter import Command, provider_for_model
 from knowledge import replay
 from lean_broker import terminate_tree
 from runner import Runner
-from runtime_support import alive, process_identity, read_json, write_json
+from runtime_support import alive, git, process_identity, read_json, write_json
 from test_research import InstanceCase
 
 
@@ -53,12 +53,20 @@ class PipelineTests(InstanceCase):
         self.assertEqual(runner.state['attempt_dispatches'], 1)
         records = list((self.instance / 'knowledge/records').iterdir())
         self.assertTrue(any(list(r.glob('review/lean-evidence/*/result.json')) for r in records))
-        frozen = sorted((self.instance / 'knowledge/events').glob('*.json'))
+        def published_bytes():
+            knowledge = self.instance / 'knowledge'
+            return {p.relative_to(knowledge).as_posix(): p.read_bytes()
+                    for name in ('events', 'records', 'reviews', 'organizations')
+                    for p in (knowledge / name).rglob('*') if p.is_file()}
+
+        frozen = published_bytes()
+        history = git(self.instance, 'log', '--format=%H', '--', 'knowledge')
         restarted = Runner(self.instance, self.skill)
         self.addCleanup(self.cleanup_runner, restarted)
         with patch('runner.build_command', side_effect=self.command):
             self.assertTrue(restarted.tick())
-        self.assertEqual(frozen, sorted((self.instance / 'knowledge/events').glob('*.json')))
+        self.assertEqual(frozen, published_bytes())
+        self.assertEqual(history, git(self.instance, 'log', '--format=%H', '--', 'knowledge'))
         # Registered cleanups also run if a tick or assertion above fails.
 
 

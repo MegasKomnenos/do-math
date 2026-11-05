@@ -126,30 +126,53 @@
     "runtime/tests/test_retention.py": "096485a67ffc9e341ffd1b83f9321abda032acda970e977698261a49e2917cff"
   },
   "follow_up_lean_4_32_module_cache_check": {
-    "status": "unresolved",
-    "evidence_scope": "Previously recorded actual-broker execution with Lean 4.32.0 on Windows; inspected for this update without rerunning the probe.",
-    "observation_local": "임시/do-math_검증_20261105/sources/lean-4.32-observation.json",
+    "status": "resolved_for_tested_two_module_case",
+    "evidence_scope": "Two retained actual-broker observations with Lean 4.32.0 on Windows, before and after the round 3 repairs; inspected for this report update without rerunning the probe.",
     "reproduction_local": "임시/do-math_검증_20261105/sources/lean-4.32-probe.py",
-    "cold_build": {"Basis": 0, "Target": 0, "target_axioms": []},
-    "cached_review": {
-      "result": "rejected_as_required",
-      "reason": "review must freshly compile targets (use --fresh-targets)"
+    "before_repair": {
+      "observation_local": "임시/do-math_검증_20261105/sources/lean-4.32-observation.json",
+      "cold_build": {"Basis": 0, "Target": 0, "target_axioms": []},
+      "cached_review": {
+        "result": "rejected_as_required",
+        "reason": "review must freshly compile targets (use --fresh-targets)"
+      },
+      "fresh_target_build": {
+        "Basis": "cached",
+        "Target_exit_code": 1,
+        "compiler_error": "failed to open file Basis.olean.server in the fresh build library directory"
+      },
+      "actual_formal_evidence_check": "not reached after the fresh-target success assertion failed"
     },
-    "fresh_target_build": {
-      "Basis": "cached",
-      "Target_exit_code": 1,
-      "compiler_error": "failed to open file Basis.olean.server in the fresh build library directory"
+    "after_repair": {
+      "observation_local": "임시/do-math_검증_20261105/sources/lean-4.32-after-repair.json",
+      "observation_stage": "After the approved round 3 repairs; before the round 3 commit.",
+      "toolchain": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+      "cold_build": {"Basis": 0, "Target": 0, "target_axioms": []},
+      "cached_review": {
+        "result": "rejected_as_required",
+        "reason": "review must freshly compile targets (use --fresh-targets)"
+      },
+      "fresh_target_build": {
+        "Basis": "cached",
+        "Target_exit_code": 0,
+        "Target_job": "j509044b15d3444b8ae95f48c572a9553"
+      },
+      "actual_formal_evidence_accepted": true,
+      "runtime_source_sha256": {
+        "lean_broker.py": "d1259195ec5ea7b5f38f2d3d2d9646b7dbaf02288501eb80cbae359838378408",
+        "check.py": "0e500ebcd8c34269ff20bf748d92686c5180a7bc5de342952e4716dc5a0f32ea"
+      }
     },
-    "actual_formal_evidence_check": "not reached after the fresh-target success assertion failed",
     "closure_required": [
       "Successful actual-Lean cold build",
       "Rejection of cached-target review evidence",
       "Successful actual-Lean fresh-target build with cached dependencies",
       "Acceptance by the actual formal-evidence checker"
-    ]
+    ],
+    "closure_scope": "The post-repair observation satisfies all four checks for this Windows/core Lean two-module path. It does not establish every Lean or Mathlib project or repeat the earlier runtime suite or live research."
   },
   "limits": [
-    "A subsequent actual Lean 4.32.0 module-cache probe failed its fresh-target compile; the final formal-evidence check was not reached. This remains unresolved and is not superseded by controlled-compiler tests.",
+    "The initial actual Lean 4.32.0 module-cache probe failed its fresh-target compile before the formal-evidence check. A separate post-repair actual-Lean observation closes that failure for the tested Windows/core Lean two-module path; broader compiler integration remains outside this observation's scope.",
     "Windows verification only for this rebuild; Linux process paths not exercised.",
     "No new Mathlib research run; real core Lean and controlled broker tests were used.",
     "Elementary live run confirms workflow and evidence handoffs, not effectiveness on difficult mathematics.",

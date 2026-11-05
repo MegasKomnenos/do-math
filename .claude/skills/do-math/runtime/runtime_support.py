@@ -342,8 +342,10 @@ def _digest(stream):
 
 def _work_entries(session):
     """Archive name -> SHA-256 of each file, None for each directory. Links are refused."""
+    def scan_error(error):
+        raise error
     entries = {"work": None}
-    for top, dirs, files in os.walk(session / "work"):
+    for top, dirs, files in os.walk(session / "work", onerror=scan_error):
         dirs.sort()
         for name in dirs + sorted(files):
             path = os.path.join(top, name)

@@ -168,6 +168,25 @@ class KnowledgeTests(InstanceCase):
         self.assertTrue(model['proofs']['r1/s']['concerned'])
         self.assertTrue(formal_ready(model, model['proofs']['r1/s']))
 
+    def test_later_independent_premise_refreshes_a_concerned_relation_application(self):
+        self.publish('r1', self.reduction())
+        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'issue',
+            'targets': [{'record': 'r2', 'claim': 'q'}],
+            'reason': 'The original proof needs checking.', 'evidence': 'A questioned case.'}]})
+        self.publish('r3', record(
+            [claim_row('a'), claim_row('independent'), claim_row('onward')],
+            [{'id': 'A', 'statement': 'A', 'connection': 'independent'},
+             {'id': 'S', 'statement': 'S', 'connection': 'onward'}],
+            [implication('independent', 'A', 'Q'), implication('onward', 'root', 'S')],
+            [solution('a', 'A', 'a')]))
+        model = replay(self.instance)
+        self.assertTrue(model['proofs']['r2/q']['concerned'])
+        self.assertEqual(model['concerns']['v1/issue']['status'], 'pending')
+        self.assertEqual(model['proofs']['r1/reduce']['premise_proofs'], ['r3/independent'])
+        self.assertFalse(model['proofs']['r1/reduce']['concerned'])
+        self.assertEqual(model['nodes']['S']['state'], 'informal_proved')
+
     def test_glossary_refusal_does_not_reappear_on_replay(self):
         term = {'id': 't', 'name': 'Shared object', 'symbol': 'X', 'definition': 'X := 1.', 'global_candidate': True}
         self.publish('r1', record(glossary=[term]))
@@ -467,6 +486,48 @@ class RunnerTests(InstanceCase):
         runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
         runner.schedule()
         self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
+
+    def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
+        self.publish('r1', self.reduction())  # Q remains available for the attempt.
+        self.publish('r2', record([claim_row('p')],
+                                 solutions=[solution('p', 'root', 'p')]))
+        runner = self.runner()
+        runner.settings['max_sessions'] = 1
+        # Reverse insertion order makes dictionary order an incorrect scheduler.
+        runner.producer('attempt')
+        runner.producer('explore')
+        runner.enqueue('organizer', {'batch': ['r1', 'r2']})
+        runner.producer('formalizer', {'node': 'root', 'proofs': ['r2/p'],
+                                      'previous_records': []})
+        runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
+                                'source_role': 'attempt'})
+        runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [],
+                                  'conflicts': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            for expected in ('review', 'peer', 'formalizer', 'organizer',
+                             'explore', 'attempt'):
+                with self.subTest(role=expected):
+                    runner.dispatch_pending()
+                    active = runner.active()
+                    self.assertEqual([s['role'] for _, s in active], [expected])
+                    sid, session = active[0]
+                    self.assertEqual(read_json(runner.session_dir(sid) / 'input.json')['role'],
+                                     expected)
+                    count = len(runner.state['sessions'])
+                    runner.dispatch_pending()
+                    self.assertEqual(len(runner.state['sessions']), count)
+                    # Release this test slot; lifecycle handoffs have their own tests.
+                    job = runner.state['jobs'][session['job']]
+                    session['status'] = 'integrated'
+                    job['status'] = 'done'
+                    if job['pipeline']:
+                        runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
+                    runner.save()
+        self.assertEqual(len(runner.state['sessions']), 6)
+        self.assertTrue(all(j['status'] == 'done' for j in runner.state['jobs'].values()))
+        self.assertEqual(runner.state['attempt_dispatches'], 1)
+        self.assertFalse(runner.state['explore_requested'])
 
     def test_eligible_exploration_precedes_a_pending_attempt_retry(self):
         runner = self.runner()
