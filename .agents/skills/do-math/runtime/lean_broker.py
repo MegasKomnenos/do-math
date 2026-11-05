@@ -66,7 +66,7 @@ class Paths:
         self.jobs = self.root / "jobs"
         self.sources = self.root / "calibration"
         self.builds = self.root / "builds"
-        self.cache = self.root / "cache"  # one .olean per module key; written once, never changed
+        self.cache = self.root / "cache"  # emitted module files and logs; a manifest marks complete entries
         self.log = self.root / "broker.log"
 
     def ensure(self):
@@ -646,9 +646,15 @@ class Broker:
                 continue
             job_dir = self.paths.job(job_id)
             job_dir.mkdir(exist_ok=True)
+            try:
+                source_hash = hashlib.sha256(Path(source).read_bytes()).hexdigest()
+            except OSError:
+                source_hash = None
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
-                              and j["source"] == source and j["kind"] == "compile"), None)
+                              and j["source"] == source and j["kind"] == "compile"
+                              and source_hash is not None and j.get("source_sha256") == source_hash
+                              and j.get("environment_key") == self.state["environment_key"]), None)
             if duplicate:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
                 path.unlink(missing_ok=True)
@@ -684,22 +690,21 @@ class Broker:
         jobs = {}
         try:
             build["targets"] = [module_name(root, t) for t in targets]
+            modules = discover_modules(root, targets)
+            keys = module_keys((self.state['version'] or '') + '\n' + self.state['environment_key'], modules)
+            build.update(module_keys=keys, fresh_targets=bool(request.get("fresh_targets")))
             duplicate = next((b for b in self.state["builds"].values() if b["status"] in ACTIVE
                               and b["session"] == session and b["root"] == root
-                              and b["targets"] == build["targets"]), None)
+                              and b["targets"] == build["targets"] and b.get("module_keys") == keys
+                              and b.get("fresh_targets", False) == build["fresh_targets"]), None)
             if duplicate:
                 write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
                 return
-            modules = discover_modules(root, targets)
-            keys = module_keys((self.state['version'] or '') + '\n' + self.state['environment_key'], modules)
             for name, module in modules:
                 olean = lib.joinpath(*name.split(".")).with_suffix(".olean")
                 entry = {"key": keys[name], "source": module["source"], "source_sha256": module['source_sha256'], "job": None, "status": None,
                          "exit_code": None, "olean": str(olean)}
-                cached = self.paths.cache / (keys[name] + ".olean")
-                if cached.is_file() and not (request.get("fresh_targets") and name in build["targets"]):
-                    olean.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(cached, olean)
+                if not (request.get("fresh_targets") and name in build["targets"]) and self.restore_module(keys[name], olean):
                     entry.update(status="cached", exit_code=0)
                 else:
                     job_id = "j" + uuid.uuid4().hex
@@ -878,13 +883,29 @@ class Broker:
                                                reason=job.get("reason"), measured=job.get("measured"))
         self.settle_build(build)
 
-    def cache_module(self, key, olean, job_dir):
-        """Copy a built .olean and its Lean output into the cache under the module key, written once.
+    def restore_module(self, key, olean):
+        """Restore every emitted file; an incomplete or old cache entry is a miss."""
+        try:
+            suffixes = read_json(self.paths.cache / (key + ".artifacts.json")).get("artifacts")
+        except (OSError, ValueError, AttributeError):
+            return False
+        if not isinstance(suffixes, list) or ".olean" not in suffixes or not all(
+                isinstance(s, str) and len(s) > 1 and s.startswith(".")
+                and not any(c in s for c in ('/', '\\', ':', '\0')) for s in suffixes):
+            return False
+        if not all((self.paths.cache / (key + suffix)).is_file() for suffix in suffixes):
+            return False
+        olean.parent.mkdir(parents=True, exist_ok=True)
+        for suffix in suffixes:
+            shutil.copyfile(self.paths.cache / (key + suffix), olean.with_name(olean.stem + suffix))
+        return True
 
-        The same key means the same bytes, so an entry that already exists is left alone,
-        and so is one that Windows will not let us replace because a compile has it open."""
-        for suffix, source in ((".olean", olean), (".stdout.log", job_dir / "stdout.log"),
-                               (".stderr.log", job_dir / "stderr.log")):
+    def cache_module(self, key, olean, job_dir):
+        """Preserve a module's emitted files and logs; publish its file list last."""
+        artifacts = [(p.name[len(olean.stem):], p) for p in sorted(olean.parent.glob(olean.stem + ".*"))
+                     if p.is_file()]
+        for suffix, source in artifacts + [(".stdout.log", job_dir / "stdout.log"),
+                                           (".stderr.log", job_dir / "stderr.log")]:
             target = self.paths.cache / (key + suffix)
             if target.exists() or not source.is_file():
                 continue
@@ -895,6 +916,12 @@ class Broker:
             except OSError as exc:
                 temporary.unlink(missing_ok=True)
                 self.log(event="cache_skipped", key=key, file=target.name, error=str(exc))
+                return
+        try:
+            write_json(self.paths.cache / (key + ".artifacts.json"),
+                       {"artifacts": [suffix for suffix, _ in artifacts]})
+        except OSError as exc:
+            self.log(event="cache_skipped", key=key, error=str(exc))
 
     def prune(self):
         """Keep the KEEP_FINISHED most recently finished jobs and builds in the state; result.json files stay.

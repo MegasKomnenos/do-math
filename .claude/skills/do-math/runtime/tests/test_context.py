@@ -223,11 +223,16 @@ class ContextTests(InstanceCase):
                 body = (folder / 'pack.md').read_text(encoding='utf-8')
                 previous_end = -1
                 for name in expected:
-                    begin = body.index('<!-- begin ' + name + ' -->')
+                    marker = '<!-- begin ' + name + ' -->'
+                    begin = body.index(marker)
                     self.assertGreater(begin, previous_end)
                     previous_end = body.index('<!-- end ' + name + ' -->', begin)
-                    self.assertEqual((folder / 'context' / name).read_bytes(),
-                                     (self.skill / name).read_bytes())
+                    snapshot = folder / 'context' / name
+                    self.assertEqual(snapshot.read_bytes(), (self.skill / name).read_bytes())
+                    expected_body = rebase_links(snapshot.read_text(encoding='utf-8-sig'),
+                                                 snapshot, folder, folder / 'context')
+                    self.assertEqual(body[begin + len(marker):previous_end].strip(),
+                                     expected_body.strip(), name)
                 self.assertEqual([p.name for p in (folder / 'context/roles').iterdir()],
                                  [role + '.md'])
 

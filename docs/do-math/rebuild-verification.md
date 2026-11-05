@@ -50,6 +50,14 @@ The retained compiler output reports that this theorem depends on no axioms. The
 
 The controlled tests run during the rebuild exercised dependency ordering and cache reuse. That suite did not call the fresh-target build option; its scripted lifecycle used a single-file reviewer compile. The real Lean run confirms a reviewer-owned fresh build, the actual axiom output, final-source identity and the handoff into a published formal result. No new Mathlib research run was performed.
 
+## Follow-up Lean 4.32 module-cache check
+
+A later development probe used the actual broker and Lean 4.32.0 on Windows with two local modules. `Basis.lean` used `module` and `public import Init` and exported `basis : True`; `Target.lean` used `module` and `public import Basis`, proved `target : True` from `basis`, and printed its axioms. The first build compiled both modules successfully and reported no axioms for `target`. A fully cached build was then correctly rejected as independent review evidence because the target had not been compiled freshly.
+
+The next build requested a fresh target compile while reusing the cached `Basis` dependency. That target compile exited with code 1: Lean could not open `Basis.olean.server` in the new build's library directory. The first build had emitted `Basis.olean`, `Basis.olean.private`, `Basis.olean.server` and `Basis.ir`. The probe stopped at its fresh-target success assertion, before the final `audit_formal` call; actual formal-evidence acceptance for this two-module path therefore remains unchecked.
+
+This is an unresolved actual-compiler failure. The retained observation and reproduction program are the local verification inputs `임시/do-math_검증_20261105/sources/lean-4.32-observation.json` and `lean-4.32-probe.py`; they were inspected for this report update, without a new execution. These paths identify local inputs and are not distributed evidence. The earlier live research and automated-test results above retain their original scope. Overall compiler-integration verification requires a successful cold build, rejection of cached-target review evidence, a successful fresh-target build using cached dependencies, and acceptance by the actual formal-evidence checker. A controlled compiler test cannot close this actual-compiler failure.
+
 ## Recovery
 
 The live test runner was terminated and restarted while one worker remained active. That worker's recorded host and CLI identities were preserved. The run subsequently finished.

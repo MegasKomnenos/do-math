@@ -125,7 +125,31 @@
     "runtime/tests/test_research.py": "8d577192cd5ab3f147126d9a6a454aa1d173cce11f9b38747fab7ec5c8902d4f",
     "runtime/tests/test_retention.py": "096485a67ffc9e341ffd1b83f9321abda032acda970e977698261a49e2917cff"
   },
+  "follow_up_lean_4_32_module_cache_check": {
+    "status": "unresolved",
+    "evidence_scope": "Previously recorded actual-broker execution with Lean 4.32.0 on Windows; inspected for this update without rerunning the probe.",
+    "observation_local": "임시/do-math_검증_20261105/sources/lean-4.32-observation.json",
+    "reproduction_local": "임시/do-math_검증_20261105/sources/lean-4.32-probe.py",
+    "cold_build": {"Basis": 0, "Target": 0, "target_axioms": []},
+    "cached_review": {
+      "result": "rejected_as_required",
+      "reason": "review must freshly compile targets (use --fresh-targets)"
+    },
+    "fresh_target_build": {
+      "Basis": "cached",
+      "Target_exit_code": 1,
+      "compiler_error": "failed to open file Basis.olean.server in the fresh build library directory"
+    },
+    "actual_formal_evidence_check": "not reached after the fresh-target success assertion failed",
+    "closure_required": [
+      "Successful actual-Lean cold build",
+      "Rejection of cached-target review evidence",
+      "Successful actual-Lean fresh-target build with cached dependencies",
+      "Acceptance by the actual formal-evidence checker"
+    ]
+  },
   "limits": [
+    "A subsequent actual Lean 4.32.0 module-cache probe failed its fresh-target compile; the final formal-evidence check was not reached. This remains unresolved and is not superseded by controlled-compiler tests.",
     "Windows verification only for this rebuild; Linux process paths not exercised.",
     "No new Mathlib research run; real core Lean and controlled broker tests were used.",
     "Elementary live run confirms workflow and evidence handoffs, not effectiveness on difficult mathematics.",

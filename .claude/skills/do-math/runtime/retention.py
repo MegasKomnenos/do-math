@@ -39,6 +39,8 @@ def conversation(source, destination, native):
             payload = None
             if native and kind == 'response_item':
                 item = event.get('payload', {})
+                if not isinstance(item, dict):
+                    continue
                 if item.get('type') == 'reasoning':
                     if item.get('summary'):
                         payload = item['summary']

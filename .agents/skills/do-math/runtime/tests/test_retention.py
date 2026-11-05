@@ -71,6 +71,27 @@ class RetentionTests(unittest.TestCase):
             self.assertNotIn('Duplicated transport event', result)
             self.assertNotIn('OPAQUE_TRANSPORT', result)
 
+    def test_malformed_native_payload_does_not_hide_later_messages_and_tool_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rows = [{'type': 'response_item', 'payload': value}
+                    for value in (None, [], 'invalid', 42)]
+            rows += [
+                {'type': 'response_item', 'payload': {'type': 'message', 'role': 'assistant',
+                 'content': [{'type': 'output_text', 'text': 'A recoverable mathematical result.'}]}},
+                {'type': 'response_item', 'payload': {'type': 'custom_tool_call_output',
+                 'output': 'The calculation supporting the result.'}},
+            ]
+            source = root / 'native.jsonl'
+            raw = ('\n'.join(json.dumps(row) for row in rows) + '\n').encode('utf-8')
+            source.write_bytes(raw)
+            target = root / 'conversation.md'
+            self.assertEqual(conversation(source, target, True), 2)
+            body = target.read_text(encoding='utf-8')
+            self.assertIn('A recoverable mathematical result.', body)
+            self.assertIn('The calculation supporting the result.', body)
+            self.assertEqual(source.read_bytes(), raw)
+
     def test_capture_finds_native_transcripts_and_prefers_them_to_cli_text(self):
         identity = '01234567-89ab-cdef-0123-456789abcdef'
         message = 'The original argument uses ℕ, including zero.'

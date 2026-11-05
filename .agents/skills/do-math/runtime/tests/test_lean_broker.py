@@ -678,11 +678,24 @@ class BuildTests(BrokerFixture):
         self.until(lambda: self.build_record(warm)['status'] in lean_broker.FINISHED)
         self.assertEqual(self.build_record(warm)['status'], 'finished')
         self.assertTrue(all(m['exit_code'] == 0 for m in self.build_record(warm)['modules'].values()))
+        original_files = {}
+        for name, module in self.build_record(warm)['modules'].items():
+            olean = Path(module['olean'])
+            original_files[name] = {p.name: p.read_bytes()
+                                    for p in olean.parent.glob(olean.stem + '.*')}
+            self.assertEqual(set(original_files[name]),
+                             {name + suffix for suffix in
+                              ('.olean', '.olean.server', '.olean.private', '.ir')})
 
         cached = self.build(root, [root / 'Target.lean'], session='sauthor')
         self.until(lambda: self.build_record(cached)['status'] in lean_broker.FINISHED)
         self.assertTrue(all(m['status'] == 'cached' and m['job'] is None
                             for m in self.build_record(cached)['modules'].values()))
+        for name, module in self.build_record(cached)['modules'].items():
+            olean = Path(module['olean'])
+            self.assertEqual({p.name: p.read_bytes()
+                              for p in olean.parent.glob(olean.stem + '.*')},
+                             original_files[name])
         with patch.object(lean_broker, 'ensure_broker', return_value={}):
             fresh = lean_broker.build(self.paths, root, [root / 'Target.lean'], 60,
                                       'sreview', fresh_targets=True)['build']
@@ -691,6 +704,10 @@ class BuildTests(BrokerFixture):
         self.assertEqual((result['status'], result['session']), ('finished', 'sreview'))
         basis, target = result['modules']['Basis'], result['modules']['Target']
         self.assertEqual((basis['status'], basis['job']), ('cached', None))
+        restored = Path(basis['olean'])
+        self.assertEqual({p.name: p.read_bytes()
+                          for p in restored.parent.glob(restored.stem + '.*')},
+                         original_files['Basis'])
         self.assertEqual((target['status'], target['exit_code']), ('finished', 0))
         self.assertIsNotNone(target['job'])
         compiled = lean_broker.job_record(self.paths, target['job'])
@@ -699,6 +716,24 @@ class BuildTests(BrokerFixture):
                          self.build_record(warm)['modules']['Target']['source_sha256'])
         self.assertIn('REVIEW-TARGET',
                       (self.paths.job(target['job']) / 'stdout.log').read_text(encoding='utf-8'))
+
+        # Old entries without a manifest and entries missing an artifact are cache misses.
+        for missing in ('.artifacts.json', '.olean.server'):
+            with self.subTest(missing=missing):
+                (self.paths.cache / (basis['key'] + missing)).unlink()
+                with patch.object(lean_broker, 'ensure_broker', return_value={}):
+                    rebuilt = lean_broker.build(self.paths, root, [root / 'Target.lean'], 60,
+                                                'sreview', fresh_targets=True)['build']
+                self.until(lambda: self.build_record(rebuilt)['status'] in lean_broker.FINISHED)
+                rebuilt_record = self.build_record(rebuilt)
+                self.assertEqual(rebuilt_record['status'], 'finished', rebuilt_record)
+                self.assertTrue(all(m['status'] == 'finished' and m['exit_code'] == 0
+                                    and m['job'] for m in rebuilt_record['modules'].values()))
+                for name, module in rebuilt_record['modules'].items():
+                    olean = Path(module['olean'])
+                    self.assertEqual({p.name: p.read_bytes()
+                                      for p in olean.parent.glob(olean.stem + '.*')},
+                                     original_files[name])
 
     def test_failed_module_fails_its_dependents_with_the_reason(self):
         self.start_broker()
