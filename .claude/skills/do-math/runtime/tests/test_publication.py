@@ -180,6 +180,22 @@ class FormalEvidenceTests(InstanceCase):
         with self.assertRaisesRegex(Invalid, 'reviewing session'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def test_axiom_output_must_name_the_exact_candidate_theorem(self):
+        candidate, _, check, solution = self.evidence()
+        log = self.instance / 'runner/lean/jobs' / check['job'] / 'stdout.log'
+        for suffix, axioms in (
+                ('does not depend on any axioms', []),
+                ('depends on axioms: [propext]', ['propext'])):
+            check['axioms'] = axioms
+            with self.subTest(suffix=suffix, theorem='target'):
+                log.write_text("'target' " + suffix + '\n', encoding='utf-8')
+                audit_formal(self.instance, 'sreview', check, solution, candidate)
+            for reported in ('not_target', 'Namespace.target'):
+                with self.subTest(suffix=suffix, theorem=reported):
+                    log.write_text("'" + reported + "' " + suffix + '\n', encoding='utf-8')
+                    with self.assertRaisesRegex(Invalid, 'did not print target axiom dependencies'):
+                        audit_formal(self.instance, 'sreview', check, solution, candidate)
+
     def test_modified_working_copy_cannot_reuse_old_compile(self):
         candidate, working, check, solution = self.evidence()
         audit_formal(self.instance, 'sreview', check, solution, candidate)

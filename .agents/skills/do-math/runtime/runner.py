@@ -474,6 +474,9 @@ class Runner:
                     continue
                 job['task']['proofs'] = ready
             if job['role'] == 'attempt':
+                if not any(node['canonical'] == nid and node['state'] == 'unresolved'
+                           for nid, node in self.model['nodes'].items()):
+                    continue
                 if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
                     continue
                 exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
@@ -512,7 +515,12 @@ class Runner:
                 self.dispatch(key)
                 continue
             waiting = any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values())
-            higher_ready = any(j['status'] == 'pending' and j['role'] not in PRODUCERS and j['not_before'] <= time.time() and self.selection(j['role']) for j in self.state['jobs'].values())
+            organizer_running = any(j['role'] == 'organizer' and j['status'] == 'running'
+                                    for j in self.state['jobs'].values())
+            higher_ready = any(j['status'] == 'pending' and j['role'] not in PRODUCERS
+                               and j['not_before'] <= time.time() and self.selection(j['role'])
+                               and (j['role'] != 'organizer' or not organizer_running)
+                               for j in self.state['jobs'].values())
             if waiting or higher_ready or len(nodes) <= choosing or not self.selection('attempt'):
                 break
             key = self.producer('attempt')

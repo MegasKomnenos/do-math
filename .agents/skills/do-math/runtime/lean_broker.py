@@ -627,6 +627,14 @@ class Broker:
                 expect = request["expect_mb"]
                 if type(expect) is not int or expect < 1:
                     raise ValueError("expect_mb must be a positive integer")
+                folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
+                if (folder / "CANCEL").exists():
+                    write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
+                               "session": request.get("session"), "reason": "cancelled on request",
+                               "finished_at": time.time()})
+                    path.unlink(missing_ok=True)
+                    self.log(event="cancelled", job=job_id, reason="cancelled before registration")
+                    continue
                 if BUILD_ID.match(job_id):
                     self.ingest_build(job_id, request)
                     path.unlink(missing_ok=True)
@@ -657,6 +665,8 @@ class Broker:
                               and j.get("environment_key") == self.state["environment_key"]), None)
             if duplicate:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
+                if (job_dir / "CANCEL").exists():
+                    cancel(self.paths, duplicate)
                 path.unlink(missing_ok=True)
                 continue
             try:
@@ -667,10 +677,12 @@ class Broker:
             job = self.new_job(job_id, request, source, imports, imports)
             write_json(job_dir / "job.json", job)
             self.state["jobs"][job_id] = job
+            if (job_dir / "CANCEL").exists():
+                self.cancel(job, "cancelled on request")
             self.dirty = True
             self.save()
             path.unlink(missing_ok=True)
-            self.log(event="queued", job=job_id, session=job["session"], expect_mb=expect, imports=len(imports))
+            self.log(event=job["status"], job=job_id, session=job["session"], expect_mb=expect, imports=len(imports))
 
     def ingest_build(self, build_id, request):
         """Expand a build request into one job per module that is not already in the cache.
@@ -699,6 +711,8 @@ class Broker:
                               and b.get("fresh_targets", False) == build["fresh_targets"]), None)
             if duplicate:
                 write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
+                if (folder / "CANCEL").exists():
+                    cancel(self.paths, duplicate["id"])
                 return
             for name, module in modules:
                 olean = lib.joinpath(*name.split(".")).with_suffix(".olean")
@@ -727,6 +741,11 @@ class Broker:
         write_json(folder / "build.json", build)
         self.dirty = True
         if build["status"] == "queued":
+            if (folder / "CANCEL").exists():
+                for job_id in jobs.values():
+                    job = self.state["jobs"][job_id]
+                    if job["status"] in ACTIVE:
+                        self.cancel(job, "build cancelled on request")
             self.log(event="build_queued", build=build_id, session=session, modules=len(build["modules"]),
                      cached=sum(m["status"] == "cached" for m in build["modules"].values()))
             self.settle_build(build)
@@ -735,13 +754,20 @@ class Broker:
         self.save()
 
     def settle_build(self, build):
-        """Close the build once no module of it is queued or running any more."""
+        """Close a build after its modules end, retaining an explicit build cancellation."""
+        if build["status"] not in ACTIVE:
+            return
         modules = build["modules"]
+        if (self.paths.build(build["id"]) / "CANCEL").exists():
+            build["cancel_requested"] = True
+            build["reason"] = "cancelled on request"
         if any(m["status"] in ACTIVE for m in modules.values()):
             return
         broken = next((n for n, m in modules.items() if m["status"] == "failed"), None) \
             or next((n for n, m in modules.items() if m["status"] == "cancelled"), None)
-        if broken is None:
+        if build.get("cancel_requested"):
+            build["status"] = "cancelled"
+        elif broken is None:
             build["status"] = "finished"
         else:
             build["status"] = modules[broken]["status"]
@@ -798,6 +824,15 @@ class Broker:
             self.samples_dirty = True
 
     def collect(self):
+        for build in list(self.state["builds"].values()):
+            if build["status"] in ACTIVE and (self.paths.build(build["id"]) / "CANCEL").exists():
+                build["cancel_requested"] = True
+                build["reason"] = "cancelled on request"
+                for module in build["modules"].values():
+                    job = self.state["jobs"].get(module.get("job"))
+                    if job and job["status"] in ACTIVE and not job.get("cancel_requested"):
+                        self.cancel(job, "build cancelled on request")
+                self.settle_build(build)
         for job_id, job in list(self.state["jobs"].items()):
             if job["status"] in ACTIVE and not job.get("cancel_requested") \
                     and (self.paths.job(job_id) / "CANCEL").exists():
@@ -1077,6 +1112,10 @@ class Broker:
 
     def launch(self, job):
         job_dir = self.paths.job(job["id"])
+        if (job_dir / "CANCEL").exists() or (job.get("build") and
+                (self.paths.build(job["build"]) / "CANCEL").exists()):
+            self.cancel(job, "cancelled on request")
+            return
         lean = self.settings["lean"]
         if self.direct:  # lean itself, in the environment lake gave once; see capture_environment
             command, env = self.direct["argv"], {**lean["env"], **self.direct["env"]}
@@ -1364,22 +1403,25 @@ def report_build(paths, build):
 
 
 def cancel(paths, job_id):
-    queued = paths.queue / (job_id + ".json")
-    if queued.exists():
-        queued.unlink()
-        return {"job": job_id, "cancelled": "before the broker read it"}
-    if BUILD_ID.match(job_id):
-        build = job_record(paths, job_id)
-        if build is None:
-            raise ValueError(f"unknown build: {job_id}")
-        jobs = [m["job"] for m in build.get("modules", {}).values() if m.get("job") and m.get("status") in ACTIVE]
-        for job in jobs:
-            (paths.job(job) / "CANCEL").touch()
-        return {"build": job_id, "cancelled": f"requested for {len(jobs)} module compiles"}
-    if not paths.job(job_id).is_dir():
-        raise ValueError(f"unknown job: {job_id}")
-    (paths.job(job_id) / "CANCEL").touch()
-    return {"job": job_id, "cancelled": "requested"}
+    is_build = BUILD_ID.fullmatch(job_id) is not None
+    folder = paths.build(job_id) if is_build else paths.job(job_id)
+    key = "build" if is_build else "job"
+    record = job_record(paths, job_id)
+    if record and record["status"] == "duplicate":
+        return cancel(paths, record["duplicate_of"])
+    if record and record["status"] in FINISHED:
+        return {key: job_id, "status": record["status"], "cancelled": "already completed"}
+    if record is None and not folder.is_dir():
+        raise ValueError(f"unknown {key}: {job_id}")
+    folder.mkdir(exist_ok=True)
+    # Ingestion may already hold the request; keep both the request and its cancellation.
+    (folder / "CANCEL").touch()
+    latest = job_record(paths, job_id)
+    if latest and latest["status"] == "duplicate":
+        return cancel(paths, latest["duplicate_of"])
+    if latest and latest["status"] in FINISHED:
+        return {key: job_id, "status": latest["status"], "cancelled": "already completed"}
+    return {key: job_id, "cancelled": "requested"}
 
 
 def broker_status(paths):

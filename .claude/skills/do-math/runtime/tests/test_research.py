@@ -487,6 +487,22 @@ class RunnerTests(InstanceCase):
         runner.schedule()
         self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
 
+    def test_waiting_organizer_does_not_block_attempt_while_another_organizer_runs(self):
+        runner = self.runner()
+        runner.settings['max_sessions'] = 3
+        first = runner.enqueue('organizer', {'batch': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(first))
+            second = runner.enqueue('organizer', {'batch': []})
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            runner.schedule()
+        self.assertEqual(runner.state['jobs'][first]['status'], 'running')
+        self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
+        self.assertCountEqual([s['role'] for _, s in runner.active()],
+                              ['organizer', 'explore', 'attempt'])
+        self.assertEqual(runner.state['attempt_dispatches'], 1)
+
     def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
         self.publish('r1', self.reduction())  # Q remains available for the attempt.
         self.publish('r2', record([claim_row('p')],
@@ -566,6 +582,32 @@ class RunnerTests(InstanceCase):
         self.assertTrue(runner.state['explore_requested'])
         self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
                              for p in runner.state['pipelines'].values()), 1)
+
+    def test_attempt_retry_waits_when_all_nodes_are_informally_solved(self):
+        runner = self.runner()
+        runner.settings['max_sessions'] = 2
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        runner.finish(sid, session)
+        self.assertEqual(job['status'], 'pending')
+        job['not_before'] = 0
+        runner.state['blocks'].clear()
+        self.publish('rsolved', record([claim_row('p')],
+                                      solutions=[solution('p', 'root', 'p')]))
+        runner.model = replay(self.instance)
+        self.assertEqual(runner.model['nodes']['root']['state'], 'informal_proved')
+        self.assertFalse(runner.state['complete'])
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            before = set(runner.state['sessions'])
+            runner.dispatch_pending()
+        self.assertEqual(set(runner.state['sessions']), before)
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
+        self.assertEqual(runner.state['attempt_dispatches'], 0)
 
     def test_organizer_batch_excludes_arrivals_during_processing(self):
         for i in range(4): self.publish('r' + str(i), record())

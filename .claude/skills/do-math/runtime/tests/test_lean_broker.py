@@ -270,7 +270,15 @@ class JobHostTests(unittest.TestCase):
         runner.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
             "env": {"FAKE_ENV": "1"}, "priority": "below_normal", "broker": broker})
-        return subprocess.Popen([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)])
+        host = subprocess.Popen([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)])
+        self.addCleanup(self.stop_host, host)
+        return host
+
+    @staticmethod
+    def stop_host(host):
+        if host.poll() is None:
+            lean_broker.terminate_tree(host.pid)
+        host.wait(timeout=10)
 
     def test_host_waits_for_go_and_records_identity_and_exit(self):
         host = self.launch(runner.process_identity(os.getpid()))
@@ -542,9 +550,13 @@ class BrokerTests(BrokerFixture):
         self.assertFalse((self.paths.job(waiting) / "launch.json").exists())
         self.assertEqual(self.broker.state["jobs"][blocker]["status"], "running")
         unread = self.submit(self.session_file("s1", "unread.lean"), expect_mb=40)
-        self.assertIn("before the broker", lean_broker.cancel(self.paths, unread)["cancelled"])
+        self.assertEqual(lean_broker.cancel(self.paths, unread)["cancelled"], "requested")
         self.broker.tick()
         self.assertNotIn(unread, self.broker.state["jobs"])
+        self.assertEqual(lean_broker.job_record(self.paths, unread)["status"], "cancelled")
+        self.assertFalse((self.paths.job(unread) / "launch.json").exists())
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lean_broker.wait(self.paths, unread, timeout=0), 4)
         # A request the broker cannot accept is answered, not dropped.
         bad = "j" + "0" * 32
         runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
@@ -627,6 +639,101 @@ class BrokerTests(BrokerFixture):
 
 
 class BuildTests(BrokerFixture):
+    def test_cancellation_survives_ingestion_and_cached_completion(self):
+        self.start_broker()
+        cases = (("build", "before_ingest"), ("job", "after_read"),
+                 ("build", "after_read"), ("job", "after_expansion"),
+                 ("build", "after_expansion"), ("build", "during_restore"))
+        cancelled = []
+        for number, (kind, timing) in enumerate(cases):
+            with self.subTest(kind=kind, timing=timing):
+                root = self.instance / "sessions/s1/work" / str(number)
+                target = source(root / "Target.lean", imports=())
+                if timing == "during_restore":
+                    warm = self.build(root, [target])
+                    self.until(lambda: self.build_record(warm)["status"] in lean_broker.FINISHED)
+                    self.assertEqual(self.build_record(warm)["status"], "finished")
+                    self.assertEqual(self.build_record(warm)["modules"]["Target"]["exit_code"], 0)
+                previous = set(self.broker.state["jobs"])
+                identity = self.submit(target) if kind == "job" else self.build(root, [target])
+                request = self.paths.queue / (identity + ".json")
+                responses = []
+                original_read = lean_broker.read_json
+                original_new = self.broker.new_job
+                original_restore = self.broker.restore_module
+
+                def read_then_cancel(path, *args, **kwargs):
+                    value = original_read(path, *args, **kwargs)
+                    if Path(path) == request and not responses:
+                        responses.append(lean_broker.cancel(self.paths, identity))
+                    return value
+
+                def expand_then_cancel(*args, **kwargs):
+                    value = original_new(*args, **kwargs)
+                    if not responses:
+                        responses.append(lean_broker.cancel(self.paths, identity))
+                    return value
+
+                def restore_then_cancel(*args, **kwargs):
+                    value = original_restore(*args, **kwargs)
+                    if not responses:
+                        self.assertTrue(value)
+                        responses.append(lean_broker.cancel(self.paths, identity))
+                    return value
+
+                if timing == "before_ingest":
+                    responses.append(lean_broker.cancel(self.paths, identity))
+                    self.broker.ingest()
+                elif timing == "after_read":
+                    with patch.object(lean_broker, "read_json", side_effect=read_then_cancel):
+                        self.broker.ingest()
+                elif timing == "after_expansion":
+                    with patch.object(self.broker, "new_job", side_effect=expand_then_cancel):
+                        self.broker.ingest()
+                else:
+                    with patch.object(self.broker, "restore_module", side_effect=restore_then_cancel):
+                        self.broker.ingest()
+                    self.assertEqual(self.build_record(identity)["modules"]["Target"]["status"], "cached")
+                    self.assertEqual(set(self.broker.state["jobs"]), previous)
+                self.assertEqual(len(responses), 1)
+                self.assertEqual(responses[0]["cancelled"], "requested")
+                self.broker.tick()
+                self.assertEqual(lean_broker.job_record(self.paths, identity)["status"], "cancelled")
+                for jid in set(self.broker.state["jobs"]) - previous:
+                    job = self.broker.state["jobs"][jid]
+                    if job["kind"] == "compile":
+                        self.assertEqual(job["status"], "cancelled")
+                        self.assertFalse((self.paths.job(jid) / "launch.json").exists())
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(lean_broker.wait(self.paths, identity, timeout=0), 4)
+                cancelled.append(identity)
+        self.broker = lean_broker.Broker(self.instance, log_path=self.paths.log)
+        self.broker.start()
+        for identity in cancelled:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(lean_broker.wait(self.paths, identity, timeout=0), 4)
+        completed = lean_broker.job_record(self.paths, warm)
+        self.assertEqual(lean_broker.cancel(self.paths, warm)["status"], "finished")
+        self.broker.tick()
+        self.assertEqual(lean_broker.job_record(self.paths, warm), completed)
+
+    def test_cancelling_duplicate_ids_reaches_original_work(self):
+        self.start_broker()
+        for kind in ("job", "build"):
+            with self.subTest(kind=kind):
+                root = self.instance / "sessions/s1/work" / kind
+                target = source(root / "Target.lean", imports=())
+                original = self.submit(target) if kind == "job" else self.build(root, [target])
+                self.broker.ingest()
+                duplicate = self.submit(target) if kind == "job" else self.build(root, [target])
+                self.broker.ingest()
+                self.assertEqual(lean_broker.job_record(self.paths, duplicate)["duplicate_of"], original)
+                self.assertEqual(lean_broker.cancel(self.paths, duplicate)["cancelled"], "requested")
+                self.broker.tick()
+                self.assertEqual(lean_broker.job_record(self.paths, original)["status"], "cancelled")
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(lean_broker.wait(self.paths, duplicate, timeout=0), 4)
+
     def test_build_follows_imports_caches_and_rebuilds_only_what_changed(self):
         self.start_broker()
         root = self.tree()
@@ -752,6 +859,27 @@ class BuildTests(BrokerFixture):
         self.assertFalse(list(self.paths.cache.glob("*.olean")))
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(lean_broker.report_build(self.paths, record), 3)
+
+    def test_target_compile_failure_reaches_build_wait_with_its_output_and_exit(self):
+        self.start_broker()
+        root = self.instance / 'sessions/s1/work/lean'
+        target = source(root / 'Target.lean', imports=(), exit=1,
+                        marker='TARGET-FAILED', stderr='TARGET-DIAGNOSTIC')
+        build_id = self.build(root, [target])
+        self.until(lambda: self.build_record(build_id)['status'] in lean_broker.FINISHED)
+        result = lean_broker.job_record(self.paths, build_id)
+        self.assertEqual(result['modules']['Target']['exit_code'], 1)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = lean_broker.wait(self.paths, build_id)
+        self.assertEqual(code, 1)
+        self.assertIn('TARGET-FAILED', out.getvalue())
+        self.assertIn('TARGET-DIAGNOSTIC', err.getvalue())
+        summary = json.loads(err.getvalue().strip().splitlines()[-1].split('lean-broker: ', 1)[1])
+        self.assertEqual(summary['exit_code'], 1)
+        self.assertEqual([(m['module'], m['exit_code']) for m in summary['modules']],
+                         [('Target', 1)])
+        self.assertFalse(list(self.paths.cache.glob('*.olean')))
 
     def test_build_rejects_bad_targets_cycles_and_shadowing(self):
         self.start_broker()
