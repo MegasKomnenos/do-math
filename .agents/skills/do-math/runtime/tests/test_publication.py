@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+import shutil
 import sys
 import unittest
 from unittest.mock import patch
@@ -102,11 +103,13 @@ class PublicationTests(InstanceCase):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
         write_json(candidate / 'record.json', data)
         (candidate / 'record.md').write_text('The proof.', encoding='utf-8')
+        shutil.copytree(candidate, candidate.parent / 'output')
         session = self.instance / 'sessions/sreview'
         (session / 'output').mkdir(parents=True)
         write_json(session / 'output/assessment.json', assessment(data))
         (session / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
-        task = {'kind': 'candidate', 'candidate': str(candidate), 'candidate_hashes': runtime.tree_hashes(candidate)}
+        task = {'kind': 'candidate', 'candidate': str(candidate), 'candidate_hashes': runtime.tree_hashes(candidate),
+                'peer': str(candidate.parent), 'source': str(runner.session_dir('sauthor'))}
         jid = runner.enqueue('review', task, pid, pid + ':review')
         write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
                                            'role': 'review', 'task': task})
@@ -167,6 +170,67 @@ class PublicationTests(InstanceCase):
         self.assertIsNone(runner.state['publication'])
         self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
         self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+        restored = Path(job['task']['candidate'])
+        self.assertNotEqual(restored, candidate)
+        self.assertEqual(runtime.tree_hashes(restored), job['task']['candidate_hashes'])
+        self.assertEqual((candidate / 'record.md').read_text(encoding='utf-8'),
+                         'A different argument after assignment.')
+        self.finish_replacement_review(runner, job)
+        self.assertEqual(job['status'], 'done')
+        event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
+        self.assertEqual((self.instance / 'knowledge' / event['folder'] / 'record.md').read_bytes(), b'The proof.')
+
+    def finish_replacement_review(self, runner, job):
+        sid = 'sreplacement'
+        session = runner.session_dir(sid)
+        shutil.copytree(runner.session_dir('sreview') / 'output', session / 'output')
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': sid,
+                                           'role': 'review', 'task': job['task']})
+        (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+        reviewer = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id'],
+                    'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2}
+        runner.state['sessions'][sid] = reviewer
+        job.update(status='running', session=sid)
+        runner.state['pipelines'][job['pipeline']]['review'] = sid
+        runner.finish(sid, reviewer)
+
+    def test_changed_candidate_and_changed_peer_output_return_to_peer_then_publish(self):
+        runner, job = self.candidate_pipeline()
+        candidate = Path(job['task']['candidate'])
+        for folder in (candidate, candidate.parent / 'output'):
+            (folder / 'record.md').write_text('Changed retained bytes.', encoding='utf-8')
+        runner.finish('sreview', runner.state['sessions']['sreview'])
+        pipeline = runner.state['pipelines'][job['pipeline']]
+        self.assertEqual(job['status'], 'cancelled')
+        self.assertEqual(pipeline['stage'], 'peer')
+        peer_job = next(j for j in runner.state['jobs'].values() if j['role'] == 'peer')
+        self.assertEqual(peer_job['status'], 'pending')
+        self.assertIn(str(candidate.parent), peer_job['task']['previous_partial_sessions'])
+        self.assertEqual((candidate / 'record.md').read_text(encoding='utf-8'), 'Changed retained bytes.')
+        peer_sid = 'snewpeer'
+        peer = runner.session_dir(peer_sid)
+        shutil.copytree(candidate.parent / 'output', peer / 'output')
+        (peer / 'output/record.md').write_text('A newly developed proof.', encoding='utf-8')
+        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': peer_sid,
+                                       'role': 'peer', 'task': peer_job['task']})
+        (peer / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (peer / 'cli.stderr.log').write_text('', encoding='utf-8')
+        worker = {'id': peer_sid, 'role': 'peer', 'status': 'running', 'job': peer_job['id'],
+                  'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2}
+        runner.state['sessions'][peer_sid] = worker
+        peer_job.update(status='running', session=peer_sid)
+        pipeline['peer'] = peer_sid
+        runner.finish(peer_sid, worker)
+        review_job = next(j for j in runner.state['jobs'].values()
+                          if j['role'] == 'review' and j['status'] == 'pending')
+        self.assertNotEqual(review_job['id'], job['id'])
+        self.assertEqual(Path(review_job['task']['candidate']), peer / 'candidate')
+        self.finish_replacement_review(runner, review_job)
+        self.assertEqual(pipeline['stage'], 'done')
+        event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
+        self.assertEqual((self.instance / 'knowledge' / event['folder'] / 'record.md').read_text(encoding='utf-8'),
+                         'A newly developed proof.')
 
 
     def test_completed_exclusion_releases_occupancy_without_publishing(self):

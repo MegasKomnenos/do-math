@@ -614,7 +614,12 @@ class RunnerTests(InstanceCase):
                     'raise SystemExit(coordination.main())') % (runtime, start)
         processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
-        results = [(p.wait(timeout=60), json.loads(p.stdout.read().decode('utf-8'))) for p in processes]
+        results = []
+        for process in processes:
+            # communicate() reads and closes both pipes; a child that printed no answer shows its traceback.
+            out, err = process.communicate(timeout=60)
+            self.assertTrue(out.strip(), err.decode('utf-8', 'replace'))
+            results.append((process.returncode, json.loads(out.decode('utf-8'))))
         self.assertEqual(sorted(code for code, _ in results), [0, 1, 1, 1, 1, 1], results)
         holders = lease_table(self.instance)['root']['holders']
         self.assertEqual(len(holders), 1)
@@ -822,18 +827,17 @@ class RunnerTests(InstanceCase):
                 with patch('runner.time.time', return_value=1061):
                     self.assertEqual(runner.selection('review')['model'], expected_model)
 
-    def check_refusal_handoff(self, message, expected_key, expected_model):
+    def check_refusal_handoff(self, row, expected_key, expected_model, model='codex/gpt-6.1-sol',
+                              peers=('codex/gpt-6.1-sol', 'codex/other', 'claude/opus')):
         runner = self.runner()
-        runner.settings['roles']['peer'] = [
-            {'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'},
-            {'model': 'codex/other', 'effort': 'xhigh'},
-            {'model': 'claude/opus', 'effort': 'xhigh'},
-        ]
+        runner.settings['roles']['peer'] = [{'model': name, 'effort': 'xhigh'} for name in peers]
         write_json(self.instance / 'settings.json', runner.settings)
         sid, session, job = self.ended(runner, 'attempt')
+        # The refused session ran under this model; the row is its provider's refusal in the CLI stream.
+        session.update(model=model, provider=model.split('/', 1)[0])
         folder = runner.session_dir(sid)
         with (folder / 'cli.stdout.jsonl').open('a', encoding='utf-8') as stream:
-            stream.write('\n' + json.dumps({'type': 'error', 'message': message}) + '\n')
+            stream.write('\n' + json.dumps(row) + '\n')
         with patch('runner.time.time', return_value=2000):
             runner.finish(sid, session)
             self.assertEqual(set(runner.state['blocks']), {expected_key})
@@ -853,12 +857,19 @@ class RunnerTests(InstanceCase):
             self.assertEqual(recovered.selection('peer')['model'], expected_model)
 
     def test_provider_refusal_retains_work_and_falls_back_across_providers(self):
-        self.check_refusal_handoff("You've hit your usage limit. Try again later.",
+        self.check_refusal_handoff({'type': 'error', 'message': "You've hit your usage limit. Try again later."},
                                    'provider:codex', 'claude/opus')
 
     def test_model_refusal_retains_work_and_keeps_other_models_available(self):
-        self.check_refusal_handoff('Selected model is at capacity',
+        self.check_refusal_handoff({'type': 'error', 'message': 'Selected model is at capacity'},
                                    'model:codex/gpt-6.1-sol', 'codex/other')
+
+    def test_claude_model_refusal_blocks_only_that_model_and_retains_work(self):
+        # Claude's typed refusal for one model blocks that model, not the claude provider.
+        self.check_refusal_handoff({'type': 'assistant', 'is_api_error_message': True,
+                                    'api_error': 'model_requires_usage_credits'},
+                                   'model:claude/opus', 'claude/sonnet', model='claude/opus',
+                                   peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
     def test_waiting_review_blocks_fresh_attempt_even_when_other_provider_free(self):
         runner = self.runner()
@@ -1104,6 +1115,19 @@ class RunnerTests(InstanceCase):
         executable = defaults(); executable['cli']['Codex'] = 'C:/tools/codex.exe'
         for name, config in (('legacy', legacy), ('misspelled', misspelled), ('executable', executable)):
             with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
+                validate(config)
+
+    def test_malformed_setting_structure_is_rejected_by_name(self):
+        cli_path = defaults(); cli_path['cli']['codex'] = 5
+        lean_cwd = defaults(); lean_cwd['lean']['cwd'] = 5
+        cases = (('cli must be an object', {**defaults(), 'cli': 'C:/tools/codex.exe'}),
+                 ('lean must be an object', {**defaults(), 'lean': []}),
+                 ('model entries need exactly', {**defaults(), 'models': ['codex/gpt-6.1-sol']}),
+                 ('fallback', {**defaults(), 'models': [{'model': 'claude/opus', 'effort': 'xhigh', 'fallback': True}]}),
+                 ('cli.codex must be', cli_path),
+                 ('lean.cwd must be', lean_cwd))
+        for pattern, config in cases:
+            with self.subTest(pattern), self.assertRaisesRegex(ValueError, pattern):
                 validate(config)
 
     def test_board_can_show_a_producer_waiting_for_its_first_model(self):

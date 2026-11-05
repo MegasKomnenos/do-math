@@ -54,6 +54,7 @@ class BrokerFixture(unittest.TestCase):
         self.paths = lean_broker.Paths(self.instance)
         self.paths.ensure()
         self.broker = None
+        self.previous_hosts = []
 
     def write_settings(self, **lean):
         """Change the instance's settings file as an operator would, for the broker's live reload."""
@@ -71,9 +72,9 @@ class BrokerFixture(unittest.TestCase):
                 if runner.alive(lean["process"]):
                     lean_broker.terminate_tree(lean["pid"])
                     self.wait_gone(lean["process"])
-        if self.broker is not None:
-            for host in self.broker.hosts.values():
-                host.wait(timeout=10)
+        hosts = self.previous_hosts + (list(self.broker.hosts.values()) if self.broker is not None else [])
+        for host in hosts:
+            host.wait(timeout=10)
         if self.paths.state.exists():  # hosts of a detached broker exit once their Lean has ended
             for job in runner.read_json(self.paths.state).get("jobs", {}).values():
                 self.wait_gone(job.get("host"))
@@ -108,6 +109,8 @@ class BrokerFixture(unittest.TestCase):
 
     def start_broker(self):
         """The broker's own startup, in this process, minus the lock and the receipt `serve` adds."""
+        if self.broker is not None:
+            self.previous_hosts.extend(self.broker.hosts.values())
         self.broker = lean_broker.Broker(self.instance, log_path=self.paths.log)
         self.broker.start()
         return self.broker

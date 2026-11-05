@@ -268,6 +268,10 @@ class Runner:
             return
         errors = check_session(session)
         if errors:
+            if (s['role'] == 'review' and job['task'].get('kind') == 'candidate'
+                    and errors == ['candidate changed after review assignment']):
+                self.recover_candidate(job, s, errors[0])
+                return
             self.retry(job, s, '; '.join(errors),
                        availability=bool(s.get('refusal') or s.get('launch_error')))
             return
@@ -288,7 +292,7 @@ class Runner:
             self.enqueue('review', {'kind': 'candidate', 'candidate': str(candidate),
                                     'candidate_hashes': tree_hashes(candidate),
                                     'source': str(self.session_dir(pipeline['producer'])),
-                                    'peer': str(session)}, pipeline['id'], pipeline['id'] + ':review')
+                                    'peer': str(session)}, pipeline['id'], pipeline['id'] + ':review:' + sid)
             self.save()
             return
         if s['role'] == 'review' and job['task'].get('kind') == 'candidate':
@@ -307,6 +311,49 @@ class Runner:
             kind = 'organization'
         self.prepare_publication(sid, job, kind)
         self.publish()
+
+    def recover_candidate(self, job, session, reason):
+        """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
+        task = job['task']
+        peer = Path(task['peer'])
+        original = peer / 'output'
+        expected = task['candidate_hashes']
+        try:
+            regular_tree(original)
+            recoverable = tree_hashes(original) == expected
+        except (OSError, ValueError):
+            recoverable = False
+        if recoverable:
+            restored = peer / ('candidate-recovered-' + session['id'])
+            if not restored.exists():
+                staging = restored.with_name(restored.name + '.part')
+                if staging.exists():
+                    if staging.is_symlink() or staging.is_junction() or staging.resolve().parent != peer.resolve():
+                        raise ValueError('invalid candidate recovery staging path')
+                    shutil.rmtree(staging)
+                shutil.copytree(original, staging)
+                if tree_hashes(staging) != expected:
+                    raise ValueError('peer output changed during candidate recovery')
+                staging.rename(restored)
+            regular_tree(restored)
+            if tree_hashes(restored) != expected:
+                raise ValueError('recovered candidate does not match the assigned hashes')
+            task['candidate'] = str(restored)
+            self.retry(job, session, reason, availability=False)
+            return
+        # A new peer gets the original research and earlier peer work. The cancelled
+        # review remains in history; the new peer's own review receives a distinct job.
+        self.retry(job, session, reason, availability=False)
+        job['status'] = 'cancelled'
+        pipeline = self.state['pipelines'][job['pipeline']]
+        if peer.name not in pipeline['previous_peers']:
+            pipeline['previous_peers'].append(peer.name)
+        pipeline['stage'] = 'peer'
+        self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
+                             'node': pipeline.get('node'), 'previous_error': reason,
+                             'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
+                     pipeline['id'], pipeline['id'] + ':peer-recovery:' + session['id'])
+        self.save()
 
     def prepare_publication(self, sid, job, kind):
         rid = uid({'record': 'r', 'review': 'v', 'organization': 'o'}[kind])

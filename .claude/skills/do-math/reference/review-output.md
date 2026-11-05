@@ -27,7 +27,7 @@ An accepted relation or solution cites a supported claim. Admitting a node requi
 
 The feedback covers important mathematical assertions in the body as well as the structured list. Explain missing source content, defects, restrictions, unperformed checks and valuable supported work. The structured judgment does not limit the mathematical scope of review to what the peer happened to list.
 
-If `publish` is false, accept no nodes, relations or solutions and apply no shared-state findings through that excluded candidate. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing, releases the attempt's occupied nodes or completes the exploration cycle as applicable.
+If `publish` is false, accept no nodes, relations or solutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing, releases the attempt's occupied nodes or completes the exploration cycle as applicable.
 
 ## Evidence for a formal solution
 
@@ -71,7 +71,7 @@ Write only consequences supported by your examination of the evidence. Clearing 
 
 The `proofs` object in `knowledge/state.json` lists the currently supported proof routes. A direct solution has ID `<record-id>/<solution-id>`; an established application of a relation has ID `<record-id>/<relation-id>`. Each entry identifies its node, outcome and supporting claims, and an inferred application lists `premise_proofs` in premise order. Use those exact IDs in a clearance. The separate `relations` object contains the reviewed implication statements, including relations whose premises are not yet solved.
 
-When a candidate review finds a defect in an earlier record, it can report a concern and its established findings. A withdrawal without a named existing concern creates a comprehensive review of its broader consequences. Do not claim that those consequences have all been assessed merely because the original defect was found.
+When a candidate review that publishes its candidate finds a defect in an earlier record, it can report a concern and its established findings. A withdrawal without a named existing concern creates a comprehensive review of its broader consequences. Do not claim that those consequences have all been assessed merely because the original defect was found.
 
 ## Comprehensive assessment
 

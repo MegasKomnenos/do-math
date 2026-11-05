@@ -26,6 +26,9 @@ def defaults():
 def validate(raw):
     if not isinstance(raw, dict) or raw.get('schema', 1) != 1:
         raise ValueError('settings must be a fresh-runtime schema 1 object')
+    for section in ('cli', 'lean'):
+        if not isinstance(raw.get(section, {}), dict):
+            raise ValueError(section + ' must be an object')
     value = defaults()
     value.update(raw)
     value['cli'] = {**defaults()['cli'], **raw.get('cli', {})}
@@ -56,7 +59,11 @@ def validate(raw):
         if not isinstance(pool, list) or not pool:
             raise ValueError(f'{role} needs an ordered nonempty model list')
         for choice in pool:
+            if not isinstance(choice, dict) or set(choice) != {'model', 'effort'}:
+                raise ValueError(f'{role} model entries need exactly "model" and "effort"; got: {choice!r}')
             provider = provider_for_model(choice['model'])
+            if not isinstance(value['cli'][provider], str):
+                raise ValueError(f'cli.{provider} must be an executable path or name')
             build_command(value['cli'][provider], choice['model'], choice['effort'], Path.cwd())
     lean = value['lean']
     if not isinstance(lean['cache_epoch'], str) or not lean['cache_epoch'].strip():
@@ -64,7 +71,7 @@ def validate(raw):
     for key in ('command', 'version_command'):
         if not isinstance(lean[key], list) or not lean[key] or not all(isinstance(x, str) and x.strip() for x in lean[key]):
             raise ValueError(f'lean.{key} must be a nonempty command array')
-    if lean['cwd'] is not None and not Path(lean['cwd']).is_absolute():
+    if lean['cwd'] is not None and not (isinstance(lean['cwd'], str) and Path(lean['cwd']).is_absolute()):
         raise ValueError('lean.cwd must be absolute or null')
     if not isinstance(lean['env'], dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in lean['env'].items()):
         raise ValueError('lean.env must map strings to strings')

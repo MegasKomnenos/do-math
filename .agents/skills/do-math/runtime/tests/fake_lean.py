@@ -2,6 +2,7 @@
 
 The last argument is the source file. Its `import` lines cost 8 MiB each plus 8 MiB
 (the "baseline"), held for the whole run. A line `-- fake: key=value ...` adds:
+import_sleep (seconds the baseline alone is held before anything else; default 0.3),
 alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code),
 marker (text printed to stdout), stderr (text printed to stderr). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
