@@ -4,7 +4,7 @@ The peer's exposition gives a future researcher a coherent account of the produc
 
 Write the structured description in `output/record.json`, with the exposition and its evidence in companion files. The sections below introduce the information in the order a record is built: its account and claims, its proposed consequences for nodes, and the terminology it introduces. Review writes a separate assessment. The runner freezes the candidate before that review and publishes its bytes unchanged if review finds useful material.
 
-File references in `record.json` are relative to the candidate directory and use `/`. They cannot contain `..` or point through filesystem links. This keeps the candidate's evidence together when the runner copies it into the published record.
+File references in `record.json` are relative to the candidate directory and use `/`. They cannot contain `..` or point through filesystem links. This keeps the candidate's evidence together when the runner copies it into the published record. Reserve the candidate's top-level names `review` and `provenance.json` for the runner's assessment attachment and processing identities. Put copied historical reviews or provenance under another evidence path, such as `evidence/source-review/` or `evidence/source-provenance.json`, and refer to that path in the account. The transport check rejects a candidate containing either reserved top-level name before review or publication.
 
 ## The account and its claims
 

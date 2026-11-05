@@ -5,13 +5,42 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import runner as runtime
-from check import Invalid, audit_formal
+from check import Invalid, audit_formal, check_session
 from knowledge import replay
 from runtime_support import read_json, write_json
 from test_research import InstanceCase, assessment, claim_row, record, solution
 
 
 class PublicationTests(InstanceCase):
+    def test_candidate_cannot_collide_with_publication_attachments(self):
+        session = self.instance / 'sessions/speer'
+        output = session / 'output'
+        output.mkdir(parents=True)
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'speer',
+                                           'role': 'peer', 'task': {}})
+        write_json(output / 'record.json', record())
+        (output / 'record.md').write_text('Retained mathematics.', encoding='utf-8')
+        self.assertEqual(check_session(session), [])
+        for name, directory in (('review', True), ('Review', True),
+                                ('provenance.json', False), ('PROVENANCE.JSON', False)):
+            with self.subTest(name=name):
+                path = output / name
+                if directory:
+                    path.mkdir()
+                else:
+                    path.write_text('Historical evidence.', encoding='utf-8')
+                try:
+                    errors = check_session(session)
+                    self.assertTrue(errors)
+                    self.assertIn('reserved for publication attachments', errors[0])
+                finally:
+                    path.rmdir() if directory else path.unlink()
+        evidence = output / 'evidence'
+        evidence.mkdir()
+        (evidence / 'review').mkdir()
+        (evidence / 'provenance.json').write_text('Historical evidence.', encoding='utf-8')
+        self.assertEqual(check_session(session), [])
+
     def candidate_pipeline(self):
         runner = runtime.Runner(self.instance, self.skill)
         producer = runner.producer('attempt')
@@ -27,10 +56,16 @@ class PublicationTests(InstanceCase):
         (session / 'output').mkdir(parents=True)
         write_json(session / 'output/assessment.json', assessment(data))
         (session / 'output/feedback.md').write_text('Independent assessment.', encoding='utf-8')
-        jid = runner.enqueue('review', {'kind': 'candidate', 'candidate': str(candidate)}, pid, pid + ':review')
+        task = {'kind': 'candidate', 'candidate': str(candidate), 'candidate_hashes': runtime.tree_hashes(candidate)}
+        jid = runner.enqueue('review', task, pid, pid + ':review')
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
+                                           'role': 'review', 'task': task})
+        (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (session / 'cli.stderr.log').write_text('', encoding='utf-8')
         runner.state['jobs'][jid].update(status='running', session='sreview')
         runner.state['jobs'][producer]['status'] = 'done'
-        runner.state['sessions']['sreview'] = {'id': 'sreview', 'role': 'review', 'status': 'running', 'job': jid}
+        runner.state['sessions']['sreview'] = {'id': 'sreview', 'role': 'review', 'status': 'running', 'job': jid,
+                                              'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 1}
         runner.save()
         return runner, runner.state['jobs'][jid]
 
@@ -55,6 +90,68 @@ class PublicationTests(InstanceCase):
         self.assertEqual(len(list((self.instance / 'knowledge/events').glob('*.json'))), 1)
         history = original(self.instance, 'log', '--format=%s')
         self.assertEqual(history.count('Publish ' + identity), 1)
+
+    def test_review_finish_publishes_the_unchanged_assigned_candidate(self):
+        runner, job = self.candidate_pipeline()
+        runner.finish('sreview', runner.state['sessions']['sreview'])
+        events = list((self.instance / 'knowledge/events').glob('*.json'))
+        self.assertEqual(len(events), 1)
+        event = read_json(events[0])
+        self.assertEqual(event['kind'], 'record')
+        self.assertEqual(job['status'], 'done')
+        self.assertEqual(runner.state['sessions']['sreview']['status'], 'integrated')
+        self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'done')
+        published = self.instance / 'knowledge' / event['folder']
+        self.assertEqual((published / 'record.md').read_bytes(), b'The proof.')
+
+    def test_review_finish_retries_instead_of_publishing_a_changed_candidate(self):
+        runner, job = self.candidate_pipeline()
+        candidate = Path(job['task']['candidate'])
+        (candidate / 'record.md').write_text('A different argument after assignment.', encoding='utf-8')
+        runner.finish('sreview', runner.state['sessions']['sreview'])
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual(job['retries'], 1)
+        self.assertEqual(job['last_error'], 'candidate changed after review assignment')
+        self.assertEqual(runner.state['sessions']['sreview']['status'], 'failed')
+        self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'review')
+        self.assertIsNone(runner.state['publication'])
+        self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
+        self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+
+
+    def test_completed_exclusion_releases_occupancy_without_publishing(self):
+        runner, job = self.candidate_pipeline()
+        pipeline = runner.state['pipelines'][job['pipeline']]
+        producer = runner.session_dir(pipeline['producer'])
+        producer.mkdir(parents=True)
+        write_json(producer / 'declaration.json', {'nodes': ['root'], 'at': 1})
+        self.assertEqual(runner.available_nodes(), ([], 0))
+        session = runner.session_dir('sreview')
+        verdict = read_json(session / 'output/assessment.json')
+        verdict.update(publish=False, reason='No useful supported material.',
+                       index_assessment='The offered argument is unsupported.')
+        verdict['claims'][0].update(status='unsupported', reason='The argument does not establish the claim.')
+        verdict['solutions'][0].update(level='none', reason='No solution established.')
+        write_json(session / 'output/assessment.json', verdict)
+        write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
+                                           'role': 'review', 'task': job['task']})
+        (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+        reviewer = runner.state['sessions']['sreview']
+        reviewer.update(provider='codex', model='codex/gpt-6.1-sol', started_at=1)
+        runner.finish('sreview', reviewer)
+        self.assertEqual((reviewer['status'], job['status'], pipeline['stage']),
+                         ('integrated', 'done', 'done'))
+        self.assertTrue(reviewer['rejected'])
+        self.assertEqual(pipeline['rejection_session'], 'sreview')
+        self.assertIsNone(runner.state['publication'])
+        self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
+        self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
+        self.assertEqual(runner.available_nodes(), (['root'], 0))
+        recovered = runtime.Runner(self.instance, self.skill)
+        self.assertEqual(recovered.available_nodes(), (['root'], 0))
+        self.assertEqual(recovered.state['jobs'][job['id']]['status'], 'done')
 
 
 class FormalEvidenceTests(InstanceCase):

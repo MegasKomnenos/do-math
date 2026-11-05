@@ -40,7 +40,7 @@ Write the exposition for a researcher who cannot open the producer's private fol
 
 The candidate's structured `record.json` identifies claims and evidence, proposed solutions and established connections, and the local terminology introduced by this record. Use it to make the mathematical account addressable. The exposition carries the argument; the structured fields let review identify its judgments and let the runner apply explicit outcomes. [Record format](../reference/record-format.md) is supplied with your context and gives the precise fields.
 
-Propose a new node only when an established connection connects it to the instance's existing questions. Check the current frontier for an existing statement first. Speculative connections belong in the exposition and unresolved questions, where later attempts can choose to investigate them. A proof of the node and a proof of its negation are separate outcomes and must be recorded correctly.
+Propose a new node only when an established mathematical relation connects it to the instance's existing questions. Check the current frontier for an existing statement first. Speculative connections belong in the exposition and unresolved questions, where later attempts can choose to investigate them. A proof of the node and a proof of its negation are separate outcomes and must be recorded correctly.
 
 Assemble the record's local glossary from the terminology introduced by the producer and by you. Reuse current shared primary names. A globally flagged entry is a recommendation for shared use; review assesses its definition and consistency, and publication can then make it a global candidate.
 

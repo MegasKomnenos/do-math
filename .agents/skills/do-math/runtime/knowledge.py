@@ -92,15 +92,33 @@ def settle(model):
                 selected.append(candidates[0])
             if len(selected) != len(relation['premises']):
                 continue
-            claims = sorted({relation['claim']} | {c for _, p in selected for c in p['claims']})
-            premise_ids = [pid for pid, _ in selected]
-            use = {'relation': rid, 'premise_proofs': premise_ids}
-            concerns = sorted(({cid for cid, c in model['concerns'].items() if concerned(model, relation['claim'], c)} |
-                               {cid for _, p in selected for cid in p['concerns']}) -
-                              {cid for cid, uses in model['cleared_uses'].items() if use in uses})
-            flagged = bool(concerns)
-            if flagged and previous.get('claims') != claims:
+            selections = [selected]
+            for uses in model['cleared_uses'].values():
+                for cleared in uses:
+                    if cleared['relation'] != rid:
+                        continue
+                    ids = cleared['premise_proofs']
+                    if len(ids) != len(relation['premises']) or any(pid not in proofs for pid in ids):
+                        continue
+                    alternative = [(pid, proofs[pid]) for pid in ids]
+                    if all(p['node'] == canonical(model, premise['node'])
+                           and p['outcome'] == premise['outcome']
+                           for (_, p), premise in zip(alternative, relation['premises'])):
+                        selections.append(alternative)
+            eligible = []
+            for selection in selections:
+                claims = sorted({relation['claim']} | {c for _, p in selection for c in p['claims']})
+                use = {'relation': rid, 'premise_proofs': [pid for pid, _ in selection]}
+                concerns = sorted(({cid for cid, c in model['concerns'].items()
+                                    if concerned(model, relation['claim'], c)} |
+                                   {cid for _, p in selection for cid in p['concerns']}) -
+                                  {cid for cid, uses in model['cleared_uses'].items() if use in uses})
+                if not concerns or previous.get('claims') == claims:
+                    eligible.append((bool(concerns), selection, claims, concerns))
+            if not eligible:
                 continue
+            flagged, selected, claims, concerns = min(eligible, key=lambda row: (row[0], len(row[3])))
+            premise_ids = [pid for pid, _ in selected]
             proofs[rid] = {'id': rid, 'node': conclusion, 'outcome': relation['conclusion']['outcome'],
                            'level': 'informal', 'claim': relation['claim'], 'claims': claims,
                            'nodes': sorted({conclusion} | {n for _, p in selected for n in p['nodes']}),
@@ -137,6 +155,28 @@ def settle(model):
         node['annotations'] = [i for i, finding in enumerate(model['findings']) if evidence.intersection(finding['claims'])]
         node['concern_history'] = [cid for cid, concern in model['concerns'].items()
                                    if any(concerned(model, key, {**concern, 'status': 'pending', 'cleared_claims': []}) for key in evidence)]
+        node['possible_concerns'] = []
+    # A held implication has no proof object yet. Keep its possible dependencies
+    # visible without treating a concern as a mathematical verdict or a new proof.
+    histories = {n['canonical']: set(n['concern_history']) | (set(n['concerns']) & set(model['concerns']))
+                 for n in model['nodes'].values()}
+    possible = {nid: set() for nid in histories}
+    changed = True
+    while changed:
+        changed = False
+        for rid, relation in model['relations'].items():
+            if rid in proofs:
+                continue  # Its actual proof already records concerns and exact-use clearance.
+            conclusion = canonical(model, relation['conclusion']['node'])
+            inherited = set()
+            for premise in relation['premises']:
+                source = canonical(model, premise['node'])
+                inherited.update(histories[source] | possible[source])
+            if not inherited <= possible[conclusion]:
+                possible[conclusion].update(inherited)
+                changed = True
+    for node in model['nodes'].values():
+        node['possible_concerns'] = sorted(possible[node['canonical']] - histories[node['canonical']])
 
 
 def add_terms(model, entries, publication, location):
@@ -342,6 +382,9 @@ def render(instance, model, board):
         aliases = [n for n in model['aliases'] if canonical(model, n) == nid]
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
+        for cid in node.get('possible_concerns', []):
+            c = model['concerns'][cid]
+            lines.append(f"- Possible dependency through a recorded relation: concern {cid}: {c['reason']} ({c['status']}); source {assessment_link(c['source'])}; comprehensive review {investigation(cid)}. This annotation does not determine the effect on this node.")
         lines.append('')
     write_text(base / 'frontier.md', '\n'.join(lines) + '\n')
     glossary = ['# Global glossary', '', 'Use primary names in new writing. Aliases interpret existing records.', '']
@@ -358,9 +401,13 @@ def render(instance, model, board):
         for finding in model['findings']:
             if any(key.startswith(rid + '/') for key in finding['claims']):
                 result += [f"Later review ({finding['status']}): {finding['reason']} — {assessment_link(finding['source'], prefix)}", '']
+        conclusions = {canonical(model, r['conclusion']['node']) for r in model['relations'].values() if r['record'] == rid}
         for cid, concern in model['concerns'].items():
-            if concern['status'] != 'cleared' and any(concerned(model, k, concern) for k, c in model['claims'].items() if c['record'] == rid):
-                result += [f"Concern {cid}: {concern['reason']} ({concern['status']}); {assessment_link(concern['source'], prefix)}; comprehensive review {investigation(cid)}", '']
+            direct = any(concerned(model, k, concern) for k, c in model['claims'].items() if c['record'] == rid)
+            possible = any(cid in model['nodes'][nid].get('possible_concerns', []) for nid in conclusions)
+            if concern['status'] != 'cleared' and (direct or possible):
+                label = 'Concern' if direct else 'Possible dependency through a recorded relation; effect undetermined. Concern'
+                result += [f"{label} {cid}: {concern['reason']} ({concern['status']}); {assessment_link(concern['source'], prefix)}; comprehensive review {investigation(cid)}", '']
         if any(n['contested'] and any(model['proofs'][p]['record'] == rid for p in n['proofs']) for n in model['nodes'].values()):
             result += [f'Opposing accepted outcomes: consult the [frontier]({prefix}frontier.md) and comprehensive review.', '']
         return result
@@ -394,7 +441,7 @@ def render(instance, model, board):
         board_lines += [f"- {row['pipeline']} · {row['role']} · {row['stage']} · nodes: {', '.join(row['nodes']) or '(choosing)'}"]
         for nid in row['nodes']:
             node = model['nodes'].get(canonical(model, nid), {})
-            if node.get('concerns') or node.get('concern_history'):
+            if node.get('concerns') or node.get('concern_history') or node.get('possible_concerns'):
                 board_lines.append(f'  Concern: see [frontier](frontier.md) for {nid}.')
     write_text(base / 'board.md', '\n'.join(board_lines) + '\n')
     write_json(base / 'state.json', model)

@@ -102,7 +102,23 @@ def capture(session, provider):
             shutil.copyfile(path, destination)
             copied.append(destination.name)
             break
+    native_activity = False
+    for name in copied:
+        for event in events(session / name):
+            if provider == 'codex' and event.get('type') == 'response_item':
+                item = event.get('payload')
+                if not isinstance(item, dict):
+                    continue
+                if item.get('type') == 'message':
+                    native_activity |= item.get('role') == 'assistant' and bool(item.get('content'))
+                elif item.get('type') == 'reasoning':
+                    native_activity |= bool(item.get('summary') or item.get('content'))
+                else:
+                    native_activity |= item.get('type') not in ('error', None)
+            elif provider == 'claude' and event.get('type') == 'assistant' and not event.get('is_api_error_message'):
+                native_activity = True
     receipt = {'native_transcripts': copied, 'cli_activity': activity,
+               'native_activity': native_activity,
                'streams': ['cli.stdout.jsonl', 'cli.stderr.log'],
                'limitation': None if copied else 'No native transcript was located; retained CLI streams and artifacts are the available source.'}
     source = session / copied[0] if copied else session / 'cli.stdout.jsonl'

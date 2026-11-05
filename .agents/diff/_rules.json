@@ -15,6 +15,10 @@
   "verbatim": [
     "*/references/원본_대조.md",
     "do-math/scripts/tests/corpus/*",
+    "do-math/SKILL.md",
+    "do-math/roles/*",
+    "do-math/reference/*",
+    "do-math/runtime/*",
     "skill-creator/scripts/run_eval.py",
     "writing-skills/examples/CLAUDE_MD_TESTING.md",
     "writing-skills/references/멀티런타임_동기화.md",

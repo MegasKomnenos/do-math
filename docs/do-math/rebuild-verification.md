@@ -48,7 +48,7 @@ DoMath.root : ∀ (n : Nat), n + 0 = n
 
 The retained compiler output reports that this theorem depends on no axioms. The review's source hashes match the final published candidate files, and its assessment confirms correspondence with the original proposition. The instance reached `formal_proved` and finished its remaining work.
 
-The controlled tests exercise dependency ordering, cache reuse and fresh target builds. The real Lean run confirms a reviewer-owned fresh build, the actual axiom output, final-source identity and the handoff into a published formal result. No new Mathlib research run was performed.
+The controlled tests run during the rebuild exercised dependency ordering and cache reuse. That suite did not call the fresh-target build option; its scripted lifecycle used a single-file reviewer compile. The real Lean run confirms a reviewer-owned fresh build, the actual axiom output, final-source identity and the handoff into a published formal result. No new Mathlib research run was performed.
 
 ## Recovery
 

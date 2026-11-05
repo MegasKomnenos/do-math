@@ -334,10 +334,10 @@ class BrokerTests(BrokerFixture):
     def serial(self, jobs):
         """Tick through the jobs and confirm that no two of them ever run at once."""
         self.until(lambda: self.jobs("running"))
-        while not all(self.finished(j) for j in jobs):
-            self.broker.tick()
+        def all_finished_serially():
             self.assertLessEqual(len(self.jobs("running")), 1)
-            time.sleep(0.05)
+            return all(self.finished(j) for j in jobs)
+        self.until(all_finished_serially)
 
     def test_thread_budget_limits_parallelism(self):
         # Memory is ample (two of these fit the 700 MiB budget easily); only the threads can serialize them.
@@ -652,6 +652,37 @@ class BuildTests(BrokerFixture):
         statuses = {n: m["status"] for n, m in self.build_record(third)["modules"].items()}
         self.assertEqual(statuses, {"A": "cached", "B": "finished", "C": "cached", "D": "finished"})
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 6)
+
+    def test_fresh_review_target_recompiles_while_unchanged_dependency_is_cached(self):
+        self.start_broker()
+        root = self.instance / 'sessions/sreview/work/lean'
+        source(root / 'Basis.lean', imports=())
+        source(root / 'Target.lean', imports=('Basis',), marker='REVIEW-TARGET')
+        warm = self.build(root, [root / 'Target.lean'], session='sauthor')
+        self.until(lambda: self.build_record(warm)['status'] in lean_broker.FINISHED)
+        self.assertEqual(self.build_record(warm)['status'], 'finished')
+        self.assertTrue(all(m['exit_code'] == 0 for m in self.build_record(warm)['modules'].values()))
+
+        cached = self.build(root, [root / 'Target.lean'], session='sauthor')
+        self.until(lambda: self.build_record(cached)['status'] in lean_broker.FINISHED)
+        self.assertTrue(all(m['status'] == 'cached' and m['job'] is None
+                            for m in self.build_record(cached)['modules'].values()))
+        with patch.object(lean_broker, 'ensure_broker', return_value={}):
+            fresh = lean_broker.build(self.paths, root, [root / 'Target.lean'], 60,
+                                      'sreview', fresh_targets=True)['build']
+        self.until(lambda: self.build_record(fresh)['status'] in lean_broker.FINISHED)
+        result = lean_broker.job_record(self.paths, fresh)
+        self.assertEqual((result['status'], result['session']), ('finished', 'sreview'))
+        basis, target = result['modules']['Basis'], result['modules']['Target']
+        self.assertEqual((basis['status'], basis['job']), ('cached', None))
+        self.assertEqual((target['status'], target['exit_code']), ('finished', 0))
+        self.assertIsNotNone(target['job'])
+        compiled = lean_broker.job_record(self.paths, target['job'])
+        self.assertEqual(compiled['session'], 'sreview')
+        self.assertEqual(compiled['source_sha256'],
+                         self.build_record(warm)['modules']['Target']['source_sha256'])
+        self.assertIn('REVIEW-TARGET',
+                      (self.paths.job(target['job']) / 'stdout.log').read_text(encoding='utf-8'))
 
     def test_failed_module_fails_its_dependents_with_the_reason(self):
         self.start_broker()

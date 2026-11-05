@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import unittest
@@ -55,14 +56,10 @@ class InstanceCase(unittest.TestCase):
         initialize(self.instance, self.root / 'goal.md')
         self.seq = 0
         self.skill = self.root / 'skill'
+        installed = Path(__file__).resolve().parents[2]
         for name in ('reference', 'roles'):
-            (self.skill / name).mkdir(parents=True)
-        (self.skill / 'reference/common.md').write_text('Shared context.', encoding='utf-8')
-        (self.skill / 'reference/writing.md').write_text('Write clearly and faithfully.', encoding='utf-8')
-        for name in ('tools.md', 'retained-work.md', 'record-format.md', 'review-output.md', 'organizer-output.md', 'lean.md'):
-            (self.skill / 'reference' / name).write_text('Fixture reference ' + name, encoding='utf-8')
-        for role in ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer'):
-            (self.skill / 'roles' / (role + '.md')).write_text(role, encoding='utf-8')
+            shutil.copytree(installed / name, self.skill / name)
+        shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
 
     def publish(self, rid, data, review=None, role='attempt'):
         self.seq += 1
@@ -139,12 +136,29 @@ class KnowledgeTests(InstanceCase):
         self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
         self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'boundary', 'targets': [{'record': 'r2', 'claim': 'q'}],
                                                                'reason': 'Boundary needs checking.', 'evidence': 'A missing case.'}]})
-        data = record([claim_row('next')], [{'id': 'R', 'statement': 'R', 'connection': 'next'}], [implication('next', 'Q', 'R')])
+        data = record([claim_row('next'), claim_row('onward')],
+                      [{'id': 'R', 'statement': 'R', 'connection': 'next'},
+                       {'id': 'S', 'statement': 'S', 'connection': 'onward'}],
+                      [implication('next', 'Q', 'R'), implication('onward', 'R', 'S')])
         self.publish('r3', data)
         m = replay(self.instance)
         self.assertEqual(m['nodes']['root']['state'], 'informal_proved')
         self.assertTrue(m['proofs']['r1/reduce']['concerned'])
-        self.assertEqual(m['nodes']['R']['state'], 'unresolved')
+        for nid in ('R', 'S'):
+            self.assertEqual(m['nodes'][nid]['state'], 'unresolved')
+            self.assertEqual(m['nodes'][nid]['proofs'], [])
+            self.assertIn('v1/boundary', m['nodes'][nid]['possible_concerns'])
+        render(self.instance, m, [{'pipeline': 'p', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S']}])
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        for nid in ('R', 'S'):
+            section = frontier.split('## ' + nid + '\n', 1)[1].split('\n## ', 1)[0]
+            self.assertIn('Possible dependency through a recorded relation', section)
+            self.assertIn('v1/boundary', section)
+            self.assertIn('reviews/v1/assessment.json', section)
+        index = (self.instance / 'knowledge/index.md').read_text(encoding='utf-8')
+        self.assertIn('Possible dependency through a recorded relation; effect undetermined.', index)
+        self.assertIn('Concern: see [frontier](frontier.md) for S.',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
 
     def test_concern_does_not_ban_formalizer_work_on_accepted_mathematics(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
@@ -176,6 +190,10 @@ class KnowledgeTests(InstanceCase):
         self.assertEqual(m['nodes']['R']['state'], 'informal_proved')
         self.assertFalse(m['proofs']['r3/next']['concerned'])
         self.assertTrue(m['proofs']['r2/q']['concerned'])
+        self.assertEqual(m['nodes']['R']['possible_concerns'], [])
+        render(self.instance, m, [])
+        section = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8').split('## R\n', 1)[1].split('\n## ', 1)[0]
+        self.assertNotIn('Possible dependency through a recorded relation', section)
 
     def test_signed_cycle_exposes_contradiction_but_cannot_create_a_seed(self):
         data = self.reduction()
@@ -243,6 +261,51 @@ class RunnerTests(InstanceCase):
         self.assertEqual(session['status'], 'ended')
         self.assertEqual(runner.state['jobs'][pipeline['id'] + ':peer']['task']['source'], str(runner.session_dir(sid)))
 
+    def test_native_only_research_reaches_peer(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'thread.started', 'thread_id': identity}), encoding='utf-8')
+        profile = self.root / 'native-profile'
+        (profile / 'sessions').mkdir(parents=True)
+        observation = 'A mathematical observation retained before interruption.'
+        rows = [
+            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': 'Study the root.'}]}},
+            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'assistant', 'content': [{'type': 'output_text', 'text': observation}]}},
+        ]
+        (profile / 'sessions' / (identity + '.jsonl')).write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+        with patch.dict('os.environ', {'CODEX_HOME': str(profile)}):
+            runner.finish(sid, session)
+        pipeline = runner.state['pipelines'][job['pipeline']]
+        self.assertEqual(pipeline['stage'], 'peer')
+        self.assertEqual(job['status'], 'done')
+        self.assertEqual(session['status'], 'ended')
+        self.assertEqual(runner.state['jobs'][pipeline['id'] + ':peer']['task']['source'], str(folder))
+        self.assertIn(observation, (folder / 'conversation.md').read_text(encoding='utf-8'))
+
+    def test_native_prompt_without_research_remains_a_launch_retry(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        (folder / 'cli.stdout.jsonl').write_text(json.dumps({'type': 'thread.started', 'thread_id': identity}), encoding='utf-8')
+        profile = self.root / 'native-profile'
+        (profile / 'sessions').mkdir(parents=True)
+        rows = [
+            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': 'Study the root.'}]}},
+            {'type': 'response_item', 'payload': {'type': 'reasoning', 'summary': [], 'encrypted_content': 'OPAQUE_TRANSPORT'}},
+        ]
+        (profile / 'sessions' / (identity + '.jsonl')).write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+        with patch.dict('os.environ', {'CODEX_HOME': str(profile)}):
+            runner.finish(sid, session)
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual(session['status'], 'failed')
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        self.assertTrue(session['retention']['native_transcripts'])
+
     def test_occupancy_survives_producer_exit(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -266,6 +329,64 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
         self.assertEqual(runner.selection('review')['model'], 'claude/opus')
+
+    def test_retry_extends_short_blocks_and_preserves_long_blocks(self):
+        for deadline, expected_until, expected_model in (
+                (1020, 1060, 'codex/gpt-6.1-sol'),
+                (1480, 1480, 'claude/opus')):
+            with self.subTest(deadline=deadline):
+                runner = self.runner()
+                key = runner.enqueue('review', {'kind': 'comprehensive', 'concerns': []})
+                session = {'id': 'spartial', 'model': 'codex/gpt-6.1-sol', 'provider': 'codex'}
+                block_key = 'model:' + session['model']
+                previous = {'until': deadline, 'reason': 'model_capacity', 'source': 'backoff'}
+                runner.state['blocks'][block_key] = dict(previous)
+                with patch('runner.time.time', return_value=1000):
+                    runner.retry(runner.state['jobs'][key], session, 'incomplete output')
+                self.assertEqual(runner.state['blocks'][block_key]['until'], expected_until)
+                self.assertEqual(runner.state['jobs'][key]['status'], 'pending')
+                if deadline > 1060:
+                    self.assertEqual(runner.state['blocks'][block_key], previous)
+                with patch('runner.time.time', return_value=1061):
+                    self.assertEqual(runner.selection('review')['model'], expected_model)
+
+    def check_refusal_handoff(self, message, expected_key, expected_model):
+        runner = self.runner()
+        runner.settings['roles']['peer'] = [
+            {'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'},
+            {'model': 'codex/other', 'effort': 'xhigh'},
+            {'model': 'claude/opus', 'effort': 'xhigh'},
+        ]
+        write_json(self.instance / 'settings.json', runner.settings)
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        with (folder / 'cli.stdout.jsonl').open('a', encoding='utf-8') as stream:
+            stream.write('\n' + json.dumps({'type': 'error', 'message': message}) + '\n')
+        with patch('runner.time.time', return_value=2000):
+            runner.finish(sid, session)
+            self.assertEqual(set(runner.state['blocks']), {expected_key})
+            self.assertGreater(runner.state['blocks'][expected_key]['until'], 2000)
+            self.assertEqual((session['status'], job['status']), ('ended', 'done'))
+            self.assertEqual(job['retries'], 0)
+            self.assertEqual(read_json(folder / 'termination.json')['cause'], 'refusal')
+            self.assertTrue((folder / 'work/notes.md').is_file())
+            pipeline = runner.state['pipelines'][job['pipeline']]
+            self.assertEqual(pipeline['stage'], 'peer')
+            peer = runner.state['jobs'][pipeline['id'] + ':peer']
+            self.assertEqual(peer['task']['source'], str(folder))
+            self.assertEqual(peer['status'], 'pending')
+            self.assertEqual(runner.selection('peer')['model'], expected_model)
+            recovered = self.runner()
+            self.assertEqual(set(recovered.state['blocks']), {expected_key})
+            self.assertEqual(recovered.selection('peer')['model'], expected_model)
+
+    def test_provider_refusal_retains_work_and_falls_back_across_providers(self):
+        self.check_refusal_handoff("You've hit your usage limit. Try again later.",
+                                   'provider:codex', 'claude/opus')
+
+    def test_model_refusal_retains_work_and_keeps_other_models_available(self):
+        self.check_refusal_handoff('Selected model is at capacity',
+                                   'model:codex/gpt-6.1-sol', 'codex/other')
 
     def test_waiting_review_blocks_fresh_attempt_even_when_other_provider_free(self):
         runner = self.runner()

@@ -192,7 +192,9 @@ class Runner:
         job['task']['previous_error'] = reason
         block_key = 'model:' + session['model']
         if self.state['blocks'].get('provider:' + session['provider'], {}).get('until', 0) <= time.time():
-            self.state['blocks'][block_key] = {'until': time.time() + delay, 'reason': reason, 'source': 'retry'}
+            until = time.time() + delay
+            if self.state['blocks'].get(block_key, {}).get('until', 0) < until:
+                self.state['blocks'][block_key] = {'until': until, 'reason': reason, 'source': 'retry'}
         session.update(status='failed', reason=reason)
         if job['role'] not in PRODUCERS:
             previous = job['task'].setdefault('previous_partial_sessions', [])
@@ -229,7 +231,8 @@ class Runner:
                                                       'at': time.time()})
             self.save()
         if s['role'] in PRODUCERS:
-            material = s['retention'].get('cli_activity') or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work'))
+            material = (s['retention'].get('cli_activity') or s['retention'].get('native_activity')
+                        or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
             if not material:
                 self.retry(job, s, s.get('launch_error') or 'session ended without retained research material')
                 return

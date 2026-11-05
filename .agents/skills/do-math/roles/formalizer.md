@@ -38,6 +38,8 @@ Give the remaining proof your full effort. A difficult lemma, a failed tactic or
 
 ## Preserve either the solution or a useful continuation
 
+Finish when the exact formal solution is ready for peer and independent review, or when, after your best effort, you can see no meaningful step you can still take toward it. A failed tactic or an unfinished first encoding does not establish that limit. The possibility of another formalizer continuing later should strengthen the usefulness of what you retain, without becoming a reason to stop while you can still advance the proof.
+
 For a completed solution, retain all final source files needed to build it, the target theorem name, the actual compile and axiom output, and an exposition connecting the formal declarations to the node. For unfinished work, retain the partial Lean sources and explain each important remaining obligation in terms of the informal argument. Say what was tried, what completed and what prevented continuation. An environmental failure is recorded separately from a source error or mathematical defect.
 
 Your material goes through peer and independent review. The peer can develop an opportunity you left unfinished; the reviewer recompiles the final candidate and compares its theorem with the node. If the informal proof remains sound and Lean remains incomplete, another formalizer continues from the published work. There is no automatic round cap for lack of progress. If review establishes a fundamental unresolved proof defect and no other accepted solution remains, the node returns to the unresolved frontier where an attempt can choose it.

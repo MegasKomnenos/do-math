@@ -11,11 +11,13 @@ records and views derived from that repository. A lightweight runner and support
 publication, and shared state usable. Sessions make semantic decisions throughout their work, including how
 to understand and follow the coordination instructions that let them cooperate.
 
-This document records the shared design established in the rebuild discussion. It is intended for a reader who
-has neither that conversation nor prior knowledge of do-math. It explains the governing principles, the roles,
-the evidence and state they exchange, the timing of their work, and the exceptions that change those rules. It
-also identifies decisions that remain open. It is a design contract for subsequent work, not a claim that the
-new system has been implemented or tested.
+This document records the shared design established in the rebuild interview and the subsequent policy
+decisions. It is intended for a reader who has neither those conversations nor prior knowledge of do-math.
+It explains the governing principles, roles, evidence, shared state and timing of the research. Section 18.2
+distinguishes later user decisions from the implementation details that realize them. The operator's
+[entry point](../../.claude/skills/do-math/SKILL.md) describes the installed interfaces. This design contract
+does not establish that execution checks succeeded; [the verification report](rebuild-verification.md)
+records that evidence and its limits.
 
 The rebuild targets **fresh research instances only**. Legacy support and compatibility are excluded. The new
 runner does not need to resume an old instance, accept old schemas or role names, migrate a plan's request
@@ -28,11 +30,11 @@ guidance, publication, and execution support. The separate `v2/` draft was also 
 point, not an authoritative specification. Its extra roles, thresholds, formats, and restrictions do not become
 requirements merely because they appear there.
 
-The current decisions in this document take precedence over both earlier designs and proposals superseded
-during the interview. Explanations of necessary consequences are identified as such. Examples illustrate the
-contract; they do not silently fix identifiers, filenames, schemas, default values, or an exhaustive catalogue
-of permitted mathematics. The final sections distinguish implementation choices from genuinely unsettled
-policy and record the important revisions to prevent an implementer from reviving an obsolete rule.
+Later explicit user decisions take precedence over earlier proposals and questions left open in the initial
+interview. This document incorporates those decisions in the relevant chapters and summarizes them in
+section 18.2. Explanations of necessary consequences remain distinct from user decisions. Examples illustrate
+the contract; they do not silently fix identifiers, filenames, schemas or an exhaustive catalogue of permitted
+mathematics. Implementation choices must preserve the settled responsibilities and mathematical boundaries.
 
 ### Reading map
 
@@ -738,10 +740,11 @@ when the scheduling and singleton conditions permit it. It is not a count of owe
 
 There are two triggers:
 
-1. When unresolved nodes are all occupied and spare capacity cannot be used for another attempt, request an
-   exploration if none is present.
-2. Every \(N\) attempt dispatches, request an exploration. This cadence ensures that exploration also occurs
-   when there is plenty of available attempt work. The value of \(N\) is configurable and was not chosen.
+1. Before the root is formally solved, when spare capacity cannot serve another attempt because no unresolved
+   node is available, request exploration if none is present. This includes both all unresolved nodes being
+   occupied and all known nodes already being informally solved.
+2. Every \(N\) attempt dispatches, request exploration. This ensures that exploration also occurs when attempt
+   work is available. The configurable default is \(N = 3\).
 
 Either trigger assigns the flag `true`. Dispatching an exploration assigns it `false`. If it is already
 `true`, another trigger leaves it `true`; it does not create a second queued request. If an exploration is
@@ -755,16 +758,15 @@ present, the flag can remain `true` until that exploration's peer and review fin
 | An eligible exploration is actually dispatched | Set `false`. | The new exploration becomes the one present cycle. |
 | The exploration session ends but peer or review remains | No reset merely for the session's exit. | A second exploration still waits. |
 
-The cadence counts attempt dispatches, not exploration dispatches or record publications. The discussion did
-not separately choose the counter's initial phase or whether an opportunistic exploration resets an interval
-counter. Those details must be made explicit when the counter is implemented; they must not be inherited
-silently from v2. Whatever representation is chosen must preserve the Boolean coalescing and the whole-cycle
-singleton above.
+The cadence counts attempt dispatches, not exploration dispatches or record publications. In the installed
+implementation its counter starts at zero and survives restarts. Spare-capacity exploration does not reset
+the counter; every configured interval sets the same Boolean request. These mechanics preserve the agreed
+cadence, Boolean coalescing and whole-cycle singleton without accumulating an exploration backlog.
 
-The spare-capacity case explicitly discussed was the occupancy of unresolved nodes. A separate case can arise
-when no unresolved nodes remain because all remaining nodes are informally solved and awaiting formalization.
-Whether that situation also sets the spare-capacity flag was not decided. An implementation must not settle
-that question accidentally through the empty-set behavior of a Boolean expression.
+The user explicitly extended spare-capacity exploration to the period when all known nodes are informally
+solved but the root lacks formal assurance. Exploration can develop understanding and alternative arguments
+during that period. Priority, available capacity and the whole-cycle singleton still govern dispatch.
+Formal settlement of the root prevents any new exploration dispatch.
 
 ### 6.4 A true flag has priority over fresh attempts
 
@@ -897,9 +899,9 @@ When the defect bears on evidence used elsewhere, the comprehensive review proce
 dependencies. Useful partial formalization and diagnostic work remain publishable with feedback. The system
 should preserve which components were completed, which are drafts, and which depend on the defective step.
 
-No fixed formalizer round limit, provider-switch policy, or escalation threshold was chosen. Continuing sound
-formalization work and diagnosing an execution failure are responsibilities the implementation must support,
-but v2's retry counts do not become requirements of this design.
+Formalization continues autonomously while the informal proof remains supported. Repeated lack of progress
+creates no automatic round cap or pause for user input. Execution failures and provider availability follow
+the configured fallback and recovery policy; they supply no mathematical verdict about the proof.
 
 ## 8. Peer: make the most valuable record from the work that remains
 
@@ -964,11 +966,10 @@ The record must distinguish what the source session obtained from what the peer 
 supports accurate attribution and independent assessment. It also lets a later reader find the actual argument
 behind a result instead of assuming that a reconstruction was present in the original material.
 
-One boundary remains open: the discussion explicitly settled attempt occupancy and the explorer's freedom,
-but did not separately decide what happens when a peer's extension becomes focused solving work on a node
-occupied by a different attempt. The broad permission to develop the source material should not silently be
-interpreted as either an additional occupancy exception or a new prohibition. That interaction needs a policy
-before the corresponding coordination behavior is implemented.
+The peer's scope follows the producing session's work and the opportunities developed from it. Another
+attempt's occupancy adds no restriction to that development. If A worked on P and its peer finds that proving
+Q would develop A's contribution, the peer may pursue Q while B occupies it. The peer remains responsible
+for its assigned source work, and its additions receive independent review with the producer's mathematics.
 
 ### 8.3 Construct a usable mathematical record
 
@@ -1161,11 +1162,11 @@ recurrence does not automatically establish a statement about an originally defi
 The link between those objects must be supported. A proof under an additional hypothesis does not settle the
 unconditional node until that hypothesis is established or removed.
 
-The existing do-math uses `#print axioms` to inspect the target theorem's transitive dependencies. This is a
-concrete available technique for carrying out the agreed audit. The exact allowed-axiom configuration and its
-default were not newly selected in this discussion. The requirement is that a completed proof genuinely meets
-the applicable allowed set and that review checks it independently. An unfinished placeholder is not made
-into a completed proof merely by accepting a compiler exit code.
+Review uses `#print axioms` to inspect the target theorem's transitive dependencies. The approved default
+allowlist is `propext`, `Classical.choice` and `Quot.sound`. Additional axioms require an explicit instance-level
+allowance; `sorryAx` is always excluded. Review independently checks the target's actual dependencies against
+the applicable allowed set. An unfinished placeholder is not made into a completed proof merely by accepting
+a compiler exit code.
 
 A source error, a missing mathematical argument, and a failure to run the compiler have different meanings.
 An environmental failure can leave a proof unverified without refuting it. Review must report the actual
@@ -1489,17 +1490,18 @@ duplicates are merged; it does not remove the ordinary instruction against takin
 
 ### 11.4 Organize after a batch of new publications
 
-The organizer's normal trigger is a configurable batch of newly published records. Its work is thus connected
-to the arrival of material that may need organization. The numerical batch size was not selected.
+The organizer's normal trigger is a configurable batch of newly published research records, with a default
+of four. The implementation counts publications from attempt, explore and formalizer processing. Organizer
+outputs and standalone comprehensive reviews do not increment that research-publication count.
 
 When due, organizer work is dispatched after formalizers and before eligible exploration and fresh attempts.
 This gives publication and formalization priority while preventing a constant supply of fresh research from
 postponing repository organization indefinitely.
 
-The discussion did not impose v2's restriction that the organizer read only the newest batch, or its fixed
-thresholds and document-size gates. The organizer must obtain the context needed for its actual judgments.
-The implementation still needs to define how its batch is counted, how concurrent arrivals are carried
-forward, and how organizing outputs are kept from creating a self-triggering maintenance loop.
+The assigned batch is fixed at launch and acknowledged when the organizer's decisions are integrated.
+Arrivals during its session remain for a later batch; an interrupted organizer leaves its batch pending.
+The organizer may read older material needed for its judgments. The batch identifies what it processes,
+without restricting its necessary context or making its output trigger further organization by itself.
 
 ### 11.5 Organize the record index into modules
 
@@ -1730,15 +1732,14 @@ merely because formalizers have high priority. An exploration whose preceding cy
 eligible merely because its flag is `true`. These are readiness conditions; the order chooses among work that
 can actually be dispatched under its contract.
 
-The explicit prohibition on bypassing waiting peer or review work remains a separate condition on fresh
-attempts. The discussion did not specify provider-limit exceptions, alternate-model behavior, or a rule for
-skipping a higher-priority job whose infrastructure is unavailable. Those policies must be made explicit
-without silently weakening that condition.
+The prohibition on bypassing waiting peer or review work remains a separate condition on fresh attempts.
+An infrastructure-blocked review is still waiting. Each new launch uses its role's first available configured
+model alternative; if none is available, the work remains pending. An interrupted producer ends and its
+retained work proceeds to peer, rather than silently continuing under a different model.
 
-No total session-cap value, separate reserve of processing slots, per-provider cap, or per-role concurrency
-number was selected, apart from the whole-cycle exploration singleton. The implementation must not copy v2's
-numbers into the contract as user decisions. Similarly, a fixed launch delay, an exploration budget, or a
-maximum number of concurrent formalizers is not implied by the priority ordering.
+The configurable default is eight concurrent AI sessions shared across all six roles. Each role prefers
+Codex `gpt-6.1-sol/xhigh`, followed by Claude `opus/xhigh`. In the implementation, provider refusals block the
+provider and model-specific refusals block only that model. Lean compilation has a separate broker budget.
 
 ## 14. Completion: achieve the root, then finish the remaining sessions
 
@@ -1766,10 +1767,10 @@ remaining sessions**. Finishing may take time, especially when a formalizer stil
 comprehensive review is processing existing evidence. No rule authorizing cancellation of those sessions to
 make the exit prompt was agreed.
 
-Some boundary policies remain open: what happens if a later judgment removes the root's only accepted formal
-solution during this phase; whether an already-running attempt may expand its set of nodes after the root is
-solved; and what stops repeated continuation of a sound but persistently unfinished formalization. Those cases
-must not be silently decided by importing an old sticky-completion flag or an arbitrary retry cap.
+Existing sessions retain their normal scope, including an attempt's ability to claim additional available
+nodes. Sound but unfinished formalization continues autonomously without an automatic round cap. If later
+review removes the root's last accepted formal solution before exit, the ordinary scheduler makes attempts
+and explorations eligible again according to the updated evidence.
 
 ## 15. Deliver the user's writing standards to the sessions
 
@@ -2102,9 +2103,9 @@ changes the mathematical standing of its claims.
 
 ## 18. Decisions still to make, and what implementation may choose
 
-The conversation establishes a substantial behavioral contract, but it does not select every operational
-detail. This section makes that boundary explicit so a reader can reconstruct the agreement without filling
-the remaining blanks with v1 behavior, v2 proposals, or assumptions disguised as user decisions.
+The initial design left operational questions for the implementation discussion. Subsequent user decisions
+settled the policies summarized in section 18.2. The section distinguishes those decisions from implementation
+mechanics, preserving the boundary between the user's authority and routine choices within the agreed design.
 
 ### 18.1 Implementation choices within the settled contract
 
@@ -2126,32 +2127,39 @@ has the agreed placement in the frontier, separate index annotations, and compac
 the source review. The implementer should not introduce a separate authored state narrative or rewrite
 original descriptions to make the rendering convenient.
 
-### 18.2 Matters needing an explicit policy before the relevant behavior is implemented
+### 18.2 Settled policies and implementation details
 
-| Matter | What is settled | What remains to be decided, by whom and when |
+The later user decisions are recorded in conversations `01a1a67d-46e5-7212-aacc-cd85b5586023` and
+`01a1a72a-3619-74f3-8151-7b7678b2e720`. They resolve the initial interview's policy questions. Counter,
+batch and recovery mechanics are implementation choices within those decisions. The table preserves that
+distinction and identifies the current interfaces where the concrete behavior is explained.
+
+| Matter | Settled policy | Implementation detail or current interface |
 |---|---|---|
-| Exploration cadence | Every \(N\) attempt dispatches sets the Boolean request; the entire exploration cycle is a singleton. | The run configuration needs \(N\), the initial counter phase, and its interaction with opportunistic exploration. The implementer should propose coherent semantics and expose values for the operator before use. |
-| Spare capacity with no unresolved nodes | The agreed spare-capacity trigger covers unresolved nodes that are all occupied. | Decide whether it also applies when all remaining nodes are informally solved and awaiting formalization. This must be a deliberate scheduling policy, not an accidental empty-set interpretation. |
-| Organizer batching | New publications trigger organization after a configurable batch. | Define which publication kinds count, the batch value, treatment of arrivals during a run, and prevention of self-triggering. Decide during scheduler design; expose the operational value before use. |
-| Capacity and model configuration | The relative dispatch order and the explicit no-waiting-peer/review condition on fresh attempts are fixed. | Total capacity, per-provider behavior, model choices, and any extra role caps or reserves need a configuration and rationale. No v2 defaults were adopted. |
-| Blocked infrastructure | A failure to run or verify is not a mathematical verdict. | Retry, provider-limit, unavailable-model, and operator-escalation behavior must be specified before unattended operation, including how it interacts with priority. |
-| Formalizer continuation | Sound informal mathematics remains informally solved; partial Lean work continues with formalizers. | Decide continuation and escalation when repeated efforts make no formal progress. Do not silently insert v2's fixed round cap or reopen sound mathematics merely to escape the problem. |
-| Mathematical relation representation | Established connections can admit nodes and propagate solutions; speculation cannot. Polarity and conditions matter. | Choose the supported relation representation and treatment of multi-premise or alternative proofs. The implementer must expose any new mathematical policy for agreement rather than infer a full graph calculus from one example. |
-| Formal dependency readiness | Formalizers wait for the validated Lean dependencies required for their continuation. | Specify how those dependencies are recorded and updated when alternative proofs are available, and how redundant formalizer dispatches are avoided. |
-| Allowed axioms and environment | Every formal solution gets an independent compile, axiom audit, and semantic correspondence check. | Specify the allowed-axiom configuration, defaults, toolchain access, and evidence packaging before formal verification is implemented. Existing practice is reference material, not an unstated new choice. |
-| Unexpected occupancy races | Sessions read a live board and obey occupancy rules; strict scripted exclusion is not required. Existing attempts on merged duplicate nodes both continue. | Choose simple ways to represent and communicate conflicting observations or accidental overlapping declarations. Do not equate this implementation work with permission to add a mandatory lock arbiter. |
-| Peer development overlapping another attempt | Peer develops useful missed opportunities; the other-attempt occupancy rule and exploration's broader permission are explicit. | Clarify what happens when a peer's extension becomes focused solving of a node occupied by a different attempt. No general peer exception or prohibition was separately chosen. |
-| Other roles' access to unpublished work | Ordinary attempts use published/reviewed mathematics; designated peers and reviewers access the originals needed for their work. | The conversation did not separately define every cross-role access case for exploration, formalizers, and organization. Specify the required contexts and any additional access explicitly rather than infer unrestricted access or an unspoken universal prohibition. |
-| Empty or interrupted production | Retained mathematics is processed by peer and review; useful imperfect records can be published. | Define minimal recovery for missing material, failed launches, malformed transport data, and interrupted publication without conflating them with rejection of mathematics. |
-| Multiple concern investigations | One comprehensive review handles the connected defect and its consequences. | Specify how simultaneous or overlapping reports are combined and how findings are attached without multiplying redundant reviews. |
-| Current-state delivery | Frontier, index, and board expose current evidence and concerns. | Choose refresh and notification mechanics that actually reach sessions when needed. Visibility alone must not be reported as proof of delivery. |
-| Root solution questioned during finishing | No new attempts or explorations are dispatched after the root is formally solved; remaining sessions continue. | The user did not decide what happens if later review removes the only formal solution during this phase. Obtain that policy before implementing this branch. |
-| Existing attempts after root completion | Their sessions are allowed to continue. | The user did not decide whether those sessions may expand to additional nodes while the run is finishing. Clarify before treating either permission or prohibition as part of the contract. |
+| Exploration cadence | The configurable default is every three attempt dispatches. Requests coalesce into one Boolean and the whole exploration cycle is a singleton. | The counter starts at zero, survives restarts and is not reset by spare-capacity exploration. Dispatch clears the Boolean request. |
+| Spare capacity with no unresolved nodes | Before formal settlement of the root, spare capacity can request exploration even when every known node is informally solved. | The same request flag, priority and singleton apply as when all unresolved nodes are occupied. |
+| Organizer batching | The configurable default is four new research publications. | Count publications from attempt, explore and formalizer processing. Fix the batch at launch and acknowledge it on integration; later arrivals remain pending. Organizer and standalone comprehensive-review outputs do not count. |
+| Capacity and models | The default is eight concurrent AI sessions. All six roles prefer Codex gpt-6.1-sol/xhigh, then Claude opus/xhigh, with configured fallback for new launches. | [Operations](../../.claude/skills/do-math/reference/operations.md) explains common and role-specific settings, availability, retry and the separate Lean budget. |
+| Blocked infrastructure | Execution failure supplies no mathematical verdict. Waiting peer or review work continues to prevent fresh attempts. | Provider and model blocks have separate scopes. If no configured alternative is available, work remains pending and status exposes the reason. |
+| Formalizer continuation | Continue autonomously while the informal proof remains supported, without an automatic round cap or pause for lack of progress. | Preserve partial Lean work and obstacles for later formalizers. Execution failure and a reviewed fundamental proof defect remain distinct outcomes. |
+| Mathematical relations | Established connections can admit nodes and propagate solutions. Speculation cannot; polarity and conditions matter. | [Record format](../../.claude/skills/do-math/reference/record-format.md) represents explicitly reviewed signed premises and conclusions. Separate relations express alternative proofs or the two directions of an equivalence. |
+| Formal dependencies | Formalizers wait for the validated Lean results required by their continuation. | Recorded dependencies identify the required signed results. [Review output](../../.claude/skills/do-math/reference/review-output.md) describes dependency corrections and proof-route references. |
+| Allowed axioms and environment | The default allowlist is propext, Classical.choice and Quot.sound. Additional axioms require explicit instance allowance; sorryAx is always excluded. Every formal solution receives independent compilation, axiom audit and exact mathematical correspondence checking. | [Lean](../../.claude/skills/do-math/reference/lean.md) and the review-output guide specify toolchain configuration and retained verification evidence. |
+| Unexpected occupancy overlap | Sessions follow a live board; semantic coordination belongs to them rather than a mandatory lock arbiter. Both attempts on merged duplicate nodes continue. | Declarations preserve earlier claims and expose overlap. [Tools](../../.claude/skills/do-math/reference/tools.md) describes declarations and coordination messages. |
+| Peer development | A peer follows its assigned source work and useful opportunities. Another attempt's occupancy imposes no additional restriction. | Peer additions receive independent review with the producing session's work. |
+| Access to unpublished work | Ordinary attempts use published/reviewed mathematics; designated peers and reviewers receive the originals needed for their assignments. | [Common context](../../.claude/skills/do-math/reference/common.md) and the role guides specify supplied inputs and access boundaries. Peer development does not confer unrestricted cross-session access. |
+| Worker instructions and user conditions | Workers inherit no personal/project instructions, hooks or memories. Later user conditions apply only to sessions launched afterward. | Each launch retains its conditions and instruction references. Authentication and explicitly configured tools remain separate. Research information, including publications and occupancy, remains live. |
+| Root statement changes | Changing the root's mathematical proposition, including its assumptions, requires a new instance. | Operations distinguishes standing conditions and research suggestions from changes to the proposition itself. |
+| Interrupted or empty production | External interruption ends a producing session; retained mathematical work proceeds to peer. | Interrupted processing stages receive fresh sessions with partial work and the original assignment. A failed launch with no research material is an operational retry case; recovery preserves publication identities. |
+| Multiple concerns | One comprehensive review examines the connected defect and its consequences. | The review-output guide describes assignments and findings grounded in immutable evidence, with their scope explicit and redundant investigations avoided. |
+| Current-state delivery | Frontier, index and board expose current evidence and concerns. Availability alone does not prove that a session has read them. | The common and tools guides describe the updates command and when sessions must consult changing information relevant to their work. |
+| Completion | Formal settlement of the root prevents only new attempt and explore dispatches. Existing sessions retain their normal scope, including additional available-node claims; remaining processing continues. | Ready formalizers, peers, reviews and due organizers follow ordinary priority. If the last formal root solution is withdrawn before exit, the same scheduler follows the updated state. |
 
-The unresolved rows do not undo the settled design or authorize implementing arbitrary alternatives. They
-identify the next decision point and prevent an implementation from appearing complete by concealing a policy
-choice. Low-level choices can be made within the agreed purpose. Choices that change the user's goals,
-authority, resource commitment, or meaning of completion need to be resolved explicitly at the appropriate stage.
+Implementation choices must preserve these policies and the substantive explanations in the earlier chapters.
+Low-level structures and interfaces can be chosen within the agreed purpose. A change to the user's goals,
+authority, resource commitment or meaning of completion requires a new explicit decision. The installed
+interfaces explain how the contract is realized; the verification report separately records what was tested
+and the limits of that evidence.
 
 ## Appendix A. Important revisions and their final meaning
 

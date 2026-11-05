@@ -61,6 +61,9 @@ def unique(rows, key='id'):
 
 
 def record_check(data, root, model):
+    for path in Path(root).iterdir():
+        need(path.name.casefold() not in ('review', 'provenance.json'),
+             'candidate top-level names review and provenance.json are reserved for publication attachments')
     for key in ('title', 'description'):
         text(data.get(key), key)
     file(root, data.get('exposition'))
@@ -151,7 +154,7 @@ def audit_formal(instance, session, check, solution, candidate):
         log = None
         logs = [Path(instance) / 'runner/lean/jobs' / m['job'] / 'stdout.log' for m in targets]
     output = log.read_text(encoding='utf-8', errors='replace') if log else '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in logs)
-    found = re.findall(r"['\"]?" + re.escape(theorem) + r"['\"]?\s+(?:depends on axioms:\s*\[([^\]]*)\]|(does not depend on any axioms))", output)
+    found = re.findall(r"^[ \t]*['\"]?" + re.escape(theorem) + r"['\"]?\s+(?:depends on axioms:\s*\[([^\]]*)\]|(does not depend on any axioms))", output, re.MULTILINE)
     need(bool(found), 'review compile did not print target axiom dependencies')
     axioms = set()
     for names, no_axioms in found:
@@ -315,7 +318,9 @@ def organization_check(data, model, batch):
     for key in data.get('refuse', []):
         need(key in model['global_terms'] and model['global_terms'][key]['membership'] == 'candidate',
              'only a pending candidate may be refused')
-    available = (set(model['global_terms']) | set(data.get('promote', []))) - set(data.get('refuse', []))
+    promoted = {next((primary for primary, member in model['global_terms'].items()
+                      if key in member['merged']), key) for key in data.get('promote', [])}
+    available = (set(model['global_terms']) | promoted) - set(data.get('refuse', []))
     for merge in data.get('merge_terms', []):
         need(merge['keep'] in available, 'merge primary term is not available')
         for other in merge['others']:
