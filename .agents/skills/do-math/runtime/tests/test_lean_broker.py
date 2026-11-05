@@ -77,13 +77,11 @@ class BrokerFixture(unittest.TestCase):
         if self.paths.state.exists():  # hosts of a detached broker exit once their Lean has ended
             for job in runner.read_json(self.paths.state).get("jobs", {}).values():
                 self.wait_gone(job.get("host"))
-        info = lean_broker.broker_alive(self.paths)
-        if info:
-            runner.terminate_process(info["process"])
-            while runner.alive(info["process"]):
-                time.sleep(0.02)
+        self.stop_detached_broker()
         # A broker terminated during its startup orphans its version command for a moment; on Windows
-        # that child holds the calibration folder as its working directory until it exits.
+        # that child holds the calibration folder as its working directory until it exits. A broker
+        # that was still starting when it was looked for above holds its files as well, so each retry
+        # stops any broker that has since recorded itself.
         deadline = time.monotonic() + 10
         while True:
             try:
@@ -92,7 +90,15 @@ class BrokerFixture(unittest.TestCase):
             except PermissionError:
                 if time.monotonic() >= deadline:
                     raise
+                self.stop_detached_broker()
                 time.sleep(0.1)
+
+    def stop_detached_broker(self):
+        info = lean_broker.broker_alive(self.paths)
+        if info:
+            runner.terminate_process(info["process"])
+            while runner.alive(info["process"]):
+                time.sleep(0.02)
 
     @staticmethod
     def wait_gone(identity, limit=10):
@@ -1126,6 +1132,13 @@ class ClientAndLifecycleTests(BrokerFixture):
         unknown = self.cli("wait", str(self.instance), "jnobody")
         self.assertEqual(unknown.returncode, 1)
         self.assertIn("invalid job ID", unknown.stderr)
+
+    def test_serve_for_a_deleted_instance_creates_nothing(self):
+        gone = self.root / "deleted instance"
+        result = self.cli("serve", str(gone), timeout=30)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("not a do-math instance", result.stderr)
+        self.assertFalse(gone.exists())
 
     def test_second_broker_yields_to_the_lock(self):
         self.assertEqual(self.cli("version", str(self.instance)).returncode, 0)  # launches the first broker

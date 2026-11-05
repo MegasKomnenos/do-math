@@ -1517,10 +1517,12 @@ def main(argv=None):
         if args.command == "_job":
             return job_host(args.job_dir)
         paths = Paths(args.instance)
-        if args.command == "serve":
-            return Broker(paths.instance, args.token).serve()
+        # Checked before serve as well: a broker started for an instance that has since been
+        # deleted must not recreate its folders.
         if not (paths.instance / "runner").is_dir():
             raise ValueError(f"not a do-math instance: {paths.instance}")
+        if args.command == "serve":
+            return Broker(paths.instance, args.token).serve()
         if args.command in ("submit", "run"):
             receipt = submit(paths, args.source, args.expect_mb, args.session)
             if args.command == "submit":
