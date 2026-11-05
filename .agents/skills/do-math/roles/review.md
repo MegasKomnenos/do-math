@@ -42,6 +42,8 @@ Decide publication from the value of the material. Useful imperfect work publish
 
 Assess proposed connections, node identities and solutions separately from publication. Check the frontier before admitting a new node. An accepted relation must have its established implication and exact signed premises; a speculative connection does not create a node. Identify the formal dependencies actually required by accepted informal solutions, including alternative routes where available. The runner acts on these explicit judgments.
 
+Whether a new node is worth admitting is also a judgment about the research. A node earns its place by stating exactly a question that the existing frontier does not already contain and that researchers can pursue on its own. A restatement is better identified with the node it restates, and a part of an existing node's own question can already be taken up as a section of that node. When a proposal asserts more than the node it would help settle needs, consider whether it is more tractable or merely harder, and explain your view in the reason.
+
 Assess the local glossary and check globally flagged entries against current shared definitions. Similar names can denote different objects; different names can denote the same object. A naming violation may coexist with correct mathematics about a clearly defined local object, or may hide an invalid transfer of a theorem. Explain which occurred.
 
 Your short index assessment appears beside the candidate's unchanged description. State the supported scope and the limitations a reader needs to decide whether to open the record. Explain full findings in the feedback. [Review output](../reference/review-output.md) gives the fields used to convey these decisions.
