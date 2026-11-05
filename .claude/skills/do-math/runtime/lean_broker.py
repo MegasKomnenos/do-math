@@ -1392,7 +1392,8 @@ def report_build(paths, build):
              "cached": m.get("status") == "cached", "reason": m.get("reason"),
              "measured": {k: (m.get("measured") or {}).get(k) for k in ("peak_mb", "seconds")}}
             for name, m in modules.items()]
-    exit_codes = [m.get("exit_code") for m in modules.values() if m.get("exit_code") is not None]
+    # Successful modules must not mask negative subprocess return codes.
+    exit_codes = [m["exit_code"] for m in modules.values() if m.get("exit_code") not in (None, 0)]
     summary = {"build": build["id"], "status": build["status"], "exit_code": max(exit_codes, default=0),
                "reason": build.get("reason"), "targets": build.get("targets", []), "modules": rows,
                "dir": str(paths.build(build["id"]))}

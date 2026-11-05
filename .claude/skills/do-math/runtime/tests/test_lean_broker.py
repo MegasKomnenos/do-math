@@ -151,6 +151,48 @@ class BrokerFixture(unittest.TestCase):
         return self.broker.state["jobs"].get(job_id, {}).get("status") in lean_broker.FINISHED
 
 
+class BuildResultTests(unittest.TestCase):
+    def test_wait_preserves_nonzero_module_codes_in_the_build_aggregate(self):
+        # Controlled terminal records test the real consumer, not POSIX execution.
+        cases = (
+            ("finished", (0, 0), 0, 0),
+            ("finished", (0, 1), 1, 1),
+            ("finished", (0, -9), -9, -9),
+            ("finished", (-9, 0), -9, -9),
+            ("finished", (-15, -9), -9, -9),
+            ("finished", (-9, 1), 1, 1),
+            ("failed", (0, -9), 3, -9),
+            ("cancelled", (0, -9), 4, -9),
+            ("failed", (None, None), 3, 0),
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = lean_broker.Paths(Path(temporary))
+            build_id = "b" + "1" * 32
+            folder = paths.build(build_id)
+            folder.mkdir(parents=True)
+            for status, codes, expected_return, expected_summary in cases:
+                with self.subTest(status=status, codes=codes):
+                    modules = {
+                        name: {"status": "finished" if code is not None else "failed",
+                               "exit_code": code, "job": None}
+                        for name, code in zip(("Basis", "Target"), codes)
+                    }
+                    if codes[0] == 0:
+                        modules["Basis"]["status"] = "cached"
+                    result = {"id": build_id, "status": status, "targets": ["Target"],
+                              "modules": modules, "reason": None}
+                    runner.write_json(folder / "result.json", result)
+                    out, err = io.StringIO(), io.StringIO()
+                    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                        returned = lean_broker.wait(paths, build_id, timeout=0)
+                    self.assertEqual(returned, expected_return)
+                    summary = json.loads(err.getvalue().split("lean-broker: ", 1)[1])
+                    self.assertEqual(summary["status"], status)
+                    self.assertEqual(summary["exit_code"], expected_summary)
+                    self.assertEqual([(m["module"], m["exit_code"]) for m in summary["modules"]],
+                                     list(zip(("Basis", "Target"), codes)))
+
+
 class AdmissionRuleTests(unittest.TestCase):
     def test_estimate_is_read_as_a_probable_peak_above_the_baseline(self):
         certain, mean, sd = lean_broker.reservation(1000, 400, 0.5)
