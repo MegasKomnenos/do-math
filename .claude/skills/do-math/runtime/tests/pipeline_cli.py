@@ -6,7 +6,7 @@ import shutil
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from coordination import claim
+from coordination import lease, section
 from lean_broker import Paths, submit, wait
 from runtime_support import read_json, write_json
 
@@ -18,7 +18,11 @@ print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 't
 
 if role in ('attempt', 'explore', 'formalizer'):
     if role == 'attempt':
-        claim(session, 'root')
+        lease(session, 'root')
+        (session / 'work').mkdir(exist_ok=True)
+        (session / 'work/section.json').write_text(json.dumps({'whole': True}), encoding='utf-8')
+        if not section(session, 'root', session / 'work/section.json')['registered']:
+            raise RuntimeError('scripted attempt could not register the whole root')
     (output / 'report.md').write_text('For every natural number n, n + 0 = n by the defining equation of addition.', encoding='utf-8')
     if role == 'formalizer':
         (output / 'Proof.lean').write_text('theorem add_zero_example (n : Nat) : n + 0 = n := by rfl\n', encoding='utf-8')

@@ -360,7 +360,7 @@ def escape(text):
     return str(text).replace('<', '&lt;').replace('>', '&gt;')
 
 
-def render(instance, model, board):
+def render(instance, model, board, leases=None):
     base = Path(instance) / 'knowledge'
     state_path = Path(instance) / 'runner/state.json'
     state = read_json(state_path) if state_path.exists() else {'jobs': {}}
@@ -453,12 +453,21 @@ def render(instance, model, board):
     board_lines = ['# Live board', '', f"Research revision: {model['sequence']}", '']
     for row in board:
         producer = row.get('session') or '(not launched)'
-        # Only an attempt that is still producing can yet declare a node; other rows hold none.
+        # An attempt still producing may not have registered a section yet; it is choosing.
         holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
         board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
+        for section in row.get('sections', []):
+            scope = 'the whole node' if section['whole'] else escape(section['statement'])
+            board_lines.append(f"  Section {section['id']} on {section['node']} (session {section['session']}): {scope}")
         for nid in row['nodes']:
             node = model['nodes'].get(canonical(model, nid), {})
             if node.get('concerns') or node.get('concern_history') or node.get('possible_concerns'):
                 board_lines.append(f'  Concern: see [frontier](frontier.md) for {nid}.')
+    if leases:
+        board_lines += ['', '## Node leases', '', 'One session at a time chooses a section on a node; others wait in order.', '']
+        for nid, entry in sorted(leases.items()):
+            holders = ', '.join(h['session'] for h in entry['holders']) or '(free)'
+            queue = ', '.join(w['session'] for w in entry['queue']) or '(none)'
+            board_lines.append(f'- {nid} · lease: {holders} · waiting: {queue}')
     write_text(base / 'board.md', '\n'.join(board_lines) + '\n')
     write_json(base / 'state.json', model)

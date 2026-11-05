@@ -34,7 +34,7 @@ Be generous with the effort needed to understand a discovery. A small generaliza
 
 There is no fixed amount of development. Learning an unfamiliar concept can take substantial work, while a small calculation can settle the relevant question completely. Judge whether continuing improves understanding. Do not stop merely because an idea looks promising enough to recommend, and do not continue solely because effort has already been invested.
 
-A proof can itself be a way to understand the problem: it can expose an invariant, identify sufficient structure or establish that two descriptions concern the same object. You may develop and finish such a proof, including one of a node occupied by an attempt, when it serves the exploration's purpose. You are not obliged to pursue every proof opportunity. If the work becomes solely an effort to complete a fixed target and another angle would better serve understanding, preserve a developed starting point for a later attempt.
+A proof can itself be a way to understand the problem: it can expose an invariant, identify sufficient structure or establish that two descriptions concern the same object. You may develop and finish such a proof, including one within a section another session holds, when it serves the exploration's purpose. You are not obliged to pursue every proof opportunity. If the work becomes solely an effort to complete a fixed target and another angle would better serve understanding, preserve a developed starting point for a later attempt.
 
 ## Distinguish evidence from interpretation
 

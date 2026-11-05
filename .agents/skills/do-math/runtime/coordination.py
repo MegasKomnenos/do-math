@@ -1,4 +1,10 @@
-"""Live coordination information and session-owned declarations. Claims are first-wins under one instance lock."""
+"""Live coordination information, node leases and session-owned section declarations.
+
+A section is an exact part of a node's question that an attempt or peer works on. It is kept in
+the registering session's declaration.json and lasts, as node occupancy did, until that session's
+pipeline finishes review. Choosing a section is serialized per node: one session at a time holds
+the node's lease, registers its section and so passes the lease to the next waiting session.
+Leases and registrations are decided first-wins under one instance lock."""
 import argparse
 from contextlib import contextmanager
 import json
@@ -7,14 +13,16 @@ from pathlib import Path
 import time
 import uuid
 from knowledge import canonical, replay
-from runtime_support import read_json, write_json
+from runtime_support import alive, read_json, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
+WAIT_POLL_SECONDS = 1.0
+SECTION_ROLES = ('attempt', 'peer')
 
 
 @contextmanager
 def claims_lock(instance):
-    """One claim at a time per instance; the OS releases the lock if its holder dies."""
+    """One coordination change at a time per instance; the OS releases the lock if its holder dies."""
     path = Path(instance) / 'runner' / 'claims.lock'
     deadline = time.monotonic() + CLAIM_LOCK_SECONDS
     with path.open('a+b') as stream:
@@ -33,7 +41,7 @@ def claims_lock(instance):
                 break
             except OSError:
                 if time.monotonic() >= deadline:
-                    raise RuntimeError('another claim is still in progress; run the claim again')
+                    raise RuntimeError('another coordination change is still in progress; run the command again')
                 time.sleep(0.05)
         try:
             yield
@@ -43,7 +51,29 @@ def claims_lock(instance):
                 msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
 
 
+def session_live(state, sid):
+    """The broker's rule for an ended session: its stage is over, or its host and CLI are both gone."""
+    session = (state or {}).get('sessions', {}).get(sid)
+    if session is None or session['status'] not in ('starting', 'running'):
+        return False
+    return session.get('cli') is None or alive(session.get('host')) or alive(session.get('cli'))
+
+
+def section_entries(instance, sid, model):
+    """Sections one session declared. The earlier {"nodes": [...]} form reads as whole-node sections."""
+    path = Path(instance) / 'sessions' / sid / 'declaration.json'
+    if not sid or not path.is_file():
+        return []
+    data = read_json(path)
+    rows = list(data.get('sections', []))
+    rows += [{'id': f'{sid}-{node}', 'node': node, 'whole': True, 'statement': None, 'at': data.get('at')}
+             for node in data.get('nodes', [])]
+    return [{**row, 'node': canonical(model, row['node']), 'session': sid} for row in rows
+            if row['node'] in model['nodes'] or row['node'] in model['aliases']]
+
+
 def board(instance, state=None, model=None):
+    """Producing work and its sections. A pipeline's sections, its producer's and its peers', end together."""
     instance = Path(instance)
     state = state or read_json(instance / 'runner/state.json')
     model = model or replay(instance)
@@ -51,50 +81,215 @@ def board(instance, state=None, model=None):
     for pid, pipeline in state['pipelines'].items():
         if pipeline['stage'] == 'done':
             continue
-        source = instance / 'sessions' / pipeline['producer'] / 'declaration.json' if pipeline['producer'] else None
-        declaration = read_json(source) if source is not None and source.is_file() else {}
+        owners = [pipeline['producer'], *pipeline.get('previous_peers', []), pipeline.get('peer')]
+        sections = [s for sid in dict.fromkeys(x for x in owners if x) for s in section_entries(instance, sid, model)]
         rows.append({'pipeline': pid, 'session': pipeline['producer'], 'role': pipeline['role'],
                      'stage': pipeline['stage'] if pipeline['producer'] else 'queued',
-                     'nodes': sorted({canonical(model, n) for n in declaration.get('nodes', []) if n in model['nodes'] or n in model['aliases']}),
-                     'declared_at': declaration.get('at')})
+                     'nodes': sorted({s['node'] for s in sections}), 'sections': sections,
+                     'declared_at': min((s['at'] for s in sections if s.get('at')), default=None)})
     return rows
 
 
-def claim(session, node):
+def normalize(table, state):
+    """Drop holders and waiters whose sessions ended and give a free lease to the longest waiter."""
+    result = {}
+    for node, entry in table.items():
+        holders = [h for h in entry.get('holders', []) if session_live(state, h['session'])]
+        present = {h['session'] for h in holders}
+        queue = []
+        for waiter in sorted(entry.get('queue', []), key=lambda w: w['since']):
+            if session_live(state, waiter['session']) and waiter['session'] not in present:
+                present.add(waiter['session'])
+                queue.append(waiter)
+        if not holders and queue:
+            head = queue.pop(0)
+            holders = [{'session': head['session'], 'since': time.time(), 'waited_since': head['since']}]
+        if holders or queue:
+            result[node] = {'holders': holders, 'queue': queue}
+    return result
+
+
+def lease_table(instance, state=None, model=None):
+    """Leases in force, keyed by canonical node. A merge of two leased nodes keeps both holders."""
+    instance = Path(instance)
+    state = state or read_json(instance / 'runner/state.json')
+    model = model or replay(instance)
+    path = instance / 'runner' / 'leases.json'
+    merged = {}
+    for node, entry in (read_json(path) if path.exists() else {}).items():
+        if node in model['nodes'] or node in model['aliases']:
+            target = merged.setdefault(canonical(model, node), {'holders': [], 'queue': []})
+            target['holders'] += entry.get('holders', [])
+            target['queue'] += entry.get('queue', [])
+    return normalize(merged, state)
+
+
+def blocked(model, rows, node, pipeline):
+    """Why no session of this pipeline can register on the node, or None."""
+    if model['nodes'][node]['state'] != 'unresolved':
+        return 'This node is not unresolved; read its evidence instead of choosing a section on it.'
+    whole = [s for r in rows if r['pipeline'] != pipeline for s in r['sections'] if s['node'] == node and s['whole']]
+    if whole:
+        return 'Session ' + whole[0]['session'] + ' holds this whole node; no other section can be registered on it.'
+    return None
+
+
+def context(session):
     session = Path(session).resolve()
     inp = read_json(session / 'input.json')
-    if inp['role'] != 'attempt':
-        raise ValueError('only attempts declare node occupancy; other roles pursue their assigned responsibilities')
-    instance = Path(inp['instance'])
-    # Read the board, decide and record in one step, so two attempts cannot both take a node.
+    if inp['role'] not in SECTION_ROLES:
+        raise ValueError('only attempts and peers register sections; other roles pursue their assigned responsibilities')
+    return inp, Path(inp['instance'])
+
+
+def known(model, node):
+    if node not in model['nodes'] and node not in model['aliases']:
+        raise ValueError('unknown node')
+    return canonical(model, node)
+
+
+def leave(table, sid, keep=None):
+    """A session stands in at most one lease relation, so taking or joining one ends any other."""
+    for node, entry in table.items():
+        if node != keep:
+            entry['holders'] = [h for h in entry['holders'] if h['session'] != sid]
+            entry['queue'] = [w for w in entry['queue'] if w['session'] != sid]
+
+
+def save(instance, table, state):
+    write_json(Path(instance) / 'runner' / 'leases.json', normalize(table, state))
+
+
+def view(node, table, rows):
+    entry = table.get(node, {'holders': [], 'queue': []})
+    return {'node': node, 'holders': [h['session'] for h in entry['holders']],
+            'queue': [w['session'] for w in entry['queue']],
+            'sections': [s for r in rows for s in r['sections'] if s['node'] == node]}
+
+
+def lease(session, node):
+    """Take a node's lease if no one holds it. A refusal records nothing."""
+    inp, instance = context(session)
+    sid = inp['session']
     with claims_lock(instance):
-        model = replay(instance)
-        if node not in model['nodes'] and node not in model['aliases']:
-            raise ValueError('unknown node')
-        node = canonical(model, node)
-        rows = board(instance, model=model)
-        path = session / 'declaration.json'
-        data = read_json(path) if path.exists() else {'nodes': [], 'at': time.time()}
-        held = {canonical(model, n) for n in data['nodes'] if n in model['nodes'] or n in model['aliases']}
-        occupants = [r for r in rows if r['role'] == 'attempt' and node in r['nodes'] and r['session'] != inp['session']]
-        if occupants and node not in held:
-            taken = {n for r in rows if r['role'] == 'attempt' and r['session'] != inp['session'] for n in r['nodes']}
-            available = [n for n, v in model['nodes'].items()
-                         if v['canonical'] == n and v['state'] == 'unresolved' and n not in taken and n not in held]
-            return {'claimed': False, 'node': node, 'nodes': data['nodes'], 'occupants': occupants,
-                    'available': available,
-                    'reason': 'Another attempt already occupies this node; nothing was recorded. '
-                              'Choose an available node. If none is available, follow your guide for that case.',
-                    'revision': model['sequence'], 'board': rows}
-        if node not in held:
-            data['nodes'].append(node)
-            write_json(path, data)
-    warnings = []
-    if model['nodes'][node]['state'] != 'unresolved':
-        warnings.append('This node is already settled or contested. Read its evidence before choosing work.')
-    # Occupants remain only when an organizer merge joined nodes this attempt already held.
-    return {'claimed': True, 'nodes': data['nodes'], 'occupants': occupants, 'warnings': warnings,
-            'revision': model['sequence'], 'board': board(instance, model=model)}
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        node = known(model, node)
+        rows, table = board(instance, state, model), lease_table(instance, state, model)
+        reason = blocked(model, rows, node, inp.get('pipeline'))
+        entry = table.get(node, {'holders': [], 'queue': []})
+        mine = any(h['session'] == sid for h in entry['holders'])
+        if reason is None and entry['holders'] and not mine:
+            reason = 'Another session holds this node\'s lease. Wait for it with commands.wait or choose another node.'
+        if reason:
+            return {'leased': False, 'reason': reason, **view(node, table, rows)}
+        leave(table, sid, keep=node)
+        if not mine:
+            table[node] = {'holders': [{'session': sid, 'since': time.time()}], 'queue': entry['queue']}
+        save(instance, table, state)
+        return {'leased': True, **view(node, table, rows)}
+
+
+def wait(session, node, timeout=None):
+    """Join the node's queue and return once the lease is this session's, or at the timeout."""
+    inp, instance = context(session)
+    sid = inp['session']
+    deadline = None if timeout is None else time.monotonic() + timeout
+    while True:
+        with claims_lock(instance):
+            model, state = replay(instance), read_json(instance / 'runner/state.json')
+            node = known(model, node)
+            rows, table = board(instance, state, model), lease_table(instance, state, model)
+            reason = blocked(model, rows, node, inp.get('pipeline'))
+            if reason:
+                # Only this node's place ends; a place on another node is kept.
+                entry = table.get(node)
+                if entry:
+                    entry['holders'] = [h for h in entry['holders'] if h['session'] != sid]
+                    entry['queue'] = [w for w in entry['queue'] if w['session'] != sid]
+                    save(instance, table, state)
+                return {'leased': False, 'reason': reason, **view(node, table, rows)}
+            entry = table.setdefault(node, {'holders': [], 'queue': []})
+            if not any(x['session'] == sid for x in entry['holders'] + entry['queue']):
+                leave(table, sid, keep=node)
+                entry['queue'].append({'session': sid, 'since': time.time()})
+            table = normalize(table, state)
+            save(instance, table, state)
+            if any(h['session'] == sid for h in table.get(node, {}).get('holders', [])):
+                return {'leased': True, **view(node, table, rows)}
+            position = [w['session'] for w in table[node]['queue']].index(sid) + 1
+        if deadline is not None and time.monotonic() >= deadline:
+            return {'leased': False, 'waiting': True, 'position': position, 'timeout': True,
+                    'hint': 'Your place is kept; run wait again, or take another node.', **view(node, table, rows)}
+        time.sleep(WAIT_POLL_SECONDS)
+
+
+def release(session, node):
+    """Give up a node's lease, or leave its queue, without registering a section."""
+    inp, instance = context(session)
+    with claims_lock(instance):
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        node = known(model, node)
+        table = lease_table(instance, state, model)
+        entry = table.get(node, {'holders': [], 'queue': []})
+        entry['holders'] = [h for h in entry['holders'] if h['session'] != inp['session']]
+        entry['queue'] = [w for w in entry['queue'] if w['session'] != inp['session']]
+        save(instance, table, state)
+        return {'released': True, **view(node, normalize(table, state), board(instance, state, model))}
+
+
+def section(session, node, request_file):
+    """Register a section while holding the node's lease; registration ends the lease.
+
+    The tool refuses what it can decide: no lease, a settled node, a conflict with a whole-node
+    section, an identical statement, or a missing non-overlap reason. Overlap itself is the
+    registering session's judgement, recorded with its reasons."""
+    inp, instance = context(session)
+    sid = inp['session']
+    request = read_json(request_file)
+    whole = request.get('whole', False)
+    reasons = request.get('reasons', {})
+    if type(whole) is not bool or not isinstance(reasons, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) for k, v in reasons.items()):
+        raise ValueError('the request needs "whole" as Boolean and "reasons" mapping section IDs to text')
+    statement = None if whole else request.get('statement')
+    if not whole and not (isinstance(statement, str) and statement.strip()):
+        raise ValueError('a section needs its exact "statement", or "whole": true for the whole node')
+    with claims_lock(instance):
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        node = known(model, node)
+        rows, table = board(instance, state, model), lease_table(instance, state, model)
+
+        def refuse(reason):
+            return {'registered': False, 'reason': reason, **view(node, table, rows)}
+
+        if not any(h['session'] == sid for h in table.get(node, {}).get('holders', [])):
+            return refuse('Take the node\'s lease with commands.lease or commands.wait before registering.')
+        reason = blocked(model, rows, node, inp.get('pipeline'))
+        if reason:
+            return refuse(reason)
+        existing = [s for r in rows for s in r['sections'] if s['node'] == node]
+        others = [s for r in rows if r['pipeline'] != inp.get('pipeline') for s in r['sections'] if s['node'] == node]
+        if whole and others:
+            return refuse('Sections of other sessions exist on this node, so the whole node cannot be registered.')
+        if whole and any(s['whole'] for s in existing):
+            return refuse('Your processing already holds this whole node.')
+        if not whole and any(s['statement'] and ' '.join(s['statement'].split()) == ' '.join(statement.split())
+                             for s in existing):
+            return refuse('A section with this exact statement is already registered on this node.')
+        missing = [s['id'] for s in others if not reasons.get(s['id'], '').strip()]
+        if missing:
+            return refuse('State why your section does not overlap each of these sections: ' + ', '.join(missing))
+        path = Path(session).resolve() / 'declaration.json'
+        data = read_json(path) if path.exists() else {'sections': [], 'at': time.time()}
+        data.setdefault('sections', [])
+        entry = {'id': f'{sid}-{len(data["sections"]) + 1}', 'node': node, 'whole': whole, 'statement': statement,
+                 'reasons': {s['id']: reasons[s['id']] for s in others}, 'at': time.time()}
+        data['sections'].append(entry)
+        write_json(path, data)
+        table[node]['holders'] = [h for h in table[node]['holders'] if h['session'] != sid]
+        save(instance, table, state)
+        rows = board(instance, state, model)
+        return {'registered': True, 'section': entry, **view(node, normalize(table, state), rows)}
 
 
 def updates(session):
@@ -105,7 +300,8 @@ def updates(session):
     state = read_json(instance / 'runner/state.json')
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     return {'revision': model['sequence'], 'root_state': model['nodes'][canonical(model, 'root')]['state'],
-            'board': board(instance, state, model), 'concerns': model['concerns'],
+            'board': board(instance, state, model), 'leases': lease_table(instance, state, model),
+            'concerns': model['concerns'],
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
                                for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive'],
             'messages': received,
@@ -132,27 +328,38 @@ def message(session, target, message_file):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('board', 'claim', 'updates', 'message'):
+    for name in ('updates', 'lease', 'wait', 'release', 'section', 'message'):
         p = sub.add_parser(name)
         p.add_argument('session', type=Path)
-        if name == 'claim':
+        if name in ('lease', 'wait', 'release', 'section'):
             p.add_argument('node')
+        if name == 'wait':
+            p.add_argument('--timeout', type=float, default=50.0)
+        if name == 'section':
+            p.add_argument('--file', required=True, type=Path)
         if name == 'message':
             p.add_argument('target')
             p.add_argument('--file', required=True, type=Path)
     args = parser.parse_args()
     try:
-        if args.command == 'claim':
-            result = claim(args.session, args.node)
-            if not result['claimed']:
-                print(json.dumps(result, ensure_ascii=True))
-                return 1
+        code = 0
+        if args.command == 'lease':
+            result = lease(args.session, args.node)
+            code = 0 if result['leased'] else 1
+        elif args.command == 'wait':
+            result = wait(args.session, args.node, args.timeout)
+            code = 0 if result['leased'] else 124 if result.get('timeout') else 1
+        elif args.command == 'release':
+            result = release(args.session, args.node)
+        elif args.command == 'section':
+            result = section(args.session, args.node, args.file)
+            code = 0 if result['registered'] else 1
         elif args.command == 'message':
             result = message(args.session, args.target, args.file)
         else:
             result = updates(args.session)
         print(json.dumps(result, ensure_ascii=True))
-        return 0
+        return code
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
         print(json.dumps({'error': str(exc)}))
         return 1

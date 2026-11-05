@@ -23,6 +23,6 @@ Carry forward the existing layout as appropriate and place every record in the a
 
 A global term ID refers to its published local definition. Promotion retains that definition. Refusal applies only to candidates; permanent membership survives merges. If a permanent entry merges into a candidate primary, the surviving primary becomes permanent. New writing then uses that primary name and recognizes the merged names as aliases.
 
-Node merges preserve references through aliases. Explain the mathematical identity in `reason`; the runner does not establish identity by comparing strings. If both original nodes are occupied, both preexisting attempts continue against the merged identity.
+Node merges preserve references through aliases. Explain the mathematical identity in `reason`; the runner does not establish identity by comparing strings. Sections held on either original node continue against the merged identity.
 
 The runner checks IDs, references, permissible dispositions and the exact batch. You judge whether the grouping helps readers, a term deserves shared status, and definitions or statements are actually identical. Read the resulting arrangement from that perspective, run the transport check on your own session directory, and end.

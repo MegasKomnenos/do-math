@@ -175,7 +175,7 @@ class PublicationTests(InstanceCase):
         producer = runner.session_dir(pipeline['producer'])
         producer.mkdir(parents=True)
         write_json(producer / 'declaration.json', {'nodes': ['root'], 'at': 1})
-        self.assertEqual(runner.available_nodes(), ([], 0))
+        self.assertEqual(runner.available_nodes(), [])
         session = runner.session_dir('sreview')
         verdict = read_json(session / 'output/assessment.json')
         verdict.update(publish=False, reason='No useful supported material.',
@@ -198,9 +198,9 @@ class PublicationTests(InstanceCase):
         self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
         self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
         self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
-        self.assertEqual(runner.available_nodes(), (['root'], 0))
+        self.assertEqual(runner.available_nodes(), ['root'])
         recovered = runtime.Runner(self.instance, self.skill)
-        self.assertEqual(recovered.available_nodes(), (['root'], 0))
+        self.assertEqual(recovered.available_nodes(), ['root'])
         self.assertEqual(recovered.state['jobs'][job['id']]['status'], 'done')
 
 

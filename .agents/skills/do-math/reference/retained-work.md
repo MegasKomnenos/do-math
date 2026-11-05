@@ -4,7 +4,7 @@ Attempts, explorations and formalizers use `output/report.md` as the entry point
 
 | Section | What the next researcher needs |
 |---|---|
-| Question and current work | The exact question, occupied nodes where applicable, current approach and what is being investigated now. |
+| Question and current work | The exact question, registered sections where applicable, current approach and what is being investigated now. |
 | Definitions and assumptions | Objects and conditions used, links to inherited definitions, and the local terminology introduced here. |
 | Mathematics | Arguments and completed intermediate steps, computations with their interpretation, and literature used with its application. |
 | Results and evidence | What was established, its scope and evidence, and what remains observed, conjectural or unchecked. |
@@ -24,4 +24,4 @@ When finishing normally, write `output/outcome.json`:
 
 This small manifest makes the endpoint easy to find. It is not a success certificate or a publication gate. The runner forwards retained producing material to peer even if interruption prevents the manifest or report from being completed. Save important work throughout so that there is material to recover.
 
-An attempt's occupancy declarations are maintained by the claim command in its session's `declaration.json`. An explorer does not claim nodes. A formalizer receives its node in its assignment. None of these roles directly creates shared nodes or publishes mathematical state; the peer prepares proposals and review assesses them.
+Attempts and peers register sections with the coordination commands, which record them in the session's `declaration.json`. An explorer does not register sections. A formalizer receives its node in its assignment, recorded as a whole-node section. None of these roles directly creates shared nodes or publishes mathematical state; the peer prepares proposals and review assesses them.

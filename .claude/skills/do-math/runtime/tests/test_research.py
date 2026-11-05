@@ -7,12 +7,13 @@ import sys
 import tempfile
 import time
 import unittest
+import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, organization_check, record_check
 from cli_adapter import Command
-from coordination import board, claim
+from coordination import board, lease, lease_table, release, section, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved
 from runner import Runner, archive_finished, initialize
 from runtime_support import read_json, write_json
@@ -37,6 +38,18 @@ def assessment(data, formal=()):
             'relations': [{'proposal': r['id'], 'accepted': True, 'reason': 'Implication checked.'} for r in data['relations']],
             'solutions': [{'proposal': s['id'], 'level': 'formal' if s['id'] in formal else 'informal', 'reason': 'Exact statement.'} for s in data['solutions']],
             'concerns': []}
+
+
+def take(session, node, statement=None, reasons=None, leased=False):
+    """Register a section through the node's lease: the whole node unless a statement is given."""
+    session = Path(session)
+    request = session / ('section-' + uuid.uuid4().hex + '.json')
+    write_json(request, {'whole': statement is None, 'statement': statement, 'reasons': reasons or {}})
+    if not leased:
+        taken = lease(session, node)
+        if not taken['leased']:
+            return {'registered': False, **taken}
+    return section(session, node, request)
 
 
 def implication(rid, premise, conclusion='root', outcome='proved'):
@@ -146,7 +159,7 @@ class KnowledgeTests(InstanceCase):
                 sid = job['session']
                 sessions.append(sid)
                 pipelines.append(job['pipeline'])
-                self.assertEqual(claim(engine.session_dir(sid), node)['warnings'], [])
+                self.assertTrue(take(engine.session_dir(sid), node)['registered'])
                 path = engine.session_dir(sid) / 'declaration.json'
                 declarations[path] = path.read_bytes()
         organization = {'batch': ['rnodes'], 'modules': [], 'shared_context': ['rnodes'],
@@ -158,7 +171,7 @@ class KnowledgeTests(InstanceCase):
         self.assertCountEqual([sid for sid, _ in engine.active()], sessions)
         self.assertEqual({row['session']: row['nodes'] for row in board(self.instance)},
                          {sid: ['B'] for sid in sessions})
-        self.assertEqual(engine.available_nodes(), (['root'], 0))
+        self.assertEqual(engine.available_nodes(), ['root'])
         self.assertEqual({p: p.read_bytes() for p in declarations}, declarations)
         # Publication and exclusion have lifecycle tests; here release each occupancy
         # to check that the other pipeline still holds the merged identity.
@@ -166,11 +179,11 @@ class KnowledgeTests(InstanceCase):
         engine.save()
         self.assertEqual([(row['session'], row['nodes']) for row in board(self.instance)],
                          [(sessions[1], ['B'])])
-        self.assertEqual(engine.available_nodes(), (['root'], 0))
+        self.assertEqual(engine.available_nodes(), ['root'])
         engine.state['pipelines'][pipelines[1]]['stage'] = 'done'
         engine.save()
         self.assertEqual(board(self.instance), [])
-        self.assertCountEqual(engine.available_nodes()[0], ['root', 'B'])
+        self.assertCountEqual(engine.available_nodes(), ['root', 'B'])
 
     def test_informal_propagation_and_formal_readiness_are_separate(self):
         self.publish('r1', self.reduction())
@@ -547,7 +560,7 @@ class RunnerTests(InstanceCase):
     def test_occupancy_survives_producer_exit(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
-        claim(runner.session_dir(sid), 'root')
+        self.assertTrue(take(runner.session_dir(sid), 'root')['registered'])
         for stage in ('producing', 'peer'):
             if stage == 'peer':
                 runner.finish(sid, session)
@@ -566,62 +579,192 @@ class RunnerTests(InstanceCase):
         folder = runner.session_dir(sid)
         folder.mkdir(parents=True)
         (folder / 'inbox').mkdir()
-        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt', 'task': {}})
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt',
+                                           'pipeline': job['pipeline'], 'task': {}})
         runner.state['pipelines'][job['pipeline']]['producer'] = sid
         runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
         job.update(status='running', session=sid)
         runner.save()
         return folder
 
-    def test_claim_is_first_wins_and_a_refusal_records_nothing(self):
+    def test_lease_is_first_wins_and_a_refusal_records_nothing(self):
         self.publish('r1', self.reduction())  # Q stays available
         runner = self.runner()
         first, second = (self.running_attempt(runner, sid) for sid in ('sfirst', 'ssecond'))
-        self.assertTrue(claim(first, 'root')['claimed'])
-        refused = claim(second, 'root')
-        self.assertFalse(refused['claimed'])
-        self.assertEqual([row['session'] for row in refused['occupants']], ['sfirst'])
-        self.assertEqual(refused['available'], ['Q'])
+        self.assertTrue(lease(first, 'root')['leased'])
+        refused = lease(second, 'root')
+        self.assertFalse(refused['leased'])
+        self.assertEqual(refused['holders'], ['sfirst'])
+        self.assertEqual(refused['queue'], [])
+        self.assertEqual({n: [h['session'] for h in e['holders']] for n, e in lease_table(self.instance).items()},
+                         {'root': ['sfirst']})
         self.assertFalse((second / 'declaration.json').exists())
-        self.assertEqual({row['session']: row['nodes'] for row in board(self.instance)},
-                         {'sfirst': ['root'], 'ssecond': []})
-        # Repeating one's own claim is accepted; the refused attempt chooses again.
-        self.assertTrue(claim(first, 'root')['claimed'])
-        self.assertEqual(read_json(first / 'declaration.json')['nodes'], ['root'])
-        self.assertTrue(claim(second, 'Q')['claimed'])
+        # Repeating one's own lease is accepted; the refused attempt can take another node.
+        self.assertTrue(lease(first, 'root')['leased'])
+        self.assertTrue(lease(second, 'Q')['leased'])
 
-    def test_simultaneous_claims_from_separate_processes_admit_one_attempt(self):
+    def test_simultaneous_leases_from_separate_processes_admit_one_holder(self):
         runner = self.runner()
         folders = [self.running_attempt(runner, 's' + str(i)) for i in range(6)]
         runtime = str(Path(__file__).resolve().parents[1])
-        start = time.time() + 3  # every process imports first, then claims at the same instant
+        start = time.time() + 3  # every process imports first, then asks at the same instant
         launcher = ('import sys, time; sys.path.insert(0, %r); import coordination; '
                     'time.sleep(max(0, %r - time.time())); '
-                    'sys.argv = ["coordination.py", "claim", sys.argv[1], "root"]; '
+                    'sys.argv = ["coordination.py", "lease", sys.argv[1], "root"]; '
                     'raise SystemExit(coordination.main())') % (runtime, start)
         processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
         results = [(p.wait(timeout=60), json.loads(p.stdout.read().decode('utf-8'))) for p in processes]
         self.assertEqual(sorted(code for code, _ in results), [0, 1, 1, 1, 1, 1], results)
-        self.assertEqual([r['claimed'] for _, r in results].count(True), 1)
-        holders = [f.name for f in folders if (f / 'declaration.json').exists()]
+        holders = lease_table(self.instance)['root']['holders']
         self.assertEqual(len(holders), 1)
-        self.assertEqual([row['session'] for row in board(self.instance) if row['nodes']], holders)
+        self.assertEqual([r['holders'] for code, r in results if code == 0], [[holders[0]['session']]])
 
-    def test_refused_claim_keeps_the_attempt_choosing_and_launches_no_extra_attempt(self):
-        # The 15:56 case: two attempts launched for two free nodes both choose Q.
+    def test_waiters_are_served_in_order_and_registration_passes_the_lease(self):
+        runner = self.runner()
+        a, b, c = (self.running_attempt(runner, sid) for sid in ('sa', 'sb', 'sc'))
+        self.assertTrue(lease(a, 'root')['leased'])
+        self.assertEqual(wait(b, 'root', timeout=0)['position'], 1)
+        self.assertEqual(wait(c, 'root', timeout=0)['position'], 2)
+        first = take(a, 'root', 'For every n, b is nondecreasing for l < n - 2.', leased=True)
+        self.assertTrue(first['registered'], first)
+        sid_a = first['section']['id']
+        self.assertEqual([h['session'] for h in lease_table(self.instance)['root']['holders']], ['sb'])
+        self.assertTrue(wait(b, 'root', timeout=0)['leased'])
+        # The tool refuses what it can decide; overlap itself is the registering session's reasoned judgement.
+        self.assertIn('whole node cannot', take(b, 'root', leased=True)['reason'])
+        self.assertIn('exact statement',
+                      take(b, 'root', 'For every n,  b is nondecreasing for l < n - 2.', leased=True)['reason'])
+        missing = take(b, 'root', 'For every n, the last three terms decrease.', leased=True)
+        self.assertIn(sid_a, missing['reason'])
+        self.assertFalse((b / 'declaration.json').exists())
+        second = take(b, 'root', 'For every n, the last three terms decrease.',
+                      {sid_a: 'Mine concerns l >= n - 3 only, where the other section does not apply.'}, leased=True)
+        self.assertTrue(second['registered'], second)
+        self.assertEqual([h['session'] for h in lease_table(self.instance)['root']['holders']], ['sc'])
+        rows = {r['session']: [s['id'] for s in r['sections']] for r in board(self.instance)}
+        self.assertEqual(rows, {'sa': [sid_a], 'sb': [second['section']['id']], 'sc': []})
+        self.assertEqual(runner.available_nodes(), ['root'])
+
+    def test_lease_of_an_ended_session_passes_to_the_next_waiter(self):
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'root')['leased'])
+        self.assertFalse(wait(b, 'root', timeout=0)['leased'])
+        runner.state['sessions']['sa']['status'] = 'ended'
+        runner.save()
+        self.assertTrue(wait(b, 'root', timeout=0)['leased'])
+        # A running session whose host and CLI are both gone has ended as well.
+        c = self.running_attempt(runner, 'sc')
+        self.assertFalse(wait(c, 'root', timeout=0)['leased'])
+        gone = {'pid': 2 ** 22, 'birth': 'gone'}
+        runner.state['sessions']['sb'].update(host=gone, cli=gone)
+        runner.save()
+        self.assertTrue(wait(c, 'root', timeout=0)['leased'])
+
+    def test_a_session_stands_in_one_lease_relation(self):
         self.publish('r1', self.reduction())
         runner = self.runner()
+        holder, mover = (self.running_attempt(runner, sid) for sid in ('sholder', 'smover'))
+        self.assertTrue(lease(holder, 'root')['leased'])
+        self.assertFalse(wait(mover, 'root', timeout=0)['leased'])
+        self.assertTrue(lease(mover, 'Q')['leased'])
+        self.assertEqual(lease_table(self.instance)['root']['queue'], [])
+        # Leaving without registering frees the lease for everyone.
+        release(mover, 'Q')
+        self.assertNotIn('Q', lease_table(self.instance))
+        # A refused wait on a node held whole keeps the place already taken on another node.
+        self.assertFalse(wait(mover, 'root', timeout=0)['leased'])
+        blocked_by = self.running_attempt(runner, 'swhole')
+        self.assertTrue(take(blocked_by, 'Q')['registered'])
+        self.assertIn('whole node', wait(mover, 'Q', timeout=0)['reason'])
+        self.assertEqual([w['session'] for w in lease_table(self.instance)['root']['queue']], ['smover'])
+        self.assertIn('already holds', take(blocked_by, 'Q')['reason'])
+
+    def test_whole_node_section_blocks_others_until_its_pipeline_is_done(self):
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(take(a, 'root')['registered'])
+        self.assertIn('whole node', lease(b, 'root')['reason'])
+        self.assertEqual(runner.available_nodes(), [])
+        pipeline = runner.state['jobs'][runner.state['sessions']['sa']['job']]['pipeline']
+        runner.state['pipelines'][pipeline]['stage'] = 'done'
+        runner.save()
+        self.assertEqual(runner.available_nodes(), ['root'])
+        self.assertTrue(lease(b, 'root')['leased'])
+
+    def test_sections_expand_through_the_lease_and_are_not_released(self):
+        runner = self.runner()
+        a = self.running_attempt(runner, 'sa')
+        self.assertTrue(take(a, 'root', 'For every n, the last three terms decrease.')['registered'])
+        request = a / 'next.json'
+        write_json(request, {'whole': False, 'statement': 'For every n >= 4, b_(n,n-4) > b_(n,n-3).', 'reasons': {}})
+        self.assertIn('lease', section(a, 'root', request)['reason'])
+        self.assertTrue(lease(a, 'root')['leased'])
+        # Its own earlier section needs no non-overlap reason.
+        self.assertTrue(section(a, 'root', request)['registered'])
+        self.assertTrue(lease(a, 'root')['leased'])
+        release(a, 'root')
+        self.assertEqual([s['id'] for s in read_json(a / 'declaration.json')['sections']], ['sa-1', 'sa-2'])
+
+    def test_peers_register_within_their_pipeline_and_other_roles_cannot(self):
+        runner = self.runner()
+        a = self.running_attempt(runner, 'sa')
+        self.assertTrue(take(a, 'root', 'For every n, the last three terms decrease.')['registered'])
+        job = runner.state['jobs'][runner.state['sessions']['sa']['job']]
+        peer = runner.session_dir('speer')
+        peer.mkdir()
+        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': 'speer', 'role': 'peer',
+                                         'pipeline': job['pipeline'], 'task': {}})
+        runner.state['pipelines'][job['pipeline']].update(peer='speer', stage='peer')
+        runner.state['sessions']['speer'] = {'id': 'speer', 'role': 'peer', 'status': 'running', 'job': 'peerjob'}
+        runner.save()
+        # The source's sections belong to the same pipeline, so the peer may take the rest of the node.
+        self.assertTrue(take(peer, 'root')['registered'])
+        self.assertEqual([s['session'] for s in board(self.instance)[0]['sections']], ['sa', 'speer'])
+        explorer = runner.session_dir('sexplore')
+        explorer.mkdir()
+        write_json(explorer / 'input.json', {'instance': str(self.instance), 'session': 'sexplore', 'role': 'explore'})
+        with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
+            lease(explorer, 'root')
+
+    def test_earlier_node_declarations_read_as_whole_sections(self):
+        runner = self.runner()
+        old, new = (self.running_attempt(runner, sid) for sid in ('sold', 'snew'))
+        write_json(old / 'declaration.json', {'nodes': ['root'], 'at': 1})
+        self.assertEqual([(s['node'], s['whole']) for s in board(self.instance)[0]['sections']], [('root', True)])
+        self.assertEqual(runner.available_nodes(), [])
+        self.assertIn('whole node', lease(new, 'root')['reason'])
+
+    def test_attempt_launches_are_spaced_and_a_queued_node_launches_none(self):
+        self.publish('r1', self.reduction())  # root and Q are both available
+        runner = self.runner()
+        self.assertEqual(runner.settings['attempt_launch_interval'], 180)
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.schedule()
+            runner.schedule()
+            self.assertEqual(len([s for _, s in runner.active() if s['role'] == 'attempt']), 1)
+            # The spacing survives a restart.
+            runner = self.runner()
+            runner.schedule()
+            self.assertEqual(len([s for _, s in runner.active() if s['role'] == 'attempt']), 1)
+            runner.state['last_attempt_launch'] -= 181
+            runner.schedule()
             attempts = [sid for sid, s in runner.active() if s['role'] == 'attempt']
             self.assertEqual(len(attempts), 2)
-            self.assertTrue(claim(runner.session_dir(attempts[0]), 'Q')['claimed'])
-            self.assertFalse(claim(runner.session_dir(attempts[1]), 'Q')['claimed'])
-            self.assertEqual(runner.available_nodes(), (['root'], 1))
-            runner.schedule()
-        self.assertEqual(sorted(sid for sid, s in runner.active() if s['role'] == 'attempt'), sorted(attempts))
+        first, second = (runner.session_dir(sid) for sid in attempts)
+        self.assertTrue(lease(first, 'root')['leased'])
+        self.assertCountEqual(runner.available_nodes(), ['root', 'Q'])
+        self.assertFalse(wait(second, 'root', timeout=0)['leased'])
+        self.assertEqual(runner.available_nodes(), ['Q'])
+
+    def test_attempt_launch_interval_must_be_nonnegative_seconds(self):
+        for bad in (-1, 1.5, '180'):
+            config = defaults()
+            config['attempt_launch_interval'] = bad
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'attempt_launch_interval'):
+                validate(config)
 
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()
@@ -969,7 +1112,7 @@ class RunnerTests(InstanceCase):
         rows = board(self.instance, runner.state)
         self.assertEqual(rows[0]['stage'], 'queued')
         self.assertIsNone(rows[0]['session'])
-        self.assertEqual(runner.available_nodes(), (['root'], 1))
+        self.assertEqual(runner.available_nodes(), ['root'])
         runner.producer('explore')
         render(self.instance, replay(self.instance), board(self.instance, runner.state))
         visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')

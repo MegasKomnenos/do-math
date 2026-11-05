@@ -53,7 +53,10 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     runtime = skill / 'runtime'
     commands = {
         'updates': [sys.executable, str(runtime / 'coordination.py'), 'updates', str(session)],
-        'claim': [sys.executable, str(runtime / 'coordination.py'), 'claim', str(session), '<node>'],
+        'lease': [sys.executable, str(runtime / 'coordination.py'), 'lease', str(session), '<node>'],
+        'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<node>', '--timeout', '50'],
+        'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<node>', '--file', '<file>'],
+        'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<node>'],
         'message': [sys.executable, str(runtime / 'coordination.py'), 'message', str(session), '<recipient>', '--file', '<file>'],
         'check': [sys.executable, str(runtime / 'check.py'), str(session)],
         'lean': [sys.executable, str(runtime / 'lean_broker.py'), '<command>', str(instance)],

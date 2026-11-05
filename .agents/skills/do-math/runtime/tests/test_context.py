@@ -9,12 +9,12 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from context import assemble, rebase_links
-from coordination import updates, claim
+from coordination import updates
 from knowledge import render, replay
 from launch import worker_command, worker_environment
 from runner import Runner, initialize
 from runtime_support import read_json, write_json
-from test_research import InstanceCase, record, claim_row, solution, assessment
+from test_research import InstanceCase, record, claim_row, solution, assessment, take
 
 
 class ContextTests(InstanceCase):
@@ -214,7 +214,7 @@ class ContextTests(InstanceCase):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
         self.publish('r1', data, assessment(data, ['p']))
         engine.model = replay(self.instance); engine.state['complete'] = True
-        self.assertEqual(claim(folder, 'Q')['nodes'], ['Q'])
+        self.assertTrue(take(folder, 'Q')['registered'])
         queued = [engine.producer(role) for role in ('attempt', 'explore')]
         review = engine.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
         with patch.object(engine, 'populate'), patch.object(engine, 'dispatch') as dispatch, \

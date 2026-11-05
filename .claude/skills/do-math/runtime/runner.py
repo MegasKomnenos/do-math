@@ -13,7 +13,7 @@ import uuid
 from check import check_session, regular_tree
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
-from coordination import board
+from coordination import board, lease_table
 from knowledge import canonical, formal_ready, render, replay, root_solved
 from retention import capture, refusal
 from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
@@ -155,10 +155,15 @@ class Runner:
             if job['role'] in PRODUCERS:
                 pipeline['producer'] = sid
                 if job['role'] == 'formalizer':
-                    write_json(session / 'declaration.json', {'nodes': [job['task']['node']], 'at': time.time()})
+                    # The assigned node is the formalizer's whole section; it registers nothing itself.
+                    now = time.time()
+                    write_json(session / 'declaration.json', {'sections': [
+                        {'id': sid + '-1', 'node': job['task']['node'], 'whole': True, 'statement': None,
+                         'reasons': {}, 'at': now}], 'at': now})
             else:
                 pipeline[job['role']] = sid
         if job['role'] == 'attempt':
+            self.state['last_attempt_launch'] = time.time()
             self.state['attempt_dispatches'] += 1
             if self.state['attempt_dispatches'] % self.settings['explore_every'] == 0:
                 self.state['explore_requested'] = True
@@ -345,7 +350,8 @@ class Runner:
         if not event_path.exists():
             write_json(event_path, event)
         self.model = replay(self.instance)
-        render(self.instance, self.model, board(self.instance, self.state, self.model))
+        render(self.instance, self.model, board(self.instance, self.state, self.model),
+               lease_table(self.instance, self.state, self.model))
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
             git(self.instance, 'add', '-A', '--', 'knowledge')
             git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge')
@@ -467,11 +473,21 @@ class Runner:
             self.enqueue('organizer', {'batch': due})
 
     def available_nodes(self):
+        """Unresolved nodes where another attempt could still register a section.
+
+        A node is unavailable while any pipeline holds it whole, or while a session already waits
+        for its lease: launching another attempt there would only lengthen that queue."""
         rows = board(self.instance, self.state, self.model)
-        held = {n for r in rows if r['role'] == 'attempt' for n in r['nodes']}
-        nodes = [n for n, v in self.model['nodes'].items() if v['canonical'] == n and v['state'] == 'unresolved' and n not in held]
-        choosing = sum(r['role'] == 'attempt' and r['stage'] in ('producing', 'queued') and not r['nodes'] for r in rows)
-        return nodes, choosing
+        whole = {s['node'] for r in rows for s in r['sections'] if s['whole']}
+        leases = lease_table(self.instance, self.state, self.model)
+        queued = {n for n, entry in leases.items() if entry['queue']}
+        return [n for n, v in self.model['nodes'].items()
+                if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
+
+    def attempt_launch_due(self):
+        """Launches are spaced so each attempt can take a lease before the next one reads the board."""
+        last = self.state.get('last_attempt_launch')
+        return last is None or time.time() - last >= self.settings['attempt_launch_interval']
 
     def dispatch_pending(self):
         changed = False
@@ -499,10 +515,12 @@ class Runner:
                     continue
                 if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
                     continue
+                if not self.attempt_launch_due():
+                    continue
                 exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
                                   for p in self.state['pipelines'].values())
                 if not exploration and self.selection('explore') and (
-                        self.state['explore_requested'] or not self.available_nodes()[0]):
+                        self.state['explore_requested'] or not self.available_nodes()):
                     # schedule() creates eligible exploration after this pass.
                     # Leave capacity for it before launching another attempt.
                     continue
@@ -524,7 +542,7 @@ class Runner:
         if self.state['complete']:
             return
         while len(self.active()) < self.settings['max_sessions']:
-            nodes, choosing = self.available_nodes()
+            nodes = self.available_nodes()
             exploration = any(p['role'] == 'explore' and p['stage'] != 'done' for p in self.state['pipelines'].values())
             if not nodes and not exploration:
                 if not self.state['explore_requested']:
@@ -541,18 +559,21 @@ class Runner:
                                and j['not_before'] <= time.time() and self.selection(j['role'])
                                and (j['role'] != 'organizer' or not organizer_running)
                                for j in self.state['jobs'].values())
-            if waiting or higher_ready or len(nodes) <= choosing or not self.selection('attempt'):
+            if waiting or higher_ready or not nodes or not self.attempt_launch_due() or not self.selection('attempt'):
                 break
             key = self.producer('attempt')
             self.dispatch(key)
 
     def refresh(self):
         rows = board(self.instance, self.state, self.model)
+        leases = lease_table(self.instance, self.state, self.model)
         investigations = [(j['id'], j['status']) for j in self.state['jobs'].values()
                           if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive']
-        signature = json.dumps([rows, self.model['sequence'], investigations], sort_keys=True)
+        # Lease grant times change on every read of a free lease; the board shows only who holds and waits.
+        holding = {n: ([h['session'] for h in e['holders']], [w['session'] for w in e['queue']]) for n, e in leases.items()}
+        signature = json.dumps([rows, holding, self.model['sequence'], investigations], sort_keys=True)
         if signature != self.last_board:
-            render(self.instance, self.model, rows)
+            render(self.instance, self.model, rows, leases)
             self.last_board = signature
 
     def ingest_inputs(self):
@@ -760,7 +781,7 @@ def main(argv=None):
             result['input'] = str(path)
         elif args.command == 'render':
             with InstanceLock(instance / 'runner/lock'):
-                render(instance, replay(instance), board(instance))
+                render(instance, replay(instance), board(instance), lease_table(instance))
         elif args.command == 'kill-session':
             state = read_json(instance / 'runner/state.json')
             if args.session not in state['sessions']:

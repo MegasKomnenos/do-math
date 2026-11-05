@@ -15,7 +15,7 @@ AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 def defaults():
     return {'schema': 1, 'max_sessions': 8, 'explore_every': 3,
-            'organizer_every_records': 4, 'models': deepcopy(MODELS), 'roles': {},
+            'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS), 'roles': {},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
@@ -43,6 +43,8 @@ def validate(raw):
                 'retry_seconds', 'retry_max_seconds'):
         if type(value[key]) is not int or value[key] < 1:
             raise ValueError(f'{key} must be a positive integer')
+    if type(value['attempt_launch_interval']) is not int or value['attempt_launch_interval'] < 0:
+        raise ValueError('attempt_launch_interval must be a nonnegative integer number of seconds')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
     if not isinstance(value['roles'], dict) or set(value['roles']) - set(ROLES):

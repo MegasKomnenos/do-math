@@ -40,7 +40,7 @@ The glossary's definition comes from its published local source. Its source link
 
 Review checks for preexisting nodes before admitting proposals, but two descriptions of the same question can still acquire different IDs. Compare their statements and definitions. If they are the same mathematical question, merge their identities with a reason and preserve the old IDs as aliases. Similar wording alone does not establish identity.
 
-Both attempts continue if a merge reveals that the two nodes were already occupied. The board shows their reservations against the shared identity, and new attempts respect that occupancy. You do not assign their next mathematical work.
+Sessions holding sections on either node continue if you merge them. The board shows their sections against the shared identity, and new attempts respect them. You do not assign their next mathematical work.
 
 ## Submit the organization
 

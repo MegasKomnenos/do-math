@@ -10,7 +10,7 @@ The root file contains the mathematical proposition to settle, with its objects,
 
 Put standing instructions, such as the language of the records or limits on permitted methods, in a separate input file. Submit it before starting the runner to make it part of every initial session's context. Later inputs affect only sessions launched after submission. They do not rewrite existing sessions' instructions or their saved contexts.
 
-The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, exploration requested every three attempt dispatches, and organization after four research publications.
+The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, attempt launches at least three minutes apart, exploration requested every three attempt dispatches, and organization after four research publications.
 
 An example settings file is:
 
@@ -20,6 +20,7 @@ An example settings file is:
   "max_sessions": 8,
   "explore_every": 3,
   "organizer_every_records": 4,
+  "attempt_launch_interval": 180,
   "models": [
     {"model": "codex/gpt-6.1-sol", "effort": "xhigh"},
     {"model": "claude/opus", "effort": "xhigh"}
@@ -67,7 +68,7 @@ The caller can then end its conversation. The runner and session hosts continue 
 
 Begin with `knowledge/index.md`. It contains records the organizer selected as common orientation for new sessions (shared context), descriptions of grouped records (modules), and new publications awaiting placement (unfiled arrivals). Open a record's exposition and its review to understand what was established. The original description remains visible beside the review's short assessment. Later findings appear separately, with links to the review that supplies them.
 
-`knowledge/frontier.md` shows exact node statements, current informal/formal outcomes, reviewed relations and concerns. `knowledge/glossary.md` supplies the full current shared vocabulary. `knowledge/board.md` shows attempt occupancy and processing stages; an attempt's declaration lists the nodes it has taken on. The status command reads those declarations directly, including changes since the board file was last rendered. `knowledge/state.json` is a structured projection of published evidence for detailed inspection.
+`knowledge/frontier.md` shows exact node statements, current informal/formal outcomes, reviewed relations and concerns. `knowledge/glossary.md` supplies the full current shared vocabulary. `knowledge/board.md` shows the sections producing work holds, its processing stages and the node leases; a session's declaration lists the sections it has registered. The status command reads those declarations directly, including changes since the board file was last rendered. `knowledge/state.json` is a structured projection of published evidence for detailed inspection.
 
 Unresolved means that no accepted proof or refutation has settled a node informally. An informally proved or refuted node is settled as mathematics and awaits the remaining Lean assurance. A formally proved or refuted node has that independently reviewed assurance. Opposing accepted outcomes are shown as contested for review. A contested node is not treated as formally settled for completion; the opposing evidence must be resolved.
 
@@ -97,9 +98,9 @@ Use status to identify the intended session before termination. The command targ
 
 When a producing session ends, its retained material creates peer work. A structurally usable peer candidate creates review work. An accepted informal solution creates formalizer work when the other node results needed by its chosen argument have independently validated Lean proofs available. These results are its formal dependencies. New research publications create organizer work when the configured number of unprocessed publications is reached. Available capacity and an available configured model permit each launch.
 
-Priority is review, peer, formalizer, organizer, eligible explore, then attempt. Fresh attempts require free capacity and no waiting peer or review. An infrastructure-blocked review remains waiting under this rule. Running sessions are not preempted when higher-priority work appears.
+Priority is review, peer, formalizer, organizer, eligible explore, then attempt. Fresh attempts require free capacity, no waiting peer or review, an unresolved node that no pipeline holds whole and no session is waiting to lease, and at least `attempt_launch_interval` seconds since the previous attempt launch. The spacing gives each new attempt time to take a lease before the next one reads the board. An infrastructure-blocked review remains waiting under this rule. Running sessions are not preempted when higher-priority work appears.
 
-Exploration is eligible when its request flag is true and no exploration cycle is present. A cycle includes the explorer, its peer and its review. Every third attempt dispatch sets the flag by default; unused capacity also sets it when no unresolved node is free of other attempts' occupancy, including when all nodes are informally solved. Repeated triggers coalesce into one request. Launching an explorer clears the flag; it does not reset the attempt counter.
+Exploration is eligible when its request flag is true and no exploration cycle is present. A cycle includes the explorer, its peer and its review. Every third attempt dispatch sets the flag by default; unused capacity also sets it when no unresolved node is available to a new attempt, including when all nodes are informally solved. Repeated triggers coalesce into one request. Launching an explorer clears the flag; it does not reset the attempt counter.
 
 A typed provider usage refusal blocks that provider until its known reset, or a configured backoff when the reset is unavailable. Model-specific refusals block that model. A new launch uses the first available alternative in its role's list. If all are unavailable, the job remains pending. A producer interrupted after doing work ends and proceeds to peer; it is not silently resumed under another model. A session that failed before leaving any research material can be retried as an operational launch.
 
