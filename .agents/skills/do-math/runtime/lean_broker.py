@@ -566,7 +566,12 @@ class Broker:
         if not split or split == len(command) - 1:
             self.state["launcher"] = {"direct": False, "reason": "the command is not of the form lake [options] env lean"}
             return
-        probe = command[:split + 1] + [sys.executable, "-c", "import json, os; print(json.dumps(dict(os.environ)))"]
+        # Resolve inside Lake's environment and cwd. On Windows Popen's env PATH
+        # does not control the executable search for a bare command name.
+        probe = command[:split + 1] + [sys.executable, "-c",
+            "import json, os, shutil, sys; p = shutil.which(sys.argv[1]); "
+            "print(json.dumps({'env': dict(os.environ), 'executable': os.path.abspath(p) if p else None}))",
+            command[split + 1]]
         given = self.lean_env()
         try:
             result = subprocess.run(probe, cwd=self.lean_cwd(None), env=given, stdout=subprocess.PIPE,
@@ -574,14 +579,19 @@ class Broker:
                                     **popen_options())
             if result.returncode:
                 raise RuntimeError(f"exit code {result.returncode}: {result.stderr.strip()[:500]}")
-            captured = json.loads(result.stdout)
+            payload = json.loads(result.stdout)
+            captured = payload['env']
+            executable = payload['executable']
+            if not executable:
+                raise RuntimeError(f"cannot resolve executable in Lake environment: {command[split + 1]}")
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
             self.state["launcher"] = {"direct": False, "reason": str(exc)}
             self.log(event="environment_failed", error=str(exc))
             return
         delta = {k: v for k, v in captured.items() if given.get(k) != v}
-        self.direct = {"argv": command[split + 1:], "env": delta}
-        self.state["launcher"] = {"direct": True, "argv": command[split + 1:], "variables": sorted(delta),
+        argv = [executable, *command[split + 2:]]
+        self.direct = {"argv": argv, "env": delta}
+        self.state["launcher"] = {"direct": True, "argv": argv, "variables": sorted(delta),
                                   "captured_at": time.time()}
         self.log(event="environment_captured", variables=sorted(delta))
 

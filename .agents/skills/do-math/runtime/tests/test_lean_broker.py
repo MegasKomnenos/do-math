@@ -1082,6 +1082,26 @@ class BuildTests(BrokerFixture):
 class LauncherTests(BrokerFixture):
     LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
 
+    def test_bare_executable_is_resolved_before_direct_launch(self):
+        executable = Path(sys.executable)
+        self.write_settings(command=self.LAKE + [executable.name, "-B", str(FAKE)],
+                            env={"PATH": str(executable.parent)})
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        resolved = self.broker.direct["argv"][0]
+        self.assertTrue(Path(resolved).is_absolute())
+        self.assertTrue(Path(resolved).samefile(executable))
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        self.until(lambda: self.finished(job_id))
+        self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
+
+    def test_unresolved_executable_keeps_lake_fallback(self):
+        self.write_settings(command=self.LAKE + ["do-math-missing-executable"])
+        self.start_broker()
+        self.assertFalse(self.broker.state["launcher"]["direct"])
+        self.assertIn("cannot resolve executable", self.broker.state["launcher"]["reason"])
+        self.assertIsNone(self.broker.direct)
+
     def test_lake_env_is_asked_once_and_lean_then_runs_directly(self):
         self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)],
                             version_command=self.LAKE + [sys.executable, "-B", str(FAKE), "--version"])
