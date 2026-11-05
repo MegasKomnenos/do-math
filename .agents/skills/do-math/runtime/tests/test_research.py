@@ -2,8 +2,10 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -557,15 +559,69 @@ class RunnerTests(InstanceCase):
             self.assertIn(f'producer: {sid}', visible)
             self.assertIn(f'· {stage} · nodes: root', visible)
 
-    def test_claim_overlap_informs_instead_of_rejecting(self):
+    def running_attempt(self, runner, sid):
+        """A producing attempt whose session the board lists, as dispatch would leave it."""
+        key = runner.producer('attempt')
+        job = runner.state['jobs'][key]
+        folder = runner.session_dir(sid)
+        folder.mkdir(parents=True)
+        (folder / 'inbox').mkdir()
+        write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt', 'task': {}})
+        runner.state['pipelines'][job['pipeline']]['producer'] = sid
+        runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
+        job.update(status='running', session=sid)
+        runner.save()
+        return folder
+
+    def test_claim_is_first_wins_and_a_refusal_records_nothing(self):
+        self.publish('r1', self.reduction())  # Q stays available
         runner = self.runner()
-        sid, session, job = self.ended(runner, 'attempt')
-        claim(runner.session_dir(sid), 'root')
-        second = runner.session_dir('sother')
-        second.mkdir(); write_json(second / 'input.json', {'instance': str(self.instance), 'role': 'attempt', 'session': 'sother'})
-        result = claim(second, 'root')
-        self.assertTrue(result['warnings'])
-        self.assertEqual(result['nodes'], ['root'])
+        first, second = (self.running_attempt(runner, sid) for sid in ('sfirst', 'ssecond'))
+        self.assertTrue(claim(first, 'root')['claimed'])
+        refused = claim(second, 'root')
+        self.assertFalse(refused['claimed'])
+        self.assertEqual([row['session'] for row in refused['occupants']], ['sfirst'])
+        self.assertEqual(refused['available'], ['Q'])
+        self.assertFalse((second / 'declaration.json').exists())
+        self.assertEqual({row['session']: row['nodes'] for row in board(self.instance)},
+                         {'sfirst': ['root'], 'ssecond': []})
+        # Repeating one's own claim is accepted; the refused attempt chooses again.
+        self.assertTrue(claim(first, 'root')['claimed'])
+        self.assertEqual(read_json(first / 'declaration.json')['nodes'], ['root'])
+        self.assertTrue(claim(second, 'Q')['claimed'])
+
+    def test_simultaneous_claims_from_separate_processes_admit_one_attempt(self):
+        runner = self.runner()
+        folders = [self.running_attempt(runner, 's' + str(i)) for i in range(6)]
+        runtime = str(Path(__file__).resolve().parents[1])
+        start = time.time() + 3  # every process imports first, then claims at the same instant
+        launcher = ('import sys, time; sys.path.insert(0, %r); import coordination; '
+                    'time.sleep(max(0, %r - time.time())); '
+                    'sys.argv = ["coordination.py", "claim", sys.argv[1], "root"]; '
+                    'raise SystemExit(coordination.main())') % (runtime, start)
+        processes = [subprocess.Popen([sys.executable, '-B', '-c', launcher, str(f)],
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) for f in folders]
+        results = [(p.wait(timeout=60), json.loads(p.stdout.read().decode('utf-8'))) for p in processes]
+        self.assertEqual(sorted(code for code, _ in results), [0, 1, 1, 1, 1, 1], results)
+        self.assertEqual([r['claimed'] for _, r in results].count(True), 1)
+        holders = [f.name for f in folders if (f / 'declaration.json').exists()]
+        self.assertEqual(len(holders), 1)
+        self.assertEqual([row['session'] for row in board(self.instance) if row['nodes']], holders)
+
+    def test_refused_claim_keeps_the_attempt_choosing_and_launches_no_extra_attempt(self):
+        # The 15:56 case: two attempts launched for two free nodes both choose Q.
+        self.publish('r1', self.reduction())
+        runner = self.runner()
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+            attempts = [sid for sid, s in runner.active() if s['role'] == 'attempt']
+            self.assertEqual(len(attempts), 2)
+            self.assertTrue(claim(runner.session_dir(attempts[0]), 'Q')['claimed'])
+            self.assertFalse(claim(runner.session_dir(attempts[1]), 'Q')['claimed'])
+            self.assertEqual(runner.available_nodes(), (['root'], 1))
+            runner.schedule()
+        self.assertEqual(sorted(sid for sid, s in runner.active() if s['role'] == 'attempt'), sorted(attempts))
 
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()

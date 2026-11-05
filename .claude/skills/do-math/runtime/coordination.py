@@ -1,11 +1,46 @@
-"""Live coordination information and session-owned declarations. No node admission lock."""
+"""Live coordination information and session-owned declarations. Claims are first-wins under one instance lock."""
 import argparse
+from contextlib import contextmanager
 import json
+import os
 from pathlib import Path
 import time
 import uuid
 from knowledge import canonical, replay
 from runtime_support import read_json, write_json
+
+CLAIM_LOCK_SECONDS = 30.0
+
+
+@contextmanager
+def claims_lock(instance):
+    """One claim at a time per instance; the OS releases the lock if its holder dies."""
+    path = Path(instance) / 'runner' / 'claims.lock'
+    deadline = time.monotonic() + CLAIM_LOCK_SECONDS
+    with path.open('a+b') as stream:
+        if path.stat().st_size == 0:
+            stream.write(b'0')
+            stream.flush()
+        while True:
+            stream.seek(0)
+            try:
+                if os.name == 'nt':
+                    import msvcrt
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError('another claim is still in progress; run the claim again')
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            if os.name == 'nt':
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 def board(instance, state=None, model=None):
@@ -31,23 +66,34 @@ def claim(session, node):
     if inp['role'] != 'attempt':
         raise ValueError('only attempts declare node occupancy; other roles pursue their assigned responsibilities')
     instance = Path(inp['instance'])
-    model = replay(instance)
-    if node not in model['nodes'] and node not in model['aliases']:
-        raise ValueError('unknown node')
-    node = canonical(model, node)
-    rows = board(instance, model=model)
-    occupants = [r for r in rows if r['role'] == 'attempt' and node in r['nodes'] and r['session'] != inp['session']]
-    path = session / 'declaration.json'
-    data = read_json(path) if path.exists() else {'nodes': [], 'at': time.time()}
-    if node not in data['nodes']:
-        data['nodes'].append(node)
-    write_json(path, data)
+    # Read the board, decide and record in one step, so two attempts cannot both take a node.
+    with claims_lock(instance):
+        model = replay(instance)
+        if node not in model['nodes'] and node not in model['aliases']:
+            raise ValueError('unknown node')
+        node = canonical(model, node)
+        rows = board(instance, model=model)
+        path = session / 'declaration.json'
+        data = read_json(path) if path.exists() else {'nodes': [], 'at': time.time()}
+        held = {canonical(model, n) for n in data['nodes'] if n in model['nodes'] or n in model['aliases']}
+        occupants = [r for r in rows if r['role'] == 'attempt' and node in r['nodes'] and r['session'] != inp['session']]
+        if occupants and node not in held:
+            taken = {n for r in rows if r['role'] == 'attempt' and r['session'] != inp['session'] for n in r['nodes']}
+            available = [n for n, v in model['nodes'].items()
+                         if v['canonical'] == n and v['state'] == 'unresolved' and n not in taken and n not in held]
+            return {'claimed': False, 'node': node, 'nodes': data['nodes'], 'occupants': occupants,
+                    'available': available,
+                    'reason': 'Another attempt already occupies this node; nothing was recorded. '
+                              'Choose an available node. If none is available, follow your guide for that case.',
+                    'revision': model['sequence'], 'board': rows}
+        if node not in held:
+            data['nodes'].append(node)
+            write_json(path, data)
     warnings = []
-    if occupants:
-        warnings.append('Another attempt occupies this node. Inspect the board and coordinate; this declaration is not permission to duplicate its work.')
     if model['nodes'][node]['state'] != 'unresolved':
         warnings.append('This node is already settled or contested. Read its evidence before choosing work.')
-    return {'nodes': data['nodes'], 'occupants': occupants, 'warnings': warnings,
+    # Occupants remain only when an organizer merge joined nodes this attempt already held.
+    return {'claimed': True, 'nodes': data['nodes'], 'occupants': occupants, 'warnings': warnings,
             'revision': model['sequence'], 'board': board(instance, model=model)}
 
 
@@ -98,13 +144,16 @@ def main():
     try:
         if args.command == 'claim':
             result = claim(args.session, args.node)
+            if not result['claimed']:
+                print(json.dumps(result, ensure_ascii=True))
+                return 1
         elif args.command == 'message':
             result = message(args.session, args.target, args.file)
         else:
             result = updates(args.session)
         print(json.dumps(result, ensure_ascii=True))
         return 0
-    except (OSError, ValueError, KeyError, TypeError) as exc:
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
         print(json.dumps({'error': str(exc)}))
         return 1
 
