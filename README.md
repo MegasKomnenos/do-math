@@ -1,224 +1,130 @@
 # do-math
 
-do-math is a multi-agent management system that provides governance for autonomous mathematical research. It consists of instruction documents that direct agent behavior and a Python program, the runner, which dispatches the agents. You can give it a goal, such as a theorem to prove, a computation to carry out or a question to settle from the literature, and the runner then keeps the work going across many sessions, each a fresh conversation with a single job: some decide what to try next, some attempt proofs and computations, and others verify what the rest have produced. The run ends when a reviewing session judges that the goal has been met.
+do-math is a multi-agent management system that provides governance for autonomous mathematical research. It consists of instruction documents that direct agent behavior and a Python program, the runner, which dispatches the agents. You give it a precise mathematical proposition, and the runner keeps the research going across fresh sessions: some choose questions and attempt proofs, some explore the mathematics, some formalize results in Lean, and others develop, review and organize what the research produces. The root is settled when an independent review validates a Lean proof of the proposition or its negation. The runner then finishes processing the remaining work.
 
-Splitting the work this way addresses two problems. Long research does not fit in one conversation, and a model checking its own work tends to miss its own mistakes. So sessions share a folder rather than a conversation. Each one starts fresh, reads what earlier sessions recorded there, and leaves its results for the ones that follow. No result is relied on until a different session has reviewed it, and when the result is a Lean proof, the review includes recompiling it.
+Long research needs both continuity and independent judgment. Sessions share recorded mathematics: definitions, arguments, computations, failed approaches and unresolved opportunities. A peer reads a producing session's complete retained work and develops a record candidate for future researchers. A separate review assesses this candidate against that session's original material and checks any mathematics the peer added. Useful imperfect work is retained with the review's feedback, so a later researcher can distinguish established results from claims that need more work.
 
-What you end up with is that folder. At its center are mathematical expositions meant for people to read. Around them are the Lean source of the formalized results, computation code and data, the approaches that failed, the questions still open, and a review of every result. For a goal that asks for a proof, the default standard is a Lean theorem stating the goal, which a reviewer has recompiled and found free of `sorry` and of axioms beyond the standard three, together with an exposition that the reviewer judged to say the same thing.
+The result is a research folder with readable mathematical expositions, their evidence and independent assessments. Around those records are the current questions and their reviewed connections, a live board of occupied questions, a full shared glossary, and an index organized into modules. Each attempt uses this information to choose its own work. There is no planning session assigning its mathematical task.
 
-do-math is meant for problems that take many attempts, where what failed should shape what is tried next and every result needs verification before anything is built on it.
-
-The repository also contains the supporting skills I use to develop and operate do-math, and a few standalone tools I built alongside it. The do-math skill itself — the session instructions, the file contract, the operating documents and the strings the runner writes — is in English. Most of the *supporting* skills and the standalone tools' documentation are still in Korean; those links are marked (Korean).
+The do-math skill and runtime documentation are in English. The repository also contains supporting skills and standalone tools, most of whose documentation is in Korean.
 
 ## How a run works
 
-Each goal is researched in its own instance, which lives in a folder with its own Git repository. The folder holds `goal.md`, where you state the goal, the conditions the result must meet and what the sessions may do; `settings.json`, which names the models and tools to use; a folder for every session; and `knowledge/`, where the results accumulate. Within the limits set in `goal.md`, the sessions decide for themselves how to break the problem down and which methods to try.
+Each proposition is researched in its own instance, a folder with its own Git repository. It holds the fixed statement in `root.md`, the models and tools in `settings.json`, a directory for every session, and `knowledge/`, where reviewed records accumulate. User conditions are supplied explicitly. Within those conditions, researchers decide which questions and methods to pursue.
 
-The runner dispatches each task to a new session: a fresh, non-interactive Claude Code or Codex conversation (`claude --print` or `codex exec`) that runs under your own login and subscription. do-math never calls model APIs directly. A session reads its task and the existing records, writes its results into its own folder, checks their format with `check.py`, and exits. The runner then runs the same check. If the output passes, the runner copies it into `knowledge/` as a new record and commits it to the instance's repository. do-math calls this publishing, although nothing leaves your machine at this step. If the output fails, nothing is published and the failure is passed to the next plan.
+The runner launches each job as a fresh, non-interactive Claude Code or Codex conversation under your existing authentication. It uses the CLIs, not direct model API calls. Each worker receives a saved context containing its guides, the root, the full global glossary, current research views and the inputs specific to its role. Attempts choose their own mathematical target; the other roles receive the source work, node, candidate, evidence or publication batch they are to work on. Personal/project instructions, hooks and memories are excluded from worker launches. The worker's instruction references and user conditions are fixed at launch; published research and occupancy remain available as live information.
 
-There are five kinds of session:
+The root is the instance's first node: a precisely stated mathematical question. Other nodes arise from established, reviewed connections to the research. For example, if an attempt on P proves that Q implies P, review can admit Q as a new question even while Q remains unresolved. Solving a node means proving its statement or its negation.
 
-| Session | What it does |
+There are six roles:
+
+| Role | Responsibility |
 |---|---|
-| plan | Decides what happens next. It reads the goal, the previous plan's notes and the published records, then requests research, explorations, extra peers or reviews, or a goal review. When it needs a decision that only you can make, it pauses the run and asks. Every plan also rewrites the research status and the global glossary, and decides how the index is split into modules. |
-| research | Works on one assigned question by proof, counterexample search, computation or literature search. Proofs are formalized in Lean by default, compiled through the instance's Lean broker. Partial results and failed attempts are recorded along with successes. |
-| explore | Gets to know the problem without a question to answer, for example by working through small cases, restating the problem or looking for connections to other areas. It labels each claim with one of five epistemic statuses: verified, observed, conjecture, hunch or literature. Plans ask for explorations early on and when progress stalls. |
-| peer | Reads a newly published research or exploration record as a fellow researcher would, and works through the mathematics itself. It can confirm, criticize or extend the work, but gives no verdicts. The runner dispatches one automatically for every such record. |
-| review | Decides what the work and the peer's response actually establish, result by result. The runner dispatches one automatically after every peer response. A goal review instead judges everything published against the goal. |
+| attempt | Chooses an unresolved node and tries to prove or refute it, retaining the work and obstacles. |
+| explore | Develops understanding and insight by working with the mathematics from useful angles. |
+| formalizer | Produces a Lean solution from reviewed informal mathematics and available formal dependencies. |
+| peer | Reads a producing session's complete retained work, develops opportunities and writes its record candidate. |
+| review | Independently assesses a candidate and its producing originals, or investigates defective evidence and the later arguments that used that evidence. |
+| organizer | Maintains shared terminology, groups records into modules and reconciles duplicate node identities. |
 
-Together they form a loop:
+An attempt, exploration or formalizer is followed by peer and review. The runner publishes useful records with their assessments and commits them to the instance's Git repository. Publishing is a local operation. Records and their descriptions remain immutable; subsequent findings attach to them separately.
 
-```text
-plan ─┬─> research ─> peer ─> review ─┐
-      ├─> explore  ─> peer ─> review ─┤
-      │                               └─> events ─> next plan
-      └─> goal review ─> "achieved" completes the run
-```
+A node can be informally or formally proved or refuted. Informal solutions accepted by review remove nodes from the questions needing fresh attempts. Formalizers wait for the validated Lean dependencies their arguments require. Every formal solution receives an independent compile, an audit of the target's transitive axioms, and a comparison with the exact mathematical statement. The default allowed axioms are `propext`, `Classical.choice` and `Quot.sound`; `sorryAx` is never allowed.
 
-The plan is the only session that steers. Whenever a review, an exploration or a peer response is published, a session fails, or you send input, the runner records an event. As soon as no plan is running and a slot is free, it dispatches a new plan and hands it every event since the last one. A published research record is not an event in itself; the review that follows it is. Up to `max_sessions` sessions run at once (eight by default), and only one of them can be a plan.
+An attempt ordinarily occupies each node it takes on until its work has passed through peer and review. The live board informs sessions of that occupancy, and they follow the coordination instructions. An attempt can add available nodes while keeping its earlier nodes occupied. Exploration has a broader purpose and may develop a proof when that improves understanding. Only one exploration cycle, including its peer and review, is present at a time.
 
-### One Lean broker per instance
+Dispatch priority is **review → peer → formalizer → organizer → eligible explore → attempt**. Defaults are eight concurrent AI sessions, an exploration request every three attempt dispatches, and an organizer after four research publications. Spare capacity can also request exploration when no node is available for another attempt. A requested exploration is eligible once the preceding exploration cycle has finished, subject to the same capacity and model-availability conditions as other launches. Each role prefers Codex `gpt-6.1-sol/xhigh` and uses Claude `opus/xhigh` as its configured fallback. These settings are configurable.
 
-Sessions do not run Lean themselves. Each instance has a single process, the Lean broker, which the runner starts and keeps alive for as long as it runs, and every compile goes through it. A session submits a file together with its estimate of how much memory the compile will need at its peak. The broker measures what the file's imports alone cost, the first time it sees that set of imports, and keeps a table of what compiles have cost since; it then starts queued compiles within one memory budget, reserving the part of each compile's memory that is certain in full and pooling the uncertain parts statistically, so that several compiles can share the budget without adding up their worst cases. It never stops a compile for using more memory than was estimated. The only compiles it cancels are those of sessions that have already ended. A compile keeps running, and keeps its result, even if the session's shell tool stops waiting for it, and the session gets back Lean's output and exit code together with the measured peak memory and duration. When a session's Lean is split into modules of its own that import one another, it hands the broker the module root and the target files, and the broker compiles the modules in dependency order, running independent ones side by side within the budget, and keeps every compiled module in a per-instance cache keyed by its content, so that later builds of the same sources by any session, a reviewer's recompilation included, reuse them. [LEAN.md](.claude/skills/do-math/LEAN.md) explains what a compile costs, the commands, the estimate, the scheduling rule and the settings, and how to write Lean that compiles cheaply.
+### Lean compilation
 
-### Keeping verification independent
+Every compile goes through one Lean broker per instance. The broker schedules compiles against shared memory and thread budgets, measures their costs, retains results across shell-tool timeouts, and builds local modules in dependency order. Unchanged dependencies can be reused from its cache. Independent reviewers force a new target compile and retain the actual axiom output. [The Lean guide](.claude/skills/do-math/reference/lean.md) explains the commands, estimates and environment settings.
 
-Whether a result can be used is decided by its review, and do-math keeps that decision away from the session that produced the result.
+### Interruption and completion
 
-- Peer and review sessions receive the published records and their own task, and nothing else: not the author's working files and not its logs. This is a rule the runner follows when it hands out work, not a sandbox.
-- A reviewer writes down its own judgment before it reads any earlier review of the same work.
-- A reviewer recompiles the Lean source in its own copy and runs `#print axioms` on every theorem. Only `propext`, `Classical.choice` and `Quot.sound` are allowed, plus whatever `goal.md` explicitly permits, and `sorryAx` never is. A clean compile is not enough, because Lean accepts a `sorry` with only a warning.
-- Every result gets four verdicts: whether the argument supports the claim, whether the Lean source compiles within the allowed axioms, whether the exposition says the same thing as the Lean theorem, and whether it uses the global and local glossaries correctly. Only the first three decide whether the result is accepted.
-- A result whose reviews disagree is not relied on, and neither is a result that builds on one that was rejected. A plan cannot overrule a negative verdict; only another review can.
-- Sessions can run on different models. Running reviews on Claude while research runs on Codex, for example, makes it less likely that a reviewer shares the author's blind spots.
-- Only a goal review can finish the run. A plan that believes the goal has been met has to request one.
+A producing session interrupted by a provider limit or another execution failure leaves its retained material for peer processing. An incomplete final manifest does not discard its mathematics. Interrupted processing stages receive fresh sessions with their partial work. A provider refusal blocks launches through that provider; a model-specific refusal blocks only that model. Configured alternatives can serve later launches.
 
-### What the sessions share
-
-Besides the records themselves, sessions rely on two documents that every plan rewrites. `research-status.md` sums up what is established, what is open, what has failed and what is under way. `glossary.md`, the global glossary, fixes a single name and definition for each object the research shares across sessions; only plans change it. Each research, exploration and peer record carries its own local glossary, `glossary-local.md`, for the names it uses internally, and flags in it the entries it thinks the run should share; the plan adopts, identifies or declines those candidates. The runner also keeps the index, `knowledge/index.md`, which lists the research and exploration records with their current reviews. On a long run the plan splits the index into modules: `index.md` keeps the records every session needs as base context, and records that only some tasks need are filed into further module files under `knowledge/index/`, each with a description, so that a session opens only the modules its task concerns.
-
-### When a run stops
-
-No session has a time limit, and there is no cap on how many sessions a run uses, so a long run can take a large share of your subscription's usage. The runner stops dispatching new sessions in five situations:
-
-| Situation | What it takes to continue |
-|---|---|
-| A goal review returns `achieved`. | Nothing; the run is finished. Sessions already running are completed and published, and then the runner exits. |
-| You run `stop`. | `resume`. Sessions already running carry on in the meantime. |
-| A plan asks you a question, for instance whether to narrow or change the goal because it has run out of approaches. | Your answer, sent with `input`. do-math does not notify you, so look at `status` from time to time. |
-| The provider reports a usage limit. | Nothing. The runner waits until the reported reset time, or for `limit_wait_seconds` if no time was given. |
-| Three plans in a row fail for reasons other than a usage limit, which usually means a broken login, model name or CLI path. | Fix the cause and run `start` again. |
+Formal completion of the root prevents new attempt and explore launches. Existing sessions retain their normal scope, including an attempt's ability to claim additional available nodes. The runner still launches peers and reviewers to process finished work, formalizers for accepted informal solutions whose dependencies are available, and organizers when a publication batch is due. Status distinguishes the root being settled from the runner having finished. There is no fixed session-duration cap or automatic cap on formalizer rounds for a node whose informal solution remains supported.
 
 ## Requirements
 
-- Python 3.12 or later. The runner and the checker use only the standard library.
-- Git.
-- The Claude Code CLI, the Codex CLI or both, installed and logged in. Your settings decide which ones are used.
-- Lean 4, which the runner's Lean broker runs on the sessions' behalf. Mathlib is optional.
-- Optionally, scholarly-mcp for literature search (see [Standalone tools](#standalone-tools)). It needs its own Python environment with the packages pinned in [requirements.txt](services/scholarly-mcp/requirements.txt).
+- Python 3.12 or later and Git. The runtime uses Python's standard library.
+- Codex CLI, Claude Code CLI, or both, installed and authenticated.
+- Lean 4; Mathlib when the problem requires it.
+- Optional external tools, such as scholarly-mcp, configured explicitly in the instance.
 
-I develop and run do-math on Windows 11, and the commands below use PowerShell. The runner's process handling is also written for Linux, but I have not tested it there. macOS is not supported, because the runner tracks processes through `/proc`.
+Development and live verification use Windows. The process helpers also contain Linux support; the verification report states which paths were exercised. macOS process identification is not implemented.
 
-## Before you run anything
-
-**Sessions run without permission prompts.** The runner starts Claude Code with `--dangerously-skip-permissions --permission-prompts none`, and Codex with `approval_policy="never"` and `--sandbox danger-full-access`. Each session is told to stay inside its own folder, but nothing at the operating-system level enforces that, so run do-math only on a machine and account where you are comfortable with it.
-
-**Sessions pick up your own configuration.** Your user-level settings, your hooks, and any `CLAUDE.md` or `AGENTS.md` the CLI finds apply to every session.
-
-**What the sessions read and write goes to the model provider,** Anthropic or OpenAI, as with any other use of their CLIs.
-
-**This repository's own settings skip prompts too.** `.claude/settings.json` sets Claude Code's default permission mode to `bypassPermissions`, and `.codex/config.toml` gives Codex full access with no approval prompts. That is how I run long research on my own machine. If you do not want it, change these files before you open the repository with Claude Code or Codex.
-
-**Some paths point at my machine.** The scholarly-mcp entries in `.mcp.json` and `.codex/config.toml` use absolute paths under `C:/math`. Change them to the location of your clone, or remove them if you do not use scholarly-mcp.
+Workers run unattended with file and command access under your account. Their workspace boundaries are instructions, not an OS sandbox. Their model providers receive the material they read, as in ordinary CLI use. The instance explicitly configures external tools while excluding personal/project behavioral instructions, hooks and memories.
 
 ## Starting a run
 
-### From Claude Code or Codex
+From Claude Code or Codex, ask the do-math skill to start research on a proposition. The operator prepares the statement and settings, launches the detached runner and reports where the work lives. The [operator entry point](.claude/skills/do-math/SKILL.md) and [operating guide](.claude/skills/do-math/reference/operations.md) explain the full path.
 
-Open Claude Code or Codex in this repository and ask it to start research on your goal. The do-math skill writes `goal.md` and `settings.json`, creates the instance, starts the runner as a background process that keeps going after the conversation ends, and tells you where to find the results. It asks you something only if the meaning of the goal, or a permission that only you can give, is unclear.
-
-### By hand
-
-1. Make sure `python` (3.12 or later), `git` and the CLIs you plan to use are installed and logged in, and that Lean runs.
-
-2. Write `goal.md` in UTF-8. State the goal, the conditions the result must meet and what the sessions may do. Say what counts as done, and leave the strategy to the sessions. For example:
-
-   ```markdown
-   Prove in Lean that n + 0 = n for every natural number n, and write an exposition faithful to that proof. Natural numbers include 0.
-   ```
-
-   A goal that asks for a proof or disproof needs an accepted Lean theorem by default. If an informal proof is enough, or you want some other standard, say so in `goal.md`. The session instructions are written in English, so sessions write their records in English unless you say otherwise; if you want the records in a particular language, say that in `goal.md` as well.
-
-3. Write `settings.json` in UTF-8. The paths and model names below are placeholders; use your own installation paths and models your CLIs accept.
-
-   ```json
-   {
-     "max_sessions": 8,
-     "defaults": {
-       "plan": {"model": "codex/gpt-6.1-sol", "effort": "high"},
-       "research": {"model": "codex/gpt-6.1-sol", "effort": "high"},
-       "peer": {"model": "codex/gpt-6.1-sol", "effort": "medium"},
-       "explore": {"model": "codex/gpt-6.1-sol", "effort": "high"},
-       "review": {"model": "claude/sonnet", "effort": "high"}
-     },
-     "cli": {"codex": "C:/tools/codex.exe", "claude": "C:/tools/claude.exe"},
-     "limit_wait_seconds": 300,
-     "lean": {
-       "command": ["C:/tools/lean.exe"],
-       "version_command": ["C:/tools/lean.exe", "--version"],
-       "cwd": null,
-       "env": {}
-     }
-   }
-   ```
-
-   - A model is written as `codex/<model>` or `claude/<model>`. The prefix picks the CLI, and the rest is passed to it as the model name.
-   - Claude accepts the efforts `low`, `medium`, `high`, `xhigh` and `max`. Codex receives the effort string unchanged.
-   - `defaults` sets the model and effort for each kind of session. A plan can override them for a single request, and records why when it does.
-   - `max_sessions` counts sessions of every kind together.
-   - `limit_wait_seconds` is how long to wait after a usage limit when the provider gives no reset time.
-   - `lean.command` is run by the instance's Lean broker with the absolute path of a Lean file added as the last argument. With `"cwd": null` it runs in the submitting session's own folder.
-   - To use Mathlib, set `command` to `["<path>/lake.exe", "env", "lean"]`, set `version_command` to the same with `"--version"` added, and set `cwd` to the absolute path of a Mathlib project. If Lean's `bin` folder has to be on `PATH`, write the full value into `env.PATH`; JSON does not expand `$env:PATH`.
-   - The `lean` block also accepts optional keys for the broker: `memory_budget_mb`, `confidence`, `min_free_memory_mb`, `cpu_threads_budget`, `threads`, `priority`, `max_passes`, `calibration_expect_mb` and `default_spread`. Their defaults are derived from the machine; [LEAN.md](.claude/skills/do-math/LEAN.md) defines them.
-
-   Section 1 of [protocol.md](.claude/skills/do-math/protocol.md) defines every field.
-
-4. Create the instance at a path that does not exist yet, either outside this repository or under the ignored `.skill-workspace/` folder, so that its Git repository stays separate from this one. Then start the runner:
-
-   ```powershell
-   $skill = 'C:/path/to/do-math/.claude/skills/do-math'
-   $instance = 'C:/path/to/do-math/.skill-workspace/do-math/add-zero'
-   python "$skill/runner.py" init $instance --goal C:/path/to/goal.md --settings C:/path/to/settings.json
-   python "$skill/runner.py" start $instance
-   python "$skill/runner.py" status $instance
-   ```
-
-   `start` returns once it has confirmed that the new runner is alive, and prints the runner's PID and the paths of its log files. You can then close the terminal. If `init` fails partway, fix the problem and start over at a new path rather than reusing the half-created folder.
-
-## Reading the results
-
-Everything published lives under `<instance>/knowledge/`, one folder per record, each with an `output.json` that points to the record's files.
-
-Start with `knowledge/index.md`. It lists the research and exploration records of the general module with the title and summary each session wrote, links to their peer responses and current reviews, and flags records that have not been reviewed yet or whose reviews conflict. At the top it links the latest research status, the global glossary and the latest plan record, shows the verdict of any goal review, and lists the other modules the last plan declared, each a file under `knowledge/index/` with the same kind of entries and a description of what it holds.
-
-From there, open a record's `output.json`. For research, each entry under `results` points to its exposition (`exposition`), says what the author actually verified (`verification`) and lists any Lean files (`lean.sources`), with `failed_attempts` and `open_questions` alongside; the names the exposition uses internally are defined in the record's `glossary-local.md`. Then read the reviews linked from the index. A result counts as established only when its current reviews accept it, they do not conflict, and nothing it builds on has been rejected. Being published means only that a record passed the format check.
-
-When the run is complete, `status` shows the ID of the deciding goal review in `state.complete`, and that review's `goal.reason` explains how the goal was met. The instance's Git log has one commit for each published record.
-
-## Operating a run
-
-Every command has the form `python "$skill/runner.py" <command> $instance ...` and prints JSON. Use shells with the same privilege level for every command on an instance; on Windows, mixing elevated and normal shells can make the runner mistake a live process for a finished one.
-
-| Command | What it does |
-|---|---|
-| `init $instance --goal <file> --settings <file>` | Creates a new instance and its Git repository. |
-| `start $instance` | Starts the runner in the background and confirms that it is alive. Run it again to restart after a crash or a reboot. |
-| `status $instance` | Shows whether the runner is alive (`runner_alive`), what is blocking new dispatches (`dispatch_blocks`), the Lean broker and its queue (`lean`), and every session and request (`state`). It changes nothing. |
-| `stop $instance` | Stops the runner from dispatching new sessions. Running sessions finish and are published. |
-| `resume $instance` | Undoes `stop`. It does not start a runner that is not running. |
-| `input $instance --file <file>` | Passes the text of a UTF-8 file to the next plan. This is also how you answer a plan's question. |
-| `kill-session $instance <session id>` | Ends one session's CLI process, though not any processes that the CLI started; its Lean compiles are cancelled by the Lean broker once the session is dead. Whatever the session left in its output is still checked, and published if it passes. Session IDs are listed in `status`. |
-| `index $instance` | Rebuilds `knowledge/index.md` and the module files under `knowledge/index/` while the runner is not running. |
-| `run $instance` | Runs the runner in the foreground for debugging. It does not return until the run ends. |
-
-If the runner or the machine stops, run `start` again on the same instance. The runner recognizes each recorded session by its process ID and creation time, waits for the ones still running, and processes whatever the finished ones left behind. It never relaunches a session that has already ended. Recovery depends on the files under `runner/`, so do not delete `runner/lock` or edit anything there by hand.
-
-[SKILL.md](.claude/skills/do-math/SKILL.md) and [RUNTIME.md](.claude/skills/do-math/RUNTIME.md) cover every command's states and edge cases.
-
-## Repository layout
+For a manual launch, write a UTF-8 `root.md` containing the exact proposition, for example:
 
 ```text
-.claude/
-  skills/do-math/     the runner, checker, session instructions and tests
-  skills/...          11 supporting skills (listed below)
-  agents/             subagent definitions with fixed model and effort
-  CLAUDE.md           project instructions for Claude Code
-.agents/              a generated copy of the skills for Codex, with Codex's project instructions
-.codex/               Codex configuration
-.mcp.json             MCP servers registered for Claude Code
-AGENTS.md             short project instructions for Codex
-services/             standalone tools (listed below)
-기억/                 the project's working memory, linked to commits
-ROADMAP.md            planned work
+For every natural number n, including zero, n + 0 = n.
 ```
 
-Inside `.claude/skills/do-math/`:
+Prepare settings with your actual executable paths. The operating guide gives the full example; this minimal file overrides the Lean installation while retaining the model and scheduling defaults:
 
-| File | Content |
+```json
+{
+  "lean": {
+    "command": ["C:/tools/lean.exe"],
+    "version_command": ["C:/tools/lean.exe", "--version"]
+  }
+}
+```
+
+Create an instance at a new path outside the repository or under its ignored `.skill-workspace/`, then start it:
+
+```powershell
+$skill = 'C:/path/to/do-math/.claude/skills/do-math'
+$instance = 'C:/research/add-zero'
+python "$skill/runtime/runner.py" init $instance --root C:/research-input/root.md --settings C:/research-input/settings.json
+python "$skill/runtime/runner.py" start $instance
+python "$skill/runtime/runner.py" status $instance
+```
+
+If you have standing conditions, submit their file with `input --file <file>` before `start`. Later standing inputs apply only to subsequently launched sessions. Changing the root's mathematical proposition requires a new instance.
+
+`start` confirms its new process and returns log paths; the runner then continues after the terminal or operator conversation ends. Inspect those logs and status if launch confirmation fails before attempting another start.
+
+## Reading and operating the instance
+
+Start at `knowledge/index.md`, then follow records to their expositions and reviews. `knowledge/frontier.md` shows the mathematical questions and current evidence. `knowledge/glossary.md` supplies the shared definitions and aliases. `knowledge/board.md` shows occupied nodes and processing stages. A published record's description and its review assessment have different purposes; read both before using its results.
+
+All commands have the form `python <skill>/runtime/runner.py <command> <instance> ...`.
+
+| Command | Purpose |
 |---|---|
-| `runner.py` | The runner and its commands |
-| `check.py` | The format checker that both the sessions and the runner run |
-| `cli_adapter.py` | Builds the Claude Code and Codex command lines and reads usage limits from their logs |
-| `lean_broker.py` | The Lean broker, its job host and the commands sessions use to compile through it |
-| `common.md`, `protocol.md` | Instructions that direct every session, and the file contract between the sessions and the runner |
-| `plan.md`, `research.md`, `explore.md`, `peer.md`, `review.md` | Instructions that direct each kind of session |
-| `SKILL.md`, `RUNTIME.md`, `CLI.md` | How to operate the runner and how it calls the CLIs |
-| `LEAN.md` | The Lean broker: commands, the estimate sessions give, scheduling, settings, and how to write Lean that compiles cheaply |
-| `tests/` | Tests that use fake CLI processes with the real checker and real Git: `python -B -m unittest discover -s .claude/skills/do-math/tests -v` |
+| `status` | Read the root state, runner liveness, sessions, pending work and provider/model blocks. |
+| `stop` / `resume` | Stop or resume new dispatch; already-running sessions continue. |
+| `input --file <file>` | Supply standing information to future sessions. |
+| `review --record <id>` | Request a comprehensive examination of published evidence. |
+| `organize` | Request organization of current unprocessed publications. |
+| `kill-session <id>` | End the identified CLI process, retaining its work for processing. |
+| `start` | Restart after a runner crash or machine reboot, recovering existing work. |
+| `render` | Rebuild derived views while the runner is off. |
+
+The [operating guide](.claude/skills/do-math/reference/operations.md) explains states, failures, fallback and Lean environment changes. Preserve the instance's operational files when recovering; the runner uses saved process and publication identities to avoid duplicating work.
+
+## Development layout and verification
+
+Within `.claude/skills/do-math/`, the new implementation is in `runtime/`, worker guides are in `roles/`, and shared and specialist guides are in `reference/`. `SKILL.md` is the operator's entry point. `.agents/skills/do-math/` is the Codex mirror. Fresh instances use the new runtime; old top-level runtime files remain in this checkout for a research instance already using those paths.
+
+The runtime tests use scripted CLI processes, the runtime's structural output checker and Git, and a controlled Lean stand-in. They check evidence propagation, occupancy, scheduling, glossary/index behavior, formal-evidence identity, interruption, recovery and context delivery. Run them with:
+
+```powershell
+python -B -m unittest discover -s .claude/skills/do-math/runtime/tests -v
+```
+
+Documentation is also read independently through the context assembled for each role. Live CLI and Lean probes complement the scripted tests. Their results and limits are recorded in [the implementation verification report](docs/do-math/rebuild-verification.md).
 
 ## Standalone tools
 
-None of these is needed to run do-math. When scholarly-mcp is registered as an MCP server, research and explore sessions use it for literature search; otherwise they search the web and say so in their records. I built the current version of do-math with async-development, but do-math does not use it at run time. The tools' READMEs are in Korean.
+None of these is needed to run do-math. When explicitly configured for an instance, scholarly-mcp gives its workers academic literature search; otherwise they can use the available web tools and record their search limits. The standalone development tools are independent of do-math's runtime. The tools' READMEs are in Korean.
 
 - [services/scholarly-mcp](services/scholarly-mcp/README.md): a local MCP server that searches 49 academic sources and saves bibliographic data, abstracts, full text and supplements. The public sources need no login; some of the others go through one university library's login.
 - [services/continuous-development](services/continuous-development/README.md): a multi-agent management system for software development, made up of instruction documents that direct Codex sessions and a Python runner that dispatches those sessions in phases. Each phase runs several Codex task sessions in parallel, after which a manager session reads their reports and writes the next phase.
@@ -242,7 +148,7 @@ None of these is needed to run do-math. When scholarly-mcp is registered as an M
 
 ## Language
 
-The do-math skill is in English: every term that carries a do-math-specific meaning has one fixed English name, used the same way in the session instructions, the file contract, the operating documents and the strings the runner writes. A freshly created instance behaves exactly as before the port. Instances created before it can still be restarted; their next plan relabels the inherited Korean glossary fields into English, as described in `protocol.md`. The supporting skills, the standalone tools' documentation, the working-memory directory and the commit messages are still in Korean; porting them is item 3 of the roadmap.
+The new do-math operator and worker guides, file contracts, runtime output and README are in English. Supporting skills, standalone-tool documentation and the working-memory directory remain primarily in Korean.
 
 ## Roadmap
 

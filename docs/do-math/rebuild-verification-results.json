@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "verified_at_utc": "2026-11-04T23:57:35.883892+00:00",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "python": "3.12.10",
+  "automated_tests": {
+    "command": "python -B -m unittest discover -s .claude/skills/do-math/runtime/tests -v",
+    "tests": 84,
+    "result": "passed",
+    "duration_seconds": 156.139,
+    "source_unchanged_during_run": true,
+    "log_local": "C:\\math\\.skill-workspace\\do-math-development-20261105\\tests-final-installed.txt",
+    "log_sha256": "fefa577fdf35c522ebb680f53ad2567e83989988a556ffee24abb39a3642c035"
+  },
+  "live_research": {
+    "root_state": "formal_proved",
+    "finished": true,
+    "sessions_by_role": {
+      "attempt": 1,
+      "explore": 2,
+      "formalizer": 1,
+      "peer": 4,
+      "review": 4,
+      "organizer": 4
+    },
+    "failed_sessions": [],
+    "records": 4,
+    "organizations": 4,
+    "events": 8,
+    "formal_checks": [
+      {
+        "record": "r3f9215233b0d40218fe6fcf1532aaed8",
+        "solution": "s-root-core-lean",
+        "theorem": "DoMath.root",
+        "axioms": [],
+        "job": "b31a587b2b06249cdaf93597a70c7444e",
+        "review_session": "s8be216c129034e3389ecae40848616c5",
+        "status": "finished",
+        "source_hashes_match": true,
+        "output": [
+          "theorem DoMath.root : ∀ (n : Nat), n + 0 = n :=\nfun n => Eq.refl n\n'DoMath.root' does not depend on any axioms\n'DoMath.root' does not depend on any axioms\n"
+        ]
+      }
+    ],
+    "restart_recorded_active_sessions": 1,
+    "restart_preserved_session_identities": true,
+    "publish_commits": "Publish odf9913008f9042609d51f44adec836ce\nPublish r3ce6fd7bf36b4bad84f778c54904e033\nPublish o79e4ef7a22f44e4c8ac5c5257220d319\nPublish r3f9215233b0d40218fe6fcf1532aaed8\nPublish o65677eabe67c49198a9ae4fedf4eb6b2\nPublish oe37aa3b9a2a64d49978aeb07ac0973e5\nPublish r8647abab1d934b8db32f45679b47c7ff\nPublish r2055be7a0d0645eebf5397556e14ea01\nInitialize autonomous mathematical research",
+    "last_error": null
+  },
+  "completed_instance_restart": {
+    "runner_exited": true,
+    "history_unchanged": true,
+    "events_unchanged": true,
+    "finished": true,
+    "uncommitted_publications": ""
+  },
+  "live_guidance_scope": "The live run exercised the six-role implementation before the final revision of guide structure and startup reading order. The revised guides receive separate independent per-role readings and context-assembly regression checks; runtime transition behavior is unchanged.",
+  "isolated_cli_probes": {
+    "codex": {
+      "provider": "codex",
+      "exit": 0,
+      "ready": "MCP_PROBE_OK",
+      "hook_ran": false,
+      "retention": {
+        "native_transcripts": [
+          "transcript-01a1a758-430c-7231-ae4e-6c35a03eee94.jsonl"
+        ],
+        "cli_activity": true,
+        "streams": [
+          "cli.stdout.jsonl",
+          "cli.stderr.log"
+        ],
+        "limitation": null,
+        "conversation_items": 15,
+        "conversation": "conversation.md"
+      }
+    },
+    "claude": {
+      "provider": "claude",
+      "exit": 0,
+      "ready": "MCP_PROBE_OK",
+      "hook_ran": false,
+      "retention": {
+        "native_transcripts": [
+          "transcript-7a23d73b-1f16-4fc3-a40e-1e61370257c3.jsonl"
+        ],
+        "cli_activity": true,
+        "streams": [
+          "cli.stdout.jsonl",
+          "cli.stderr.log"
+        ],
+        "limitation": null,
+        "conversation_items": 8,
+        "conversation": "conversation.md"
+      }
+    }
+  },
+  "documentation": {
+    "status": "final reading comparisons in progress",
+    "source": ".claude/skills/do-math",
+    "mirror": ".agents/skills/do-math"
+  },
+  "runtime_source_sha256": {
+    "runtime/check.py": "b3313722ab539d862146b7e50ada8ed9b0383b6c98adfded4802d9ddba632e8a",
+    "runtime/cli_adapter.py": "08420ae22b0b0b8bdefedd769392563ab8eb0f7267e128a8abc3de525ef530d0",
+    "runtime/context.py": "c7343e4a1c11946f05abd6113f8fcc2da5447a293b5e392ec7f50ea2e14cd86a",
+    "runtime/coordination.py": "8c566aa5a55cc4e9e5c998ab25f657cfdfb745c36222576caee46ea1c925dc18",
+    "runtime/knowledge.py": "21ccc2777eedb9f866240ed866576ab19778721cca1ee1b0ab027b028e0d3599",
+    "runtime/launch.py": "25f4764b4a12dd57b19cfa7a3df419f127aac362034b5aa34603d192961faf5b",
+    "runtime/lean_broker.py": "f8190908b25ed65afd805fcff8d565c8e21916809bb1ccc26f0d136192b82818",
+    "runtime/retention.py": "4948c596741cac19b7340bff8abe92933653a293ba79c1ac3c19f6761c71712d",
+    "runtime/runner.py": "d3968bacc11a54cfebf0f02ef8d122d4f68444b1f2031e71e0357dfcc42f5c0e",
+    "runtime/runtime_support.py": "50d02ce557cf619ea58abdb291dbc430fd63913ce05375628579ef308da5256c",
+    "runtime/settings.py": "965640291e7142473d5ea2394164d20d40b7226843bba65266d5d367fa604a9f",
+    "runtime/tests/fake_lake.py": "66c5343147f526b9c60768884698fedf393809de5d499c0c6802cd86df555b9c",
+    "runtime/tests/fake_lean.py": "83e078fd359d769b42f5808d2814c983818414cae6066832842cda5691ff6735",
+    "runtime/tests/mcp_probe.py": "d24bc237eda277a7869ca2da95c9dfe3b6f9067fc37d7bc74d5b144ece296061",
+    "runtime/tests/pipeline_cli.py": "1a096cc48abdc88f94cd9c3f7943470a51ac6624f4b329bd93a6b4e350c9a1ce",
+    "runtime/tests/pipeline_lean.py": "5061765368556a58b13160bdf00635272e55517396012d5d333aac9e3739a921",
+    "runtime/tests/test_cli_adapter.py": "ffa86aa7879649e442ef8d461c521f163519b10f05b53574113885b545f9350a",
+    "runtime/tests/test_context.py": "aba095e4035ca4d2eaec1f4bc9366fe81c0bd98433ab956e2a2a5b6facff6693",
+    "runtime/tests/test_lean_broker.py": "21c2aa978ea35765b4b84b6362e021eb1f37f6ace0357fdae9a1d664a2fc76b3",
+    "runtime/tests/test_pipeline.py": "487a6d8fde4f5a6ed3fda60cc95a7f71e5e75c407cbae74aca997461c2f787ba",
+    "runtime/tests/test_publication.py": "14661a8f7286d451f2e3150fa44e6cdb73184e88fc82cb2f7442c69da2ae643e",
+    "runtime/tests/test_research.py": "8d577192cd5ab3f147126d9a6a454aa1d173cce11f9b38747fab7ec5c8902d4f",
+    "runtime/tests/test_retention.py": "096485a67ffc9e341ffd1b83f9321abda032acda970e977698261a49e2917cff"
+  },
+  "limits": [
+    "Windows verification only for this rebuild; Linux process paths not exercised.",
+    "No new Mathlib research run; real core Lean and controlled broker tests were used.",
+    "Elementary live run confirms workflow and evidence handoffs, not effectiveness on difficult mathematics.",
+    "CLI isolation probes cover installed providers and an explicitly configured local MCP server; central provider policy is outside personal/project customization.",
+    "Detailed raw execution and reading evidence is local ignored workspace material, not distributed with a clone."
+  ]
+}

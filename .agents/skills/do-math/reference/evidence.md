@@ -1,0 +1,17 @@
+# Reading mathematical evidence
+
+The common introduction explains how a record and its review enter shared knowledge. This guide develops the next judgment: whether a particular result gives you the mathematical premise your own work needs. Begin with the question you intend to use it for, then follow the record's actual statement and evidence.
+
+Use the index to locate the contribution and open its exposition, definitions, supporting artifacts and current review. The description tells you why the record may be relevant. The proof and assessment determine what you can conclude from it. Reading them together lets you distinguish a supported result from the stronger conclusion you might hope to draw.
+
+Before using a result, compare its objects, hypotheses, domains and quantifier order with the present use. Confirm that its established scope covers the needed case, that the supporting evidence is accessible, and that you have understood the current review and later findings. If the present question assumes less than the cited theorem, the missing hypothesis remains a proof obligation. If the cited computation covers only a finite range, its conclusion stops at that range.
+
+The record's `claims` have local IDs. A stable reference consists of the record ID and claim ID. `supported` means review found the offered evidence supports that claim as stated; `unsupported` means it does not; `undetermined` means the assessment was not completed. A supported report of a conjecture still reports a conjecture. Read the claim and evidence rather than treating its assessment word as a proof of a stronger statement.
+
+Solutions and relations identify particular claims and exact node outcomes. Several arguments may support the same node. Removing one argument need not remove the others. A relation with several premises requires the specified outcome for every premise. An equivalence can be represented by its two directions. These recorded connections let the runner display consequences that sessions have justified; it does not discover implications in prose.
+
+A later concern names the questioned claims, the evidence for the concern and the comprehensive review investigating it. That review follows actual mathematical uses. A citation for historical context differs from a premise, and using an established subrange can differ from relying on a defective boundary case. Establish which situation your own argument is in. Explain conditional uses and independent repairs so a later reviewer can assess them.
+
+Later findings attach to immutable records. Read the finding as well as the original assessment. A confirmed gap does not prove the statement false, and a cleared concern does not establish a claim beyond the scope of that clearance. If the accounts conflict, reason from the exact arguments and leave the disagreement visible for review.
+
+Record dependencies as the claims you use mathematically, with an explanation of their use in the exposition. Names in the global glossary provide shared definitions; their existence alone does not establish a property. Follow local definitions and alias correspondences far enough to know which object a theorem actually concerns.

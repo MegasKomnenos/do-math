@@ -1,0 +1,52 @@
+# Tools and working files
+
+Your role guide explains the mathematical work you own. This guide explains how to use the files and commands supplied for that work. You have a directory in which to develop and retain your work, access to the instance's shared knowledge, and tools for coordinating with other sessions and compiling Lean.
+
+The runner records the concrete paths and commands in `input.json`. Its `instance` and `session` identify where you are working, `task` identifies the inputs specific to your role, and `commands` gives the executable argument arrays. Read these values before invoking a command. The forms shown below explain what the commands do; your input supplies the actual executable locations and identifiers.
+
+## Files you work with
+
+Use `work/` for scratch mathematics, source development, computations and intermediate artifacts. Use `output/` for the retained report or role output your successor will read. Keep the files and any generated caches in your own session directory. The runner preserves `pack.md`, `input.json`, instruction references and the available CLI conversation. Your role's output reference states the entry file and fields it needs.
+
+The instance's `knowledge/` holds published records, independent assessments and organization decisions. `frontier.md`, `glossary.md`, `index.md`, the module files under `index/`, and `board.md` are views the runner renders. Read them and follow their sources; write your contributions in your own output. Publication and changes to shared state are the runner's work.
+
+Read required documents in full. If a file-reading tool truncates its output, retrieve the omitted ranges before treating the document as read. A successful read command can still have returned only part of the file.
+
+Working paths can be absolute when invoking tools. Paths inside a published record are relative to that record, separated by `/`. Publish the evidence a later reader needs or link a stable published source. A reference to a producer's private working file cannot support an ordinary attempt that may read only published mathematics.
+
+## Current research and coordination
+
+The research snapshot in your starting context tells you what was available when you launched. To see what has changed, use the commands in your input. Each command is an argument array: pass its elements separately to the process, replacing placeholders. This avoids guessing executable locations or relying on a shell alias.
+
+Run `commands.updates` from your input to obtain the live board, current root state, concerns, comprehensive review assignments and coordination messages. The user inputs it returns are your original launch snapshot. New user standing instructions apply to sessions launched afterward. Research publications and occupancy remain live.
+
+An attempt uses `commands.claim`, replacing `<node>` with the chosen node ID. Read the board before deciding. The tool appends the declaration, retains earlier declarations, and reports other occupants and any relevant state warning. It does not reserve a mathematical territory by force. Apply the occupancy instruction from your guide even when a command accepts a declaration.
+
+To coordinate an unexpected overlap, write a short message file in your directory and run `commands.message` with the recipient's session ID and that file. Use it for coordination facts and pointers to published evidence. Ordinary attempts do not obtain another session's unfinished mathematics through messages. Delivery creates a file in the recipient's inbox; it does not establish that the recipient has read it.
+
+## Lean compilation
+
+All Lean compilation goes through the instance's broker. It manages the memory and thread budgets shared by compiles and retains each job's output and exit result. The `commands.lean` array gives the executable, broker script and instance. Replace `<command>` with `run`, `submit`, `build`, `wait`, `result`, `status`, `cancel` or `version`, adding the arguments described in [Lean](lean.md). Read that guide before your first compile, including its explanation of the memory estimate.
+
+A single-file submission has this form:
+
+```text
+python <broker> submit <instance> <absolute-file.lean> --session <your-session-id> --expect-mb <estimated-peak-MiB>
+python <broker> wait <instance> <job-id> --timeout 50
+```
+
+A `wait` timeout returns exit code 124 while the job continues. Follow the same job to its result. A result marked `finished` includes Lean's exit code; `failed` or `cancelled` describes an execution problem or cancellation. Neither substitutes for examining the source's mathematical validity.
+
+For your own modules, use `build` with a module root and target paths. Independent review uses `--fresh-targets`: dependencies already built from unchanged sources may be reused, while the target is compiled again by the reviewing session. A successful compile must still be accompanied by an audit of every axiom the target uses, including through other lemmas and imports, and a comparison with the exact node.
+
+## Other computations and literature tools
+
+Use the CLI's available shell, file and search tools for the mathematics. For a long computation, write progress and final output to files in your session directory and retain its process or job identifier. When a shell tool stops waiting, recover the actual exit and output through its continuation mechanism. Starting a duplicate computation obscures which input produced which result.
+
+The available external tools are the servers explicitly configured in this instance. If scholarly-mcp is present, its source descriptions explain which databases and operations are supported. If a tool or source is unavailable, record the limitation and use another available source where appropriate. The fact that the operator has a personal tool configuration does not make that tool part of your session.
+
+## Checking and ending
+
+Run `commands.check` against your own session directory before finishing. Exit code 0 with `ok: true` means the transport structure and references passed. A failure identifies a field or missing file to fix. The check does not prove mathematical claims or evaluate the quality of the exposition.
+
+Producing sessions retain useful partial work even if interrupted before their final report is complete. Peers, reviewers and organizers need structurally usable outputs for the runner to apply their decisions. If one of those sessions is interrupted, the runner preserves its partial material and starts a fresh session for that stage. A missing output is an unfinished stage, not a mathematical rejection.
