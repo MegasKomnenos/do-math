@@ -382,6 +382,27 @@ class JobHostTests(unittest.TestCase):
 
 
 class BrokerTests(BrokerFixture):
+    def test_edit_before_ingestion_keeps_submissions_distinct(self):
+        self.start_broker()
+        path = self.session_file("s1", marker="BEFORE-INGESTION")
+        original_hash = lean_broker.hashlib.sha256(path.read_bytes()).hexdigest()
+        first = self.submit(path)
+        source(path, marker="AFTER-INGESTION")
+        second = self.submit(path)
+        self.broker.ingest()
+        first_job = self.broker.state["jobs"][first]
+        second_job = self.broker.state["jobs"][second]
+        self.assertEqual(first_job["source_sha256"], original_hash)
+        self.assertNotEqual(first_job["source_sha256"], second_job["source_sha256"])
+        self.assertFalse((self.paths.job(second) / "result.json").exists())
+        self.broker.launch(first_job)
+        first_result = lean_broker.job_record(self.paths, first)
+        self.assertEqual(first_result["status"], "failed")
+        self.assertIn("source changed after submission", first_result["reason"])
+        self.until(lambda: self.finished(second))
+        self.assertEqual(lean_broker.job_record(self.paths, second)["exit_code"], 0)
+        self.assertIn("AFTER-INGESTION", (self.paths.job(second) / "stdout.log").read_text(encoding="utf-8"))
+
     def test_ingestion_restart_preserves_registration_and_duplicate_outcomes(self):
         for kind in ("job", "build"):
             for boundary in ("registration", "duplicate"):
@@ -852,8 +873,7 @@ class BuildTests(BrokerFixture):
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(lean_broker.wait(self.paths, identity, timeout=0), 4)
                 cancelled.append(identity)
-        self.broker = lean_broker.Broker(self.instance, log_path=self.paths.log)
-        self.broker.start()
+        self.start_broker()
         for identity in cancelled:
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(lean_broker.wait(self.paths, identity, timeout=0), 4)

@@ -266,6 +266,12 @@ class Runner:
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
+        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error'):
+            reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
+                      f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})")
+            self.retry(job, s, reason,
+                       availability=bool(s.get('refusal') or s.get('launch_error')))
+            return
         errors = check_session(session)
         if errors:
             if (s['role'] == 'review' and job['task'].get('kind') == 'candidate'
@@ -385,6 +391,12 @@ class Runner:
                 candidate = Path(job['task']['candidate'])
                 regular_tree(candidate)
                 shutil.copytree(candidate, stage)
+                if tree_hashes(stage) != job['task']['candidate_hashes']:
+                    self.state['publication'] = None
+                    session = self.state['sessions'][sid]
+                    session['record'] = None
+                    self.recover_candidate(job, session, 'candidate changed after review assignment')
+                    return
                 shutil.copytree(self.session_dir(sid) / 'output', stage / 'review')
                 pipeline = self.state['pipelines'][job['pipeline']]
                 write_json(stage / 'provenance.json', {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
@@ -557,8 +569,7 @@ class Runner:
                     continue
                 job['task']['proofs'] = ready
             if job['role'] == 'attempt':
-                if not any(node['canonical'] == nid and node['state'] == 'unresolved'
-                           for nid, node in self.model['nodes'].items()):
+                if not self.available_nodes():
                     continue
                 if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
                     continue

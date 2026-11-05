@@ -118,9 +118,36 @@ class PublicationTests(InstanceCase):
         runner.state['jobs'][jid].update(status='running', session='sreview')
         runner.state['jobs'][producer]['status'] = 'done'
         runner.state['sessions']['sreview'] = {'id': 'sreview', 'role': 'review', 'status': 'running', 'job': jid,
-                                              'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 1}
+                                              'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 1,
+                                              'exit_code': 0}
         runner.save()
         return runner, runner.state['jobs'][jid]
+
+    def test_publication_restart_rechecks_the_copied_candidate(self):
+        runner, job = self.candidate_pipeline()
+        self.assertEqual(check_session(runner.session_dir('sreview')), [])
+        runner.prepare_publication('sreview', job, 'record')
+        candidate = Path(job['task']['candidate'])
+        (candidate / 'record.md').write_text('Changed after publication preparation.', encoding='utf-8')
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.publish()
+        job = recovered.state['jobs'][job['id']]
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(job['status'], 'pending')
+        self.assertEqual(job['last_error'], 'candidate changed after review assignment')
+        self.assertEqual(recovered.state['sessions']['sreview']['status'], 'failed')
+        self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
+        self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+        restored = Path(job['task']['candidate'])
+        self.assertNotEqual(restored, candidate)
+        self.assertEqual(runtime.tree_hashes(restored), job['task']['candidate_hashes'])
+        self.assertEqual((candidate / 'record.md').read_text(encoding='utf-8'),
+                         'Changed after publication preparation.')
+        self.finish_replacement_review(recovered, job)
+        self.assertEqual(job['status'], 'done')
+        event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
+        published = self.instance / 'knowledge' / event['folder']
+        self.assertEqual((published / 'record.md').read_bytes(), b'The proof.')
 
     def test_commit_failure_recovers_same_publication_without_duplicates(self):
         runner, job = self.candidate_pipeline()
@@ -189,7 +216,8 @@ class PublicationTests(InstanceCase):
         (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
         (session / 'cli.stderr.log').write_text('', encoding='utf-8')
         reviewer = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id'],
-                    'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2}
+                    'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2,
+                    'exit_code': 0}
         runner.state['sessions'][sid] = reviewer
         job.update(status='running', session=sid)
         runner.state['pipelines'][job['pipeline']]['review'] = sid
@@ -217,7 +245,8 @@ class PublicationTests(InstanceCase):
         (peer / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
         (peer / 'cli.stderr.log').write_text('', encoding='utf-8')
         worker = {'id': peer_sid, 'role': 'peer', 'status': 'running', 'job': peer_job['id'],
-                  'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2}
+                  'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2,
+                  'exit_code': 0}
         runner.state['sessions'][peer_sid] = worker
         peer_job.update(status='running', session=peer_sid)
         pipeline['peer'] = peer_sid
@@ -232,6 +261,30 @@ class PublicationTests(InstanceCase):
         self.assertEqual((self.instance / 'knowledge' / event['folder'] / 'record.md').read_text(encoding='utf-8'),
                          'A newly developed proof.')
 
+
+    def test_interrupted_review_does_not_apply_a_structurally_usable_assessment(self):
+        runner, job = self.candidate_pipeline()
+        session = runner.state['sessions']['sreview']
+        folder = runner.session_dir('sreview')
+        verdict = read_json(folder / 'output/assessment.json')
+        for publish in (True, False):
+            verdict['publish'] = publish
+            verdict['solutions'][0]['level'] = 'informal' if publish else 'none'
+            write_json(folder / 'output/assessment.json', verdict)
+            for code, refusal in ((1, None), (None, None),
+                                  (0, {'reason': 'usage_limit'})):
+                with self.subTest(publish=publish, exit_code=code, refusal=refusal):
+                    self.assertEqual(check_session(folder), [])
+                    session.update(status='running', exit_code=code, refusal=refusal)
+                    job.update(status='running', session='sreview')
+                    runner.finish('sreview', session)
+                    self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
+                    self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'review')
+                    self.assertIn(str(folder), job['task']['previous_partial_sessions'])
+                    self.assertIsNone(runner.state['publication'])
+                    self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
+                    self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+                    self.assertFalse(runner.archive_due)
 
     def test_completed_exclusion_releases_occupancy_without_publishing(self):
         runner, job = self.candidate_pipeline()

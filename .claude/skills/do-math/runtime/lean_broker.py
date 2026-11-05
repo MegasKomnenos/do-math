@@ -676,7 +676,7 @@ class Broker:
             job_dir = self.paths.job(job_id)
             job_dir.mkdir(exist_ok=True)
             try:
-                source_hash = hashlib.sha256(Path(source).read_bytes()).hexdigest()
+                source_hash = request.get("source_sha256") or hashlib.sha256(Path(source).read_bytes()).hexdigest()
             except OSError:
                 source_hash = None
             duplicate = next((jid for jid, j in self.state["jobs"].items()
@@ -695,7 +695,7 @@ class Broker:
             except OSError as exc:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
-            job = self.new_job(job_id, request, source, imports, imports)
+            job = self.new_job(job_id, request, source, imports, imports, source_sha256=source_hash)
             write_json(job_dir / "job.json", job)
             self.state["jobs"][job_id] = job
             if (job_dir / "CANCEL").exists():
@@ -1305,10 +1305,11 @@ def submit(paths, source, expect_mb, session):
         raise ValueError("--expect-mb must be a positive integer: your probable peak private memory in MiB")
     if not isinstance(session, str) or not session.strip():
         raise ValueError("--session must be your session ID")
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
     ensure_broker(paths)
     job_id = "j" + uuid.uuid4().hex
     request = {"id": job_id, "source": str(source), "expect_mb": expect_mb, "session": session,
-               "submitted_at": time.time()}
+               "source_sha256": source_hash, "submitted_at": time.time()}
     temporary = paths.queue / ("." + job_id)
     write_json(temporary, request)
     temporary.rename(paths.queue / (job_id + ".json"))

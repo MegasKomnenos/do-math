@@ -975,6 +975,57 @@ class RunnerTests(InstanceCase):
         self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
                              for p in runner.state['pipelines'].values()), 1)
 
+    def test_attempt_retry_respects_lease_queue_and_whole_node_occupancy(self):
+        runner = self.runner()
+        runner.settings['max_sessions'] = 3
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        runner.finish(sid, session)
+        self.assertEqual(job['status'], 'pending')
+        job['not_before'] = 0
+        runner.state['blocks'].clear()
+        holder = self.running_attempt(runner, 'sholder')
+        waiter = self.running_attempt(runner, 'swaiter')
+        self.assertTrue(lease(holder, 'root')['leased'])
+        self.assertTrue(wait(waiter, 'root', timeout=0)['waiting'])
+        exploration = runner.producer('explore')
+        runner.state['jobs'][exploration]['status'] = 'done'
+        pipeline = runner.state['pipelines'][runner.state['jobs'][exploration]['pipeline']]
+        pipeline.update(stage='peer', producer='sprevious')
+        runner.save()
+        self.assertEqual(runner.model['nodes']['root']['state'], 'unresolved')
+        self.assertLess(len(runner.active()), runner.settings['max_sessions'])
+        self.assertTrue(runner.attempt_launch_due())
+        self.assertIsNotNone(runner.selection('attempt'))
+        before = set(runner.state['sessions'])
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertEqual(runner.available_nodes(), [])
+            runner.dispatch_pending()
+            self.assertEqual(job['status'], 'pending')
+            self.assertEqual(set(runner.state['sessions']), before)
+            self.assertEqual(runner.state['attempt_dispatches'], 0)
+            release(waiter, 'root')
+            self.assertTrue(take(holder, 'root', leased=True)['registered'])
+            holder_job = runner.state['sessions']['sholder']['job']
+            holder_pipeline = runner.state['pipelines'][runner.state['jobs'][holder_job]['pipeline']]
+            holder_pipeline['stage'] = 'peer'
+            runner.save()
+            self.assertEqual(runner.available_nodes(), [])
+            runner.dispatch_pending()
+            self.assertEqual(job['status'], 'pending')
+            self.assertEqual(set(runner.state['sessions']), before)
+            self.assertEqual(runner.state['attempt_dispatches'], 0)
+            holder_pipeline['stage'] = 'done'
+            runner.save()
+            self.assertEqual(runner.available_nodes(), ['root'])
+            runner.dispatch_pending()
+        self.assertEqual(job['status'], 'running')
+        self.assertEqual(set(runner.state['sessions']) - before, {job['session']})
+        self.assertEqual(runner.state['attempt_dispatches'], 1)
+
     def test_attempt_retry_waits_when_all_nodes_are_informally_solved(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 2
