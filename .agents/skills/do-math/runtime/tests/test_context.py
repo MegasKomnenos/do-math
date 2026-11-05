@@ -121,22 +121,20 @@ class ContextTests(InstanceCase):
                 self.pack(folder, role)
                 self.assertIn(current, (folder / 'pack.md').read_text(encoding='utf-8'))
 
-    def test_references_are_snapshots_and_pack_contains_only_assigned_role(self):
+    def test_launch_snapshot_keeps_references_research_views_and_assignment(self):
+        # Role selection and reading order are checked for every role in
+        # test_every_role_receives_its_ordered_guides_and_output_contract.
         first = self.session('first')
         self.pack(first, 'peer', {'source': '/retained/source'})
         source = self.skill / 'reference/record-format.md'
         saved = (first / 'context/reference/record-format.md').read_bytes()
         source.write_text('Revised format for later launches.', encoding='utf-8')
         self.assertEqual((first / 'context/reference/record-format.md').read_bytes(), saved)
-        self.assertEqual([p.name for p in (first / 'context/roles').iterdir()], ['peer.md'])
         text = (first / 'pack.md').read_text(encoding='utf-8')
         self.assertIn('Full current global glossary', text)
         self.assertIn('General index at launch', text)
         self.assertIn('/retained/source', text)
         self.assertNotIn('Revised format', text)
-        self.assertLess(text.index('<!-- begin reference/common.md -->'), text.index('<!-- begin roles/peer.md -->'))
-        self.assertLess(text.index('<!-- begin roles/peer.md -->'), text.index('<!-- begin reference/writing.md -->'))
-        self.assertLess(text.index('<!-- begin reference/tools.md -->'), text.index('<!-- begin reference/record-format.md -->'))
 
     def test_worker_commands_keep_auth_separate_from_customizations(self):
         folder = self.session('isolated')
@@ -148,6 +146,11 @@ class ContextTests(InstanceCase):
         self.assertIn('project_doc_max_bytes=0', codex.argv)
         self.assertIn('skip_host_skill_discovery', codex.argv)
         overrides = [codex.argv[i+1] for i, value in enumerate(codex.argv[:-1]) if value == '-c']
+        # Codex splits a dotted override key literally, so a quoted component such as
+        # mcp_servers."explicit".command becomes part of the server's name. TOML parsing
+        # strips those quotes and would accept that form, so also require one whole-table override.
+        self.assertEqual([value.partition('=')[0] for value in overrides if value.startswith('mcp_servers')],
+                         ['mcp_servers'])
         self.assertEqual(tomllib.loads('\n'.join(overrides))['mcp_servers'], server)
         for name in ('hooks', 'memories', 'plugins', 'apps', 'multi_agent'):
             self.assertTrue(any(codex.argv[i:i+2] == ['--disable', name] for i in range(len(codex.argv))))
@@ -161,10 +164,28 @@ class ContextTests(InstanceCase):
         self.assertFalse(config['autoMemoryEnabled'])
         self.assertEqual(config['claudeMdExcludes'], ['**'])
         self.assertEqual(read_json(folder / 'worker-mcp.json')['mcpServers'], server)
-        with patch.dict('os.environ', {'CODEX_THREAD_ID': 'parent', 'CODEX_SESSION_ID': 'parent', 'TASK_PROBE': 'kept'}):
+        # A worker launched from an operator's Codex or Claude session starts a session of its own, not a nested one.
+        parent = dict.fromkeys(('CODEX_THREAD_ID', 'CODEX_SESSION_ID', 'CLAUDE_CODE_SESSION_ID', 'CLAUDECODE'), 'parent')
+        with patch.dict('os.environ', {**parent, 'TASK_PROBE': 'kept'}):
             env = worker_environment()
-            self.assertNotIn('CODEX_THREAD_ID', env)
+            self.assertEqual(set(parent) & set(env), set())
             self.assertEqual(env['TASK_PROBE'], 'kept')
+
+    def test_runner_dispatch_launches_the_isolated_worker_command(self):
+        # The session host executes launch.json, so the runner must record the isolated
+        # worker command with the instance's explicit tools, not the bare base command.
+        engine = Runner(self.instance, self.skill)
+        engine.settings['mcp_servers'] = {'explicit': {'command': sys.executable, 'args': ['server.py']}}
+        key = engine.producer('attempt')
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        session = engine.state['sessions'][sid]
+        launched = read_json(engine.session_dir(sid) / 'launch.json')['command']['argv']
+        expected = worker_command(engine.settings['cli'][session['provider']], session['model'],
+                                  session['effort'], engine.session_dir(sid), engine.settings['mcp_servers'])
+        self.assertEqual(launched, expected.argv)
 
     def test_withdrawn_solution_keeps_its_explanation_visible(self):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])

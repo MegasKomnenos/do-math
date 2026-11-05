@@ -88,7 +88,7 @@ def capture(session, provider):
             activity |= event['item'].get('type') not in ('error', None)
         if event.get('type') == 'assistant' and not event.get('is_api_error_message'):
             activity = True
-    copied = []
+    copied, companions = [], []
     profile = Path.home()
     for identity in ids:
         if not identity or any(c not in '0123456789abcdefABCDEF-' for c in identity):
@@ -103,6 +103,12 @@ def capture(session, provider):
             destination = session / ('transcript-' + identity + '.jsonl')
             shutil.copyfile(path, destination)
             copied.append(destination.name)
+            # Claude keeps large tool outputs and subagent conversations in a folder named
+            # after the transcript; the transcript's tool result then holds only a preview.
+            companion = path.with_suffix('')
+            if provider == 'claude' and companion.is_dir():
+                shutil.copytree(companion, session / ('transcript-' + identity), dirs_exist_ok=True)
+                companions.append('transcript-' + identity)
             break
     native_activity = False
     for name in copied:
@@ -117,10 +123,12 @@ def capture(session, provider):
                     native_activity |= bool(item.get('summary') or item.get('content'))
                 else:
                     native_activity |= item.get('type') not in ('error', None)
-            elif provider == 'claude' and event.get('type') == 'assistant' and not event.get('is_api_error_message'):
+            # Claude's native transcript stores the internal isApiErrorMessage flag;
+            # the CLI stream read above names the same flag is_api_error_message.
+            elif provider == 'claude' and event.get('type') == 'assistant' and not event.get('isApiErrorMessage'):
                 native_activity = True
-    receipt = {'native_transcripts': copied, 'cli_activity': activity,
-               'native_activity': native_activity,
+    receipt = {'native_transcripts': copied, 'native_companions': companions,
+               'cli_activity': activity, 'native_activity': native_activity,
                'streams': ['cli.stdout.jsonl', 'cli.stderr.log'],
                'limitation': None if copied else 'No native transcript was located; retained CLI streams and artifacts are the available source.'}
     source = session / copied[0] if copied else session / 'cli.stdout.jsonl'

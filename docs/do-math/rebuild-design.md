@@ -1685,9 +1685,11 @@ annotations show its conclusions and links: which claims remain supported, which
 remain uncertain. The original record and earlier review are not rewritten.
 
 The board makes this information available to already-running sessions when they read it. The design does not
-claim that a rendered annotation automatically reaches a session that never reads the updated state. A precise
-refresh or notification mechanism remains to be designed in accordance with the same principle of useful
-information and trusted behavior.
+claim that a rendered annotation automatically reaches a session that never reads the updated state. The
+implementation follows the same principle of useful information and trusted behavior: when a publication
+changes the shared research, the runner leaves a notice in each running session's inbox, and the updates
+command returns the live board, concerns and those notices. Section 18.2 records this as current-state
+delivery. A delivered notice still does not show that the session has read it.
 
 ## 13. Dispatch: priority, readiness, and capacity
 

@@ -195,6 +195,30 @@ class RetentionTests(unittest.TestCase):
                     self.assertIn(tool_output, body)
                     self.assertNotIn('TRANSPORT_ONLY', body)
 
+    def test_claude_native_api_error_is_not_research_activity(self):
+        # A refused Claude launch leaves only a synthetic error message in its native transcript.
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        for api_error, expected in ((True, False), (False, True)):
+            with self.subTest(api_error=api_error), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                session = root / 'session'
+                session.mkdir()
+                native = root / 'profile/.claude/projects/project' / (identity + '.jsonl')
+                native.parent.mkdir(parents=True)
+                text = "You've hit your usage limit" if api_error else 'A first lemma about the root.'
+                rows = [{'type': 'user', 'message': {'role': 'user', 'content': 'Begin the assigned research.'}},
+                        {'type': 'assistant', 'isApiErrorMessage': api_error,
+                         'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': text}]}}]
+                native.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+                (session / 'cli.stdout.jsonl').write_text(
+                    json.dumps({'type': 'system', 'session_id': identity}), encoding='utf-8')
+                (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+                with patch.dict(os.environ, {}, clear=True), patch('retention.Path.home', return_value=root / 'profile'):
+                    receipt = capture(session, 'claude')
+                self.assertEqual(receipt['native_transcripts'], ['transcript-' + identity + '.jsonl'])
+                self.assertFalse(receipt['cli_activity'])
+                self.assertIs(receipt['native_activity'], expected)
+
     def test_capture_retains_cli_text_when_the_identified_native_log_is_missing(self):
         identity = '01234567-89ab-cdef-0123-456789abcdef'
         for provider in ('codex', 'claude'):
@@ -214,6 +238,34 @@ class RetentionTests(unittest.TestCase):
                 self.assertEqual(receipt['streams'], ['cli.stdout.jsonl', 'cli.stderr.log'])
                 self.assertEqual(receipt['conversation_items'], 1)
                 self.assertIn('Available CLI material.', (root / receipt['conversation']).read_text(encoding='utf-8'))
+
+    def test_capture_copies_claude_output_stored_beside_the_transcript(self):
+        identity = '01234567-89ab-cdef-0123-456789abcdef'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            session = root / 'session'
+            session.mkdir()
+            project = root / 'profile/.claude/projects/project'
+            stored = project / identity / 'tool-results/call1.txt'
+            stored.parent.mkdir(parents=True)
+            full_output = 'begin\n' + 'a' * 40000 + 'DECISIVE MIDDLE\nend'
+            stored.write_text(full_output, encoding='utf-8')
+            (project / identity / 'subagents').mkdir()
+            (project / identity / 'subagents/agent-a1.jsonl').write_text('{"type": "assistant"}\n', encoding='utf-8')
+            preview = ('<persisted-output>\nOutput too large. Full output saved to: ' + str(stored)
+                       + '\n\nPreview (first 2KB):\nbegin\n</persisted-output>')
+            (project / (identity + '.jsonl')).write_text(json.dumps({'type': 'user', 'message': {'role': 'user',
+                'content': [{'type': 'tool_result', 'tool_use_id': 'call1', 'content': preview}]}}) + '\n', encoding='utf-8')
+            (session / 'cli.stdout.jsonl').write_text(
+                json.dumps({'type': 'system', 'session_id': identity}), encoding='utf-8')
+            (session / 'cli.stderr.log').write_text('', encoding='utf-8')
+            copy = session / ('transcript-' + identity)
+            with patch.dict(os.environ, {}, clear=True), patch('retention.Path.home', return_value=root / 'profile'):
+                self.assertEqual(capture(session, 'claude')['native_companions'], [copy.name])
+                # Restart recovery can capture the same session again.
+                self.assertEqual(capture(session, 'claude')['native_companions'], [copy.name])
+            self.assertEqual((copy / 'tool-results/call1.txt').read_text(encoding='utf-8'), full_output)
+            self.assertTrue((copy / 'subagents/agent-a1.jsonl').is_file())
 
 
 if __name__ == '__main__':

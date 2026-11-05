@@ -151,7 +151,10 @@ class BrokerFixture(unittest.TestCase):
 
 class BuildResultTests(unittest.TestCase):
     def test_wait_preserves_nonzero_module_codes_in_the_build_aggregate(self):
-        # Controlled terminal records test the real consumer, not POSIX execution.
+        # Controlled terminal records test the real consumer, not POSIX execution. Each row is
+        # a state the broker can reach. Basis is Target's import when it is cached or failed;
+        # an import with a nonzero code would have failed Target, so a nonzero Basis code
+        # comes from a second target compiled beside Target.
         cases = (
             ("finished", (0, 0), 0, 0),
             ("finished", (0, 1), 1, 1),
@@ -159,7 +162,7 @@ class BuildResultTests(unittest.TestCase):
             ("finished", (-9, 0), -9, -9),
             ("finished", (-15, -9), -9, -9),
             ("finished", (-9, 1), 1, 1),
-            ("failed", (0, -9), 3, -9),
+            ("failed", (-9, None), 3, -9),
             ("cancelled", (0, -9), 4, -9),
             ("failed", (None, None), 3, 0),
         )
@@ -177,7 +180,8 @@ class BuildResultTests(unittest.TestCase):
                     }
                     if codes[0] == 0:
                         modules["Basis"]["status"] = "cached"
-                    result = {"id": build_id, "status": status, "targets": ["Target"],
+                    targets = ["Target"] if codes[0] in (0, None) else ["Basis", "Target"]
+                    result = {"id": build_id, "status": status, "targets": targets,
                               "modules": modules, "reason": None}
                     runner.write_json(folder / "result.json", result)
                     out, err = io.StringIO(), io.StringIO()
@@ -1014,6 +1018,9 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertIn("warning: declaration uses 'sorry'", result.stdout)
         self.assertIn("TO-STDERR", result.stderr)
         summary = json.loads(result.stderr.strip().splitlines()[-1].split("lean-broker: ", 1)[1])
+        # The job ID comes first, before any waiting, so a session whose shell tool gave up can still wait on it.
+        receipt = json.loads(result.stderr.splitlines()[0].split("lean-broker: ", 1)[1])
+        self.assertEqual((receipt["job"], receipt["session"]), (summary["job"], "s1"))
         self.assertEqual((summary["status"], summary["exit_code"], summary["expect_mb"]), ("finished", 1, 120))
         self.assertGreater(summary["measured"]["peak_mb"], 50)
         self.assertIn("baseline_mb", summary["measured"])

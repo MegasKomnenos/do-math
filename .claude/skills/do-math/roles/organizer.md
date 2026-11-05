@@ -6,7 +6,7 @@ The common introduction defines the resources you maintain: modules and shared-c
 
 Your assignment names a **batch**: the list of new research publications this organizer session is responsible for placing. That list is fixed when you launch. Read each record with its review and local terminology, then examine the existing organization in which it will be found. Follow older material whenever understanding a contribution or settling an identity requires it.
 
-Publications arriving during your session remain available, but your assigned batch is the one you acknowledge as processed. They are left for the next batch unless your work also places them. Your organization output changes the repository's arrangement; it does not itself count as another research publication triggering organization.
+Publications arriving during your session remain available, but your assigned batch is the one you acknowledge as processed. Those later arrivals belong to the next batch even if your layout already places them; placing one in a module or in shared context only removes it from the unfiled list. Your organization output changes the repository's arrangement; it does not itself count as another research publication triggering organization.
 
 ## Think from the next researcher's position
 

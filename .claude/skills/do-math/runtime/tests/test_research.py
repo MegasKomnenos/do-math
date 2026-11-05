@@ -12,7 +12,7 @@ from check import Invalid, assessment_check, organization_check, record_check
 from cli_adapter import Command
 from coordination import board, claim
 from knowledge import canonical, formal_ready, render, replay, root_solved
-from runner import Runner, initialize
+from runner import Runner, archive_finished, initialize
 from runtime_support import read_json, write_json
 from settings import defaults, validate
 
@@ -361,6 +361,20 @@ class RunnerTests(InstanceCase):
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertTrue(session['retention']['native_transcripts'])
 
+    def test_archiver_keeps_producer_work_until_its_pipeline_is_done(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        runner.finish(sid, session)
+        work = runner.session_dir(sid) / 'work'
+        # The producer has ended, but its peer still has to read the retained work.
+        archive_finished(self.instance)
+        self.assertTrue((work / 'notes.md').is_file())
+        runner.state['pipelines'][job['pipeline']]['stage'] = 'done'
+        runner.save()
+        archive_finished(self.instance)
+        self.assertFalse(work.exists())
+        self.assertTrue((runner.session_dir(sid) / 'work.tar.xz').is_file())
+
     def test_occupancy_survives_producer_exit(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -672,6 +686,30 @@ class RunnerTests(InstanceCase):
                                  [str(runner.session_dir('s' + role))])
                 self.assertEqual(runner.state['jobs'][key]['status'], 'pending')
 
+    def test_published_comprehensive_review_is_not_reassigned_for_its_open_concern(self):
+        self.publish('r1', record([claim_row('p')]))
+        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'gap',
+            'targets': [{'record': 'r1', 'claim': 'p'}], 'reason': 'A boundary case needs checking.',
+            'evidence': 'The case n = 0.'}]})
+        runner = self.runner()
+        runner.populate()
+        job = next(j for j in runner.state['jobs'].values() if j['task'].get('kind') == 'comprehensive')
+        self.assertEqual(job['task']['concerns'], ['v1/gap'])
+        sid = 'scomprehensive'
+        output = runner.session_dir(sid) / 'output'
+        output.mkdir(parents=True)
+        # The review could not settle the concern, so the concern itself stays open.
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'index_assessment': 'Still undetermined.',
+                                                'findings': [], 'concerns': []})
+        (output / 'feedback.md').write_text('The boundary case remains undetermined.', encoding='utf-8')
+        runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
+        job.update(status='running', session=sid)
+        runner.prepare_publication(sid, job, 'review')
+        runner.publish()
+        runner.populate()
+        self.assertEqual([j['id'] for j in runner.state['jobs'].values()
+                          if j['task'].get('kind') == 'comprehensive'], [job['id']])
+
     def test_root_change_requires_new_instance(self):
         (self.instance / 'root.md').write_text('A different proposition.', encoding='utf-8')
         with self.assertRaisesRegex(ValueError, 'new instance'):
@@ -697,7 +735,8 @@ class RunnerTests(InstanceCase):
     def test_legacy_or_misspelled_settings_are_rejected(self):
         legacy = {**defaults(), 'limit_wait_seconds': 5}
         misspelled = defaults(); misspelled['lean']['memory_budget'] = 4096
-        for name, config in (('legacy', legacy), ('misspelled', misspelled)):
+        executable = defaults(); executable['cli']['Codex'] = 'C:/tools/codex.exe'
+        for name, config in (('legacy', legacy), ('misspelled', misspelled), ('executable', executable)):
             with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
                 validate(config)
 
