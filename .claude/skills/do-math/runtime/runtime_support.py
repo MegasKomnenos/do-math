@@ -136,6 +136,26 @@ def _replace_file(temp, path):
             time.sleep(0.05)
 
 
+def rename_directory(source, destination):
+    """Retry only Windows access/sharing failures; never replace a destination.
+
+    Keep the same staged tree throughout the retry. The caller may advance its
+    workflow only after this returns; persistent or unexpected errors propagate.
+    """
+    deadline = time.monotonic() + 60.0
+    while True:
+        if os.path.lexists(destination):
+            raise FileExistsError(f'directory destination already exists: {destination}')
+        try:
+            os.rename(source, destination)
+            return
+        except OSError as exc:
+            if (os.name != 'nt' or getattr(exc, 'winerror', None) not in (5, 32, 33)
+                    or time.monotonic() >= deadline):
+                raise
+            time.sleep(0.05)
+
+
 
 class InstanceLock(AbstractContextManager):
     """OS lock, released by process death; the lock file itself stays in place."""

@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 import uuid
 
 from check import check_session, regular_tree
@@ -19,7 +20,7 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import canonical, formal_ready, render, replay, root_solved
 from retention import capture, refusal
 from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
-                             popen_options, process_identity, read_json, session_host,
+                             popen_options, process_identity, read_json, rename_directory, session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, ROLES, defaults, load_settings, validate
 
@@ -309,13 +310,16 @@ class Runner:
                         raise ValueError('invalid candidate staging path')
                     shutil.rmtree(staging)
                 shutil.copytree(session / 'output', staging)
-                staging.rename(candidate)
+                rename_directory(staging, candidate)
+            # Finish all candidate reads before marking the peer complete. A
+            # failed read must remain collectable after the fatal-error save.
+            hashes = tree_hashes(candidate)
             s['status'] = 'ended'
             job['status'] = 'done'
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'review'
             self.enqueue('review', {'kind': 'candidate', 'candidate': str(candidate),
-                                    'candidate_hashes': tree_hashes(candidate),
+                                    'candidate_hashes': hashes,
                                     'source': str(self.session_dir(pipeline['producer'])),
                                     'peer': str(session)}, pipeline['id'], pipeline['id'] + ':review:' + sid)
             self.save()
@@ -359,7 +363,7 @@ class Runner:
                 shutil.copytree(original, staging)
                 if tree_hashes(staging) != expected:
                     raise ValueError('peer output changed during candidate recovery')
-                staging.rename(restored)
+                rename_directory(staging, restored)
             regular_tree(restored)
             if tree_hashes(restored) != expected:
                 raise ValueError('recovered candidate does not match the assigned hashes')
@@ -423,7 +427,7 @@ class Runner:
                 self.copy_formal_evidence(stage, sid)
             else:
                 shutil.copytree(self.session_dir(sid) / 'output', stage)
-            stage.rename(destination)
+            rename_directory(stage, destination)
         event_path = self.instance / 'knowledge/events' / (event['id'] + '.json')
         if not event_path.exists():
             write_json(event_path, event)
@@ -836,6 +840,9 @@ class Runner:
                 except MemoryError:
                     self.reserve.release()
                 except (OSError, ValueError, KeyError, RuntimeError) as exc:
+                    # Log before saving: a second storage error must not erase
+                    # the original failure's operation and call stack.
+                    traceback.print_exc(file=sys.stderr)
                     self.state['last_error'] = {'at': time.time(), 'error': str(exc)}
                     self.save()
                     print(json.dumps({'error': str(exc)}), file=sys.stderr, flush=True)
