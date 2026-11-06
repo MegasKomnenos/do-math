@@ -5,10 +5,6 @@ hooks = true
 # The ported orchestrator agents spawn their own specialist workers.
 max_depth = 2
 
-[mcp_servers.dag-measure]
-command = "python"
-args = [".agents/skills/do-dag/scripts/dag_measure_mcp.py"]
-
 [mcp_servers.playwright]
 enabled = false
 
