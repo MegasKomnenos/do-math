@@ -187,6 +187,37 @@ class ContextTests(InstanceCase):
                                   session['effort'], engine.session_dir(sid), engine.settings['mcp_servers'])
         self.assertEqual(launched, expected.argv)
 
+    def test_context_request_applies_to_every_worker_model(self):
+        folder = self.session('long-context')
+        for model in ('codex/gpt-6.1-sol', 'codex/gpt-6-astra', 'codex/custom-model'):
+            with self.subTest(model=model):
+                command = worker_command('codex', model, 'xhigh', folder)
+                overrides = [command.argv[i + 1] for i, arg in enumerate(command.argv[:-1]) if arg == '-c']
+                config = tomllib.loads('\n'.join(overrides))
+                self.assertEqual(config['model_context_window'], 1_000_000)
+                self.assertEqual(config['model_auto_compact_token_limit'], 900_000)
+                self.assertEqual(command.argv[command.argv.index('--model') + 1], model.split('/', 1)[1])
+                self.assertEqual(command.argv[-1], '-')
+        for model, expected in (
+            ('claude/opus', 'opus[1m]'), ('claude/sonnet', 'sonnet[1m]'),
+            ('claude/haiku', 'haiku[1m]'), ('claude/custom-model', 'custom-model[1m]'),
+            ('claude/claude-opus-4-6', 'claude-opus-4-6[1m]'),
+            ('claude/opus[1m]', 'opus[1m]'), ('claude/opus[1M]', 'opus[1m]'),
+            ('claude/sonnet[200k]', 'sonnet[1m]'),
+        ):
+            with self.subTest(model=model):
+                command = worker_command('claude', model, 'xhigh', folder)
+                self.assertEqual(command.argv[command.argv.index('--model') + 1], expected)
+                self.assertIn('--strict-mcp-config', command.argv)
+        with patch.dict(os.environ, {'CLAUDE_CODE_DISABLE_1M_CONTEXT': '1',
+                                     'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE': '20',
+                                     'CLAUDE_CODE_AUTO_COMPACT_WINDOW': '200000'}):
+            environment = worker_environment()
+            self.assertNotIn('CLAUDE_CODE_DISABLE_1M_CONTEXT', environment)
+            self.assertNotIn('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', environment)
+            self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '900000')
+            self.assertEqual(os.environ['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '200000')
+
     def test_withdrawn_solution_keeps_its_explanation_visible(self):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
         self.publish('r1', data, assessment(data, ['p']))

@@ -26,6 +26,27 @@ For a session that undertook research, this small manifest makes the endpoint ea
 
 Attempts and peers register sections with the coordination commands, which record them in the session's `declaration.json`. An explorer does not register sections. A formalizer receives its node in its assignment, recorded as a whole-node section. None of these roles directly creates shared nodes or publishes mathematical state; the peer prepares proposals and review assesses them.
 
+## Reconsidering an attempt or formalizer's ending
+
+For an attempt that undertook research or a formalizer, ending a CLI turn does not immediately close the research session. The session host can resume the same conversation and ask whether ending now is justified under the directives supplied at launch. The assignment, saved instructions, files and registered sections remain those of the same session. This check asks you to apply the existing criteria for completing or ending your work; it does not replace those criteria.
+
+If your judgment is that the session should continue, continue the mathematical work in that turn. No decision file is needed before doing so. If your judgment is that the session should end, write `output/end-decision.json` using the request ID in the resumption message or `end-request.json`:
+
+```json
+{
+  "request_id": "<the current request ID>",
+  "decision": "end",
+  "basis": "no_way_forward",
+  "explanation": "The grounds for ending, from the work actually undertaken."
+}
+```
+
+Use exactly these fields. `basis` is `task_completed` when the work you took on is complete, or `no_way_forward` when your investigation justifies an unresolved ending under the role guide. The explanation gives the grounds for that judgment. Write the decision only when you have made that judgment for the current ending. A decision from another request cannot authorize this turn's ending. A missing or invalid decision leads to another reconsideration turn while the configured allowance remains.
+
+The runner records end authorization after a valid decision or after the configured maximum number of resumptions. At the maximum it authorizes the handoff itself, recording `source: runner` and `basis: resumption_limit`. That is an operational limit, not the worker claiming completion or an impasse. A valid worker decision is recorded with `source: worker`. Neither kind of end authorization settles a mathematical node; peer and independent review still assess the retained work. The session's `end-check.json` is the host's record, not a worker output file.
+
+The initial turn's prompt and CLI streams remain at the session root. Resumed turns have separate prompts, commands, process receipts, streams and decision checks under `turns/`. The host remains alive across those turns, so the session retains its capacity slot and coordination identity, and peer processing and archiving do not begin midway. Dispatch stop also holds new resumption turns. A provider refusal, execution failure or operator cancellation ends the interrupted work through the existing retention path; an unavailable native conversation identity is recorded as `resume_unavailable`, without substituting a fresh conversation. Availability-only `no_research` outcomes use the separate path below.
+
 ## Ending before research starts
 
 You may read the research context and check the frontier and board, yet find no section you can take on. That assessment does not itself begin research. To end a session in which you have only assessed availability and have registered no section, write this to `output/outcome.json`:
@@ -36,7 +57,7 @@ You may read the research context and check the frontier and board, yet find no 
 
 No report or glossary is required. Run `commands.check`, correct any errors it reports, and exit. After a successful exit, the runner retains your files and conversation and closes the pipeline without peer or review. That decision is final for this session: later changes in available work do not reopen it.
 
-Use this outcome only for a session that never began mathematical investigation. Developing an argument, investigating a counterexample, running a mathematical computation or beginning formalization is research, even without a successful result. Preserve that work for peer. The runner does not accept `no_research` from a session that registered a section, exited unsuccessfully or received a provider refusal. It sends retained work to peer; a failed launch without retained material is retried.
+Use this outcome only for a session that never began mathematical investigation. Reading existing research to understand the questions, their established coverage and their availability can be part of choosing work. Developing or testing your own mathematical approach is research, including before section registration: this includes developing an argument, investigating a counterexample, running a mathematical computation or beginning formalization, even without a successful result. Preserve that work for peer. The runner does not accept `no_research` from a session that registered a section, exited unsuccessfully or received a provider refusal. It sends retained work to peer; a failed launch without retained material is retried.
 
 ## Reporting that all unresolved work is occupied
 
@@ -56,4 +77,4 @@ Read the current `commands.updates` result and copy its `availability_snapshot` 
 
 The runner processes the availability report separately from `disposition`. A stale or invalid report cannot prevent a valid `no_research` outcome from closing your session. It only means that the report cannot suppress new attempts. The transport check reports invalid fields or snapshot tokens so you can correct them before exiting.
 
-An accepted report makes the runner wait before launching further attempts. A section released on an unresolved node, a new or reopened unresolved node, or an operator request gives it reason to reconsider. It then launches one attempt to assess availability again. Registration of work returns the runner to normal attempt scheduling; another applicable report of full occupancy makes it wait again. Exploration continues under its own cycle rule while attempts wait.
+An accepted report makes the runner wait before launching further attempts. The end of a section's occupancy on a still-unresolved node gives it reason to reconsider: publication or a completed review decision with no useful record ends that occupancy. This differs from releasing a lease or a place in its queue. A new or reopened unresolved node or an operator request also prompts reconsideration. The runner then launches one attempt to assess availability again. Registration of work returns the runner to normal attempt scheduling; another applicable report of full occupancy makes it wait again. Exploration continues under its own cycle rule while attempts wait.

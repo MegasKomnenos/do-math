@@ -19,6 +19,7 @@ from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
 from knowledge import canonical, formal_ready, render, replay, root_solved
 from retention import capture, refusal
+from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
                              popen_options, process_identity, read_json, rename_directory, session_host,
                              terminate_process, write_json, write_text)
@@ -183,7 +184,15 @@ class Runner:
                                     **({'servers': self.settings['mcp_servers']} if self.settings['mcp_servers'] else {}))
             # Native session persistence retains tool messages beyond the CLI stream.
             argv = [x for x in command.argv if x not in ('--ephemeral', '--no-session-persistence')]
-            write_json(session / 'launch.json', {'runner': self.identity, 'command': {'argv': argv, 'cwd': str(command.cwd)}})
+            launch = {'runner': self.identity, 'command': {'argv': argv, 'cwd': str(command.cwd)}}
+            if job['role'] in END_CHECK_ROLES:
+                launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
+                                       'instance': str(self.instance), 'role': job['role'],
+                                       'provider': provider, 'model': selected['model'], 'effort': selected['effort'],
+                                       'executable': self.settings['cli'][provider],
+                                       'mcp_servers': self.settings['mcp_servers'],
+                                       'retry_seconds': self.settings['retry_seconds']}
+            write_json(session / 'launch.json', launch)
             with (session / 'host.log').open('wb') as log:
                 host = subprocess.Popen([sys.executable, '-B', str(SCRIPT), '_session', str(session)],
                                         stdin=subprocess.DEVNULL, stdout=log, stderr=log, cwd=session,
@@ -231,10 +240,25 @@ class Runner:
         if job['status'] == 'done':
             return
         session = self.session_dir(sid)
+        ending = session / 'end-check.json'
+        if not ending.exists() and (session / 'launch.json').exists():
+            policy = read_json(session / 'launch.json').get('end_check')
+            if policy is not None:
+                authorize(session, {'maximum': policy['maximum'], 'resumptions': 0, 'request': None},
+                          'runner', 'interrupted', 'Session host ended before starting end reconsideration.')
+        if ending.exists():
+            s['end_check'] = read_json(ending)
+            if s['end_check'].get('authorization') is None:
+                # Host loss is an interruption, never the worker deciding to end.
+                authorize(session, s['end_check'], 'runner', 'interrupted',
+                          'Session host ended before end reconsideration could finish.')
+            self.save()
         if not s.get('retained'):
             # File errors leave this stage incomplete for restart recovery.
             retention = capture(session, s['provider'])
-            signal = refusal(session, s['provider'], s['model'], s['started_at'], self.settings['retry_seconds'])
+            last_turn = turn_directory(session, s.get('end_check', {}).get('resumptions', 0))
+            signal = refusal(last_turn, s['provider'], s['model'],
+                             s.get('invocation_started_at', s['started_at']), self.settings['retry_seconds'])
             if signal:
                 previous = self.state['blocks'].get(signal['key'], {})
                 signal['attempts'] = previous.get('attempts', 0) + 1
@@ -256,13 +280,14 @@ class Runner:
             # An older in-flight success must not erase a later refusal's block.
             recovered = [key for key in ('provider:' + s['provider'], 'model:' + s['model'])
                          if key in self.state['blocks']
-                         and s['started_at'] >= self.state['blocks'][key]['until']]
+                    and s.get('invocation_started_at', s['started_at']) >= self.state['blocks'][key]['until']]
             for key in recovered:
                 del self.state['blocks'][key]
             if recovered:
                 self.save()
         if s['role'] in PRODUCERS:
-            if s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error'):
+            if (s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error')
+                    and s.get('end_check', {}).get('authorization', {}).get('basis') != 'interrupted'):
                 try:
                     outcome = no_research_outcome(session, s['role'])
                 except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -493,6 +518,12 @@ class Runner:
             self.publish()
         for sid, s in list(self.active()):
             session = self.session_dir(sid)
+            ending = session / 'end-check.json'
+            if ending.exists():
+                current = read_json(ending)
+                if s.get('end_check') != current:
+                    s['end_check'] = current
+                    self.save()
             child = self.hosts.get(sid)
             if child is not None and child.poll() is not None:
                 del self.hosts[sid]
@@ -963,8 +994,15 @@ def main(argv=None):
             state = read_json(instance / 'runner/state.json')
             if args.session not in state['sessions']:
                 raise ValueError('unknown session')
-            receipt = read_json(instance / 'sessions' / args.session / 'process.json')
-            terminate_process(receipt['process'])
+            directory = instance / 'sessions' / args.session
+            receipt = read_json(directory / 'process.json') if (directory / 'process.json').exists() else {'process': None}
+            if alive(state['sessions'][args.session].get('host')) or alive(receipt['process']):
+                # A persistent cancellation also covers the gap between turns.
+                (directory / 'CANCEL').touch()
+            if alive(receipt['process']):
+                terminate_process(receipt['process'])
+            elif not alive(state['sessions'][args.session].get('host')):
+                raise ValueError('session is no longer running')
             result['terminated'] = args.session
         elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}

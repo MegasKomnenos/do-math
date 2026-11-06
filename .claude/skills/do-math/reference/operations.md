@@ -21,6 +21,7 @@ An example settings file is:
   "explore_every": 3,
   "organizer_every_records": 4,
   "attempt_launch_interval": 180,
+  "max_end_resumptions": 3,
   "models": [
     {"model": "codex/gpt-6.1-sol", "effort": "xhigh"},
     {"model": "claude/opus", "effort": "xhigh"}
@@ -46,6 +47,12 @@ Replace the executable paths with the actual installations. A role-specific orde
 To use Mathlib, configure `lean.command` as `["<lake executable>", "env", "lean"]`, its version command with `"--version"` appended, and `cwd` as the Mathlib project. Supply any necessary PATH value through `lean.env`; JSON does not expand shell variables. The broker handles compilation and dependency builds. [Lean](lean.md) explains resource settings and estimates. When several instances share a machine, set their broker memory budgets explicitly rather than letting each derive a budget for the whole host.
 
 Only explicitly configured external tools enter worker sessions. `mcp_servers` maps server names to configuration objects. A local server uses `command`, `args`, and optional `env`; an HTTP server uses `url` and the provider's supported transport configuration. Configure the tool capabilities the research needs, such as scholarly-mcp, independently from personal instructions and hooks. Authentication remains with the installed CLIs. Worker launches disable personal/project instruction discovery, skills, hooks and memories; all do-math guides and user conditions are supplied explicitly.
+
+Every worker role requests a 1,000,000-token context window, including role-specific model choices and fallback launches. Codex receives explicit `model_context_window=1000000` and `model_auto_compact_token_limit=900000` overrides, so isolation from the operator's configuration does not discard the context setting. Claude receives the model's `[1m]` variant and `CLAUDE_CODE_AUTO_COMPACT_WINDOW=900000`; an inherited setting that disables 1M context or overrides the compaction percentage is removed from the worker environment. Existing `[1m]` suffixes are retained once, and `[200k]` is replaced. These are launch requests: the selected model, account and CLI determine actual capacity and access. The Claude selector follows its [model configuration interface](https://code.claude.com/docs/en/model-config#extended-context).
+
+Worker guides and launch options are fixed for sessions already started. Updated guides are read for later launches. A runner already running keeps its imported launch code until it is restarted; updating the installation does not rewrite saved session contexts or commands.
+
+`max_end_resumptions` is the maximum number of additional turns in which an attempt or formalizer is asked to reconsider ending. It is a nonnegative integer, default 3, fixed for that session at launch. The initial turn is not counted. At the limit, the host issues the same end authorization that permits peer handoff, with `source: runner` and `basis: resumption_limit`; it does not wait for operator approval or resume indefinitely. A value of 0 authorizes the initial ending without a reconsideration turn. Valid `no_research` outcomes bypass the check, and interruptions retain their existing processing.
 
 ## Create and start
 
@@ -83,13 +90,13 @@ Every command below is `python <skill>/runtime/runner.py <command> <instance> ..
 | `start` | Launch or restart the detached runner, checking its new readiness record. |
 | `run` | Run in the foreground for observation; remains attached until the runner exits. |
 | `status` | Read current liveness, mathematical state and operational queues. |
-| `stop` | Stop new dispatch. Running sessions finish their current stage; queued follow-ups wait. |
+| `stop` | Stop new dispatch. Running CLI turns finish; pending reconsideration turns and queued follow-ups wait. |
 | `resume` | Remove the dispatch stop. If the runner is not alive, also use `start`. |
 | `reconsider-attempts` | Request one reassessment of work availability, overriding an occupancy report. Does not remove a dispatch stop. |
 | `input --file <file>` | Preserve standing information for future launches. It does not notify running sessions of new instructions. |
 | `review --record <id>` or `review --node <id>` | Request a comprehensive assessment of published evidence; targets may be repeated. `--concern <id>` and `--reason <text>` can identify the issue. |
 | `organize` | Request organization of the currently unprocessed research records. |
-| `kill-session <session-id>` | Terminate the identified CLI process after confirming its OS creation identity. Retained producing work still goes to peer. |
+| `kill-session <session-id>` | Cancel the identified session's pending resumption and terminate its current CLI after confirming its OS creation identity. Retained producing work still goes to peer. |
 | `render` | Rebuild the knowledge views while the runner is off. |
 | `restart-broker` | With dispatch stopped and active sessions and compiles finished, replace the broker after an environment change. |
 
@@ -98,6 +105,12 @@ Use status to identify the intended session before termination. The command targ
 ## Waiting, fallback and recovery
 
 When a producing session ends, its retained material creates peer work. A structurally usable peer candidate creates review work. An accepted informal solution creates formalizer work when the other node results needed by its chosen argument have independently validated Lean proofs available. These results are its formal dependencies. New research publications create organizer work when the configured number of unprocessed publications is reached. Available capacity and an available configured model permit each launch.
+
+An attempt or formalizer's host can keep the same logical session alive across several CLI turns. After an ordinary turn exit, it resumes the exact native conversation with the same provider, model, effort and launch-time instructions. A current `output/end-decision.json` or the configured resumption limit authorizes normal handoff. Each request has a fresh ID, so an older decision cannot authorize a later ending. The protocol is described in [Retained work](retained-work.md). This does not create another attempt, another occupied section or another concurrency slot.
+
+`status` exposes the host's `end_check` record in each session's state, including `maximum`, `resumptions`, `status`, the current request and `authorization`. A host waiting behind `STOP` reports `waiting_dispatch`; a provider/model availability block reports `waiting_provider`. It retains its existing slot and scope while waiting. `resume` allows it to proceed once the availability block has also expired. `kill-session` cancels a pending resumption even between CLI processes. The host survives runner restart, and the runner collects the logical session only once after the host and CLI have ended. Host loss is recorded as an interruption, without inventing a worker end decision. These launch semantics apply to newly launched sessions; already-running hosts keep their original protocol.
+
+The session root retains its initial prompt and CLI streams; `turns/0001/` and later directories retain each resumed invocation separately. `end-check.json` contains the authorization and its issuer. Missing native identity or an identity change is recorded as `resume_unavailable`, and retained work proceeds as an operationally interrupted producer rather than silently starting a different conversation. A provider refusal or failed invocation also ends this continuation through the usual interruption path. Availability handling still applies to later sessions.
 
 Priority is review, peer, formalizer, organizer, eligible explore, then attempt. Fresh attempts require free capacity, no waiting peer or review, an unresolved node that no pipeline holds whole and no session is waiting to lease, and at least `attempt_launch_interval` seconds since the previous attempt launch. The spacing gives each new attempt time to take a lease before the next one reads the board. An infrastructure-blocked review remains waiting under this rule. Running sessions are not preempted when higher-priority work appears.
 

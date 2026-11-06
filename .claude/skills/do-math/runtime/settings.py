@@ -18,6 +18,7 @@ def defaults():
             'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS), 'roles': {},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
+            'max_end_resumptions': 3,
             'lean': {**LEAN_DEFAULTS, 'command': ['lean'],
                      'version_command': ['lean', '--version'], 'cwd': None,
                      'env': {}, 'cache_epoch': 'initial', 'allowed_axioms': list(AXIOMS)}}
@@ -48,6 +49,8 @@ def validate(raw):
             raise ValueError(f'{key} must be a positive integer')
     if type(value['attempt_launch_interval']) is not int or value['attempt_launch_interval'] < 0:
         raise ValueError('attempt_launch_interval must be a nonnegative integer number of seconds')
+    if type(value['max_end_resumptions']) is not int or value['max_end_resumptions'] < 0:
+        raise ValueError('max_end_resumptions must be a nonnegative integer')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
     if not isinstance(value['roles'], dict) or set(value['roles']) - set(ROLES):

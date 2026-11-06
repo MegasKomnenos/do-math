@@ -25,7 +25,7 @@ Prepare `settings.json` using the format in Operations. Defaults are eight simul
 
 The default formal-proof axiom list is `propext`, `Classical.choice` and `Quot.sound`. `sorryAx` is never allowed. A formal result also requires independent compilation and correspondence with the exact node. If a needed environment is unavailable, explain the concrete limitation and prepare the necessary supported environment; do not silently lower the assurance required for completion.
 
-Worker sessions inherit no personal/project instructions, hooks or memories. Their guides, references and standing inputs are supplied by do-math and saved at launch. Existing CLI authentication and explicitly configured external tools are separate. Configure capabilities such as scholarly-mcp in `mcp_servers` when useful, rather than relying on the operator's personal settings to appear in workers.
+Worker sessions inherit no personal/project instructions, hooks or memories. Their guides, references and standing inputs are supplied by do-math and saved at launch. All worker models explicitly request 1M context and a 900,000-token compaction setting; Operations explains the provider-specific launch settings and actual-capacity limits. Existing CLI authentication and explicitly configured external tools are separate. Configure capabilities such as scholarly-mcp in `mcp_servers` when useful, rather than relying on the operator's personal settings to appear in workers.
 
 Choose an instance path that does not exist. Put it outside the development repository or under an ignored directory such as `.skill-workspace/`, and confirm that its Git repository will remain separate from the parent. Create it with `init --root <file> --settings <file>`, submit any initial conditions with `input --file <file>`, then use `start`. A failed initialization can leave a partial folder; fix the problem and use a new path.
 
@@ -35,7 +35,7 @@ Choose an instance path that does not exist. Put it outside the development repo
 
 Tell the user the absolute instance path, runner PID, new log paths, current running or waiting state, and `knowledge/index.md`, where the results can be found. Then end the operator conversation. The runner carries the work forward without keeping this conversation open.
 
-The runner sends retained research from attempts, explorations and formalizers through peer and review. An attempt that only checked availability can report `no_research` and end without those stages. The runner retains its files and conversation. Useful imperfect records publish with feedback, and reviewed informal solutions can be used within their supported scope while formalization continues. The runner stops launching attempts and explorations when the root has an accepted formal solution, and continues remaining sessions and eligible follow-ups until finished. Existing sessions retain their normal scope.
+The runner sends retained research from attempts, explorations and formalizers through peer and review. Before closing a research attempt or formalizer, its host asks it to reconsider ending in the same conversation, up to `max_end_resumptions` additional turns (default 3). A valid worker end decision or reaching that limit authorizes the handoff; the recorded issuer distinguishes the two. An attempt that only checked availability can report `no_research` and end without those stages. The runner retains its files and conversation. Useful imperfect records publish with feedback, and reviewed informal solutions can be used within their supported scope while formalization continues. The runner stops launching attempts and explorations when the root has an accepted formal solution, and continues remaining sessions and eligible follow-ups until finished. Existing sessions retain their normal scope.
 
 ## Read results in their mathematical scope
 
@@ -47,7 +47,7 @@ When reporting completion, distinguish formal settlement of the root from the ru
 
 ## Operate and recover
 
-Use the commands in [Operations](reference/operations.md). `status` is read-only. `stop` blocks new dispatch while active sessions finish their stages; `resume` removes that stop and requires `start` as well if the runner is no longer alive. `input` preserves new standing information for future sessions. `review` requests independent examination of existing evidence, and `organize` requests a repository organization pass.
+Use the commands in [Operations](reference/operations.md). `status` is read-only. `stop` blocks new dispatch while active CLI turns finish; reconsideration turns and queued follow-ups wait. `resume` removes that stop and requires `start` as well if the runner is no longer alive. `input` preserves new standing information for future sessions. `review` requests independent examination of existing evidence, and `organize` requests a repository organization pass.
 
 A provider or model refusal causes a scoped wait and permits configured fallback for later launches. A producing session interrupted after doing work ends and its retained material goes to peer. Partial peer, review or organizer processing is supplied to a replacement session. Read the actual block or error in status before diagnosing a failure as mathematical.
 

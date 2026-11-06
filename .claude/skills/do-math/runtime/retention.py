@@ -23,11 +23,12 @@ def readable(value):
     return json.dumps(value, ensure_ascii=False)
 
 
-def conversation(source, destination, native):
+def conversation(source, destination, native, *, append=False, label=None):
     """Retain all canonical messages and tool contents without truncating their middles."""
     written = 0
-    with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('w', encoding='utf-8', newline='\n') as out:
-        out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport remains in ' + Path(source).name + '.\n\n')
+    with Path(source).open(encoding='utf-8', errors='replace') as inp, Path(destination).open('a' if append else 'w', encoding='utf-8', newline='\n') as out:
+        if not append:
+            out.write('# Retained conversation\n\nFull readable message and tool content follows. Raw transport remains in the named source files.\n\n')
         for number, line in enumerate(inp, 1):
             try:
                 event = json.loads(line)
@@ -56,7 +57,7 @@ def conversation(source, destination, native):
                 continue
             body = readable(payload)
             fence = '`' * max(3, 1 + max((len(x) for x in re.findall(r'`+', body)), default=0))
-            out.write(f'## {Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')
+            out.write(f'## {label or Path(source).name}:{number} — {kind}\n\n{fence}text\n{body}\n{fence}\n\n')
             written += 1
     return written
 
@@ -78,7 +79,8 @@ def capture(session, provider):
     session = Path(session)
     ids = set()
     activity = False
-    for event in events(session / 'cli.stdout.jsonl'):
+    streams = [session / 'cli.stdout.jsonl', *sorted((session / 'turns').glob('*/cli.stdout.jsonl'))]
+    for event in (event for stream in streams for event in events(stream)):
         if provider == 'codex' and event.get('type') == 'thread.started':
             if isinstance(event.get('thread_id'), str):
                 ids.add(event['thread_id'])
@@ -129,11 +131,14 @@ def capture(session, provider):
                 native_activity = True
     receipt = {'native_transcripts': copied, 'native_companions': companions,
                'cli_activity': activity, 'native_activity': native_activity,
-               'streams': ['cli.stdout.jsonl', 'cli.stderr.log'],
+               'streams': [str(path.relative_to(session)).replace('\\', '/')
+                           for stream in streams for path in (stream, stream.with_name('cli.stderr.log'))],
                'limitation': None if copied else 'No native transcript was located; retained CLI streams and artifacts are the available source.'}
-    source = session / copied[0] if copied else session / 'cli.stdout.jsonl'
-    if source.exists():
-        receipt['conversation_items'] = conversation(source, session / 'conversation.md', bool(copied))
+    sources = [session / name for name in sorted(copied)] if copied else [p for p in streams if p.exists()]
+    if sources:
+        receipt['conversation_items'] = sum(conversation(source, session / 'conversation.md', bool(copied),
+                                                        append=i > 0, label=source.relative_to(session).as_posix())
+                                            for i, source in enumerate(sources))
         receipt['conversation'] = 'conversation.md'
     write_json(session / 'retention.json', receipt)
     return receipt

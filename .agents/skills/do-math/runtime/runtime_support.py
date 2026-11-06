@@ -318,7 +318,7 @@ def lean_config(settings):
 
 
 def session_host(session):
-    """Keep a CLI handle across runner death; never restart a CLI.
+    """Supervise one logical session independently of the runner's lifetime.
 
     The runner durably records this host's identity BEFORE enabling its gate.
     An unrecorded host cannot start a CLI, even if its parent dies mid-spawn.
@@ -328,6 +328,11 @@ def session_host(session):
         if (session / "CANCEL").exists() or not alive(job["runner"]):
             return 1
         time.sleep(0.1)
+    if job.get('end_check') is not None:
+        from ending import supervise
+        result = supervise(session, job)
+        write_json(session / 'exit.json', result)
+        return 0
     command = job["command"]
     result = {"exit_code": None}
     with (session / "prompt.txt").open("rb") as inp, \
