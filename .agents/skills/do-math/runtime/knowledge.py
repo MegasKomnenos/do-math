@@ -362,6 +362,15 @@ def escape(text):
 
 def render(instance, model, board, leases=None):
     base = Path(instance) / 'knowledge'
+    def write_view(path, content):
+        # Board changes trigger rendering too. Leave unchanged research files alone.
+        try:
+            if path.read_bytes() == content.encode('utf-8'):
+                return
+        except FileNotFoundError:
+            pass
+        write_text(path, content)
+
     state_path = Path(instance) / 'runner/state.json'
     state = read_json(state_path) if state_path.exists() else {'jobs': {}}
     investigations = [j for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive']
@@ -400,15 +409,28 @@ def render(instance, model, board, leases=None):
             c = model['concerns'][cid]
             lines.append(f"- Possible dependency through a recorded relation: concern {cid}: {c['reason']} ({c['status']}); source {assessment_link(c['source'])}; comprehensive review {investigation(cid)}. This annotation does not determine the effect on this node.")
         lines.append('')
-    write_text(base / 'frontier.md', '\n'.join(lines) + '\n')
-    glossary = ['# Global glossary', '', 'Use primary names in new writing. Aliases interpret existing records.', '']
+    write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
+    glossary = ['# Global glossary', '', f"Research revision: {model['sequence']}", '',
+                'Use primary names in new writing. Historical names and symbols below are scoped to their linked definitions.',
+                'Definitions retain their source wording; consult the [frontier](frontier.md) for current node status.', '']
     for key, member in model['global_terms'].items():
         term = model['terms'][key]
-        glossary += [f"## {term['name']}", '', f"Symbol: {term.get('symbol', '')}", '', term['definition'], '',
-                     'Aliases: ' + ', '.join(member['aliases']), f"Membership: {member['membership']}",
+        glossary += [f"## {term['name']}", '']
+        if term.get('symbol'):
+            glossary += [f"Symbol: {term['symbol']}", '']
+        glossary += [term['definition'], '', f"Membership: {member['membership']}",
                      f"Source: [local definition]({term['location']}) — {key}", '']
-    write_text(base / 'glossary.md', '\n'.join(glossary) + '\n')
+        for alias_key in member['merged']:
+            alias = model['terms'][alias_key]
+            label = alias['name'] + (f" ({alias['symbol']})" if alias.get('symbol') else '')
+            glossary += [f"Historical name/symbol: {label} — [local definition]({alias['location']}) — {alias_key}"]
+        if member['merged']:
+            glossary.append('')
+    write_view(base / 'glossary.md', '\n'.join(glossary) + '\n')
+    entries = {}
     def entry(rid, prefix=''):
+        if (rid, prefix) in entries:
+            return entries[rid, prefix]
         r = model['records'][rid]
         result = [f"### {escape(r['title'])}", '', r['description'], '',
                   f"Review: {r['review']}", '', f"[Record]({prefix}records/{rid}/record.json) · [Exposition]({prefix}records/{rid}/{quote(r['exposition'], safe='/')}) · [Review]({prefix}records/{rid}/review/assessment.json)", '']
@@ -424,8 +446,12 @@ def render(instance, model, board, leases=None):
                 result += [f"{label} {cid}: {concern['reason']} ({concern['status']}); {assessment_link(concern['source'], prefix)}; comprehensive review {investigation(cid)}", '']
         if any(n['contested'] and any(model['proofs'][p]['record'] == rid for p in n['proofs']) for n in model['nodes'].values()):
             result += [f'Opposing accepted outcomes: consult the [frontier]({prefix}frontier.md) and comprehensive review.', '']
+        entries[rid, prefix] = result
         return result
-    index = ['# Research index', '', '[Frontier](frontier.md) · [Full glossary](glossary.md) · [Board](board.md)', '', '## Shared context', '']
+    index = ['# Research index', '', f"Research revision: {model['sequence']}", '',
+             '[Frontier](frontier.md) · [Full glossary](glossary.md) · [Board](board.md)', '',
+             'Module summaries reflect the latest organization; newer reviewed records appear under [Unfiled records](#unfiled-records).', '',
+             '## Shared context', '']
     for rid in model['shared_context']:
         index += entry(rid)
     index += ['## Modules', '']
@@ -438,10 +464,10 @@ def render(instance, model, board, leases=None):
         wanted.add(name)
         filed.update(module['records'])
         index += [f"- [{module['title']}](index/{name}): {module['description']}"]
-        body = [f"# {module['title']}", '', module['description'], '']
+        body = [f"# {module['title']}", '', f"Research revision: {model['sequence']}", '', module['description'], '']
         for rid in module['records']:
             body += entry(rid, '../')
-        write_text(directory / name, '\n'.join(body) + '\n')
+        write_view(directory / name, '\n'.join(body) + '\n')
     for path in directory.glob('*.md'):
         if path.name not in wanted:
             path.unlink()
@@ -449,8 +475,9 @@ def render(instance, model, board, leases=None):
     for rid in model['records']:
         if rid not in filed:
             index += entry(rid)
-    write_text(base / 'index.md', '\n'.join(index) + '\n')
-    board_lines = ['# Live board', '', f"Research revision: {model['sequence']}", '']
+    write_view(base / 'index.md', '\n'.join(index) + '\n')
+    board_lines = ['# Research work and occupied sections', '', f"Research revision: {model['sequence']}", '',
+                   'Saved pipeline state, not process liveness. Sections remain occupied through peer and review.', '']
     for row in board:
         producer = row.get('session') or '(not launched)'
         # An attempt still producing may not have registered a section yet; it is choosing.
@@ -469,5 +496,10 @@ def render(instance, model, board, leases=None):
             holders = ', '.join(h['session'] for h in entry['holders']) or '(free)'
             queue = ', '.join(w['session'] for w in entry['queue']) or '(none)'
             board_lines.append(f'- {nid} · lease: {holders} · waiting: {queue}')
-    write_text(base / 'board.md', '\n'.join(board_lines) + '\n')
-    write_json(base / 'state.json', model)
+    write_view(base / 'board.md', '\n'.join(board_lines) + '\n')
+    try:
+        previous = read_json(base / 'state.json')
+    except FileNotFoundError:
+        previous = None
+    if previous != model:
+        write_json(base / 'state.json', model)
