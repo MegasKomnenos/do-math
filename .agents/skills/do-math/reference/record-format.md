@@ -22,7 +22,7 @@ For a new proposal, prefix a short local label with your peer session ID and a h
 
 Review still compares statements and definitions. It may admit the proposal, identify it with an existing node, or decline it. A distinct technical ID does not establish a distinct mathematical question. Speculative statements stay in the exposition and do not need node proposals.
 
-A relation has `id`, `claim`, `premises`, and `conclusion`. Each premise and conclusion is a signed node statement: `{"node": "<id>", "outcome": "proved"}` for the statement, or `outcome: "refuted"` for its negation. The premises are conjunctive. A separate relation represents an alternative route, and two directions can represent an equivalence. `claim` names the candidate's proof of this exact implication. Merely suggesting a connection does not justify its acceptance.
+A relation has `id`, `claim`, `premises`, and `conclusion`. Each premise and conclusion is a signed node statement: `{"node": "<id>", "outcome": "proved"}` for the statement, or `outcome: "refuted"` for its negation. The premises are conjunctive. Once accepted, a relation is applied in every direction propositional logic permits, each statement taken in the sign written here: when every premise holds, the conclusion holds; when the conclusion fails while every premise but one holds, the remaining premise fails, its node receiving the opposite of the written outcome. A separate relation represents an alternative route, and two directions can represent an equivalence. `claim` names the candidate's proof of this exact implication. Merely suggesting a connection does not justify its acceptance.
 
 A solution has `id`, `node`, `outcome`, `claim`, optional `formal_dependencies`, and optional `lean`. It asserts that the cited claim settles the whole node or its negation. `formal_dependencies` lists the signed nodes whose validated Lean results are needed for the intended formalization. Review checks that dependency choice and can correct it. An implication that still needs its premises is a relation; it is not an unconditional solution of its conclusion.
 
@@ -54,6 +54,8 @@ This example shows transport structure. Its mathematical exposition and evidence
 ```
 
 For a reduction from a proposed Q to an existing P, add the precise Q under `nodes`, a claim proving Q implies P, and a relation whose premise is proved Q and conclusion is proved P. Leave Q out of `solutions` until its statement or negation has actually been established. An unresolved premise does not prevent publication of the useful implication.
+
+For a split of an existing P into parts, put each part under `nodes` with the covering argument as its `connection`, and add one relation whose premises are the parts, each with outcome `proved`, and whose conclusion is proved P. A part the work has settled also gets a solution. The frontier then shows P with its parts and which of them are established.
 
 ## Handoff
 

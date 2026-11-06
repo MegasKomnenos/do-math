@@ -27,7 +27,7 @@ An accepted relation or solution cites a supported claim. Admitting a node requi
 
 The feedback covers important mathematical assertions in the body as well as the structured list. Explain missing source content, defects, restrictions, unperformed checks and valuable supported work. The structured judgment does not limit the mathematical scope of review to what the peer happened to list.
 
-If `publish` is false, accept no nodes, relations or solutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing, releases the attempt's occupied nodes or completes the exploration cycle as applicable.
+If `publish` is false, accept no nodes, relations or solutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing, ends the occupancy of the attempt's sections or completes the exploration cycle as applicable.
 
 ## Evidence for a formal solution
 
@@ -55,21 +55,19 @@ If compilation cannot be completed, do not issue formal acceptance. An informal 
 
 ## Concerns and later findings
 
-A new concern has `id`, `targets`, `reason`, and `evidence`. Targets are `{record, claim}` references; a candidate review can use `record: "self"` for its candidate's claims. The reason identifies what is questioned, and the evidence tells another researcher how to inspect it. Publication gives the concern a stable ID `<publication-id>/<local-id>` and creates comprehensive review work.
+A new concern has `id`, `targets`, `reason`, and `evidence`. Targets are `{record, claim}` references; a candidate review can use `record: "self"` for its candidate's claims. The reason identifies what is questioned, and the evidence tells another researcher how to inspect it. Publication gives the concern a stable ID `<publication-id>/<local-id>` and creates comprehensive review work. It does not change the standing of the claims it names; only a finding does.
 
-A finding has `concerns` (the existing concern IDs it addresses), `status` (`cleared`, `confirmed` or `undetermined`), and `reason`. It may also have:
+A finding has `concerns` (the existing concern IDs it addresses), `status` (`cleared`, `confirmed` or `undetermined`), and `reason`. The status records your judgment on the named concerns and is shown beside them; the standing of claims changes only through the arrays below, so a status alone leaves every claim as it was. It may also have:
 
 | Field | Effect |
 |---|---|
 | `invalidates` | Claim references whose offered support is withdrawn. |
 | `validates` | Existing claim references whose support this review establishes or restores. |
-| `clears` | Claim references whose use is sound despite the named concern. |
-| `cleared_uses` | Exact relation applications cleared despite a concern: `{relation, premise_proofs}`. Use the relation and proof IDs from the research state, in the relation's premise order. |
 | `dependency_updates` | `{proof, dependencies, reason}` entries correcting the formal dependencies of an existing proof route. |
 
-Write only consequences supported by your examination of the evidence. Clearing one use is narrower than clearing the original claim or the whole concern. A confirmed defect can withdraw one argument while another argument continues to support the same node. The feedback explains the actual uses and what remains unresolved.
+Write only consequences supported by your examination of the evidence. A pending concern leaves the questioned claim in force; a finding that withdraws the claim removes every consequence that rested on it, and a finding that reaffirms it leaves them standing. A confirmed defect can withdraw one argument while another argument continues to support the same node. The feedback explains the actual uses and what remains unresolved.
 
-The `proofs` object in `knowledge/state.json` lists the currently supported proof routes. A direct solution has ID `<record-id>/<solution-id>`; an established application of a relation has ID `<record-id>/<relation-id>`. Each entry identifies its node, outcome and supporting claims, and an inferred application lists `premise_proofs` in premise order. Use those exact IDs in a clearance. The separate `relations` object contains the reviewed implication statements, including relations whose premises are not yet solved.
+The `proofs` object in `knowledge/state.json` lists the currently supported proof routes. A direct solution has ID `<record-id>/<solution-id>`. A relation applied forward, to its conclusion, has ID `<record-id>/<relation-id>`; applied backward, to refute one premise, it has that ID followed by `~` and the position of the premise it refuted, counted from zero. Each entry identifies its node, outcome and supporting claims, and a derived outcome lists in `premise_proofs` the proofs it used. Use those exact IDs in `dependency_updates`. The separate `relations` object contains the reviewed implication statements, including relations whose premises are not yet solved.
 
 When a candidate review that publishes its candidate finds a defect in an earlier record, it can report a concern and its established findings. A withdrawal without a named existing concern creates a comprehensive review of its broader consequences. Do not claim that those consequences have all been assessed merely because the original defect was found.
 

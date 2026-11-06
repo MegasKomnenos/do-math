@@ -17,7 +17,7 @@ from launch import worker_command as build_command
 from coordination import board, lease_table, section_entries
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from knowledge import canonical, formal_ready, render, replay, root_solved
+from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
@@ -307,8 +307,10 @@ class Runner:
             job['status'] = 'done'
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
+            sections = [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
+                        for entry in section_entries(self.instance, sid, self.model)]
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'node': pipeline.get('node'), 'retention': s['retention']},
+                                  'node': pipeline.get('node'), 'sections': sections, 'retention': s['retention']},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
@@ -574,9 +576,12 @@ class Runner:
             if concerns or conflicts:
                 self.enqueue('review', {'kind': 'comprehensive', 'concerns': concerns, 'conflicts': conflicts,
                                         'purpose': 'Trace the questioned claims to their evidence and through actual dependent uses; report precise findings.'})
+        closure = sufficient_closure(model)
         for nid, node in model['nodes'].items():
             if node['canonical'] != nid or node['state'] not in ('informal_proved', 'informal_refuted'):
                 continue
+            if (nid, node['state'].split('_', 1)[1]) not in closure:
+                continue  # settled, but no accepted relation carries this outcome to the root
             if any(p['role'] == 'formalizer' and p['stage'] != 'done' and canonical(model, p['node']) == nid for p in self.state['pipelines'].values()):
                 continue
             proofs = [pid for pid in node['proofs'] if formal_ready(model, model['proofs'][pid])]
@@ -670,8 +675,11 @@ class Runner:
         whole = {s['node'] for r in rows for s in r['sections'] if s['whole']}
         leases = lease_table(self.instance, self.state, self.model)
         queued = {n for n, entry in leases.items() if entry['queue']}
-        return [n for n, v in self.model['nodes'].items()
-                if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
+        closure = sufficient_closure(self.model)
+        nodes = [n for n, v in self.model['nodes'].items()
+                 if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
+        # Nodes whose settlement can carry the root come first; the order is informational.
+        return sorted(nodes, key=lambda n: (n, 'proved') not in closure and (n, 'refuted') not in closure)
 
     def attempt_launch_due(self):
         """Launches are spaced so each attempt can take a lease before the next one reads the board."""
@@ -692,7 +700,9 @@ class Runner:
             if job['role'] == 'formalizer':
                 node = self.model['nodes'][canonical(self.model, job['task']['node'])]
                 ready = [p for p in node['proofs'] if formal_ready(self.model, self.model['proofs'][p])]
-                if node['state'] not in ('informal_proved', 'informal_refuted') or not ready:
+                settled = node['state'] in ('informal_proved', 'informal_refuted')
+                carries = settled and (node['canonical'], node['state'].split('_', 1)[1]) in sufficient_closure(self.model)
+                if not settled or not ready or not carries:
                     job['status'] = 'cancelled'
                     self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                     changed = True

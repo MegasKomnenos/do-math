@@ -25,135 +25,134 @@ def new_model(statement):
     return {'nodes': {'root': {'id': 'root', 'statement': statement, 'source': None}},
             'aliases': {}, 'claims': {}, 'direct': {}, 'relations': {}, 'proofs': {},
             'records': {}, 'concerns': {}, 'terms': {}, 'global_terms': {},
-            'modules': [], 'shared_context': [], 'organized': [], 'cleared_uses': {}, 'dependency_overrides': {},
+            'modules': [], 'shared_context': [], 'organized': [], 'dependency_overrides': {},
             'findings': [], 'sequence': 0}
 
 
-def concerned(model, key, concern=None, seen=None):
-    concerns = [concern] if concern else list(model['concerns'].values())
-    for item in concerns:
-        if item['status'] == 'cleared' or key in item.get('cleared_claims', []):
-            continue
-        if key in item['targets']:
-            return True
-        visited = set(seen or ())
-        if key in visited:
-            continue
-        visited.add(key)
-        if any(concerned(model, dep, item, visited)
-               for dep in model['claims'].get(key, {}).get('dependencies', [])):
-            return True
-    return False
+def flip(outcome):
+    return 'refuted' if outcome == 'proved' else 'proved'
+
+
+def concerned(model, key, concern, seen=None):
+    """Whether a claim rests, directly or through its dependencies, on a target of an open concern."""
+    if concern['status'] == 'cleared':
+        return False
+    if key in concern['targets']:
+        return True
+    visited = set(seen or ())
+    if key in visited:
+        return False
+    visited.add(key)
+    return any(concerned(model, dep, concern, visited)
+               for dep in model['claims'].get(key, {}).get('dependencies', []))
+
+
+def clause(model, relation):
+    """A relation as a propositional clause: each premise negated, the conclusion as written."""
+    items = [(canonical(model, p['node']), flip(p['outcome'])) for p in relation['premises']]
+    items.append((canonical(model, relation['conclusion']['node']), relation['conclusion']['outcome']))
+    return items
 
 
 def settle(model):
-    """Maintain reviewed direct supports and forward consequences of explicit relations.
+    """Hold every supported solution and relation true and draw their propositional consequences.
 
-    A concern preserves previously established consequences while blocking new ones.
-    An explicitly withdrawn claim removes the supports that actually cite it.
+    A supported direct solution is a fact. A supported relation is a clause: whenever all of
+    its signed statements but one are established, the remaining one follows, in whichever
+    direction that is. A node established both ways is contested; its statements are not
+    used to derive anything further until review resolves the opposition. A concern only
+    annotates the outcomes that rest on the questioned claim.
     """
-    old = model['proofs']
-    proofs = {}
+    direct = {}
     for pid, proof in model['direct'].items():
         if model['claims'].get(proof['claim'], {}).get('status') != 'supported':
             continue
         node = canonical(model, proof['node'])
-        concerns = [cid for cid, c in model['concerns'].items() if concerned(model, proof['claim'], c)]
-        proofs[pid] = {**proof, 'node': node, 'claims': [proof['claim']], 'nodes': [node],
+        concerns = sorted(cid for cid, c in model['concerns'].items() if concerned(model, proof['claim'], c))
+        direct[pid] = {**proof, 'node': node, 'claims': [proof['claim']], 'nodes': [node],
                        'formal_dependencies': model['dependency_overrides'].get(pid, proof.get('formal_dependencies', [])),
                        'concerns': concerns, 'concerned': bool(concerns)}
-    prior_valid = [p for p in old.values() if all(model['claims'].get(c, {}).get('status') == 'supported' for c in p['claims'])]
-    directions = {}
-    for proof in list(proofs.values()) + prior_valid:
-        directions.setdefault(canonical(model, proof['node']), set()).add(proof['outcome'])
-    conflicts = {n for n, outcomes in directions.items() if len(outcomes) > 1}
-    for proof in proofs.values():
-        if proof['node'] in conflicts:
-            proof['concerns'].append('conflict:' + proof['node'])
-            proof['concerned'] = True
-    def uses_route(pid, target):
-        pending, visited = [pid], set()
-        while pending:
-            current = pending.pop()
-            if current == target:
-                return True
-            if current in visited:
-                continue
-            visited.add(current)
-            pending.extend(proofs.get(current, {}).get('premise_proofs', []))
-        return False
+    relations = {rid: r for rid, r in model['relations'].items()
+                 if model['claims'].get(r['claim'], {}).get('status') == 'supported'}
 
-    changed = True
-    while changed:
-        changed = False
-        for rid, relation in model['relations'].items():
-            if (rid in proofs and not proofs[rid]['concerned']) or model['claims'].get(relation['claim'], {}).get('status') != 'supported':
-                continue
-            conclusion = canonical(model, relation['conclusion']['node'])
-            selected = []
-            previous = old.get(rid, {})
-            for index, premise in enumerate(relation['premises']):
-                candidates = [(pid, p) for pid, p in proofs.items()
-                              if p['node'] == canonical(model, premise['node'])
-                              and p['outcome'] == premise['outcome'] and not uses_route(pid, rid)]
-                previous_ids = previous.get('premise_proofs', [])
-                preferred = previous_ids[index] if index < len(previous_ids) else None
-                candidates.sort(key=lambda row: (row[1]['concerned'], row[0] != preferred, row[0]))
-                if not candidates:
-                    break
-                selected.append(candidates[0])
-            if len(selected) != len(relation['premises']):
-                continue
-            selections = [selected]
-            for uses in model['cleared_uses'].values():
-                for cleared in uses:
-                    if cleared['relation'] != rid:
+    def derive(excluded):
+        proofs = dict(direct)
+
+        def uses(pid, target):
+            pending, visited = [pid], set()
+            while pending:
+                current = pending.pop()
+                if current == target:
+                    return True
+                if current in visited:
+                    continue
+                visited.add(current)
+                pending.extend(proofs.get(current, {}).get('premise_proofs', []))
+            return False
+
+        changed = True
+        while changed:
+            changed = False
+            for rid, relation in relations.items():
+                literals = clause(model, relation)
+                for index, (node, outcome) in enumerate(literals):
+                    forward = index == len(literals) - 1
+                    pid = rid if forward else f'{rid}~{index}'
+                    needed = [(n, flip(o)) for i, (n, o) in enumerate(literals) if i != index]
+                    selected = []
+                    for n, o in needed:
+                        if n in excluded:
+                            break
+                        candidates = sorted((p['concerned'], qid) for qid, p in proofs.items()
+                                            if p['node'] == n and p['outcome'] == o and not uses(qid, pid))
+                        if not candidates:
+                            break
+                        selected.append(candidates[0][1])
+                    if len(selected) != len(needed):
                         continue
-                    ids = cleared['premise_proofs']
-                    if len(ids) != len(relation['premises']) or any(pid not in proofs or uses_route(pid, rid) for pid in ids):
+                    concerns = sorted({cid for cid, c in model['concerns'].items() if concerned(model, relation['claim'], c)}
+                                      | {cid for q in selected for cid in proofs[q]['concerns']})
+                    existing = proofs.get(pid)
+                    if existing is not None and (existing['concerned'], len(existing['concerns'])) <= (bool(concerns), len(concerns)):
                         continue
-                    alternative = [(pid, proofs[pid]) for pid in ids]
-                    if all(p['node'] == canonical(model, premise['node'])
-                           and p['outcome'] == premise['outcome']
-                           for (_, p), premise in zip(alternative, relation['premises'])):
-                        selections.append(alternative)
-            eligible = []
-            for selection in selections:
-                claims = sorted({relation['claim']} | {c for _, p in selection for c in p['claims']})
-                use = {'relation': rid, 'premise_proofs': [pid for pid, _ in selection]}
-                concerns = sorted(({cid for cid, c in model['concerns'].items()
-                                    if concerned(model, relation['claim'], c)} |
-                                   {cid for _, p in selection for cid in p['concerns']}) -
-                                  {cid for cid, uses in model['cleared_uses'].items() if use in uses})
-                if not concerns or previous.get('claims') == claims:
-                    eligible.append((bool(concerns), selection, claims, concerns))
-            if not eligible:
-                continue
-            flagged, selected, claims, concerns = min(eligible, key=lambda row: (row[0], len(row[3])))
-            if rid in proofs and flagged:
-                continue
-            premise_ids = [pid for pid, _ in selected]
-            proofs[rid] = {'id': rid, 'node': conclusion, 'outcome': relation['conclusion']['outcome'],
-                           'level': 'informal', 'claim': relation['claim'], 'claims': claims,
-                           'nodes': sorted({conclusion} | {n for _, p in selected for n in p['nodes']}),
-                           'premise_proofs': premise_ids, 'concerns': concerns,
-                           'formal_dependencies': model['dependency_overrides'].get(rid, relation['premises']), 'record': relation['record'],
-                           'concerned': flagged}
-            changed = True
-    model['proofs'] = proofs
-    directions = {}
+                    proofs[pid] = {'id': pid, 'node': node, 'outcome': outcome, 'level': 'informal',
+                                   'claim': relation['claim'],
+                                   'claims': sorted({relation['claim']} | {c for q in selected for c in proofs[q]['claims']}),
+                                   'nodes': sorted({node} | {m for q in selected for m in proofs[q]['nodes']}),
+                                   'premise_proofs': selected, 'relation': rid,
+                                   'derivation': 'forward' if forward else 'backward',
+                                   'formal_dependencies': model['dependency_overrides'].get(
+                                       pid, [{'node': n, 'outcome': o} for n, o in needed]),
+                                   'record': relation['record'], 'concerns': concerns, 'concerned': bool(concerns)}
+                    changed = True
+        return proofs
+
+    excluded, first = set(), None
+    while True:
+        proofs = derive(excluded)
+        if first is None:
+            first = proofs
+        outcomes = {}
+        for p in proofs.values():
+            outcomes.setdefault(p['node'], set()).add(p['outcome'])
+        contested = {n for n, seen in outcomes.items() if len(seen) > 1}
+        if contested <= excluded:
+            break
+        excluded |= contested
+    # The opposing evidence of a contested node stays visible for review.
+    for pid, p in first.items():
+        if p['node'] in excluded and pid not in proofs:
+            proofs[pid] = p
     for proof in proofs.values():
-        directions.setdefault(proof['node'], set()).add(proof['outcome'])
-    conflicts = {n for n, outcomes in directions.items() if len(outcomes) > 1}
-    for proof in proofs.values():
-        proof['concerns'] = sorted(set(proof['concerns']) | {'conflict:' + n for n in proof['nodes'] if n in conflicts})
+        proof['concerns'] = sorted(set(proof['concerns']) | {'conflict:' + n for n in proof['nodes'] if n in excluded})
         proof['concerned'] = bool(proof['concerns'])
+    model['proofs'] = proofs
     for nid, node in model['nodes'].items():
         representative = canonical(model, nid)
         node['canonical'] = representative
         node['proofs'] = [pid for pid, p in proofs.items() if p['node'] == representative]
         outcomes = {proofs[pid]['outcome'] for pid in node['proofs']}
-        node['contested'] = len(outcomes) > 1
+        node['contested'] = representative in excluded
         node['state'] = 'unresolved'
         if node['contested']:
             node['state'] = 'contested'
@@ -168,29 +167,46 @@ def settle(model):
                         if representative in {canonical(model, x['node']) for x in r['premises'] + [r['conclusion']]})
         node['annotations'] = [i for i, finding in enumerate(model['findings']) if evidence.intersection(finding['claims'])]
         node['concern_history'] = [cid for cid, concern in model['concerns'].items()
-                                   if any(concerned(model, key, {**concern, 'status': 'pending', 'cleared_claims': []}) for key in evidence)]
-        node['possible_concerns'] = []
-    # A held implication has no proof object yet. Keep its possible dependencies
-    # visible without treating a concern as a mathematical verdict or a new proof.
-    histories = {n['canonical']: set(n['concern_history']) | (set(n['concerns']) & set(model['concerns']))
-                 for n in model['nodes'].values()}
-    possible = {nid: set() for nid in histories}
+                                   if any(concerned(model, key, {**concern, 'status': 'pending'}) for key in evidence)]
+
+
+def sufficient_closure(model):
+    """The signed statements from which the root's proof or refutation is reachable.
+
+    Starting from the root settled either way, every accepted relation whose clause
+    contains a reachable statement makes the negations of its other statements reachable,
+    because establishing those is what derives it. A statement outside this set cannot
+    move the root however it is settled, so formal work is not sent for it."""
+    root = canonical(model, 'root')
+    reachable = {(root, 'proved'), (root, 'refuted')}
+    relations = [r for r in model['relations'].values()
+                 if model['claims'].get(r['claim'], {}).get('status') == 'supported']
     changed = True
     while changed:
         changed = False
-        for rid, relation in model['relations'].items():
-            if rid in proofs:
-                continue  # Its actual proof already records concerns and exact-use clearance.
-            conclusion = canonical(model, relation['conclusion']['node'])
-            inherited = set()
-            for premise in relation['premises']:
-                source = canonical(model, premise['node'])
-                inherited.update(histories[source] | possible[source])
-            if not inherited <= possible[conclusion]:
-                possible[conclusion].update(inherited)
-                changed = True
-    for node in model['nodes'].values():
-        node['possible_concerns'] = sorted(possible[node['canonical']] - histories[node['canonical']])
+        for relation in relations:
+            literals = clause(model, relation)
+            for index, literal in enumerate(literals):
+                if literal not in reachable:
+                    continue
+                for other, (n, o) in enumerate(literals):
+                    if other != index and (n, flip(o)) not in reachable:
+                        reachable.add((n, flip(o)))
+                        changed = True
+    return reachable
+
+
+def root_path(model, closure, node):
+    """How settling a node stands to the root: both outcomes reach it, only one does, or neither."""
+    node = canonical(model, node)
+    proved, refuted = (node, 'proved') in closure, (node, 'refuted') in closure
+    if proved and refuted:
+        return 'either outcome reaches the root'
+    if proved:
+        return 'on a sufficient path to the root: its proof can carry the root'
+    if refuted:
+        return 'a necessary condition only: its refutation refutes the root; its proof cannot carry the root'
+    return 'not connected to the root by an accepted relation'
 
 
 def add_terms(model, entries, publication, location):
@@ -204,7 +220,7 @@ def add_concerns(model, values, source):
         cid = source + '/' + item['id']
         model['concerns'][cid] = {**deepcopy(item), 'id': cid, 'source': source,
                                  'targets': [claim_key(x, source) for x in item['targets']],
-                                 'status': 'pending', 'cleared_claims': []}
+                                 'status': 'pending'}
 
 
 def record_event(model, event, folder):
@@ -259,7 +275,7 @@ def assessment_event(model, event, folder):
 
 def apply_findings(model, findings, source, followup=True):
     for number, finding in enumerate(findings):
-        affected = {claim_key(ref) for key in ('invalidates', 'validates', 'clears') for ref in finding.get(key, [])}
+        affected = {claim_key(ref) for key in ('invalidates', 'validates') for ref in finding.get(key, [])}
         for cid in finding.get('concerns', []):
             affected.update(model['concerns'].get(cid, {}).get('targets', []))
         model['findings'].append({'source': source, 'reason': finding['reason'], 'status': finding['status'], 'claims': sorted(affected)})
@@ -270,12 +286,6 @@ def apply_findings(model, findings, source, followup=True):
                 item = model['concerns'][cid]
                 item['status'] = finding['status']
                 item['finding'] = {'review': source, 'reason': finding['reason']}
-                item['cleared_claims'] = sorted(set(item.get('cleared_claims', [])) |
-                                                 {claim_key(x) for x in finding.get('clears', [])})
-                uses = model['cleared_uses'].setdefault(cid, [])
-                for use in finding.get('cleared_uses', []):
-                    if use not in uses:
-                        uses.append(deepcopy(use))
         for ref in finding.get('invalidates', []):
             key = claim_key(ref)
             model['claims'][key]['status'] = 'unsupported'
@@ -380,17 +390,27 @@ def render(instance, model, board, leases=None):
     def investigation(cid):
         matches = [j for j in investigations if cid in j['task'].get('concerns', [])]
         return ', '.join(j['id'] + ' (' + j['status'] + ')' for j in matches) or 'pending assignment'
+    closure = sufficient_closure(model)
+    established = {(p['node'], p['outcome']) for p in model['proofs'].values()
+                   if not model['nodes'][p['node']]['contested']}
     lines = ['# Frontier', '', f"Revision: {model['sequence']}", '']
     for nid, node in model['nodes'].items():
         if node['canonical'] != nid:
             continue
         lines += [f'## {nid}', '', node['statement'], '', f"State: {node['state']}", '']
+        if nid != canonical(model, 'root'):
+            lines += [f"Path to root: {root_path(model, closure, nid)}", '']
         for pid in node['proofs']:
             p = model['proofs'][pid]
-            lines.append(f"- {p['outcome']}, {p['level']}: [{pid}](records/{p['record']}/record.json)" + (' — concern pending' if p['concerned'] else ''))
+            how = '' if 'relation' not in p else f" (derived {p['derivation']} through relation {p['relation']})"
+            marker = ' — rests on a questioned claim' if any(not c.startswith('conflict:') for c in p['concerns']) else ''
+            lines.append(f"- {p['outcome']}, {p['level']}: [{pid}](records/{p['record']}/record.json){how}{marker}")
         for key, relation in model['relations'].items():
             if canonical(model, relation['conclusion']['node']) == nid or any(canonical(model, p['node']) == nid for p in relation['premises']):
-                premises = ', '.join(p['outcome'] + ' ' + canonical(model, p['node']) for p in relation['premises'])
+                premises = ', '.join(
+                    p['outcome'] + ' ' + canonical(model, p['node'])
+                    + (' (established)' if (canonical(model, p['node']), p['outcome']) in established else ' (open)')
+                    for p in relation['premises'])
                 standing = model['claims'][relation['claim']]['status']
                 lines.append(f"- Relation [{key}](records/{relation['record']}/record.json), {standing}: [{premises}] implies {relation['conclusion']['outcome']} {canonical(model, relation['conclusion']['node'])}")
         for number in node['annotations']:
@@ -405,9 +425,6 @@ def render(instance, model, board, leases=None):
         aliases = [n for n in model['aliases'] if canonical(model, n) == nid]
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
-        for cid in node.get('possible_concerns', []):
-            c = model['concerns'][cid]
-            lines.append(f"- Possible dependency through a recorded relation: concern {cid}: {c['reason']} ({c['status']}); source {assessment_link(c['source'])}; comprehensive review {investigation(cid)}. This annotation does not determine the effect on this node.")
         lines.append('')
     write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
     glossary = ['# Global glossary', '', f"Research revision: {model['sequence']}", '',
@@ -437,13 +454,9 @@ def render(instance, model, board, leases=None):
         for finding in model['findings']:
             if any(key.startswith(rid + '/') for key in finding['claims']):
                 result += [f"Later review ({finding['status']}): {finding['reason']} — {assessment_link(finding['source'], prefix)}", '']
-        conclusions = {canonical(model, r['conclusion']['node']) for r in model['relations'].values() if r['record'] == rid}
         for cid, concern in model['concerns'].items():
-            direct = any(concerned(model, k, concern) for k, c in model['claims'].items() if c['record'] == rid)
-            possible = any(cid in model['nodes'][nid].get('possible_concerns', []) for nid in conclusions)
-            if concern['status'] != 'cleared' and (direct or possible):
-                label = 'Concern' if direct else 'Possible dependency through a recorded relation; effect undetermined. Concern'
-                result += [f"{label} {cid}: {concern['reason']} ({concern['status']}); {assessment_link(concern['source'], prefix)}; comprehensive review {investigation(cid)}", '']
+            if concern['status'] != 'cleared' and any(concerned(model, k, concern) for k, c in model['claims'].items() if c['record'] == rid):
+                result += [f"Concern {cid}: {concern['reason']} ({concern['status']}); {assessment_link(concern['source'], prefix)}; comprehensive review {investigation(cid)}", '']
         if any(n['contested'] and any(model['proofs'][p]['record'] == rid for p in n['proofs']) for n in model['nodes'].values()):
             result += [f'Opposing accepted outcomes: consult the [frontier]({prefix}frontier.md) and comprehensive review.', '']
         entries[rid, prefix] = result
@@ -488,7 +501,7 @@ def render(instance, model, board, leases=None):
             board_lines.append(f"  Section {section['id']} on {section['node']} (session {section['session']}): {scope}")
         for nid in row['nodes']:
             node = model['nodes'].get(canonical(model, nid), {})
-            if node.get('concerns') or node.get('concern_history') or node.get('possible_concerns'):
+            if node.get('concerns') or node.get('concern_history'):
                 board_lines.append(f'  Concern: see [frontier](frontier.md) for {nid}.')
     if leases:
         board_lines += ['', '## Node leases', '', 'One session at a time chooses a section on a node; others wait in order.', '']

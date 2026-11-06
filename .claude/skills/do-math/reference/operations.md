@@ -10,7 +10,7 @@ The root file contains the mathematical proposition to settle, with its objects,
 
 Put standing instructions, such as the language of the records or limits on permitted methods, in a separate input file. Submit it before starting the runner to make it part of every initial session's context. Later inputs affect only sessions launched after submission. They do not rewrite existing sessions' instructions or their saved contexts.
 
-The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, attempt launches at least three minutes apart, exploration requested after every three attempts that register work, and organization after four research publications.
+The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models for attempt, explore, formalizer and organizer are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`; for peer and review the order is reversed, so that the record and its review come from a different model than the producers. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, attempt launches at least three minutes apart, exploration requested after every three attempts that register work, and organization after four research publications.
 
 An example settings file is:
 
@@ -26,7 +26,10 @@ An example settings file is:
     {"model": "codex/gpt-6.1-sol", "effort": "xhigh"},
     {"model": "claude/opus", "effort": "xhigh"}
   ],
-  "roles": {},
+  "roles": {
+    "peer": [{"model": "claude/opus", "effort": "xhigh"}, {"model": "codex/gpt-6.1-sol", "effort": "xhigh"}],
+    "review": [{"model": "claude/opus", "effort": "xhigh"}, {"model": "codex/gpt-6.1-sol", "effort": "xhigh"}]
+  },
   "cli": {"codex": "C:/tools/codex.exe", "claude": "C:/tools/claude.exe"},
   "mcp_servers": {},
   "retry_seconds": 60,
@@ -42,7 +45,7 @@ An example settings file is:
 }
 ```
 
-Replace the executable paths with the actual installations. A role-specific ordered model list under `roles`, such as `"review": [{"model": "claude/opus", "effort": "xhigh"}]`, replaces the common list for that role. An omitted setting receives its default. An unrecognized key, such as a misspelling or a setting carried over from the earlier do-math runtime, is rejected by name rather than ignored, because ignoring it would leave the default in force without notice. The runner checks structure; actual login and model availability are confirmed by execution.
+Replace the executable paths with the actual installations. A role-specific ordered model list under `roles` replaces the common list for that role; the example shows the default lists for peer and review. A `roles` object that omits a role sends that role to the common list. An omitted setting receives its default. An unrecognized key, such as a misspelling or a setting carried over from the earlier do-math runtime, is rejected by name rather than ignored, because ignoring it would leave the default in force without notice. The runner checks structure; actual login and model availability are confirmed by execution.
 
 To use Mathlib, configure `lean.command` as `["<lake executable>", "env", "lean"]`, its version command with `"--version"` appended, and `cwd` as the Mathlib project. Supply any necessary PATH value through `lean.env`; JSON does not expand shell variables. The broker handles compilation and dependency builds. [Lean](lean.md) explains resource settings and estimates. When several instances share a machine, set their broker memory budgets explicitly rather than letting each derive a budget for the whole host.
 
@@ -104,7 +107,7 @@ Use status to identify the intended session before termination. The command targ
 
 ## Waiting, fallback and recovery
 
-When a producing session ends, its retained material creates peer work. A structurally usable peer candidate creates review work. An accepted informal solution creates formalizer work when the other node results needed by its chosen argument have independently validated Lean proofs available. These results are its formal dependencies. New research publications create organizer work when the configured number of unprocessed publications is reached. Available capacity and an available configured model permit each launch.
+When a producing session ends, its retained material creates peer work. A structurally usable peer candidate creates review work. An accepted informal solution creates formalizer work when the settled statement lies on a path to the root, that is, when its proof or refutation can carry the root through accepted relations, and when the other node results needed by its chosen argument have independently validated Lean proofs available. These results are its formal dependencies. A proof of a necessary condition of the root is not formalized; its refutation is. New research publications create organizer work when the configured number of unprocessed publications is reached. Available capacity and an available configured model permit each launch.
 
 An attempt, explorer, formalizer or peer's host can keep the same logical session alive across several CLI turns. After an ordinary turn exit, it resumes the exact native conversation with the same provider, model, effort and launch-time instructions. A current `output/end-decision.json` or the configured resumption limit authorizes normal handoff. Each request has a fresh ID, so an older decision cannot authorize a later ending. The protocol is described in [Retained work](retained-work.md). This does not create another attempt, another occupied section or another concurrency slot.
 

@@ -25,6 +25,7 @@ class EndingTests(InstanceCase):
     def prepare(self, maximum=3, role='attempt', config=None):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
+        engine.settings['roles'] = {}  # the scripted CLI speaks the Codex stream for every role
         key = engine.producer('attempt' if role == 'peer' else role,
                               {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
         if role == 'peer':

@@ -33,7 +33,8 @@ class PipelineTests(InstanceCase):
 
     def test_full_pipeline_formalizes_and_drains_followups(self):
         config = read_json(self.instance / 'settings.json')
-        config.update(max_sessions=2, organizer_every_records=1, retry_seconds=1, retry_max_seconds=2)
+        config.update(max_sessions=2, organizer_every_records=1, retry_seconds=1, retry_max_seconds=2,
+                      roles={})  # the scripted CLI speaks the Codex stream for every role
         config['lean'].update(command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py')],
                               version_command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py'), '--version'],
                               min_free_memory_mb=0, memory_budget_mb=512)

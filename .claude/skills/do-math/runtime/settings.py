@@ -10,12 +10,16 @@ ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
 PRODUCERS = ('attempt', 'explore', 'formalizer')
 MODELS = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'},
           {'model': 'claude/opus', 'effort': 'xhigh'}]
+# A record and its review come from a different model than the work they assess.
+ASSESSORS = [{'model': 'claude/opus', 'effort': 'xhigh'},
+             {'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
 AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 
 def defaults():
     return {'schema': 1, 'max_sessions': 8, 'explore_every': 3,
-            'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS), 'roles': {},
+            'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS),
+            'roles': {'peer': deepcopy(ASSESSORS), 'review': deepcopy(ASSESSORS)},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
             'max_end_resumptions': 3,

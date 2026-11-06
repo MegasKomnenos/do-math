@@ -11,10 +11,10 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check import Invalid, assessment_check, organization_check, record_check
+from check import Invalid, assessment_check, findings_check, organization_check, record_check
 from cli_adapter import Command
 from coordination import board, lease, lease_table, release, section, wait
-from knowledge import canonical, formal_ready, render, replay, root_solved
+from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from runner import Runner, archive_finished, initialize
 from runtime_support import read_json, write_json
 from settings import defaults, validate
@@ -228,7 +228,7 @@ class KnowledgeTests(InstanceCase):
                                                 'invalidates': [{'record': 'r2', 'claim': 'p'}]}]})
         self.assertFalse(root_solved(replay(self.instance)))
 
-    def test_concern_preserves_previous_consequence_but_blocks_new_ones(self):
+    def test_concern_annotates_without_blocking_and_a_withdrawal_recomputes(self):
         self.publish('r1', self.reduction())
         self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
         self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'boundary', 'targets': [{'record': 'r2', 'claim': 'q'}],
@@ -239,23 +239,29 @@ class KnowledgeTests(InstanceCase):
                       [implication('next', 'Q', 'R'), implication('onward', 'R', 'S')])
         self.publish('r3', data)
         m = replay(self.instance)
-        self.assertEqual(m['nodes']['root']['state'], 'informal_proved')
-        self.assertTrue(m['proofs']['r1/reduce']['concerned'])
-        for nid in ('R', 'S'):
-            self.assertEqual(m['nodes'][nid]['state'], 'unresolved')
-            self.assertEqual(m['nodes'][nid]['proofs'], [])
-            self.assertIn('v1/boundary', m['nodes'][nid]['possible_concerns'])
-        render(self.instance, m, [{'pipeline': 'p', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S']}])
+        # A pending concern changes nothing about what is held true; it annotates what rests on it.
+        for nid in ('root', 'Q', 'R', 'S'):
+            self.assertEqual(m['nodes'][nid]['state'], 'informal_proved')
+        for pid in ('r2/q', 'r1/reduce', 'r3/next', 'r3/onward'):
+            self.assertTrue(m['proofs'][pid]['concerned'])
+            self.assertIn('v1/boundary', m['proofs'][pid]['concerns'])
+        render(self.instance, m, [{'pipeline': 'p', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': []}])
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         for nid in ('R', 'S'):
             section = frontier.split('## ' + nid + '\n', 1)[1].split('\n## ', 1)[0]
-            self.assertIn('Possible dependency through a recorded relation', section)
+            self.assertIn('rests on a questioned claim', section)
             self.assertIn('v1/boundary', section)
             self.assertIn('reviews/v1/assessment.json', section)
-        index = (self.instance / 'knowledge/index.md').read_text(encoding='utf-8')
-        self.assertIn('Possible dependency through a recorded relation; effect undetermined.', index)
+        self.assertNotIn('Possible dependency', frontier)
         self.assertIn('Concern: see [frontier](frontier.md) for S.',
                       (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
+        # Only a finding changes standing: withdrawing q recomputes everything that rested on it.
+        self.event('v2', 'review', {'findings': [{'concerns': ['v1/boundary'], 'status': 'confirmed',
+                                                'reason': 'The missing case fails.', 'invalidates': [{'record': 'r2', 'claim': 'q'}]}]})
+        m = replay(self.instance)
+        for nid in ('root', 'Q', 'R', 'S'):
+            self.assertEqual(m['nodes'][nid]['state'], 'unresolved')
+        self.assertEqual(m['concerns']['v1/boundary']['status'], 'confirmed')
 
     def test_concern_does_not_ban_formalizer_work_on_accepted_mathematics(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
@@ -295,21 +301,90 @@ class KnowledgeTests(InstanceCase):
         with self.assertRaises(Invalid):
             organization_check({'batch': [], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']}, m, [])
 
-    def test_review_can_clear_one_exact_use_before_the_whole_concern(self):
+    def test_clearance_fields_are_not_applied_and_are_rejected(self):
         self.publish('r1', self.reduction())
         self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        self.event('v1', 'review', {'findings': [], 'concerns': [{'id': 'issue', 'targets': [{'record': 'r2', 'claim': 'q'}], 'reason': 'A questioned range.', 'evidence': 'Source.'}]})
-        self.publish('r3', record([claim_row('next')], [{'id': 'R', 'statement': 'R', 'connection': 'next'}], [implication('next', 'Q', 'R')]))
-        self.event('v2', 'review', {'findings': [{'concerns': ['v1/issue'], 'status': 'undetermined', 'reason': 'This exact use avoids the issue.',
-                                                'cleared_uses': [{'relation': 'r3/next', 'premise_proofs': ['r2/q']}]}]})
         m = replay(self.instance)
-        self.assertEqual(m['nodes']['R']['state'], 'informal_proved')
-        self.assertFalse(m['proofs']['r3/next']['concerned'])
-        self.assertTrue(m['proofs']['r2/q']['concerned'])
-        self.assertEqual(m['nodes']['R']['possible_concerns'], [])
+        for stale in ({'cleared_uses': [{'relation': 'r1/reduce', 'premise_proofs': ['r2/q']}]},
+                      {'clears': [{'record': 'r2', 'claim': 'q'}]}):
+            with self.subTest(field=next(iter(stale))), self.assertRaisesRegex(Invalid, 'not applied'):
+                findings_check([{'concerns': [], 'status': 'undetermined', 'reason': 'An exact use.', **stale}], m)
+
+    def test_refuting_a_necessary_condition_refutes_the_node(self):
+        # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
+        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'unresolved')
+        self.publish('r2', record([claim_row('notk')], solutions=[solution('refutation', 'K', 'notk', 'refuted')]))
+        m = replay(self.instance)
+        self.assertEqual(m['nodes']['K']['state'], 'informal_refuted')
+        self.assertEqual(m['nodes']['root']['state'], 'informal_refuted')
+        proof = m['proofs']['r1/necessary~0']
+        self.assertEqual((proof['node'], proof['outcome'], proof['derivation']), ('root', 'refuted', 'backward'))
+        self.assertEqual(proof['premise_proofs'], ['r2/refutation'])
+        self.assertEqual(proof['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
+        # A proof of the necessary condition alone moves nothing.
+        self.publish('r3', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
+        m = replay(self.instance)
+        self.assertEqual(m['nodes']['K']['state'], 'contested')
+
+    def test_multi_premise_relation_derives_in_every_direction(self):
+        data = record([claim_row('joint')], [{'id': n, 'statement': n, 'connection': 'joint'} for n in ('A', 'B')],
+                      [{'id': 'joint', 'claim': 'joint', 'premises': [{'node': 'A', 'outcome': 'proved'}, {'node': 'B', 'outcome': 'proved'}],
+                        'conclusion': {'node': 'root', 'outcome': 'proved'}}])
+        self.publish('r1', data)
+        self.publish('r2', record([claim_row('notroot')], solutions=[solution('notroot', 'root', 'notroot', 'refuted')]))
+        self.assertEqual(replay(self.instance)['nodes']['B']['state'], 'unresolved')
+        self.publish('r3', record([claim_row('a')], solutions=[solution('a', 'A', 'a')]))
+        m = replay(self.instance)
+        self.assertEqual(m['nodes']['B']['state'], 'informal_refuted')
+        proof = m['proofs']['r1/joint~1']
+        self.assertEqual(sorted(proof['premise_proofs']), ['r2/notroot', 'r3/a'])
+        self.assertCountEqual(proof['formal_dependencies'], [{'node': 'A', 'outcome': 'proved'}, {'node': 'root', 'outcome': 'refuted'}])
+
+    def test_contested_node_derives_nothing_further(self):
+        self.publish('r1', self.reduction())
+        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'informal_proved')
+        self.publish('r3', record([claim_row('notq')], solutions=[solution('notq', 'Q', 'notq', 'refuted')]))
+        m = replay(self.instance)
+        self.assertEqual(m['nodes']['Q']['state'], 'contested')
+        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
+        self.assertCountEqual(m['nodes']['Q']['proofs'], ['r2/q', 'r3/notq'])
         render(self.instance, m, [])
-        section = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8').split('## R\n', 1)[1].split('\n## ', 1)[0]
-        self.assertNotIn('Possible dependency through a recorded relation', section)
+        self.assertIn('Opposing accepted outcomes', (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
+
+    def test_sufficient_closure_and_frontier_labels(self):
+        self.publish('r1', self.reduction())  # Q implies root
+        self.publish('r2', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        m = replay(self.instance)
+        closure = sufficient_closure(m)
+        self.assertIn(('Q', 'proved'), closure)
+        self.assertNotIn(('Q', 'refuted'), closure)
+        self.assertIn(('K', 'refuted'), closure)
+        self.assertNotIn(('K', 'proved'), closure)
+        render(self.instance, m, [])
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        q = frontier.split('## Q\n', 1)[1].split('\n## ', 1)[0]
+        k = frontier.split('## K\n', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('on a sufficient path to the root', q)
+        self.assertIn('a necessary condition only', k)
+        self.assertNotIn('Path to root', frontier.split('## root\n', 1)[1].split('\n## ', 1)[0])
+
+    def test_frontier_shows_which_parts_of_a_split_are_established(self):
+        data = record([claim_row('cover')], [{'id': n, 'statement': n, 'connection': 'cover'} for n in ('L', 'R')],
+                      [{'id': 'cover', 'claim': 'cover', 'premises': [{'node': 'L', 'outcome': 'proved'}, {'node': 'R', 'outcome': 'proved'}],
+                        'conclusion': {'node': 'root', 'outcome': 'proved'}}])
+        self.publish('r1', data)
+        self.publish('r2', record([claim_row('left')], solutions=[solution('left', 'L', 'left')]))
+        m = replay(self.instance)
+        render(self.instance, m, [])
+        root = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8').split('## root\n', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('proved L (established), proved R (open)', root)
+        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
+        self.publish('r3', record([claim_row('right')], solutions=[solution('right', 'R', 'right')]))
+        self.assertEqual(replay(self.instance)['nodes']['root']['state'], 'informal_proved')
 
     def test_signed_cycle_exposes_contradiction_but_cannot_create_a_seed(self):
         data = self.reduction()
@@ -774,9 +849,17 @@ class RunnerTests(InstanceCase):
     def test_default_pool_and_provider_fallback(self):
         runner = self.runner()
         self.assertEqual(runner.settings['max_sessions'], 8)
-        self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
+        for role in ('peer', 'review'):
+            self.assertEqual(runner.selection(role)['model'], 'claude/opus')
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
+        self.assertEqual(runner.selection('attempt')['model'], 'claude/opus')
         self.assertEqual(runner.selection('review')['model'], 'claude/opus')
+        runner.state['blocks']['provider:claude'] = {'until': 10**12}
+        self.assertIsNone(runner.selection('review'))
+        del runner.state['blocks']['provider:codex']
+        self.assertEqual(runner.selection('review')['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(defaults()['roles']['peer'], defaults()['roles']['review'])
 
     def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
         runner = self.runner()
@@ -831,7 +914,7 @@ class RunnerTests(InstanceCase):
                 if deadline > 1060:
                     self.assertEqual(runner.state['blocks'][block_key], previous)
                 with patch('runner.time.time', return_value=1061):
-                    self.assertEqual(runner.selection('review')['model'], expected_model)
+                    self.assertEqual(runner.selection('attempt')['model'], expected_model)
 
     def check_refusal_handoff(self, row, expected_key, expected_model, model='codex/gpt-6.1-sol',
                               peers=('codex/gpt-6.1-sol', 'codex/other', 'claude/opus')):
@@ -1100,6 +1183,67 @@ class RunnerTests(InstanceCase):
         runner.session_dir('sretry').mkdir()
         runner.make_pack('sretry', job)
         self.assertEqual(job['task']['batch'], ['r0', 'r1', 'r2', 'r3', 'r4'])
+
+    def test_formalizer_is_sent_only_for_outcomes_that_reach_the_root(self):
+        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        self.publish('r2', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
+        runner = self.runner()
+        self.assertEqual(runner.model['nodes']['K']['state'], 'informal_proved')
+        runner.populate()
+        self.assertFalse(any(p['role'] == 'formalizer' for p in runner.state['pipelines'].values()))
+        # A formalizer job enqueued for such an outcome is cancelled at dispatch.
+        key = runner.producer('formalizer', {'node': 'K', 'proofs': ['r2/k'], 'previous_records': []})
+        with patch('runner.subprocess.Popen'):
+            runner.dispatch_pending()
+        self.assertEqual(runner.state['jobs'][key]['status'], 'cancelled')
+        # The same node refuted reaches the root, so its refutation is formalized.
+        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Wrong object.',
+                                                'invalidates': [{'record': 'r2', 'claim': 'k'}]}]})
+        self.publish('r3', record([claim_row('notk')], solutions=[solution('notk', 'K', 'notk', 'refuted')]))
+        runner.model = replay(self.instance)
+        self.assertEqual(runner.model['nodes']['root']['state'], 'informal_refuted')
+        runner.populate()
+        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
+        self.assertEqual(nodes, ['K'])  # root's own refutation waits for K's formal refutation
+
+    def test_sufficient_premise_proved_is_formalized_and_an_inconsistent_set_sends_nothing(self):
+        self.publish('r1', self.reduction())  # Q implies root
+        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+        runner = self.runner()
+        runner.populate()
+        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
+        self.assertEqual(nodes, ['Q'])  # root proved through Q waits for Q's formal proof
+        # Accepting root implies K and a refutation of K now makes the accepted set inconsistent:
+        # root, Q and K are each derivable both ways, so all three are contested and nothing new is sent.
+        self.publish('r3', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        self.publish('r4', record([claim_row('notk')], solutions=[solution('notk', 'K', 'notk', 'refuted')]))
+        runner.model = replay(self.instance)
+        self.assertEqual({n: runner.model['nodes'][n]['state'] for n in ('root', 'Q', 'K')},
+                         {'root': 'contested', 'Q': 'contested', 'K': 'contested'})
+        runner.populate()
+        nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
+        self.assertEqual(nodes, ['Q'])
+        self.assertTrue(any(j['task'].get('kind') == 'comprehensive' and j['task']['conflicts'] for j in runner.state['jobs'].values()))
+
+    def test_available_nodes_list_nodes_on_a_path_to_the_root_first(self):
+        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        self.publish('r2', record([claim_row('free')], [{'id': 'F', 'statement': 'F', 'connection': 'free'}],
+                                 [implication('free', 'K', 'F')]))
+        runner = self.runner()
+        self.assertEqual(runner.available_nodes(), ['root', 'K', 'F'])
+
+    def test_peer_task_carries_the_producers_sections(self):
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        taken = take(runner.session_dir(sid), 'root', 'For every n, the last three terms decrease.')
+        self.assertTrue(taken['registered'])
+        runner.finish(sid, session)
+        peer = runner.state['jobs'][job['pipeline'] + ':peer']
+        self.assertEqual(peer['task']['sections'], [{'id': taken['section']['id'], 'node': 'root', 'whole': False,
+                                                     'statement': 'For every n, the last three terms decrease.'}])
 
     def test_formalization_has_no_round_cap(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
