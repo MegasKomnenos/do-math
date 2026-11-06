@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import time
 import uuid
+from availability import availability_view, retain_snapshot
 from knowledge import canonical, replay
 from runtime_support import alive, read_json, write_json
 
@@ -296,11 +297,17 @@ def updates(session):
     session = Path(session).resolve()
     inp = read_json(session / 'input.json')
     instance = Path(inp['instance'])
-    model = replay(instance)
-    state = read_json(instance / 'runner/state.json')
+    with claims_lock(instance):
+        model = replay(instance)
+        state = read_json(instance / 'runner/state.json')
+        rows = board(instance, state, model)
+        snapshot = (retain_snapshot(session, availability_view(
+            model, rows, state.get('attempt_availability_epoch', 0)))
+            if inp['role'] == 'attempt' else None)
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     return {'revision': model['sequence'], 'root_state': model['nodes'][canonical(model, 'root')]['state'],
-            'board': board(instance, state, model), 'leases': lease_table(instance, state, model),
+            'board': rows, 'leases': lease_table(instance, state, model),
+            'availability_snapshot': snapshot,
             'concerns': model['concerns'],
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
                                for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive'],

@@ -32,6 +32,10 @@ Publication preserves useful work with the judgment it needs. It does not certif
 
 If review concludes that a candidate contains no useful material to publish, it records that decision and the processing ends. This differs from an interrupted review, which has not finished its assessment. A genuine counterexample is also different from a baseless claimed accomplishment: proving a statement false may be an important result worth publishing.
 
+Before starting research, an attempt reads the frontier and board to choose work. Sometimes no section is available to it, and the session ends after that check. The attempt records `{"disposition": "no_research"}` in `output/outcome.json` to tell the runner that it has registered no section and has done nothing beyond assessing availability. When the attempt exits successfully, the runner retains its files and conversation and closes the pipeline without launching a peer or reviewer. A failed proof attempt or an inconclusive computation is still research and goes to peer.
+
+The attempt can also tell the runner that other sessions occupy all unresolved work. It records that judgment in a separate `availability` field in the same file. This tells the runner to wait before launching more attempts; it does not change the outcome of the session that has ended. [Retained work](retained-work.md) explains how to write both fields and identify the board and frontier on which the availability judgment rests.
+
 ## From an informal solution to a formal one
 
 A node is **informally solved** when review accepts a mathematical proof of its exact statement or its negation. That removes the node from the unresolved questions needing a fresh attempt. The outcome retains its direction: proving Q and proving not-Q both settle Q, but have different consequences for other questions.

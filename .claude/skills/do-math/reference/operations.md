@@ -10,7 +10,7 @@ The root file contains the mathematical proposition to settle, with its objects,
 
 Put standing instructions, such as the language of the records or limits on permitted methods, in a separate input file. Submit it before starting the runner to make it part of every initial session's context. Later inputs affect only sessions launched after submission. They do not rewrite existing sessions' instructions or their saved contexts.
 
-The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, attempt launches at least three minutes apart, exploration requested every three attempt dispatches, and organization after four research publications.
+The runner needs Python 3.12 or later, Git, authenticated Codex and/or Claude native executables, and a Lean environment. The default models are `codex/gpt-6.1-sol` at `xhigh`, followed by `claude/opus` at `xhigh`. These are ordered alternatives for each role. Defaults are eight concurrent AI sessions, attempt launches at least three minutes apart, exploration requested after every three attempts that register work, and organization after four research publications.
 
 An example settings file is:
 
@@ -85,6 +85,7 @@ Every command below is `python <skill>/runtime/runner.py <command> <instance> ..
 | `status` | Read current liveness, mathematical state and operational queues. |
 | `stop` | Stop new dispatch. Running sessions finish their current stage; queued follow-ups wait. |
 | `resume` | Remove the dispatch stop. If the runner is not alive, also use `start`. |
+| `reconsider-attempts` | Request one reassessment of work availability, overriding an occupancy report. Does not remove a dispatch stop. |
 | `input --file <file>` | Preserve standing information for future launches. It does not notify running sessions of new instructions. |
 | `review --record <id>` or `review --node <id>` | Request a comprehensive assessment of published evidence; targets may be repeated. `--concern <id>` and `--reason <text>` can identify the issue. |
 | `organize` | Request organization of the currently unprocessed research records. |
@@ -100,7 +101,17 @@ When a producing session ends, its retained material creates peer work. A struct
 
 Priority is review, peer, formalizer, organizer, eligible explore, then attempt. Fresh attempts require free capacity, no waiting peer or review, an unresolved node that no pipeline holds whole and no session is waiting to lease, and at least `attempt_launch_interval` seconds since the previous attempt launch. The spacing gives each new attempt time to take a lease before the next one reads the board. An infrastructure-blocked review remains waiting under this rule. Running sessions are not preempted when higher-priority work appears.
 
-Exploration is eligible when its request flag is true and no exploration cycle is present. A cycle includes the explorer, its peer and its review. Every third attempt dispatch sets the flag by default; unused capacity also sets it when no unresolved node is available to a new attempt, including when all nodes are informally solved. Repeated triggers coalesce into one request. Launching an explorer clears the flag; it does not reset the attempt counter.
+An attempt that only checked availability can write `disposition: no_research` in `output/outcome.json`. It must have registered no section and begun no mathematical investigation. When the attempt exits successfully, the runner retains its files and conversation and closes the pipeline without peer or review. The session stays closed regardless of later changes in available work. Failed research and interrupted investigations still go to peer.
+
+The attempt can also submit an `all_unresolved_work_occupied` report with the snapshot token from its coordination updates. The runner evaluates that report separately. An invalid or stale report does not prevent the session from closing, but it cannot suppress dispatch. An accepted report stops the runner from launching fresh or pending attempts while the reported occupancy remains applicable.
+
+The runner waits until a section is released on a still-unresolved node, a new or reopened unresolved node appears, or the operator requests reconsideration. Elapsed time, unrelated publications, organization changes and additional reservations do not end that wait. The runner then permits one reassessment attempt at a time. Once an attempt registers work, normal scheduling resumes. Another applicable report of full occupancy makes the runner wait again. An interrupted reassessment can be replaced, and any research it retained follows the ordinary processing path.
+
+`status` reports this wait or reassessment under `attempt_dispatch`. It identifies the reporting session, snapshot token, current grounds and any reassessment session. Use `reconsider-attempts` to request reassessment explicitly. An older report cannot undo that request. The command does not remove `STOP`; a stopped instance still requires `resume` before any new session can launch.
+
+Full occupancy also requests exploration. Exploration cycles can continue while attempts wait, but only one cycle, including peer and review, can run at a time.
+
+Exploration is eligible when its request flag is true and no exploration cycle is present. A cycle includes the explorer, its peer and its review. Every third attempt to register its first section sets the flag by default; unused capacity also sets it when no unresolved node is available to a new attempt, including when all nodes are informally solved. Repeated triggers coalesce into one request. Launching an explorer clears the flag; it does not reset the registered-attempt counter. An attempt is counted once, even when it registers further sections. A no-research exit does not advance this counter.
 
 A typed provider usage refusal blocks that provider until its known reset, or a configured backoff when the reset is unavailable. Model-specific refusals block that model. A new launch uses the first available alternative in its role's list. If all are unavailable, the job remains pending. A producer interrupted after doing work ends and proceeds to peer; it is not silently resumed under another model. A session that failed before leaving any research material can be retried as an operational launch.
 

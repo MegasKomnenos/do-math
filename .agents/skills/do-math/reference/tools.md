@@ -31,6 +31,8 @@ A registered section cannot be withdrawn, so register it once you have decided t
 
 To coordinate an unexpected overlap, write a short message file in your directory and run `commands.message` with the recipient's session ID and that file. If registered sections turn out to overlap, they stay as registered: agree by message which session pursues the shared part, and record the agreement in your report. Use it for coordination facts and pointers to published evidence. Ordinary attempts do not obtain another session's unfinished mathematics through messages. Delivery creates a file in the recipient's inbox; it does not establish that the recipient has read it.
 
+When an attempt runs `commands.updates`, the command saves the unresolved nodes and section assignments in the session's `availability/` directory. It returns an `availability_snapshot` token identifying that snapshot. The attempt can use the token in the availability report described in [Retained work](retained-work.md). The token identifies what the attempt inspected; the attempt still judges whether all work is occupied.
+
 ## Lean compilation
 
 All Lean compilation goes through the instance's broker. It manages the memory and thread budgets shared by compiles and retains each job's output and exit result. The `commands.lean` array gives the executable, broker script and instance. Replace `<command>` with `run`, `submit`, `build`, `wait`, `result`, `status`, `cancel` or `version`, adding the arguments described in [Lean](lean.md). Read that guide before your first compile, including its explanation of the memory estimate.

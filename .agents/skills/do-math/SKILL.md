@@ -21,7 +21,7 @@ Use the folder containing this skill as the installation path. The new runner is
 
 Prepare a UTF-8 root file outside the new instance directory. Put standing instructions in a separate input file when needed, including the language of records and explicit constraints on methods or resources. New standing inputs apply only to sessions launched afterward. The operator should therefore submit initial conditions before starting the runner. Mathematical suggestions remain information for the researchers' judgment.
 
-Prepare `settings.json` using the format in Operations. Defaults are eight simultaneous AI sessions, attempt launches at least three minutes apart, exploration requested every three attempt dispatches, and organization after four research publications. Every role prefers `codex/gpt-6.1-sol` with `xhigh` effort and falls back to `claude/opus` with `xhigh` effort when unavailable. Use configured alternatives automatically. Lean compilation has a separate broker budget; configure shares explicitly when the machine hosts several instances.
+Prepare `settings.json` using the format in Operations. Defaults are eight simultaneous AI sessions, attempt launches at least three minutes apart, exploration requested after every three attempts that register work, and organization after four research publications. Every role prefers `codex/gpt-6.1-sol` with `xhigh` effort and falls back to `claude/opus` with `xhigh` effort when unavailable. Use configured alternatives automatically. Lean compilation has a separate broker budget; configure shares explicitly when the machine hosts several instances.
 
 The default formal-proof axiom list is `propext`, `Classical.choice` and `Quot.sound`. `sorryAx` is never allowed. A formal result also requires independent compilation and correspondence with the exact node. If a needed environment is unavailable, explain the concrete limitation and prepare the necessary supported environment; do not silently lower the assurance required for completion.
 
@@ -35,7 +35,7 @@ Choose an instance path that does not exist. Put it outside the development repo
 
 Tell the user the absolute instance path, runner PID, new log paths, current running or waiting state, and `knowledge/index.md`, where the results can be found. Then end the operator conversation. The runner carries the work forward without keeping this conversation open.
 
-An attempt, exploration or formalizer is followed by peer and review. Useful imperfect records publish with feedback, and reviewed informal solutions can be used within their supported scope while formalization continues. The runner stops launching attempts and explorations when the root has an accepted formal solution, and continues remaining sessions and eligible follow-ups until finished. Existing sessions retain their normal scope.
+The runner sends retained research from attempts, explorations and formalizers through peer and review. An attempt that only checked availability can report `no_research` and end without those stages. The runner retains its files and conversation. Useful imperfect records publish with feedback, and reviewed informal solutions can be used within their supported scope while formalization continues. The runner stops launching attempts and explorations when the root has an accepted formal solution, and continues remaining sessions and eligible follow-ups until finished. Existing sessions retain their normal scope.
 
 ## Read results in their mathematical scope
 

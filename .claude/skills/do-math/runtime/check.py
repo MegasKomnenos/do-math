@@ -8,6 +8,7 @@ import re
 from knowledge import canonical, claim_key, replay
 from runtime_support import read_json
 from settings import PRODUCERS, load_settings
+from availability import no_research_outcome, reported_availability
 
 
 class Invalid(ValueError):
@@ -362,7 +363,10 @@ def check_session(session, verify_jobs=True):
         output = session / 'output'
         if role in PRODUCERS:
             regular_tree(output)
-            return []  # retained material, including partial material, always reaches peer
+            outcome = no_research_outcome(session, role)
+            if outcome is not None:
+                reported_availability(session, outcome)
+            return []  # research, including interrupted work, remains eligible for peer
         if role == 'peer':
             record_check(read_json(output / 'record.json'), output, model, session.name)
         elif role == 'review' and task['kind'] == 'candidate':

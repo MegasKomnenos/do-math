@@ -13,7 +13,9 @@ import uuid
 from check import check_session, regular_tree
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
-from coordination import board, lease_table
+from coordination import board, lease_table, section_entries
+from availability import (availability_view, no_research_outcome, opening_since,
+                          reported_availability)
 from knowledge import canonical, formal_ready, render, replay, root_solved
 from retention import capture, refusal
 from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
@@ -51,7 +53,9 @@ def initialize(instance, root_file, settings_file=None):
     write_json(instance / 'settings.json', config)
     write_text(instance / '.gitignore', '/sessions/\n/runner/\n/control/\n')
     state = {'schema': 1, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
-             'attempt_dispatches': 0, 'explore_requested': False, 'complete': False,
+             'attempt_dispatches': 0, 'attempt_research_starts': 0,
+             'attempt_availability_epoch': 0, 'attempt_dispatch_gate': None,
+             'explore_requested': False, 'complete': False,
              'processed_concerns': [], 'processed_conflicts': [], 'publication': None,
              'seen_inputs': [], 'seen_requests': [], 'last_error': None, 'finished': False}
     write_json(instance / 'runner/state.json', state)
@@ -135,6 +139,8 @@ class Runner:
 
     def dispatch(self, key):
         job = self.state['jobs'][key]
+        if job['role'] == 'attempt' and not self.attempt_dispatch_ready():
+            return False
         selected = self.selection(job['role'])
         if selected is None:
             return False
@@ -165,8 +171,9 @@ class Runner:
         if job['role'] == 'attempt':
             self.state['last_attempt_launch'] = time.time()
             self.state['attempt_dispatches'] += 1
-            if self.state['attempt_dispatches'] % self.settings['explore_every'] == 0:
-                self.state['explore_requested'] = True
+            gate = self.state.get('attempt_dispatch_gate')
+            if gate and gate['mode'] == 'reassess':
+                gate['probe_session'] = sid
         elif job['role'] == 'explore':
             self.state['explore_requested'] = False
         self.save()
@@ -220,6 +227,8 @@ class Runner:
 
     def finish(self, sid, s):
         job = self.state['jobs'][s['job']]
+        if job['status'] == 'done':
+            return
         session = self.session_dir(sid)
         if not s.get('retained'):
             # File errors leave this stage incomplete for restart recovery.
@@ -252,6 +261,16 @@ class Runner:
             if recovered:
                 self.save()
         if s['role'] in PRODUCERS:
+            if s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error'):
+                try:
+                    outcome = no_research_outcome(session, s['role'])
+                except (OSError, ValueError, TypeError, KeyError) as exc:
+                    # An invalid opt-out cannot discard retained research.
+                    s['no_research_error'] = str(exc)
+                    outcome = None
+                if outcome is not None:
+                    self.finish_no_research(sid, s, job, outcome)
+                    return
             material = (s['retention'].get('cli_activity') or s['retention'].get('native_activity')
                         or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
             if not material:
@@ -409,6 +428,7 @@ class Runner:
         if not event_path.exists():
             write_json(event_path, event)
         self.model = replay(self.instance)
+        self.attempt_dispatch_ready()
         render(self.instance, self.model, board(self.instance, self.state, self.model),
                lease_table(self.instance, self.state, self.model))
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
@@ -531,6 +551,80 @@ class Runner:
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):
             self.enqueue('organizer', {'batch': due})
 
+    def current_availability(self):
+        return availability_view(self.model, board(self.instance, self.state, self.model),
+                                 self.state.get('attempt_availability_epoch', 0))
+
+    def finish_no_research(self, sid, session, job, outcome):
+        """Terminal for this session even when its separate availability report is stale."""
+        try:
+            observed = reported_availability(self.session_dir(sid), outcome)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            observed = None
+            session['availability_report'] = {'status': 'invalid', 'error': str(exc)}
+        if observed is not None:
+            current = self.current_availability()
+            if (observed['epoch'] != current['epoch']
+                    or opening_since(observed, current, self.model)):
+                session['availability_report'] = {'status': 'stale'}
+            else:
+                self.state['attempt_dispatch_gate'] = {
+                    'mode': 'suppressed', 'reported_by': sid,
+                    'snapshot': outcome['availability']['snapshot'],
+                    'baseline': current, 'probe_session': None,
+                    'reason': 'all_unresolved_work_occupied'}
+                session['availability_report'] = {'status': 'accepted'}
+                self.state['explore_requested'] = True
+        session.update(status='ended', disposition='no_research')
+        job['status'] = 'done'
+        self.state['pipelines'][job['pipeline']].update(stage='done', disposition='no_research')
+        self.archive_due = True
+        self.save()
+
+    def observe_attempt_selections(self):
+        selected = [s for sid, s in self.state['sessions'].items()
+                    if s['role'] == 'attempt' and not s.get('research_counted')
+                    and s.get('disposition') != 'no_research'
+                    and section_entries(self.instance, sid, self.model)]
+        if 'attempt_research_starts' not in self.state:
+            # Older instances counted launches. Establish a baseline without retroactive triggers.
+            self.state['attempt_research_starts'] = len(selected)
+            for session in selected:
+                session['research_counted'] = True
+            self.save()
+        for session in selected:
+            if not session.get('research_counted'):
+                session['research_counted'] = True
+                self.state['attempt_research_starts'] += 1
+                if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
+                    self.state['explore_requested'] = True
+                self.save()
+
+    def attempt_dispatch_ready(self):
+        gate = self.state.get('attempt_dispatch_gate')
+        if gate is None:
+            return True
+        before = json.dumps(gate, sort_keys=True)
+        current = self.current_availability()
+        if gate['mode'] == 'suppressed':
+            reason = opening_since(gate['baseline'], current, self.model)
+            if reason:
+                gate.update(mode='reassess', reason=reason, probe_session=None)
+        # Track solved nodes disappearing, so a later reopening is a new opportunity.
+        # Additions and publication revisions alone do not release suppression.
+        gate['baseline'] = current
+        sid = gate.get('probe_session')
+        if gate['mode'] == 'reassess' and sid:
+            if section_entries(self.instance, sid, self.model):
+                self.state['attempt_dispatch_gate'] = None
+                self.save()
+                return True
+            if self.state['sessions'][sid]['status'] not in ('starting', 'running', 'publishing'):
+                gate['probe_session'] = None
+        if before != json.dumps(gate, sort_keys=True):
+            self.save()
+        return gate['mode'] == 'reassess' and gate.get('probe_session') is None
+
     def available_nodes(self):
         """Unresolved nodes where another attempt could still register a section.
 
@@ -569,6 +663,8 @@ class Runner:
                     continue
                 job['task']['proofs'] = ready
             if job['role'] == 'attempt':
+                if not self.attempt_dispatch_ready():
+                    continue
                 if not self.available_nodes():
                     continue
                 if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
@@ -595,14 +691,17 @@ class Runner:
             self.save()
 
     def schedule(self):
+        self.observe_attempt_selections()
         self.populate()
         self.dispatch_pending()
         if self.state['complete']:
             return
         while len(self.active()) < self.settings['max_sessions']:
             nodes = self.available_nodes()
+            self.attempt_dispatch_ready()
+            suppressed = (self.state.get('attempt_dispatch_gate') or {}).get('mode') == 'suppressed'
             exploration = any(p['role'] == 'explore' and p['stage'] != 'done' for p in self.state['pipelines'].values())
-            if not nodes and not exploration:
+            if (not nodes or suppressed) and not exploration:
                 if not self.state['explore_requested']:
                     self.state['explore_requested'] = True
                     self.save()
@@ -617,7 +716,8 @@ class Runner:
                                and j['not_before'] <= time.time() and self.selection(j['role'])
                                and (j['role'] != 'organizer' or not organizer_running)
                                for j in self.state['jobs'].values())
-            if waiting or higher_ready or not nodes or not self.attempt_launch_due() or not self.selection('attempt'):
+            if (waiting or higher_ready or not nodes or not self.attempt_launch_due()
+                    or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break
             key = self.producer('attempt')
             self.dispatch(key)
@@ -646,6 +746,15 @@ class Runner:
                 self.enqueue('review', task, key='operator:' + path.stem)
             elif request['kind'] == 'organize':
                 self.enqueue('organizer', {'batch': [r for r in self.model['records'] if r not in self.model['organized']]}, key='operator:' + path.stem)
+            elif request['kind'] == 'reconsider-attempts':
+                self.state['attempt_availability_epoch'] = self.state.get('attempt_availability_epoch', 0) + 1
+                probe = (self.state.get('attempt_dispatch_gate') or {}).get('probe_session')
+                if self.state['sessions'].get(probe, {}).get('status') not in ('starting', 'running', 'publishing'):
+                    probe = None
+                self.state['attempt_dispatch_gate'] = {
+                    'mode': 'reassess', 'reported_by': None, 'snapshot': None,
+                    'baseline': self.current_availability(), 'probe_session': probe,
+                    'reason': 'operator_request'}
             else:
                 raise ValueError('unknown operator request')
             self.state['seen_requests'].append(path.name)
@@ -681,6 +790,7 @@ class Runner:
             self.save()
 
     def tick(self):
+        self.observe_attempt_selections()
         self.collect()
         self.archive()
         self.reload_settings()
@@ -689,6 +799,7 @@ class Runner:
             self.state['complete'] = complete
             self.save()
         self.ingest_inputs()
+        self.attempt_dispatch_ready()
         self.refresh()
         if not (self.instance / 'control/STOP').exists():
             self.schedule()
@@ -765,6 +876,7 @@ def status(instance):
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['nodes'][canonical(model, 'root')]['state'], 'finished': state['finished'],
             'stopped': (instance / 'control/STOP').exists(), 'board': board(instance, state, model),
+            'attempt_dispatch': state.get('attempt_dispatch_gate'),
             'blocks': state['blocks'], 'lean': broker_status(Paths(instance)), 'state': state}
 
 
@@ -791,7 +903,7 @@ def archive_finished(instance):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'render', 'review', 'organize', 'restart-broker', 'kill-session', '_session', '_archive'):
+    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'render', 'review', 'organize', 'reconsider-attempts', 'restart-broker', 'kill-session', '_session', '_archive'):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
@@ -847,7 +959,7 @@ def main(argv=None):
             receipt = read_json(instance / 'sessions' / args.session / 'process.json')
             terminate_process(receipt['process'])
             result['terminated'] = args.session
-        elif args.command in ('review', 'organize'):
+        elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}
             if args.command == 'review':
                 model = replay(instance)

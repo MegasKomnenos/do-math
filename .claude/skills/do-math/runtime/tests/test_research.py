@@ -780,12 +780,18 @@ class RunnerTests(InstanceCase):
 
     def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
         runner = self.runner()
+        def start_research():
+            key = runner.producer('attempt')
+            self.assertTrue(runner.dispatch(key))
+            sid = runner.state['jobs'][key]['session']
+            write_json(runner.session_dir(sid) / 'declaration.json', {'nodes': ['root']})
+            runner.observe_attempt_selections()
         self.assertEqual(runner.settings['explore_every'], 3)
         self.assertEqual(runner.state['attempt_dispatches'], 0)
         self.assertIs(runner.state['explore_requested'], False)
         with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
             for expected in (1, 2):
-                self.assertTrue(runner.dispatch(runner.producer('attempt')))
+                start_research()
                 self.assertEqual(runner.state['attempt_dispatches'], expected)
                 self.assertIs(runner.state['explore_requested'], False)
 
@@ -793,7 +799,7 @@ class RunnerTests(InstanceCase):
             self.assertEqual(runner.state['attempt_dispatches'], 2)
             self.assertIs(runner.state['explore_requested'], False)
             for expected in (3, 4, 5, 6):
-                self.assertTrue(runner.dispatch(runner.producer('attempt')))
+                start_research()
                 self.assertEqual(runner.state['attempt_dispatches'], expected)
                 self.assertIs(runner.state['explore_requested'], True)
 
@@ -803,7 +809,7 @@ class RunnerTests(InstanceCase):
             self.assertTrue(runner.dispatch(runner.producer('explore')))
             self.assertEqual(runner.state['attempt_dispatches'], 6)
             self.assertIs(runner.state['explore_requested'], False)
-            self.assertTrue(runner.dispatch(runner.producer('attempt')))
+            start_research()
             self.assertEqual(runner.state['attempt_dispatches'], 7)
             self.assertIs(runner.state['explore_requested'], False)
 
