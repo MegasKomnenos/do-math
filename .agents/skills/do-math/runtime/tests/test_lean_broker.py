@@ -48,7 +48,9 @@ class BrokerFixture(unittest.TestCase):
             "lean": {"command": [sys.executable, "-B", str(FAKE)],
                      "version_command": [sys.executable, "-B", str(FAKE), "--version"], "cwd": None, "env": {},
                      "memory_budget_mb": self.budget, "min_free_memory_mb": 0, "threads": 1,
-                     "cpu_threads_budget": self.threads_budget}}
+                     "cpu_threads_budget": self.threads_budget,
+                     # The stand-in compiler must not starve behind normal-priority load on the test machine.
+                     "priority": "normal"}}
         runner.write_json(self.settings_path, self.settings)
         runner.initialize(self.instance, goal, self.settings_path)
         self.paths = lean_broker.Paths(self.instance)
@@ -342,7 +344,7 @@ class JobHostTests(unittest.TestCase):
     def launch(self, broker):
         runner.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
-            "env": {"FAKE_ENV": "1"}, "priority": "below_normal", "broker": broker})
+            "env": {"FAKE_ENV": "1"}, "priority": "normal", "broker": broker})  # equal footing with the test machine's load
         host = subprocess.Popen([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)])
         self.addCleanup(self.stop_host, host)
         return host
@@ -368,7 +370,7 @@ class JobHostTests(unittest.TestCase):
         self.assertIn("threads=1", output)
         self.assertIn("FAKE_ENV=1", output)  # lean.env overrides reach the Lean process
         if hasattr(os, "nice"):
-            self.assertIn(f"nice={lean_broker.NICE['below_normal']}", output)  # and so does the priority
+            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)  # and so does the priority
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):

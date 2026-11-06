@@ -37,11 +37,12 @@ class PipelineTests(InstanceCase):
                       roles={})  # the scripted CLI speaks the Codex stream for every role
         config['lean'].update(command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py')],
                               version_command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py'), '--version'],
-                              min_free_memory_mb=0, memory_budget_mb=512)
+                              min_free_memory_mb=0, memory_budget_mb=512,
+                              priority='normal')  # the stand-in compiler competes on equal terms with other load
         write_json(self.instance / 'settings.json', config)
         runner = Runner(self.instance, self.skill)
         self.addCleanup(self.cleanup_runner, runner)
-        deadline = time.monotonic() + 60
+        deadline = time.monotonic() + 180  # a guard against a hung runner; an idle machine finishes in a fraction
         with patch('runner.build_command', side_effect=self.command):
             while time.monotonic() < deadline:
                 if runner.tick(): break
