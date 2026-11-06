@@ -16,7 +16,7 @@ description: 스킬의 description·구조·명명·예시를 쓰는 원칙을 �
 - 원본 경로: `~/.claude/plugins/cache/claude-plugins-official/superpowers/6.1.0/skills/writing-skills/`
 - 원본 SKILL.md 해시: `6d3ded6e62ffdaaed7a84b52bc53f66e00e548be`
 - 대조표: `references/원본_대조.md`
-- 재검토 트리거: 원본 플러그인 갱신(해시 불일치), 로컬 규범 개정(특히 다이어그램 표기·검증 인프라·모델 사용 실태 변경)
+- 재검토 트리거: 원본 플러그인 갱신(해시 불일치), 로컬 규범 개정(특히 다이어그램 표기·검증 인프라·모델 사용 실태 변경). 이 재검토를 수행하던 `adapt-skill`은 2026-10-30에 삭제되어 현재 수행 절차가 없다. 트리거가 생기면 그 절차부터 정한다.
 
 ## 관할 지도
 

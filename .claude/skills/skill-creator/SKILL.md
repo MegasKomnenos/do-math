@@ -14,7 +14,7 @@ argument-hint: "[만들 스킬의 주제 | 개선할 로컬 스킬명]"
 - 원본 경로: `~/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown/skills/skill-creator/`
 - 원본 SKILL.md 해시: `65b3a402dbd09b8e83f9d637c6b553875189085c`
 - 대조표: `references/원본_대조.md`
-- 재검토 트리거: 원본 플러그인 갱신(해시 불일치), 로컬 규범 개정, eval 인프라·배포 모델 변경, 뷰어 UI 한국어화가 필요해질 때
+- 재검토 트리거: 원본 플러그인 갱신(해시 불일치), 로컬 규범 개정, eval 인프라·배포 모델 변경, 뷰어 UI 한국어화가 필요해질 때. 이 재검토를 수행하던 `adapt-skill`은 2026-10-30에 삭제되어 현재 수행 절차가 없다. 트리거가 생기면 그 절차부터 정한다.
 
 ## 관할 지도
 
