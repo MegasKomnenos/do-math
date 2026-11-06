@@ -273,7 +273,7 @@ class ContextTests(InstanceCase):
             'attempt': ['retained-work.md'],
             'explore': ['retained-work.md'],
             'formalizer': ['retained-work.md', 'lean.md'],
-            'peer': ['record-format.md'],
+            'peer': ['record-format.md', 'retained-work.md'],
             'review': ['record-format.md', 'review-output.md'],
             'organizer': ['organizer-output.md'],
         }

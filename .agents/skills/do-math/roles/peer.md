@@ -53,3 +53,5 @@ Write the index description as an introduction to the whole contribution. Import
 ## Finish the candidate
 
 Read the account from its entry point, checking that the explanation and evidence support what it claims and that valuable source content has not disappeared. Finish when you have developed the meaningful opportunities you can pursue and made the record understandable, assessable and usable by another researcher. Run the transport check and correct its structural errors. The runner freezes the candidate and gives it, together with the originals, to review. That review assesses your additions as independently as the producer's work.
+
+A CLI turn ending can be followed by bounded continuation in the same conversation under the common and role-specific resume guidance. Apply this role's completion standard throughout that session. The ending decision protocol is in [Retained work](../reference/retained-work.md).

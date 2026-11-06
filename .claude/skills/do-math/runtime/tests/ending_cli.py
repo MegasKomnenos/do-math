@@ -18,6 +18,11 @@ if not config.get('omit_identity'):
 print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message',
                   'text': f'Retained mathematical work from turn {number}.'}}), flush=True)
 (session / 'output/report.md').write_text(f'Research through turn {number}.', encoding='utf-8')
+if json.loads((session / 'input.json').read_text())['role'] == 'peer':
+    (session / 'output/record.json').write_text(json.dumps({
+        'title': 'Retained investigation', 'description': 'A developed contribution.',
+        'exposition': 'report.md', 'claims': [], 'nodes': [], 'relations': [],
+        'solutions': [], 'glossary': []}), encoding='utf-8')
 if config.get('refuse_at') == number:
     print(json.dumps({'type': 'error', 'message': "You've hit your usage limit. Try again later."}), flush=True)
     raise SystemExit(1)

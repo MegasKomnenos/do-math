@@ -187,6 +187,7 @@ class Runner:
             launch = {'runner': self.identity, 'command': {'argv': argv, 'cwd': str(command.cwd)}}
             if job['role'] in END_CHECK_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
+                                       'resume_guidance': str(self.skill / 'resume'),
                                        'instance': str(self.instance), 'role': job['role'],
                                        'provider': provider, 'model': selected['model'], 'effort': selected['effort'],
                                        'executable': self.settings['cli'][provider],

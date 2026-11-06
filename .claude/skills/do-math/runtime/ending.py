@@ -1,4 +1,4 @@
-"""Bounded reconsideration of a producer's ending, supervised by its session host.
+"""Bounded continuation of mathematical sessions, supervised by their session hosts.
 
 The host stays alive across turns, preserving the logical session's capacity and
 coordination identity. The runner collects only after this host has finished.
@@ -16,7 +16,8 @@ from retention import events, refusal
 from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
-ROLES = ('attempt', 'formalizer')
+ROLES = ('attempt', 'formalizer', 'explore', 'peer')
+RESUME_DIRECTORY = Path(__file__).resolve().parents[1] / 'resume'
 
 
 def turn_directory(session, number):
@@ -58,39 +59,29 @@ def end_decision(session, request):
     return data, None
 
 
-def request_prompt(session, request):
-    return (
-        'Resume working toward a proof or refutation of the mathematics you took on, under the '
-        'directives supplied for this session. '
-        'Read your saved pack.md and role guide as needed, and obtain current research updates.\n\n'
-        'Stay with the unresolved difficulty. Develop the arguments you have not completed, '
-        'and pursue other approaches when the present ones fail. Deciding what remains, '
-        'examining an approach, or explaining an obstacle does not discharge your responsibility '
-        'to pursue the solution.\n\n'
-        'Apply the role guide\'s standard for ending to the investigation as a whole. '
-        'If you conclude that you cannot meaningfully advance it further, explain the grounds '
-        'for that judgment in the ending decision. That conclusion must come from sustained, '
-        'serious effort to solve the unresolved mathematics, including pursuing possibilities '
-        'beyond the approaches that failed. Being able to explain difficulties, list attempted '
-        'methods, or write a persuasive account of why you stopped is not itself grounds for '
-        'ending. The explanation must report a judgment you actually reached through that '
-        'effort, not serve as a substitute for the effort or an excuse to stop. '
-        'If there is still a meaningful mathematical direction you can pursue, pursue it in '
-        'this conversation, even when it is difficult, substantial, or offers no quick result. '
-        'End with unresolved work only when you genuinely judge, after that effort and under '
-        'the role guide, that you cannot carry the investigation further.\n\n'
-        'Continue without submitting an ending decision while you are pursuing the research. '
-        'When ending is justified, use the exact output/end-decision.json format in '
-        'context/reference/retained-work.md. The current request ID is ' + request['id'] + '. '
-        'Use basis=task_completed only if the work you took on is complete; otherwise '
-        'basis=no_way_forward requires the judgment described above.\n\n'
-        'The runner checks this decision for the current request only. Your judgment does '
-        'not constitute independent review or settle a node in shared knowledge. '
-        'Your original assignment, instructions, working directory and registered sections '
-        'remain in force.\n'
-        + ('\nThe preceding decision could not be accepted: ' + request['previous_error'] + '\n'
-           if request.get('previous_error') else '')
-    )
+def request_prompt(session, request, *, role=None, guidance_dir=None, snapshot=None):
+    """Read current guidance for each turn; retain the actual source bytes delivered."""
+    role = role or read_json(Path(session) / 'input.json')['role']
+    if role not in ROLES:
+        raise ValueError('no continuation guidance for role: ' + role)
+    directory = Path(guidance_dir) if guidance_dir is not None else RESUME_DIRECTORY
+    sources = {name: (directory / name).read_bytes() for name in ('common.md', role + '.md')}
+    common, specific = (sources[name].decode('utf-8-sig').strip()
+                        for name in ('common.md', role + '.md'))
+    if not common or not specific:
+        raise ValueError('continuation guidance must not be empty')
+    for marker in ('{{role_guidance}}', '{{request_id}}', '{{previous_error}}'):
+        if common.count(marker) != 1:
+            raise ValueError('continuation common.md needs exactly one ' + marker)
+    prompt = common.replace('{{role_guidance}}', specific)
+    prompt = prompt.replace('{{request_id}}', request['id'])
+    prompt = prompt.replace('{{previous_error}}', request.get('previous_error') or 'None') + '\n'
+    if snapshot is not None:
+        snapshot = Path(snapshot)
+        snapshot.mkdir(parents=True, exist_ok=True)
+        for name, content in sources.items():
+            (snapshot / name).write_bytes(content)
+    return prompt
 
 
 def authorize(session, state, source, basis, explanation, *, decision=None):
@@ -232,7 +223,9 @@ def supervise(session, launch):
             return result
         next_folder = turn_directory(session, number + 1)
         next_folder.mkdir(parents=True)
-        write_text(next_folder / 'prompt.txt', request_prompt(session, request))
+        write_text(next_folder / 'prompt.txt', request_prompt(
+            session, request, role=policy['role'], guidance_dir=policy.get('resume_guidance'),
+            snapshot=next_folder / 'guidance'))
         write_json(next_folder / 'request.json', request)
         selected = worker_command(policy['executable'], policy['model'], policy['effort'], session,
                                   policy['mcp_servers'], resume_id=state['conversation_id'])

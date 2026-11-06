@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cli_adapter import Command
 from coordination import board, session_live
-from ending import conversation_id, end_decision, supervise
+from ending import conversation_id, end_decision, request_prompt, run_turn, supervise
 from launch import worker_command
 from retention import capture
 from runner import Runner, main
@@ -25,7 +25,14 @@ class EndingTests(InstanceCase):
     def prepare(self, maximum=3, role='attempt', config=None):
         engine = Runner(self.instance, self.skill)
         engine.settings['max_end_resumptions'] = maximum
-        key = engine.producer(role, {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
+        key = engine.producer('attempt' if role == 'peer' else role,
+                              {'node': 'root', 'proofs': []} if role == 'formalizer' else None)
+        if role == 'peer':
+            pipeline = engine.state['jobs'][key]['pipeline']
+            engine.state['jobs'][key]['status'] = 'done'
+            engine.state['pipelines'][pipeline].update(role='attempt', stage='peer', producer='source')
+            key = engine.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
+                                         'source_role': 'attempt'}, pipeline)
         with patch('runner.subprocess.Popen') as host, patch('runner.build_command') as build:
             host.return_value.pid = engine.identity['pid']
             build.return_value = self.command(None, None, None, self.instance)
@@ -50,11 +57,12 @@ class EndingTests(InstanceCase):
         return read_json(directory / 'end-check.json')
 
     def test_worker_end_resumes_exact_conversation_and_preserves_context(self):
-        for role in ('attempt', 'formalizer'):
+        for role in ('attempt', 'formalizer', 'explore', 'peer'):
             with self.subTest(role=role):
                 engine, sid, directory = self.prepare(role=role, config={'end_after': 1})
                 pack = (directory / 'pack.md').read_bytes()
-                declaration = (directory / 'declaration.json').read_bytes()
+                declaration_path = directory / 'declaration.json'
+                declaration = declaration_path.read_bytes() if declaration_path.exists() else None
                 with patch('ending.worker_command', side_effect=self.command) as resume:
                     session_host(directory)
                 self.assertEqual(resume.call_count, 1)
@@ -64,7 +72,7 @@ class EndingTests(InstanceCase):
                 self.assertEqual(state['authorization']['basis'], 'no_way_forward')
                 self.assertEqual(state['resumptions'], 1)
                 self.assertEqual(pack, (directory / 'pack.md').read_bytes())
-                self.assertEqual(declaration, (directory / 'declaration.json').read_bytes())
+                self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
                 self.assertIn('directives supplied for this session', (directory / 'turns/0001/prompt.txt').read_text())
                 self.assertTrue((directory / 'turns/0001/turn-result.json').is_file())
                 # Runner restart sees the same logical session, then collects it once.
@@ -75,7 +83,11 @@ class EndingTests(InstanceCase):
                 engine.finish(sid, s)
                 engine.finish(sid, s)
                 pipeline = engine.state['jobs'][s['job']]['pipeline']
-                self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'peer')
+                self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review' if role == 'peer' else 'peer')
+                if role == 'peer':
+                    self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 1.')
+                    self.assertEqual(len([j for j in engine.state['jobs'].values()
+                                          if j['role'] == 'review' and j['pipeline'] == pipeline]), 1)
                 self.assertEqual(len([j for j in engine.state['jobs'].values()
                                       if j['role'] == 'peer' and j['pipeline'] == pipeline]), 1)
                 body = (directory / 'conversation.md').read_text()
@@ -85,6 +97,30 @@ class EndingTests(InstanceCase):
                 # Finish the first test pipeline so the next role can take root.
                 engine.state['pipelines'][pipeline]['stage'] = 'done'
                 engine.save()
+
+    def test_guidance_edits_reach_next_turn_without_restarting_host(self):
+        _, _, directory = self.prepare(maximum=2, role='explore')
+        guidance = self.skill / 'resume'
+        original_common = (guidance / 'common.md').read_bytes()
+        original_role = (guidance / 'explore.md').read_bytes()
+        def update_after_turn(session, folder, command):
+            result = run_turn(session, folder, command)
+            if Path(folder) == directory:
+                (guidance / 'common.md').write_bytes(original_common + b'\nCommon update between turns.\n')
+            else:
+                (guidance / 'explore.md').write_bytes(original_role + b'\nRole update between turns.\n')
+            return result
+        with patch('ending.run_turn', side_effect=update_after_turn):
+            state = self.run_host(directory)
+        self.assertEqual(state['resumptions'], 2)
+        first = directory / 'turns/0001'
+        second = directory / 'turns/0002'
+        self.assertIn('Common update between turns.', (first / 'prompt.txt').read_text())
+        self.assertNotIn('Role update between turns.', (first / 'prompt.txt').read_text())
+        self.assertIn('Role update between turns.', (second / 'prompt.txt').read_text())
+        self.assertEqual((first / 'guidance/explore.md').read_bytes(), original_role)
+        self.assertIn(b'Role update between turns.', (second / 'guidance/explore.md').read_bytes())
+        self.assertEqual((directory / 'candidate').exists(), False)
 
     def test_limit_authorizes_end_instead_of_waiting_or_resuming_indefinitely(self):
         _, _, directory = self.prepare(maximum=2)
@@ -244,6 +280,30 @@ class EndingTests(InstanceCase):
 
 
 class EndingConfigurationTests(unittest.TestCase):
+    def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
+        import shutil
+        import tempfile
+        from ending import RESUME_DIRECTORY, ROLES
+        self.assertEqual(set(ROLES), {'attempt', 'formalizer', 'explore', 'peer'})
+        with tempfile.TemporaryDirectory() as tmp:
+            guidance = Path(tmp) / 'resume'
+            shutil.copytree(RESUME_DIRECTORY, guidance)
+            request = {'id': 'current-request', 'previous_error': 'Stale decision'}
+            for role in ROLES:
+                prompt = request_prompt(None, request, role=role, guidance_dir=guidance)
+                self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
+                self.assertIn('current-request', prompt)
+                self.assertIn('Stale decision', prompt)
+                self.assertNotIn('{{', prompt)
+            with self.assertRaises(ValueError):
+                request_prompt(None, request, role='review', guidance_dir=guidance)
+            (guidance / 'peer.md').unlink()
+            with self.assertRaises(FileNotFoundError):
+                request_prompt(None, request, role='peer', guidance_dir=guidance)
+            (guidance / 'common.md').write_text('Incomplete message.')
+            with self.assertRaises(ValueError):
+                request_prompt(None, request, role='explore', guidance_dir=guidance)
+
     def test_limit_validation(self):
         self.assertEqual(defaults()['max_end_resumptions'], 3)
         for value in (0, 1, 8):

@@ -72,7 +72,7 @@ class InstanceCase(unittest.TestCase):
         self.seq = 0
         self.skill = self.root / 'skill'
         installed = Path(__file__).resolve().parents[2]
-        for name in ('reference', 'roles'):
+        for name in ('reference', 'roles', 'resume'):
             shutil.copytree(installed / name, self.skill / name)
         shutil.copyfile(installed / 'SKILL.md', self.skill / 'SKILL.md')
 

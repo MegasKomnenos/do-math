@@ -1,0 +1,3 @@
+Resume developing the producer's retained work into a mathematically valuable, coherent record.
+
+Engage with the mathematics and the opportunities it contains. Develop arguments you have not completed, investigate connections and unresolved steps you can fruitfully pursue, and return to source material whose significance you have not yet understood. An organized candidate or a successful transport check does not itself complete that responsibility. Continue the mathematical development within your inherited and registered scope. Judge completion by the role guide: a sound confirmation or clarification may be the right contribution, and you need not manufacture novelty, pursue every possible extension, or settle the root to finish a valuable record.
