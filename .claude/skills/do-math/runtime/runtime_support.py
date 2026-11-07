@@ -1,6 +1,6 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, math, os, shutil, signal, subprocess, sys, tarfile, time, uuid
+import ctypes, gc, hashlib, json, os, shutil, signal, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 

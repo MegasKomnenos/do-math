@@ -1,6 +1,4 @@
 from pathlib import Path
-import json
-import subprocess
 import sys
 import threading
 import time
@@ -10,11 +8,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cli_adapter import Command
 from coordination import board, session_live
-from ending import conversation_id, end_decision, request_prompt, run_turn, supervise
+from ending import request_prompt, run_turn
 from launch import worker_command
-from retention import capture
 from runner import Runner, main
-from runtime_support import process_identity, read_json, session_host, write_json
+from runtime_support import read_json, session_host, write_json
 from settings import defaults, validate
 from test_research import InstanceCase, take
 
@@ -284,26 +281,26 @@ class EndingConfigurationTests(unittest.TestCase):
     def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
         import shutil
         import tempfile
-        from ending import RESUME_DIRECTORY, ROLES
+        from ending import ROLES
         self.assertEqual(set(ROLES), {'attempt', 'formalizer', 'explore', 'peer'})
         with tempfile.TemporaryDirectory() as tmp:
             guidance = Path(tmp) / 'resume'
-            shutil.copytree(RESUME_DIRECTORY, guidance)
+            shutil.copytree(Path(__file__).resolve().parents[2] / 'resume', guidance)
             request = {'id': 'current-request', 'previous_error': 'Stale decision'}
             for role in ROLES:
-                prompt = request_prompt(None, request, role=role, guidance_dir=guidance)
+                prompt = request_prompt(request, role, guidance)
                 self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
                 self.assertIn('current-request', prompt)
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('{{', prompt)
             with self.assertRaises(ValueError):
-                request_prompt(None, request, role='review', guidance_dir=guidance)
+                request_prompt(request, 'review', guidance)
             (guidance / 'peer.md').unlink()
             with self.assertRaises(FileNotFoundError):
-                request_prompt(None, request, role='peer', guidance_dir=guidance)
+                request_prompt(request, 'peer', guidance)
             (guidance / 'common.md').write_text('Incomplete message.')
             with self.assertRaises(ValueError):
-                request_prompt(None, request, role='explore', guidance_dir=guidance)
+                request_prompt(request, 'explore', guidance)
 
     def test_limit_validation(self):
         self.assertEqual(defaults()['max_end_resumptions'], 3)

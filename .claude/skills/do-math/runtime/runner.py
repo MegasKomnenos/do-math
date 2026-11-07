@@ -20,10 +20,10 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
+from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, rename_directory, session_host,
                              terminate_process, write_json, write_text)
-from settings import PRODUCERS, ROLES, defaults, load_settings, validate
+from settings import PRODUCERS, defaults, load_settings, validate
 
 SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
@@ -182,9 +182,7 @@ class Runner:
         try:
             command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
                                     **({'servers': self.settings['mcp_servers']} if self.settings['mcp_servers'] else {}))
-            # Native session persistence retains tool messages beyond the CLI stream.
-            argv = [x for x in command.argv if x not in ('--ephemeral', '--no-session-persistence')]
-            launch = {'runner': self.identity, 'command': {'argv': argv, 'cwd': str(command.cwd)}}
+            launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
             if job['role'] in END_CHECK_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
                                        'resume_guidance': str(self.skill / 'resume'),
@@ -627,19 +625,12 @@ class Runner:
                     if s['role'] == 'attempt' and not s.get('research_counted')
                     and s.get('disposition') != 'no_research'
                     and section_entries(self.instance, sid, self.model)]
-        if 'attempt_research_starts' not in self.state:
-            # Older instances counted launches. Establish a baseline without retroactive triggers.
-            self.state['attempt_research_starts'] = len(selected)
-            for session in selected:
-                session['research_counted'] = True
-            self.save()
         for session in selected:
-            if not session.get('research_counted'):
-                session['research_counted'] = True
-                self.state['attempt_research_starts'] += 1
-                if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
-                    self.state['explore_requested'] = True
-                self.save()
+            session['research_counted'] = True
+            self.state['attempt_research_starts'] += 1
+            if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
+                self.state['explore_requested'] = True
+            self.save()
 
     def attempt_dispatch_ready(self):
         gate = self.state.get('attempt_dispatch_gate')
@@ -675,11 +666,8 @@ class Runner:
         whole = {s['node'] for r in rows for s in r['sections'] if s['whole']}
         leases = lease_table(self.instance, self.state, self.model)
         queued = {n for n, entry in leases.items() if entry['queue']}
-        closure = sufficient_closure(self.model)
-        nodes = [n for n, v in self.model['nodes'].items()
-                 if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
-        # Nodes whose settlement can carry the root come first; the order is informational.
-        return sorted(nodes, key=lambda n: (n, 'proved') not in closure and (n, 'refuted') not in closure)
+        return [n for n, v in self.model['nodes'].items()
+                if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
 
     def attempt_launch_due(self):
         """Launches are spaced so each attempt can take a lease before the next one reads the board."""

@@ -1,6 +1,5 @@
 """No-work exits, state-dependent dispatch suppression and one-at-a-time reassessment."""
 from pathlib import Path
-import json
 import sys
 import time
 from unittest.mock import patch
@@ -157,7 +156,9 @@ class AvailabilityTests(InstanceCase):
                 folder = self.runner.session_dir(sid)
                 write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
                 if kind == 'claimed':
-                    write_json(folder / 'declaration.json', {'nodes': ['root']})
+                    write_json(folder / 'declaration.json', {'sections': [
+                        {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
+                         'reasons': {}, 'at': 1}], 'at': 1})
                 elif kind == 'interrupted':
                     session['exit_code'] = 1
                 elif kind == 'refused':
@@ -277,18 +278,6 @@ class AvailabilityTests(InstanceCase):
         (self.runner.session_dir(sid) / 'output/outcome.json').write_text('{', encoding='utf-8')
         self.runner.finish(sid, session)
         self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
-
-    def test_old_instance_baselines_registered_attempts_without_retriggering(self):
-        sid, _, _ = self.attempt()
-        self.assertTrue(take(self.runner.session_dir(sid), 'root')['registered'])
-        del self.runner.state['attempt_research_starts']
-        self.runner.settings['explore_every'] = 1
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
-        self.assertFalse(self.runner.state['explore_requested'])
-        self.runner = Runner(self.instance, self.skill)
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -11,8 +10,7 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check import Invalid, assessment_check, findings_check, organization_check, record_check
-from cli_adapter import Command
+from check import Invalid, assessment_check, findings_check, organization_check
 from coordination import board, lease, lease_table, release, section, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from runner import Runner, archive_finished, initialize
@@ -808,14 +806,6 @@ class RunnerTests(InstanceCase):
         with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
             lease(explorer, 'root')
 
-    def test_earlier_node_declarations_read_as_whole_sections(self):
-        runner = self.runner()
-        old, new = (self.running_attempt(runner, sid) for sid in ('sold', 'snew'))
-        write_json(old / 'declaration.json', {'nodes': ['root'], 'at': 1})
-        self.assertEqual([(s['node'], s['whole']) for s in board(self.instance)[0]['sections']], [('root', True)])
-        self.assertEqual(runner.available_nodes(), [])
-        self.assertIn('whole node', lease(new, 'root')['reason'])
-
     def test_attempt_launches_are_spaced_and_a_queued_node_launches_none(self):
         self.publish('r1', self.reduction())  # root and Q are both available
         runner = self.runner()
@@ -867,7 +857,9 @@ class RunnerTests(InstanceCase):
             key = runner.producer('attempt')
             self.assertTrue(runner.dispatch(key))
             sid = runner.state['jobs'][key]['session']
-            write_json(runner.session_dir(sid) / 'declaration.json', {'nodes': ['root']})
+            write_json(runner.session_dir(sid) / 'declaration.json', {'sections': [
+                {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
+                 'reasons': {}, 'at': 1}], 'at': 1})
             runner.observe_attempt_selections()
         self.assertEqual(runner.settings['explore_every'], 3)
         self.assertEqual(runner.state['attempt_dispatches'], 0)
@@ -1226,14 +1218,6 @@ class RunnerTests(InstanceCase):
         nodes = sorted(p['node'] for p in runner.state['pipelines'].values() if p['role'] == 'formalizer' and p['stage'] != 'done')
         self.assertEqual(nodes, ['Q'])
         self.assertTrue(any(j['task'].get('kind') == 'comprehensive' and j['task']['conflicts'] for j in runner.state['jobs'].values()))
-
-    def test_available_nodes_list_nodes_on_a_path_to_the_root_first(self):
-        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.publish('r2', record([claim_row('free')], [{'id': 'F', 'statement': 'F', 'connection': 'free'}],
-                                 [implication('free', 'K', 'F')]))
-        runner = self.runner()
-        self.assertEqual(runner.available_nodes(), ['root', 'K', 'F'])
 
     def test_peer_task_carries_the_producers_sections(self):
         runner = self.runner()

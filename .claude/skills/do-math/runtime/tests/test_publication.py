@@ -291,7 +291,9 @@ class PublicationTests(InstanceCase):
         pipeline = runner.state['pipelines'][job['pipeline']]
         producer = runner.session_dir(pipeline['producer'])
         producer.mkdir(parents=True)
-        write_json(producer / 'declaration.json', {'nodes': ['root'], 'at': 1})
+        write_json(producer / 'declaration.json', {'sections': [
+            {'id': pipeline['producer'] + '-1', 'node': 'root', 'whole': True, 'statement': None,
+             'reasons': {}, 'at': 1}], 'at': 1})
         self.assertEqual(runner.available_nodes(), [])
         session = runner.session_dir('sreview')
         verdict = read_json(session / 'output/assessment.json')

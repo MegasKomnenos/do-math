@@ -311,17 +311,17 @@ class SettingsTests(unittest.TestCase):
 
     def test_defaults_fill_in_and_derive_from_the_host(self):
         settings = self.load()
-        self.assertEqual({k: settings["lean"][k] for k in runner.LEAN_DEFAULTS}, runner.LEAN_DEFAULTS)
+        self.assertEqual({k: settings["lean"][k] for k in runtime_support.LEAN_DEFAULTS}, runtime_support.LEAN_DEFAULTS)
         with patch.object(runtime_support, "memory_status", return_value=(32 * 1024 ** 3, 8 * 1024 ** 3)), \
                 patch.object(runner.os, "cpu_count", return_value=8):
-            config = runner.lean_config(settings)
+            config = runtime_support.lean_config(settings)
         self.assertEqual(config["memory_budget_mb"], 32 * 1024 - 2048 - 512 * 3)
         self.assertEqual(config["cpu_threads_budget"], 16)
         self.assertEqual(config["derived"]["logical_cores"], 8)
-        explicit = runner.lean_config(self.load(memory_budget_mb=4096, cpu_threads_budget=3))
+        explicit = runtime_support.lean_config(self.load(memory_budget_mb=4096, cpu_threads_budget=3))
         self.assertEqual((explicit["memory_budget_mb"], explicit["cpu_threads_budget"]), (4096, 3))
         with patch.object(runtime_support, "memory_status", return_value=(1024 ** 3, 0)):
-            self.assertEqual(runner.lean_config(self.load())["memory_budget_mb"], 1024)
+            self.assertEqual(runtime_support.lean_config(self.load())["memory_budget_mb"], 1024)
 
     def test_invalid_values_are_rejected(self):
         for bad in ({"memory_budget_mb": 0}, {"memory_budget_mb": "8192"}, {"confidence": -1},

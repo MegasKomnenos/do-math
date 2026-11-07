@@ -3,7 +3,6 @@
 The host stays alive across turns, preserving the logical session's capacity and
 coordination identity. The runner collects only after this host has finished.
 """
-import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,7 +16,6 @@ from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
-RESUME_DIRECTORY = Path(__file__).resolve().parents[1] / 'resume'
 
 
 def turn_directory(session, number):
@@ -59,12 +57,11 @@ def end_decision(session, request):
     return data, None
 
 
-def request_prompt(session, request, *, role=None, guidance_dir=None, snapshot=None):
+def request_prompt(request, role, guidance_dir, *, snapshot=None):
     """Read current guidance for each turn; retain the actual source bytes delivered."""
-    role = role or read_json(Path(session) / 'input.json')['role']
     if role not in ROLES:
         raise ValueError('no continuation guidance for role: ' + role)
-    directory = Path(guidance_dir) if guidance_dir is not None else RESUME_DIRECTORY
+    directory = Path(guidance_dir)
     sources = {name: (directory / name).read_bytes() for name in ('common.md', role + '.md')}
     common, specific = (sources[name].decode('utf-8-sig').strip()
                         for name in ('common.md', role + '.md'))
@@ -204,8 +201,6 @@ def supervise(session, launch):
             return result
         try:
             identity = conversation_id(folder, policy['provider'])
-            if identity is not None and state['conversation_id'] not in (None, identity):
-                raise ValueError('Resumption returned a different conversation identity')
             state['conversation_id'] = state['conversation_id'] or identity
             if state['conversation_id'] is None:
                 raise ValueError('No exact native conversation identity is available for resumption')
@@ -224,8 +219,7 @@ def supervise(session, launch):
         next_folder = turn_directory(session, number + 1)
         next_folder.mkdir(parents=True)
         write_text(next_folder / 'prompt.txt', request_prompt(
-            session, request, role=policy['role'], guidance_dir=policy.get('resume_guidance'),
-            snapshot=next_folder / 'guidance'))
+            request, policy['role'], policy['resume_guidance'], snapshot=next_folder / 'guidance'))
         write_json(next_folder / 'request.json', request)
         selected = worker_command(policy['executable'], policy['model'], policy['effort'], session,
                                   policy['mcp_servers'], resume_id=state['conversation_id'])

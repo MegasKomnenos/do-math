@@ -65,7 +65,7 @@ def no_research_outcome(session, role):
         raise ValueError('only attempts may declare disposition: no_research')
     declaration = Path(session) / 'declaration.json'
     held = read_json(declaration) if declaration.exists() else {}
-    if held.get('sections') or held.get('nodes'):
+    if held.get('sections'):
         raise ValueError('no_research is incompatible with registered sections')
     return value
 

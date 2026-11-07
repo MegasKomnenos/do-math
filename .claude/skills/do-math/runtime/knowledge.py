@@ -1,7 +1,5 @@
 """Replay reviewed publications into research state. Prose is never interpreted."""
 from copy import deepcopy
-import hashlib
-import json
 from pathlib import Path
 from urllib.parse import quote
 from runtime_support import read_json, write_json, write_text
@@ -349,8 +347,8 @@ def replay(instance):
 
 
 def formal_ready(model, proof):
-    # Concerns inform the formalizer's judgment. They hold new mechanical
-    # deductions in settle(), not research on a still-accepted solution.
+    # Concerns inform the formalizer's judgment. They do not hold a proof back:
+    # settle() only annotates the outcomes that rest on a questioned claim.
     if proof['level'] != 'informal':
         return False
     for dep in proof.get('formal_dependencies', []):

@@ -2,9 +2,9 @@
 
 Three roles live in this file.
 
-- The client (`submit`, `wait`, `run`, `result`, `status`, `cancel`, `version`) is what a
-  session runs instead of Lean. It writes a request, waits for the result and relays
-  Lean's output and exit code.
+- The client (`submit`, `run`, `build`, `wait`, `result`, `status`, `cancel`, `version`) is
+  what a session runs instead of Lean. It writes a request, waits for the result and
+  relays Lean's output and exit code.
 - The broker (`serve`) is one detached process per instance, single through
   runner/lean/lock. It measures what compiles cost, keeps the calibration table, and
   starts queued jobs within one memory budget and one thread budget.
@@ -441,7 +441,7 @@ class Calibration:
 # ------------------------------------------------------------------- admission
 
 def reservation(expect_mb, baseline_mb, cv, current_mb=None):
-    """(certain, mean, sd) in MiB for one job under the statistical-multiplexing rule (LEAN.md).
+    """(certain, mean, sd) in MiB for one job under the statistical-multiplexing rule (reference/lean.md).
 
     The baseline is certain: every compile of the closure reaches it. The estimate
     is read as the 90th percentile of the job's peak, so the elaboration excess above
@@ -558,7 +558,7 @@ class Broker:
         """With `lake env lean …` configured, ask lake once for the environment it gives lean.
 
         Every later compile then runs lean directly in that environment, sparing the
-        workspace load that lake repeats per compile (LEAN.md). If this fails, the
+        workspace load that lake repeats per compile (reference/lean.md). If this fails, the
         configured command stays in force, so no compile depends on it working."""
         command = list(self.settings["lean"]["command"])
         self.direct = None
@@ -808,11 +808,14 @@ class Broker:
         self.dirty = True
         self.log(event="build_" + build["status"], build=build["id"], session=build["session"], reason=build["reason"])
 
-    def new_job(self, job_id, request, source, imports, external, **extra):
-        """A queued compile job; `external` imports alone key its calibration closure."""
+    def new_job(self, job_id, request, source, imports, external, source_sha256, **extra):
+        """A queued compile job; `external` imports alone key its calibration closure.
+
+        `source_sha256` is the hash the caller has already read, or None when the source
+        could not be read; the job does not read the source a second time."""
         session = request.get("session") or "unknown"
         return {"id": job_id, "kind": "compile", "session": session, "source": source,
-                "source_sha256": hashlib.sha256(Path(source).read_bytes()).hexdigest() if Path(source).is_file() else None,
+                "source_sha256": source_sha256,
                 'lean_version': self.state['version'], 'environment_key': self.state['environment_key'],
                 "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
                 "external": external, "closure": closure_key((self.state['version'] or '') + '\n' + self.state['environment_key'], external, self.direct is not None),
@@ -1093,7 +1096,7 @@ class Broker:
         """The memory rule, the thread budget and the machine gate, all at once.
 
         A job that exceeds a budget on its own still runs, alone: refusing it
-        forever would be a kill policy by another name (LEAN.md)."""
+        forever would be a kill policy by another name (reference/lean.md)."""
         config = self.config
         rows = [self.reserve(r) for r in running]
         certain, mean, sd = self.reserve(job)
@@ -1252,9 +1255,6 @@ class Broker:
     def start(self):
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
         self.state = read_json(self.paths.state) if self.paths.state.exists() else self.state
-        self.state.setdefault("jobs", {})
-        self.state.setdefault("builds", {})  # a state written before builds existed
-        self.state.setdefault("version", None)
         self.reload_settings()
         if self.config is None:
             raise ValueError("settings.json rejected: " + str(self.config_error))
@@ -1515,7 +1515,7 @@ def main(argv=None):
             sub.add_argument("--no-wait", action="store_true", help="print the build ID and return; wait <build> later")
         if name in ("submit", "run", "build"):
             sub.add_argument("--expect-mb", type=int, required=True,
-                             help="your probable peak private memory of one compile in MiB (LEAN.md)")
+                             help="your probable peak private memory of one compile in MiB (reference/lean.md)")
             sub.add_argument("--session", required=True, help="your session ID, as given in your launch prompt")
         if name in ("wait", "result", "cancel"):
             sub.add_argument("job", help="a job ID or a build ID")

@@ -1,13 +1,12 @@
 """Check transport structure and evidence identities; sessions judge mathematics."""
 import argparse
-from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
-from knowledge import canonical, claim_key, replay
+from knowledge import claim_key, replay
 from runtime_support import read_json
-from settings import PRODUCERS, load_settings
+from settings import PRODUCERS
 from availability import no_research_outcome, reported_availability
 
 
@@ -171,8 +170,7 @@ def audit_formal(instance, session, check, solution, candidate):
         if not no_axioms:
             axioms.update(x.strip() for x in names.split(',') if x.strip())
     inp = read_json(Path(instance) / 'sessions' / session / 'input.json')
-    config = inp['settings'] if 'settings' in inp else load_settings(instance)
-    allowed = set(config['lean']['allowed_axioms'])
+    allowed = set(inp['settings']['lean']['allowed_axioms'])
     need('sorryAx' not in axioms and axioms <= allowed, 'target uses an unapproved axiom')
     need(set(check.get('axioms', [])) == axioms, 'reported axioms differ from broker output')
     hashes = check.get('source_hashes', {})
@@ -331,12 +329,8 @@ def organization_check(data, model, batch):
             need(other in available and other != merge['keep'], 'unknown or duplicate merged term')
             available.remove(other)
         text(merge.get('reason'), 'term merge reason')
-    shadow = deepcopy(model)
     for merge in data.get('merge_nodes', []):
         need(merge['from'] in model['nodes'] and merge['into'] in model['nodes'], 'merge needs existing nodes')
-        a, b = canonical(shadow, merge['from']), canonical(shadow, merge['into'])
-        if a != b:
-            shadow['aliases'][a] = b
         text(merge.get('reason'), 'node merge reason')
 
 
@@ -365,9 +359,8 @@ def check_session(session, verify_jobs=True):
             record_check(read_json(output / 'record.json'), output, model, session.name)
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
-            if 'candidate_hashes' in task:
-                actual = {p.relative_to(candidate).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.rglob('*') if p.is_file()}
-                need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
+            actual = {p.relative_to(candidate).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.rglob('*') if p.is_file()}
+            need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
             record = read_json(candidate / 'record.json')
             record_check(record, candidate, model, candidate.parent.name)
             assessment_check(read_json(output / 'assessment.json'), output, record, candidate, model,
