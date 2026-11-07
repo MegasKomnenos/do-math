@@ -159,8 +159,9 @@ def rename_directory(source, destination):
 
 class InstanceLock(AbstractContextManager):
     """OS lock, released by process death; the lock file itself stays in place."""
-    def __init__(self, path):
+    def __init__(self, path, holder="runner"):
         self.path = Path(path)
+        self.holder = holder  # named in the refusal, so a broker log does not blame the runner
         self.stream = None
 
     def __enter__(self):
@@ -178,7 +179,7 @@ class InstanceLock(AbstractContextManager):
                 fcntl.flock(self.stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError as exc:
             self.stream.close()
-            raise RuntimeError("This instance already has a running runner") from exc
+            raise RuntimeError(f"This instance already has a running {self.holder}") from exc
         return self
 
     def __exit__(self, *args):

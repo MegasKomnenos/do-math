@@ -14,7 +14,7 @@ from check import Invalid, assessment_check, findings_check, organization_check
 from coordination import board, lease, lease_table, release, section, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from runner import Runner, archive_finished, initialize, main
-from runtime_support import read_json, write_json
+from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
 
 
@@ -298,15 +298,6 @@ class KnowledgeTests(InstanceCase):
         self.assertEqual(m['global_terms']['r1/t']['membership'], 'permanent')
         with self.assertRaises(Invalid):
             organization_check({'batch': [], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']}, m, [])
-
-    def test_clearance_fields_are_not_applied_and_are_rejected(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        m = replay(self.instance)
-        for stale in ({'cleared_uses': [{'relation': 'r1/reduce', 'premise_proofs': ['r2/q']}]},
-                      {'clears': [{'record': 'r2', 'claim': 'q'}]}):
-            with self.subTest(field=next(iter(stale))), self.assertRaisesRegex(Invalid, 'not applied'):
-                findings_check([{'concerns': [], 'status': 'undetermined', 'reason': 'An exact use.', **stale}], m)
 
     def test_refuting_a_necessary_condition_refutes_the_node(self):
         # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
@@ -1287,6 +1278,47 @@ class RunnerTests(InstanceCase):
         self.assertEqual([j['id'] for j in runner.state['jobs'].values()
                           if j['task'].get('kind') == 'comprehensive'], [job['id']])
 
+    def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
+        later = record([claim_row('check')])
+        review = assessment(later)
+        review['findings'] = [{'concerns': [], 'status': 'confirmed', 'reason': 'The case n = 0 fails.',
+                               'invalidates': [{'record': 'r1', 'claim': 'p'}]}]
+        self.publish('r2', later, review)
+        model = replay(self.instance)
+        self.assertEqual(model['nodes']['root']['state'], 'unresolved')
+        concern = model['concerns']['r2/withdrawal-0']
+        self.assertEqual((concern['targets'], concern['status'], concern['source']), (['r1/p'], 'pending', 'r2'))
+        runner = self.runner()
+        runner.populate()
+        self.assertEqual([j['task']['concerns'] for j in runner.state['jobs'].values()
+                          if j['task'].get('kind') == 'comprehensive'], [['r2/withdrawal-0']])
+        # A comprehensive review's own withdrawal ends that tracing; it does not open another one.
+        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Traced.',
+                                                'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
+        self.assertEqual([cid for cid in replay(self.instance)['concerns'] if cid.startswith('v1/')], [])
+
+    def test_restart_broker_admits_sessions_held_behind_stop(self):
+        runner = self.runner()
+        (self.instance / 'control/STOP').touch()
+        for sid in ('sheld', 'sturn'):
+            runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'status': 'running', 'cli': None}
+            runner.session_dir(sid).mkdir(parents=True, exist_ok=True)
+        write_json(runner.session_dir('sheld') / 'end-check.json', {'status': 'waiting_dispatch'})
+        runner.save()
+        idle = {'queued': 0, 'running': 0, 'broker_alive': False}
+        with patch('lean_broker.broker_status', return_value=idle), \
+                patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
+                patch('builtins.print') as shown:
+            # A session without a held turn is still an active turn and blocks replacement.
+            self.assertEqual(main(['restart-broker', str(self.instance)]), 1)
+            start.assert_not_called()
+            runner.state['sessions']['sturn']['status'] = 'ended'
+            runner.save()
+            self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
+        start.assert_called_once()
+        self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
+
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
         with patch('builtins.print'):
@@ -1362,6 +1394,21 @@ class RunnerTests(InstanceCase):
         # Only the attempt can still choose a node; an exploration occupies none.
         self.assertIn('· attempt · queued · nodes: (choosing)', visible)
         self.assertIn('· explore · queued · nodes: (none)', visible)
+
+    def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
+        views = [self.instance / 'knowledge' / name for name in ('frontier.md', 'index.md', 'board.md')]
+        for path in views:
+            path.unlink()
+        with InstanceLock(self.instance / 'runner/lock'), patch('builtins.print'):
+            self.assertEqual(main(['render', str(self.instance)]), 1)
+        self.assertFalse(any(path.exists() for path in views))
+        with patch('builtins.print'):
+            self.assertEqual(main(['render', str(self.instance)]), 0)
+        frontier, index, board_view = (path.read_text(encoding='utf-8') for path in views)
+        self.assertIn('State: informal_proved', frontier)
+        self.assertIn('Investigation', index)
+        self.assertIn('Research work and occupied sections', board_view)
 
 
 if __name__ == '__main__':

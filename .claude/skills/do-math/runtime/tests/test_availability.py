@@ -1,5 +1,7 @@
 """No-work exits, state-dependent dispatch suppression and one-at-a-time reassessment."""
+import json
 from pathlib import Path
+import subprocess
 import sys
 import time
 from unittest.mock import patch
@@ -278,6 +280,23 @@ class AvailabilityTests(InstanceCase):
         (self.runner.session_dir(sid) / 'output/outcome.json').write_text('{', encoding='utf-8')
         self.runner.finish(sid, session)
         self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
+
+    def test_check_command_reports_transport_errors_through_its_exit_code(self):
+        sid, _, _ = self.report()
+        folder = self.runner.session_dir(sid)
+        script = Path(__file__).resolve().parents[1] / 'check.py'
+
+        def check():
+            result = subprocess.run([sys.executable, '-B', str(script), str(folder)], capture_output=True)
+            return result.returncode, json.loads(result.stdout.decode('utf-8'))
+
+        self.assertEqual(check(), (0, {'ok': True, 'errors': []}))
+        value = read_json(folder / 'output/outcome.json')
+        value['availability']['snapshot'] = 'not-a-token'
+        write_json(folder / 'output/outcome.json', value)
+        code, report = check()
+        self.assertEqual((code, report['ok']), (1, False))
+        self.assertIn('token returned by updates', report['errors'][0])
 
 
 if __name__ == '__main__':

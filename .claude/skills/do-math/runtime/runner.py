@@ -321,8 +321,8 @@ class Runner:
                     and errors == ['candidate changed after review assignment']):
                 self.recover_candidate(job, s, errors[0])
                 return
-            self.retry(job, s, '; '.join(errors),
-                       availability=bool(s.get('refusal') or s.get('launch_error')))
+            # Invalid output is a job failure; refusals and launch errors returned above.
+            self.retry(job, s, '; '.join(errors), availability=False)
             return
         if s['role'] == 'peer':
             candidate = session / 'candidate'
@@ -444,6 +444,8 @@ class Runner:
                 regular_tree(candidate)
                 shutil.copytree(candidate, stage)
                 if tree_hashes(stage) != job['task']['candidate_hashes']:
+                    # The damaged candidate stays where review read it; its staged copy is not evidence.
+                    shutil.rmtree(stage)
                     self.state['publication'] = None
                     session = self.state['sessions'][sid]
                     session['record'] = None
@@ -922,7 +924,7 @@ def archive_finished(instance):
     import lzma
     import tarfile
     try:
-        with InstanceLock(Path(instance) / 'runner/archive-lock'):
+        with InstanceLock(Path(instance) / 'runner/archive-lock', 'archiver'):
             state = read_json(Path(instance) / 'runner/state.json')
             for sid, session in state['sessions'].items():
                 job = state['jobs'][session['job']]
@@ -1019,8 +1021,21 @@ def main(argv=None):
         elif args.command == 'restart-broker':
             from lean_broker import Paths, broker_status, ensure_broker
             state = read_json(instance / 'runner/state.json')
-            if not (instance / 'control/STOP').exists() or any(s['status'] in ('starting', 'running', 'publishing') for s in state['sessions'].values()):
-                raise ValueError('stop new dispatch and let active sessions finish before replacing the Lean environment')
+            if not (instance / 'control/STOP').exists():
+                raise ValueError('stop new dispatch before replacing the Lean environment')
+            # A session held behind STOP for its next turn has no running CLI and
+            # continues with the replaced broker after resume.
+            held, active = [], []
+            for sid, s in state['sessions'].items():
+                if s['status'] not in ('starting', 'running', 'publishing'):
+                    continue
+                check = instance / 'sessions' / sid / 'end-check.json'
+                waiting = check.is_file() and read_json(check).get('status') == 'waiting_dispatch'
+                (held if waiting and not alive(s.get('cli')) else active).append(sid)
+            if active:
+                raise ValueError('let active CLI turns finish before replacing the Lean environment: '
+                                 + ', '.join(sorted(active)))
+            result['held_sessions'] = sorted(held)
             paths = Paths(instance)
             current = broker_status(paths)
             if current['queued'] or current['running']:

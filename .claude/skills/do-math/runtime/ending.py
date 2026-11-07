@@ -144,7 +144,6 @@ def run_turn(session, folder, command):
                 # A supervision error must not leave an untracked resumed CLI.
                 child.terminate()
                 child.wait()
-    write_json(folder / 'turn-result.json', result)
     return result
 
 

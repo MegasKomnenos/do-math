@@ -49,7 +49,7 @@ class ProposalIdentityTests(InstanceCase):
         output = reviewer / 'output'
         output.mkdir(parents=True)
         candidate = second / 'output'
-        hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.iterdir()}
+        hashes = runtime.tree_hashes(candidate)
         write_json(reviewer / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
             'role': 'review', 'task': {'kind': 'candidate', 'candidate': str(candidate),
                                      'candidate_hashes': hashes}})
@@ -138,6 +138,7 @@ class PublicationTests(InstanceCase):
         self.assertEqual(recovered.state['sessions']['sreview']['status'], 'failed')
         self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
         self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+        self.assertEqual(list((self.instance / 'runner').glob('stage-*')), [])
         restored = Path(job['task']['candidate'])
         self.assertNotEqual(restored, candidate)
         self.assertEqual(runtime.tree_hashes(restored), job['task']['candidate_hashes'])

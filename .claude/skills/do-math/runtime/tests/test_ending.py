@@ -72,7 +72,7 @@ class EndingTests(InstanceCase):
                 self.assertEqual(pack, (directory / 'pack.md').read_bytes())
                 self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
                 self.assertIn('directives supplied for this session', (directory / 'turns/0001/prompt.txt').read_text())
-                self.assertTrue((directory / 'turns/0001/turn-result.json').is_file())
+                self.assertTrue((directory / 'turns/0001/turn-termination.json').is_file())
                 # Runner restart sees the same logical session, then collects it once.
                 engine = Runner(self.instance, self.skill)
                 s = engine.state['sessions'][sid]

@@ -633,7 +633,6 @@ class Broker:
     # --- queue
 
     def ingest(self):
-        now = time.time()
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
             job_id = path.stem
             try:
@@ -653,6 +652,13 @@ class Broker:
                 expect = request["expect_mb"]
                 if type(expect) is not int or expect < 1:
                     raise ValueError("expect_mb must be a positive integer")
+                # Fields kept in the broker state must have the shapes the scheduler and the orphan
+                # check rely on; a request that fails here is answered, not left to crash a later tick.
+                if request.get("session") is not None and not isinstance(request["session"], str):
+                    raise ValueError("session must be a session ID")
+                if "submitted_at" in request and (type(request["submitted_at"]) not in (int, float)
+                                                  or not math.isfinite(request["submitted_at"])):
+                    raise ValueError("submitted_at must be a finite number")
                 if (folder / "CANCEL").exists():
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
@@ -681,11 +687,13 @@ class Broker:
             job_dir.mkdir(exist_ok=True)
             try:
                 source_hash = request.get("source_sha256") or hashlib.sha256(Path(source).read_bytes()).hexdigest()
-            except OSError:
+            except (OSError, ValueError):  # unreadable, or a path with a character the OS rejects
                 source_hash = None
+            # A module compile of a build runs with -R, -o and the build's lib on the search path;
+            # a single-file submission of the same bytes is a different compile, not its duplicate.
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
-                              and j["source"] == source and j["kind"] == "compile"
+                              and j["source"] == source and j["kind"] == "compile" and not j.get("build")
                               and source_hash is not None and j.get("source_sha256") == source_hash
                               and j.get("environment_key") == self.state["environment_key"]), None)
             if duplicate:
@@ -696,7 +704,7 @@ class Broker:
                 continue
             try:
                 imports = read_imports(source)
-            except OSError as exc:
+            except (OSError, ValueError) as exc:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
             job = self.new_job(job_id, request, source, imports, imports, source_sha256=source_hash)
@@ -1258,7 +1266,7 @@ class Broker:
         self.save()
 
     def serve(self):
-        with InstanceLock(self.paths.lock):
+        with InstanceLock(self.paths.lock, "Lean broker"):
             # Alive from this moment: clients may queue requests while the broker finishes starting.
             write_json(self.paths.process, {"process": self.identity, "started_at": time.time()})
             self.start()

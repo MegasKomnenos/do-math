@@ -744,14 +744,22 @@ class BrokerTests(BrokerFixture):
         # A request the broker cannot accept is answered, not dropped.
         bad = "j" + "0" * 32
         runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
+        # Fields that reached the broker state unchecked would crash a later tick instead of this request.
+        malformed = "j" + "2" * 32
+        runner.write_json(self.paths.queue / (malformed + ".json"),
+                          {"id": malformed, "source": str(self.session_file("s1", "malformed.lean")),
+                           "expect_mb": 40, "session": ["s1"], "submitted_at": "now"})
         (self.paths.queue / "x..escape.json").write_text("{}", encoding="utf-8")
         if os.name != "nt":  # a POSIX file name can end in a newline, which a `$`-anchored match accepts
             (self.paths.queue / ("j" + "1" * 32 + "\n.json")).write_text("{}", encoding="utf-8")
         self.broker.tick()
-        self.assertEqual(lean_broker.job_record(self.paths, bad)["status"], "failed")
-        self.assertIn("rejected", lean_broker.job_record(self.paths, bad)["reason"])
+        for job_id, field in ((bad, "source"), (malformed, "session")):
+            self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "failed")
+            self.assertIn("rejected: " + field, lean_broker.job_record(self.paths, job_id)["reason"])
+        self.assertNotIn(malformed, self.broker.state["jobs"])
         self.assertEqual(list(self.paths.queue.glob("*.json")), [])
-        self.assertFalse((self.paths.root / "escape").exists())
+        # Nothing under jobs/ was made for a name that is not a job ID.
+        self.assertEqual([p.name for p in self.paths.jobs.iterdir() if not lean_broker.JOB_ID.fullmatch(p.name)], [])
 
     def test_settings_reload_live_and_keep_the_last_good_configuration(self):
         self.start_broker()
@@ -1098,6 +1106,21 @@ class BuildTests(BrokerFixture):
         self.assertTrue(all(m["status"] in ("cancelled", "failed") for m in record["modules"].values()))
         self.assertFalse(runner.alive(self.module_job(build_id, "A").get("lean")))
 
+    def test_single_file_submission_is_not_a_duplicate_of_a_module_compile(self):
+        self.start_broker()
+        root = self.tree(A={"sleep": 3})
+        build_id = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
+        job_id = self.submit(root / "A.lean")
+        self.broker.ingest()
+        # Registered as a job of its own, not redirected to A's module compile.
+        self.assertIn(job_id, self.broker.state["jobs"])
+        self.assertFalse((self.paths.job(job_id) / "result.json").exists())
+        self.until(lambda: self.finished(job_id))
+        self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
+        self.assertNotIn("-R", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+
 
 class LauncherTests(BrokerFixture):
     LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
@@ -1219,7 +1242,7 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertTrue(first)
         second = self.cli("serve", str(self.instance), timeout=30)
         self.assertNotEqual(second.returncode, 0)
-        self.assertIn("already has a running runner", second.stderr)
+        self.assertIn("already has a running Lean broker", second.stderr)
         self.assertTrue(runner.alive(first["process"]))
         self.cli("version", str(self.instance))  # finds the live broker; launches nothing
         self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])

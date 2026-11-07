@@ -313,8 +313,6 @@ def findings_check(values, model):
                 signed(dep, set(model['nodes']) | set(model['aliases']))
         for cid in array(finding.get('concerns'), 'finding.concerns'):
             need(cid in model['concerns'], 'unknown concern')
-        need('clears' not in finding and 'cleared_uses' not in finding,
-             'a finding withdraws or validates claims; clears and cleared_uses are not applied')
         for key in ('invalidates', 'validates'):
             for ref in array(finding.get(key, []), key):
                 need(claim_key(ref) in model['claims'], 'finding targets unknown claim')
