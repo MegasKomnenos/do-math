@@ -3,6 +3,7 @@ name: gp-opus-high
 description: 범용 에이전트. Opus 5 · high 고정.
 model: opus[1m]
 effort: high
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: purple
 ---

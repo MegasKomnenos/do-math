@@ -3,6 +3,7 @@ name: gp-opus-xhigh
 description: 범용 에이전트. Opus 5 · xhigh 고정.
 model: opus[1m]
 effort: xhigh
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: purple
 ---

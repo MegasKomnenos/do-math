@@ -3,6 +3,7 @@ name: gp-fable-low
 description: 범용 에이전트. Fable 5 · low 고정.
 model: fable[1m]
 effort: low
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: cyan
 ---

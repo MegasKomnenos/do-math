@@ -3,6 +3,7 @@ name: gp-opus-medium
 description: 범용 에이전트. Opus 5 · medium 고정.
 model: opus[1m]
 effort: medium
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: purple
 ---

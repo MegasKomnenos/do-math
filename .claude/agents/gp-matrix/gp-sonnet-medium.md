@@ -3,6 +3,7 @@ name: gp-sonnet-medium
 description: 범용 에이전트. Sonnet 5 · medium 고정.
 model: sonnet[1m]
 effort: medium
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: green
 ---

@@ -3,6 +3,7 @@ name: gp-sonnet-high
 description: 범용 에이전트. Sonnet 5 · high 고정.
 model: sonnet[1m]
 effort: high
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: green
 ---

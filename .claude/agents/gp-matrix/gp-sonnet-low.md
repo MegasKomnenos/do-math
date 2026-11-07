@@ -3,6 +3,7 @@ name: gp-sonnet-low
 description: 범용 에이전트. Sonnet 5 · low 고정.
 model: sonnet[1m]
 effort: low
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: green
 ---

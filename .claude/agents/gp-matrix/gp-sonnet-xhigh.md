@@ -3,6 +3,7 @@ name: gp-sonnet-xhigh
 description: 범용 에이전트. Sonnet 5 · xhigh 고정.
 model: sonnet[1m]
 effort: xhigh
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: green
 ---

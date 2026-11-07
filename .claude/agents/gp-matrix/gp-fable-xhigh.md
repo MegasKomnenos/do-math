@@ -3,6 +3,7 @@ name: gp-fable-xhigh
 description: 범용 에이전트. Fable 5 · xhigh 고정.
 model: fable[1m]
 effort: xhigh
+omitClaudeMd: true
 disallowedTools: mcp__plugin_playwright_playwright
 color: cyan
 ---
