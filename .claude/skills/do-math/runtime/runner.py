@@ -55,11 +55,11 @@ def initialize(instance, root_file, settings_file=None):
     write_json(instance / 'settings.json', config)
     write_text(instance / '.gitignore', '/sessions/\n/runner/\n/control/\n')
     state = {'schema': 1, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
-             'attempt_dispatches': 0, 'attempt_research_starts': 0,
+             'attempt_research_starts': 0,
              'attempt_availability_epoch': 0, 'attempt_dispatch_gate': None,
              'explore_requested': False, 'complete': False,
              'processed_concerns': [], 'processed_conflicts': [], 'publication': None,
-             'seen_inputs': [], 'seen_requests': [], 'last_error': None, 'finished': False}
+             'seen_requests': [], 'last_error': None, 'finished': False}
     write_json(instance / 'runner/state.json', state)
     render(instance, replay(instance), [])
     git(instance, 'init')
@@ -172,7 +172,6 @@ class Runner:
                 pipeline[job['role']] = sid
         if job['role'] == 'attempt':
             self.state['last_attempt_launch'] = time.time()
-            self.state['attempt_dispatches'] += 1
             gate = self.state.get('attempt_dispatch_gate')
             if gate and gate['mode'] == 'reassess':
                 gate['probe_session'] = sid
@@ -305,16 +304,19 @@ class Runner:
             job['status'] = 'done'
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
-            sections = [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
-                        for entry in section_entries(self.instance, sid, self.model)]
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'node': pipeline.get('node'), 'sections': sections, 'retention': s['retention']},
+                                  'node': pipeline.get('node'), 'sections': self.producer_sections(sid),
+                                  'retention': s['retention']},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
-        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error'):
+        # A cancellation recorded by the host, even after a clean CLI exit between turns,
+        # leaves this stage unfinished; a replacement receives the partial material.
+        interrupted = s.get('end_check', {}).get('authorization', {}).get('basis') == 'interrupted'
+        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error') or interrupted:
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
-                      f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})")
+                      (s['end_check']['authorization']['explanation'] if s.get('exit_code') == 0 else
+                       f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})"))
             self.retry(job, s, reason,
                        availability=bool(s.get('refusal') or s.get('launch_error')))
             return
@@ -367,6 +369,11 @@ class Runner:
         self.prepare_publication(sid, job, kind)
         self.publish()
 
+    def producer_sections(self, sid):
+        """The sections a producer registered, as a peer assignment lists them."""
+        return [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
+                for entry in section_entries(self.instance, sid, self.model)]
+
     def recover_candidate(self, job, session, reason):
         """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
         task = job['task']
@@ -405,7 +412,8 @@ class Runner:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
-                             'node': pipeline.get('node'), 'previous_error': reason,
+                             'node': pipeline.get('node'), 'sections': self.producer_sections(pipeline['producer']),
+                             'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
                      pipeline['id'], pipeline['id'] + ':peer-recovery:' + session['id'])
         self.save()

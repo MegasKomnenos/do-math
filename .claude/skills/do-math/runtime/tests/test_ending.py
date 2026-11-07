@@ -166,6 +166,31 @@ class EndingTests(InstanceCase):
         self.assertEqual(receipt['refusal']['reason'], 'usage_limit')
         self.assertEqual(read_json(directory / 'exit.json')['exit_code'], 1)
 
+    def test_failed_turn_is_interruption_not_worker_authorization(self):
+        _, _, directory = self.prepare(config={'fail_at': 1})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['source'], 'runner')
+        self.assertEqual(state['authorization']['basis'], 'interrupted')
+        self.assertEqual(state['resumptions'], 1)
+        receipt = read_json(directory / 'turns/0001/turn-termination.json')
+        self.assertEqual(receipt['result']['exit_code'], 2)
+        self.assertIsNone(receipt['refusal'])
+
+    def test_only_the_two_ending_bases_authorize_a_worker_end(self):
+        for basis, expected in (('task_completed', 'task_completed'), ('partial_result', 'resumption_limit')):
+            with self.subTest(basis=basis):
+                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, 'basis': basis})
+                state = self.run_host(directory)
+                self.assertEqual(state['authorization']['basis'], expected)
+                error = read_json(directory / 'turns/0001/decision-check.json')['error']
+                if basis == 'partial_result':
+                    self.assertIn('task_completed or no_way_forward', error)
+                else:
+                    self.assertIsNone(error)
+                pipeline = engine.state['jobs'][engine.state['sessions'][sid]['job']]['pipeline']
+                engine.state['pipelines'][pipeline]['stage'] = 'done'
+                engine.save()
+
     def test_missing_or_changed_identity_does_not_start_a_fresh_conversation(self):
         for config in ({'omit_identity': True}, {'change_identity_at': 1, 'end_after': 1}):
             engine, sid, directory = self.prepare(config=config)
@@ -239,6 +264,41 @@ class EndingTests(InstanceCase):
         state = read_json(directory / 'end-check.json')
         self.assertEqual(state['authorization']['basis'], 'interrupted')
         self.assertEqual(state['resumptions'], 0)
+
+    def test_cancelled_peer_resumption_gets_a_replacement_instead_of_review(self):
+        engine, sid, directory = self.prepare(role='peer')
+        (self.instance / 'control/STOP').touch()
+        with patch('ending.worker_command', side_effect=self.command):
+            thread = threading.Thread(target=session_host, args=(directory,), daemon=True)
+            thread.start()
+            try:
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    path = directory / 'end-check.json'
+                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
+                        break
+                    time.sleep(.05)
+                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
+                import io
+                with patch('sys.stdout', new=io.StringIO()):
+                    self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
+                thread.join(10)
+                self.assertFalse(thread.is_alive())
+            finally:
+                (directory / 'CANCEL').touch()
+                thread.join(10)
+        # The first turn exited cleanly with a structurally valid candidate, but the operator
+        # cancelled the pending resumption: the peer stage is unfinished, not ready for review.
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+        self.assertFalse((directory / 'candidate').exists())
+        job = engine.state['jobs'][s['job']]
+        self.assertEqual((job['status'], s['status']), ('pending', 'failed'))
+        self.assertIn(str(directory), job['task']['previous_partial_sessions'])
+        self.assertFalse(any(j['role'] == 'review' for j in engine.state['jobs'].values()))
 
     def test_another_sessions_provider_block_holds_resumption(self):
         engine, _, directory = self.prepare(maximum=1)

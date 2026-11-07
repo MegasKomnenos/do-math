@@ -45,8 +45,8 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for source in (skill / 'reference').glob('*.md'):
         shutil.copyfile(source, context / 'reference' / source.name)
     shutil.copyfile(skill / 'roles' / (role + '.md'), context / 'roles' / (role + '.md'))
-    if (skill / 'SKILL.md').is_file():
-        shutil.copyfile(skill / 'SKILL.md', context / 'SKILL.md')
+    # reference/operations.md links to ../SKILL.md; this copy keeps that link inside the snapshot.
+    shutil.copyfile(skill / 'SKILL.md', context / 'SKILL.md')
     inputs = []
     for path in sorted((instance / 'control/inputs').glob('*.txt')):
         inputs.append({'id': path.name, 'text': path.read_text(encoding='utf-8-sig')})

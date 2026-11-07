@@ -228,6 +228,8 @@ class PublicationTests(InstanceCase):
         candidate = Path(job['task']['candidate'])
         for folder in (candidate, candidate.parent / 'output'):
             (folder / 'record.md').write_text('Changed retained bytes.', encoding='utf-8')
+        runner.session_dir('sauthor').mkdir(parents=True, exist_ok=True)
+        write_json(runner.session_dir('sauthor') / 'declaration.json', {'sections': [{'id': 'sp', 'node': 'root', 'whole': True, 'statement': 'The whole root node.'}]})
         runner.finish('sreview', runner.state['sessions']['sreview'])
         pipeline = runner.state['pipelines'][job['pipeline']]
         self.assertEqual(job['status'], 'cancelled')
@@ -235,6 +237,7 @@ class PublicationTests(InstanceCase):
         peer_job = next(j for j in runner.state['jobs'].values() if j['role'] == 'peer')
         self.assertEqual(peer_job['status'], 'pending')
         self.assertIn(str(candidate.parent), peer_job['task']['previous_partial_sessions'])
+        self.assertEqual(peer_job['task']['sections'], [{'id': 'sp', 'node': 'root', 'whole': True, 'statement': 'The whole root node.'}])
         self.assertEqual((candidate / 'record.md').read_text(encoding='utf-8'), 'Changed retained bytes.')
         peer_sid = 'snewpeer'
         peer = runner.session_dir(peer_sid)

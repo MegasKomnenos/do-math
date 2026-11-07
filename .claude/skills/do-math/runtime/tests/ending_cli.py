@@ -10,7 +10,7 @@ history = session / 'work/turns.jsonl'
 number = len(history.read_text().splitlines()) if history.exists() else 0
 with history.open('a', encoding='utf-8') as stream:
     stream.write(json.dumps({'turn': number, 'prompt': prompt}) + '\n')
-identity = config.get('identity', '01234567-89ab-cdef-0123-456789abcdef')
+identity = '01234567-89ab-cdef-0123-456789abcdef'
 if config.get('change_identity_at') == number:
     identity = 'fedcba98-7654-3210-fedc-ba9876543210'
 if not config.get('omit_identity'):

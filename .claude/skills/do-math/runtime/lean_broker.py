@@ -28,8 +28,9 @@ import sys
 import time
 import uuid
 
-from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config, load_settings,
+from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
                     popen_options, process_identity, read_json, terminate_process, write_json)
+from settings import load_settings
 
 SCRIPT = Path(__file__).resolve()
 MIB = 1024 * 1024
@@ -639,8 +640,6 @@ class Broker:
     def ingest(self):
         now = time.time()
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
-            if path.name.startswith("."):
-                continue
             job_id = path.stem
             try:
                 if not JOB_ID.match(job_id) and not BUILD_ID.match(job_id):
@@ -1477,7 +1476,8 @@ def broker_status(paths):
             "running": [{k: j.get(k) for k in ("id", "kind", "session", "expect_mb", "started_at", "reserve", "measured")}
                         for j in jobs.values() if j["status"] == "running"],
             "finished": [{k: j.get(k) for k in ("id", "kind", "session", "status", "exit_code", "expect_mb", "measured")}
-                         for j in jobs.values() if j["status"] in FINISHED][-20:],
+                         for j in sorted((j for j in jobs.values() if j["status"] in FINISHED),
+                                         key=lambda j: j["finished_at"] or 0)][-20:],
             "builds": [{"id": b["id"], "session": b["session"], "status": b["status"], "targets": b["targets"],
                         "modules": {s: sum(m["status"] == s for m in b["modules"].values())
                                     for s in ("cached", "queued", "running", "finished", "failed", "cancelled")}}
@@ -1572,4 +1572,9 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    code = main()
+    # Windows gives a process's exit code as an unsigned 32-bit value, so a crashed Lean's
+    # NTSTATUS code (0xC0000005 and the like) exceeds the C long that SystemExit accepts and
+    # would end this client with an OverflowError instead. The same 32 bits in signed form
+    # reach the caller as Lean's own code.
+    raise SystemExit(code - 2 ** 32 if os.name == "nt" and code >= 2 ** 31 else code)

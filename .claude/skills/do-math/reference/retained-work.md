@@ -61,7 +61,7 @@ Use this outcome only for a session that never began mathematical investigation.
 
 ## Reporting that all unresolved work is occupied
 
-Your session outcome says what you did. An availability report answers a different question: whether another attempt could find work to take on. You can add this report when you have determined that other pipelines' registered sections cover all unresolved questions:
+Your session outcome says what you did. An availability report answers a different question: whether another attempt could find work to take on. The report is part of a `no_research` outcome, as in the example below. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that other pipelines' registered sections cover all unresolved questions:
 
 ```json
 {

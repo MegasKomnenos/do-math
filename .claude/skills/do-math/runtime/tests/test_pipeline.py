@@ -52,7 +52,7 @@ class PipelineTests(InstanceCase):
         self.assertTrue(all(p['stage'] == 'done' for p in runner.state['pipelines'].values()))
         roles = {s['role'] for s in runner.state['sessions'].values()}
         self.assertTrue({'attempt', 'peer', 'review', 'formalizer', 'explore', 'organizer'} <= roles)
-        self.assertEqual(runner.state['attempt_dispatches'], 1)
+        self.assertEqual(sum(s['role'] == 'attempt' for s in runner.state['sessions'].values()), 1)
         records = list((self.instance / 'knowledge/records').iterdir())
         self.assertTrue(any(list(r.glob('review/lean-evidence/*/result.json')) for r in records))
         def published_bytes():

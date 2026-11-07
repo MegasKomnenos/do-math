@@ -31,18 +31,20 @@ def flip(outcome):
     return 'refuted' if outcome == 'proved' else 'proved'
 
 
-def concerned(model, key, concern, seen=None):
+def concerned(model, key, concern):
     """Whether a claim rests, directly or through its dependencies, on a target of an open concern."""
     if concern['status'] == 'cleared':
         return False
-    if key in concern['targets']:
-        return True
-    visited = set(seen or ())
-    if key in visited:
-        return False
-    visited.add(key)
-    return any(concerned(model, dep, concern, visited)
-               for dep in model['claims'].get(key, {}).get('dependencies', []))
+    # Each claim is examined once: a dependency reached by several routes gives the same answer.
+    pending, visited = [key], set()
+    while pending:
+        current = pending.pop()
+        if current in concern['targets']:
+            return True
+        if current not in visited:
+            visited.add(current)
+            pending.extend(model['claims'].get(current, {}).get('dependencies', []))
+    return False
 
 
 def clause(model, relation):
@@ -259,7 +261,7 @@ def record_event(model, event, folder):
     for term in record['glossary']:
         key = rid + '/' + term['id']
         if review['glossary_approved'] and term.get('global_candidate'):
-            model['global_terms'][key] = {'term': key, 'membership': 'candidate', 'aliases': [], 'merged': []}
+            model['global_terms'][key] = {'membership': 'candidate', 'merged': []}
     add_concerns(model, review.get('concerns', []), rid)
     apply_findings(model, review.get('findings', []), rid)
 
@@ -307,8 +309,7 @@ def organization_event(model, event, folder):
     for key in data.get('promote', []):
         key = next((primary for primary, member in model['global_terms'].items() if key in member['merged']), key)
         existing = model['global_terms'].get(key, {})
-        model['global_terms'][key] = {**existing, 'term': key, 'membership': 'permanent',
-                                     'aliases': existing.get('aliases', []), 'merged': existing.get('merged', [])}
+        model['global_terms'][key] = {'membership': 'permanent', 'merged': existing.get('merged', [])}
     for key in data.get('refuse', []):
         current = model['global_terms'].get(key)
         if current and current['membership'] == 'candidate':
@@ -321,9 +322,6 @@ def organization_event(model, event, folder):
             other = model['global_terms'].pop(source, None)
             if not other:
                 continue
-            term = model['terms'][source]
-            target['aliases'] = sorted(set(target['aliases'] + other['aliases'] +
-                                          [term['name']] + ([term['symbol']] if term.get('symbol') else [])))
             target['merged'] = sorted(set(target['merged'] + other['merged'] + [source]))
             if other['membership'] == 'permanent':
                 target['membership'] = 'permanent'
@@ -341,7 +339,6 @@ def replay(instance):
         folder = instance / 'knowledge' / event['folder']
         {'record': record_event, 'review': assessment_event, 'organization': organization_event}[event['kind']](model, event, folder)
         model['sequence'] = event['sequence']
-        settle(model)
     settle(model)
     return model
 

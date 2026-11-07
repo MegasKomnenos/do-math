@@ -282,12 +282,24 @@ def comprehensive_check(data, root, model):
     regular_tree(root)
 
 
+def proof_route(model, pid):
+    """A proof ID of knowledge/state.json: a direct solution, an accepted relation applied
+    forward, or one applied backward to refute the premise at the given position."""
+    if not isinstance(pid, str):
+        return False
+    relation, mark, position = pid.rpartition('~')
+    if not mark:
+        return pid in model['direct'] or pid in model['relations']
+    premises = model['relations'].get(relation, {}).get('premises', [])
+    return position in {str(index) for index in range(len(premises))}
+
+
 def findings_check(values, model):
     for finding in array(values, 'findings'):
         need(finding.get('status') in ('cleared', 'confirmed', 'undetermined'), 'unknown finding status')
         text(finding.get('reason'), 'finding.reason')
         for update in finding.get('dependency_updates', []):
-            need(update.get('proof') in model['direct'] or update.get('proof') in model['relations'], 'dependency update needs an existing proof route')
+            need(proof_route(model, update.get('proof')), 'dependency update needs an existing proof route')
             text(update.get('reason'), 'dependency update reason')
             for dep in array(update.get('dependencies'), 'dependency update dependencies'):
                 signed(dep, set(model['nodes']) | set(model['aliases']))

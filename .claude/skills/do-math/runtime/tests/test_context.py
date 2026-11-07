@@ -50,7 +50,7 @@ class ContextTests(InstanceCase):
                  read_json(self.instance / 'settings.json'))
         self.assertIn(root, (folder / 'pack.md').read_text(encoding='utf-8'))
 
-    def session(self, name, role='attempt'):
+    def session(self, name):
         folder = self.instance / 'sessions' / name
         folder.mkdir()
         (folder / 'inbox').mkdir()

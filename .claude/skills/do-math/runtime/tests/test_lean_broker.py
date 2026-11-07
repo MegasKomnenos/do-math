@@ -206,6 +206,22 @@ class BuildResultTests(unittest.TestCase):
                                      list(zip(("Basis", "Target"), codes)))
 
 
+class StatusTests(unittest.TestCase):
+    def test_recently_finished_jobs_are_the_last_to_finish(self):
+        # A long compile submitted before many short ones finishes after them; status must list it.
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = lean_broker.Paths(Path(temporary))
+            paths.ensure()
+            late = "j" + "f" * 32
+            jobs = {late: {"id": late, "status": "finished", "finished_at": 2000.0}}
+            short = [f"j{n:032x}" for n in range(1, 31)]
+            jobs.update({job_id: {"id": job_id, "status": "finished", "finished_at": 1000.0 + n}
+                         for n, job_id in enumerate(short, 1)})
+            runner.write_json(paths.state, {"jobs": jobs})
+            listed = [j["id"] for j in lean_broker.broker_status(paths)["finished"]]
+            self.assertEqual(listed, short[-19:] + [late])
+
+
 class AdmissionRuleTests(unittest.TestCase):
     def test_estimate_is_read_as_a_probable_peak_above_the_baseline(self):
         certain, mean, sd = lean_broker.reservation(1000, 400, 0.5)
@@ -1164,6 +1180,16 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertIn("4.0.0-fake", json.loads(self.cli("version", str(self.instance)).stdout)["version"])
         self.assertIn("4.0.0-fake", status["version"])
         self.assertEqual(runner.status(self.instance)["lean"]["version"], status["version"])
+
+    @unittest.skipUnless(os.name == "nt", "only Windows reports exit codes as unsigned 32-bit values")
+    def test_run_relays_a_windows_crash_code_unchanged(self):
+        # The stand-in exits with -1073741819, which Windows reports as 0xC0000005, the code of a
+        # crashed process; the client must exit with that code and end on its summary line.
+        path = self.session_file("s1", exit=-1073741819)
+        result = self.cli("run", str(self.instance), str(path), "--session", "s1", "--expect-mb", "40")
+        self.assertEqual(result.returncode, 0xC0000005, result.stderr)
+        summary = json.loads(result.stderr.strip().splitlines()[-1].split("lean-broker: ", 1)[1])
+        self.assertEqual((summary["status"], summary["exit_code"]), ("finished", 0xC0000005))
 
     def test_wait_timeout_returns_124_and_the_job_continues(self):
         path = self.session_file("s1", sleep=3)

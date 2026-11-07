@@ -328,31 +328,11 @@ def session_host(session):
         if (session / "CANCEL").exists() or not alive(job["runner"]):
             return 1
         time.sleep(0.1)
+    from ending import run_turn, supervise
     if job.get('end_check') is not None:
-        from ending import supervise
         result = supervise(session, job)
-        write_json(session / 'exit.json', result)
-        return 0
-    command = job["command"]
-    result = {"exit_code": None}
-    with (session / "prompt.txt").open("rb") as inp, \
-            (session / "cli.stdout.jsonl").open("wb") as out, \
-            (session / "cli.stderr.log").open("wb") as err:
-        child = None
-        try:
-            started = time.time()
-            from launch import worker_environment
-            child = subprocess.Popen(command["argv"], cwd=command["cwd"], env=worker_environment(),
-                                     stdin=inp, stdout=out, stderr=err, shell=False,
-                                     **popen_options())
-            identity = process_identity(child.pid)
-            write_json(session / "process.json", {"process": identity,
-                       "pid": child.pid, "started_at": started})
-        except OSError as exc:
-            result["launch_error"] = str(exc)
-        finally:
-            if child is not None:
-                result["exit_code"] = child.wait()
+    else:
+        result = run_turn(session, session, job["command"])
     write_json(session / "exit.json", result)
     return 0
 
@@ -427,9 +407,3 @@ def archive_work(session):
         raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
     shutil.rmtree(work)
     return True
-
-
-
-def load_settings(instance):
-    from settings import load_settings as load
-    return load(instance)

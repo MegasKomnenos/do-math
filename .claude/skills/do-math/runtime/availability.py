@@ -61,8 +61,10 @@ def no_research_outcome(session, role):
     value = read_json(path)
     if not isinstance(value, dict) or 'disposition' not in value:
         return None
-    if role != 'attempt' or value['disposition'] != 'no_research':
+    if role != 'attempt':
         raise ValueError('only attempts may declare disposition: no_research')
+    if value['disposition'] != 'no_research':
+        raise ValueError('disposition can only be no_research; omit it from the outcome of a session that undertook research')
     declaration = Path(session) / 'declaration.json'
     held = read_json(declaration) if declaration.exists() else {}
     if held.get('sections'):
