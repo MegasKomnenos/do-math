@@ -596,7 +596,8 @@ class Runner:
                 self.producer('formalizer', {'node': nid, 'proofs': proofs, 'previous_records': previous})
         due = [rid for rid in model['records'] if rid not in model['organized']]
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):
-            self.enqueue('organizer', {'batch': due})
+            # make_pack fixes the batch from the published records when the organizer launches.
+            self.enqueue('organizer', {})
 
     def current_availability(self):
         return availability_view(self.model, board(self.instance, self.state, self.model),
@@ -787,7 +788,7 @@ class Runner:
                         'purpose': request.get('reason', 'Operator requested a renewed independent assessment.')}
                 self.enqueue('review', task, key='operator:' + path.stem)
             elif request['kind'] == 'organize':
-                self.enqueue('organizer', {'batch': [r for r in self.model['records'] if r not in self.model['organized']]}, key='operator:' + path.stem)
+                self.enqueue('organizer', {}, key='operator:' + path.stem)
             elif request['kind'] == 'reconsider-attempts':
                 self.state['attempt_availability_epoch'] = self.state.get('attempt_availability_epoch', 0) + 1
                 probe = (self.state.get('attempt_dispatch_gate') or {}).get('probe_session')

@@ -53,5 +53,3 @@ The instance permits only one exploration cycle at a time, including its peer an
 Session run time has no cap. Do not finish after writing down the first few things that came to mind, or simply because one promising direction has appeared. Allow the exploration to develop enough depth that you can explain how your understanding changed and why. One blocked angle is a reason to look more widely, not evidence that the available understanding has been exhausted.
 
 Consider finishing when you can explain the understanding gained and further serious mathematical work is no longer adding to it. This is a judgment about the work you have actually pursued and the useful angles still open to you. Run the transport check when the retained account is ready and end; the peer then develops its record and review assesses the claims independently.
-
-A CLI turn ending can be followed by bounded continuation in the same conversation under the common and role-specific resume guidance. Apply this role's completion standard throughout that session. The ending decision protocol is in [Retained work](../reference/retained-work.md).

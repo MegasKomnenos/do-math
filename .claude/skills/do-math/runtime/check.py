@@ -151,7 +151,8 @@ def audit_formal(instance, session, check, solution, candidate):
          'formal check must be a finished job of this reviewing session')
     need(check.get('alignment') == 'matches', 'formal acceptance requires exact mathematical correspondence')
     text(check.get('reason'), 'formal_check.reason')
-    theorem = solution.get('lean', {}).get('theorem')
+    need(isinstance(solution.get('lean'), dict), "formal acceptance needs the candidate solution's lean theorem and sources")
+    theorem = solution['lean'].get('theorem')
     need(theorem and check.get('theorem') == theorem, 'formal theorem differs from candidate')
     if JOB_ID.fullmatch(job):
         need(receipt.get('exit_code') == 0, 'review compile failed')

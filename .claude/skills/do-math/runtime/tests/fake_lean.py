@@ -1,8 +1,8 @@
 """A stand-in for `lean` with a controllable memory and time profile; no Lean is involved.
 
 The last argument is the source file. Its `import` lines cost 8 MiB each plus 8 MiB
-(the "baseline"), held for the whole run. A line `-- fake: key=value ...` adds:
-import_sleep (seconds the baseline alone is held before anything else; default 0.3),
+(the "baseline"), held for the whole run and alone for its first 0.3 seconds, so that
+the broker's sampling sees an imports-only peak. A line `-- fake: key=value ...` adds:
 alloc_mb (private memory taken after the baseline), sleep (seconds), exit (code),
 marker (text printed to stdout), stderr (text printed to stderr). `--threads=N` is
 echoed, as are the FAKE_ENV environment variable and the process's niceness;
@@ -55,7 +55,7 @@ def main(argv):
                 key, _, value = pair.partition("=")
                 options[key] = value
     held = [touch(bytearray((8 + 8 * len(imports)) * 1024 * 1024))]
-    time.sleep(float(options.get("import_sleep", 0.3)))
+    time.sleep(0.3)  # the baseline alone, long enough for the broker's sampling to see it
     if "alloc_mb" in options:
         held.append(touch(bytearray(int(options["alloc_mb"]) * 1024 * 1024)))
     time.sleep(float(options.get("sleep", 0)))

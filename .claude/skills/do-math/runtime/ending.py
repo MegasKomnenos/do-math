@@ -37,9 +37,9 @@ def conversation_id(folder, provider):
     return next(iter(identities), None)
 
 
-def end_decision(session, request):
+def end_decision(path, request):
     """A decision is valid only for the reconsideration turn that requested it."""
-    path = Path(session) / 'output/end-decision.json'
+    path = Path(path)
     if not path.exists():
         return None, None
     try:
@@ -165,6 +165,11 @@ def supervise(session, launch):
         signal = refusal(folder, policy['provider'], policy['model'],
                          result['invocation_started_at'], policy['retry_seconds'])
         write_json(folder / 'turn-termination.json', {'result': result, 'refusal': signal})
+        # A submitted decision is a receipt of this turn, not role output. Left in output/,
+        # it would be frozen into a peer's candidate and checked again after a later request.
+        submitted = folder / 'submitted-end-decision.json'
+        if (session / 'output/end-decision.json').exists():
+            shutil.move(session / 'output/end-decision.json', submitted)
         if (session / 'CANCEL').exists() or result['exit_code'] != 0 or signal:
             authorize(session, state, 'runner', 'interrupted',
                       'Execution ended by cancellation, failure or provider/model refusal.')
@@ -187,10 +192,7 @@ def supervise(session, launch):
                 return result
         error = None
         if state['request'] is not None:
-            submitted = session / 'output/end-decision.json'
-            if submitted.exists():
-                shutil.copyfile(submitted, folder / 'submitted-end-decision.json')
-            decision, error = end_decision(session, state['request'])
+            decision, error = end_decision(submitted, state['request'])
             write_json(folder / 'decision-check.json', {'decision': decision, 'error': error})
             if decision is not None:
                 authorize(session, state, 'worker', decision['basis'], decision['explanation'], decision=decision)

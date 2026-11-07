@@ -84,6 +84,9 @@ class EndingTests(InstanceCase):
                 self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review' if role == 'peer' else 'peer')
                 if role == 'peer':
                     self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 1.')
+                    # The ending decision stays with its turn; it is not frozen into the candidate.
+                    self.assertFalse((directory / 'candidate/end-decision.json').exists())
+                    self.assertTrue((directory / 'turns/0001/submitted-end-decision.json').is_file())
                     self.assertEqual(len([j for j in engine.state['jobs'].values()
                                           if j['role'] == 'review' and j['pipeline'] == pipeline]), 1)
                 self.assertEqual(len([j for j in engine.state['jobs'].values()
@@ -144,6 +147,16 @@ class EndingTests(InstanceCase):
         second = read_json(directory / 'turns/0002/request.json')
         self.assertNotEqual(first['id'], second['id'])
         self.assertIn('another reconsideration', second['previous_error'])
+        self.assertEqual(read_json(directory / 'turns/0001/submitted-end-decision.json')['request_id'], 'old-request')
+
+    def test_rejected_decision_is_not_reported_again_after_a_continuing_turn(self):
+        _, _, directory = self.prepare(config={'stale_at': 1})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        self.assertIn('another reconsideration', read_json(directory / 'turns/0002/request.json')['previous_error'])
+        # Turn 2 continued without a decision; the rejected file remains only in turn 1's receipts.
+        self.assertIsNone(read_json(directory / 'turns/0003/request.json')['previous_error'])
+        self.assertFalse((directory / 'output/end-decision.json').exists())
         self.assertEqual(read_json(directory / 'turns/0001/submitted-end-decision.json')['request_id'], 'old-request')
 
     def test_malformed_decision_still_ends_at_configured_limit(self):

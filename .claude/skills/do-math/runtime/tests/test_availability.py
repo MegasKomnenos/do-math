@@ -85,7 +85,7 @@ class AvailabilityTests(InstanceCase):
         with patch('runner.time.time', return_value=time.time() + 10**6):
             self.assertFalse(self.runner.attempt_dispatch_ready())
         third, _, _ = self.attempt()
-        # Adding a reservation does not open work, even if a worker mistakenly reports overlap.
+        # Adding a section does not open work, even if a worker mistakenly reports overlap.
         write_json(self.runner.session_dir(third) / 'declaration.json',
                    {'sections': [{'id': 'new', 'node': 'root', 'whole': False,
                                   'statement': 'More occupied cases', 'at': 1}]})

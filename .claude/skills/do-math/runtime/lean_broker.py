@@ -421,17 +421,13 @@ class Calibration:
         entry["seconds"] = (entry["seconds"] + [round(seconds, 1)])[-HISTORY:]
         self.dirty = True
 
-    def stats(self, key):
+    def spread(self, key):
+        """The measured spread of the closure's excess relative to its mean; None until two samples."""
         entry = self.entry(key)
-        if entry is None or entry.get("baseline_mb") is None:
+        excess = entry["excess_mb"] if entry else []
+        if len(excess) < 2 or not statistics.fmean(excess):
             return None
-        excess, seconds = entry["excess_mb"], entry["seconds"]
-        mean = statistics.fmean(excess) if excess else None
-        sd = statistics.pstdev(excess) if len(excess) >= 2 else None
-        return {"baseline_mb": entry["baseline_mb"], "import_seconds": entry["import_seconds"],
-                "excess_mean": mean, "excess_sd": sd,
-                "excess_cv": (sd / mean if sd is not None and mean else None),
-                "duration_mean": statistics.fmean(seconds) if seconds else None, "samples": len(excess)}
+        return statistics.pstdev(excess) / statistics.fmean(excess)
 
     def save(self):
         if self.dirty:
@@ -479,10 +475,9 @@ def admission(running, candidate, budget_mb, z):
 # ----------------------------------------------------------------------- broker
 
 class Broker:
-    def __init__(self, instance, token=None, log_path=None):
+    def __init__(self, instance, log_path=None):
         self.paths = Paths(instance)
         self.paths.ensure()
-        self.token = token
         self.log_path = log_path  # None: stderr, which `serve` has redirected to broker.log
         self.identity = process_identity(os.getpid())
         self.settings = None
@@ -1080,10 +1075,10 @@ class Broker:
     # --- scheduling
 
     def reserve(self, job, record=True):
-        stats = self.calibration.stats(job["closure"]) if job["kind"] == "compile" else None
-        baseline = stats["baseline_mb"] if stats else None
+        baseline = self.calibration.baseline(job["closure"]) if job["kind"] == "compile" else None
         expect = max(job["expect_mb"], baseline or 0)
-        cv = stats["excess_cv"] if stats and stats["excess_cv"] else self.config["default_spread"]
+        cv = (self.calibration.spread(job["closure"]) if baseline is not None else None) \
+            or self.config["default_spread"]
         current = (job["measured"] or {}).get("current_mb", 0.0) if job["status"] == "running" else None
         certain, mean, sd = reservation(expect, baseline, cv, current)
         if record:
@@ -1265,10 +1260,9 @@ class Broker:
     def serve(self):
         with InstanceLock(self.paths.lock):
             # Alive from this moment: clients may queue requests while the broker finishes starting.
-            write_json(self.paths.process, {"process": self.identity, "started_at": time.time(), "token": self.token})
+            write_json(self.paths.process, {"process": self.identity, "started_at": time.time()})
             self.start()
-            print(json.dumps({"started": self.identity, "instance": str(self.paths.instance), "token": self.token}),
-                  flush=True)
+            print(json.dumps({"started": self.identity, "instance": str(self.paths.instance)}), flush=True)
             while True:
                 self.tick()
                 if self.should_exit():
@@ -1521,8 +1515,6 @@ def main(argv=None):
             sub.add_argument("job", help="a job ID or a build ID")
         if name in ("run", "build", "wait"):
             sub.add_argument("--timeout", type=float, help="seconds to wait before returning 124; the work continues")
-        if name == "serve":
-            sub.add_argument("--token")
     args = parser.parse_args(argv)
     try:
         if args.command == "_job":
@@ -1533,7 +1525,7 @@ def main(argv=None):
         if not (paths.instance / "runner").is_dir():
             raise ValueError(f"not a do-math instance: {paths.instance}")
         if args.command == "serve":
-            return Broker(paths.instance, args.token).serve()
+            return Broker(paths.instance).serve()
         if args.command in ("submit", "run"):
             receipt = submit(paths, args.source, args.expect_mb, args.session)
             if args.command == "submit":

@@ -397,6 +397,12 @@ class FormalEvidenceTests(InstanceCase):
         with self.assertRaisesRegex(Invalid, 'unapproved axiom'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def test_formal_level_needs_a_candidate_lean_solution(self):
+        # A solution without lean can still be marked formal by mistake; the check names what is missing.
+        candidate, _, check, _ = self.evidence()
+        with self.assertRaisesRegex(Invalid, "candidate solution's lean theorem and sources"):
+            audit_formal(self.instance, 'sreview', check, {'lean': None}, candidate)
+
     def test_failed_single_file_review_compile_is_not_formal_evidence(self):
         candidate, _, check, solution = self.evidence()
         result = self.instance / 'runner/lean/jobs' / check['job'] / 'result.json'

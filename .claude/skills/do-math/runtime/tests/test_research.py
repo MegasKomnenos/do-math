@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, findings_check, organization_check
 from coordination import board, lease, lease_table, release, section, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
-from runner import Runner, archive_finished, initialize
+from runner import Runner, archive_finished, initialize, main
 from runtime_support import read_json, write_json
 from settings import defaults, validate
 
@@ -1166,6 +1166,8 @@ class RunnerTests(InstanceCase):
         self.publish('r3', record())
         runner.model = replay(self.instance); runner.populate()
         job = next(j for j in runner.state['jobs'].values() if j['role'] == 'organizer')
+        runner.session_dir('sorganizer').mkdir()
+        runner.make_pack('sorganizer', job)
         self.assertEqual(len(job['task']['batch']), 4)
         for i in range(4, 6): self.publish('r' + str(i), record())
         self.event('o1', 'organization', {'batch': job['task']['batch'], 'modules': [], 'shared_context': []})
@@ -1282,6 +1284,23 @@ class RunnerTests(InstanceCase):
         runner.populate()
         self.assertEqual([j['id'] for j in runner.state['jobs'].values()
                           if j['task'].get('kind') == 'comprehensive'], [job['id']])
+
+    def test_operator_review_and_organize_requests_become_assignments(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
+        with patch('builtins.print'):
+            self.assertEqual(main(['review', str(self.instance), '--record', 'missing']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--record', 'r1', '--node', 'root',
+                                   '--reason', 'Check the base case.']), 0)
+            self.assertEqual(main(['organize', str(self.instance)]), 0)
+        runner = self.runner()
+        runner.ingest_inputs()
+        runner.ingest_inputs()
+        reviews = [j['task'] for j in runner.state['jobs'].values() if j['role'] == 'review']
+        self.assertEqual([(t['kind'], t['requested_records'], t['requested_nodes'], t['purpose']) for t in reviews],
+                         [('comprehensive', ['r1'], ['root'], 'Check the base case.')])
+        organizers = [j for j in runner.state['jobs'].values() if j['role'] == 'organizer'
+                      and j['id'].startswith('operator:')]
+        self.assertEqual([j['status'] for j in organizers], ['pending'])
 
     def test_root_change_requires_new_instance(self):
         (self.instance / 'root.md').write_text('A different proposition.', encoding='utf-8')

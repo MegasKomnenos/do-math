@@ -36,7 +36,7 @@ def retain_snapshot(session, view):
 
 
 def normalized_nodes(view, model):
-    """Node merges preserve reservations, rather than falsely opening a new node."""
+    """Node merges preserve registered sections, rather than falsely opening a new node."""
     result = {}
     for nid, sections in view['nodes'].items():
         if nid in model['nodes'] or nid in model['aliases']:

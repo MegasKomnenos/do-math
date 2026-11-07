@@ -205,7 +205,7 @@ def root_path(model, closure, node):
     if proved:
         return 'on a sufficient path to the root: its proof can carry the root'
     if refuted:
-        return 'a necessary condition only: its refutation refutes the root; its proof cannot carry the root'
+        return 'a necessary condition only: its refutation can carry the root; its proof cannot carry the root'
     return 'not connected to the root by an accepted relation'
 
 

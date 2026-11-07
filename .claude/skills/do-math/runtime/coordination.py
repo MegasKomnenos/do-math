@@ -1,7 +1,7 @@
 """Live coordination information, node leases and session-owned section declarations.
 
 A section is an exact part of a node's question that an attempt or peer works on. It is kept in
-the registering session's declaration.json and lasts, as node occupancy did, until that session's
+the registering session's declaration.json and lasts until that session's
 pipeline finishes review. Choosing a section is serialized per node: one session at a time holds
 the node's lease, registers its section and so passes the lease to the next waiting session.
 Leases and registrations are decided first-wins under one instance lock."""
