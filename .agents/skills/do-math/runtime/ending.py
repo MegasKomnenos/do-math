@@ -3,7 +3,6 @@
 The host stays alive across turns, preserving the logical session's capacity and
 coordination identity. The runner collects only after this host has finished.
 """
-import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,12 +11,11 @@ import uuid
 
 from availability import no_research_outcome
 from launch import worker_command, worker_environment
-from retention import events, refusal
+from retention import conversation_identity, events, refusal
 from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
-RESUME_DIRECTORY = Path(__file__).resolve().parents[1] / 'resume'
 
 
 def turn_directory(session, number):
@@ -27,8 +25,7 @@ def turn_directory(session, number):
 def conversation_id(folder, provider):
     identities = set()
     for event in events(Path(folder) / 'cli.stdout.jsonl'):
-        value = (event.get('thread_id') if event.get('type') == 'thread.started' else None
-                 ) if provider == 'codex' else event.get('session_id')
+        value = conversation_identity(event, provider)
         if value is not None:
             try:
                 identities.add(str(uuid.UUID(value)))
@@ -39,9 +36,9 @@ def conversation_id(folder, provider):
     return next(iter(identities), None)
 
 
-def end_decision(session, request):
+def end_decision(path, request):
     """A decision is valid only for the reconsideration turn that requested it."""
-    path = Path(session) / 'output/end-decision.json'
+    path = Path(path)
     if not path.exists():
         return None, None
     try:
@@ -59,12 +56,11 @@ def end_decision(session, request):
     return data, None
 
 
-def request_prompt(session, request, *, role=None, guidance_dir=None, snapshot=None):
+def request_prompt(request, role, guidance_dir, *, snapshot=None):
     """Read current guidance for each turn; retain the actual source bytes delivered."""
-    role = role or read_json(Path(session) / 'input.json')['role']
     if role not in ROLES:
         raise ValueError('no continuation guidance for role: ' + role)
-    directory = Path(guidance_dir) if guidance_dir is not None else RESUME_DIRECTORY
+    directory = Path(guidance_dir)
     sources = {name: (directory / name).read_bytes() for name in ('common.md', role + '.md')}
     common, specific = (sources[name].decode('utf-8-sig').strip()
                         for name in ('common.md', role + '.md'))
@@ -84,13 +80,11 @@ def request_prompt(session, request, *, role=None, guidance_dir=None, snapshot=N
     return prompt
 
 
-def authorize(session, state, source, basis, explanation, *, decision=None):
+def authorize(session, state, source, basis, explanation):
     authorization = {'authorized': True, 'source': source, 'basis': basis,
                      'explanation': explanation, 'at': time.time(),
                      'resumptions': state['resumptions'], 'maximum': state['maximum'],
                      'request_id': (state.get('request') or {}).get('id')}
-    if decision is not None:
-        authorization['decision'] = decision
     state.update(status='authorized', authorization=authorization)
     write_json(Path(session) / 'end-check.json', state)
     return authorization
@@ -149,7 +143,6 @@ def run_turn(session, folder, command):
                 # A supervision error must not leave an untracked resumed CLI.
                 child.terminate()
                 child.wait()
-    write_json(folder / 'turn-result.json', result)
     return result
 
 
@@ -168,6 +161,11 @@ def supervise(session, launch):
         signal = refusal(folder, policy['provider'], policy['model'],
                          result['invocation_started_at'], policy['retry_seconds'])
         write_json(folder / 'turn-termination.json', {'result': result, 'refusal': signal})
+        # A submitted decision is a receipt of this turn, not role output. Left in output/,
+        # it would be frozen into a peer's candidate and checked again after a later request.
+        submitted = folder / 'submitted-end-decision.json'
+        if (session / 'output/end-decision.json').exists():
+            shutil.move(session / 'output/end-decision.json', submitted)
         if (session / 'CANCEL').exists() or result['exit_code'] != 0 or signal:
             authorize(session, state, 'runner', 'interrupted',
                       'Execution ended by cancellation, failure or provider/model refusal.')
@@ -186,17 +184,13 @@ def supervise(session, launch):
                     raise ValueError('Resumption returned a different conversation identity')
             except ValueError as exc:
                 authorize(session, state, 'runner', 'resume_unavailable', str(exc))
-                result['ending_error'] = str(exc)
                 return result
         error = None
         if state['request'] is not None:
-            submitted = session / 'output/end-decision.json'
-            if submitted.exists():
-                shutil.copyfile(submitted, folder / 'submitted-end-decision.json')
-            decision, error = end_decision(session, state['request'])
+            decision, error = end_decision(submitted, state['request'])
             write_json(folder / 'decision-check.json', {'decision': decision, 'error': error})
             if decision is not None:
-                authorize(session, state, 'worker', decision['basis'], decision['explanation'], decision=decision)
+                authorize(session, state, 'worker', decision['basis'], decision['explanation'])
                 return result
         if number >= state['maximum']:
             authorize(session, state, 'runner', 'resumption_limit',
@@ -204,14 +198,11 @@ def supervise(session, launch):
             return result
         try:
             identity = conversation_id(folder, policy['provider'])
-            if identity is not None and state['conversation_id'] not in (None, identity):
-                raise ValueError('Resumption returned a different conversation identity')
             state['conversation_id'] = state['conversation_id'] or identity
             if state['conversation_id'] is None:
                 raise ValueError('No exact native conversation identity is available for resumption')
         except ValueError as exc:
             authorize(session, state, 'runner', 'resume_unavailable', str(exc))
-            result['ending_error'] = str(exc)
             return result
         request = {'id': uuid.uuid4().hex, 'round': number + 1, 'previous_error': error}
         state['request'] = request
@@ -224,8 +215,7 @@ def supervise(session, launch):
         next_folder = turn_directory(session, number + 1)
         next_folder.mkdir(parents=True)
         write_text(next_folder / 'prompt.txt', request_prompt(
-            session, request, role=policy['role'], guidance_dir=policy.get('resume_guidance'),
-            snapshot=next_folder / 'guidance'))
+            request, policy['role'], policy['resume_guidance'], snapshot=next_folder / 'guidance'))
         write_json(next_folder / 'request.json', request)
         selected = worker_command(policy['executable'], policy['model'], policy['effort'], session,
                                   policy['mcp_servers'], resume_id=state['conversation_id'])

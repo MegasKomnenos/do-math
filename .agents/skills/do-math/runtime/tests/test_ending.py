@@ -1,6 +1,4 @@
 from pathlib import Path
-import json
-import subprocess
 import sys
 import threading
 import time
@@ -10,11 +8,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cli_adapter import Command
 from coordination import board, session_live
-from ending import conversation_id, end_decision, request_prompt, run_turn, supervise
+from ending import request_prompt, run_turn
 from launch import worker_command
-from retention import capture
 from runner import Runner, main
-from runtime_support import process_identity, read_json, session_host, write_json
+from runtime_support import read_json, session_host, write_json
 from settings import defaults, validate
 from test_research import InstanceCase, take
 
@@ -75,7 +72,7 @@ class EndingTests(InstanceCase):
                 self.assertEqual(pack, (directory / 'pack.md').read_bytes())
                 self.assertEqual(declaration, declaration_path.read_bytes() if declaration_path.exists() else None)
                 self.assertIn('directives supplied for this session', (directory / 'turns/0001/prompt.txt').read_text())
-                self.assertTrue((directory / 'turns/0001/turn-result.json').is_file())
+                self.assertTrue((directory / 'turns/0001/turn-termination.json').is_file())
                 # Runner restart sees the same logical session, then collects it once.
                 engine = Runner(self.instance, self.skill)
                 s = engine.state['sessions'][sid]
@@ -87,6 +84,9 @@ class EndingTests(InstanceCase):
                 self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review' if role == 'peer' else 'peer')
                 if role == 'peer':
                     self.assertEqual((directory / 'candidate/report.md').read_text(), 'Research through turn 1.')
+                    # The ending decision stays with its turn; it is not frozen into the candidate.
+                    self.assertFalse((directory / 'candidate/end-decision.json').exists())
+                    self.assertTrue((directory / 'turns/0001/submitted-end-decision.json').is_file())
                     self.assertEqual(len([j for j in engine.state['jobs'].values()
                                           if j['role'] == 'review' and j['pipeline'] == pipeline]), 1)
                 self.assertEqual(len([j for j in engine.state['jobs'].values()
@@ -121,7 +121,6 @@ class EndingTests(InstanceCase):
         self.assertIn('Role update between turns.', (second / 'prompt.txt').read_text())
         self.assertEqual((first / 'guidance/explore.md').read_bytes(), original_role)
         self.assertIn(b'Role update between turns.', (second / 'guidance/explore.md').read_bytes())
-        self.assertEqual((directory / 'candidate').exists(), False)
 
     def test_limit_authorizes_end_instead_of_waiting_or_resuming_indefinitely(self):
         _, _, directory = self.prepare(maximum=2)
@@ -149,6 +148,16 @@ class EndingTests(InstanceCase):
         self.assertIn('another reconsideration', second['previous_error'])
         self.assertEqual(read_json(directory / 'turns/0001/submitted-end-decision.json')['request_id'], 'old-request')
 
+    def test_rejected_decision_is_not_reported_again_after_a_continuing_turn(self):
+        _, _, directory = self.prepare(config={'stale_at': 1})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        self.assertIn('another reconsideration', read_json(directory / 'turns/0002/request.json')['previous_error'])
+        # Turn 2 continued without a decision; the rejected file remains only in turn 1's receipts.
+        self.assertIsNone(read_json(directory / 'turns/0003/request.json')['previous_error'])
+        self.assertFalse((directory / 'output/end-decision.json').exists())
+        self.assertEqual(read_json(directory / 'turns/0001/submitted-end-decision.json')['request_id'], 'old-request')
+
     def test_malformed_decision_still_ends_at_configured_limit(self):
         _, _, directory = self.prepare(maximum=1, config={'malformed_at': 1})
         state = self.run_host(directory)
@@ -168,6 +177,31 @@ class EndingTests(InstanceCase):
         receipt = read_json(directory / 'turns/0001/turn-termination.json')
         self.assertEqual(receipt['refusal']['reason'], 'usage_limit')
         self.assertEqual(read_json(directory / 'exit.json')['exit_code'], 1)
+
+    def test_failed_turn_is_interruption_not_worker_authorization(self):
+        _, _, directory = self.prepare(config={'fail_at': 1})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['source'], 'runner')
+        self.assertEqual(state['authorization']['basis'], 'interrupted')
+        self.assertEqual(state['resumptions'], 1)
+        receipt = read_json(directory / 'turns/0001/turn-termination.json')
+        self.assertEqual(receipt['result']['exit_code'], 2)
+        self.assertIsNone(receipt['refusal'])
+
+    def test_only_the_two_ending_bases_authorize_a_worker_end(self):
+        for basis, expected in (('task_completed', 'task_completed'), ('partial_result', 'resumption_limit')):
+            with self.subTest(basis=basis):
+                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, 'basis': basis})
+                state = self.run_host(directory)
+                self.assertEqual(state['authorization']['basis'], expected)
+                error = read_json(directory / 'turns/0001/decision-check.json')['error']
+                if basis == 'partial_result':
+                    self.assertIn('task_completed or no_way_forward', error)
+                else:
+                    self.assertIsNone(error)
+                pipeline = engine.state['jobs'][engine.state['sessions'][sid]['job']]['pipeline']
+                engine.state['pipelines'][pipeline]['stage'] = 'done'
+                engine.save()
 
     def test_missing_or_changed_identity_does_not_start_a_fresh_conversation(self):
         for config in ({'omit_identity': True}, {'change_identity_at': 1, 'end_after': 1}):
@@ -243,6 +277,41 @@ class EndingTests(InstanceCase):
         self.assertEqual(state['authorization']['basis'], 'interrupted')
         self.assertEqual(state['resumptions'], 0)
 
+    def test_cancelled_peer_resumption_gets_a_replacement_instead_of_review(self):
+        engine, sid, directory = self.prepare(role='peer')
+        (self.instance / 'control/STOP').touch()
+        with patch('ending.worker_command', side_effect=self.command):
+            thread = threading.Thread(target=session_host, args=(directory,), daemon=True)
+            thread.start()
+            try:
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    path = directory / 'end-check.json'
+                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
+                        break
+                    time.sleep(.05)
+                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
+                import io
+                with patch('sys.stdout', new=io.StringIO()):
+                    self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
+                thread.join(10)
+                self.assertFalse(thread.is_alive())
+            finally:
+                (directory / 'CANCEL').touch()
+                thread.join(10)
+        # The first turn exited cleanly with a structurally valid candidate, but the operator
+        # cancelled the pending resumption: the peer stage is unfinished, not ready for review.
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+        self.assertFalse((directory / 'candidate').exists())
+        job = engine.state['jobs'][s['job']]
+        self.assertEqual((job['status'], s['status']), ('pending', 'failed'))
+        self.assertIn(str(directory), job['task']['previous_partial_sessions'])
+        self.assertFalse(any(j['role'] == 'review' for j in engine.state['jobs'].values()))
+
     def test_another_sessions_provider_block_holds_resumption(self):
         engine, _, directory = self.prepare(maximum=1)
         engine.state['blocks']['provider:codex'] = {'until': time.time() + 60, 'reason': 'usage_limit'}
@@ -268,7 +337,7 @@ class EndingTests(InstanceCase):
                 (directory / 'CANCEL').touch()
                 thread.join(10)
 
-    def test_host_loss_is_recorded_as_interruption_without_duplicate_publication(self):
+    def test_host_loss_is_recorded_as_interruption_and_retained_work_reaches_peer(self):
         engine, sid, directory = self.prepare()
         write_json(directory / 'end-check.json', {'maximum': 3, 'resumptions': 0,
                    'status': 'running', 'request': None, 'authorization': None})
@@ -284,26 +353,26 @@ class EndingConfigurationTests(unittest.TestCase):
     def test_role_guidance_is_selected_and_invalid_templates_fail_before_delivery(self):
         import shutil
         import tempfile
-        from ending import RESUME_DIRECTORY, ROLES
+        from ending import ROLES
         self.assertEqual(set(ROLES), {'attempt', 'formalizer', 'explore', 'peer'})
         with tempfile.TemporaryDirectory() as tmp:
             guidance = Path(tmp) / 'resume'
-            shutil.copytree(RESUME_DIRECTORY, guidance)
+            shutil.copytree(Path(__file__).resolve().parents[2] / 'resume', guidance)
             request = {'id': 'current-request', 'previous_error': 'Stale decision'}
             for role in ROLES:
-                prompt = request_prompt(None, request, role=role, guidance_dir=guidance)
+                prompt = request_prompt(request, role, guidance)
                 self.assertIn((guidance / (role + '.md')).read_text().strip(), prompt)
                 self.assertIn('current-request', prompt)
                 self.assertIn('Stale decision', prompt)
                 self.assertNotIn('{{', prompt)
             with self.assertRaises(ValueError):
-                request_prompt(None, request, role='review', guidance_dir=guidance)
+                request_prompt(request, 'review', guidance)
             (guidance / 'peer.md').unlink()
             with self.assertRaises(FileNotFoundError):
-                request_prompt(None, request, role='peer', guidance_dir=guidance)
+                request_prompt(request, 'peer', guidance)
             (guidance / 'common.md').write_text('Incomplete message.')
             with self.assertRaises(ValueError):
-                request_prompt(None, request, role='explore', guidance_dir=guidance)
+                request_prompt(request, 'explore', guidance)
 
     def test_limit_validation(self):
         self.assertEqual(defaults()['max_end_resumptions'], 3)

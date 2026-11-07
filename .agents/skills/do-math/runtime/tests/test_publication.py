@@ -49,7 +49,7 @@ class ProposalIdentityTests(InstanceCase):
         output = reviewer / 'output'
         output.mkdir(parents=True)
         candidate = second / 'output'
-        hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.iterdir()}
+        hashes = runtime.tree_hashes(candidate)
         write_json(reviewer / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
             'role': 'review', 'task': {'kind': 'candidate', 'candidate': str(candidate),
                                      'candidate_hashes': hashes}})
@@ -138,6 +138,7 @@ class PublicationTests(InstanceCase):
         self.assertEqual(recovered.state['sessions']['sreview']['status'], 'failed')
         self.assertEqual(list((self.instance / 'knowledge/events').glob('*.json')), [])
         self.assertEqual(list((self.instance / 'knowledge/records').iterdir()), [])
+        self.assertEqual(list((self.instance / 'runner').glob('stage-*')), [])
         restored = Path(job['task']['candidate'])
         self.assertNotEqual(restored, candidate)
         self.assertEqual(runtime.tree_hashes(restored), job['task']['candidate_hashes'])
@@ -228,6 +229,8 @@ class PublicationTests(InstanceCase):
         candidate = Path(job['task']['candidate'])
         for folder in (candidate, candidate.parent / 'output'):
             (folder / 'record.md').write_text('Changed retained bytes.', encoding='utf-8')
+        runner.session_dir('sauthor').mkdir(parents=True, exist_ok=True)
+        write_json(runner.session_dir('sauthor') / 'declaration.json', {'sections': [{'id': 'sp', 'node': 'root', 'whole': True, 'statement': 'The whole root node.'}]})
         runner.finish('sreview', runner.state['sessions']['sreview'])
         pipeline = runner.state['pipelines'][job['pipeline']]
         self.assertEqual(job['status'], 'cancelled')
@@ -235,6 +238,7 @@ class PublicationTests(InstanceCase):
         peer_job = next(j for j in runner.state['jobs'].values() if j['role'] == 'peer')
         self.assertEqual(peer_job['status'], 'pending')
         self.assertIn(str(candidate.parent), peer_job['task']['previous_partial_sessions'])
+        self.assertEqual(peer_job['task']['sections'], [{'id': 'sp', 'node': 'root', 'whole': True, 'statement': 'The whole root node.'}])
         self.assertEqual((candidate / 'record.md').read_text(encoding='utf-8'), 'Changed retained bytes.')
         peer_sid = 'snewpeer'
         peer = runner.session_dir(peer_sid)
@@ -291,7 +295,9 @@ class PublicationTests(InstanceCase):
         pipeline = runner.state['pipelines'][job['pipeline']]
         producer = runner.session_dir(pipeline['producer'])
         producer.mkdir(parents=True)
-        write_json(producer / 'declaration.json', {'nodes': ['root'], 'at': 1})
+        write_json(producer / 'declaration.json', {'sections': [
+            {'id': pipeline['producer'] + '-1', 'node': 'root', 'whole': True, 'statement': None,
+             'reasons': {}, 'at': 1}], 'at': 1})
         self.assertEqual(runner.available_nodes(), [])
         session = runner.session_dir('sreview')
         verdict = read_json(session / 'output/assessment.json')
@@ -392,6 +398,12 @@ class FormalEvidenceTests(InstanceCase):
         with self.assertRaisesRegex(Invalid, 'unapproved axiom'):
             audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def test_formal_level_needs_a_candidate_lean_solution(self):
+        # A solution without lean can still be marked formal by mistake; the check names what is missing.
+        candidate, _, check, _ = self.evidence()
+        with self.assertRaisesRegex(Invalid, "candidate solution's lean theorem and sources"):
+            audit_formal(self.instance, 'sreview', check, {'lean': None}, candidate)
+
     def test_failed_single_file_review_compile_is_not_formal_evidence(self):
         candidate, _, check, solution = self.evidence()
         result = self.instance / 'runner/lean/jobs' / check['job'] / 'result.json'
@@ -415,6 +427,22 @@ class FormalEvidenceTests(InstanceCase):
         # launched under a condition that did. Later conditions do not alter it.
         self.assertNotIn('custom_assumption', read_json(self.instance / 'settings.json')['lean']['allowed_axioms'])
         audit_formal(self.instance, 'sreview', check, solution, candidate)
+
+    def test_formal_check_must_match_candidate_theorem_sources_and_printed_axioms(self):
+        # Each formal_check field is compared with the evidence it names; the reviewer's
+        # own entry, or a stale one, does not pass the audit by itself.
+        candidate, _, check, solution = self.evidence()
+        audit_formal(self.instance, 'sreview', check, solution, candidate)
+        for change, message in (
+                ({'alignment': 'differs'}, 'exact mathematical correspondence'),
+                ({'theorem': 'other_target'}, 'formal theorem differs from candidate'),
+                ({'axioms': ['propext']}, 'reported axioms differ from broker output'),
+                ({'source_hashes': {'Proof.lean': hashlib.sha256(b'edited source').hexdigest()}},
+                 'identify the final candidate source bytes'),
+                ({'source_files': {'Proof.lean': 'input.json'}}, 'absent from the reviewing compile')):
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(Invalid, message):
+                    audit_formal(self.instance, 'sreview', {**check, **change}, solution, candidate)
 
     def build_evidence(self):
         candidate, working, check, solution = self.evidence()

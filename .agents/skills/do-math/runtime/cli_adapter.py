@@ -39,7 +39,10 @@ def provider_for_model(model: str) -> Provider:
 def build_command(
     cli_path: PathLike, model: str, effort: str, cwd: PathLike
 ) -> Command:
-    """Build a fresh, unattended command; caller supplies stdin and log files."""
+    """Build an unattended command for a new conversation; caller supplies stdin and log files.
+
+    The native conversation persists: retention copies its transcript and the session
+    host resumes it (launch.py), so no ephemeral or no-persistence flag is set here."""
     provider = provider_for_model(model)
     model = model.partition("/")[2]
     executable = os.fspath(cli_path)
@@ -54,7 +57,7 @@ def build_command(
             "-c", "model_reasoning_effort=" + json.dumps(effort),
             "-c", 'approval_policy="never"',
             "--sandbox", "danger-full-access", "--cd", str(workdir),
-            "--skip-git-repo-check", "--ephemeral", "--color", "never",
+            "--skip-git-repo-check", "--color", "never",
             "--json", "-",
         ]
     else:
@@ -63,7 +66,7 @@ def build_command(
         argv = [
             executable, "--print", "--model", model, "--effort", effort,
             "--dangerously-skip-permissions", "--permission-prompts", "none",
-            "--no-session-persistence", "--input-format", "text",
+            "--input-format", "text",
             "--output-format", "stream-json", "--verbose",
         ]
     return Command(provider, argv, workdir)

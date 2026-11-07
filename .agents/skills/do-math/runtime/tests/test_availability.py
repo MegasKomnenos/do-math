@@ -1,6 +1,7 @@
 """No-work exits, state-dependent dispatch suppression and one-at-a-time reassessment."""
-from pathlib import Path
 import json
+from pathlib import Path
+import subprocess
 import sys
 import time
 from unittest.mock import patch
@@ -86,7 +87,7 @@ class AvailabilityTests(InstanceCase):
         with patch('runner.time.time', return_value=time.time() + 10**6):
             self.assertFalse(self.runner.attempt_dispatch_ready())
         third, _, _ = self.attempt()
-        # Adding a reservation does not open work, even if a worker mistakenly reports overlap.
+        # Adding a section does not open work, even if a worker mistakenly reports overlap.
         write_json(self.runner.session_dir(third) / 'declaration.json',
                    {'sections': [{'id': 'new', 'node': 'root', 'whole': False,
                                   'statement': 'More occupied cases', 'at': 1}]})
@@ -157,7 +158,9 @@ class AvailabilityTests(InstanceCase):
                 folder = self.runner.session_dir(sid)
                 write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
                 if kind == 'claimed':
-                    write_json(folder / 'declaration.json', {'nodes': ['root']})
+                    write_json(folder / 'declaration.json', {'sections': [
+                        {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
+                         'reasons': {}, 'at': 1}], 'at': 1})
                 elif kind == 'interrupted':
                     session['exit_code'] = 1
                 elif kind == 'refused':
@@ -278,17 +281,25 @@ class AvailabilityTests(InstanceCase):
         self.runner.finish(sid, session)
         self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
 
-    def test_old_instance_baselines_registered_attempts_without_retriggering(self):
-        sid, _, _ = self.attempt()
-        self.assertTrue(take(self.runner.session_dir(sid), 'root')['registered'])
-        del self.runner.state['attempt_research_starts']
-        self.runner.settings['explore_every'] = 1
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
-        self.assertFalse(self.runner.state['explore_requested'])
-        self.runner = Runner(self.instance, self.skill)
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
+    def test_check_command_reports_transport_errors_through_its_exit_code(self):
+        sid, _, _ = self.report()
+        folder = self.runner.session_dir(sid)
+        script = Path(__file__).resolve().parents[1] / 'check.py'
+
+        def check():
+            result = subprocess.run([sys.executable, '-B', str(script), str(folder)], capture_output=True)
+            return result.returncode, json.loads(result.stdout.decode('utf-8'))
+
+        self.assertEqual(check(), (0, {'ok': True, 'errors': []}))
+        value = read_json(folder / 'output/outcome.json')
+        # A malformed token and a well-formed token this session never retained receive the same diagnosis.
+        for token in ('not-a-token', '0' * 64):
+            with self.subTest(token=token):
+                value['availability']['snapshot'] = token
+                write_json(folder / 'output/outcome.json', value)
+                code, report = check()
+                self.assertEqual((code, report['ok']), (1, False))
+                self.assertIn('token returned by updates', report['errors'][0])
 
 
 if __name__ == '__main__':

@@ -36,7 +36,7 @@ def retain_snapshot(session, view):
 
 
 def normalized_nodes(view, model):
-    """Node merges preserve reservations, rather than falsely opening a new node."""
+    """Node merges preserve registered sections, rather than falsely opening a new node."""
     result = {}
     for nid, sections in view['nodes'].items():
         if nid in model['nodes'] or nid in model['aliases']:
@@ -50,7 +50,7 @@ def opening_since(observed, current, model):
         if nid not in previous:
             return 'new_or_reopened_node'
         if previous[nid] - set(sections):
-            return 'released_section'
+            return 'ended_occupancy'
     return None
 
 
@@ -61,11 +61,13 @@ def no_research_outcome(session, role):
     value = read_json(path)
     if not isinstance(value, dict) or 'disposition' not in value:
         return None
-    if role != 'attempt' or value['disposition'] != 'no_research':
+    if role != 'attempt':
         raise ValueError('only attempts may declare disposition: no_research')
+    if value['disposition'] != 'no_research':
+        raise ValueError('disposition can only be no_research; omit it from the outcome of a session that undertook research')
     declaration = Path(session) / 'declaration.json'
     held = read_json(declaration) if declaration.exists() else {}
-    if held.get('sections') or held.get('nodes'):
+    if held.get('sections'):
         raise ValueError('no_research is incompatible with registered sections')
     return value
 
@@ -80,9 +82,12 @@ def reported_availability(session, outcome):
     if report['status'] != 'all_unresolved_work_occupied':
         raise ValueError('unknown availability status')
     token = report['snapshot']
-    if not isinstance(token, str) or not re.fullmatch(r'[0-9a-f]{64}', token):
+    well_formed = isinstance(token, str) and re.fullmatch(r'[0-9a-f]{64}', token)
+    # A token of the right form that updates never retained for this session is equally not one of its tokens.
+    path = Path(session) / 'availability' / (token + '.json') if well_formed else None
+    if path is None or not path.exists():
         raise ValueError('availability.snapshot must be a token returned by updates')
-    observed = read_json(Path(session) / 'availability' / (token + '.json'))
+    observed = read_json(path)
     if (not isinstance(observed, dict) or set(observed) != {'epoch', 'nodes'}
             or type(observed['epoch']) is not int or observed['epoch'] < 0
             or not isinstance(observed['nodes'], dict)

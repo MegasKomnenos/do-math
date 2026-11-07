@@ -1,6 +1,6 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, math, os, shutil, signal, subprocess, sys, tarfile, time, uuid
+import ctypes, gc, hashlib, json, os, shutil, signal, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 
@@ -159,8 +159,9 @@ def rename_directory(source, destination):
 
 class InstanceLock(AbstractContextManager):
     """OS lock, released by process death; the lock file itself stays in place."""
-    def __init__(self, path):
+    def __init__(self, path, holder="runner"):
         self.path = Path(path)
+        self.holder = holder  # named in the refusal, so a broker log does not blame the runner
         self.stream = None
 
     def __enter__(self):
@@ -178,7 +179,7 @@ class InstanceLock(AbstractContextManager):
                 fcntl.flock(self.stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError as exc:
             self.stream.close()
-            raise RuntimeError("This instance already has a running runner") from exc
+            raise RuntimeError(f"This instance already has a running {self.holder}") from exc
         return self
 
     def __exit__(self, *args):
@@ -328,31 +329,11 @@ def session_host(session):
         if (session / "CANCEL").exists() or not alive(job["runner"]):
             return 1
         time.sleep(0.1)
+    from ending import run_turn, supervise
     if job.get('end_check') is not None:
-        from ending import supervise
         result = supervise(session, job)
-        write_json(session / 'exit.json', result)
-        return 0
-    command = job["command"]
-    result = {"exit_code": None}
-    with (session / "prompt.txt").open("rb") as inp, \
-            (session / "cli.stdout.jsonl").open("wb") as out, \
-            (session / "cli.stderr.log").open("wb") as err:
-        child = None
-        try:
-            started = time.time()
-            from launch import worker_environment
-            child = subprocess.Popen(command["argv"], cwd=command["cwd"], env=worker_environment(),
-                                     stdin=inp, stdout=out, stderr=err, shell=False,
-                                     **popen_options())
-            identity = process_identity(child.pid)
-            write_json(session / "process.json", {"process": identity,
-                       "pid": child.pid, "started_at": started})
-        except OSError as exc:
-            result["launch_error"] = str(exc)
-        finally:
-            if child is not None:
-                result["exit_code"] = child.wait()
+    else:
+        result = run_turn(session, session, job["command"])
     write_json(session / "exit.json", result)
     return 0
 
@@ -427,9 +408,3 @@ def archive_work(session):
         raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
     shutil.rmtree(work)
     return True
-
-
-
-def load_settings(instance):
-    from settings import load_settings as load
-    return load(instance)

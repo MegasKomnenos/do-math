@@ -2,9 +2,9 @@
 
 Three roles live in this file.
 
-- The client (`submit`, `wait`, `run`, `result`, `status`, `cancel`, `version`) is what a
-  session runs instead of Lean. It writes a request, waits for the result and relays
-  Lean's output and exit code.
+- The client (`submit`, `run`, `build`, `wait`, `result`, `status`, `cancel`, `version`) is
+  what a session runs instead of Lean. It writes a request, waits for the result and
+  relays Lean's output and exit code.
 - The broker (`serve`) is one detached process per instance, single through
   runner/lean/lock. It measures what compiles cost, keeps the calibration table, and
   starts queued jobs within one memory budget and one thread budget.
@@ -28,8 +28,9 @@ import sys
 import time
 import uuid
 
-from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config, load_settings,
+from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
                     popen_options, process_identity, read_json, terminate_process, write_json)
+from settings import load_settings
 
 SCRIPT = Path(__file__).resolve()
 MIB = 1024 * 1024
@@ -397,17 +398,16 @@ class Calibration:
         """Calibrated, or calibration tried and failed: either way no new calibration job is due."""
         return self.entry(key) is not None
 
-    def record_baseline(self, key, imports, version, baseline_mb, import_seconds):
-        entry = self.data["entries"].setdefault(key, {"imports": imports, "version": version,
-                                                      "excess_mb": [], "seconds": []})
+    def record_baseline(self, key, identity, baseline_mb, import_seconds):
+        """`identity` is what the key hashes, in readable form: imports, version, environment_key and direct."""
+        entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
         entry.update(baseline_mb=round(baseline_mb, 1), import_seconds=round(import_seconds, 1),
                      calibrated_at=time.time(), failed=None)
         self.dirty = True
 
-    def record_failure(self, key, imports, version, exit_code, reason):
+    def record_failure(self, key, identity, exit_code, reason):
         """A calibration that did not succeed; compiles of this closure run on their own estimates."""
-        entry = self.data["entries"].setdefault(key, {"imports": imports, "version": version,
-                                                      "excess_mb": [], "seconds": []})
+        entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
         entry.update(baseline_mb=None, import_seconds=None, calibrated_at=time.time(),
                      failed={"exit_code": exit_code, "reason": reason})
         self.dirty = True
@@ -420,17 +420,13 @@ class Calibration:
         entry["seconds"] = (entry["seconds"] + [round(seconds, 1)])[-HISTORY:]
         self.dirty = True
 
-    def stats(self, key):
+    def spread(self, key):
+        """The measured spread of the closure's excess relative to its mean; None until two samples."""
         entry = self.entry(key)
-        if entry is None or entry.get("baseline_mb") is None:
+        excess = entry["excess_mb"] if entry else []
+        if len(excess) < 2 or not statistics.fmean(excess):
             return None
-        excess, seconds = entry["excess_mb"], entry["seconds"]
-        mean = statistics.fmean(excess) if excess else None
-        sd = statistics.pstdev(excess) if len(excess) >= 2 else None
-        return {"baseline_mb": entry["baseline_mb"], "import_seconds": entry["import_seconds"],
-                "excess_mean": mean, "excess_sd": sd,
-                "excess_cv": (sd / mean if sd is not None and mean else None),
-                "duration_mean": statistics.fmean(seconds) if seconds else None, "samples": len(excess)}
+        return statistics.pstdev(excess) / statistics.fmean(excess)
 
     def save(self):
         if self.dirty:
@@ -441,7 +437,7 @@ class Calibration:
 # ------------------------------------------------------------------- admission
 
 def reservation(expect_mb, baseline_mb, cv, current_mb=None):
-    """(certain, mean, sd) in MiB for one job under the statistical-multiplexing rule (LEAN.md).
+    """(certain, mean, sd) in MiB for one job under the statistical-multiplexing rule (reference/lean.md).
 
     The baseline is certain: every compile of the closure reaches it. The estimate
     is read as the 90th percentile of the job's peak, so the elaboration excess above
@@ -478,10 +474,9 @@ def admission(running, candidate, budget_mb, z):
 # ----------------------------------------------------------------------- broker
 
 class Broker:
-    def __init__(self, instance, token=None, log_path=None):
+    def __init__(self, instance, log_path=None):
         self.paths = Paths(instance)
         self.paths.ensure()
-        self.token = token
         self.log_path = log_path  # None: stderr, which `serve` has redirected to broker.log
         self.identity = process_identity(os.getpid())
         self.settings = None
@@ -558,7 +553,7 @@ class Broker:
         """With `lake env lean …` configured, ask lake once for the environment it gives lean.
 
         Every later compile then runs lean directly in that environment, sparing the
-        workspace load that lake repeats per compile (LEAN.md). If this fails, the
+        workspace load that lake repeats per compile (reference/lean.md). If this fails, the
         configured command stays in force, so no compile depends on it working."""
         command = list(self.settings["lean"]["command"])
         self.direct = None
@@ -637,13 +632,10 @@ class Broker:
     # --- queue
 
     def ingest(self):
-        now = time.time()
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
-            if path.name.startswith("."):
-                continue
             job_id = path.stem
             try:
-                if not JOB_ID.match(job_id) and not BUILD_ID.match(job_id):
+                if not JOB_ID.fullmatch(job_id) and not BUILD_ID.fullmatch(job_id):
                     raise ValueError(f"not a job ID: {job_id}")
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 # Registration or a final outcome can be durable while its queue
@@ -659,6 +651,13 @@ class Broker:
                 expect = request["expect_mb"]
                 if type(expect) is not int or expect < 1:
                     raise ValueError("expect_mb must be a positive integer")
+                # Fields kept in the broker state must have the shapes the scheduler and the orphan
+                # check rely on; a request that fails here is answered, not left to crash a later tick.
+                if request.get("session") is not None and not isinstance(request["session"], str):
+                    raise ValueError("session must be a session ID")
+                if "submitted_at" in request and (type(request["submitted_at"]) not in (int, float)
+                                                  or not math.isfinite(request["submitted_at"])):
+                    raise ValueError("submitted_at must be a finite number")
                 if (folder / "CANCEL").exists():
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
@@ -675,8 +674,8 @@ class Broker:
                     raise ValueError("source must be a path")
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
-                folder = self.paths.build(job_id) if BUILD_ID.match(job_id) else \
-                    self.paths.job(job_id) if JOB_ID.match(job_id) else None
+                folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else \
+                    self.paths.job(job_id) if JOB_ID.fullmatch(job_id) else None
                 if folder is not None:
                     folder.mkdir(exist_ok=True)
                     write_json(folder / "result.json",
@@ -687,11 +686,13 @@ class Broker:
             job_dir.mkdir(exist_ok=True)
             try:
                 source_hash = request.get("source_sha256") or hashlib.sha256(Path(source).read_bytes()).hexdigest()
-            except OSError:
+            except (OSError, ValueError):  # unreadable, or a path with a character the OS rejects
                 source_hash = None
+            # A module compile of a build runs with -R, -o and the build's lib on the search path;
+            # a single-file submission of the same bytes is a different compile, not its duplicate.
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
-                              and j["source"] == source and j["kind"] == "compile"
+                              and j["source"] == source and j["kind"] == "compile" and not j.get("build")
                               and source_hash is not None and j.get("source_sha256") == source_hash
                               and j.get("environment_key") == self.state["environment_key"]), None)
             if duplicate:
@@ -702,7 +703,7 @@ class Broker:
                 continue
             try:
                 imports = read_imports(source)
-            except OSError as exc:
+            except (OSError, ValueError) as exc:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
             job = self.new_job(job_id, request, source, imports, imports, source_sha256=source_hash)
@@ -808,11 +809,14 @@ class Broker:
         self.dirty = True
         self.log(event="build_" + build["status"], build=build["id"], session=build["session"], reason=build["reason"])
 
-    def new_job(self, job_id, request, source, imports, external, **extra):
-        """A queued compile job; `external` imports alone key its calibration closure."""
+    def new_job(self, job_id, request, source, imports, external, source_sha256, **extra):
+        """A queued compile job; `external` imports alone key its calibration closure.
+
+        `source_sha256` is the hash the caller has already read, or None when the source
+        could not be read; the job does not read the source a second time."""
         session = request.get("session") or "unknown"
         return {"id": job_id, "kind": "compile", "session": session, "source": source,
-                "source_sha256": hashlib.sha256(Path(source).read_bytes()).hexdigest() if Path(source).is_file() else None,
+                "source_sha256": source_sha256,
                 'lean_version': self.state['version'], 'environment_key': self.state['environment_key'],
                 "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
                 "external": external, "closure": closure_key((self.state['version'] or '') + '\n' + self.state['environment_key'], external, self.direct is not None),
@@ -827,7 +831,7 @@ class Broker:
         source = self.paths.sources / (closure + ".lean")
         source.write_text("".join(f"import {name}\n" for name in imports) or "-- no imports\n", encoding="utf-8")
         job = {"id": job_id, "kind": "calibration", "session": BROKER_SESSION, "source": str(source),
-               "environment_key": self.state['environment_key'],
+               "environment_key": self.state['environment_key'], "direct": self.direct is not None,
                "cwd": self.lean_cwd(None), "expect_mb": self.config["calibration_expect_mb"], "imports": imports,
                "closure": closure, "threads": 1, "submitted_at": time.time(), "status": "queued",
                "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None, "host": None,
@@ -903,13 +907,17 @@ class Broker:
         measured["seconds"] = round(now - (job["started_at"] or now), 1)
         baseline = self.calibration.baseline(job["closure"])
         if job["kind"] == "calibration":
+            # What the closure key hashes, in readable form: a session matching its imports against the
+            # table compares `environment_key` and `direct` with what `status` reports as environment_key
+            # and launcher.direct, since the key itself is a hash it cannot recompute.
+            identity = {"imports": job["imports"], "version": self.state["version"],
+                        "environment_key": job["environment_key"], "direct": job["direct"]}
             if job["exit_code"] == 0:
-                self.calibration.record_baseline(job["closure"], job["imports"], self.state["version"],
-                                                 measured["peak_mb"], measured["seconds"])
+                self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"])
             elif job["exit_code"] is not None and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
-                self.calibration.record_failure(job["closure"], job["imports"], self.state["version"],
-                                                job["exit_code"], "the calibration compile failed; see its stdout.log")
+                self.calibration.record_failure(job["closure"], identity, job["exit_code"],
+                                                "the calibration compile failed; see its stdout.log")
             else:
                 # A launch error or a cancellation records nothing, so the next compile calibrates again.
                 # The compiles that waited for this one go ahead on their own estimates rather than
@@ -1078,10 +1086,10 @@ class Broker:
     # --- scheduling
 
     def reserve(self, job, record=True):
-        stats = self.calibration.stats(job["closure"]) if job["kind"] == "compile" else None
-        baseline = stats["baseline_mb"] if stats else None
+        baseline = self.calibration.baseline(job["closure"]) if job["kind"] == "compile" else None
         expect = max(job["expect_mb"], baseline or 0)
-        cv = stats["excess_cv"] if stats and stats["excess_cv"] else self.config["default_spread"]
+        cv = (self.calibration.spread(job["closure"]) if baseline is not None else None) \
+            or self.config["default_spread"]
         current = (job["measured"] or {}).get("current_mb", 0.0) if job["status"] == "running" else None
         certain, mean, sd = reservation(expect, baseline, cv, current)
         if record:
@@ -1093,7 +1101,7 @@ class Broker:
         """The memory rule, the thread budget and the machine gate, all at once.
 
         A job that exceeds a budget on its own still runs, alone: refusing it
-        forever would be a kill policy by another name (LEAN.md)."""
+        forever would be a kill policy by another name (reference/lean.md)."""
         config = self.config
         rows = [self.reserve(r) for r in running]
         certain, mean, sd = self.reserve(job)
@@ -1252,9 +1260,6 @@ class Broker:
     def start(self):
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
         self.state = read_json(self.paths.state) if self.paths.state.exists() else self.state
-        self.state.setdefault("jobs", {})
-        self.state.setdefault("builds", {})  # a state written before builds existed
-        self.state.setdefault("version", None)
         self.reload_settings()
         if self.config is None:
             raise ValueError("settings.json rejected: " + str(self.config_error))
@@ -1264,12 +1269,11 @@ class Broker:
         self.save()
 
     def serve(self):
-        with InstanceLock(self.paths.lock):
+        with InstanceLock(self.paths.lock, "Lean broker"):
             # Alive from this moment: clients may queue requests while the broker finishes starting.
-            write_json(self.paths.process, {"process": self.identity, "started_at": time.time(), "token": self.token})
+            write_json(self.paths.process, {"process": self.identity, "started_at": time.time()})
             self.start()
-            print(json.dumps({"started": self.identity, "instance": str(self.paths.instance), "token": self.token}),
-                  flush=True)
+            print(json.dumps({"started": self.identity, "instance": str(self.paths.instance)}), flush=True)
             while True:
                 self.tick()
                 if self.should_exit():
@@ -1477,7 +1481,8 @@ def broker_status(paths):
             "running": [{k: j.get(k) for k in ("id", "kind", "session", "expect_mb", "started_at", "reserve", "measured")}
                         for j in jobs.values() if j["status"] == "running"],
             "finished": [{k: j.get(k) for k in ("id", "kind", "session", "status", "exit_code", "expect_mb", "measured")}
-                         for j in jobs.values() if j["status"] in FINISHED][-20:],
+                         for j in sorted((j for j in jobs.values() if j["status"] in FINISHED),
+                                         key=lambda j: j["finished_at"] or 0)][-20:],
             "builds": [{"id": b["id"], "session": b["session"], "status": b["status"], "targets": b["targets"],
                         "modules": {s: sum(m["status"] == s for m in b["modules"].values())
                                     for s in ("cached", "queued", "running", "finished", "failed", "cancelled")}}
@@ -1515,14 +1520,12 @@ def main(argv=None):
             sub.add_argument("--no-wait", action="store_true", help="print the build ID and return; wait <build> later")
         if name in ("submit", "run", "build"):
             sub.add_argument("--expect-mb", type=int, required=True,
-                             help="your probable peak private memory of one compile in MiB (LEAN.md)")
+                             help="your probable peak private memory of one compile in MiB (reference/lean.md)")
             sub.add_argument("--session", required=True, help="your session ID, as given in your launch prompt")
         if name in ("wait", "result", "cancel"):
             sub.add_argument("job", help="a job ID or a build ID")
         if name in ("run", "build", "wait"):
             sub.add_argument("--timeout", type=float, help="seconds to wait before returning 124; the work continues")
-        if name == "serve":
-            sub.add_argument("--token")
     args = parser.parse_args(argv)
     try:
         if args.command == "_job":
@@ -1533,7 +1536,7 @@ def main(argv=None):
         if not (paths.instance / "runner").is_dir():
             raise ValueError(f"not a do-math instance: {paths.instance}")
         if args.command == "serve":
-            return Broker(paths.instance, args.token).serve()
+            return Broker(paths.instance).serve()
         if args.command in ("submit", "run"):
             receipt = submit(paths, args.source, args.expect_mb, args.session)
             if args.command == "submit":
@@ -1572,4 +1575,9 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    code = main()
+    # Windows gives a process's exit code as an unsigned 32-bit value, so a crashed Lean's
+    # NTSTATUS code (0xC0000005 and the like) exceeds the C long that SystemExit accepts and
+    # would end this client with an OverflowError instead. The same 32 bits in signed form
+    # reach the caller as Lean's own code.
+    raise SystemExit(code - 2 ** 32 if os.name == "nt" and code >= 2 ** 31 else code)

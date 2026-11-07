@@ -206,6 +206,22 @@ class BuildResultTests(unittest.TestCase):
                                      list(zip(("Basis", "Target"), codes)))
 
 
+class StatusTests(unittest.TestCase):
+    def test_recently_finished_jobs_are_the_last_to_finish(self):
+        # A long compile submitted before many short ones finishes after them; status must list it.
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = lean_broker.Paths(Path(temporary))
+            paths.ensure()
+            late = "j" + "f" * 32
+            jobs = {late: {"id": late, "status": "finished", "finished_at": 2000.0}}
+            short = [f"j{n:032x}" for n in range(1, 31)]
+            jobs.update({job_id: {"id": job_id, "status": "finished", "finished_at": 1000.0 + n}
+                         for n, job_id in enumerate(short, 1)})
+            runner.write_json(paths.state, {"jobs": jobs})
+            listed = [j["id"] for j in lean_broker.broker_status(paths)["finished"]]
+            self.assertEqual(listed, short[-19:] + [late])
+
+
 class AdmissionRuleTests(unittest.TestCase):
     def test_estimate_is_read_as_a_probable_peak_above_the_baseline(self):
         certain, mean, sd = lean_broker.reservation(1000, 400, 0.5)
@@ -311,17 +327,17 @@ class SettingsTests(unittest.TestCase):
 
     def test_defaults_fill_in_and_derive_from_the_host(self):
         settings = self.load()
-        self.assertEqual({k: settings["lean"][k] for k in runner.LEAN_DEFAULTS}, runner.LEAN_DEFAULTS)
+        self.assertEqual({k: settings["lean"][k] for k in runtime_support.LEAN_DEFAULTS}, runtime_support.LEAN_DEFAULTS)
         with patch.object(runtime_support, "memory_status", return_value=(32 * 1024 ** 3, 8 * 1024 ** 3)), \
                 patch.object(runner.os, "cpu_count", return_value=8):
-            config = runner.lean_config(settings)
+            config = runtime_support.lean_config(settings)
         self.assertEqual(config["memory_budget_mb"], 32 * 1024 - 2048 - 512 * 3)
         self.assertEqual(config["cpu_threads_budget"], 16)
         self.assertEqual(config["derived"]["logical_cores"], 8)
-        explicit = runner.lean_config(self.load(memory_budget_mb=4096, cpu_threads_budget=3))
+        explicit = runtime_support.lean_config(self.load(memory_budget_mb=4096, cpu_threads_budget=3))
         self.assertEqual((explicit["memory_budget_mb"], explicit["cpu_threads_budget"]), (4096, 3))
         with patch.object(runtime_support, "memory_status", return_value=(1024 ** 3, 0)):
-            self.assertEqual(runner.lean_config(self.load())["memory_budget_mb"], 1024)
+            self.assertEqual(runtime_support.lean_config(self.load())["memory_budget_mb"], 1024)
 
     def test_invalid_values_are_rejected(self):
         for bad in ({"memory_budget_mb": 0}, {"memory_budget_mb": "8192"}, {"confidence": -1},
@@ -370,7 +386,10 @@ class JobHostTests(unittest.TestCase):
         self.assertIn("threads=1", output)
         self.assertIn("FAKE_ENV=1", output)  # lean.env overrides reach the Lean process
         if hasattr(os, "nice"):
-            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)  # and so does the priority
+            # `normal` leaves the niceness as inherited, so this shows only that the host did not change it.
+            # The lowered priorities are not exercised: a below-normal stand-in starves behind normal-priority
+            # research load on the test machine, which is why every fixture here runs at `normal`.
+            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):
@@ -477,6 +496,8 @@ class BrokerTests(BrokerFixture):
         entry = runner.read_json(self.paths.calibration)["entries"][job["closure"]]
         self.assertEqual(entry["imports"], ["Mathlib.Data.Nat.Basic"])
         self.assertIn("4.0.0-fake", entry["version"])
+        # The entry names its environment as `status` does, so a session can tell it from one measured before a change.
+        self.assertEqual((entry["environment_key"], entry["direct"]), (self.broker.state["environment_key"], False))
         self.assertGreater(entry["baseline_mb"], 10)
         self.assertLess(entry["baseline_mb"], 60)
         self.assertEqual(job["status"], "finished")
@@ -728,12 +749,22 @@ class BrokerTests(BrokerFixture):
         # A request the broker cannot accept is answered, not dropped.
         bad = "j" + "0" * 32
         runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
+        # Fields that reached the broker state unchecked would crash a later tick instead of this request.
+        malformed = "j" + "2" * 32
+        runner.write_json(self.paths.queue / (malformed + ".json"),
+                          {"id": malformed, "source": str(self.session_file("s1", "malformed.lean")),
+                           "expect_mb": 40, "session": ["s1"], "submitted_at": "now"})
         (self.paths.queue / "x..escape.json").write_text("{}", encoding="utf-8")
+        if os.name != "nt":  # a POSIX file name can end in a newline, which a `$`-anchored match accepts
+            (self.paths.queue / ("j" + "1" * 32 + "\n.json")).write_text("{}", encoding="utf-8")
         self.broker.tick()
-        self.assertEqual(lean_broker.job_record(self.paths, bad)["status"], "failed")
-        self.assertIn("rejected", lean_broker.job_record(self.paths, bad)["reason"])
+        for job_id, field in ((bad, "source"), (malformed, "session")):
+            self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "failed")
+            self.assertIn("rejected: " + field, lean_broker.job_record(self.paths, job_id)["reason"])
+        self.assertNotIn(malformed, self.broker.state["jobs"])
         self.assertEqual(list(self.paths.queue.glob("*.json")), [])
-        self.assertFalse((self.paths.root / "escape").exists())
+        # Nothing under jobs/ was made for a name that is not a job ID.
+        self.assertEqual([p.name for p in self.paths.jobs.iterdir() if not lean_broker.JOB_ID.fullmatch(p.name)], [])
 
     def test_settings_reload_live_and_keep_the_last_good_configuration(self):
         self.start_broker()
@@ -755,6 +786,38 @@ class BrokerTests(BrokerFixture):
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
         self.assertIsNone(runner.read_json(self.paths.state)["config_error"])
+
+    def test_environment_change_fails_queued_jobs_and_calibrates_the_new_environment_anew(self):
+        # An environment change reaches the broker through settings.json. A job queued under the earlier
+        # identity must not start under the new one, a running compile is left alone, and the same file
+        # submitted again is a job of the new environment with a calibration key of its own.
+        self.write_settings(cpu_threads_budget=1)
+        self.start_broker()
+        before = self.broker.state["environment_key"]
+        blocker = self.submit(self.session_file("s1", "block.lean", sleep=3), expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"][blocker]["status"] == "running")
+        path = self.session_file("s1", "wait.lean", marker="NEW-EPOCH")
+        waiting = self.submit(path, expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"].get(waiting, {}).get("status") == "queued")
+        time.sleep(0.02)
+        self.write_settings(cache_epoch="second")
+        self.until(lambda: self.finished(waiting))
+        stale = self.broker.state["jobs"][waiting]
+        self.assertEqual((stale["status"], stale["exit_code"], stale["environment_key"]), ("failed", None, before))
+        self.assertIn("environment changed", stale["reason"])
+        self.assertFalse((self.paths.job(waiting) / "launch.json").exists())
+        self.assertNotEqual(self.broker.state["environment_key"], before)
+        self.assertEqual(lean_broker.broker_status(self.paths)["environment_key"], self.broker.state["environment_key"])
+        again = self.submit(path, expect_mb=40)
+        self.until(lambda: self.finished(again) and self.finished(blocker))
+        fresh = self.broker.state["jobs"][again]
+        self.assertEqual((fresh["status"], fresh["exit_code"], fresh["environment_key"]),
+                         ("finished", 0, self.broker.state["environment_key"]))
+        self.assertNotEqual(fresh["closure"], stale["closure"])
+        self.assertEqual(self.broker.state["jobs"][blocker]["exit_code"], 0)
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual(sorted(j["closure"] for j in calibrations), sorted([stale["closure"], fresh["closure"]]))
+        self.assertIn("NEW-EPOCH", (self.paths.job(again) / "stdout.log").read_text(encoding="utf-8"))
 
     def test_machine_gate_holds_every_start(self):
         self.start_broker()
@@ -1080,6 +1143,21 @@ class BuildTests(BrokerFixture):
         self.assertTrue(all(m["status"] in ("cancelled", "failed") for m in record["modules"].values()))
         self.assertFalse(runner.alive(self.module_job(build_id, "A").get("lean")))
 
+    def test_single_file_submission_is_not_a_duplicate_of_a_module_compile(self):
+        self.start_broker()
+        root = self.tree(A={"sleep": 3})
+        build_id = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
+        job_id = self.submit(root / "A.lean")
+        self.broker.ingest()
+        # Registered as a job of its own, not redirected to A's module compile.
+        self.assertIn(job_id, self.broker.state["jobs"])
+        self.assertFalse((self.paths.job(job_id) / "result.json").exists())
+        self.until(lambda: self.finished(job_id))
+        self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
+        self.assertNotIn("-R", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+
 
 class LauncherTests(BrokerFixture):
     LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
@@ -1122,6 +1200,7 @@ class LauncherTests(BrokerFixture):
         # Baselines measured directly are keyed apart from those measured through lake.
         self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"], True))
         self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"]))
+        self.assertTrue(self.broker.calibration.entry(job["closure"])["direct"])  # and the table says so in words
         self.assertIn("launcher", lean_broker.broker_status(self.paths))
 
     def test_a_lake_that_fails_leaves_the_configured_command_in_force(self):
@@ -1165,6 +1244,16 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertIn("4.0.0-fake", status["version"])
         self.assertEqual(runner.status(self.instance)["lean"]["version"], status["version"])
 
+    @unittest.skipUnless(os.name == "nt", "only Windows reports exit codes as unsigned 32-bit values")
+    def test_run_relays_a_windows_crash_code_unchanged(self):
+        # The stand-in exits with -1073741819, which Windows reports as 0xC0000005, the code of a
+        # crashed process; the client must exit with that code and end on its summary line.
+        path = self.session_file("s1", exit=-1073741819)
+        result = self.cli("run", str(self.instance), str(path), "--session", "s1", "--expect-mb", "40")
+        self.assertEqual(result.returncode, 0xC0000005, result.stderr)
+        summary = json.loads(result.stderr.strip().splitlines()[-1].split("lean-broker: ", 1)[1])
+        self.assertEqual((summary["status"], summary["exit_code"]), ("finished", 0xC0000005))
+
     def test_wait_timeout_returns_124_and_the_job_continues(self):
         path = self.session_file("s1", sleep=3)
         submitted = json.loads(self.cli("submit", str(self.instance), str(path), "--session", "s1", "--expect-mb", "40").stdout)
@@ -1191,7 +1280,7 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertTrue(first)
         second = self.cli("serve", str(self.instance), timeout=30)
         self.assertNotEqual(second.returncode, 0)
-        self.assertIn("already has a running runner", second.stderr)
+        self.assertIn("already has a running Lean broker", second.stderr)
         self.assertTrue(runner.alive(first["process"]))
         self.cli("version", str(self.instance))  # finds the live broker; launches nothing
         self.assertEqual(lean_broker.broker_alive(self.paths)["process"], first["process"])
@@ -1251,12 +1340,7 @@ class ClientAndLifecycleTests(BrokerFixture):
     def test_runner_launches_adopts_and_relaunches_the_broker(self):
         skill = runner.SKILL
         engine = runner.Runner(self.instance, skill)
-        # A complete instance with nothing active is the one case where no broker is started.
-        engine.state["finished"] = True
-        engine.ensure_broker()
-        self.assertIsNone(lean_broker.broker_alive(self.paths))
-        engine.state["finished"] = False
-        engine.ensure_broker()  # otherwise a broker is kept alive whether or not a session exists yet
+        engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
             time.sleep(0.05)
@@ -1270,7 +1354,7 @@ class ClientAndLifecycleTests(BrokerFixture):
         runner.terminate_process(first["process"])
         while runner.alive(first["process"]):
             time.sleep(0.02)
-        engine.ensure_broker()  # within BROKER_RETRY of the last launch: no relaunch yet
+        engine.ensure_broker()  # within ten seconds of the last launch (runner.ensure_broker): no relaunch yet
         time.sleep(0.5)
         self.assertIsNone(lean_broker.broker_alive(self.paths))
         engine.broker_attempt = float("-inf")

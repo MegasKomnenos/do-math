@@ -1,7 +1,7 @@
 """Live coordination information, node leases and session-owned section declarations.
 
 A section is an exact part of a node's question that an attempt or peer works on. It is kept in
-the registering session's declaration.json and lasts, as node occupancy did, until that session's
+the registering session's declaration.json and lasts until that session's
 pipeline finishes review. Choosing a section is serialized per node: one session at a time holds
 the node's lease, registers its section and so passes the lease to the next waiting session.
 Leases and registrations are decided first-wins under one instance lock."""
@@ -61,15 +61,12 @@ def session_live(state, sid):
 
 
 def section_entries(instance, sid, model):
-    """Sections one session declared. The earlier {"nodes": [...]} form reads as whole-node sections."""
+    """Sections one session declared."""
     path = Path(instance) / 'sessions' / sid / 'declaration.json'
     if not sid or not path.is_file():
         return []
     data = read_json(path)
-    rows = list(data.get('sections', []))
-    rows += [{'id': f'{sid}-{node}', 'node': node, 'whole': True, 'statement': None, 'at': data.get('at')}
-             for node in data.get('nodes', [])]
-    return [{**row, 'node': canonical(model, row['node']), 'session': sid} for row in rows
+    return [{**row, 'node': canonical(model, row['node']), 'session': sid} for row in data.get('sections', [])
             if row['node'] in model['nodes'] or row['node'] in model['aliases']]
 
 

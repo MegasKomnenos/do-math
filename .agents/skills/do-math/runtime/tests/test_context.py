@@ -12,7 +12,7 @@ from context import assemble, rebase_links
 from coordination import updates
 from knowledge import render, replay
 from launch import worker_command, worker_environment
-from runner import Runner, initialize
+from runner import Runner, initialize, main
 from runtime_support import read_json, write_json
 from test_research import InstanceCase, record, claim_row, solution, assessment, take
 
@@ -50,7 +50,7 @@ class ContextTests(InstanceCase):
                  read_json(self.instance / 'settings.json'))
         self.assertIn(root, (folder / 'pack.md').read_text(encoding='utf-8'))
 
-    def session(self, name, role='attempt'):
+    def session(self, name):
         folder = self.instance / 'sessions' / name
         folder.mkdir()
         (folder / 'inbox').mkdir()
@@ -76,6 +76,23 @@ class ContextTests(InstanceCase):
         data = record([claim_row('p')], solutions=[solution('s', 'root', 'p')])
         self.publish('r1', data)
         self.assertEqual(updates(first)['root_state'], 'informal_proved')
+
+    def test_input_command_preserves_standing_conditions_for_later_launches(self):
+        condition = self.root / 'conditions.md'
+        condition.write_text('﻿Write every record in English.', encoding='utf-8')
+        blank = self.root / 'blank.md'
+        blank.write_text(' \n', encoding='utf-8')
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['input', str(self.instance), '--file', str(condition)]), 0)
+            self.assertEqual(main(['input', str(self.instance), '--file', str(blank)]), 1)
+        stored = Path(json.loads(shown.call_args_list[0].args[0])['input'])
+        inputs = self.instance / 'control/inputs'
+        self.assertEqual(stored.parent.resolve(), inputs.resolve())
+        self.assertEqual(stored.read_text(encoding='utf-8'), 'Write every record in English.')
+        self.assertEqual([p.name for p in inputs.iterdir()], [stored.name])
+        later = self.session('later')
+        self.assertEqual([item['text'] for item in self.pack(later)['user_inputs']],
+                         ['Write every record in English.'])
 
     def test_every_role_receives_the_complete_current_glossary_at_launch(self):
         terms = [

@@ -45,8 +45,8 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for source in (skill / 'reference').glob('*.md'):
         shutil.copyfile(source, context / 'reference' / source.name)
     shutil.copyfile(skill / 'roles' / (role + '.md'), context / 'roles' / (role + '.md'))
-    if (skill / 'SKILL.md').is_file():
-        shutil.copyfile(skill / 'SKILL.md', context / 'SKILL.md')
+    # reference/operations.md links to ../SKILL.md; this copy keeps that link inside the snapshot.
+    shutil.copyfile(skill / 'SKILL.md', context / 'SKILL.md')
     inputs = []
     for path in sorted((instance / 'control/inputs').glob('*.txt')):
         inputs.append({'id': path.name, 'text': path.read_text(encoding='utf-8-sig')})
@@ -91,7 +91,7 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
     parts += ['', '# Assignment and executable commands', '',
-              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt has no assigned mathematical task.', '',
+              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt or an exploration has no assigned mathematical task.', '',
               '```json', json.dumps({'task': task, 'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     write_text(session / 'pack.md', '\n'.join(parts))
     write_text(session / 'prompt.txt',

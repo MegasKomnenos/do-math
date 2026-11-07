@@ -1,13 +1,12 @@
 """Check transport structure and evidence identities; sessions judge mathematics."""
 import argparse
-from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
-from knowledge import canonical, claim_key, replay
+from knowledge import claim_key, replay
 from runtime_support import read_json
-from settings import PRODUCERS, load_settings
+from settings import PRODUCERS
 from availability import no_research_outcome, reported_availability
 
 
@@ -48,6 +47,12 @@ def file(root, name):
 def regular_tree(root):
     for p in [Path(root), *Path(root).rglob('*')]:
         need(not p.is_symlink() and not p.is_junction(), 'filesystem links cannot be published: ' + str(p))
+
+
+def tree_hashes(root):
+    """The file identities under which the runner freezes a candidate and review checks it."""
+    return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in Path(root).rglob('*') if p.is_file()}
 
 
 def signed(value, known):
@@ -142,27 +147,29 @@ def audit_formal(instance, session, check, solution, candidate):
     need(isinstance(check, dict), 'formal acceptance needs formal_check')
     job = text(check.get('job'), 'formal_check.job')
     need(JOB_ID.fullmatch(job) or BUILD_ID.fullmatch(job), 'invalid broker job ID')
-    receipt = job_record(Paths(instance), job)
+    paths = Paths(instance)
+    receipt = job_record(paths, job)
     if receipt and receipt['status'] == 'duplicate':
         # A repeated submission names the job already doing the work; waiting on either ID gives
         # the same result (lean.md), so the audit follows it to that job as well.
         job = receipt['duplicate_of']
-        receipt = job_record(Paths(instance), job)
+        receipt = job_record(paths, job)
     need(receipt and receipt['status'] == 'finished' and receipt['session'] == session,
          'formal check must be a finished job of this reviewing session')
     need(check.get('alignment') == 'matches', 'formal acceptance requires exact mathematical correspondence')
     text(check.get('reason'), 'formal_check.reason')
-    theorem = solution.get('lean', {}).get('theorem')
+    need(isinstance(solution.get('lean'), dict), "formal acceptance needs the candidate solution's lean theorem and sources")
+    theorem = solution['lean'].get('theorem')
     need(theorem and check.get('theorem') == theorem, 'formal theorem differs from candidate')
     if JOB_ID.fullmatch(job):
         need(receipt.get('exit_code') == 0, 'review compile failed')
-        log = Path(instance) / 'runner/lean/jobs' / job / 'stdout.log'
+        log = paths.job(job) / 'stdout.log'
     else:
         targets = [receipt['modules'][n] for n in receipt['targets']]
         need(all(m['status'] == 'finished' and m.get('exit_code') == 0 and m.get('job') for m in targets),
              'review must freshly compile targets (use --fresh-targets)')
         log = None
-        logs = [Path(instance) / 'runner/lean/jobs' / m['job'] / 'stdout.log' for m in targets]
+        logs = [paths.job(m['job']) / 'stdout.log' for m in targets]
     output = log.read_text(encoding='utf-8', errors='replace') if log else '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in logs)
     found = re.findall(r"^[ \t]*['\"]?" + re.escape(theorem) + r"['\"]?\s+(?:depends on axioms:\s*\[([^\]]*)\]|(does not depend on any axioms))", output, re.MULTILINE)
     need(bool(found), 'review compile did not print target axiom dependencies')
@@ -171,8 +178,7 @@ def audit_formal(instance, session, check, solution, candidate):
         if not no_axioms:
             axioms.update(x.strip() for x in names.split(',') if x.strip())
     inp = read_json(Path(instance) / 'sessions' / session / 'input.json')
-    config = inp['settings'] if 'settings' in inp else load_settings(instance)
-    allowed = set(config['lean']['allowed_axioms'])
+    allowed = set(inp['settings']['lean']['allowed_axioms'])
     need('sorryAx' not in axioms and axioms <= allowed, 'target uses an unapproved axiom')
     need(set(check.get('axioms', [])) == axioms, 'reported axioms differ from broker output')
     hashes = check.get('source_hashes', {})
@@ -192,7 +198,7 @@ def audit_formal(instance, session, check, solution, candidate):
              'only axiom inspection commands may be appended to the reviewed source')
 
 
-def assessment_check(data, root, record, candidate, model, instance, sid, verify_jobs=True):
+def assessment_check(data, root, record, candidate, model, instance, sid):
     need(type(data.get('publish')) is bool, 'publish must be Boolean')
     text(data.get('reason'), 'assessment.reason')
     text(data.get('index_assessment'), 'index_assessment')
@@ -262,7 +268,7 @@ def assessment_check(data, root, record, candidate, model, instance, sid, verify
             need(solution['claim'] in supported, 'accepted solution needs a supported claim')
             for dep in row.get('formal_dependencies', solution.get('formal_dependencies', [])):
                 signed(dep, known)
-            if row['level'] == 'formal' and verify_jobs:
+            if row['level'] == 'formal':
                 audit_formal(instance, sid, row.get('formal_check'), solution, candidate)
     need(seen == set(solutions), 'assess every solution proposal')
     concerns_check(data.get('concerns', []), model, ids)
@@ -284,19 +290,29 @@ def comprehensive_check(data, root, model):
     regular_tree(root)
 
 
+def proof_route(model, pid):
+    """A proof ID of knowledge/state.json: a direct solution, an accepted relation applied
+    forward, or one applied backward to refute the premise at the given position."""
+    if not isinstance(pid, str):
+        return False
+    relation, mark, position = pid.rpartition('~')
+    if not mark:
+        return pid in model['direct'] or pid in model['relations']
+    premises = model['relations'].get(relation, {}).get('premises', [])
+    return position in {str(index) for index in range(len(premises))}
+
+
 def findings_check(values, model):
     for finding in array(values, 'findings'):
         need(finding.get('status') in ('cleared', 'confirmed', 'undetermined'), 'unknown finding status')
         text(finding.get('reason'), 'finding.reason')
         for update in finding.get('dependency_updates', []):
-            need(update.get('proof') in model['direct'] or update.get('proof') in model['relations'], 'dependency update needs an existing proof route')
+            need(proof_route(model, update.get('proof')), 'dependency update needs an existing proof route')
             text(update.get('reason'), 'dependency update reason')
             for dep in array(update.get('dependencies'), 'dependency update dependencies'):
                 signed(dep, set(model['nodes']) | set(model['aliases']))
         for cid in array(finding.get('concerns'), 'finding.concerns'):
             need(cid in model['concerns'], 'unknown concern')
-        need('clears' not in finding and 'cleared_uses' not in finding,
-             'a finding withdraws or validates claims; clears and cleared_uses are not applied')
         for key in ('invalidates', 'validates'):
             for ref in array(finding.get(key, []), key):
                 need(claim_key(ref) in model['claims'], 'finding targets unknown claim')
@@ -331,12 +347,8 @@ def organization_check(data, model, batch):
             need(other in available and other != merge['keep'], 'unknown or duplicate merged term')
             available.remove(other)
         text(merge.get('reason'), 'term merge reason')
-    shadow = deepcopy(model)
     for merge in data.get('merge_nodes', []):
         need(merge['from'] in model['nodes'] and merge['into'] in model['nodes'], 'merge needs existing nodes')
-        a, b = canonical(shadow, merge['from']), canonical(shadow, merge['into'])
-        if a != b:
-            shadow['aliases'][a] = b
         text(merge.get('reason'), 'node merge reason')
 
 
@@ -348,7 +360,7 @@ def glossary_check(entries):
         need(isinstance(term.get('symbol', ''), str), 'term.symbol must be text')
 
 
-def check_session(session, verify_jobs=True):
+def check_session(session):
     try:
         session = Path(session).resolve()
         inp = read_json(session / 'input.json')
@@ -365,13 +377,12 @@ def check_session(session, verify_jobs=True):
             record_check(read_json(output / 'record.json'), output, model, session.name)
         elif role == 'review' and task['kind'] == 'candidate':
             candidate = Path(task['candidate'])
-            if 'candidate_hashes' in task:
-                actual = {p.relative_to(candidate).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in candidate.rglob('*') if p.is_file()}
-                need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
+            actual = tree_hashes(candidate)
+            need(actual == task['candidate_hashes'], 'candidate changed after review assignment')
             record = read_json(candidate / 'record.json')
             record_check(record, candidate, model, candidate.parent.name)
             assessment_check(read_json(output / 'assessment.json'), output, record, candidate, model,
-                             instance, inp['session'], verify_jobs)
+                             instance, inp['session'])
         elif role == 'review':
             comprehensive_check(read_json(output / 'assessment.json'), output, model)
         elif role == 'organizer':

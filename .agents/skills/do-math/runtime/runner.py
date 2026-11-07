@@ -11,7 +11,7 @@ import time
 import traceback
 import uuid
 
-from check import check_session, regular_tree
+from check import check_session, regular_tree, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
 from coordination import board, lease_table, section_entries
@@ -20,10 +20,10 @@ from availability import (availability_view, no_research_outcome, opening_since,
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
-from runtime_support import (EmergencyMemory, InstanceLock, LEAN_DEFAULTS, alive, archive_work, available_memory, file_stamp, git, lean_config,
+from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
                              popen_options, process_identity, read_json, rename_directory, session_host,
                              terminate_process, write_json, write_text)
-from settings import PRODUCERS, ROLES, defaults, load_settings, validate
+from settings import PRODUCERS, defaults, load_settings, validate
 
 SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
@@ -33,11 +33,6 @@ PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 
 
 def uid(prefix):
     return prefix + uuid.uuid4().hex
-
-
-def tree_hashes(folder):
-    return {p.relative_to(folder).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in Path(folder).rglob('*') if p.is_file()}
 
 
 def initialize(instance, root_file, settings_file=None):
@@ -55,11 +50,11 @@ def initialize(instance, root_file, settings_file=None):
     write_json(instance / 'settings.json', config)
     write_text(instance / '.gitignore', '/sessions/\n/runner/\n/control/\n')
     state = {'schema': 1, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
-             'attempt_dispatches': 0, 'attempt_research_starts': 0,
+             'attempt_research_starts': 0,
              'attempt_availability_epoch': 0, 'attempt_dispatch_gate': None,
              'explore_requested': False, 'complete': False,
              'processed_concerns': [], 'processed_conflicts': [], 'publication': None,
-             'seen_inputs': [], 'seen_requests': [], 'last_error': None, 'finished': False}
+             'seen_requests': [], 'last_error': None, 'finished': False}
     write_json(instance / 'runner/state.json', state)
     render(instance, replay(instance), [])
     git(instance, 'init')
@@ -172,7 +167,6 @@ class Runner:
                 pipeline[job['role']] = sid
         if job['role'] == 'attempt':
             self.state['last_attempt_launch'] = time.time()
-            self.state['attempt_dispatches'] += 1
             gate = self.state.get('attempt_dispatch_gate')
             if gate and gate['mode'] == 'reassess':
                 gate['probe_session'] = sid
@@ -181,10 +175,8 @@ class Runner:
         self.save()
         try:
             command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
-                                    **({'servers': self.settings['mcp_servers']} if self.settings['mcp_servers'] else {}))
-            # Native session persistence retains tool messages beyond the CLI stream.
-            argv = [x for x in command.argv if x not in ('--ephemeral', '--no-session-persistence')]
-            launch = {'runner': self.identity, 'command': {'argv': argv, 'cwd': str(command.cwd)}}
+                                    self.settings['mcp_servers'])
+            launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
             if job['role'] in END_CHECK_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
                                        'resume_guidance': str(self.skill / 'resume'),
@@ -307,16 +299,19 @@ class Runner:
             job['status'] = 'done'
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
-            sections = [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
-                        for entry in section_entries(self.instance, sid, self.model)]
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'node': pipeline.get('node'), 'sections': sections, 'retention': s['retention']},
+                                  'node': pipeline.get('node'), 'sections': self.producer_sections(sid),
+                                  'retention': s['retention']},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
-        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error'):
+        # A cancellation recorded by the host, even after a clean CLI exit between turns,
+        # leaves this stage unfinished; a replacement receives the partial material.
+        interrupted = s.get('end_check', {}).get('authorization', {}).get('basis') == 'interrupted'
+        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error') or interrupted:
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
-                      f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})")
+                      (s['end_check']['authorization']['explanation'] if s.get('exit_code') == 0 else
+                       f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})"))
             self.retry(job, s, reason,
                        availability=bool(s.get('refusal') or s.get('launch_error')))
             return
@@ -326,8 +321,8 @@ class Runner:
                     and errors == ['candidate changed after review assignment']):
                 self.recover_candidate(job, s, errors[0])
                 return
-            self.retry(job, s, '; '.join(errors),
-                       availability=bool(s.get('refusal') or s.get('launch_error')))
+            # Invalid output is a job failure; refusals and launch errors returned above.
+            self.retry(job, s, '; '.join(errors), availability=False)
             return
         if s['role'] == 'peer':
             candidate = session / 'candidate'
@@ -369,6 +364,11 @@ class Runner:
         self.prepare_publication(sid, job, kind)
         self.publish()
 
+    def producer_sections(self, sid):
+        """The sections a producer registered, as a peer assignment lists them."""
+        return [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
+                for entry in section_entries(self.instance, sid, self.model)]
+
     def recover_candidate(self, job, session, reason):
         """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
         task = job['task']
@@ -407,7 +407,8 @@ class Runner:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
-                             'node': pipeline.get('node'), 'previous_error': reason,
+                             'node': pipeline.get('node'), 'sections': self.producer_sections(pipeline['producer']),
+                             'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
                      pipeline['id'], pipeline['id'] + ':peer-recovery:' + session['id'])
         self.save()
@@ -443,6 +444,8 @@ class Runner:
                 regular_tree(candidate)
                 shutil.copytree(candidate, stage)
                 if tree_hashes(stage) != job['task']['candidate_hashes']:
+                    # The damaged candidate stays where review read it; its staged copy is not evidence.
+                    shutil.rmtree(stage)
                     self.state['publication'] = None
                     session = self.state['sessions'][sid]
                     session['record'] = None
@@ -546,8 +549,6 @@ class Runner:
             self.finish(sid, s)
 
     def ensure_broker(self):
-        if self.state.get('finished') and not self.active():
-            return
         if self.broker is not None and self.broker.poll() is not None:
             self.broker = None
         receipt = self.instance / 'runner/lean/process.json'
@@ -590,7 +591,8 @@ class Runner:
                 self.producer('formalizer', {'node': nid, 'proofs': proofs, 'previous_records': previous})
         due = [rid for rid in model['records'] if rid not in model['organized']]
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):
-            self.enqueue('organizer', {'batch': due})
+            # make_pack fixes the batch from the published records when the organizer launches.
+            self.enqueue('organizer', {})
 
     def current_availability(self):
         return availability_view(self.model, board(self.instance, self.state, self.model),
@@ -627,19 +629,12 @@ class Runner:
                     if s['role'] == 'attempt' and not s.get('research_counted')
                     and s.get('disposition') != 'no_research'
                     and section_entries(self.instance, sid, self.model)]
-        if 'attempt_research_starts' not in self.state:
-            # Older instances counted launches. Establish a baseline without retroactive triggers.
-            self.state['attempt_research_starts'] = len(selected)
-            for session in selected:
-                session['research_counted'] = True
-            self.save()
         for session in selected:
-            if not session.get('research_counted'):
-                session['research_counted'] = True
-                self.state['attempt_research_starts'] += 1
-                if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
-                    self.state['explore_requested'] = True
-                self.save()
+            session['research_counted'] = True
+            self.state['attempt_research_starts'] += 1
+            if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
+                self.state['explore_requested'] = True
+            self.save()
 
     def attempt_dispatch_ready(self):
         gate = self.state.get('attempt_dispatch_gate')
@@ -675,11 +670,8 @@ class Runner:
         whole = {s['node'] for r in rows for s in r['sections'] if s['whole']}
         leases = lease_table(self.instance, self.state, self.model)
         queued = {n for n, entry in leases.items() if entry['queue']}
-        closure = sufficient_closure(self.model)
-        nodes = [n for n, v in self.model['nodes'].items()
-                 if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
-        # Nodes whose settlement can carry the root come first; the order is informational.
-        return sorted(nodes, key=lambda n: (n, 'proved') not in closure and (n, 'refuted') not in closure)
+        return [n for n, v in self.model['nodes'].items()
+                if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
 
     def attempt_launch_due(self):
         """Launches are spaced so each attempt can take a lease before the next one reads the board."""
@@ -719,8 +711,7 @@ class Runner:
                     continue
                 exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
                                   for p in self.state['pipelines'].values())
-                if not exploration and self.selection('explore') and (
-                        self.state['explore_requested'] or not self.available_nodes()):
+                if not exploration and self.selection('explore') and self.state['explore_requested']:
                     # schedule() creates eligible exploration after this pass.
                     # Leave capacity for it before launching another attempt.
                     continue
@@ -791,7 +782,7 @@ class Runner:
                         'purpose': request.get('reason', 'Operator requested a renewed independent assessment.')}
                 self.enqueue('review', task, key='operator:' + path.stem)
             elif request['kind'] == 'organize':
-                self.enqueue('organizer', {'batch': [r for r in self.model['records'] if r not in self.model['organized']]}, key='operator:' + path.stem)
+                self.enqueue('organizer', {}, key='operator:' + path.stem)
             elif request['kind'] == 'reconsider-attempts':
                 self.state['attempt_availability_epoch'] = self.state.get('attempt_availability_epoch', 0) + 1
                 probe = (self.state.get('attempt_dispatch_gate') or {}).get('probe_session')
@@ -933,7 +924,7 @@ def archive_finished(instance):
     import lzma
     import tarfile
     try:
-        with InstanceLock(Path(instance) / 'runner/archive-lock'):
+        with InstanceLock(Path(instance) / 'runner/archive-lock', 'archiver'):
             state = read_json(Path(instance) / 'runner/state.json')
             for sid, session in state['sessions'].items():
                 job = state['jobs'][session['job']]
@@ -1018,6 +1009,8 @@ def main(argv=None):
         elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}
             if args.command == 'review':
+                if not (args.record or args.node or args.concern):
+                    raise ValueError('name the evidence to review with --record, --node or --concern')
                 model = replay(instance)
                 if any(r not in model['records'] for r in args.record) or any(n not in model['nodes'] for n in args.node) or any(c not in model['concerns'] for c in args.concern):
                     raise ValueError('unknown review target')
@@ -1028,8 +1021,21 @@ def main(argv=None):
         elif args.command == 'restart-broker':
             from lean_broker import Paths, broker_status, ensure_broker
             state = read_json(instance / 'runner/state.json')
-            if not (instance / 'control/STOP').exists() or any(s['status'] in ('starting', 'running', 'publishing') for s in state['sessions'].values()):
-                raise ValueError('stop new dispatch and let active sessions finish before replacing the Lean environment')
+            if not (instance / 'control/STOP').exists():
+                raise ValueError('stop new dispatch before replacing the Lean environment')
+            # A session held behind STOP for its next turn has no running CLI and
+            # continues with the replaced broker after resume.
+            held, active = [], []
+            for sid, s in state['sessions'].items():
+                if s['status'] not in ('starting', 'running', 'publishing'):
+                    continue
+                check = instance / 'sessions' / sid / 'end-check.json'
+                waiting = check.is_file() and read_json(check).get('status') == 'waiting_dispatch'
+                (held if waiting and not alive(s.get('cli')) else active).append(sid)
+            if active:
+                raise ValueError('let active CLI turns finish before replacing the Lean environment: '
+                                 + ', '.join(sorted(active)))
+            result['held_sessions'] = sorted(held)
             paths = Paths(instance)
             current = broker_status(paths)
             if current['queued'] or current['running']:

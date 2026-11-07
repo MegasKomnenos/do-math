@@ -75,17 +75,25 @@ def events(path):
                 yield item
 
 
+def conversation_identity(event, provider):
+    """The native conversation identity one CLI stream event announces, or None.
+
+    Codex announces its thread once in thread.started; Claude stamps session_id on its events.
+    Retention and the session host both read this rule here, so a provider change is one edit."""
+    if provider == 'codex':
+        return event.get('thread_id') if event.get('type') == 'thread.started' else None
+    return event.get('session_id')
+
+
 def capture(session, provider):
     session = Path(session)
     ids = set()
     activity = False
     streams = [session / 'cli.stdout.jsonl', *sorted((session / 'turns').glob('*/cli.stdout.jsonl'))]
     for event in (event for stream in streams for event in events(stream)):
-        if provider == 'codex' and event.get('type') == 'thread.started':
-            if isinstance(event.get('thread_id'), str):
-                ids.add(event['thread_id'])
-        if provider == 'claude' and isinstance(event.get('session_id'), str):
-            ids.add(event['session_id'])
+        identity = conversation_identity(event, provider)
+        if isinstance(identity, str):
+            ids.add(identity)
         if event.get('type') in ('item.completed', 'item.started') and isinstance(event.get('item'), dict):
             activity |= event['item'].get('type') not in ('error', None)
         if event.get('type') == 'assistant' and not event.get('is_api_error_message'):

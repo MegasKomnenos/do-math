@@ -1,4 +1,3 @@
-import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -11,12 +10,11 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check import Invalid, assessment_check, findings_check, organization_check, record_check
-from cli_adapter import Command
-from coordination import board, lease, lease_table, release, section, wait
+from check import Invalid, assessment_check, findings_check, organization_check
+from coordination import board, lease, lease_table, message, release, section, updates, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
-from runner import Runner, archive_finished, initialize
-from runtime_support import read_json, write_json
+from runner import Runner, archive_finished, initialize, main
+from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
 
 
@@ -301,15 +299,6 @@ class KnowledgeTests(InstanceCase):
         with self.assertRaises(Invalid):
             organization_check({'batch': [], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']}, m, [])
 
-    def test_clearance_fields_are_not_applied_and_are_rejected(self):
-        self.publish('r1', self.reduction())
-        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
-        m = replay(self.instance)
-        for stale in ({'cleared_uses': [{'relation': 'r1/reduce', 'premise_proofs': ['r2/q']}]},
-                      {'clears': [{'record': 'r2', 'claim': 'q'}]}):
-            with self.subTest(field=next(iter(stale))), self.assertRaisesRegex(Invalid, 'not applied'):
-                findings_check([{'concerns': [], 'status': 'undetermined', 'reason': 'An exact use.', **stale}], m)
-
     def test_refuting_a_necessary_condition_refutes_the_node(self):
         # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
         self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
@@ -323,10 +312,31 @@ class KnowledgeTests(InstanceCase):
         self.assertEqual((proof['node'], proof['outcome'], proof['derivation']), ('root', 'refuted', 'backward'))
         self.assertEqual(proof['premise_proofs'], ['r2/refutation'])
         self.assertEqual(proof['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
-        # A proof of the necessary condition alone moves nothing.
+        # A proof of K beside its accepted refutation makes K contested, so the refutation
+        # of root that rested on K is no longer derived.
         self.publish('r3', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
         m = replay(self.instance)
         self.assertEqual(m['nodes']['K']['state'], 'contested')
+        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
+
+    def test_dependency_update_can_name_a_backward_proof_route(self):
+        # The proofs object names a relation applied backward as <relation>~<premise position>.
+        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
+                                 [implication('necessary', 'root', 'K')]))
+        self.publish('r2', record([claim_row('notk')], solutions=[solution('refutation', 'K', 'notk', 'refuted')]))
+        m = replay(self.instance)
+        self.assertEqual(m['proofs']['r1/necessary~0']['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
+        finding = {'concerns': [], 'status': 'undetermined', 'reason': 'The route was traced.',
+                   'dependency_updates': [{'proof': 'r1/necessary~0', 'dependencies': [],
+                                           'reason': 'A direct formalization of the refutation needs no Lean result for K.'}]}
+        findings_check([finding], m)
+        for proof in ('r1/necessary~1', 'r1/missing~0', 'r1/necessary~'):
+            wrong = {**finding, 'dependency_updates': [{**finding['dependency_updates'][0], 'proof': proof}]}
+            with self.subTest(proof=proof), self.assertRaisesRegex(Invalid, 'existing proof route'):
+                findings_check([wrong], m)
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'index_assessment': 'Dependencies corrected.',
+                                    'findings': [finding]})
+        self.assertEqual(replay(self.instance)['proofs']['r1/necessary~0']['formal_dependencies'], [])
 
     def test_multi_premise_relation_derives_in_every_direction(self):
         data = record([claim_row('joint')], [{'id': n, 'statement': n, 'connection': 'joint'} for n in ('A', 'B')],
@@ -808,13 +818,25 @@ class RunnerTests(InstanceCase):
         with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
             lease(explorer, 'root')
 
-    def test_earlier_node_declarations_read_as_whole_sections(self):
+    def test_messages_reach_the_recipient_inbox_and_its_updates(self):
         runner = self.runner()
-        old, new = (self.running_attempt(runner, sid) for sid in ('sold', 'snew'))
-        write_json(old / 'declaration.json', {'nodes': ['root'], 'at': 1})
-        self.assertEqual([(s['node'], s['whole']) for s in board(self.instance)[0]['sections']], [('root', True)])
-        self.assertEqual(runner.available_nodes(), [])
-        self.assertIn('whole node', lease(new, 'root')['reason'])
+        sender, recipient = (self.running_attempt(runner, sid) for sid in ('ssender', 'srecipient'))
+        note = sender / 'note.md'
+        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8')
+        delivered = Path(message(sender, 'srecipient', note)['delivered'])
+        self.assertEqual(delivered.resolve().parent, (recipient / 'inbox').resolve())
+        with self.assertRaisesRegex(ValueError, 'unknown recipient'):
+            message(sender, 'snobody', note)
+        (sender / 'blank.md').write_text(' \n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'empty coordination message'):
+            message(sender, 'srecipient', sender / 'blank.md')
+        # A publication leaves a notice in every running session's inbox; it names no sender.
+        runner.notify({'id': 'r9', 'kind': 'record', 'sequence': 1})
+        received = updates(recipient)['messages']
+        self.assertEqual(sorted(m.get('from') or m.get('event') for m in received), ['r9', 'ssender'])
+        self.assertEqual([m['text'] for m in received if m.get('from') == 'ssender'],
+                         ['Our sections meet at n = 7; I leave that case to you.'])
+        self.assertEqual([(m['event'], m['revision']) for m in updates(sender)['messages']], [('r9', 1)])
 
     def test_attempt_launches_are_spaced_and_a_queued_node_launches_none(self):
         self.publish('r1', self.reduction())  # root and Q are both available
@@ -867,33 +889,35 @@ class RunnerTests(InstanceCase):
             key = runner.producer('attempt')
             self.assertTrue(runner.dispatch(key))
             sid = runner.state['jobs'][key]['session']
-            write_json(runner.session_dir(sid) / 'declaration.json', {'nodes': ['root']})
+            write_json(runner.session_dir(sid) / 'declaration.json', {'sections': [
+                {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
+                 'reasons': {}, 'at': 1}], 'at': 1})
             runner.observe_attempt_selections()
         self.assertEqual(runner.settings['explore_every'], 3)
-        self.assertEqual(runner.state['attempt_dispatches'], 0)
+        self.assertEqual(runner.state['attempt_research_starts'], 0)
         self.assertIs(runner.state['explore_requested'], False)
         with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
             for expected in (1, 2):
                 start_research()
-                self.assertEqual(runner.state['attempt_dispatches'], expected)
+                self.assertEqual(runner.state['attempt_research_starts'], expected)
                 self.assertIs(runner.state['explore_requested'], False)
 
             runner = self.runner()
-            self.assertEqual(runner.state['attempt_dispatches'], 2)
+            self.assertEqual(runner.state['attempt_research_starts'], 2)
             self.assertIs(runner.state['explore_requested'], False)
             for expected in (3, 4, 5, 6):
                 start_research()
-                self.assertEqual(runner.state['attempt_dispatches'], expected)
+                self.assertEqual(runner.state['attempt_research_starts'], expected)
                 self.assertIs(runner.state['explore_requested'], True)
 
             runner = self.runner()
-            self.assertEqual(runner.state['attempt_dispatches'], 6)
+            self.assertEqual(runner.state['attempt_research_starts'], 6)
             self.assertIs(runner.state['explore_requested'], True)
             self.assertTrue(runner.dispatch(runner.producer('explore')))
-            self.assertEqual(runner.state['attempt_dispatches'], 6)
+            self.assertEqual(runner.state['attempt_research_starts'], 6)
             self.assertIs(runner.state['explore_requested'], False)
             start_research()
-            self.assertEqual(runner.state['attempt_dispatches'], 7)
+            self.assertEqual(runner.state['attempt_research_starts'], 7)
             self.assertIs(runner.state['explore_requested'], False)
 
     def test_retry_extends_short_blocks_and_preserves_long_blocks(self):
@@ -982,7 +1006,6 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
         self.assertCountEqual([s['role'] for _, s in runner.active()],
                               ['organizer', 'explore', 'attempt'])
-        self.assertEqual(runner.state['attempt_dispatches'], 1)
 
     def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
         self.publish('r1', self.reduction())  # Q remains available for the attempt.
@@ -1023,7 +1046,6 @@ class RunnerTests(InstanceCase):
                     runner.save()
         self.assertEqual(len(runner.state['sessions']), 6)
         self.assertTrue(all(j['status'] == 'done' for j in runner.state['jobs'].values()))
-        self.assertEqual(runner.state['attempt_dispatches'], 1)
         self.assertFalse(runner.state['explore_requested'])
 
     def test_eligible_exploration_precedes_a_pending_attempt_retry(self):
@@ -1040,7 +1062,6 @@ class RunnerTests(InstanceCase):
             runner.schedule()
         self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
         self.assertEqual(job['status'], 'pending')
-        self.assertEqual(runner.state['attempt_dispatches'], 0)
         self.assertFalse(runner.state['explore_requested'])
         self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
                              for p in runner.state['pipelines'].values()), 1)
@@ -1095,7 +1116,6 @@ class RunnerTests(InstanceCase):
             runner.dispatch_pending()
             self.assertEqual(job['status'], 'pending')
             self.assertEqual(set(runner.state['sessions']), before)
-            self.assertEqual(runner.state['attempt_dispatches'], 0)
             release(waiter, 'root')
             self.assertTrue(take(holder, 'root', leased=True)['registered'])
             holder_job = runner.state['sessions']['sholder']['job']
@@ -1106,14 +1126,12 @@ class RunnerTests(InstanceCase):
             runner.dispatch_pending()
             self.assertEqual(job['status'], 'pending')
             self.assertEqual(set(runner.state['sessions']), before)
-            self.assertEqual(runner.state['attempt_dispatches'], 0)
             holder_pipeline['stage'] = 'done'
             runner.save()
             self.assertEqual(runner.available_nodes(), ['root'])
             runner.dispatch_pending()
         self.assertEqual(job['status'], 'running')
         self.assertEqual(set(runner.state['sessions']) - before, {job['session']})
-        self.assertEqual(runner.state['attempt_dispatches'], 1)
 
     def test_attempt_retry_waits_when_all_nodes_are_informally_solved(self):
         runner = self.runner()
@@ -1139,7 +1157,6 @@ class RunnerTests(InstanceCase):
         self.assertEqual(set(runner.state['sessions']), before)
         self.assertEqual(job['status'], 'pending')
         self.assertEqual([s['role'] for _, s in runner.active()], ['explore'])
-        self.assertEqual(runner.state['attempt_dispatches'], 0)
 
     def test_spare_capacity_explores_when_every_node_is_informally_solved(self):
         # Spare capacity requests exploration whether nodes are occupied or none remain unresolved.
@@ -1152,7 +1169,6 @@ class RunnerTests(InstanceCase):
             runner.schedule()
         self.assertCountEqual([s['role'] for _, s in runner.active()], ['formalizer', 'explore'])
         self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
-        self.assertEqual(runner.state['attempt_dispatches'], 0)
         self.assertFalse(runner.state['explore_requested'])
 
     def test_organizer_batch_excludes_arrivals_during_processing(self):
@@ -1163,6 +1179,8 @@ class RunnerTests(InstanceCase):
         self.publish('r3', record())
         runner.model = replay(self.instance); runner.populate()
         job = next(j for j in runner.state['jobs'].values() if j['role'] == 'organizer')
+        runner.session_dir('sorganizer').mkdir()
+        runner.make_pack('sorganizer', job)
         self.assertEqual(len(job['task']['batch']), 4)
         for i in range(4, 6): self.publish('r' + str(i), record())
         self.event('o1', 'organization', {'batch': job['task']['batch'], 'modules': [], 'shared_context': []})
@@ -1227,14 +1245,6 @@ class RunnerTests(InstanceCase):
         self.assertEqual(nodes, ['Q'])
         self.assertTrue(any(j['task'].get('kind') == 'comprehensive' and j['task']['conflicts'] for j in runner.state['jobs'].values()))
 
-    def test_available_nodes_list_nodes_on_a_path_to_the_root_first(self):
-        self.publish('r1', record([claim_row('necessary')], [{'id': 'K', 'statement': 'K', 'connection': 'necessary'}],
-                                 [implication('necessary', 'root', 'K')]))
-        self.publish('r2', record([claim_row('free')], [{'id': 'F', 'statement': 'F', 'connection': 'free'}],
-                                 [implication('free', 'K', 'F')]))
-        runner = self.runner()
-        self.assertEqual(runner.available_nodes(), ['root', 'K', 'F'])
-
     def test_peer_task_carries_the_producers_sections(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -1287,6 +1297,65 @@ class RunnerTests(InstanceCase):
         runner.populate()
         self.assertEqual([j['id'] for j in runner.state['jobs'].values()
                           if j['task'].get('kind') == 'comprehensive'], [job['id']])
+
+    def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
+        later = record([claim_row('check')])
+        review = assessment(later)
+        review['findings'] = [{'concerns': [], 'status': 'confirmed', 'reason': 'The case n = 0 fails.',
+                               'invalidates': [{'record': 'r1', 'claim': 'p'}]}]
+        self.publish('r2', later, review)
+        model = replay(self.instance)
+        self.assertEqual(model['nodes']['root']['state'], 'unresolved')
+        concern = model['concerns']['r2/withdrawal-0']
+        self.assertEqual((concern['targets'], concern['status'], concern['source']), (['r1/p'], 'pending', 'r2'))
+        runner = self.runner()
+        runner.populate()
+        self.assertEqual([j['task']['concerns'] for j in runner.state['jobs'].values()
+                          if j['task'].get('kind') == 'comprehensive'], [['r2/withdrawal-0']])
+        # A comprehensive review's own withdrawal ends that tracing; it does not open another one.
+        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed', 'reason': 'Traced.',
+                                                'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
+        self.assertEqual([cid for cid in replay(self.instance)['concerns'] if cid.startswith('v1/')], [])
+
+    def test_restart_broker_admits_sessions_held_behind_stop(self):
+        runner = self.runner()
+        (self.instance / 'control/STOP').touch()
+        for sid in ('sheld', 'sturn'):
+            runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'status': 'running', 'cli': None}
+            runner.session_dir(sid).mkdir(parents=True, exist_ok=True)
+        write_json(runner.session_dir('sheld') / 'end-check.json', {'status': 'waiting_dispatch'})
+        runner.save()
+        idle = {'queued': 0, 'running': 0, 'broker_alive': False}
+        with patch('lean_broker.broker_status', return_value=idle), \
+                patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
+                patch('builtins.print') as shown:
+            # A session without a held turn is still an active turn and blocks replacement.
+            self.assertEqual(main(['restart-broker', str(self.instance)]), 1)
+            start.assert_not_called()
+            runner.state['sessions']['sturn']['status'] = 'ended'
+            runner.save()
+            self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
+        start.assert_called_once()
+        self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
+
+    def test_operator_review_and_organize_requests_become_assignments(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
+        with patch('builtins.print'):
+            self.assertEqual(main(['review', str(self.instance), '--record', 'missing']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--reason', 'Look again.']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--record', 'r1', '--node', 'root',
+                                   '--reason', 'Check the base case.']), 0)
+            self.assertEqual(main(['organize', str(self.instance)]), 0)
+        runner = self.runner()
+        runner.ingest_inputs()
+        runner.ingest_inputs()
+        reviews = [j['task'] for j in runner.state['jobs'].values() if j['role'] == 'review']
+        self.assertEqual([(t['kind'], t['requested_records'], t['requested_nodes'], t['purpose']) for t in reviews],
+                         [('comprehensive', ['r1'], ['root'], 'Check the base case.')])
+        organizers = [j for j in runner.state['jobs'].values() if j['role'] == 'organizer'
+                      and j['id'].startswith('operator:')]
+        self.assertEqual([j['status'] for j in organizers], ['pending'])
 
     def test_root_change_requires_new_instance(self):
         (self.instance / 'root.md').write_text('A different proposition.', encoding='utf-8')
@@ -1345,6 +1414,21 @@ class RunnerTests(InstanceCase):
         # Only the attempt can still choose a node; an exploration occupies none.
         self.assertIn('· attempt · queued · nodes: (choosing)', visible)
         self.assertIn('· explore · queued · nodes: (none)', visible)
+
+    def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
+        self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
+        views = [self.instance / 'knowledge' / name for name in ('frontier.md', 'index.md', 'board.md')]
+        for path in views:
+            path.unlink()
+        with InstanceLock(self.instance / 'runner/lock'), patch('builtins.print'):
+            self.assertEqual(main(['render', str(self.instance)]), 1)
+        self.assertFalse(any(path.exists() for path in views))
+        with patch('builtins.print'):
+            self.assertEqual(main(['render', str(self.instance)]), 0)
+        frontier, index, board_view = (path.read_text(encoding='utf-8') for path in views)
+        self.assertIn('State: informal_proved', frontier)
+        self.assertIn('Investigation', index)
+        self.assertIn('Research work and occupied sections', board_view)
 
 
 if __name__ == '__main__':

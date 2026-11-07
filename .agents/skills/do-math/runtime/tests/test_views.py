@@ -92,3 +92,14 @@ class ViewTests(InstanceCase):
             self.assertIn('[Review](../records/r1/review/assessment.json)', module)
         index = (base / 'index.md').read_text(encoding='utf-8')
         self.assertIn('records/r2/record.json', index.split('## Unfiled records')[1])
+
+    def test_root_statement_is_read_as_in_the_launch_context(self):
+        # init keeps root.md's bytes; a UTF-8 byte order mark is not part of the statement.
+        root = self.instance / 'root.md'
+        statement = root.read_text(encoding='utf-8')
+        root.write_bytes(b'\xef\xbb\xbf' + statement.encode('utf-8'))
+        model = knowledge.replay(self.instance)
+        self.assertEqual(model['nodes']['root']['statement'], statement)
+        knowledge.render(self.instance, model, [])
+        self.assertIn('## root\n\n' + statement + '\n',
+                      (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
