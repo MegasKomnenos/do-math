@@ -11,7 +11,7 @@ import time
 import traceback
 import uuid
 
-from check import check_session, regular_tree
+from check import check_session, regular_tree, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
 from coordination import board, lease_table, section_entries
@@ -33,11 +33,6 @@ PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 
 
 def uid(prefix):
     return prefix + uuid.uuid4().hex
-
-
-def tree_hashes(folder):
-    return {p.relative_to(folder).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in Path(folder).rglob('*') if p.is_file()}
 
 
 def initialize(instance, root_file, settings_file=None):
@@ -180,7 +175,7 @@ class Runner:
         self.save()
         try:
             command = build_command(self.settings['cli'][provider], selected['model'], selected['effort'], session,
-                                    **({'servers': self.settings['mcp_servers']} if self.settings['mcp_servers'] else {}))
+                                    self.settings['mcp_servers'])
             launch = {'runner': self.identity, 'command': {'argv': command.argv, 'cwd': str(command.cwd)}}
             if job['role'] in END_CHECK_ROLES:
                 launch['end_check'] = {'maximum': self.settings['max_end_resumptions'],
@@ -552,8 +547,6 @@ class Runner:
             self.finish(sid, s)
 
     def ensure_broker(self):
-        if self.state.get('finished') and not self.active():
-            return
         if self.broker is not None and self.broker.poll() is not None:
             self.broker = None
         receipt = self.instance / 'runner/lean/process.json'
@@ -716,8 +709,7 @@ class Runner:
                     continue
                 exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
                                   for p in self.state['pipelines'].values())
-                if not exploration and self.selection('explore') and (
-                        self.state['explore_requested'] or not self.available_nodes()):
+                if not exploration and self.selection('explore') and self.state['explore_requested']:
                     # schedule() creates eligible exploration after this pass.
                     # Leave capacity for it before launching another attempt.
                     continue
@@ -1015,6 +1007,8 @@ def main(argv=None):
         elif args.command in ('review', 'organize', 'reconsider-attempts'):
             request = {'kind': args.command}
             if args.command == 'review':
+                if not (args.record or args.node or args.concern):
+                    raise ValueError('name the evidence to review with --record, --node or --concern')
                 model = replay(instance)
                 if any(r not in model['records'] for r in args.record) or any(n not in model['nodes'] for n in args.node) or any(c not in model['concerns'] for c in args.concern):
                     raise ValueError('unknown review target')

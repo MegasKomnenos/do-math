@@ -81,13 +81,11 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
     return prompt
 
 
-def authorize(session, state, source, basis, explanation, *, decision=None):
+def authorize(session, state, source, basis, explanation):
     authorization = {'authorized': True, 'source': source, 'basis': basis,
                      'explanation': explanation, 'at': time.time(),
                      'resumptions': state['resumptions'], 'maximum': state['maximum'],
                      'request_id': (state.get('request') or {}).get('id')}
-    if decision is not None:
-        authorization['decision'] = decision
     state.update(status='authorized', authorization=authorization)
     write_json(Path(session) / 'end-check.json', state)
     return authorization
@@ -188,14 +186,13 @@ def supervise(session, launch):
                     raise ValueError('Resumption returned a different conversation identity')
             except ValueError as exc:
                 authorize(session, state, 'runner', 'resume_unavailable', str(exc))
-                result['ending_error'] = str(exc)
                 return result
         error = None
         if state['request'] is not None:
             decision, error = end_decision(submitted, state['request'])
             write_json(folder / 'decision-check.json', {'decision': decision, 'error': error})
             if decision is not None:
-                authorize(session, state, 'worker', decision['basis'], decision['explanation'], decision=decision)
+                authorize(session, state, 'worker', decision['basis'], decision['explanation'])
                 return result
         if number >= state['maximum']:
             authorize(session, state, 'runner', 'resumption_limit',
@@ -208,7 +205,6 @@ def supervise(session, launch):
                 raise ValueError('No exact native conversation identity is available for resumption')
         except ValueError as exc:
             authorize(session, state, 'runner', 'resume_unavailable', str(exc))
-            result['ending_error'] = str(exc)
             return result
         request = {'id': uuid.uuid4().hex, 'round': number + 1, 'previous_error': error}
         state['request'] = request

@@ -745,6 +745,8 @@ class BrokerTests(BrokerFixture):
         bad = "j" + "0" * 32
         runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
         (self.paths.queue / "x..escape.json").write_text("{}", encoding="utf-8")
+        if os.name != "nt":  # a POSIX file name can end in a newline, which a `$`-anchored match accepts
+            (self.paths.queue / ("j" + "1" * 32 + "\n.json")).write_text("{}", encoding="utf-8")
         self.broker.tick()
         self.assertEqual(lean_broker.job_record(self.paths, bad)["status"], "failed")
         self.assertIn("rejected", lean_broker.job_record(self.paths, bad)["reason"])
@@ -1277,12 +1279,7 @@ class ClientAndLifecycleTests(BrokerFixture):
     def test_runner_launches_adopts_and_relaunches_the_broker(self):
         skill = runner.SKILL
         engine = runner.Runner(self.instance, skill)
-        # A complete instance with nothing active is the one case where no broker is started.
-        engine.state["finished"] = True
-        engine.ensure_broker()
-        self.assertIsNone(lean_broker.broker_alive(self.paths))
-        engine.state["finished"] = False
-        engine.ensure_broker()  # otherwise a broker is kept alive whether or not a session exists yet
+        engine.ensure_broker()  # a broker is kept alive whether or not a session exists yet
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not lean_broker.broker_alive(self.paths):
             time.sleep(0.05)
@@ -1296,7 +1293,7 @@ class ClientAndLifecycleTests(BrokerFixture):
         runner.terminate_process(first["process"])
         while runner.alive(first["process"]):
             time.sleep(0.02)
-        engine.ensure_broker()  # within BROKER_RETRY of the last launch: no relaunch yet
+        engine.ensure_broker()  # within ten seconds of the last launch (runner.ensure_broker): no relaunch yet
         time.sleep(0.5)
         self.assertIsNone(lean_broker.broker_alive(self.paths))
         engine.broker_attempt = float("-inf")

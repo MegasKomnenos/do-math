@@ -50,7 +50,7 @@ def opening_since(observed, current, model):
         if nid not in previous:
             return 'new_or_reopened_node'
         if previous[nid] - set(sections):
-            return 'released_section'
+            return 'ended_occupancy'
     return None
 
 

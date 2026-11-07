@@ -321,10 +321,12 @@ class KnowledgeTests(InstanceCase):
         self.assertEqual((proof['node'], proof['outcome'], proof['derivation']), ('root', 'refuted', 'backward'))
         self.assertEqual(proof['premise_proofs'], ['r2/refutation'])
         self.assertEqual(proof['formal_dependencies'], [{'node': 'K', 'outcome': 'refuted'}])
-        # A proof of the necessary condition alone moves nothing.
+        # A proof of K beside its accepted refutation makes K contested, so the refutation
+        # of root that rested on K is no longer derived.
         self.publish('r3', record([claim_row('k')], solutions=[solution('k', 'K', 'k')]))
         m = replay(self.instance)
         self.assertEqual(m['nodes']['K']['state'], 'contested')
+        self.assertEqual(m['nodes']['root']['state'], 'unresolved')
 
     def test_dependency_update_can_name_a_backward_proof_route(self):
         # The proofs object names a relation applied backward as <relation>~<premise position>.
@@ -1289,6 +1291,7 @@ class RunnerTests(InstanceCase):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))
         with patch('builtins.print'):
             self.assertEqual(main(['review', str(self.instance), '--record', 'missing']), 1)
+            self.assertEqual(main(['review', str(self.instance), '--reason', 'Look again.']), 1)
             self.assertEqual(main(['review', str(self.instance), '--record', 'r1', '--node', 'root',
                                    '--reason', 'Check the base case.']), 0)
             self.assertEqual(main(['organize', str(self.instance)]), 0)

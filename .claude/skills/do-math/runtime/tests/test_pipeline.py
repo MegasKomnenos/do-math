@@ -28,7 +28,7 @@ class PipelineTests(InstanceCase):
             handle.wait(timeout=10)
 
     @staticmethod
-    def command(cli, model, effort, cwd):
+    def command(cli, model, effort, cwd, servers=None):
         return Command(provider_for_model(model), [sys.executable, '-B', str(HERE / 'pipeline_cli.py')], Path(cwd))
 
     def test_full_pipeline_formalizes_and_drains_followups(self):

@@ -121,7 +121,6 @@ class EndingTests(InstanceCase):
         self.assertIn('Role update between turns.', (second / 'prompt.txt').read_text())
         self.assertEqual((first / 'guidance/explore.md').read_bytes(), original_role)
         self.assertIn(b'Role update between turns.', (second / 'guidance/explore.md').read_bytes())
-        self.assertEqual((directory / 'candidate').exists(), False)
 
     def test_limit_authorizes_end_instead_of_waiting_or_resuming_indefinitely(self):
         _, _, directory = self.prepare(maximum=2)
@@ -338,7 +337,7 @@ class EndingTests(InstanceCase):
                 (directory / 'CANCEL').touch()
                 thread.join(10)
 
-    def test_host_loss_is_recorded_as_interruption_without_duplicate_publication(self):
+    def test_host_loss_is_recorded_as_interruption_and_retained_work_reaches_peer(self):
         engine, sid, directory = self.prepare()
         write_json(directory / 'end-check.json', {'maximum': 3, 'resumptions': 0,
                    'status': 'running', 'request': None, 'authorization': None})

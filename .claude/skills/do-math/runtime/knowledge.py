@@ -333,7 +333,7 @@ def organization_event(model, event, folder):
 
 def replay(instance):
     instance = Path(instance)
-    model = new_model((instance / 'root.md').read_text(encoding='utf-8'))
+    model = new_model((instance / 'root.md').read_text(encoding='utf-8-sig'))
     for event in sorted((read_json(p) for p in (instance / 'knowledge/events').glob('*.json')),
                         key=lambda e: e['sequence']):
         folder = instance / 'knowledge' / event['folder']

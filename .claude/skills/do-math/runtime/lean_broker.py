@@ -637,7 +637,7 @@ class Broker:
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
             job_id = path.stem
             try:
-                if not JOB_ID.match(job_id) and not BUILD_ID.match(job_id):
+                if not JOB_ID.fullmatch(job_id) and not BUILD_ID.fullmatch(job_id):
                     raise ValueError(f"not a job ID: {job_id}")
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 # Registration or a final outcome can be durable while its queue
@@ -669,8 +669,8 @@ class Broker:
                     raise ValueError("source must be a path")
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
-                folder = self.paths.build(job_id) if BUILD_ID.match(job_id) else \
-                    self.paths.job(job_id) if JOB_ID.match(job_id) else None
+                folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else \
+                    self.paths.job(job_id) if JOB_ID.fullmatch(job_id) else None
                 if folder is not None:
                     folder.mkdir(exist_ok=True)
                     write_json(folder / "result.json",
