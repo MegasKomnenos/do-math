@@ -21,8 +21,7 @@ def toml(value):
 
 def worker_command(executable, model, effort, session, servers=None, *, resume_id=None):
     base = build_command(executable, model, effort, session)
-    # Native session persistence retains tool messages beyond the CLI stream.
-    argv = [x for x in base.argv if x not in ('--ephemeral', '--no-session-persistence')]
+    argv = list(base.argv)
     servers = servers or {}
     if base.provider == 'codex':
         options = ['--ignore-user-config', '--ignore-rules', '-c', 'project_doc_max_bytes=0', '-c', 'developer_instructions=""',

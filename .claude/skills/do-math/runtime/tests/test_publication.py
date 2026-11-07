@@ -428,6 +428,22 @@ class FormalEvidenceTests(InstanceCase):
         self.assertNotIn('custom_assumption', read_json(self.instance / 'settings.json')['lean']['allowed_axioms'])
         audit_formal(self.instance, 'sreview', check, solution, candidate)
 
+    def test_formal_check_must_match_candidate_theorem_sources_and_printed_axioms(self):
+        # Each formal_check field is compared with the evidence it names; the reviewer's
+        # own entry, or a stale one, does not pass the audit by itself.
+        candidate, _, check, solution = self.evidence()
+        audit_formal(self.instance, 'sreview', check, solution, candidate)
+        for change, message in (
+                ({'alignment': 'differs'}, 'exact mathematical correspondence'),
+                ({'theorem': 'other_target'}, 'formal theorem differs from candidate'),
+                ({'axioms': ['propext']}, 'reported axioms differ from broker output'),
+                ({'source_hashes': {'Proof.lean': hashlib.sha256(b'edited source').hexdigest()}},
+                 'identify the final candidate source bytes'),
+                ({'source_files': {'Proof.lean': 'input.json'}}, 'absent from the reviewing compile')):
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(Invalid, message):
+                    audit_formal(self.instance, 'sreview', {**check, **change}, solution, candidate)
+
     def build_evidence(self):
         candidate, working, check, solution = self.evidence()
         target = b'import Basis\n' + (candidate / 'Proof.lean').read_bytes()

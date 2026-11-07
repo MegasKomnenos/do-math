@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, findings_check, organization_check
-from coordination import board, lease, lease_table, release, section, wait
+from coordination import board, lease, lease_table, message, release, section, updates, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from runner import Runner, archive_finished, initialize, main
 from runtime_support import InstanceLock, read_json, write_json
@@ -817,6 +817,26 @@ class RunnerTests(InstanceCase):
         write_json(explorer / 'input.json', {'instance': str(self.instance), 'session': 'sexplore', 'role': 'explore'})
         with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
             lease(explorer, 'root')
+
+    def test_messages_reach_the_recipient_inbox_and_its_updates(self):
+        runner = self.runner()
+        sender, recipient = (self.running_attempt(runner, sid) for sid in ('ssender', 'srecipient'))
+        note = sender / 'note.md'
+        note.write_text('Our sections meet at n = 7; I leave that case to you.', encoding='utf-8')
+        delivered = Path(message(sender, 'srecipient', note)['delivered'])
+        self.assertEqual(delivered.resolve().parent, (recipient / 'inbox').resolve())
+        with self.assertRaisesRegex(ValueError, 'unknown recipient'):
+            message(sender, 'snobody', note)
+        (sender / 'blank.md').write_text(' \n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'empty coordination message'):
+            message(sender, 'srecipient', sender / 'blank.md')
+        # A publication leaves a notice in every running session's inbox; it names no sender.
+        runner.notify({'id': 'r9', 'kind': 'record', 'sequence': 1})
+        received = updates(recipient)['messages']
+        self.assertEqual(sorted(m.get('from') or m.get('event') for m in received), ['r9', 'ssender'])
+        self.assertEqual([m['text'] for m in received if m.get('from') == 'ssender'],
+                         ['Our sections meet at n = 7; I leave that case to you.'])
+        self.assertEqual([(m['event'], m['revision']) for m in updates(sender)['messages']], [('r9', 1)])
 
     def test_attempt_launches_are_spaced_and_a_queued_node_launches_none(self):
         self.publish('r1', self.reduction())  # root and Q are both available

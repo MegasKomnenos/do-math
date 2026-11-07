@@ -398,17 +398,16 @@ class Calibration:
         """Calibrated, or calibration tried and failed: either way no new calibration job is due."""
         return self.entry(key) is not None
 
-    def record_baseline(self, key, imports, version, baseline_mb, import_seconds):
-        entry = self.data["entries"].setdefault(key, {"imports": imports, "version": version,
-                                                      "excess_mb": [], "seconds": []})
+    def record_baseline(self, key, identity, baseline_mb, import_seconds):
+        """`identity` is what the key hashes, in readable form: imports, version, environment_key and direct."""
+        entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
         entry.update(baseline_mb=round(baseline_mb, 1), import_seconds=round(import_seconds, 1),
                      calibrated_at=time.time(), failed=None)
         self.dirty = True
 
-    def record_failure(self, key, imports, version, exit_code, reason):
+    def record_failure(self, key, identity, exit_code, reason):
         """A calibration that did not succeed; compiles of this closure run on their own estimates."""
-        entry = self.data["entries"].setdefault(key, {"imports": imports, "version": version,
-                                                      "excess_mb": [], "seconds": []})
+        entry = self.data["entries"].setdefault(key, {**identity, "excess_mb": [], "seconds": []})
         entry.update(baseline_mb=None, import_seconds=None, calibrated_at=time.time(),
                      failed={"exit_code": exit_code, "reason": reason})
         self.dirty = True
@@ -832,7 +831,7 @@ class Broker:
         source = self.paths.sources / (closure + ".lean")
         source.write_text("".join(f"import {name}\n" for name in imports) or "-- no imports\n", encoding="utf-8")
         job = {"id": job_id, "kind": "calibration", "session": BROKER_SESSION, "source": str(source),
-               "environment_key": self.state['environment_key'],
+               "environment_key": self.state['environment_key'], "direct": self.direct is not None,
                "cwd": self.lean_cwd(None), "expect_mb": self.config["calibration_expect_mb"], "imports": imports,
                "closure": closure, "threads": 1, "submitted_at": time.time(), "status": "queued",
                "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None, "host": None,
@@ -908,13 +907,17 @@ class Broker:
         measured["seconds"] = round(now - (job["started_at"] or now), 1)
         baseline = self.calibration.baseline(job["closure"])
         if job["kind"] == "calibration":
+            # What the closure key hashes, in readable form: a session matching its imports against the
+            # table compares `environment_key` and `direct` with what `status` reports as environment_key
+            # and launcher.direct, since the key itself is a hash it cannot recompute.
+            identity = {"imports": job["imports"], "version": self.state["version"],
+                        "environment_key": job["environment_key"], "direct": job["direct"]}
             if job["exit_code"] == 0:
-                self.calibration.record_baseline(job["closure"], job["imports"], self.state["version"],
-                                                 measured["peak_mb"], measured["seconds"])
+                self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"])
             elif job["exit_code"] is not None and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
-                self.calibration.record_failure(job["closure"], job["imports"], self.state["version"],
-                                                job["exit_code"], "the calibration compile failed; see its stdout.log")
+                self.calibration.record_failure(job["closure"], identity, job["exit_code"],
+                                                "the calibration compile failed; see its stdout.log")
             else:
                 # A launch error or a cancellation records nothing, so the next compile calibrates again.
                 # The compiles that waited for this one go ahead on their own estimates rather than

@@ -386,7 +386,10 @@ class JobHostTests(unittest.TestCase):
         self.assertIn("threads=1", output)
         self.assertIn("FAKE_ENV=1", output)  # lean.env overrides reach the Lean process
         if hasattr(os, "nice"):
-            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)  # and so does the priority
+            # `normal` leaves the niceness as inherited, so this shows only that the host did not change it.
+            # The lowered priorities are not exercised: a below-normal stand-in starves behind normal-priority
+            # research load on the test machine, which is why every fixture here runs at `normal`.
+            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):
@@ -493,6 +496,8 @@ class BrokerTests(BrokerFixture):
         entry = runner.read_json(self.paths.calibration)["entries"][job["closure"]]
         self.assertEqual(entry["imports"], ["Mathlib.Data.Nat.Basic"])
         self.assertIn("4.0.0-fake", entry["version"])
+        # The entry names its environment as `status` does, so a session can tell it from one measured before a change.
+        self.assertEqual((entry["environment_key"], entry["direct"]), (self.broker.state["environment_key"], False))
         self.assertGreater(entry["baseline_mb"], 10)
         self.assertLess(entry["baseline_mb"], 60)
         self.assertEqual(job["status"], "finished")
@@ -781,6 +786,38 @@ class BrokerTests(BrokerFixture):
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
         self.assertIsNone(runner.read_json(self.paths.state)["config_error"])
+
+    def test_environment_change_fails_queued_jobs_and_calibrates_the_new_environment_anew(self):
+        # An environment change reaches the broker through settings.json. A job queued under the earlier
+        # identity must not start under the new one, a running compile is left alone, and the same file
+        # submitted again is a job of the new environment with a calibration key of its own.
+        self.write_settings(cpu_threads_budget=1)
+        self.start_broker()
+        before = self.broker.state["environment_key"]
+        blocker = self.submit(self.session_file("s1", "block.lean", sleep=3), expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"][blocker]["status"] == "running")
+        path = self.session_file("s1", "wait.lean", marker="NEW-EPOCH")
+        waiting = self.submit(path, expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"].get(waiting, {}).get("status") == "queued")
+        time.sleep(0.02)
+        self.write_settings(cache_epoch="second")
+        self.until(lambda: self.finished(waiting))
+        stale = self.broker.state["jobs"][waiting]
+        self.assertEqual((stale["status"], stale["exit_code"], stale["environment_key"]), ("failed", None, before))
+        self.assertIn("environment changed", stale["reason"])
+        self.assertFalse((self.paths.job(waiting) / "launch.json").exists())
+        self.assertNotEqual(self.broker.state["environment_key"], before)
+        self.assertEqual(lean_broker.broker_status(self.paths)["environment_key"], self.broker.state["environment_key"])
+        again = self.submit(path, expect_mb=40)
+        self.until(lambda: self.finished(again) and self.finished(blocker))
+        fresh = self.broker.state["jobs"][again]
+        self.assertEqual((fresh["status"], fresh["exit_code"], fresh["environment_key"]),
+                         ("finished", 0, self.broker.state["environment_key"]))
+        self.assertNotEqual(fresh["closure"], stale["closure"])
+        self.assertEqual(self.broker.state["jobs"][blocker]["exit_code"], 0)
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual(sorted(j["closure"] for j in calibrations), sorted([stale["closure"], fresh["closure"]]))
+        self.assertIn("NEW-EPOCH", (self.paths.job(again) / "stdout.log").read_text(encoding="utf-8"))
 
     def test_machine_gate_holds_every_start(self):
         self.start_broker()
@@ -1163,6 +1200,7 @@ class LauncherTests(BrokerFixture):
         # Baselines measured directly are keyed apart from those measured through lake.
         self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"], True))
         self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"]))
+        self.assertTrue(self.broker.calibration.entry(job["closure"])["direct"])  # and the table says so in words
         self.assertIn("launcher", lean_broker.broker_status(self.paths))
 
     def test_a_lake_that_fails_leaves_the_configured_command_in_force(self):

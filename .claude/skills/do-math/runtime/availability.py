@@ -82,9 +82,12 @@ def reported_availability(session, outcome):
     if report['status'] != 'all_unresolved_work_occupied':
         raise ValueError('unknown availability status')
     token = report['snapshot']
-    if not isinstance(token, str) or not re.fullmatch(r'[0-9a-f]{64}', token):
+    well_formed = isinstance(token, str) and re.fullmatch(r'[0-9a-f]{64}', token)
+    # A token of the right form that updates never retained for this session is equally not one of its tokens.
+    path = Path(session) / 'availability' / (token + '.json') if well_formed else None
+    if path is None or not path.exists():
         raise ValueError('availability.snapshot must be a token returned by updates')
-    observed = read_json(Path(session) / 'availability' / (token + '.json'))
+    observed = read_json(path)
     if (not isinstance(observed, dict) or set(observed) != {'epoch', 'nodes'}
             or type(observed['epoch']) is not int or observed['epoch'] < 0
             or not isinstance(observed['nodes'], dict)

@@ -292,11 +292,14 @@ class AvailabilityTests(InstanceCase):
 
         self.assertEqual(check(), (0, {'ok': True, 'errors': []}))
         value = read_json(folder / 'output/outcome.json')
-        value['availability']['snapshot'] = 'not-a-token'
-        write_json(folder / 'output/outcome.json', value)
-        code, report = check()
-        self.assertEqual((code, report['ok']), (1, False))
-        self.assertIn('token returned by updates', report['errors'][0])
+        # A malformed token and a well-formed token this session never retained receive the same diagnosis.
+        for token in ('not-a-token', '0' * 64):
+            with self.subTest(token=token):
+                value['availability']['snapshot'] = token
+                write_json(folder / 'output/outcome.json', value)
+                code, report = check()
+                self.assertEqual((code, report['ok']), (1, False))
+                self.assertIn('token returned by updates', report['errors'][0])
 
 
 if __name__ == '__main__':

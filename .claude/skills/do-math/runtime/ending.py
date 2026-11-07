@@ -11,7 +11,7 @@ import uuid
 
 from availability import no_research_outcome
 from launch import worker_command, worker_environment
-from retention import events, refusal
+from retention import conversation_identity, events, refusal
 from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
@@ -25,8 +25,7 @@ def turn_directory(session, number):
 def conversation_id(folder, provider):
     identities = set()
     for event in events(Path(folder) / 'cli.stdout.jsonl'):
-        value = (event.get('thread_id') if event.get('type') == 'thread.started' else None
-                 ) if provider == 'codex' else event.get('session_id')
+        value = conversation_identity(event, provider)
         if value is not None:
             try:
                 identities.add(str(uuid.UUID(value)))
