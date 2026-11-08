@@ -56,7 +56,7 @@ You may write Lean when it helps your mathematical work or completes a proof nat
 
 Use the supplied retained-work format from the beginning. Write arguments and definitions as they become clear, retain code and data, and explain failures and remaining obligations. A checkpoint protects progress; after saving it, return to useful research. Do not let preparing a tidy handoff replace work you can still do.
 
-Record conjectures and speculative connections with their grounds and uncertainty. They can inform later sessions even though they do not create nodes. If you establish a connection, give its precise implication and proof so that the peer can propose the associated question and review can assess it.
+Record conjectures and speculative connections with their grounds and uncertainty. They can inform later sessions even though they do not create nodes. If you establish a connection, give its precise implication and proof so that the peer can propose the associated node and relation and review can assess them.
 
 Read relevant shared-state updates at natural pauses and before finishing. A new result may make your target informally solved, reveal a defect in a premise, or supply an argument you can use. Judge its effect on your work and explain what you do with it. Formal completion of the root changes new dispatch; it does not narrow the scope of your already-running session.
 

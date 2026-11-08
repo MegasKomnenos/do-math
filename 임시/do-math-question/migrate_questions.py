@@ -29,7 +29,9 @@ Usage:
   --questions FILE   JSON file with the initial question list; see QUESTIONS_FORMAT below. Optional:
                      without it only q0 exists after migration.
   --runtime DIR      the do-math runtime directory to import (default: the canonical installation).
-                     Use the directory the runner will actually run from.
+                     It must already hold the question-aware runtime. In the order below the installed
+                     copy (.agents/skills/do-math) is regenerated after this script and still holds the
+                     earlier runtime while the script runs, so the default is the directory to use.
   --retire-input     file name under control/inputs/ to move out (default: the known note).
   --dry-run          report what would change without writing anything.
   --commit           commit the new knowledge files in the instance's own Git repository. Without
@@ -38,9 +40,10 @@ Usage:
   --report FILE      also write the JSON report to FILE.
 
 Order of operations for the live instance:
-  stop the runner (runner.py stop; wait for the runner process to exit, or kill it after STOP so
-  that no session is launched during the migration; session hosts and CLIs may keep running),
-  then run this script on the instance, then regenerate the installed copy the instance uses
+  stop new dispatch (runner.py stop), then end the runner process itself: under STOP it keeps
+  collecting sessions and publishing, and it exits on its own only when the research is finished,
+  so terminate it once STOP is in place; session hosts and CLIs may keep running. Then run this
+  script on the instance, then regenerate the installed copy the instance uses
   (.agents/skills/do-math) from the canonical skill, then start the runner again (runner.py start)
   and resume (runner.py resume) if STOP was left in place.
 
@@ -190,6 +193,12 @@ def main(argv=None):
         if len(explorations) > 1:
             fail('more than one exploration pipeline is in progress; the earlier runtime allowed one, '
                  'and only one can occupy q0. Resolve this by hand before migrating: ' + ', '.join(pid for pid, _ in explorations))
+        if state.get('publication'):
+            # The prepared event already owns the next sequence number. A questions event written now
+            # would take the same number, and the revision would not advance when the runner finishes it.
+            fail('the runner left publication ' + state['publication']['event']['id'] + ' unfinished. Start the '
+                 'runner again with control/STOP in place, which completes a publication without launching '
+                 'sessions; once runner/state.json shows no publication, end the runner process and migrate')
 
         questions = []
         reason = None
@@ -206,29 +215,42 @@ def main(argv=None):
                 write_json(instance / 'settings.json', new_settings)
 
         # 2. in-progress exploration occupies q0
+        state_changed = False
         for pid, pipeline in explorations:
             sid = pipeline['producer']
+            held = knowledge.ROOT_QUESTION
             if sid:
                 declaration = instance / 'sessions' / sid / 'declaration.json'
                 data = read_json(declaration) if declaration.is_file() else {'at': time.time()}
                 if data.get('question'):
-                    report['changes'].append({'pipeline': pid, 'session': sid, 'question': data['question']['id'],
+                    held = data['question']['id']
+                    report['changes'].append({'pipeline': pid, 'session': sid, 'question': held,
                                               'note': 'already declared; left unchanged'})
-                    continue
-                data['question'] = {'id': knowledge.ROOT_QUESTION, 'at': time.time(), 'by': 'runner',
-                                    'note': 'assigned by the question migration to an exploration in progress'}
-                report['changes'].append({'pipeline': pid, 'session': sid, 'file': str(declaration),
-                                          'question': knowledge.ROOT_QUESTION})
-                if not args.dry_run:
-                    write_json(declaration, data)
+                else:
+                    data['question'] = {'id': knowledge.ROOT_QUESTION, 'at': time.time(), 'by': 'runner',
+                                        'note': 'assigned by the question migration to an exploration in progress'}
+                    report['changes'].append({'pipeline': pid, 'session': sid, 'file': str(declaration),
+                                              'question': knowledge.ROOT_QUESTION})
+                    if not args.dry_run:
+                        write_json(declaration, data)
             else:
                 job = state['jobs'].get(pid + ':producer')
                 if job is None:
                     fail('exploration pipeline without a producer job: ' + pid)
                 job['task']['question'] = knowledge.ROOT_QUESTION
                 report['changes'].append({'pipeline': pid, 'job': job['id'], 'task.question': knowledge.ROOT_QUESTION})
-                if not args.dry_run:
-                    write_json(instance / 'runner/state.json', state)
+                state_changed = True
+            # A peer job the earlier runner queued or launched has no question in its task, and the new
+            # runner launches or relaunches it from that saved task; the peer guidance reads the
+            # explorer's question from the assignment, so it is named there.
+            for job in state['jobs'].values():
+                if (job['pipeline'] == pid and job['role'] == 'peer' and job['status'] in ('pending', 'running')
+                        and 'question' not in job['task']):
+                    job['task']['question'] = held
+                    report['changes'].append({'pipeline': pid, 'job': job['id'], 'task.question': held})
+                    state_changed = True
+        if state_changed and not args.dry_run:
+            write_json(instance / 'runner/state.json', state)
 
         # 3. retire the operator input
         source = instance / 'control/inputs' / args.retire_input

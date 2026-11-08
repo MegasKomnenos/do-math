@@ -1,6 +1,6 @@
 # Publishing organization decisions
 
-Your organization decisions describe how the published mathematics should be found and recognized. The module layout and shared-context selection determine the reading paths through the index. Glossary dispositions and node merges determine which names or identifiers refer to the same shared objects.
+Your organization decisions describe how the published mathematics should be found and recognized. The module layout and shared-context selection determine the reading paths through the index. Glossary dispositions, node merges and question merges determine which names or identifiers refer to the same shared objects.
 
 Write these decisions in `output/organization.json`. The runner uses them to render the index and glossary while preserving every published mathematical account and its description. Supply the complete intended layout, so the file states what the organization should be after your work. The disposition arrays then record the specific glossary and identity changes that accompany it.
 

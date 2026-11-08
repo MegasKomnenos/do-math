@@ -364,6 +364,44 @@ class QuestionDispatchTests(InstanceCase):
                         if question_lease(runner.session_dir(later), 'op-scale')['leased'] else False)
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['free'], [])
 
+    def test_root_assignment_is_saved_before_the_explorer_launches(self):
+        runner = self.runner()
+        seen = []
+        prepare = runner.make_pack
+
+        def observe(sid, job):
+            # An explorer's question command reads the saved state, not the runner's memory.
+            seen.append(question_availability(self.instance)['occupied'])
+            return prepare(sid, job)
+
+        with patch.object(runner, 'make_pack', side_effect=observe), patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+        self.assertEqual(list(seen[0]), ['q0'])
+
+    def test_a_retried_explorer_is_assigned_the_root_question_its_failed_launch_was_given(self):
+        runner = self.runner()
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            key = runner.producer('explore')
+            self.assertTrue(runner.dispatch(key))
+            job = runner.state['jobs'][key]
+            failed = job['session']
+            # The launch ends without research material: the job is pending again, and its pipeline
+            # still names the failed session, whose declaration records the runner's assignment of q0.
+            runner.retry(job, runner.state['sessions'][failed], 'session ended without retained research material',
+                         availability=False)
+            self.assertEqual(runner.state['pipelines'][job['pipeline']]['producer'], failed)
+            job['not_before'] = 0
+            self.assertTrue(runner.question_slot(exclude_job=key))
+            runner.dispatch_pending()
+        relaunched = job['session']
+        self.assertEqual(job['status'], 'running')
+        self.assertNotIn(relaunched, (None, failed))
+        self.assertEqual(job['task']['question'], 'q0')
+        self.assertEqual(read_json(runner.session_dir(relaunched) / 'declaration.json')['question']['id'], 'q0')
+        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': relaunched})
+
     def test_occupied_nodes_fill_free_questions_with_explorers_one_request_at_a_time(self):
         self.questions('qops', [question('op-scale'), question('op-block')])
         runner = self.runner()
@@ -428,6 +466,26 @@ class QuestionDispatchTests(InstanceCase):
         runner.save()
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['free'], ['q0'])
 
+    def test_a_relaunch_takes_the_root_question_that_its_failed_launch_held(self):
+        runner = self.runner()
+        sid, session, job, folder = self.ended_explorer(runner, 'q0')
+        job['task']['question'] = 'q0'
+        # The launch retained nothing, so the job is retried rather than sent to a peer.
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        runner.finish(sid, session)
+        self.assertEqual((job['status'], session['status']), ('pending', 'failed'))
+        job['not_before'] = 0
+        runner.state['blocks'].clear()
+        self.assertTrue(runner.question_slot(exclude_job=job['id']))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertNotIn(job['session'], (None, sid))
+        self.assertEqual(job['task']['question'], 'q0')
+        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'],
+                         {'q0': job['session']})
+
     def test_explorer_finding_no_free_question_closes_without_peer(self):
         runner = self.runner()
         sid, session, job, folder = self.ended_explorer(runner, None)
@@ -438,6 +496,17 @@ class QuestionDispatchTests(InstanceCase):
         self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'done')
         self.assertFalse(any(j['role'] == 'peer' for j in runner.state['jobs'].values()))
         self.assertFalse(runner.state['explore_requested'])
+
+    def test_an_exploration_that_reached_peer_without_a_question_is_not_choosing(self):
+        runner = self.runner()
+        sid, session, job, folder = self.ended_explorer(runner, None)
+        # An interrupted explorer with retained material goes to peer even though it took no question.
+        session['exit_code'] = 1
+        runner.finish(sid, session)
+        self.assertEqual(runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
+        view = question_availability(self.instance, runner.state, runner.model)
+        self.assertEqual((view['free'], view['choosing']), (['q0'], []))
+        self.assertTrue(runner.question_slot())
 
     def test_status_reports_question_availability(self):
         runner = self.runner()

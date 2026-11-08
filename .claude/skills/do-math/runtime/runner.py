@@ -152,14 +152,20 @@ class Runner:
             # The root question is never left free while an explorer launches: the runner assigns
             # it, under the coordination lock, so no explorer choosing at the same moment takes it.
             with claims_lock(self.instance):
-                # An assignment left by an earlier failed launch is not occupancy; decide afresh.
+                # What was recorded for this job before this launch is not occupancy: an earlier
+                # assignment, or the declaration of a failed earlier session that the pipeline still
+                # names as its producer until this launch replaces it. Decide afresh without them.
                 job['task'].pop('question', None)
-                free = question_availability(self.instance, self.state, self.model)['free']
+                free = question_availability(self.instance, self.state, self.model,
+                                             exclude_pipeline=job['pipeline'])['free']
                 if ROOT_QUESTION in free:
                     job['task']['question'] = ROOT_QUESTION
                     now = time.time()
                     write_json(session / 'declaration.json',
                                {'question': {'id': ROOT_QUESTION, 'at': now, 'by': 'runner'}, 'at': now})
+                # Other sessions' question commands read the saved state, so the assignment is saved
+                # before the lock is released.
+                self.save()
         self.make_pack(sid, job)
         provider = provider_for_model(selected['model'])
         s = {'id': sid, 'role': job['role'], 'job': key, 'status': 'starting',
@@ -705,12 +711,13 @@ class Runner:
     def question_slot(self, exclude_job=None):
         """Whether one more explorer could still find a question of its own.
 
-        Explorers whose pipelines hold no question yet are choosing among the free questions. A
-        pending exploration job counts as choosing unless it is the job being dispatched now."""
-        view = question_availability(self.instance, self.state, self.model)
-        choosing = [p for p in view['choosing']
-                    if exclude_job is None or self.state['jobs'].get(exclude_job, {}).get('pipeline') != p]
-        return len(view['free']) > len(choosing)
+        Explorers whose pipelines hold no question yet are choosing among the free questions. The
+        job being dispatched now has its pipeline left out altogether: it is not yet choosing, and a
+        question recorded for it before this launch, by an assignment or by a failed earlier
+        session's declaration, is held by no live explorer and is free for it."""
+        pipeline = self.state['jobs'].get(exclude_job, {}).get('pipeline') if exclude_job else None
+        view = question_availability(self.instance, self.state, self.model, exclude_pipeline=pipeline)
+        return len(view['free']) > len(view['choosing'])
 
     def dispatch_pending(self):
         changed = False

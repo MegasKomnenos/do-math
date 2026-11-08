@@ -115,22 +115,29 @@ def board(instance, state=None, model=None):
     return rows
 
 
-def question_availability(instance, state=None, model=None, rows=None):
+def question_availability(instance, state=None, model=None, rows=None, exclude_pipeline=None):
     """Which questions an explorer could take now, and how many explorers are still choosing.
 
     A question is free when it is open, no unfinished exploration holds or was assigned it, and
-    no live session holds or waits for its lease. Explorers whose pipelines have no question yet
-    are choosing; the runner launches another explorer only while free questions outnumber them,
-    so that each explorer launched can find a question."""
+    no live session holds or waits for its lease. Explorers still producing, or waiting to launch,
+    whose pipelines have no question yet are choosing; an exploration that reached peer without one
+    chooses nothing more. The runner launches another explorer only while free questions outnumber
+    the choosing ones, so that each explorer launched can find a question. The runner leaves out
+    the pipeline whose job it is launching: what an earlier failed launch of that job held or was
+    assigned is free to its relaunch."""
     instance = Path(instance)
     state = state or read_json(instance / 'runner/state.json')
     model = model or replay(instance)
-    rows = board(instance, state, model) if rows is None else rows
+    rows = [row for row in (board(instance, state, model) if rows is None else rows)
+            if exclude_pipeline is None or row['pipeline'] != exclude_pipeline]
     occupied = {row['question']: row['session'] for row in rows if row['role'] == 'explore' and row['question']}
     leases = question_lease_table(instance, state, model)
     free = [qid for qid, q in model['questions'].items()
             if q['canonical'] == qid and q['state'] == 'open' and qid not in occupied and qid not in leases]
-    choosing = [row['pipeline'] for row in rows if row['role'] == 'explore' and not row['question']]
+    # Only an explorer still producing, or still waiting to launch, can go on to choose; an
+    # exploration that reached peer without a question will never take one.
+    choosing = [row['pipeline'] for row in rows
+                if row['role'] == 'explore' and not row['question'] and row['stage'] in ('producing', 'queued')]
     return {'free': free, 'occupied': occupied, 'choosing': choosing}
 
 
