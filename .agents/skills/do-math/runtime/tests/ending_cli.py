@@ -13,7 +13,9 @@ with history.open('a', encoding='utf-8') as stream:
 identity = '01234567-89ab-cdef-0123-456789abcdef'
 if config.get('change_identity_at') == number:
     identity = 'fedcba98-7654-3210-fedc-ba9876543210'
-if not config.get('omit_identity'):
+if config.get('claude_stream'):
+    print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': identity}), flush=True)
+elif not config.get('omit_identity'):
     print(json.dumps({'type': 'thread.started', 'thread_id': identity}), flush=True)
 print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message',
                   'text': f'Retained mathematical work from turn {number}.'}}), flush=True)
@@ -28,6 +30,18 @@ if config.get('refuse_at') == number:
     raise SystemExit(1)
 if config.get('fail_at') == number:
     raise SystemExit(2)
+if number in config.get('output_limit_at', []):
+    # The Claude CLI's own stream when one response reaches the output-token cap.
+    message = ("API Error: Claude's response exceeded the 64000 output token maximum. "
+               "To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable.")
+    print(json.dumps({'type': 'assistant', 'session_id': identity, 'error': 'max_output_tokens',
+                      'is_api_error_message': True, 'api_error': 'max_output_tokens',
+                      'message': {'model': '<synthetic>', 'role': 'assistant',
+                                  'content': [{'type': 'text', 'text': message}]}}), flush=True)
+    print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': True, 'session_id': identity,
+                      'api_error': 'max_output_tokens', 'terminal_reason': 'api_error',
+                      'result': message}), flush=True)
+    raise SystemExit(1)
 if config.get('no_research'):
     (session / 'output/outcome.json').write_text('{"disposition":"no_research"}')
 if number:

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from retention import capture, conversation
+from retention import capture, conversation, output_limit
 from runtime_support import archive_work
 
 
@@ -194,6 +194,24 @@ class RetentionTests(unittest.TestCase):
                     self.assertIn(message, body)
                     self.assertIn(tool_output, body)
                     self.assertNotIn('TRANSPORT_ONLY', body)
+
+    def test_output_limit_is_read_from_the_claude_stream_only(self):
+        message = "API Error: Claude's response exceeded the 64000 output token maximum."
+        limited = [{'type': 'system', 'subtype': 'init', 'session_id': 's'},
+                   {'type': 'assistant', 'is_api_error_message': True, 'api_error': 'max_output_tokens',
+                    'message': {'model': '<synthetic>', 'content': [{'type': 'text', 'text': message}]}},
+                   {'type': 'result', 'is_error': True, 'api_error': 'max_output_tokens', 'result': message}]
+        other = [{'type': 'result', 'is_error': True, 'api_error': 'overloaded_error', 'result': 'API Error: 529'}]
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            stream = folder / 'cli.stdout.jsonl'
+            stream.write_text('\n'.join(map(json.dumps, limited)) + '\nnot json\n', encoding='utf-8')
+            self.assertEqual(output_limit(folder, 'claude'), message)
+            self.assertIsNone(output_limit(folder, 'codex'))
+            stream.write_text('\n'.join(map(json.dumps, other)), encoding='utf-8')
+            self.assertIsNone(output_limit(folder, 'claude'))
+            stream.unlink()
+            self.assertIsNone(output_limit(folder, 'claude'))
 
     def test_claude_native_api_error_is_not_research_activity(self):
         # A refused Claude launch leaves only a synthetic error message in its native transcript.

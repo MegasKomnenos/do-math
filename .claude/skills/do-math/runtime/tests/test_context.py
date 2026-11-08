@@ -234,6 +234,9 @@ class ContextTests(InstanceCase):
             self.assertNotIn('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', environment)
             self.assertEqual(environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '900000')
             self.assertEqual(os.environ['CLAUDE_CODE_AUTO_COMPACT_WINDOW'], '200000')
+        with patch.dict(os.environ, {'CLAUDE_CODE_MAX_OUTPUT_TOKENS': '32000'}):
+            # The worker's output cap is explicit, not the operator's or the CLI default.
+            self.assertEqual(worker_environment()['CLAUDE_CODE_MAX_OUTPUT_TOKENS'], '128000')
 
     def test_withdrawn_solution_keeps_its_explanation_visible(self):
         data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])

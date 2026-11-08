@@ -11,11 +11,16 @@ import uuid
 
 from availability import no_research_outcome
 from launch import worker_command, worker_environment
-from retention import conversation_identity, events, refusal
+from retention import conversation_identity, events, output_limit, refusal
 from runtime_support import (alive, popen_options, process_identity, read_json,
                              terminate_process, write_json, write_text)
 
 ROLES = ('attempt', 'formalizer', 'explore', 'peer')
+OUTPUT_LIMIT_NOTICE = (
+    'Your previous turn ended because one response exceeded the output-token limit '
+    '(CLI message: "{message}"). That response was discarded: its reasoning and anything it was '
+    'producing are not in this conversation and were not saved. Your files, your earlier messages '
+    'and the results of your earlier tool calls remain; continue your work from them.')
 
 
 def turn_directory(session, number):
@@ -166,12 +171,16 @@ def supervise(session, launch):
         submitted = folder / 'submitted-end-decision.json'
         if (session / 'output/end-decision.json').exists():
             shutil.move(session / 'output/end-decision.json', submitted)
-        if (session / 'CANCEL').exists() or result['exit_code'] != 0 or signal:
+        cancelled = (session / 'CANCEL').exists()
+        # Only the output-token cap is resumable: the conversation and files survive it.
+        limit = (output_limit(folder, policy['provider'])
+                 if not cancelled and not signal and result['exit_code'] not in (0, None) else None)
+        if cancelled or signal or (result['exit_code'] != 0 and limit is None):
             authorize(session, state, 'runner', 'interrupted',
                       'Execution ended by cancellation, failure or provider/model refusal.')
             return result
         try:
-            empty = no_research_outcome(session, policy['role'])
+            empty = no_research_outcome(session, policy['role']) if limit is None else None
         except (OSError, ValueError, TypeError, KeyError):
             empty = None
         if empty is not None:
@@ -192,9 +201,14 @@ def supervise(session, launch):
             if decision is not None:
                 authorize(session, state, 'worker', decision['basis'], decision['explanation'])
                 return result
+        if limit is not None:
+            notice = OUTPUT_LIMIT_NOTICE.format(message=limit)
+            error = notice if error is None else notice + ' Ending decision check: ' + error
         if number >= state['maximum']:
-            authorize(session, state, 'runner', 'resumption_limit',
-                      'The configured maximum of end-reconsideration resumptions has been reached.')
+            explanation = 'The configured maximum of end-reconsideration resumptions has been reached.'
+            if limit is not None:
+                explanation += ' The last turn ended at the output-token limit: ' + limit
+            authorize(session, state, 'runner', 'resumption_limit', explanation)
             return result
         try:
             identity = conversation_id(folder, policy['provider'])

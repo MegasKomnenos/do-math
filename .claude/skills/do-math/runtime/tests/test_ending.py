@@ -178,6 +178,58 @@ class EndingTests(InstanceCase):
         self.assertEqual(receipt['refusal']['reason'], 'usage_limit')
         self.assertEqual(read_json(directory / 'exit.json')['exit_code'], 1)
 
+    def prepare_claude(self, maximum=3, role='attempt', config=None):
+        engine, sid, directory = self.prepare(maximum, role, {'claude_stream': True, **(config or {})})
+        launch = read_json(directory / 'launch.json')
+        launch['end_check']['provider'] = 'claude'
+        write_json(directory / 'launch.json', launch)
+        return engine, sid, directory
+
+    def test_output_limit_resumes_same_conversation_with_the_reason(self):
+        _, _, directory = self.prepare_claude(config={'output_limit_at': [0], 'end_after': 1})
+        state = self.run_host(directory)
+        self.assertEqual(state['resumptions'], 1)
+        self.assertEqual(state['authorization']['source'], 'worker')
+        self.assertEqual(state['authorization']['basis'], 'no_way_forward')
+        self.assertEqual(read_json(directory / 'turn-termination.json')['result']['exit_code'], 1)
+        request = read_json(directory / 'turns/0001/request.json')
+        self.assertIn('exceeded the output-token limit', request['previous_error'])
+        self.assertIn('exceeded the 64000 output token maximum', request['previous_error'])
+        prompt = (directory / 'turns/0001/prompt.txt').read_text(encoding='utf-8')
+        self.assertIn('Problem in the previous turn: Your previous turn ended', prompt)
+        # The resumption continues the conversation the failed turn announced.
+        self.assertEqual(state['conversation_id'], '01234567-89ab-cdef-0123-456789abcdef')
+
+    def test_output_limit_during_reconsideration_keeps_decision_error_and_counts_resumption(self):
+        _, _, directory = self.prepare_claude(config={'output_limit_at': [1], 'end_after': 2})
+        state = self.run_host(directory)
+        self.assertEqual(state['resumptions'], 2)
+        self.assertEqual(state['authorization']['basis'], 'no_way_forward')
+        self.assertIsNone(read_json(directory / 'turns/0001/request.json')['previous_error'])
+        self.assertIn('output-token limit', read_json(directory / 'turns/0002/request.json')['previous_error'])
+
+    def test_output_limit_at_the_last_allowed_turn_hands_off_with_the_reason(self):
+        engine, sid, directory = self.prepare_claude(maximum=1, config={'output_limit_at': [0, 1]})
+        state = self.run_host(directory)
+        self.assertEqual(state['resumptions'], 1)
+        self.assertEqual(state['authorization']['source'], 'runner')
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        self.assertIn('output-token limit', state['authorization']['explanation'])
+        # The producer's retained work still reaches peer even though its last CLI exit failed.
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        self.assertEqual(s['exit_code'], 1)
+        engine.finish(sid, s)
+        self.assertEqual(s['status'], 'ended')
+        self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
+
+    def test_output_limit_is_resumable_only_for_the_claude_stream(self):
+        _, _, directory = self.prepare(config={'output_limit_at': [0]})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'interrupted')
+        self.assertEqual(state['resumptions'], 0)
+
     def test_failed_turn_is_interruption_not_worker_authorization(self):
         _, _, directory = self.prepare(config={'fail_at': 1})
         state = self.run_host(directory)

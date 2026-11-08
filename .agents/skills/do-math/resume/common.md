@@ -8,4 +8,4 @@ Continue without submitting an ending decision while you are pursuing the resear
 
 The runner checks this decision for the current request only. Your judgment does not constitute independent review or settle a node in shared knowledge. Your original assignment, instructions, working directory and registered sections remain in force.
 
-Previous ending decision validation error: {{previous_error}}
+Problem in the previous turn: {{previous_error}}

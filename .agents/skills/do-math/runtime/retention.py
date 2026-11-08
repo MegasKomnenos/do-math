@@ -152,6 +152,29 @@ def capture(session, provider):
     return receipt
 
 
+def output_limit(session, provider):
+    """The CLI message when Claude's output-token cap ended the turn, or None.
+
+    The CLI discards the response that reached the cap; the conversation and files remain,
+    so the session host can resume the same conversation instead of ending it."""
+    if provider != 'claude':
+        return None
+    message = None
+    for event in events(Path(session) / 'cli.stdout.jsonl'):
+        if event.get('api_error') != 'max_output_tokens':
+            continue
+        if event.get('type') == 'result':
+            text = event.get('result')
+        else:
+            content = (event.get('message') or {}).get('content') or []
+            text = ''.join(block.get('text', '') for block in content if isinstance(block, dict))
+        if isinstance(text, str) and text.strip():
+            message = text.strip()
+        elif message is None:
+            message = 'max_output_tokens'
+    return message
+
+
 def refusal(session, provider, model, started, retry_seconds):
     session = Path(session)
     try:

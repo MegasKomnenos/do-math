@@ -9,6 +9,8 @@ from runtime_support import write_json
 
 CONTEXT_WINDOW = 1_000_000
 AUTO_COMPACT_TOKENS = 900_000
+# Twice the Claude CLI's default cap: a long reasoning response must not end the turn.
+MAX_OUTPUT_TOKENS = 128_000
 
 
 def toml(value):
@@ -63,4 +65,5 @@ def worker_environment():
     environment.pop('CLAUDE_CODE_DISABLE_1M_CONTEXT', None)
     environment.pop('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', None)
     environment['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = str(AUTO_COMPACT_TOKENS)
+    environment['CLAUDE_CODE_MAX_OUTPUT_TOKENS'] = str(MAX_OUTPUT_TOKENS)
     return environment
