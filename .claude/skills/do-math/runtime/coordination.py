@@ -14,7 +14,7 @@ from pathlib import Path
 import time
 import uuid
 from availability import availability_view, retain_snapshot
-from knowledge import canonical, canonical_question, replay
+from knowledge import ROOT_QUESTION, canonical, canonical_question, replay
 from runtime_support import alive, read_json, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
@@ -372,15 +372,31 @@ def known_question(model, question):
     return canonical_question(model, question)
 
 
-def question_blocked(model, rows, question, pipeline):
-    """Why no session of this pipeline can take the question, or None."""
+def question_blocked(model, rows, table, question, pipeline, sid):
+    """Why no session of this pipeline can take the question, or None.
+
+    While question 0 is free, a narrower question is refused: an explorer takes the root problem as
+    a whole whenever no exploration holds it, and the runner's assignment at launch cannot reach an
+    explorer that is already choosing when question 0 becomes free."""
     if model['questions'][question]['state'] != 'open':
         return 'This question is resolved; read its resolution instead of occupying it.'
     holder = next((r for r in rows if r['role'] == 'explore' and r['pipeline'] != pipeline and r['question'] == question), None)
     if holder:
         return ('Exploration ' + (holder['session'] or holder['pipeline'])
                 + ' holds this question; one explorer at a time occupies a question.')
+    if question != ROOT_QUESTION and root_free(rows, table, sid):
+        return ('Question ' + ROOT_QUESTION + ', the root problem as a whole, is free, and an explorer takes it '
+                'before any narrower question. Lease and take ' + ROOT_QUESTION + ' instead.')
     return None
+
+
+def root_free(rows, table, sid):
+    """Whether question 0 is free to this session, as the runner counts it free: no exploration
+    holds it, and no other session holds or waits for its lease."""
+    if any(r['role'] == 'explore' and r['question'] == ROOT_QUESTION for r in rows):
+        return False
+    entry = table.get(ROOT_QUESTION, {'holders': [], 'queue': []})
+    return not any(x['session'] != sid for x in entry['holders'] + entry['queue'])
 
 
 def question_view(question, table, rows):
@@ -402,7 +418,7 @@ def question_lease(session, question):
         model, state = replay(instance), read_json(instance / 'runner/state.json')
         question = known_question(model, question)
         rows, table = board(instance, state, model), question_lease_table(instance, state, model)
-        reason = question_blocked(model, rows, question, inp.get('pipeline'))
+        reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
         entry = table.get(question, {'holders': [], 'queue': []})
         mine = any(h['session'] == sid for h in entry['holders'])
         if reason is None and entry['holders'] and not mine:
@@ -426,7 +442,7 @@ def question_wait(session, question, timeout=None):
             model, state = replay(instance), read_json(instance / 'runner/state.json')
             question = known_question(model, question)
             rows, table = board(instance, state, model), question_lease_table(instance, state, model)
-            reason = question_blocked(model, rows, question, inp.get('pipeline'))
+            reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
             if reason:
                 entry = table.get(question)
                 if entry:
@@ -468,7 +484,8 @@ def question_take(session, question):
     """Occupy the whole question while holding its lease; taking it ends the lease.
 
     An explorer holds one question for its whole pipeline. The tool refuses what it can decide:
-    no lease, a resolved question, a question another exploration holds, or a second question."""
+    no lease, a resolved question, a question another exploration holds, a question other than q0
+    while q0 is free, or a second question."""
     inp, instance = question_context(session)
     sid = inp['session']
     with claims_lock(instance):
@@ -481,7 +498,7 @@ def question_take(session, question):
 
         if not any(h['session'] == sid for h in table.get(question, {}).get('holders', [])):
             return refuse("Take the question's lease with commands.question_lease or commands.question_wait before occupying it.")
-        reason = question_blocked(model, rows, question, inp.get('pipeline'))
+        reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
         if reason:
             return refuse(reason)
         path = Path(session).resolve() / 'declaration.json'

@@ -235,6 +235,11 @@ class QuestionCoordinationTests(InstanceCase):
         self.questions('qops', [question('op-scale'), question('op-block')])
         self.engine.model = replay(self.instance)
         a, b = self.session('sa'), self.session('sb')
+        # While q0 is free, an explorer takes it before any narrower question.
+        self.assertIn('q0', question_lease(a, 'op-scale')['reason'])
+        root = self.session('sroot')
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_take(root, 'q0')['taken'])
         self.assertTrue(question_lease(a, 'op-scale')['leased'])
         refused = question_lease(b, 'op-scale')
         self.assertFalse(refused['leased'])
@@ -251,10 +256,10 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertNotIn('op-block', question_lease_table(self.instance))
         self.assertIn('holds this question', question_lease(b, 'op-scale')['reason'])
         rows = {r['session']: r['question'] for r in board(self.instance, self.engine.state)}
-        self.assertEqual(rows, {'sa': 'op-scale', 'sb': None})
+        self.assertEqual(rows, {'sa': 'op-scale', 'sb': None, 'sroot': 'q0'})
         view = question_availability(self.instance, self.engine.state)
-        self.assertEqual(view['free'], ['q0', 'op-block'])
-        self.assertEqual(view['occupied'], {'op-scale': 'sa'})
+        self.assertEqual(view['free'], ['op-block'])
+        self.assertEqual(view['occupied'], {'q0': 'sroot', 'op-scale': 'sa'})
         self.assertEqual(view['choosing'], [read_json(b / 'input.json')['pipeline']])
         listed = {q['id']: (q['state'], q['occupied_by'], q['free']) for q in updates(b)['questions']}
         self.assertEqual(listed['op-scale'], ('open', 'sa', False))
@@ -268,10 +273,14 @@ class QuestionCoordinationTests(InstanceCase):
         self.questions('qops', [question('op-scale')])
         self.engine.model = replay(self.instance)
         a, b = self.session('sa'), self.session('sb')
+        # Another explorer holds q0, so the narrower question can be leased.
+        root = self.session('sroot')
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_take(root, 'q0')['taken'])
         self.assertTrue(question_lease(a, 'op-scale')['leased'])
         self.assertEqual(question_wait(b, 'op-scale', timeout=0)['position'], 1)
         # A held lease blocks the runner from counting the question as free.
-        self.assertEqual(question_availability(self.instance, self.engine.state)['free'], ['q0'])
+        self.assertEqual(question_availability(self.instance, self.engine.state)['free'], [])
         question_release(a, 'op-scale')
         self.assertTrue(question_wait(b, 'op-scale', timeout=0)['leased'])
         self.assertTrue(question_take(b, 'op-scale')['taken'])
@@ -279,7 +288,20 @@ class QuestionCoordinationTests(InstanceCase):
         c = self.session('sc')
         self.assertIn('resolved', question_lease(c, 'op-scale')['reason'])
         self.assertIn('resolved', question_wait(c, 'op-scale', timeout=0)['reason'])
-        self.assertTrue(question_lease(c, 'q0')['leased'])
+        self.assertIn('holds this question', question_lease(c, 'q0')['reason'])
+
+    def test_a_narrower_question_is_refused_while_the_root_question_is_free(self):
+        self.questions('qops', [question('op-scale')])
+        self.engine.model = replay(self.instance)
+        a, b = self.session('sa'), self.session('sb')
+        # An explorer still choosing when q0 becomes free takes q0, as the runner's assignment would have.
+        self.assertIn('q0', question_lease(a, 'op-scale')['reason'])
+        self.assertIn('q0', question_wait(a, 'op-scale', timeout=0)['reason'])
+        self.assertTrue(question_lease(a, 'q0')['leased'])
+        # Once another explorer holds q0's lease, a narrower question can be taken.
+        self.assertTrue(question_lease(b, 'op-scale')['leased'])
+        self.assertTrue(question_take(a, 'q0')['taken'])
+        self.assertTrue(question_take(b, 'op-scale')['taken'])
 
     def test_only_explorers_use_question_commands(self):
         attempt = self.session('sattempt', role='attempt')
@@ -515,6 +537,25 @@ class QuestionDispatchTests(InstanceCase):
         self.assertEqual(result['questions']['free'], [])
         self.assertEqual(list(result['questions']['occupied']), ['q0'])
         self.assertFalse(result['questions']['explore_requested'])
+
+    def test_a_busy_coordination_lock_leaves_the_explorer_queued_and_the_runner_running(self):
+        runner = self.runner()
+        runner.state['explore_requested'] = True
+        busy = RuntimeError('another coordination change is still in progress; run the command again')
+        with patch('runner.claims_lock', side_effect=busy), patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        jobs = [j for j in runner.state['jobs'].values() if j['role'] == 'explore']
+        self.assertEqual([j['status'] for j in jobs], ['pending'])
+        self.assertEqual(runner.active(), [])
+        self.assertEqual(list((self.instance / 'sessions').iterdir()), [])
+        self.assertTrue(runner.state['explore_requested'])
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertEqual(jobs[0]['status'], 'running')
+        self.assertEqual(jobs[0]['task']['question'], 'q0')
+        self.assertFalse(runner.state['explore_requested'])
 
 
 if __name__ == '__main__':

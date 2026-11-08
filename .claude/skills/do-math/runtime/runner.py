@@ -151,21 +151,27 @@ class Runner:
         if job['role'] == 'explore':
             # The root question is never left free while an explorer launches: the runner assigns
             # it, under the coordination lock, so no explorer choosing at the same moment takes it.
-            with claims_lock(self.instance):
-                # What was recorded for this job before this launch is not occupancy: an earlier
-                # assignment, or the declaration of a failed earlier session that the pipeline still
-                # names as its producer until this launch replaces it. Decide afresh without them.
-                job['task'].pop('question', None)
-                free = question_availability(self.instance, self.state, self.model,
-                                             exclude_pipeline=job['pipeline'])['free']
-                if ROOT_QUESTION in free:
-                    job['task']['question'] = ROOT_QUESTION
-                    now = time.time()
-                    write_json(session / 'declaration.json',
-                               {'question': {'id': ROOT_QUESTION, 'at': now, 'by': 'runner'}, 'at': now})
-                # Other sessions' question commands read the saved state, so the assignment is saved
-                # before the lock is released.
-                self.save()
+            try:
+                with claims_lock(self.instance):
+                    # What was recorded for this job before this launch is not occupancy: an earlier
+                    # assignment, or the declaration of a failed earlier session that the pipeline still
+                    # names as its producer until this launch replaces it. Decide afresh without them.
+                    job['task'].pop('question', None)
+                    free = question_availability(self.instance, self.state, self.model,
+                                                 exclude_pipeline=job['pipeline'])['free']
+                    if ROOT_QUESTION in free:
+                        job['task']['question'] = ROOT_QUESTION
+                        now = time.time()
+                        write_json(session / 'declaration.json',
+                                   {'question': {'id': ROOT_QUESTION, 'at': now, 'by': 'runner'}, 'at': now})
+                    # Other sessions' question commands read the saved state, so the assignment is saved
+                    # before the lock is released.
+                    self.save()
+            except RuntimeError:
+                # Sessions' coordination commands held the lock past its wait. The launch is left to a
+                # later pass rather than ending the runner, and its empty session folder goes with it.
+                shutil.rmtree(session)
+                return False
         self.make_pack(sid, job)
         provider = provider_for_model(selected['model'])
         s = {'id': sid, 'role': job['role'], 'job': key, 'status': 'starting',
@@ -788,7 +794,9 @@ class Runner:
                 # The request is consumed by the launch; without a free question it stays
                 # in force until one opens, and attempts are not held for it.
                 key = self.producer('explore')
-                self.dispatch(key)
+                if not self.dispatch(key):
+                    # The queued exploration launches from dispatch_pending() on a later pass.
+                    break
                 continue
             waiting = any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values())
             organizer_running = any(j['role'] == 'organizer' and j['status'] == 'running'

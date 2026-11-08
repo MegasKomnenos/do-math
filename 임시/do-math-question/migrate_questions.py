@@ -47,8 +47,19 @@ Order of operations for the live instance:
   (.agents/skills/do-math) from the canonical skill, then start the runner again (runner.py start)
   and resume (runner.py resume) if STOP was left in place.
 
+  Sessions that keep running between this script and the regeneration are disturbed. They invoke
+  their commands from the installed copy, which until it is regenerated holds the earlier runtime,
+  and that runtime cannot replay the questions event written for --questions: in that interval
+  their updates, lease, wait, section and release commands and their transport check fail with an
+  error naming 'questions', which says nothing about their work. Regenerating immediately after
+  this script keeps the interval short. Two orders avoid it, at the cost of departing from the
+  order above: regenerate the installed copy after the runner has exited and before this script
+  (the new runtime reads the unmigrated state), or run this script without --questions,
+  regenerate, and run it again with --questions (the second run leaves what the first changed in
+  place).
+
 The script refuses to run while the runner's instance lock is held, so it cannot change state
-underneath a live runner. Session hosts do not hold that lock and are not disturbed.
+underneath a live runner. Session hosts do not hold that lock.
 """
 import argparse
 import json

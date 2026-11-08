@@ -40,6 +40,11 @@ elif role == 'peer':
             shutil.copyfile(producer / 'output/Proof.lean', output / 'Proof.lean')
             lean = {'theorem': 'add_zero_example', 'sources': ['Proof.lean']}
         data['solutions'] = [{'id': 'solution', 'node': 'root', 'outcome': 'proved', 'claim': 'c1', 'formal_dependencies': [], 'lean': lean}]
+    if source_role == 'explore' and task.get('question') == 'q0':
+        # An exploration of the whole problem leaves a question that later explorers can take up.
+        data['questions'] = [{'id': session.name + '-definitional',
+                              'statement': 'Why does right addition of zero need nothing beyond the defining equation of addition?',
+                              'grounds': 'Every scripted record proves n + 0 = n from that equation alone.'}]
     write_json(output / 'record.json', data)
 elif role == 'review':
     (output / 'feedback.md').write_text('The precise argument was assessed.', encoding='utf-8')
@@ -51,7 +56,9 @@ elif role == 'review':
         assessment = {'publish': True, 'reason': 'Useful retained mathematics.', 'index_assessment': 'Supported within its exact scope.',
                       'feedback': 'feedback.md', 'glossary_approved': True,
                       'claims': [{'claim': c['id'], 'status': 'supported', 'reason': 'Definitional equality.'} for c in data['claims']],
-                      'nodes': [], 'relations': [], 'solutions': [], 'concerns': []}
+                      'nodes': [], 'relations': [], 'solutions': [], 'concerns': [],
+                      'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'A question later explorers can take up.'}
+                                    for q in data.get('questions', [])]}
         for solution in data['solutions']:
             verdict = {'proposal': solution['id'], 'level': 'informal', 'reason': 'Exact statement.'}
             if solution['lean']:
