@@ -383,7 +383,7 @@ def organization_event(model, event, folder):
             model['aliases'][source] = target
     for merge in data.get('merge_questions', []):
         source, target = canonical_question(model, merge['from']), canonical_question(model, merge['into'])
-        if source != target and source != ROOT_QUESTION:
+        if source != target and ROOT_QUESTION not in (source, target):
             model['question_aliases'][source] = target
     for key in data.get('promote', []):
         key = next((primary for primary, member in model['global_terms'].items() if key in member['merged']), key)

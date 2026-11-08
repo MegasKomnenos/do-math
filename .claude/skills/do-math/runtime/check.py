@@ -398,7 +398,8 @@ def organization_check(data, model, batch):
     for merge in array(data.get('merge_questions', []), 'merge_questions'):
         need(merge.get('from') in model['questions'] and merge.get('into') in model['questions'],
              'question merge needs existing questions')
-        need(canonical_question(model, merge['from']) != ROOT_QUESTION, 'the root question keeps its identity')
+        need(ROOT_QUESTION not in (canonical_question(model, merge['from']), canonical_question(model, merge['into'])),
+             'the root question keeps its identity: it neither merges into another question nor absorbs one')
         text(merge.get('reason'), 'question merge reason')
 
 

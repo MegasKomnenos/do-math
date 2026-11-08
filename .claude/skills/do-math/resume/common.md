@@ -6,6 +6,6 @@ Apply the role guide's standard for ending to the investigation as a whole. If y
 
 Continue without submitting an ending decision while you are pursuing the research. When ending is justified, use the exact output/end-decision.json format in context/reference/retained-work.md. The current request ID is {{request_id}}. Use basis=task_completed only if the work you took on is complete; otherwise basis=no_way_forward requires the judgment described above.
 
-The runner checks this decision for the current request only. Your judgment does not constitute independent review or settle a node in shared knowledge. Your original assignment, instructions, working directory and registered sections remain in force.
+The runner checks this decision for the current request only. Your judgment does not constitute independent review or settle a node in shared knowledge. Your original assignment, instructions, working directory, and registered sections or occupied question remain in force.
 
 Problem in the previous turn: {{previous_error}}

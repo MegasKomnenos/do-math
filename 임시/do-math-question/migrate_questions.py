@@ -9,7 +9,10 @@ What it changes:
   2. runner/state.json       an exploration pipeline still in progress (stage other than done) is
                              recorded as occupying question q0: the producer session receives a
                              declaration.json with that question, or, if the producer has not been
-                             launched yet, the pending job's task names the question.
+                             launched yet, the pending job's task names the question. A peer job of
+                             that pipeline that is pending or running also receives the question in
+                             its task, because the new runner launches or relaunches the peer from
+                             that saved task and the peer guidance reads the explorer's question there.
   3. control/inputs/         the operator input named by --retire-input (by default the
                              2026-11-07 note on section registration timing) moves to
                              control/retired-inputs/ so that later launches no longer receive it.

@@ -116,8 +116,9 @@ class QuestionKnowledgeTests(InstanceCase):
         organization = {'batch': [], 'modules': [], 'shared_context': [],
                         'merge_questions': [{'from': 'op-a', 'into': 'op-b', 'reason': 'Both ask about the same scale.'}]}
         organization_check(organization, model, [])
-        with self.assertRaisesRegex(Invalid, 'root question'):
-            organization_check({**organization, 'merge_questions': [{'from': 'q0', 'into': 'op-b', 'reason': 'No.'}]}, model, [])
+        for merge in ({'from': 'q0', 'into': 'op-b'}, {'from': 'op-a', 'into': 'q0'}):
+            with self.subTest(merge=merge), self.assertRaisesRegex(Invalid, 'root question'):
+                organization_check({**organization, 'merge_questions': [{**merge, 'reason': 'No.'}]}, model, [])
         with self.assertRaisesRegex(Invalid, 'existing questions'):
             organization_check({**organization, 'merge_questions': [{'from': 'op-a', 'into': 'missing', 'reason': 'No.'}]}, model, [])
         self.event('o1', 'organization', organization)
@@ -507,6 +508,52 @@ class QuestionDispatchTests(InstanceCase):
         self.assertEqual(job['task']['question'], 'q0')
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'],
                          {'q0': job['session']})
+
+    def test_waiting_explorations_do_not_yield_to_each_other_over_one_free_question(self):
+        runner = self.runner()
+        first, second = runner.producer('explore'), runner.producer('explore')
+        # Two explorations wait to launch and the root question is the only free one. Each job is
+        # decided against the launches before it, not against the other waiting job; otherwise
+        # both would yield and q0 would stay free with the request in force.
+        self.assertTrue(runner.question_slot(exclude_job=first))
+        self.assertFalse(runner.question_slot())
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual(sorted(runner.state['jobs'][key]['status'] for key in (first, second)), ['pending', 'running'])
+        launched = next(key for key in (first, second) if runner.state['jobs'][key]['status'] == 'running')
+        self.assertEqual(runner.state['jobs'][launched]['task']['question'], 'q0')
+        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['free'], [])
+
+    def test_two_pending_explorations_do_not_hold_each_other_back(self):
+        self.questions('qops', [question('op-scale')])
+        runner = self.runner()
+        first, first_session, first_job, first_folder = self.ended_explorer(runner, 'q0')
+        second, second_session, second_job, second_folder = self.ended_explorer(runner, None)
+        # Neither launch retained research material, so both jobs are pending again while their
+        # pipelines still name the failed sessions: one declaring q0, the other having chosen nothing.
+        (first_folder / 'work/notes.md').unlink()
+        for folder in (first_folder, second_folder):
+            (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        runner.finish(first, first_session)
+        runner.finish(second, second_session)
+        self.assertEqual((first_job['status'], second_job['status']), ('pending', 'pending'))
+        # The question the second explorer would have chosen was resolved meanwhile, so q0 is the
+        # only open question. Counting the other pending exploration as a chooser, or as q0's holder,
+        # would leave both waiting for each other.
+        self.publish('r1', record([claim_row('e')], question_resolutions=[resolution('res', 'op-scale', 'e')]))
+        runner.model = replay(self.instance)
+        for job in (first_job, second_job):
+            job['not_before'] = 0
+        runner.state['blocks'].clear()
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+        self.assertEqual(sorted(j['status'] for j in (first_job, second_job)), ['pending', 'running'])
+        launched = first_job if first_job['status'] == 'running' else second_job
+        self.assertEqual(launched['task']['question'], 'q0')
+        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'],
+                         {'q0': launched['session']})
 
     def test_explorer_finding_no_free_question_closes_without_peer(self):
         runner = self.runner()

@@ -153,12 +153,12 @@ class Runner:
             # it, under the coordination lock, so no explorer choosing at the same moment takes it.
             try:
                 with claims_lock(self.instance):
-                    # What was recorded for this job before this launch is not occupancy: an earlier
-                    # assignment, or the declaration of a failed earlier session that the pipeline still
-                    # names as its producer until this launch replaces it. Decide afresh without them.
+                    # What was recorded for this job, or for any other exploration still waiting to
+                    # launch, is not occupancy: an earlier assignment, or the declaration of a failed
+                    # earlier session that its pipeline still names as producer until a relaunch
+                    # replaces it. Decide afresh without them (question_view).
                     job['task'].pop('question', None)
-                    free = question_availability(self.instance, self.state, self.model,
-                                                 exclude_pipeline=job['pipeline'])['free']
+                    free = self.question_view(launching=True)['free']
                     if ROOT_QUESTION in free:
                         job['task']['question'] = ROOT_QUESTION
                         now = time.time()
@@ -714,15 +714,34 @@ class Runner:
         last = self.state.get('last_attempt_launch')
         return last is None or time.time() - last >= self.settings['attempt_launch_interval']
 
+    def question_view(self, launching=False):
+        """Free, occupied and choosing questions as the runner counts them.
+
+        While an exploration waits to launch or relaunch, its pipeline may still record a question:
+        the runner's earlier assignment in its job, or the declaration of a failed session that the
+        pipeline names as producer until the relaunch replaces it. No live explorer holds that
+        question, and the pipeline is not choosing yet. When a pending exploration is launched, every
+        pending exploration's pipeline is therefore left out, and such a question is free to whichever
+        of them launches first. Leaving out only the launching job's own pipeline let two pending
+        explorations hold each other back for good: each counted the other as a chooser, or as the
+        holder of the question it would itself take, while that question stayed free."""
+        rows = board(self.instance, self.state, self.model)
+        if launching:
+            pending = {j['pipeline'] for j in self.state['jobs'].values()
+                       if j['role'] == 'explore' and j['status'] == 'pending'}
+            rows = [row for row in rows if row['pipeline'] not in pending]
+        return question_availability(self.instance, self.state, self.model, rows)
+
     def question_slot(self, exclude_job=None):
         """Whether one more explorer could still find a question of its own.
 
-        Explorers whose pipelines hold no question yet are choosing among the free questions. The
-        job being dispatched now has its pipeline left out altogether: it is not yet choosing, and a
-        question recorded for it before this launch, by an assignment or by a failed earlier
-        session's declaration, is held by no live explorer and is free for it."""
-        pipeline = self.state['jobs'].get(exclude_job, {}).get('pipeline') if exclude_job else None
-        view = question_availability(self.instance, self.state, self.model, exclude_pipeline=pipeline)
+        Explorers whose pipelines hold no question yet are choosing among the free questions. With
+        exclude_job, a pending exploration is being launched, and every pending exploration's
+        pipeline is left out of the count (question_view): each waiting job is decided on its own
+        pass, against the questions the launches before it leave free, and the one launched becomes
+        a producing row that the next pass counts. Without a job to dispatch, waiting jobs count, so
+        that schedule() does not create another exploration for a question a waiting one will take."""
+        view = self.question_view(launching=exclude_job is not None)
         return len(view['free']) > len(view['choosing'])
 
     def dispatch_pending(self):

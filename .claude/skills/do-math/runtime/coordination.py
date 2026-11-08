@@ -115,21 +115,21 @@ def board(instance, state=None, model=None):
     return rows
 
 
-def question_availability(instance, state=None, model=None, rows=None, exclude_pipeline=None):
+def question_availability(instance, state=None, model=None, rows=None):
     """Which questions an explorer could take now, and how many explorers are still choosing.
 
     A question is free when it is open, no unfinished exploration holds or was assigned it, and
     no live session holds or waits for its lease. Explorers still producing, or waiting to launch,
     whose pipelines have no question yet are choosing; an exploration that reached peer without one
     chooses nothing more. The runner launches another explorer only while free questions outnumber
-    the choosing ones, so that each explorer launched can find a question. The runner leaves out
-    the pipeline whose job it is launching: what an earlier failed launch of that job held or was
-    assigned is free to its relaunch."""
+    the choosing ones, so that each explorer launched can find a question. When it launches a
+    pending exploration, it passes board rows without every pending exploration's pipeline: what a
+    failed earlier launch of any of them held or was assigned is held by no live explorer and is
+    free to whichever of them launches first (Runner.question_view)."""
     instance = Path(instance)
     state = state or read_json(instance / 'runner/state.json')
     model = model or replay(instance)
-    rows = [row for row in (board(instance, state, model) if rows is None else rows)
-            if exclude_pipeline is None or row['pipeline'] != exclude_pipeline]
+    rows = board(instance, state, model) if rows is None else rows
     occupied = {row['question']: row['session'] for row in rows if row['role'] == 'explore' and row['question']}
     leases = question_lease_table(instance, state, model)
     free = [qid for qid, q in model['questions'].items()
