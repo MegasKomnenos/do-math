@@ -57,6 +57,10 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
         'wait': [sys.executable, str(runtime / 'coordination.py'), 'wait', str(session), '<node>', '--timeout', '50'],
         'section': [sys.executable, str(runtime / 'coordination.py'), 'section', str(session), '<node>', '--file', '<file>'],
         'release': [sys.executable, str(runtime / 'coordination.py'), 'release', str(session), '<node>'],
+        'question_lease': [sys.executable, str(runtime / 'coordination.py'), 'question-lease', str(session), '<question>'],
+        'question_wait': [sys.executable, str(runtime / 'coordination.py'), 'question-wait', str(session), '<question>', '--timeout', '50'],
+        'question_take': [sys.executable, str(runtime / 'coordination.py'), 'question-take', str(session), '<question>'],
+        'question_release': [sys.executable, str(runtime / 'coordination.py'), 'question-release', str(session), '<question>'],
         'message': [sys.executable, str(runtime / 'coordination.py'), 'message', str(session), '<recipient>', '--file', '<file>'],
         'check': [sys.executable, str(runtime / 'check.py'), str(session)],
         'lean': [sys.executable, str(runtime / 'lean_broker.py'), '<command>', str(instance)],
@@ -91,7 +95,7 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
     parts += ['', '# Assignment and executable commands', '',
-              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt or an exploration has no assigned mathematical task.', '',
+              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt has no assigned mathematical task. An exploration whose task names a question already occupies that question; one whose task names none chooses a free question itself.', '',
               '```json', json.dumps({'task': task, 'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     write_text(session / 'pack.md', '\n'.join(parts))
     write_text(session / 'prompt.txt',

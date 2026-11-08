@@ -53,6 +53,13 @@ class PipelineTests(InstanceCase):
         roles = {s['role'] for s in runner.state['sessions'].values()}
         self.assertTrue({'attempt', 'peer', 'review', 'formalizer', 'explore', 'organizer'} <= roles)
         self.assertEqual(sum(s['role'] == 'attempt' for s in runner.state['sessions'].values()), 1)
+        # The real dispatch assigns q0 to an explorer, and the question its peer proposes reaches the
+        # frontier through the actual checks, review and publication.
+        held = [read_json(self.instance / 'sessions' / sid / 'declaration.json')['question']
+                for sid, s in runner.state['sessions'].items()
+                if s['role'] == 'explore' and (self.instance / 'sessions' / sid / 'declaration.json').is_file()]
+        self.assertIn(('q0', 'runner'), [(q['id'], q['by']) for q in held])
+        self.assertTrue(any(q['origin'] == 'record' for q in replay(self.instance)['questions'].values()))
         records = list((self.instance / 'knowledge/records').iterdir())
         self.assertTrue(any(list(r.glob('review/lean-evidence/*/result.json')) for r in records))
         def published_bytes():

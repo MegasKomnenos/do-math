@@ -1,0 +1,128 @@
+{
+  "instance": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803",
+  "dry_run": false,
+  "runtime": "C:\\math\\.claude\\skills\\do-math\\runtime",
+  "before": {
+    "explore_every": 3,
+    "explore_requested": false,
+    "open_explorations": [
+      {
+        "pipeline": "pae4d0f2c75c54364aa39930902a975ce",
+        "stage": "producing",
+        "producer": "s0b7e98470fbf46c48fb5a02e4553e0ff"
+      }
+    ],
+    "questions": [
+      "q0"
+    ],
+    "knowledge_sequence": 187,
+    "retired_input_present": true,
+    "unknown_state_keys": [
+      "attempt_dispatches",
+      "seen_inputs"
+    ]
+  },
+  "changes": [
+    {
+      "file": "settings.json",
+      "explore_every": [
+        3,
+        1
+      ]
+    },
+    {
+      "pipeline": "pae4d0f2c75c54364aa39930902a975ce",
+      "session": "s0b7e98470fbf46c48fb5a02e4553e0ff",
+      "file": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\sessions\\s0b7e98470fbf46c48fb5a02e4553e0ff\\declaration.json",
+      "question": "q0"
+    },
+    {
+      "moved": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\control\\inputs\\1794056547459557300-f256a90481e544ac926d43a63825f043.txt",
+      "to": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803\\control\\retired-inputs\\1794056547459557300-f256a90481e544ac926d43a63825f043.txt"
+    },
+    {
+      "event": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+      "sequence": 188,
+      "questions": [
+        "op-central-window",
+        "op-left-right-asymmetry",
+        "op-threshold-block",
+        "op-tie-block-transport",
+        "op-continuum-ties-blocks"
+      ]
+    },
+    {
+      "rendered": [
+        "knowledge/frontier.md",
+        "knowledge/board.md",
+        "knowledge/state.json",
+        "knowledge/index.md",
+        "knowledge/glossary.md"
+      ]
+    }
+  ],
+  "after": {
+    "explore_every": 1,
+    "explore_requested": false,
+    "questions": {
+      "q0": "open",
+      "op-central-window": "open",
+      "op-left-right-asymmetry": "open",
+      "op-threshold-block": "open",
+      "op-tie-block-transport": "open",
+      "op-continuum-ties-blocks": "open"
+    },
+    "question_availability": {
+      "free": [
+        "op-central-window",
+        "op-left-right-asymmetry",
+        "op-threshold-block",
+        "op-tie-block-transport",
+        "op-continuum-ties-blocks"
+      ],
+      "occupied": {
+        "q0": [
+          "s0b7e98470fbf46c48fb5a02e4553e0ff"
+        ]
+      },
+      "choosing": []
+    },
+    "open_explorations": {
+      "pae4d0f2c75c54364aa39930902a975ce": "q0"
+    },
+    "available_nodes": [
+      "sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+      "s570b0e977ad645fb831b27f850048913-q-left-half",
+      "s570b0e977ad645fb831b27f850048913-boundary-response-inequality",
+      "s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+      "s4df6b5432c4041a3aef869b9328818c7-left-moment",
+      "s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+      "s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+      "s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+      "seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+      "sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core",
+      "s61b074045da947f8b4600d1ee2bf22c2-lmcore-window",
+      "sa285576b08e84713a85bbec88889e550-one-step-local"
+    ],
+    "question_slot": true,
+    "attempt_dispatch_ready": true,
+    "knowledge_sequence": 188
+  },
+  "checks": {
+    "settings_valid": true,
+    "explore_every_is_1": true,
+    "q0_present_and_open": true,
+    "open_explorations_hold_a_question": true,
+    "no_question_held_twice": true,
+    "held_questions_open": true,
+    "operator_questions_open": true,
+    "retired_input_absent": true,
+    "state_keys_present": true,
+    "frontier_lists_questions": true,
+    "runner_loads_state": true,
+    "all_passed": true
+  },
+  "warnings": [
+    "knowledge/ changes are uncommitted; the runner commits all of knowledge/ at its next publication, or run with --commit"
+  ]
+}

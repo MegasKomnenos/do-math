@@ -1,10 +1,11 @@
-"""Live coordination information, node leases and session-owned section declarations.
+"""Live coordination information, node and question leases, and session-owned declarations.
 
-A section is an exact part of a node's question that an attempt or peer works on. It is kept in
-the registering session's declaration.json and lasts until that session's
-pipeline finishes review. Choosing a section is serialized per node: one session at a time holds
-the node's lease, registers its section and so passes the lease to the next waiting session.
-Leases and registrations are decided first-wins under one instance lock."""
+A section is an exact part of a node's question that an attempt or peer works on. A question is
+an object of understanding that one explorer at a time occupies whole. Both are kept in the
+registering session's declaration.json and last until that session's pipeline finishes review.
+Choosing is serialized per node or question: one session at a time holds the lease, registers
+and so passes the lease to the next waiting session. Leases and registrations are decided
+first-wins under one instance lock."""
 import argparse
 from contextlib import contextmanager
 import json
@@ -13,12 +14,13 @@ from pathlib import Path
 import time
 import uuid
 from availability import availability_view, retain_snapshot
-from knowledge import canonical, replay
+from knowledge import ROOT_QUESTION, canonical, canonical_question, replay
 from runtime_support import alive, read_json, write_json
 
 CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
 SECTION_ROLES = ('attempt', 'peer')
+QUESTION_ROLES = ('explore',)
 
 
 @contextmanager
@@ -70,8 +72,24 @@ def section_entries(instance, sid, model):
             if row['node'] in model['nodes'] or row['node'] in model['aliases']]
 
 
+def question_entry(instance, sid, model):
+    """The question one explorer declared, or None while it is still choosing."""
+    if not sid:
+        return None
+    path = Path(instance) / 'sessions' / sid / 'declaration.json'
+    if not path.is_file():
+        return None
+    held = read_json(path).get('question')
+    if not held or (held['id'] not in model['questions'] and held['id'] not in model['question_aliases']):
+        return None
+    return {**held, 'id': canonical_question(model, held['id']), 'session': sid}
+
+
 def board(instance, state=None, model=None):
-    """Producing work and its sections. A pipeline's sections, its producer's and its peers', end together."""
+    """Producing work and its sections or question. A pipeline's occupancy ends with its review.
+
+    An exploration's question is its producer's declared question, or the question the runner
+    assigned in its job while the explorer has not yet been launched."""
     instance = Path(instance)
     state = state or read_json(instance / 'runner/state.json')
     model = model or replay(instance)
@@ -81,11 +99,54 @@ def board(instance, state=None, model=None):
             continue
         owners = [pipeline['producer'], *pipeline.get('previous_peers', []), pipeline.get('peer')]
         sections = [s for sid in dict.fromkeys(x for x in owners if x) for s in section_entries(instance, sid, model)]
+        question = None
+        if pipeline['role'] == 'explore':
+            held = question_entry(instance, pipeline['producer'], model)
+            assigned = state['jobs'].get(pid + ':producer', {}).get('task', {}).get('question')
+            if held:
+                question = held['id']
+            elif assigned and (assigned in model['questions'] or assigned in model['question_aliases']):
+                question = canonical_question(model, assigned)
         rows.append({'pipeline': pid, 'session': pipeline['producer'], 'role': pipeline['role'],
                      'stage': pipeline['stage'] if pipeline['producer'] else 'queued',
                      'nodes': sorted({s['node'] for s in sections}), 'sections': sections,
+                     'question': question,
                      'declared_at': min((s['at'] for s in sections if s.get('at')), default=None)})
     return rows
+
+
+def question_availability(instance, state=None, model=None, rows=None):
+    """Which questions an explorer could take now, and how many explorers are still choosing.
+
+    A question is free when it is open, no unfinished exploration holds or was assigned it, and
+    no live session holds or waits for its lease. Explorers still producing, or waiting to launch,
+    whose pipelines have no question yet are choosing; an exploration that reached peer without one
+    chooses nothing more. The runner launches another explorer only while free questions outnumber
+    the choosing ones, so that each explorer launched can find a question. When it launches a
+    pending exploration, it passes board rows without every pending exploration's pipeline: what a
+    failed earlier launch of any of them held or was assigned is held by no live explorer and is
+    free to whichever of them launches first (Runner.question_view).
+
+    occupied maps each held question to the sessions of the explorations holding it. That is one
+    session, except after an organizer merges two questions that explorations already held: both
+    keep the merged question until each pipeline ends, as sections continue on a merged node. The
+    question is not free while either holds it, and is free again once both have ended."""
+    instance = Path(instance)
+    state = state or read_json(instance / 'runner/state.json')
+    model = model or replay(instance)
+    rows = board(instance, state, model) if rows is None else rows
+    occupied = {}
+    for row in rows:
+        if row['role'] == 'explore' and row['question']:
+            occupied.setdefault(row['question'], []).append(row['session'])
+    leases = question_lease_table(instance, state, model)
+    free = [qid for qid, q in model['questions'].items()
+            if q['canonical'] == qid and q['state'] == 'open' and qid not in occupied and qid not in leases]
+    # Only an explorer still producing, or still waiting to launch, can go on to choose; an
+    # exploration that reached peer without a question will never take one.
+    choosing = [row['pipeline'] for row in rows
+                if row['role'] == 'explore' and not row['question'] and row['stage'] in ('producing', 'queued')]
+    return {'free': free, 'occupied': occupied, 'choosing': choosing}
 
 
 def normalize(table, state):
@@ -117,6 +178,21 @@ def lease_table(instance, state=None, model=None):
     for node, entry in (read_json(path) if path.exists() else {}).items():
         if node in model['nodes'] or node in model['aliases']:
             target = merged.setdefault(canonical(model, node), {'holders': [], 'queue': []})
+            target['holders'] += entry.get('holders', [])
+            target['queue'] += entry.get('queue', [])
+    return normalize(merged, state)
+
+
+def question_lease_table(instance, state=None, model=None):
+    """Question leases in force, keyed by canonical question; kept apart from node leases."""
+    instance = Path(instance)
+    state = state or read_json(instance / 'runner/state.json')
+    model = model or replay(instance)
+    path = instance / 'runner' / 'question-leases.json'
+    merged = {}
+    for question, entry in (read_json(path) if path.exists() else {}).items():
+        if question in model['questions'] or question in model['question_aliases']:
+            target = merged.setdefault(canonical_question(model, question), {'holders': [], 'queue': []})
             target['holders'] += entry.get('holders', [])
             target['queue'] += entry.get('queue', [])
     return normalize(merged, state)
@@ -290,6 +366,168 @@ def section(session, node, request_file):
         return {'registered': True, 'section': entry, **view(node, normalize(table, state), rows)}
 
 
+def question_context(session):
+    session = Path(session).resolve()
+    inp = read_json(session / 'input.json')
+    if inp['role'] not in QUESTION_ROLES:
+        raise ValueError('only explorers occupy questions; other roles pursue their assigned responsibilities')
+    return inp, Path(inp['instance'])
+
+
+def known_question(model, question):
+    if question not in model['questions'] and question not in model['question_aliases']:
+        raise ValueError('unknown question')
+    return canonical_question(model, question)
+
+
+def question_blocked(model, rows, table, question, pipeline, sid):
+    """Why no session of this pipeline can take the question, or None.
+
+    While question 0 is free, a narrower question is refused: an explorer takes the root problem as
+    a whole whenever no exploration holds it, and the runner's assignment at launch cannot reach an
+    explorer that is already choosing when question 0 becomes free.
+
+    After an organizer merges two held questions, both explorations hold the merged one; neither
+    occupation is cut short, and no further explorer can take the question while either lasts."""
+    if model['questions'][question]['state'] != 'open':
+        return 'This question is resolved; read its resolution instead of occupying it.'
+    holders = [r['session'] or r['pipeline'] for r in rows
+               if r['role'] == 'explore' and r['pipeline'] != pipeline and r['question'] == question]
+    if len(holders) == 1:
+        return 'Exploration ' + holders[0] + ' holds this question; one explorer at a time occupies a question.'
+    if holders:
+        return ('Explorations ' + ' and '.join(holders) + ' hold this question; no further explorer occupies it '
+                'while either does.')
+    if question != ROOT_QUESTION and root_free(rows, table, sid):
+        return ('Question ' + ROOT_QUESTION + ', the root problem as a whole, is free, and an explorer takes it '
+                'before any narrower question. Lease and take ' + ROOT_QUESTION + ' instead.')
+    return None
+
+
+def root_free(rows, table, sid):
+    """Whether question 0 is free to this session, as the runner counts it free: no exploration
+    holds it, and no other session holds or waits for its lease."""
+    if any(r['role'] == 'explore' and r['question'] == ROOT_QUESTION for r in rows):
+        return False
+    entry = table.get(ROOT_QUESTION, {'holders': [], 'queue': []})
+    return not any(x['session'] != sid for x in entry['holders'] + entry['queue'])
+
+
+def question_view(question, table, rows):
+    entry = table.get(question, {'holders': [], 'queue': []})
+    return {'question': question, 'holders': [h['session'] for h in entry['holders']],
+            'queue': [w['session'] for w in entry['queue']],
+            'occupied_by': [r['session'] for r in rows if r['role'] == 'explore' and r['question'] == question]}
+
+
+def save_question_leases(instance, table, state):
+    write_json(Path(instance) / 'runner' / 'question-leases.json', normalize(table, state))
+
+
+def question_lease(session, question):
+    """Take a question's lease if no one holds it. A refusal records nothing."""
+    inp, instance = question_context(session)
+    sid = inp['session']
+    with claims_lock(instance):
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        question = known_question(model, question)
+        rows, table = board(instance, state, model), question_lease_table(instance, state, model)
+        reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
+        entry = table.get(question, {'holders': [], 'queue': []})
+        mine = any(h['session'] == sid for h in entry['holders'])
+        if reason is None and entry['holders'] and not mine:
+            reason = "Another session holds this question's lease. Wait for it with commands.question_wait or choose another question."
+        if reason:
+            return {'leased': False, 'reason': reason, **question_view(question, table, rows)}
+        leave(table, sid, keep=question)
+        if not mine:
+            table[question] = {'holders': [{'session': sid, 'since': time.time()}], 'queue': entry['queue']}
+        save_question_leases(instance, table, state)
+        return {'leased': True, **question_view(question, table, rows)}
+
+
+def question_wait(session, question, timeout=None):
+    """Join the question's queue and return once the lease is this session's, or at the timeout."""
+    inp, instance = question_context(session)
+    sid = inp['session']
+    deadline = None if timeout is None else time.monotonic() + timeout
+    while True:
+        with claims_lock(instance):
+            model, state = replay(instance), read_json(instance / 'runner/state.json')
+            question = known_question(model, question)
+            rows, table = board(instance, state, model), question_lease_table(instance, state, model)
+            reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
+            if reason:
+                entry = table.get(question)
+                if entry:
+                    entry['holders'] = [h for h in entry['holders'] if h['session'] != sid]
+                    entry['queue'] = [w for w in entry['queue'] if w['session'] != sid]
+                    save_question_leases(instance, table, state)
+                return {'leased': False, 'reason': reason, **question_view(question, table, rows)}
+            entry = table.setdefault(question, {'holders': [], 'queue': []})
+            if not any(x['session'] == sid for x in entry['holders'] + entry['queue']):
+                leave(table, sid, keep=question)
+                entry['queue'].append({'session': sid, 'since': time.time()})
+            table = normalize(table, state)
+            save_question_leases(instance, table, state)
+            if any(h['session'] == sid for h in table.get(question, {}).get('holders', [])):
+                return {'leased': True, **question_view(question, table, rows)}
+            position = [w['session'] for w in table[question]['queue']].index(sid) + 1
+        if deadline is not None and time.monotonic() >= deadline:
+            return {'leased': False, 'waiting': True, 'position': position, 'timeout': True,
+                    'hint': 'Your place is kept; run question_wait again, or take another question.',
+                    **question_view(question, table, rows)}
+        time.sleep(WAIT_POLL_SECONDS)
+
+
+def question_release(session, question):
+    """Give up a question's lease, or leave its queue, without taking the question."""
+    inp, instance = question_context(session)
+    with claims_lock(instance):
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        question = known_question(model, question)
+        table = question_lease_table(instance, state, model)
+        entry = table.get(question, {'holders': [], 'queue': []})
+        entry['holders'] = [h for h in entry['holders'] if h['session'] != inp['session']]
+        entry['queue'] = [w for w in entry['queue'] if w['session'] != inp['session']]
+        save_question_leases(instance, table, state)
+        return {'released': True, **question_view(question, normalize(table, state), board(instance, state, model))}
+
+
+def question_take(session, question):
+    """Occupy the whole question while holding its lease; taking it ends the lease.
+
+    An explorer holds one question for its whole pipeline. The tool refuses what it can decide:
+    no lease, a resolved question, a question another exploration holds, a question other than q0
+    while q0 is free, or a second question."""
+    inp, instance = question_context(session)
+    sid = inp['session']
+    with claims_lock(instance):
+        model, state = replay(instance), read_json(instance / 'runner/state.json')
+        question = known_question(model, question)
+        rows, table = board(instance, state, model), question_lease_table(instance, state, model)
+
+        def refuse(reason):
+            return {'taken': False, 'reason': reason, **question_view(question, table, rows)}
+
+        if not any(h['session'] == sid for h in table.get(question, {}).get('holders', [])):
+            return refuse("Take the question's lease with commands.question_lease or commands.question_wait before occupying it.")
+        reason = question_blocked(model, rows, table, question, inp.get('pipeline'), sid)
+        if reason:
+            return refuse(reason)
+        path = Path(session).resolve() / 'declaration.json'
+        data = read_json(path) if path.exists() else {'at': time.time()}
+        if data.get('question'):
+            return refuse('This session already occupies question ' + data['question']['id'] + '; an explorer holds one question.')
+        data['question'] = {'id': question, 'at': time.time(), 'by': 'session'}
+        write_json(path, data)
+        table[question]['holders'] = [h for h in table[question]['holders'] if h['session'] != sid]
+        save_question_leases(instance, table, state)
+        rows = board(instance, state, model)
+        return {'taken': True, 'question': question, 'at': data['question']['at'],
+                **{k: v for k, v in question_view(question, normalize(table, state), rows).items() if k != 'question'}}
+
+
 def updates(session):
     session = Path(session).resolve()
     inp = read_json(session / 'input.json')
@@ -302,8 +540,13 @@ def updates(session):
             model, rows, state.get('attempt_availability_epoch', 0)))
             if inp['role'] == 'attempt' else None)
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
+    availability = question_availability(instance, state, model, rows)
+    questions = [{'id': qid, 'statement': q['statement'], 'state': q['state'],
+                  'occupied_by': availability['occupied'].get(qid, []), 'free': qid in availability['free']}
+                 for qid, q in model['questions'].items() if q['canonical'] == qid]
     return {'revision': model['sequence'], 'root_state': model['nodes'][canonical(model, 'root')]['state'],
             'board': rows, 'leases': lease_table(instance, state, model),
+            'questions': questions, 'question_leases': question_lease_table(instance, state, model),
             'availability_snapshot': snapshot,
             'concerns': model['concerns'],
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
@@ -332,12 +575,15 @@ def message(session, target, message_file):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('updates', 'lease', 'wait', 'release', 'section', 'message'):
+    for name in ('updates', 'lease', 'wait', 'release', 'section', 'message',
+                 'question-lease', 'question-wait', 'question-release', 'question-take'):
         p = sub.add_parser(name)
         p.add_argument('session', type=Path)
         if name in ('lease', 'wait', 'release', 'section'):
             p.add_argument('node')
-        if name == 'wait':
+        if name.startswith('question-'):
+            p.add_argument('question')
+        if name in ('wait', 'question-wait'):
             p.add_argument('--timeout', type=float, default=50.0)
         if name == 'section':
             p.add_argument('--file', required=True, type=Path)
@@ -358,6 +604,17 @@ def main():
         elif args.command == 'section':
             result = section(args.session, args.node, args.file)
             code = 0 if result['registered'] else 1
+        elif args.command == 'question-lease':
+            result = question_lease(args.session, args.question)
+            code = 0 if result['leased'] else 1
+        elif args.command == 'question-wait':
+            result = question_wait(args.session, args.question, args.timeout)
+            code = 0 if result['leased'] else 124 if result.get('timeout') else 1
+        elif args.command == 'question-release':
+            result = question_release(args.session, args.question)
+        elif args.command == 'question-take':
+            result = question_take(args.session, args.question)
+            code = 0 if result['taken'] else 1
         elif args.command == 'message':
             result = message(args.session, args.target, args.file)
         else:

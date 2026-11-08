@@ -55,20 +55,28 @@ def opening_since(observed, current, model):
 
 
 def no_research_outcome(session, role):
+    """An attempt that found no section, or an explorer that found no free question, ends here.
+
+    Either session registered nothing and did nothing beyond assessing availability. Only an
+    attempt judges whether every unresolved node is occupied, so only its outcome may report it."""
     path = Path(session) / 'output/outcome.json'
     if not path.exists():
         return None
     value = read_json(path)
     if not isinstance(value, dict) or 'disposition' not in value:
         return None
-    if role != 'attempt':
-        raise ValueError('only attempts may declare disposition: no_research')
+    if role not in ('attempt', 'explore'):
+        raise ValueError('only attempts and explorers may declare disposition: no_research')
     if value['disposition'] != 'no_research':
         raise ValueError('disposition can only be no_research; omit it from the outcome of a session that undertook research')
     declaration = Path(session) / 'declaration.json'
     held = read_json(declaration) if declaration.exists() else {}
     if held.get('sections'):
         raise ValueError('no_research is incompatible with registered sections')
+    if held.get('question'):
+        raise ValueError('no_research is incompatible with an occupied question')
+    if role == 'explore' and 'availability' in value:
+        raise ValueError('only attempts report the availability of unresolved work')
     return value
 
 

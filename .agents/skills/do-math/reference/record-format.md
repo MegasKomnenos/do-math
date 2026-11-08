@@ -1,8 +1,8 @@
 # The peer's record candidate
 
-The peer's exposition gives a future researcher a coherent account of the producing session's work and the peer's additions. Review also needs to identify particular claims, proposed questions and solutions so that its judgments refer unambiguously to that account. The record candidate combines these two forms: readable mathematics and a structured description of the contribution.
+The peer's exposition gives a future researcher a coherent account of the producing session's work and the peer's additions. Review also needs to identify particular claims, proposed nodes, relations, solutions and questions so that its judgments refer unambiguously to that account. The record candidate combines these two forms: readable mathematics and a structured description of the contribution.
 
-Write the structured description in `output/record.json`, with the exposition and its evidence in companion files. The sections below introduce the information in the order a record is built: its account and claims, its proposed consequences for nodes, and the terminology it introduces. Review writes a separate assessment. The runner freezes the candidate before that review and publishes its bytes unchanged if review finds useful material.
+Write the structured description in `output/record.json`, with the exposition and its evidence in companion files. The sections below introduce the information in the order a record is built: its account and claims, its proposed consequences for nodes, the questions it proposes or resolves, and the terminology it introduces. Review writes a separate assessment. The runner freezes the candidate before that review and publishes its bytes unchanged if review finds useful material.
 
 File references in `record.json` are relative to the candidate directory and use `/`. They cannot contain `..` or point through filesystem links. This keeps the candidate's evidence together when the runner copies it into the published record. Reserve the candidate's top-level names `review` and `provenance.json` for the runner's assessment attachment and processing identities. Put copied historical reviews or provenance under another evidence path, such as `evidence/source-review/` or `evidence/source-provenance.json`, and refer to that path in the account. The transport check rejects a candidate containing either reserved top-level name before review or publication.
 
@@ -12,7 +12,7 @@ File references in `record.json` are relative to the candidate directory and use
 
 Each claim has `id`, `statement`, `evidence`, `by`, and optionally `dependencies`. Write the exact mathematical assertion in `statement`, including its scope and whether it is proved, observed, conjectural or from literature. `evidence` explains where its support is found. `by` is `producer` or `peer`, identifying who developed it. A dependency is `{"record": "<published-record-id>", "claim": "<claim-id>"}`; `record: "self"` refers to another claim in this candidate. List mathematical premises and explain their use in the exposition.
 
-IDs use letters, digits, `_` and `-`, beginning with a letter or digit. Claim IDs are unique within the record. After publication, the record ID and claim ID together identify a claim. The runner assigns the record ID. The peer can choose local claim, relation, solution and term IDs; solution and relation IDs must also be distinct from one another because they identify proof routes.
+IDs use letters, digits, `_` and `-`, beginning with a letter or digit. Claim IDs are unique within the record. After publication, the record ID and claim ID together identify a claim. The runner assigns the record ID. The peer can choose local claim, relation, solution, question-resolution and term IDs; solution, relation and question-resolution IDs must also be distinct from one another because they identify routes the frontier cites.
 
 ## Nodes, relations and solutions
 
@@ -20,13 +20,19 @@ Use existing node IDs where the precise statement is already on the frontier. A 
 
 For a new proposal, prefix a short local label with your peer session ID and a hyphen, for example `<your-session-id>-quotient-bound`. Your session ID is supplied in `input.json` and the launch context. Use the resulting full ID consistently in the candidate's relations and solutions. The runner gives each peer a unique session directory, and proposal IDs must also be unique within that peer's candidate. This keeps concurrent peers' identifiers distinct while their candidates are frozen for review; the output check rejects a proposal using another namespace before it can be frozen.
 
-Review still compares statements and definitions. It may admit the proposal, identify it with an existing node, or decline it. A distinct technical ID does not establish a distinct mathematical question. Speculative statements stay in the exposition and do not need node proposals.
+Review still compares statements and definitions. It may admit the proposal, identify it with an existing node, or decline it. A distinct technical ID does not establish a distinct mathematical proposition. Speculative statements stay in the exposition and do not need node proposals.
 
 A relation has `id`, `claim`, `premises`, and `conclusion`. Each premise and conclusion is a signed node statement: `{"node": "<id>", "outcome": "proved"}` for the statement, or `outcome: "refuted"` for its negation. The premises are conjunctive. Once accepted, a relation is applied in every direction propositional logic permits, each statement taken in the sign written here; the frontier section of the common introduction explains those directions and what they do not derive, such as a proof by cases. A separate relation represents an alternative route, and two directions can represent an equivalence. `claim` names the candidate's proof of this exact implication. Merely suggesting a connection does not justify its acceptance.
 
 A solution has `id`, `node`, `outcome`, `claim`, optional `formal_dependencies`, and optional `lean`. It asserts that the cited claim settles the whole node or its negation. `formal_dependencies` lists the signed nodes whose validated Lean results are needed for the intended formalization. Review checks that dependency choice and can correct it. An implication that still needs its premises is a relation; it is not an unconditional solution of its conclusion.
 
 For a supplied Lean solution, `lean` has `theorem` and `sources`. List every source file needed from this candidate, including its own dependency modules. Use one module root, conventionally `lean/`, so that a path such as `lean/Objects/Basic.lean` names module `Objects.Basic`. Sources imported from earlier records can be copied with provenance or linked clearly for review to obtain. The actual theorem, its scope and its relationship to the node must be explained in the exposition.
+
+## Questions and their resolutions
+
+A question, introduced in the common introduction, is what the research wants to understand rather than a statement to settle. A record proposes one under `questions` when the work has brought such a question into view: a recurring obstruction whose cause is not understood, a regime where several methods lose their margin, a suspected identity between objects that behave alike. A proposal has `id`, `statement` and `grounds`. The statement says what is to be understood, specifically enough that an explorer could take it up and a reviewer could tell whether a later account answers it. The grounds say what in this record or the published research raises the question and why it matters to the problem; a question may rest on a conjectural possibility or a suspected connection, and the grounds should say so. Prefix the ID with your peer session ID and a hyphen as for a node proposal; the ID must not coincide with any existing question or node, nor with a node this candidate proposes, so that one ID names one object. Review admits a proposal, declines it as a duplicate or as insufficiently important, or returns it for revision when only its specificity or clarity falls short, saying what would make it a question. Check the frontier's questions, including the proposals review did not admit, before proposing; a question returned for revision is worth proposing again in the sharper form review asked for.
+
+A resolution, under `question_resolutions`, asserts that this record's account settles an existing question. It has `id`, `question` and `claim`: the question's ID and the claim whose exposition gives the conclusion, answer or explanation. Review decides whether the account settles the question; a partial explanation is better left in the exposition than proposed as a resolution. Question `q0`, the root problem as a whole, is not resolved by an explanation and cannot be named here. Because a resolution rests on its claim, a later finding that withdraws the claim reopens the question. A record introducing no questions and resolving none uses empty arrays or omits both fields.
 
 ## Local terminology
 
@@ -49,6 +55,7 @@ This example shows transport structure. Its mathematical exposition and evidence
   "nodes": [], "relations": [],
   "solutions": [{"id": "s1", "node": "root", "outcome": "proved", "claim": "c1",
                  "formal_dependencies": []}],
+  "questions": [], "question_resolutions": [],
   "glossary": []
 }
 ```

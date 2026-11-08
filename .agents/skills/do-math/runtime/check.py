@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
-from knowledge import claim_key, replay
+from knowledge import ROOT_QUESTION, canonical_question, claim_key, replay
 from runtime_support import read_json
 from settings import PRODUCERS
 from availability import no_research_outcome, reported_availability
@@ -120,6 +120,27 @@ def record_check(data, root, model, proposal_owner=None):
     unique(data.get('solutions', []))
     need(not ({s['id'] for s in data.get('solutions', [])} & {r['id'] for r in data.get('relations', [])}),
          'solution and relation IDs must be distinct')
+    questions = array(data.get('questions', []), 'questions')
+    proposed_questions = unique(questions)
+    if proposal_owner is not None:
+        prefix = identifier(proposal_owner) + '-'
+        need(all(q.startswith(prefix) and len(q) > len(prefix) for q in proposed_questions),
+             'new question proposals must use their peer session prefix: ' + prefix)
+    taken = set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases']) | proposed
+    need(not proposed_questions & taken, 'question proposal ID already names a question or node')
+    for question in questions:
+        text(question.get('statement'), 'question.statement')
+        text(question.get('grounds'), 'question.grounds')
+    resolutions = array(data.get('question_resolutions', []), 'question_resolutions')
+    unique(resolutions)
+    need(not ({r['id'] for r in resolutions} & ({s['id'] for s in data.get('solutions', [])} | {r['id'] for r in data.get('relations', [])})),
+         'question resolution IDs must be distinct from solution and relation IDs')
+    for resolution in resolutions:
+        target = resolution.get('question')
+        need(target in model['questions'] or target in model['question_aliases'],
+             'question resolution must name an existing question')
+        need(canonical_question(model, target) != ROOT_QUESTION, 'the root question is not resolved by an explanation')
+        need(resolution.get('claim') in ids, 'question resolution needs its resolving claim')
     glossary = array(data.get('glossary'), 'glossary')
     unique(glossary)
     for term in glossary:
@@ -271,12 +292,36 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
             if row['level'] == 'formal':
                 audit_formal(instance, sid, row.get('formal_check'), solution, candidate)
     need(seen == set(solutions), 'assess every solution proposal')
+    questions = {q['id'] for q in record.get('questions', [])}
+    verdicts = {}
+    for row in array(data.get('questions', []), 'assessment.questions'):
+        need(row.get('proposal') in questions and row['proposal'] not in verdicts, 'unknown/duplicate question proposal')
+        need(row.get('verdict') in ('admitted', 'declined', 'revise'), 'question verdict must be admitted, declined or revise')
+        text(row.get('reason'), 'question assessment reason')
+        duplicate = row.get('duplicate_of')
+        need(duplicate is None or duplicate in model['questions'] or duplicate in model['question_aliases'],
+             'duplicate_of must name an existing question')
+        need(duplicate is None or row['verdict'] == 'declined', 'a duplicate is declined')
+        verdicts[row['proposal']] = row['verdict']
+    need(set(verdicts) == questions, 'assess every question proposal')
+    question_resolutions = {r['id']: r for r in record.get('question_resolutions', [])}
+    resolved = {}
+    for row in array(data.get('question_resolutions', []), 'assessment.question_resolutions'):
+        need(row.get('proposal') in question_resolutions and row['proposal'] not in resolved,
+             'unknown/duplicate question resolution proposal')
+        need(type(row.get('resolved')) is bool, 'resolved must be Boolean')
+        text(row.get('reason'), 'question resolution reason')
+        if row['resolved']:
+            need(question_resolutions[row['proposal']]['claim'] in supported, 'an accepted resolution needs a supported claim')
+        resolved[row['proposal']] = row['resolved']
+    need(set(resolved) == set(question_resolutions), 'assess every question resolution proposal')
     concerns_check(data.get('concerns', []), model, ids)
     findings_check(data.get('findings', []), model)
     glossary_check(data.get('glossary', []))
     if not data['publish']:
         need(not accepted_relations and not any(resolutions.values()) and
-             not any(r['level'] != 'none' for r in data['solutions']) and not data.get('concerns') and not data.get('findings'),
+             not any(r['level'] != 'none' for r in data['solutions']) and not data.get('concerns') and not data.get('findings')
+             and not any(v == 'admitted' for v in verdicts.values()) and not any(resolved.values()),
              'excluded candidate cannot change shared mathematical state')
     regular_tree(root)
 
@@ -350,6 +395,12 @@ def organization_check(data, model, batch):
     for merge in data.get('merge_nodes', []):
         need(merge['from'] in model['nodes'] and merge['into'] in model['nodes'], 'merge needs existing nodes')
         text(merge.get('reason'), 'node merge reason')
+    for merge in array(data.get('merge_questions', []), 'merge_questions'):
+        need(merge.get('from') in model['questions'] and merge.get('into') in model['questions'],
+             'question merge needs existing questions')
+        need(ROOT_QUESTION not in (canonical_question(model, merge['from']), canonical_question(model, merge['into'])),
+             'the root question keeps its identity: it neither merges into another question nor absorbs one')
+        text(merge.get('reason'), 'question merge reason')
 
 
 def glossary_check(entries):

@@ -18,6 +18,8 @@ The assessment has these fields:
 | `nodes` | Exactly one `{proposal, node, reason}` for each proposed node. `node` is the proposal ID when admitted, an existing node ID when identified with that node, or null when declined. |
 | `relations` | Exactly one `{proposal, accepted, reason}` for each relation. `accepted` is Boolean. |
 | `solutions` | Exactly one `{proposal, level, reason}` for each solution. `level` is `none`, `informal` or `formal`. |
+| `questions` | Exactly one `{proposal, verdict, reason}` for each proposed question. `verdict` is `admitted`, `declined` or `revise`; a declined duplicate also names the existing question in `duplicate_of`. Omit the field or use an empty array when the candidate proposes none. |
+| `question_resolutions` | Exactly one `{proposal, resolved, reason}` for each proposed resolution. `resolved` is Boolean. Omit the field or use an empty array when the candidate proposes none. |
 | `glossary_approved` | Boolean: approval of the candidate's local glossary, including the consistency check of globally flagged entries. |
 | `glossary` | Local terminology you introduce to explain your own assessment. Each entry has `id`, `name`, `definition`, and optional `symbol`, using the local entry format in [Record format](record-format.md). Include the definitions and their use in your feedback; omit this field or use an empty array when you introduce no terms. These entries explain your assessment and do not create new mathematical proof claims. |
 | `concerns` | New concerns about identified claims, or an empty array. |
@@ -25,9 +27,11 @@ The assessment has these fields:
 
 An accepted relation or solution cites a supported claim. Admitting a node requires a supported connection through an accepted relation to the existing research. A solution assessment can include `formal_dependencies`, replacing the candidate's list with the signed nodes actually required by the accepted argument. Assess every proposal, using null, false or `none` for those not accepted.
 
+A question verdict records which of two different judgments led to a refusal, because later peers read them differently. `declined` says the research does not want this question as proposed: it duplicates an existing question, named in `duplicate_of`, or it does not concern something important enough. `revise` says the question may well be wanted but is not yet stated specifically or clearly enough to be taken up; the reason then says what is unspecific and what would need to be made explicit, so that a later peer can propose it again in that form. The reviewer does not reword the proposal itself. An accepted resolution requires the cited claim to be supported; its reason says why the account settles the question rather than part of it.
+
 The feedback covers important mathematical assertions in the body as well as the structured list. Explain missing source content, defects, restrictions, unperformed checks and valuable supported work. The structured judgment does not limit the mathematical scope of review to what the peer happened to list.
 
-If `publish` is false, accept no nodes, relations or solutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing, ends the occupancy of the attempt's sections or completes the exploration cycle as applicable.
+If `publish` is false, accept no nodes, relations, solutions, questions or resolutions, and report no concerns or findings through that excluded candidate. An excluded candidate cannot change shared mathematical state, and the transport check rejects an exclusion whose assessment contains any of these. Preserve the reason in the feedback. Useful diagnostic mathematics is usually grounds to publish with qualifications. The runner retains that completed exclusion as an operational outcome. It finishes the producer's peer/review processing and ends the occupancy of the attempt's sections or of the exploration's question, as applicable.
 
 ## Evidence for a formal solution
 

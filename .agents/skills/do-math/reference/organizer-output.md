@@ -1,6 +1,6 @@
 # Publishing organization decisions
 
-Your organization decisions describe how the published mathematics should be found and recognized. The module layout and shared-context selection determine the reading paths through the index. Glossary dispositions and node merges determine which names or identifiers refer to the same shared objects.
+Your organization decisions describe how the published mathematics should be found and recognized. The module layout and shared-context selection determine the reading paths through the index. Glossary dispositions, node merges and question merges determine which names or identifiers refer to the same shared objects.
 
 Write these decisions in `output/organization.json`. The runner uses them to render the index and glossary while preserving every published mathematical account and its description. Supply the complete intended layout, so the file states what the organization should be after your work. The disposition arrays then record the specific glossary and identity changes that accompany it.
 
@@ -13,6 +13,7 @@ Write these decisions in `output/organization.json`. The runner uses them to ren
 | `refuse` | Current global candidate IDs to remove from the global glossary. |
 | `merge_terms` | Array of `{keep, others, reason}`. Keep the primary entry's definition and append other entries' names and aliases. |
 | `merge_nodes` | Array of `{from, into, reason}` identifying duplicate node statements. |
+| `merge_questions` | Array of `{from, into, reason}` identifying questions that ask the same thing. Question `q0` keeps its identity in both directions: it is not merged into another question, and no question is merged into it. A proposal that duplicates `q0` is declined at review with `duplicate_of`. Questions that explorations hold can be merged; the holders keep the merged question, as described below. |
 | `glossary` | Optional local definitions introduced in your own explanation, in the record's local entry format. |
 
 Use empty arrays for operations not needed. Module IDs use letters, digits, `_` and `-`, beginning with a letter or digit, and must differ even without letter case. They become files under `knowledge/index/`. Supply titles and descriptions as readable text; the runner supplies links and record assessments.
@@ -23,6 +24,6 @@ Carry forward the existing layout as appropriate and place every record in the a
 
 A global term ID refers to its published local definition. Promotion retains that definition. Refusal applies only to candidates; permanent membership survives merges. If a permanent entry merges into a candidate primary, the surviving primary becomes permanent. New writing then uses that primary name and recognizes the merged names as aliases.
 
-Node merges preserve references through aliases. Explain the mathematical identity in `reason`; the runner does not establish identity by comparing strings. Sections held on either original node continue against the merged identity.
+Node merges preserve references through aliases. Explain the mathematical identity in `reason`; the runner does not establish identity by comparing strings. Sections held on either original node continue against the merged identity. Question merges work the same way: the old identifier becomes an alias of the surviving question, an exploration holding either continues to hold the merged question, and a resolution recorded against either resolves it. When explorations hold both questions, both keep the merged question, each until its own pipeline ends; as with sections on a merged node, the merge cuts no occupation short, and the question stays unavailable to other explorers until both have ended.
 
 The runner checks IDs, references, permissible dispositions and the exact batch. You judge whether the grouping helps readers, a term deserves shared status, and definitions or statements are actually identical. Read the resulting arrangement from that perspective, run the transport check on your own session directory, and end.
