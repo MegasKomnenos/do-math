@@ -18,10 +18,12 @@ from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
 
 
-def record(claims=None, nodes=None, relations=None, solutions=None, glossary=None):
+def record(claims=None, nodes=None, relations=None, solutions=None, glossary=None,
+           questions=None, question_resolutions=None):
     return {'title': 'Investigation', 'description': 'A precise contribution with its limitations.',
             'exposition': 'record.md', 'claims': claims or [], 'nodes': nodes or [],
-            'relations': relations or [], 'solutions': solutions or [], 'glossary': glossary or []}
+            'relations': relations or [], 'solutions': solutions or [], 'glossary': glossary or [],
+            'questions': questions or [], 'question_resolutions': question_resolutions or []}
 
 
 def claim_row(cid, dependencies=None):
@@ -35,6 +37,10 @@ def assessment(data, formal=()):
             'nodes': [{'proposal': n['id'], 'node': n['id'], 'reason': 'Connection checked.'} for n in data['nodes']],
             'relations': [{'proposal': r['id'], 'accepted': True, 'reason': 'Implication checked.'} for r in data['relations']],
             'solutions': [{'proposal': s['id'], 'level': 'formal' if s['id'] in formal else 'informal', 'reason': 'Exact statement.'} for s in data['solutions']],
+            'questions': [{'proposal': q['id'], 'verdict': 'admitted', 'reason': 'Important and exactly stated.'}
+                          for q in data.get('questions', [])],
+            'question_resolutions': [{'proposal': r['id'], 'resolved': True, 'reason': 'The explanation settles the question.'}
+                                     for r in data.get('question_resolutions', [])],
             'concerns': []}
 
 
@@ -94,6 +100,15 @@ class InstanceCase(unittest.TestCase):
         write_json(folder / ('assessment.json' if kind == 'review' else 'organization.json'), data)
         write_json(self.instance / 'knowledge/events' / (eid + '.json'),
                    {'id': eid, 'sequence': self.seq, 'kind': kind, 'folder': sub + '/' + eid})
+
+    def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
+        """An operator publication of questions, the form the migration script writes."""
+        self.seq += 1
+        folder = self.instance / 'knowledge/questions' / eid
+        folder.mkdir(parents=True)
+        write_json(folder / 'questions.json', {'source': 'operator', 'reason': reason, 'questions': items})
+        write_json(self.instance / 'knowledge/events' / (eid + '.json'),
+                   {'id': eid, 'sequence': self.seq, 'kind': 'questions', 'folder': 'questions/' + eid})
 
     def reduction(self):
         return record([claim_row('reduce')], [{'id': 'Q', 'statement': 'Q', 'connection': 'reduce'}],
@@ -885,6 +900,10 @@ class RunnerTests(InstanceCase):
 
     def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
         runner = self.runner()
+        # Every research start requests exploration by default; a longer cadence shows the counting.
+        self.assertEqual(runner.settings['explore_every'], 1)
+        runner.settings['explore_every'] = 3
+        write_json(self.instance / 'settings.json', runner.settings)
         def start_research():
             key = runner.producer('attempt')
             self.assertTrue(runner.dispatch(key))
@@ -893,7 +912,6 @@ class RunnerTests(InstanceCase):
                 {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
                  'reasons': {}, 'at': 1}], 'at': 1})
             runner.observe_attempt_selections()
-        self.assertEqual(runner.settings['explore_every'], 3)
         self.assertEqual(runner.state['attempt_research_starts'], 0)
         self.assertIs(runner.state['explore_requested'], False)
         with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
@@ -1066,15 +1084,21 @@ class RunnerTests(InstanceCase):
         self.assertEqual(sum(p['role'] == 'explore' and p['stage'] != 'done'
                              for p in runner.state['pipelines'].values()), 1)
 
-    def test_exploration_still_in_peer_does_not_hold_a_pending_attempt(self):
+    def test_exploration_in_peer_keeps_its_question_and_does_not_hold_a_pending_attempt(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 1
         previous = runner.producer('explore')
         runner.state['jobs'][previous]['status'] = 'done'
         pipeline = runner.state['pipelines'][runner.state['jobs'][previous]['pipeline']]
         pipeline.update(stage='peer', producer='sprevious')
+        runner.session_dir('sprevious').mkdir()
+        write_json(runner.session_dir('sprevious') / 'declaration.json',
+                   {'question': {'id': 'q0', 'at': 1, 'by': 'runner'}, 'at': 1})
         attempt = runner.producer('attempt')
         runner.state['explore_requested'] = True
+        # The only question is occupied through peer and review, so no explorer can launch;
+        # the request stays in force and the attempt is not held for it.
+        self.assertFalse(runner.question_slot())
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.schedule()
@@ -1411,9 +1435,9 @@ class RunnerTests(InstanceCase):
         render(self.instance, replay(self.instance), board(self.instance, runner.state))
         visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
         self.assertIn('producer: (not launched)', visible)
-        # Only the attempt can still choose a node; an exploration occupies none.
+        # The attempt is still choosing a node; the exploration is still choosing a question.
         self.assertIn('· attempt · queued · nodes: (choosing)', visible)
-        self.assertIn('· explore · queued · nodes: (none)', visible)
+        self.assertIn('· explore · queued · question: (choosing)', visible)
 
     def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))

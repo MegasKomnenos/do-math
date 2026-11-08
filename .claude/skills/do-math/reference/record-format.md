@@ -12,7 +12,7 @@ File references in `record.json` are relative to the candidate directory and use
 
 Each claim has `id`, `statement`, `evidence`, `by`, and optionally `dependencies`. Write the exact mathematical assertion in `statement`, including its scope and whether it is proved, observed, conjectural or from literature. `evidence` explains where its support is found. `by` is `producer` or `peer`, identifying who developed it. A dependency is `{"record": "<published-record-id>", "claim": "<claim-id>"}`; `record: "self"` refers to another claim in this candidate. List mathematical premises and explain their use in the exposition.
 
-IDs use letters, digits, `_` and `-`, beginning with a letter or digit. Claim IDs are unique within the record. After publication, the record ID and claim ID together identify a claim. The runner assigns the record ID. The peer can choose local claim, relation, solution and term IDs; solution and relation IDs must also be distinct from one another because they identify proof routes.
+IDs use letters, digits, `_` and `-`, beginning with a letter or digit. Claim IDs are unique within the record. After publication, the record ID and claim ID together identify a claim. The runner assigns the record ID. The peer can choose local claim, relation, solution, question-resolution and term IDs; solution, relation and question-resolution IDs must also be distinct from one another because they identify routes the frontier cites.
 
 ## Nodes, relations and solutions
 
@@ -27,6 +27,12 @@ A relation has `id`, `claim`, `premises`, and `conclusion`. Each premise and con
 A solution has `id`, `node`, `outcome`, `claim`, optional `formal_dependencies`, and optional `lean`. It asserts that the cited claim settles the whole node or its negation. `formal_dependencies` lists the signed nodes whose validated Lean results are needed for the intended formalization. Review checks that dependency choice and can correct it. An implication that still needs its premises is a relation; it is not an unconditional solution of its conclusion.
 
 For a supplied Lean solution, `lean` has `theorem` and `sources`. List every source file needed from this candidate, including its own dependency modules. Use one module root, conventionally `lean/`, so that a path such as `lean/Objects/Basic.lean` names module `Objects.Basic`. Sources imported from earlier records can be copied with provenance or linked clearly for review to obtain. The actual theorem, its scope and its relationship to the node must be explained in the exposition.
+
+## Questions and their resolutions
+
+A question, introduced in the common introduction, is what the research wants to understand rather than a statement to settle. A record proposes one under `questions` when the work has brought such a question into view: a recurring obstruction whose cause is not understood, a regime where several methods lose their margin, a suspected identity between objects that behave alike. A proposal has `id`, `statement` and `grounds`. The statement says what is to be understood, specifically enough that an explorer could take it up and a reviewer could tell whether a later account answers it. The grounds say what in this record or the published research raises the question and why it matters to the problem; a question may rest on a conjectural possibility or a suspected connection, and the grounds should say so. Prefix the ID with your peer session ID and a hyphen as for a node proposal; the ID must not coincide with any existing question or node. Review admits a proposal, declines it as a duplicate or as insufficiently important, or returns it for revision when only its specificity or clarity falls short, saying what would make it a question. Check the frontier's questions, including the proposals review did not admit, before proposing; a question returned for revision is worth proposing again in the sharper form review asked for.
+
+A resolution, under `question_resolutions`, asserts that this record's account settles an existing question. It has `id`, `question` and `claim`: the question's ID and the claim whose exposition gives the conclusion, answer or explanation. Review decides whether the account settles the question; a partial explanation is better left in the exposition than proposed as a resolution. Question `q0`, the root problem as a whole, is not resolved by an explanation and cannot be named here. Because a resolution rests on its claim, a later finding that withdraws the claim reopens the question. A record introducing no questions and resolving none uses empty arrays or omits both fields.
 
 ## Local terminology
 
@@ -49,6 +55,7 @@ This example shows transport structure. Its mathematical exposition and evidence
   "nodes": [], "relations": [],
   "solutions": [{"id": "s1", "node": "root", "outcome": "proved", "claim": "c1",
                  "formal_dependencies": []}],
+  "questions": [], "question_resolutions": [],
   "glossary": []
 }
 ```

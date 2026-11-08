@@ -36,11 +36,13 @@ Once promoted, membership is permanent. Equivalent entries can be merged by reta
 
 The glossary's definition comes from its published local source. Its source link leads readers to proofs and further properties. Keep broader research interpretation in those records and their organization. This preserves mathematical meaning while allowing the common vocabulary to become easier to use.
 
-## Reconcile duplicate nodes
+## Reconcile duplicate nodes and questions
 
 Review checks for preexisting nodes before admitting proposals, but two descriptions of the same question can still acquire different IDs. Compare their statements and definitions. If they are the same mathematical question, merge their identities with a reason and preserve the old IDs as aliases. Similar wording alone does not establish identity.
 
 Sessions holding sections on either node continue if you merge them. The board shows their sections against the shared identity, and new attempts respect them. You do not assign their next mathematical work.
+
+The frontier's questions, the objects of understanding that explorers occupy, can duplicate one another as nodes can, and more easily, because a question is stated in words about what is to be understood rather than as an exact proposition. Review declines a proposal that duplicates an existing question, but two questions admitted from different records at different times can still ask the same thing in different words. Compare what each asks and the grounds on which it was asked. If they are the same question, merge them with a reason; the old identifier becomes an alias, an exploration holding either continues to hold the merged question, and a resolution of either resolves it. Two questions about the same object are not thereby the same question: one may ask why a method fails there and the other what the object looks like there.
 
 ## Submit the organization
 

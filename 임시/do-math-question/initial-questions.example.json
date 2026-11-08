@@ -1,0 +1,15 @@
+{
+  "reason": "Example of the first question list for the question migration. Replace the entries with the questions the operator wants on the frontier at migration; the entries below only show the format and the grain of a question.",
+  "questions": [
+    {
+      "id": "op-critical-scale",
+      "statement": "What does the distribution look like in the regime where the relative margin is of order k^(-1/3), and which structural feature of the parking process produces that scale?",
+      "grounds": "Several published records, using different methods, lose their margin at the same relative scale. No record explains why that scale appears; each measures where its method stops. An answer would show whether the stalls share one cause. Conjectural: the scale may come from a common fluctuation mechanism."
+    },
+    {
+      "id": "op-common-block",
+      "statement": "Why do the moment, transfer and direct-counting methods stall at the same place, and what property of the object do they all fail to see there?",
+      "grounds": "The frontier's records on the left and right regimes each stop at a comparable boundary. The common block is measured but not understood; understanding it would say what kind of argument could pass it."
+    }
+  ]
+}

@@ -17,7 +17,7 @@ AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 
 def defaults():
-    return {'schema': 1, 'max_sessions': 8, 'explore_every': 3,
+    return {'schema': 1, 'max_sessions': 8, 'explore_every': 1,
             'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS),
             'roles': {'peer': deepcopy(ASSESSORS), 'review': deepcopy(ASSESSORS)},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},

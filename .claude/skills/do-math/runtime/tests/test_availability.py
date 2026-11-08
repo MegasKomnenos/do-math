@@ -152,21 +152,39 @@ class AvailabilityTests(InstanceCase):
         self.assertEqual(len(self.runner.state['jobs']), 1)
 
     def test_claimed_or_interrupted_work_cannot_opt_out(self):
-        for kind in ('claimed', 'interrupted', 'refused', 'explore'):
+        for kind in ('claimed', 'interrupted', 'refused', 'occupied_question', 'explorer_reports_availability'):
             with self.subTest(kind=kind):
-                sid, session, job = self.attempt('explore' if kind == 'explore' else 'attempt')
+                explorer = kind in ('occupied_question', 'explorer_reports_availability')
+                sid, session, job = self.attempt('explore' if explorer else 'attempt')
                 folder = self.runner.session_dir(sid)
                 write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
                 if kind == 'claimed':
                     write_json(folder / 'declaration.json', {'sections': [
                         {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
                          'reasons': {}, 'at': 1}], 'at': 1})
+                elif kind == 'occupied_question':
+                    write_json(folder / 'declaration.json', {'question': {'id': 'q0', 'at': 1, 'by': 'runner'}, 'at': 1})
+                elif kind == 'explorer_reports_availability':
+                    write_json(folder / 'output/outcome.json', {'disposition': 'no_research', 'availability': {
+                        'status': 'all_unresolved_work_occupied', 'snapshot': '0' * 64}})
                 elif kind == 'interrupted':
                     session['exit_code'] = 1
                 elif kind == 'refused':
                     session['refusal'] = {'reason': 'usage_limit'}
                 self.runner.finish(sid, session)
                 self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
+
+    def test_explorer_without_a_question_closes_with_no_research(self):
+        sid, session, job = self.attempt('explore')
+        folder = self.runner.session_dir(sid)
+        write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
+        self.assertEqual(check_session(folder), [])
+        self.runner.finish(sid, session)
+        self.assertEqual(session['disposition'], 'no_research')
+        self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'done')
+        self.assertFalse(any(j['role'] == 'peer' for j in self.runner.state['jobs'].values()))
+        self.assertNotIn('availability_report', session)
+        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
 
     def test_new_node_and_reopening_trigger_but_solving_does_not(self):
         self.occupied()
@@ -204,7 +222,7 @@ class AvailabilityTests(InstanceCase):
         self.assertEqual(self.runner.state['attempt_dispatch_gate']['mode'], 'reassess')
         self.assertTrue((self.instance / 'control/STOP').exists())
 
-    def test_suppression_stops_pending_attempt_but_allows_one_exploration_cycle(self):
+    def test_suppression_stops_pending_attempt_and_fills_free_questions_with_explorers(self):
         self.occupied()
         sid, session, _ = self.report()
         self.runner.finish(sid, session)
@@ -214,7 +232,22 @@ class AvailabilityTests(InstanceCase):
             self.runner.schedule()
             self.runner.schedule()
         self.assertEqual(self.runner.state['jobs'][key]['status'], 'pending')
-        self.assertEqual(len([a for _, a in self.runner.active() if a['role'] == 'explore']), 1)
+        explorers = [sid for sid, a in self.runner.active() if a['role'] == 'explore']
+        self.assertEqual(len(explorers), 1)  # the root question is the only free question
+        self.assertEqual(read_json(self.runner.session_dir(explorers[0]) / 'declaration.json')['question']['id'], 'q0')
+        # Occupied nodes renew the request after each launch; it waits for a free question.
+        self.assertTrue(self.runner.state['explore_requested'])
+        self.questions('qops', [{'id': 'op-scale', 'statement': 'Why do the methods stall at the same scale?',
+                                 'grounds': 'Several records stop there.'},
+                                {'id': 'op-block', 'statement': 'What does the common block tell about the object?',
+                                 'grounds': 'The same obstruction recurs.'}])
+        self.runner.model = replay(self.instance)
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = self.runner.identity['pid']
+            self.runner.schedule()
+        self.assertEqual(len([a for _, a in self.runner.active() if a['role'] == 'explore']), 3)
+        self.assertEqual(self.runner.state['jobs'][key]['status'], 'pending')
+        self.assertFalse(self.runner.question_slot())
 
     def test_repeated_operator_request_keeps_the_live_reassessment(self):
         with patch('builtins.print'):

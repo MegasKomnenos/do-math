@@ -1,0 +1,117 @@
+{
+  "instance": "C:\\math\\임시\\do-math-question\\instance-copy",
+  "dry_run": false,
+  "runtime": "C:\\math\\.claude\\skills\\do-math\\runtime",
+  "before": {
+    "explore_every": 3,
+    "explore_requested": false,
+    "open_explorations": [
+      {
+        "pipeline": "p8ba963824ed14c678a89f53921e2215f",
+        "stage": "producing",
+        "producer": "se8fb297be8284eb3845293b46fd5b061"
+      }
+    ],
+    "questions": [
+      "q0"
+    ],
+    "knowledge_sequence": 177,
+    "retired_input_present": true,
+    "unknown_state_keys": [
+      "attempt_dispatches",
+      "seen_inputs"
+    ]
+  },
+  "changes": [
+    {
+      "file": "settings.json",
+      "explore_every": [
+        3,
+        1
+      ]
+    },
+    {
+      "pipeline": "p8ba963824ed14c678a89f53921e2215f",
+      "session": "se8fb297be8284eb3845293b46fd5b061",
+      "file": "C:\\math\\임시\\do-math-question\\instance-copy\\sessions\\se8fb297be8284eb3845293b46fd5b061\\declaration.json",
+      "question": "q0"
+    },
+    {
+      "moved": "C:\\math\\임시\\do-math-question\\instance-copy\\control\\inputs\\1794056547459557300-f256a90481e544ac926d43a63825f043.txt",
+      "to": "C:\\math\\임시\\do-math-question\\instance-copy\\control\\retired-inputs\\1794056547459557300-f256a90481e544ac926d43a63825f043.txt"
+    },
+    {
+      "event": "q211ddc50d6a6416c8d15be4436e4d5a1",
+      "sequence": 178,
+      "questions": [
+        "op-critical-scale",
+        "op-common-block"
+      ]
+    },
+    {
+      "rendered": [
+        "knowledge/frontier.md",
+        "knowledge/board.md",
+        "knowledge/state.json",
+        "knowledge/index.md",
+        "knowledge/glossary.md"
+      ]
+    }
+  ],
+  "after": {
+    "explore_every": 1,
+    "explore_requested": false,
+    "questions": {
+      "q0": "open",
+      "op-critical-scale": "open",
+      "op-common-block": "open"
+    },
+    "question_availability": {
+      "free": [
+        "op-critical-scale",
+        "op-common-block"
+      ],
+      "occupied": {
+        "q0": "se8fb297be8284eb3845293b46fd5b061"
+      },
+      "choosing": []
+    },
+    "open_explorations": {
+      "p8ba963824ed14c678a89f53921e2215f": "q0"
+    },
+    "available_nodes": [
+      "sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+      "s570b0e977ad645fb831b27f850048913-q-left-half",
+      "s570b0e977ad645fb831b27f850048913-boundary-response-inequality",
+      "s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+      "s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+      "s4df6b5432c4041a3aef869b9328818c7-left-moment",
+      "s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+      "s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+      "s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+      "seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+      "sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core"
+    ],
+    "question_slot": true,
+    "attempt_dispatch_ready": true,
+    "knowledge_sequence": 178
+  },
+  "checks": {
+    "settings_valid": true,
+    "explore_every_is_1": true,
+    "q0_present_and_open": true,
+    "open_explorations_hold_a_question": true,
+    "no_question_held_twice": true,
+    "held_questions_open": true,
+    "operator_questions_open": true,
+    "retired_input_absent": true,
+    "state_keys_present": true,
+    "frontier_lists_questions": true,
+    "runner_loads_state": true,
+    "all_passed": true
+  },
+  "warnings": [
+    "runner/process.json names a live process but the instance lock is free; this is expected on a copy of a running instance",
+    "knowledge/ changes are uncommitted; the runner commits all of knowledge/ at its next publication, or run with --commit"
+  ]
+}

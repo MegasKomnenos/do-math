@@ -19,9 +19,30 @@ def canonical(model, node):
     return node
 
 
+ROOT_QUESTION = 'q0'
+ROOT_QUESTION_STATEMENT = 'The root problem itself, taken as a whole.'
+ROOT_QUESTION_GROUNDS = ('An explorer holding this question investigates the root proposition, its objects and the '
+                         'mathematics accumulated around them without a narrower focus. It stays open until the root '
+                         'is formally settled; no explanation resolves it.')
+
+
+def canonical_question(model, question):
+    """Questions are merged by the organizer like nodes; aliases lead to the surviving identity."""
+    seen = set()
+    while question in model['question_aliases']:
+        if question in seen:
+            raise ValueError('question alias cycle')
+        seen.add(question)
+        question = model['question_aliases'][question]
+    return question
+
+
 def new_model(statement):
     return {'nodes': {'root': {'id': 'root', 'statement': statement, 'source': None}},
             'aliases': {}, 'claims': {}, 'direct': {}, 'relations': {}, 'proofs': {},
+            'questions': {ROOT_QUESTION: {'id': ROOT_QUESTION, 'statement': ROOT_QUESTION_STATEMENT,
+                                          'grounds': ROOT_QUESTION_GROUNDS, 'source': None, 'origin': 'root'}},
+            'question_aliases': {}, 'question_resolutions': {}, 'question_proposals': [],
             'records': {}, 'concerns': {}, 'terms': {}, 'global_terms': {},
             'modules': [], 'shared_context': [], 'organized': [], 'dependency_overrides': {},
             'findings': [], 'sequence': 0}
@@ -168,6 +189,27 @@ def settle(model):
         node['annotations'] = [i for i, finding in enumerate(model['findings']) if evidence.intersection(finding['claims'])]
         node['concern_history'] = [cid for cid, concern in model['concerns'].items()
                                    if any(concerned(model, key, {**concern, 'status': 'pending'}) for key in evidence)]
+    settle_questions(model)
+
+
+def settle_questions(model):
+    """A question is resolved while an accepted resolution's claim stays supported.
+
+    Questions carry no relations, so nothing is derived between them. A finding that withdraws
+    the claim behind a resolution reopens the question, and the finding stays visible beside it.
+    The root question is never resolved by an explanation."""
+    for qid, question in model['questions'].items():
+        representative = canonical_question(model, qid)
+        question['canonical'] = representative
+        resolutions = [rid for rid, r in model['question_resolutions'].items()
+                       if canonical_question(model, r['question']) == representative
+                       and model['claims'].get(r['claim'], {}).get('status') == 'supported']
+        question['resolutions'] = sorted(resolutions)
+        question['state'] = 'resolved' if resolutions and representative != ROOT_QUESTION else 'open'
+        evidence = {r['claim'] for r in model['question_resolutions'].values()
+                    if canonical_question(model, r['question']) == representative}
+        question['annotations'] = [i for i, finding in enumerate(model['findings'])
+                                   if evidence.intersection(finding['claims'])]
 
 
 def sufficient_closure(model):
@@ -256,6 +298,28 @@ def record_event(model, event, folder):
         if relation['id'] in accepted:
             key = rid + '/' + relation['id']
             model['relations'][key] = {**deepcopy(relation), 'record': rid, 'claim': rid + '/' + relation['claim']}
+    verdicts = {x['proposal']: x for x in review.get('questions', [])}
+    for proposal in record.get('questions', []):
+        verdict = verdicts.get(proposal['id'])
+        if verdict is None:
+            continue
+        if verdict['verdict'] == 'admitted':
+            model['questions'].setdefault(proposal['id'], {
+                'id': proposal['id'], 'statement': proposal['statement'], 'grounds': proposal.get('grounds', ''),
+                'source': rid, 'origin': 'record'})
+        else:
+            # A declined proposal stays visible with review's reason, so a later peer can tell
+            # a question worth proposing again in sharper form from one the research does not want.
+            model['question_proposals'].append({
+                'record': rid, 'id': proposal['id'], 'statement': proposal['statement'],
+                'grounds': proposal.get('grounds', ''), 'verdict': verdict['verdict'],
+                'reason': verdict['reason'], 'duplicate_of': verdict.get('duplicate_of')})
+    accepted = {x['proposal'] for x in review.get('question_resolutions', []) if x['resolved']}
+    for resolution in record.get('question_resolutions', []):
+        if resolution['id'] in accepted:
+            key = rid + '/' + resolution['id']
+            model['question_resolutions'][key] = {**deepcopy(resolution), 'id': key, 'record': rid,
+                                                  'claim': rid + '/' + resolution['claim']}
     add_terms(model, record['glossary'], rid, event['folder'] + '/record.json')
     add_terms(model, review.get('glossary', []), rid + '/review', event['folder'] + '/review/assessment.json')
     for term in record['glossary']:
@@ -264,6 +328,17 @@ def record_event(model, event, folder):
             model['global_terms'][key] = {'membership': 'candidate', 'merged': []}
     add_concerns(model, review.get('concerns', []), rid)
     apply_findings(model, review.get('findings', []), rid)
+
+
+def questions_event(model, event, folder):
+    """Questions placed on the frontier by the operator, outside the peer and review path.
+
+    The publication records who introduced them and why; the frontier shows that origin."""
+    data = read_json(folder / 'questions.json')
+    for item in data['questions']:
+        model['questions'].setdefault(item['id'], {
+            'id': item['id'], 'statement': item['statement'], 'grounds': item.get('grounds', ''),
+            'source': event['id'], 'origin': data.get('source', 'operator')})
 
 
 def assessment_event(model, event, folder):
@@ -306,6 +381,10 @@ def organization_event(model, event, folder):
         source, target = canonical(model, merge['from']), canonical(model, merge['into'])
         if source != target:
             model['aliases'][source] = target
+    for merge in data.get('merge_questions', []):
+        source, target = canonical_question(model, merge['from']), canonical_question(model, merge['into'])
+        if source != target and source != ROOT_QUESTION:
+            model['question_aliases'][source] = target
     for key in data.get('promote', []):
         key = next((primary for primary, member in model['global_terms'].items() if key in member['merged']), key)
         existing = model['global_terms'].get(key, {})
@@ -337,7 +416,8 @@ def replay(instance):
     for event in sorted((read_json(p) for p in (instance / 'knowledge/events').glob('*.json')),
                         key=lambda e: e['sequence']):
         folder = instance / 'knowledge' / event['folder']
-        {'record': record_event, 'review': assessment_event, 'organization': organization_event}[event['kind']](model, event, folder)
+        {'record': record_event, 'review': assessment_event, 'organization': organization_event,
+         'questions': questions_event}[event['kind']](model, event, folder)
         model['sequence'] = event['sequence']
     settle(model)
     return model
@@ -421,6 +501,44 @@ def render(instance, model, board, leases=None):
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
         lines.append('')
+    lines += ['# Questions', '',
+              'A question names something the research wants to understand about the problem. It has no premises, '
+              'relations or sections; explorers occupy questions, one explorer per question, and the board shows who holds which. '
+              f'Question {ROOT_QUESTION} is the root problem itself and stays open while the root is unsettled.', '']
+    for qid, question in model['questions'].items():
+        if question['canonical'] != qid:
+            continue
+        lines += [f'## {qid}', '', question['statement'], '']
+        if question.get('grounds'):
+            lines += [f"Grounds: {question['grounds']}", '']
+        lines.append(f"State: {question['state']}")
+        if question['origin'] == 'record':
+            lines.append(f"Source: [{question['source']}](records/{question['source']}/record.json)")
+        elif question['origin'] == 'root':
+            lines.append('Source: the root statement')
+        else:
+            lines.append(f"Source: {question['origin']} publication [{question['source']}](questions/{question['source']}/questions.json)")
+        lines.append('')
+        for key in question['resolutions']:
+            resolution = model['question_resolutions'][key]
+            lines.append(f"- Resolved by [{key}](records/{resolution['record']}/record.json) through claim {resolution['claim']}")
+        for number in question['annotations']:
+            finding = model['findings'][number]
+            lines.append(f"- Later review ({finding['status']}): {finding['reason']} — {assessment_link(finding['source'])}")
+        aliases = [q for q in model['question_aliases'] if canonical_question(model, q) == qid]
+        if aliases:
+            lines.append('Aliases: ' + ', '.join(aliases))
+        if question['resolutions'] or question['annotations'] or aliases:
+            lines.append('')
+    if model['question_proposals']:
+        lines += ['## Question proposals review did not admit', '',
+                  'A proposal marked revise lacked specificity or clarity; its review feedback says what would make it a question. '
+                  'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
+        for item in model['question_proposals']:
+            duplicate = f" (duplicate of {item['duplicate_of']})" if item.get('duplicate_of') else ''
+            lines.append(f"- {item['verdict']}{duplicate}: {escape(item['statement'])} — review: {item['reason']} "
+                         f"— [{item['record']}](records/{item['record']}/record.json)")
+        lines.append('')
     write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
     glossary = ['# Global glossary', '', f"Research revision: {model['sequence']}", '',
                 'Use primary names in new writing. Historical names and symbols below are scoped to their linked definitions.',
@@ -485,9 +603,14 @@ def render(instance, model, board, leases=None):
             index += entry(rid)
     write_view(base / 'index.md', '\n'.join(index) + '\n')
     board_lines = ['# Research work and occupied sections', '', f"Research revision: {model['sequence']}", '',
-                   'Saved pipeline state, not process liveness. Sections remain occupied through peer and review.', '']
+                   'Saved pipeline state, not process liveness. Sections and questions remain occupied through peer and review.', '']
     for row in board:
         producer = row.get('session') or '(not launched)'
+        if row['role'] == 'explore':
+            # An explorer occupies one question; until it registers one, it is choosing.
+            held = row.get('question') or ('(choosing)' if row['stage'] in ('producing', 'queued') else '(none)')
+            board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · question: {held}"]
+            continue
         # An attempt still producing may not have registered a section yet; it is choosing.
         holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
         board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]

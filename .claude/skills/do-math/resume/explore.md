@@ -1,3 +1,3 @@
-Resume investigating the problem and its objects to develop deeper mathematical understanding.
+Resume investigating the problem and its objects to develop deeper mathematical understanding. The question you hold remains the focus of the exploration; when it is `q0`, that focus is the root problem as a whole.
 
 Follow the questions and connections that still offer insight. Develop explanations beyond their first plausible form, test competing interpretations, and investigate what a failure reveals or leaves open. Finding one interesting phenomenon or describing a promising direction does not itself complete the exploration. Let the mathematics guide whether to deepen the current angle or look more widely. Your purpose remains understanding; you need not adopt a fixed theorem as the measure of completion or invent an immediate application to justify a fruitful investigation.

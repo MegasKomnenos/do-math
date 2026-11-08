@@ -18,7 +18,7 @@ Working paths can be absolute when invoking tools. Paths inside a published reco
 
 The research snapshot in your starting context tells you what was available when you launched. To see what has changed, use the commands in your input. Each command is an argument array: pass its elements separately to the process, replacing placeholders. This avoids guessing executable locations or relying on a shell alias.
 
-Run `commands.updates` from your input to obtain the live board with its sections, the node leases, current root state, concerns, comprehensive review assignments and coordination messages. The user inputs it returns are your original launch snapshot. New user standing instructions apply to sessions launched afterward. Research publications, sections and leases remain live.
+Run `commands.updates` from your input to obtain the live board with its sections and the question each exploration holds, the node and question leases, the current questions with their state and holder, current root state, concerns, comprehensive review assignments and coordination messages. The user inputs it returns are your original launch snapshot. New user standing instructions apply to sessions launched afterward. Research publications, sections, questions and leases remain live.
 
 Attempts and peers register sections with four commands. Replace `<node>` with the node ID and `<file>` with a file path.
 
@@ -28,6 +28,15 @@ Attempts and peers register sections with four commands. Replace `<node>` with t
 4. `commands.release` gives up the lease, or your place in the queue, without registering. Use it as soon as you decide not to take a section on that node. A lease has no time limit: until you register, release or end your session, everyone waiting for the node waits for you.
 
 A registered section cannot be withdrawn, so register it once you have decided to pursue it. To take on a further section, take the lease again; your own earlier sections need no reasons. The section governs which part of the question you take on; it does not restrict the files, lemmas or connections your mathematics may use.
+
+Explorers occupy questions with four commands of the same shape. Replace `<question>` with the question ID from the frontier. If your assignment already names a question, the runner has recorded your occupation of it and none of these commands is needed.
+
+1. `commands.question_lease` takes the question's lease if no other session holds it. A refusal exits with code 1, records nothing and returns the holder, the waiting sessions and the exploration that occupies the question, if any. The lease is also refused when the question is resolved or another exploration holds it.
+2. `commands.question_wait` joins the question's queue and returns with exit code 0 once the lease is yours, or with code 124 and your place when its timeout passes; the place is kept.
+3. `commands.question_take` occupies the whole question while you hold the lease, and taking it ends the lease. It refuses a question another exploration holds or a second question for a session that already holds one. A refusal records nothing and keeps your lease.
+4. `commands.question_release` gives up the lease, or your place in the queue, without taking the question.
+
+An occupied question cannot be given back; it stays with your pipeline through peer and review. The `questions` list that `commands.updates` returns shows, for each question, whether it is open or resolved, which exploration holds it, and whether it is free to take.
 
 To coordinate an unexpected overlap, write a short message file in your directory and run `commands.message` with the recipient's session ID and that file. If registered sections turn out to overlap, they stay as registered: agree by message which session pursues the shared part, and record the agreement in your report. Use it for coordination facts and pointers to published evidence. Ordinary attempts do not obtain another session's unfinished mathematics through messages. Delivery creates a file in the recipient's inbox; it does not establish that the recipient has read it. The `messages` that `commands.updates` returns are the files in your own inbox. A coordination message carries the sender's session ID in `from` and its text in `text`. A notice the runner places there when shared research is published carries the publication's `event` and `revision` instead of a sender; it tells you only that the frontier and index have changed since you last read them.
 

@@ -4,7 +4,7 @@ Attempts, explorations and formalizers use `output/report.md` as the entry point
 
 | Section | What the next researcher needs |
 |---|---|
-| Question and current work | The exact question, registered sections where applicable, current approach and what is being investigated now. |
+| Question and current work | The exact question, registered sections or the occupied question where applicable, current approach and what is being investigated now. |
 | Definitions and assumptions | Objects and conditions used, links to inherited definitions, and the local terminology introduced here. |
 | Mathematics | Arguments and completed intermediate steps, computations with their interpretation, and literature used with its application. |
 | Results and evidence | What was established, its scope and evidence, and what remains observed, conjectural or unchecked. |
@@ -24,7 +24,7 @@ When finishing normally, write `output/outcome.json`:
 
 For a session that undertook research, this small manifest makes the endpoint easy to find. It is not a success certificate or a publication gate. The runner forwards retained producing material to peer even if interruption prevents the manifest or report from being completed. Save important work throughout so that there is material to recover.
 
-Attempts and peers register sections with the coordination commands, which record them in the session's `declaration.json`. An explorer does not register sections. A formalizer receives its node in its assignment, recorded as a whole-node section. None of these roles directly creates shared nodes or publishes mathematical state; the peer prepares proposals and review assesses them.
+Attempts and peers register sections with the coordination commands, which record them in the session's `declaration.json`. An explorer registers no sections; it occupies one question, recorded in the same file either by the runner, when it assigned question `q0` at launch, or by the explorer's own `question_take`. A formalizer receives its node in its assignment, recorded as a whole-node section. None of these roles directly creates shared nodes, questions or published mathematical state; the peer prepares proposals and review assesses them.
 
 ## Continuing an attempt, exploration, formalization or peer session
 
@@ -49,7 +49,7 @@ The initial turn's prompt and CLI streams remain at the session root. Resumed tu
 
 ## Ending before research starts
 
-You may read the research context and check the frontier and board, yet find no section you can take on. That assessment does not itself begin research. To end a session in which you have only assessed availability and have registered no section, write this to `output/outcome.json`:
+An attempt may read the research context and check the frontier and board, yet find no section it can take on. An explorer launched without an assigned question may find, after reading the frontier's questions and the board, that every open question is already held. That assessment does not itself begin research. To end a session in which you have only assessed availability and have registered no section or question, write this to `output/outcome.json`:
 
 ```json
 {"disposition": "no_research"}
@@ -57,11 +57,11 @@ You may read the research context and check the frontier and board, yet find no 
 
 No report or glossary is required. Run `commands.check`, correct any errors it reports, and exit. After a successful exit, the runner retains your files and conversation and closes the pipeline without peer or review. That decision is final for this session: later changes in available work do not reopen it.
 
-Use this outcome only for a session that never began mathematical investigation. Reading existing research to understand the questions, their established coverage and their availability can be part of choosing work. Developing or testing your own mathematical approach is research, including before section registration: this includes developing an argument, investigating a counterexample, running a mathematical computation or beginning formalization, even without a successful result. Preserve that work for peer. The runner does not accept `no_research` from a session that registered a section, exited unsuccessfully or received a provider refusal. It sends retained work to peer; a failed launch without retained material is retried.
+Use this outcome only for a session that never began mathematical investigation. Reading existing research to understand the questions, their established coverage and their availability can be part of choosing work. Developing or testing your own mathematical approach is research, including before section registration: this includes developing an argument, investigating a counterexample, running a mathematical computation or beginning formalization, even without a successful result. Preserve that work for peer. The runner does not accept `no_research` from a session that registered a section or occupies a question, exited unsuccessfully or received a provider refusal. It sends retained work to peer; a failed launch without retained material is retried.
 
 ## Reporting that all unresolved work is occupied
 
-Your session outcome says what you did. An availability report answers a different question: whether another attempt could find work to take on. The report is part of a `no_research` outcome, as in the example below. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that other pipelines' registered sections cover all unresolved questions:
+Your session outcome says what you did. An availability report answers a different question: whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that other pipelines' registered sections cover all unresolved questions:
 
 ```json
 {
@@ -77,4 +77,4 @@ Read the current `commands.updates` result and copy its `availability_snapshot` 
 
 The runner processes the availability report separately from `disposition`. A stale or invalid report cannot prevent a valid `no_research` outcome from closing your session. It only means that the report cannot suppress new attempts. The transport check reports invalid fields or snapshot tokens so you can correct them before exiting.
 
-An accepted report makes the runner wait before launching further attempts. The end of a section's occupancy on a still-unresolved node gives it reason to reconsider: publication or a completed review decision with no useful record ends that occupancy. This differs from releasing a lease or a place in its queue. A new or reopened unresolved node or an operator request also prompts reconsideration. The runner then launches one attempt to assess availability again. Registration of work returns the runner to normal attempt scheduling; another applicable report of full occupancy makes it wait again. Exploration continues under its own cycle rule while attempts wait.
+An accepted report makes the runner wait before launching further attempts. The end of a section's occupancy on a still-unresolved node gives it reason to reconsider: publication or a completed review decision with no useful record ends that occupancy. This differs from releasing a lease or a place in its queue. A new or reopened unresolved node or an operator request also prompts reconsideration. The runner then launches one attempt to assess availability again. Registration of work returns the runner to normal attempt scheduling; another applicable report of full occupancy makes it wait again. Exploration continues on its own questions while attempts wait.

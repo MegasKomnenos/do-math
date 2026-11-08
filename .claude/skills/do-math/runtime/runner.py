@@ -14,10 +14,12 @@ import uuid
 from check import check_session, regular_tree, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
-from coordination import board, lease_table, section_entries
+from coordination import (board, claims_lock, lease_table, question_availability, question_entry,
+                          section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
-from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
+from knowledge import (ROOT_QUESTION, canonical, formal_ready, render, replay, root_solved,
+                       sufficient_closure)
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
@@ -146,6 +148,18 @@ class Runner:
         session.mkdir()
         for name in ('output', 'work', 'inbox'):
             (session / name).mkdir()
+        if job['role'] == 'explore':
+            # The root question is never left free while an explorer launches: the runner assigns
+            # it, under the coordination lock, so no explorer choosing at the same moment takes it.
+            with claims_lock(self.instance):
+                # An assignment left by an earlier failed launch is not occupancy; decide afresh.
+                job['task'].pop('question', None)
+                free = question_availability(self.instance, self.state, self.model)['free']
+                if ROOT_QUESTION in free:
+                    job['task']['question'] = ROOT_QUESTION
+                    now = time.time()
+                    write_json(session / 'declaration.json',
+                               {'question': {'id': ROOT_QUESTION, 'at': now, 'by': 'runner'}, 'at': now})
         self.make_pack(sid, job)
         provider = provider_for_model(selected['model'])
         s = {'id': sid, 'role': job['role'], 'job': key, 'status': 'starting',
@@ -301,6 +315,7 @@ class Runner:
             pipeline['stage'] = 'peer'
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
                                   'node': pipeline.get('node'), 'sections': self.producer_sections(sid),
+                                  'question': self.producer_question(sid),
                                   'retention': s['retention']},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
@@ -369,6 +384,11 @@ class Runner:
         return [{key: entry.get(key) for key in ('id', 'node', 'whole', 'statement')}
                 for entry in section_entries(self.instance, sid, self.model)]
 
+    def producer_question(self, sid):
+        """The question an explorer occupies, or None for other producers."""
+        held = question_entry(self.instance, sid, self.model)
+        return held['id'] if held else None
+
     def recover_candidate(self, job, session, reason):
         """Keep the damaged evidence; restore verified bytes or have a fresh peer develop a candidate."""
         task = job['task']
@@ -408,6 +428,7 @@ class Runner:
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
                              'node': pipeline.get('node'), 'sections': self.producer_sections(pipeline['producer']),
+                             'question': self.producer_question(pipeline['producer']),
                              'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
                      pipeline['id'], pipeline['id'] + ':peer-recovery:' + session['id'])
@@ -599,12 +620,15 @@ class Runner:
                                  self.state.get('attempt_availability_epoch', 0))
 
     def finish_no_research(self, sid, session, job, outcome):
-        """Terminal for this session even when its separate availability report is stale."""
-        try:
-            observed = reported_availability(self.session_dir(sid), outcome)
-        except (OSError, ValueError, TypeError, KeyError) as exc:
-            observed = None
-            session['availability_report'] = {'status': 'invalid', 'error': str(exc)}
+        """Terminal for this session even when its separate availability report is stale.
+
+        An explorer that found no free question closes the same way; only attempts report occupancy."""
+        observed = None
+        if session['role'] == 'attempt':
+            try:
+                observed = reported_availability(self.session_dir(sid), outcome)
+            except (OSError, ValueError, TypeError, KeyError) as exc:
+                session['availability_report'] = {'status': 'invalid', 'error': str(exc)}
         if observed is not None:
             current = self.current_availability()
             if (observed['epoch'] != current['epoch']
@@ -678,6 +702,16 @@ class Runner:
         last = self.state.get('last_attempt_launch')
         return last is None or time.time() - last >= self.settings['attempt_launch_interval']
 
+    def question_slot(self, exclude_job=None):
+        """Whether one more explorer could still find a question of its own.
+
+        Explorers whose pipelines hold no question yet are choosing among the free questions. A
+        pending exploration job counts as choosing unless it is the job being dispatched now."""
+        view = question_availability(self.instance, self.state, self.model)
+        choosing = [p for p in view['choosing']
+                    if exclude_job is None or self.state['jobs'].get(exclude_job, {}).get('pipeline') != p]
+        return len(view['free']) > len(choosing)
+
     def dispatch_pending(self):
         changed = False
         for job in sorted(self.state['jobs'].values(), key=lambda j: PRIORITY[j['role']]):
@@ -688,6 +722,8 @@ class Runner:
                 if job['pipeline']:
                     self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                 changed = True
+                continue
+            if job['role'] == 'explore' and not self.question_slot(exclude_job=job['id']):
                 continue
             if job['role'] == 'formalizer':
                 node = self.model['nodes'][canonical(self.model, job['task']['node'])]
@@ -709,11 +745,9 @@ class Runner:
                     continue
                 if not self.attempt_launch_due():
                     continue
-                exploration = any(p['role'] == 'explore' and p['stage'] != 'done'
-                                  for p in self.state['pipelines'].values())
-                if not exploration and self.selection('explore') and self.state['explore_requested']:
-                    # schedule() creates eligible exploration after this pass.
-                    # Leave capacity for it before launching another attempt.
+                if self.state['explore_requested'] and self.selection('explore') and self.question_slot():
+                    # An exploration that can launch now outranks the attempt; schedule() creates it
+                    # after this pass. A request without a free question does not hold the attempt.
                     continue
             if job['role'] == 'review' and job['task'].get('kind') == 'comprehensive' and any(
                     other['status'] == 'running' and other['role'] == 'review' and other['task'].get('kind') == 'comprehensive'
@@ -737,12 +771,15 @@ class Runner:
             nodes = self.available_nodes()
             self.attempt_dispatch_ready()
             suppressed = (self.state.get('attempt_dispatch_gate') or {}).get('mode') == 'suppressed'
-            exploration = any(p['role'] == 'explore' and p['stage'] != 'done' for p in self.state['pipelines'].values())
-            if (not nodes or suppressed) and not exploration:
+            if not nodes or suppressed:
+                # Capacity that no attempt can use goes to understanding. The request is renewed
+                # after every exploration launched here, so free questions fill one by one.
                 if not self.state['explore_requested']:
                     self.state['explore_requested'] = True
                     self.save()
-            if self.state['explore_requested'] and not exploration and self.selection('explore'):
+            if self.state['explore_requested'] and self.selection('explore') and self.question_slot():
+                # The request is consumed by the launch; without a free question it stays
+                # in force until one opens, and attempts are not held for it.
                 key = self.producer('explore')
                 self.dispatch(key)
                 continue
@@ -913,10 +950,13 @@ def status(instance):
     receipt = read_json(path) if path.exists() else None
     model = replay(instance)
     from lean_broker import Paths, broker_status
+    rows = board(instance, state, model)
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['nodes'][canonical(model, 'root')]['state'], 'finished': state['finished'],
-            'stopped': (instance / 'control/STOP').exists(), 'board': board(instance, state, model),
+            'stopped': (instance / 'control/STOP').exists(), 'board': rows,
             'attempt_dispatch': state.get('attempt_dispatch_gate'),
+            'questions': {**question_availability(instance, state, model, rows),
+                          'explore_requested': state['explore_requested']},
             'blocks': state['blocks'], 'lean': broker_status(Paths(instance)), 'state': state}
 
 
