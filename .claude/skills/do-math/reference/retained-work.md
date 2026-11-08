@@ -4,7 +4,7 @@ Attempts, explorations and formalizers use `output/report.md` as the entry point
 
 | Section | What the next researcher needs |
 |---|---|
-| Question and current work | The exact question, registered sections or the occupied question where applicable, current approach and what is being investigated now. |
+| Question and current work | The exact statement under work, the registered sections or the question held where applicable, the current approach and what is being investigated now. |
 | Definitions and assumptions | Objects and conditions used, links to inherited definitions, and the local terminology introduced here. |
 | Mathematics | Arguments and completed intermediate steps, computations with their interpretation, and literature used with its application. |
 | Results and evidence | What was established, its scope and evidence, and what remains observed, conjectural or unchecked. |

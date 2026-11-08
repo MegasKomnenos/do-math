@@ -8,8 +8,8 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from availability import no_research_outcome
 from check import Invalid, assessment_check, check_session, organization_check, record_check
-from coordination import (board, lease, question_availability, question_lease, question_lease_table,
-                          question_release, question_take, question_wait, updates)
+from coordination import (board, lease, main as coordination_main, question_availability, question_lease,
+                          question_lease_table, question_release, question_take, question_wait, updates)
 from knowledge import canonical_question, render, replay
 from runner import Runner, status
 from runtime_support import read_json, write_json
@@ -313,6 +313,36 @@ class QuestionCoordinationTests(InstanceCase):
             lease(explorer, 'root')
         with self.assertRaisesRegex(ValueError, 'unknown question'):
             question_lease(explorer, 'nope')
+
+    def test_question_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
+        # Explorers reach these commands only through the argv in input.json; the entry point is checked here.
+        self.questions('qops', [question('op-scale')])
+        self.engine.model = replay(self.instance)
+        a, b, c = self.session('sa'), self.session('sb'), self.session('sc')
+
+        def run(*argv):
+            with patch('sys.argv', ['coordination.py', *argv]), patch('builtins.print') as shown:
+                code = coordination_main()
+            return code, json.loads(shown.call_args.args[0])
+
+        code, answer = run('question-lease', str(a), 'q0')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('question-take', str(a), 'q0')
+        self.assertEqual((code, answer['taken'], answer['question']), (0, True, 'q0'))
+        self.assertEqual(read_json(a / 'declaration.json')['question']['by'], 'session')
+        code, answer = run('question-lease', str(b), 'q0')
+        self.assertEqual(code, 1)
+        self.assertIn('holds this question', answer['reason'])
+        code, answer = run('question-lease', str(b), 'op-scale')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('question-wait', str(c), 'op-scale', '--timeout', '0')
+        self.assertEqual((code, answer['timeout'], answer['position']), (124, True, 1))
+        code, answer = run('question-release', str(c), 'op-scale')
+        self.assertEqual((code, answer['released']), (0, True))
+        code, answer = run('question-take', str(b), 'op-scale')
+        self.assertEqual((code, answer['taken']), (0, True))
+        code, answer = run('question-lease', str(b), 'nope')
+        self.assertEqual((code, answer['error']), (1, 'unknown question'))
 
 
 class QuestionDispatchTests(InstanceCase):
