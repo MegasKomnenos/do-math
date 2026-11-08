@@ -125,12 +125,20 @@ def question_availability(instance, state=None, model=None, rows=None):
     the choosing ones, so that each explorer launched can find a question. When it launches a
     pending exploration, it passes board rows without every pending exploration's pipeline: what a
     failed earlier launch of any of them held or was assigned is held by no live explorer and is
-    free to whichever of them launches first (Runner.question_view)."""
+    free to whichever of them launches first (Runner.question_view).
+
+    occupied maps each held question to the sessions of the explorations holding it. That is one
+    session, except after an organizer merges two questions that explorations already held: both
+    keep the merged question until each pipeline ends, as sections continue on a merged node. The
+    question is not free while either holds it, and is free again once both have ended."""
     instance = Path(instance)
     state = state or read_json(instance / 'runner/state.json')
     model = model or replay(instance)
     rows = board(instance, state, model) if rows is None else rows
-    occupied = {row['question']: row['session'] for row in rows if row['role'] == 'explore' and row['question']}
+    occupied = {}
+    for row in rows:
+        if row['role'] == 'explore' and row['question']:
+            occupied.setdefault(row['question'], []).append(row['session'])
     leases = question_lease_table(instance, state, model)
     free = [qid for qid, q in model['questions'].items()
             if q['canonical'] == qid and q['state'] == 'open' and qid not in occupied and qid not in leases]
@@ -377,13 +385,19 @@ def question_blocked(model, rows, table, question, pipeline, sid):
 
     While question 0 is free, a narrower question is refused: an explorer takes the root problem as
     a whole whenever no exploration holds it, and the runner's assignment at launch cannot reach an
-    explorer that is already choosing when question 0 becomes free."""
+    explorer that is already choosing when question 0 becomes free.
+
+    After an organizer merges two held questions, both explorations hold the merged one; neither
+    occupation is cut short, and no further explorer can take the question while either lasts."""
     if model['questions'][question]['state'] != 'open':
         return 'This question is resolved; read its resolution instead of occupying it.'
-    holder = next((r for r in rows if r['role'] == 'explore' and r['pipeline'] != pipeline and r['question'] == question), None)
-    if holder:
-        return ('Exploration ' + (holder['session'] or holder['pipeline'])
-                + ' holds this question; one explorer at a time occupies a question.')
+    holders = [r['session'] or r['pipeline'] for r in rows
+               if r['role'] == 'explore' and r['pipeline'] != pipeline and r['question'] == question]
+    if len(holders) == 1:
+        return 'Exploration ' + holders[0] + ' holds this question; one explorer at a time occupies a question.'
+    if holders:
+        return ('Explorations ' + ' and '.join(holders) + ' hold this question; no further explorer occupies it '
+                'while either does.')
     if question != ROOT_QUESTION and root_free(rows, table, sid):
         return ('Question ' + ROOT_QUESTION + ', the root problem as a whole, is free, and an explorer takes it '
                 'before any narrower question. Lease and take ' + ROOT_QUESTION + ' instead.')
@@ -403,7 +417,7 @@ def question_view(question, table, rows):
     entry = table.get(question, {'holders': [], 'queue': []})
     return {'question': question, 'holders': [h['session'] for h in entry['holders']],
             'queue': [w['session'] for w in entry['queue']],
-            'occupied_by': next((r['session'] for r in rows if r['role'] == 'explore' and r['question'] == question), None)}
+            'occupied_by': [r['session'] for r in rows if r['role'] == 'explore' and r['question'] == question]}
 
 
 def save_question_leases(instance, table, state):
@@ -528,7 +542,7 @@ def updates(session):
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     availability = question_availability(instance, state, model, rows)
     questions = [{'id': qid, 'statement': q['statement'], 'state': q['state'],
-                  'occupied_by': availability['occupied'].get(qid), 'free': qid in availability['free']}
+                  'occupied_by': availability['occupied'].get(qid, []), 'free': qid in availability['free']}
                  for qid, q in model['questions'].items() if q['canonical'] == qid]
     return {'revision': model['sequence'], 'root_state': model['nodes'][canonical(model, 'root')]['state'],
             'board': rows, 'leases': lease_table(instance, state, model),

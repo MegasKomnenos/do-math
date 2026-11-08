@@ -260,11 +260,11 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertEqual(rows, {'sa': 'op-scale', 'sb': None, 'sroot': 'q0'})
         view = question_availability(self.instance, self.engine.state)
         self.assertEqual(view['free'], ['op-block'])
-        self.assertEqual(view['occupied'], {'q0': 'sroot', 'op-scale': 'sa'})
+        self.assertEqual(view['occupied'], {'q0': ['sroot'], 'op-scale': ['sa']})
         self.assertEqual(view['choosing'], [read_json(b / 'input.json')['pipeline']])
         listed = {q['id']: (q['state'], q['occupied_by'], q['free']) for q in updates(b)['questions']}
-        self.assertEqual(listed['op-scale'], ('open', 'sa', False))
-        self.assertEqual(listed['op-block'], ('open', None, True))
+        self.assertEqual(listed['op-scale'], ('open', ['sa'], False))
+        self.assertEqual(listed['op-block'], ('open', [], True))
         render(self.instance, self.engine.model, board(self.instance, self.engine.state))
         visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
         self.assertIn('· explore · producing · question: op-scale', visible)
@@ -303,6 +303,53 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertTrue(question_lease(b, 'op-scale')['leased'])
         self.assertTrue(question_take(a, 'q0')['taken'])
         self.assertTrue(question_take(b, 'op-scale')['taken'])
+
+    def test_a_merge_of_two_held_questions_leaves_both_explorers_holding_it_until_each_pipeline_ends(self):
+        # An organizer's merge is an exception to one explorer per question, as it is for a node's
+        # single lease holder: occupations taken before the merge continue to their own ends, and
+        # meanwhile the merged question is not free to any further explorer.
+        self.questions('qops', [question('op-a'), question('op-b')])
+        self.engine.model = replay(self.instance)
+        root, a, b = self.session('sroot'), self.session('sa'), self.session('sb')
+        for folder, qid in ((root, 'q0'), (a, 'op-a'), (b, 'op-b')):
+            self.assertTrue(question_lease(folder, qid)['leased'])
+            self.assertTrue(question_take(folder, qid)['taken'])
+        self.event('o1', 'organization', {'batch': [], 'modules': [], 'shared_context': [],
+                                          'merge_questions': [{'from': 'op-a', 'into': 'op-b', 'reason': 'Same scale.'}]})
+        self.engine.model = replay(self.instance)
+        rows = {r['session']: r['question'] for r in board(self.instance, self.engine.state)}
+        self.assertEqual(rows, {'sroot': 'q0', 'sa': 'op-b', 'sb': 'op-b'})
+        view = question_availability(self.instance, self.engine.state)
+        self.assertEqual((sorted(view['occupied']['op-b']), view['free']), (['sa', 'sb'], []))
+        listed = {q['id']: (sorted(q['occupied_by']), q['free']) for q in updates(b)['questions']}
+        self.assertEqual(listed['op-b'], (['sa', 'sb'], False))
+        self.assertNotIn('op-a', listed)
+        render(self.instance, self.engine.model, board(self.instance, self.engine.state))
+        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+        self.assertEqual(visible.count('· explore · producing · question: op-b'), 2)
+        # A further explorer can take the merged question under neither identifier.
+        c = self.session('sc')
+        for qid in ('op-b', 'op-a'):
+            refused = question_lease(c, qid)
+            self.assertFalse(refused['leased'])
+            self.assertIn('hold this question', refused['reason'])
+            self.assertEqual(sorted(refused['occupied_by']), ['sa', 'sb'])
+        self.assertFalse(self.engine.question_slot())  # no free question for the explorer still choosing
+        # The occupations end separately; the question stays held while either lasts.
+        pipelines = {sid: read_json(folder / 'input.json')['pipeline'] for sid, folder in (('sa', a), ('sb', b))}
+        self.engine.state['pipelines'][pipelines['sa']]['stage'] = 'done'
+        self.engine.save()
+        view = question_availability(self.instance, self.engine.state)
+        self.assertEqual((view['occupied']['op-b'], view['free']), (['sb'], []))
+        self.assertIn('holds this question', question_lease(c, 'op-b')['reason'])
+        self.engine.state['pipelines'][pipelines['sb']]['stage'] = 'done'
+        self.engine.save()
+        view = question_availability(self.instance, self.engine.state)
+        self.assertEqual((view['free'], 'op-b' in view['occupied']), (['op-b'], False))
+        self.assertTrue(question_lease(c, 'op-a')['leased'])
+        taken = question_take(c, 'op-b')
+        self.assertTrue(taken['taken'], taken)
+        self.assertEqual(taken['question'], 'op-b')
 
     def test_only_explorers_use_question_commands(self):
         attempt = self.session('sattempt', role='attempt')
@@ -403,7 +450,7 @@ class QuestionDispatchTests(InstanceCase):
             held = read_json(runner.session_dir(sid) / 'declaration.json')['question']
             self.assertEqual((held['id'], held['by']), ('q0', 'runner'))
             self.assertIn('"question": "q0"', (runner.session_dir(sid) / 'pack.md').read_text(encoding='utf-8'))
-            self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': sid})
+            self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': [sid]})
             # With the root question occupied, a further explorer launches without an assignment and chooses.
             self.questions('qops', [question('op-scale')])
             runner.model = replay(self.instance)
@@ -453,7 +500,7 @@ class QuestionDispatchTests(InstanceCase):
         self.assertNotIn(relaunched, (None, failed))
         self.assertEqual(job['task']['question'], 'q0')
         self.assertEqual(read_json(runner.session_dir(relaunched) / 'declaration.json')['question']['id'], 'q0')
-        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': relaunched})
+        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': [relaunched]})
 
     def test_occupied_nodes_fill_free_questions_with_explorers_one_request_at_a_time(self):
         self.questions('qops', [question('op-scale'), question('op-block')])
@@ -512,7 +559,7 @@ class QuestionDispatchTests(InstanceCase):
         self.assertEqual(peer['task']['question'], 'q0')
         self.assertEqual(peer['task']['sections'], [])
         view = question_availability(self.instance, runner.state, runner.model)
-        self.assertEqual((view['occupied'], view['free']), ({'q0': sid}, []))
+        self.assertEqual((view['occupied'], view['free']), ({'q0': [sid]}, []))
         rows = board(self.instance, runner.state, runner.model)
         self.assertEqual([(r['stage'], r['question']) for r in rows], [('peer', 'q0')])
         pipeline['stage'] = 'done'
@@ -537,7 +584,7 @@ class QuestionDispatchTests(InstanceCase):
         self.assertNotIn(job['session'], (None, sid))
         self.assertEqual(job['task']['question'], 'q0')
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'],
-                         {'q0': job['session']})
+                         {'q0': [job['session']]})
 
     def test_waiting_explorations_do_not_yield_to_each_other_over_one_free_question(self):
         runner = self.runner()
@@ -583,7 +630,7 @@ class QuestionDispatchTests(InstanceCase):
         launched = first_job if first_job['status'] == 'running' else second_job
         self.assertEqual(launched['task']['question'], 'q0')
         self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'],
-                         {'q0': launched['session']})
+                         {'q0': [launched['session']]})
 
     def test_explorer_finding_no_free_question_closes_without_peer(self):
         runner = self.runner()

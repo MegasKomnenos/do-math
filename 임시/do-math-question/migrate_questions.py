@@ -33,8 +33,9 @@ Usage:
                      without it only q0 exists after migration.
   --runtime DIR      the do-math runtime directory to import (default: the canonical installation).
                      It must already hold the question-aware runtime. In the order below the installed
-                     copy (.agents/skills/do-math) is regenerated after this script and still holds the
-                     earlier runtime while the script runs, so the default is the directory to use.
+                     copy (.agents/skills/do-math) is regenerated from the canonical skill before this
+                     script runs, so its runtime is then the same code as the default; the default is
+                     kept because it does not depend on the regeneration having been done.
   --retire-input     file name under control/inputs/ to move out (default: the known note).
   --dry-run          report what would change without writing anything.
   --commit           commit the new knowledge files in the instance's own Git repository. Without
@@ -43,23 +44,29 @@ Usage:
   --report FILE      also write the JSON report to FILE.
 
 Order of operations for the live instance:
-  stop new dispatch (runner.py stop), then end the runner process itself: under STOP it keeps
-  collecting sessions and publishing, and it exits on its own only when the research is finished,
-  so terminate it once STOP is in place; session hosts and CLIs may keep running. Then run this
-  script on the instance, then regenerate the installed copy the instance uses
-  (.agents/skills/do-math) from the canonical skill, then start the runner again (runner.py start)
-  and resume (runner.py resume) if STOP was left in place.
+  1. Place STOP (runner.py stop).
+  2. End the runner process itself. STOP alone does not end it: under STOP it keeps collecting
+     sessions and publishing, and it exits on its own only when the research is finished. Session
+     hosts and CLIs may keep running.
+  3. If runner/state.json still holds an unfinished publication ("publication"), start the runner
+     again with STOP still in place so that it completes the publication without launching
+     sessions, then end it again. This script refuses to run while a publication is unfinished.
+  4. Regenerate the installed copy the instance uses (.agents/skills/do-math) from the canonical
+     skill with the mirror generator.
+  5. Run this script on the instance, with --questions.
+  6. Start the runner (runner.py start), and resume (runner.py resume) if STOP is still in place.
 
-  Sessions that keep running between this script and the regeneration are disturbed. They invoke
-  their commands from the installed copy, which until it is regenerated holds the earlier runtime,
-  and that runtime cannot replay the questions event written for --questions: in that interval
-  their updates, lease, wait, section and release commands and their transport check fail with an
-  error naming 'questions', which says nothing about their work. Regenerating immediately after
-  this script keeps the interval short. Two orders avoid it, at the cost of departing from the
-  order above: regenerate the installed copy after the runner has exited and before this script
-  (the new runtime reads the unmigrated state), or run this script without --questions,
-  regenerate, and run it again with --questions (the second run leaves what the first changed in
-  place).
+  The copy is regenerated before the migration so that sessions still running never meet a state
+  their runtime cannot read. They invoke their commands from the installed copy. Had the migration
+  come first, the copy would still hold the earlier runtime, which cannot replay the questions
+  event written for --questions, and until the regeneration their updates, lease, wait, section
+  and release commands and their transport check would fail with an error naming 'questions'. In
+  this order the new runtime instead reads the unmigrated state between steps 4 and 5, before
+  q0's occupation is recorded and the operator questions are published. Its replay, board and
+  question availability read that state normally, as the verification run measured read-only on
+  the live instance, so the sessions' commands keep answering; and with the runner ended, nothing
+  is launched meanwhile on the strength of q0 appearing free. The migration then records the
+  occupation and publishes the questions, and the runner started in step 6 reads the migrated state.
 
 The script refuses to run while the runner's instance lock is held, so it cannot change state
 underneath a live runner. Session hosts do not hold that lock.
@@ -212,7 +219,8 @@ def main(argv=None):
             # would take the same number, and the revision would not advance when the runner finishes it.
             fail('the runner left publication ' + state['publication']['event']['id'] + ' unfinished. Start the '
                  'runner again with control/STOP in place, which completes a publication without launching '
-                 'sessions; once runner/state.json shows no publication, end the runner process and migrate')
+                 'sessions; once runner/state.json shows no publication, end the runner process and migrate. In the '
+                 'order of operations given in the docstring of this script this is done before the installed copy is regenerated')
 
         questions = []
         reason = None

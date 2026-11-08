@@ -504,6 +504,8 @@ def render(instance, model, board, leases=None):
     lines += ['# Questions', '',
               'A question names something the research wants to understand about the problem. It has no premises, '
               'relations or sections; explorers occupy questions, one explorer per question, and the board shows who holds which. '
+              'When an organizer merges two questions that explorers already held, both keep the merged question until '
+              'their pipelines end, and no other explorer takes it meanwhile. '
               f'Question {ROOT_QUESTION} is the root problem itself and stays open while the root is unsettled.', '']
     for qid, question in model['questions'].items():
         if question['canonical'] != qid:
