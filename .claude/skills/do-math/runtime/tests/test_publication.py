@@ -259,6 +259,20 @@ class PublicationTests(InstanceCase):
                           if j['role'] == 'review' and j['status'] == 'pending')
         self.assertNotEqual(review_job['id'], job['id'])
         self.assertEqual(Path(review_job['task']['candidate']), peer / 'candidate')
+        # A replacement for an interrupted review of the new candidate receives that review's partial
+        # work, not the assessment of the damaged candidate the new peer replaced.
+        cut_sid = 'sinterrupted'
+        cut_folder = runner.session_dir(cut_sid)
+        cut_folder.mkdir()
+        (cut_folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (cut_folder / 'cli.stderr.log').write_text('', encoding='utf-8')
+        cut = {'id': cut_sid, 'role': 'review', 'status': 'running', 'job': review_job['id'],
+               'model': 'codex/gpt-6.1-sol', 'provider': 'codex', 'started_at': 2, 'exit_code': 1}
+        runner.state['sessions'][cut_sid] = cut
+        review_job.update(status='running', session=cut_sid)
+        runner.finish(cut_sid, cut)
+        self.assertEqual((review_job['status'], review_job['task']['previous_partial_sessions']),
+                         ('pending', [str(cut_folder)]))
         self.finish_replacement_review(runner, review_job)
         self.assertEqual(pipeline['stage'], 'done')
         event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))

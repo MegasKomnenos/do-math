@@ -1068,6 +1068,21 @@ class RunnerTests(InstanceCase):
         self.assertCountEqual([s['role'] for _, s in runner.active()],
                               ['organizer', 'explore', 'attempt'])
 
+    def test_a_requested_comprehensive_review_waits_while_another_runs(self):
+        # Comprehensive reviews launch one at a time, as organizers do (reference/operations.md).
+        runner = self.runner()
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        first, second = runner.enqueue('review', dict(task)), runner.enqueue('review', dict(task))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][first]['status'], 'running')
+            self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
+            # Once the running review has finished, the waiting one launches.
+            runner.state['jobs'][first]['status'] = 'done'
+            runner.dispatch_pending()
+        self.assertEqual(runner.state['jobs'][second]['status'], 'running')
+
     def test_ready_jobs_dispatch_in_the_complete_role_priority_order(self):
         self.publish('r1', self.reduction())  # Q remains available for the attempt.
         self.publish('r2', record([claim_row('p')],

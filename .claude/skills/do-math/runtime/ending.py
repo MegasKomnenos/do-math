@@ -76,7 +76,7 @@ def request_prompt(request, role, guidance_dir, *, snapshot=None):
             raise ValueError('continuation common.md needs exactly one ' + marker)
     prompt = common.replace('{{role_guidance}}', specific)
     prompt = prompt.replace('{{request_id}}', request['id'])
-    prompt = prompt.replace('{{previous_error}}', request.get('previous_error') or 'None') + '\n'
+    prompt = prompt.replace('{{previous_error}}', request['previous_error'] or 'None') + '\n'
     if snapshot is not None:
         snapshot = Path(snapshot)
         snapshot.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ def authorize(session, state, source, basis, explanation):
     authorization = {'authorized': True, 'source': source, 'basis': basis,
                      'explanation': explanation, 'at': time.time(),
                      'resumptions': state['resumptions'], 'maximum': state['maximum'],
-                     'request_id': (state.get('request') or {}).get('id')}
+                     'request_id': state['request']['id'] if state['request'] else None}
     state.update(status='authorized', authorization=authorization)
     write_json(Path(session) / 'end-check.json', state)
     return authorization

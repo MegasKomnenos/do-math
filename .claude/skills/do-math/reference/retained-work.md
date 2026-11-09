@@ -4,7 +4,7 @@ Attempts, explorations and formalizers use `output/report.md` as the entry point
 
 | Section | What the next researcher needs |
 |---|---|
-| Question and current work | The exact statement under work, the registered sections or the question held where applicable, the current approach and what is being investigated now. |
+| Current work | The exact statement under work, the registered sections or the question held where applicable, the current approach and what is being investigated now. |
 | Definitions and assumptions | Objects and conditions used, links to inherited definitions, and the local terminology introduced here. |
 | Mathematics | Arguments and completed intermediate steps, computations with their interpretation, and literature used with its application. |
 | Results and evidence | What was established, its scope and evidence, and what remains observed, conjectural or unchecked. |
@@ -61,7 +61,7 @@ Use this outcome only for a session that never began mathematical investigation.
 
 ## Reporting that all unresolved work is occupied
 
-Your session outcome says what you did. An availability report answers a different question: whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that other pipelines' registered sections cover all unresolved nodes:
+Your session outcome says what you did. An availability report concerns something else: whether another attempt could find work to take on. The report is part of an attempt's `no_research` outcome, as in the example below; an explorer's outcome carries no such report, because the runner sees which questions are free without a judgment. The runner and the transport check read the `availability` field only beside that disposition; in the ordinary outcome of a session that undertook research, the field is not read. You can add this report when you have determined that other pipelines' registered sections cover all unresolved nodes:
 
 ```json
 {

@@ -119,7 +119,7 @@ class PeerRecoveryTests(InstanceCase):
         engine.state['sessions']['speer'] = {
             'id': 'speer', 'role': 'peer', 'job': key, 'status': 'running',
             'provider': 'codex', 'model': 'codex/gpt-6.1-sol', 'started_at': 1,
-            'exit_code': 0, 'retained': True, 'retention': {},
+            'exit_code': 0, 'retained': True, 'retention': {'cli_activity': True, 'native_activity': False},
         }
         engine.state['jobs'][key].update(status='running', session='speer')
         engine.save()

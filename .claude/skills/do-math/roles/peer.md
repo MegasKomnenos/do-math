@@ -18,7 +18,7 @@ Be generous toward the work and candid about its limits. An unfamiliar presentat
 
 ## Understand the producer's complete work
 
-Read the producer's context to identify the question, conditions and information under which it worked. Read its report and local definitions, then the retained conversation from beginning to end and all the artifacts the producer left. `retention.json` identifies the available transcript and any limitation in its capture. `conversation.md` preserves readable message and tool content; the raw stream or copied native transcript remains available for examining the original representation. Inspect code, computation inputs and outputs, mathematical notes, and partial Lean sources as the evidence they are.
+Read the producer's context to identify the problem it took on and the conditions and information under which it worked. Read its report and local definitions, then the retained conversation from beginning to end and all the artifacts the producer left. `retention.json` identifies the available transcript and any limitation in its capture. `conversation.md` preserves readable message and tool content; the raw stream or copied native transcript remains available for examining the original representation. Inspect code, computation inputs and outputs, mathematical notes, and partial Lean sources as the evidence they are.
 
 Connect material found in different places before deciding what matters. A formula can depend on a restriction recorded earlier. A later calculation may correct an initial observation. An abandoned proof may contain an identity that remains useful. The producer's final answer and its labels of success or failure are claims to examine against this material.
 

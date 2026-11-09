@@ -141,12 +141,9 @@ def record_check(data, root, model, proposal_owner=None):
              'question resolution must name an existing question')
         need(canonical_question(model, target) != ROOT_QUESTION, 'the root question is not resolved by an explanation')
         need(resolution.get('claim') in ids, 'question resolution needs its resolving claim')
-    glossary = array(data.get('glossary'), 'glossary')
-    unique(glossary)
+    glossary = data.get('glossary')
+    glossary_check(glossary)
     for term in glossary:
-        text(term.get('name'), 'term.name')
-        text(term.get('definition'), 'term.definition')
-        need(isinstance(term.get('symbol', ''), str), 'term.symbol must be text')
         need(type(term.get('global_candidate', False)) is bool, 'global_candidate must be Boolean')
     regular_tree(root)
 
@@ -254,7 +251,9 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
         target = row.get('node')
         need(target is None or target == row['proposal'] or target in model['nodes'], 'node resolution must reuse an existing node or admit the proposal')
         text(row.get('reason'), 'node resolution reason')
-        if target:
+        if target == row['proposal']:
+            # Admitting the proposal needs its own supported connection; identifying it with an
+            # existing node reuses a node the research already connects (reference/review-output.md).
             need(nodes[row['proposal']]['connection'] in supported, 'new node needs supported connection')
         resolutions[row['proposal']] = target
     need(set(resolutions) == set(nodes), 'resolve every node proposal, with null for an unadmitted node')

@@ -43,6 +43,9 @@ class ContextTests(InstanceCase):
         context = session / 'context'
         text = rebase_links('[Evidence](../reference/evidence.md)', context / 'roles/attempt.md', session, context)
         self.assertEqual(text, '[Evidence](context/reference/evidence.md)')
+        # A link that leaves the snapshot would not lead to a retained copy, so assembly refuses it.
+        with self.assertRaisesRegex(ValueError, 'escapes its source area'):
+            rebase_links('[Skill](../../SKILL.md)', context / 'roles/attempt.md', session, context)
         folder = self.session('s1')
         root = 'Consider the expression \\([n](x)\\) with its original notation.'
         (self.instance / 'root.md').write_text(root, encoding='utf-8')

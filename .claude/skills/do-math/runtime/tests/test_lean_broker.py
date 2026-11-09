@@ -841,6 +841,12 @@ class BrokerTests(BrokerFixture):
         self.broker.tick()
         self.assertEqual(self.broker.config["memory_budget_mb"], 99)
         self.assertIsNone(runner.read_json(self.paths.state)["config_error"])
+        # A broker that starts on a rejected file exits at once; `status` must still say why.
+        time.sleep(0.02)
+        (self.instance / "settings.json").write_text("{not json", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "settings.json rejected"):
+            lean_broker.Broker(self.instance, log_path=self.paths.log).start()
+        self.assertTrue(lean_broker.broker_status(self.paths)["config_error"])
 
     def test_environment_change_fails_queued_jobs_and_calibrates_the_new_environment_anew(self):
         # An environment change reaches the broker through settings.json. A job queued under the earlier
@@ -923,13 +929,18 @@ class BrokerTests(BrokerFixture):
         self.assertFalse(self.broker.should_exit())
         state = runner.read_json(self.instance / "runner/state.json")
         state["complete"] = True
-        state["sessions"]["s1"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
-        runner.write_json(self.instance / "runner/state.json", state)
-        self.assertFalse(self.broker.should_exit())
-        state["sessions"]["s1"]["status"] = "integrated"
+        state["sessions"]["s1"] = {"role": "attempt", "status": "integrated", "host": None, "cli": None}
         runner.write_json(self.instance / "runner/state.json", state)
         self.assertFalse(self.broker.should_exit())  # formal root alone does not finish pending follow-ups
         state['finished'] = True
+        # The runner saves the sessions it starts in the middle of its tick and recomputes `finished`
+        # at the end of it, so the broker can read `finished` beside a session that is still active.
+        for status in ("starting", "running", "publishing"):
+            with self.subTest(status=status):
+                state["sessions"]["s1"]["status"] = status
+                runner.write_json(self.instance / 'runner/state.json', state)
+                self.assertFalse(self.broker.should_exit())
+        state["sessions"]["s1"]["status"] = "integrated"
         runner.write_json(self.instance / 'runner/state.json', state)
         job_id = self.submit(self.session_file("s2", sleep=0.5), expect_mb=40, session="s2")
         self.broker.tick()
@@ -1482,21 +1493,26 @@ class ClientAndLifecycleTests(BrokerFixture):
         self.assertEqual(adopted["lean"], record["lean"])
         self.assertIn('"event": "adopted"', self.paths.log.read_text(encoding="utf-8"))
 
-    def test_unstarted_job_is_requeued_not_failed(self):
+    def test_unstarted_job_is_requeued_unless_its_cancellation_was_requested(self):
         self.start_broker()
         self.broker.config["cpu_threads_budget"] = 1
-        blocker = self.submit(self.session_file("s1", "block.lean", sleep=2), expect_mb=40)
+        blocker = self.submit(self.session_file("s1", "block.lean", sleep=3), expect_mb=40)
         self.until(lambda: self.broker.state["jobs"][blocker]["status"] == "running")
         job_id = self.submit(self.session_file("s1", marker="REQUEUED"), expect_mb=40)
-        self.until(lambda: self.broker.state["jobs"].get(job_id, {}).get("status") == "queued")
-        # Simulate a broker that died after recording the host but before GO.
+        dropped = self.submit(self.session_file("s1", "dropped.lean"), expect_mb=40)
+        self.until(lambda: all(self.broker.state["jobs"].get(j, {}).get("status") == "queued"
+                               for j in (job_id, dropped)))
+        # Simulate a broker that died after recording each host but before GO.
         with patch.object(lean_broker.Path, "write_bytes", side_effect=RuntimeError("died before GO")):
-            with self.assertRaises(RuntimeError):
-                self.broker.launch(self.broker.state["jobs"][job_id])
+            for unstarted in (job_id, dropped):
+                with self.assertRaises(RuntimeError):
+                    self.broker.launch(self.broker.state["jobs"][unstarted])
         job = self.broker.state["jobs"][job_id]
         self.assertEqual(job["status"], "running")
         self.assertFalse((self.paths.job(job_id) / "GO").exists())
         self.broker.save()
+        # A session cancels one of them while no broker serves it; the next broker must honour that request.
+        self.assertEqual(lean_broker.cancel(self.paths, dropped)["cancelled"], "requested")
         old_hosts = self.broker.hosts
         self.broker = lean_broker.Broker(self.instance, log_path=self.paths.log)
         self.broker.start()
@@ -1504,10 +1520,15 @@ class ClientAndLifecycleTests(BrokerFixture):
             host.wait(timeout=10)
         self.assertEqual(self.broker.state["jobs"][job_id]["status"], "queued")
         self.assertEqual(self.broker.state["jobs"][blocker]["status"], "running")
+        cancelled = self.broker.state["jobs"][dropped]
+        self.assertEqual((cancelled["status"], cancelled["started_at"]), ("cancelled", None))
+        self.assertFalse((self.paths.job(dropped) / "launch.json").exists())
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(lean_broker.wait(self.paths, dropped, timeout=0), 4)
         self.until(lambda: self.finished(job_id) and self.finished(blocker))
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 0)
         self.assertIn("REQUEUED", (self.paths.job(job_id) / "stdout.log").read_text(encoding="utf-8"))
-        self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 2)
+        self.assertEqual(sum(j["kind"] == "compile" for j in self.broker.state["jobs"].values()), 3)
 
     def test_runner_launches_adopts_and_relaunches_the_broker(self):
         skill = runner.SKILL

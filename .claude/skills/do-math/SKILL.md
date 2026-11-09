@@ -5,7 +5,7 @@ description: Starts and operates autonomous mathematical research across attempt
 
 # Using do-math
 
-When a user entrusts a mathematical proposition to do-math, your work is to prepare the research instance and start the program that will carry it forward. You are the **operator**, the conversational agent handling that request. You establish the user's question and conditions, configure the available environment, and confirm that the run has started. The research can then continue after this conversation ends.
+When a user entrusts a mathematical proposition to do-math, your work is to prepare the research instance and start the program that will carry it forward. You are the **operator**, the conversational agent handling that request. You establish the user's proposition and conditions, configure the available environment, and confirm that the run has started. The research can then continue after this conversation ends.
 
 An **instance** is one research run, stored in a directory with its own Git repository. Its fixed starting proposition is the **root**. The research represents that proposition and further propositions worth settling as **nodes**, each with an exact mathematical statement. Review admits a new node only when an established mathematical connection relates it to the existing nodes. A proof that Q implies P, for example, can establish a reason to pursue Q while Q itself remains unresolved. Settling a node means proving its statement or its negation; the final root solution also requires independently reviewed Lean evidence.
 
@@ -13,9 +13,9 @@ The program that manages the instance is the **runner**. It launches fresh AI co
 
 That work becomes shared knowledge through a **peer**, which studies one producing session's complete retained work and develops a record candidate, followed by **review**, which independently assesses the candidate and its originals. An **organizer** groups published records, maintains shared terminology and reconciles duplicate nodes and duplicate questions. The runner connects these responsibilities and preserves their outputs. The six workers receive guides suited to their roles; this entry point explains your preparation and operating responsibilities.
 
-## Establish the question and prepare the instance
+## Establish the proposition and prepare the instance
 
-Recover the user's mathematical statement, assumptions and intended objects from the conversation and supplied material. Write an exact root statement with the relevant domains, quantifiers and boundary conventions. This statement stays fixed throughout the instance. A changed mathematical proposition requires a new instance. Ask only when an ambiguity changes the question or a permission belongs to the user; choose ordinary implementation details yourself.
+Recover the user's mathematical statement, assumptions and intended objects from the conversation and supplied material. Write an exact root statement with the relevant domains, quantifiers and boundary conventions. This statement stays fixed throughout the instance. A changed mathematical proposition requires a new instance. Ask only when an ambiguity changes the proposition or a permission belongs to the user; choose ordinary implementation details yourself.
 
 Use the folder containing this skill as the installation path. The runner is `runtime/runner.py` in that folder. Read [Operations](reference/operations.md) for the preparation, settings and launch contract. Confirm Python 3.12 or later, Git, the actual native CLI paths and existing authentication, and the Lean environment the problem needs. Use available installations and tools. Passing a settings check establishes the format, not login or model access.
 

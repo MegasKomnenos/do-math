@@ -28,7 +28,7 @@ You may find nothing you can take on: other sessions' sections may already cover
 
 ## Think with initiative and mathematical purpose
 
-Be proactive in your mathematical thinking. Develop your own understanding of what makes a route promising, where its difficulty lies and what might change the question. Earlier suggestions and familiar techniques can enlarge that understanding, but the judgment of what to pursue is yours. Advice is useful when you have understood why it applies here; citing it does not discharge that responsibility.
+Be proactive in your mathematical thinking. Develop your own understanding of what makes a route promising, where its difficulty lies and what might change how the problem is posed. Earlier suggestions and familiar techniques can enlarge that understanding, but the judgment of what to pursue is yours. Advice is useful when you have understood why it applies here; citing it does not discharge that responsibility.
 
 Give your effort a mathematical purpose. The common introduction describes what moves the research forward: closing something, letting the research see something it could not see before, or changing how the problem is approached. A small counterexample can change an entire proof strategy. Carefully chosen cases can separate competing explanations or reveal a structure the present argument misses. An easy lemma or another table can be useful, but its value comes from what it establishes or makes visible.
 

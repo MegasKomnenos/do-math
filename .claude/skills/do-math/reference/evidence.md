@@ -1,6 +1,6 @@
 # Reading mathematical evidence
 
-The common introduction explains how a record and its review enter shared knowledge. This guide develops the next judgment: whether a particular result gives you the mathematical premise your own work needs. Begin with the question you intend to use it for, then follow the record's actual statement and evidence.
+The common introduction explains how a record and its review enter shared knowledge. This guide develops the next judgment: whether a particular result gives you the mathematical premise your own work needs. Begin with the use you intend for it, then follow the record's actual statement and evidence.
 
 Use the index to locate the contribution and open its exposition, definitions, supporting artifacts and current review. The description tells you why the record may be relevant. The proof and assessment determine what you can conclude from it. Reading them together lets you distinguish a supported result from the stronger conclusion you might hope to draw.
 

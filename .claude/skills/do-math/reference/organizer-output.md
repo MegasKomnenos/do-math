@@ -13,7 +13,7 @@ Write these decisions in `output/organization.json`. The runner uses them to ren
 | `refuse` | Current global candidate IDs to remove from the global glossary. |
 | `merge_terms` | Array of `{keep, others, reason}`. Keep the primary entry's definition and append other entries' names and aliases. |
 | `merge_nodes` | Array of `{from, into, reason}` identifying duplicate node statements. |
-| `merge_questions` | Array of `{from, into, reason}` identifying questions that ask the same thing. Question `q0` keeps its identity in both directions: it is not merged into another question, and no question is merged into it. A proposal that duplicates `q0` is declined at review with `duplicate_of`. Questions that explorations hold can be merged; the holders keep the merged question, as your role guide describes. |
+| `merge_questions` | Array of `{from, into, reason}` identifying questions that ask the same thing. Question `q0` keeps its identity in both directions: it is not merged into another question, and no question is merged into it. A proposal that duplicates `q0` is declined at review with `duplicate_of`. |
 | `glossary` | Optional local definitions introduced in your own explanation, in the record's local entry format. |
 
 Use empty arrays for operations not needed. Module IDs use letters, digits, `_` and `-`, beginning with a letter or digit, and must differ even without letter case. They become files under `knowledge/index/`. Supply titles and descriptions as readable text; the runner supplies links and record assessments.

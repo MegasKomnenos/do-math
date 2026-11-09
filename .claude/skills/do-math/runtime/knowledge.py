@@ -90,7 +90,7 @@ def settle(model):
         node = canonical(model, proof['node'])
         concerns = sorted(cid for cid, c in model['concerns'].items() if concerned(model, proof['claim'], c))
         direct[pid] = {**proof, 'node': node, 'claims': [proof['claim']], 'nodes': [node],
-                       'formal_dependencies': model['dependency_overrides'].get(pid, proof.get('formal_dependencies', [])),
+                       'formal_dependencies': model['dependency_overrides'].get(pid, proof['formal_dependencies']),
                        'concerns': concerns, 'concerned': bool(concerns)}
     relations = {rid: r for rid, r in model['relations'].items()
                  if model['claims'].get(r['claim'], {}).get('status') == 'supported'}
@@ -327,14 +327,14 @@ def record_event(model, event, folder):
             continue
         if verdict['verdict'] == 'admitted':
             model['questions'].setdefault(proposal['id'], {
-                'id': proposal['id'], 'statement': proposal['statement'], 'grounds': proposal.get('grounds', ''),
+                'id': proposal['id'], 'statement': proposal['statement'], 'grounds': proposal['grounds'],
                 'source': rid, 'origin': 'record'})
         else:
             # A declined proposal stays visible with review's reason, so a later peer can tell
             # a question worth proposing again in sharper form from one the research does not want.
             model['question_proposals'].append({
                 'record': rid, 'id': proposal['id'], 'statement': proposal['statement'],
-                'grounds': proposal.get('grounds', ''), 'verdict': verdict['verdict'],
+                'grounds': proposal['grounds'], 'verdict': verdict['verdict'],
                 'reason': verdict['reason'], 'duplicate_of': verdict.get('duplicate_of')})
     accepted = {x['proposal'] for x in review.get('question_resolutions', []) if x['resolved']}
     for resolution in record.get('question_resolutions', []):
@@ -450,7 +450,7 @@ def formal_ready(model, proof):
     # settle() only annotates the outcomes that rest on a questioned claim.
     if proof['level'] != 'informal':
         return False
-    for dep in proof.get('formal_dependencies', []):
+    for dep in proof['formal_dependencies']:
         node = model['nodes'][canonical(model, dep['node'])]
         if node['contested'] or not any(model['proofs'][p]['level'] == 'formal'
                                        and model['proofs'][p]['outcome'] == dep['outcome']
@@ -479,12 +479,12 @@ def render(instance, model, board, leases=None):
         write_text(path, content)
 
     state = read_json(Path(instance) / 'runner/state.json')
-    investigations = [j for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive']
+    investigations = [j for j in state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
     def assessment_link(source, prefix=''):
         path = f'records/{source}/review/assessment.json' if source in model['records'] else f'reviews/{source}/assessment.json'
         return f'[{source}]({prefix}{path})'
     def investigation(cid):
-        matches = [j for j in investigations if cid in j['task'].get('concerns', [])]
+        matches = [j for j in investigations if cid in j['task']['concerns']]
         return ', '.join(j['id'] + ' (' + j['status'] + ')' for j in matches) or 'pending assignment'
     closure = sufficient_closure(model)
     established = {(p['node'], p['outcome']) for p in model['proofs'].values()
@@ -533,7 +533,7 @@ def render(instance, model, board, leases=None):
         if question['canonical'] != qid:
             continue
         lines += [f'## {qid}', '', question['statement'], '']
-        if question.get('grounds'):
+        if question['grounds']:
             lines += [f"Grounds: {question['grounds']}", '']
         lines.append(f"State: {question['state']}")
         if question['origin'] == 'record':
@@ -546,7 +546,7 @@ def render(instance, model, board, leases=None):
         for key in question['resolutions']:
             resolution = model['question_resolutions'][key]
             lines.append(f"- Resolved by [{key}](records/{resolution['record']}/record.json) through claim {resolution['claim']}")
-        settlement = question.get('root_settlement')
+        settlement = question['root_settlement']
         if settlement:
             proofs = ', '.join(f"[{pid}](records/{model['proofs'][pid]['record']}/record.json)" for pid in settlement['proofs'])
             lines.append(f"- Resolved by the root's formal settlement, not by an explanation: node {settlement['node']} "
@@ -557,14 +557,14 @@ def render(instance, model, board, leases=None):
         aliases = [q for q in model['question_aliases'] if canonical_question(model, q) == qid]
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
-        if question['resolutions'] or question.get('root_settlement') or question['annotations'] or aliases:
+        if question['resolutions'] or question['root_settlement'] or question['annotations'] or aliases:
             lines.append('')
     if model['question_proposals']:
         lines += ['## Question proposals review did not admit', '',
                   'A proposal marked revise lacked specificity or clarity; the review reason beside it says what would make it a question. '
                   'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
         for item in model['question_proposals']:
-            duplicate = f" (duplicate of {item['duplicate_of']})" if item.get('duplicate_of') else ''
+            duplicate = f" (duplicate of {item['duplicate_of']})" if item['duplicate_of'] else ''
             lines.append(f"- {item['verdict']}{duplicate}: {escape(item['statement'])} — review: {item['reason']} "
                          f"— [{item['record']}](records/{item['record']}/record.json)")
         lines.append('')

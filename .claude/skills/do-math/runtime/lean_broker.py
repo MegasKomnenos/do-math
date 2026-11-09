@@ -1303,6 +1303,8 @@ class Broker:
         self.save()
         self.reload_settings()
         if self.config is None:
+            # This broker exits now; state.json keeps the rejection, which is where `status` reports it.
+            self.save()
             raise ValueError("settings.json rejected: " + str(self.config_error))
         self.read_version()
         self.adopt()

@@ -559,7 +559,7 @@ def updates(session):
             'availability_snapshot': snapshot,
             'concerns': model['concerns'],
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
-                               for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive'],
+                               for j in state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive'],
             'messages': received,
             'user_inputs': inp.get('user_inputs', [])}
 

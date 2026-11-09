@@ -114,7 +114,7 @@ class Runner:
         pid = uid('p')
         self.state['pipelines'][pid] = {'id': pid, 'role': role, 'stage': 'producing', 'producer': None,
                                          'peer': None, 'review': None, 'record': None,
-                                         'node': (task or {}).get('node'), 'previous_peers': [], 'previous_reviews': []}
+                                         'node': (task or {}).get('node'), 'previous_peers': []}
         key = self.enqueue(role, task or {}, pid, pid + ':producer')
         self.save()
         return key
@@ -249,15 +249,15 @@ class Runner:
                 self.state['blocks'][block_key] = {'until': until, 'reason': reason, 'source': 'retry'}
         session.update(status='failed', reason=reason)
         if job['role'] not in PRODUCERS:
+            # The replacement continues this job's own stage. A review job assesses one candidate, so the
+            # review of an earlier candidate that a new peer replaced is not partial work of this job.
             previous = job['task'].setdefault('previous_partial_sessions', [])
             path = str(self.session_dir(session['id']))
             if path not in previous:
                 previous.append(path)
-        if job['pipeline']:
-            pipeline = self.state['pipelines'][job['pipeline']]
-            if job['role'] in ('peer', 'review'):
-                pipeline['previous_' + ('peers' if job['role'] == 'peer' else 'reviews')].append(session['id'])
-                job['task']['previous_partial_sessions'] = [str(self.session_dir(x)) for x in pipeline['previous_' + ('peers' if job['role'] == 'peer' else 'reviews')]]
+        if job['role'] == 'peer':
+            # A failed peer's sections stay with its pipeline until review ends (coordination.board).
+            self.state['pipelines'][job['pipeline']]['previous_peers'].append(session['id'])
         self.save()
 
     def finish(self, sid, s):
@@ -273,7 +273,7 @@ class Runner:
                           'runner', 'interrupted', 'Session host ended before starting end reconsideration.')
         if ending.exists():
             s['end_check'] = read_json(ending)
-            if s['end_check'].get('authorization') is None:
+            if s['end_check']['authorization'] is None:
                 # Host loss is an interruption, never the worker deciding to end.
                 authorize(session, s['end_check'], 'runner', 'interrupted',
                           'Session host ended before end reconsideration could finish.')
@@ -300,7 +300,7 @@ class Runner:
             s['retained'] = True
             self.save()
         if (s.get('exit_code') == 0 and not s.get('refusal') and not s.get('launch_error')
-                and (s['retention'].get('cli_activity') or s['retention'].get('native_activity'))):
+                and (s['retention']['cli_activity'] or s['retention']['native_activity'])):
             # A successful request launched after the wait establishes recovery.
             # An older in-flight success must not erase a later refusal's block.
             recovered = [key for key in ('provider:' + s['provider'], 'model:' + s['model'])
@@ -322,7 +322,7 @@ class Runner:
                 if outcome is not None:
                     self.finish_no_research(sid, s, job, outcome)
                     return
-            material = (s['retention'].get('cli_activity') or s['retention'].get('native_activity')
+            material = (s['retention']['cli_activity'] or s['retention']['native_activity']
                         or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
             if not material:
                 self.retry(job, s, s.get('launch_error') or 'session ended without retained research material')
@@ -354,7 +354,7 @@ class Runner:
             return
         errors = check_session(session)
         if errors:
-            if (s['role'] == 'review' and job['task'].get('kind') == 'candidate'
+            if (s['role'] == 'review' and job['task']['kind'] == 'candidate'
                     and errors == ['candidate changed after review assignment']):
                 self.recover_candidate(job, s, errors[0])
                 return
@@ -384,7 +384,7 @@ class Runner:
                                     'peer': str(session)}, pipeline['id'], pipeline['id'] + ':review:' + sid)
             self.save()
             return
-        if s['role'] == 'review' and job['task'].get('kind') == 'candidate':
+        if s['role'] == 'review' and job['task']['kind'] == 'candidate':
             assessment = read_json(session / 'output/assessment.json')
             if not assessment['publish']:
                 s.update(status='integrated', rejected=True)
@@ -517,8 +517,8 @@ class Runner:
         if job['pipeline']:
             self.state['pipelines'][job['pipeline']].update(stage='done', record=event['id'])
         if event['kind'] == 'review':
-            self.state['processed_concerns'] = sorted(set(self.state['processed_concerns']) | set(job['task'].get('concerns', [])))
-            self.state['processed_conflicts'] = sorted(set(self.state['processed_conflicts']) | set(job['task'].get('conflicts', [])))
+            self.state['processed_concerns'] = sorted(set(self.state['processed_concerns']) | set(job['task']['concerns']))
+            self.state['processed_conflicts'] = sorted(set(self.state['processed_conflicts']) | set(job['task']['conflicts']))
         self.notify(event)
         self.state['publication'] = None
         self.state['complete'] = root_solved(self.model)
@@ -615,7 +615,7 @@ class Runner:
     def populate(self):
         model = self.model
         pending = [j for j in self.state['jobs'].values() if j['status'] in ('pending', 'running')]
-        if not any(j['role'] == 'review' and j['task'].get('kind') == 'comprehensive' for j in pending):
+        if not any(j['role'] == 'review' and j['task']['kind'] == 'comprehensive' for j in pending):
             concerns = [key for key, value in model['concerns'].items() if value['status'] != 'cleared' and key not in self.state['processed_concerns']]
             conflicts = [nid + ':' + ','.join(n['proofs']) for nid, n in model['nodes'].items()
                          if n['canonical'] == nid and n['contested'] and nid + ':' + ','.join(n['proofs']) not in self.state['processed_conflicts']]
@@ -782,8 +782,8 @@ class Runner:
                     # An exploration that can launch now outranks the attempt; schedule() creates it
                     # after this pass. A request without a free question does not hold the attempt.
                     continue
-            if job['role'] == 'review' and job['task'].get('kind') == 'comprehensive' and any(
-                    other['status'] == 'running' and other['role'] == 'review' and other['task'].get('kind') == 'comprehensive'
+            if job['role'] == 'review' and job['task']['kind'] == 'comprehensive' and any(
+                    other['status'] == 'running' and other['role'] == 'review' and other['task']['kind'] == 'comprehensive'
                     for other in self.state['jobs'].values()):
                 continue
             if job['not_before'] <= time.time() and self.selection(job['role']):
@@ -836,7 +836,7 @@ class Runner:
         rows = board(self.instance, self.state, self.model)
         leases = lease_table(self.instance, self.state, self.model)
         investigations = [(j['id'], j['status']) for j in self.state['jobs'].values()
-                          if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive']
+                          if j['role'] == 'review' and j['task']['kind'] == 'comprehensive']
         # Lease grant times change on every read of a free lease; the board shows only who holds and waits.
         holding = {n: ([h['session'] for h in e['holders']], [w['session'] for w in e['queue']]) for n, e in leases.items()}
         signature = json.dumps([rows, holding, self.model['sequence'], investigations], sort_keys=True)
@@ -1105,7 +1105,7 @@ def main(argv=None):
                 if s['status'] not in ('starting', 'running', 'publishing'):
                     continue
                 check = instance / 'sessions' / sid / 'end-check.json'
-                waiting = check.is_file() and read_json(check).get('status') == 'waiting_dispatch'
+                waiting = check.is_file() and read_json(check)['status'] == 'waiting_dispatch'
                 (held if waiting and not alive(s.get('cli')) else active).append(sid)
             if active:
                 raise ValueError('let active CLI turns finish before replacing the Lean environment: '

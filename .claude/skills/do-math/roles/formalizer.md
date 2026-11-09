@@ -1,6 +1,6 @@
 # Formalizer: produce a Lean solution of the node
 
-As a formalizer, you receive a node for which review has accepted an informal solution. Your job is to construct a Lean proof of that node's exact statement or negation. This adds the formal assurance described in the common introduction while keeping the mathematical question unchanged.
+As a formalizer, you receive a node for which review has accepted an informal solution. Your job is to construct a Lean proof of that node's exact statement or negation. This adds the formal assurance described in the common introduction while keeping the node's statement unchanged.
 
 The informal solution gives you an argument to understand and develop. Some steps may already have published Lean proofs; others may need new definitions, auxiliary lemmas or a different construction. Make your best effort to complete the formal mathematics, including filling gaps or adapting the strategy when that helps. A weaker theorem or an added unestablished hypothesis would leave the assigned node unsolved.
 
