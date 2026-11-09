@@ -200,7 +200,7 @@ The broker re-reads `settings.json` whenever the file changes. When a valid chan
 
 Two notes on the defaults. On a machine with simultaneous multithreading the number of logical cores is twice the number of physical cores, so the default thread budget is four times the physical cores; this is intended, and all thread arithmetic in this document is in logical cores. The priority is applied by the process that supervises each compile, with `nice` on Linux and the priority class on Windows, so the runner, the session hosts and the CLIs get the processor ahead of compiles when it is contended. Priority does not limit anything; it only decides who goes first.
 
-When several instances run on one machine, each has its own broker with its own budget, and each derived budget assumes the whole machine. Set `memory_budget_mb` explicitly in each instance to its share, and let the machine gate handle the rest.
+When several instances run on one machine, each has its own broker with its own budget, and each derived budget assumes the whole machine. The operator therefore sets `memory_budget_mb` explicitly in each instance to its share and leaves the rest to the machine gate.
 
 ## How the broker lives and recovers
 

@@ -332,9 +332,8 @@ class Runner:
             pipeline = self.state['pipelines'][job['pipeline']]
             pipeline['stage'] = 'peer'
             self.enqueue('peer', {'source': str(session), 'source_role': s['role'],
-                                  'node': pipeline.get('node'), 'sections': self.producer_sections(sid),
-                                  'question': self.producer_question(sid),
-                                  'retention': s['retention']},
+                                  'node': pipeline['node'], 'sections': self.producer_sections(sid),
+                                  'question': self.producer_question(sid)},
                          pipeline['id'], pipeline['id'] + ':peer')
             self.save()
             return
@@ -450,7 +449,7 @@ class Runner:
             pipeline['previous_peers'].append(peer.name)
         pipeline['stage'] = 'peer'
         self.enqueue('peer', {'source': task['source'], 'source_role': pipeline['role'],
-                             'node': pipeline.get('node'), 'sections': self.producer_sections(pipeline['producer']),
+                             'node': pipeline['node'], 'sections': self.producer_sections(pipeline['producer']),
                              'question': self.producer_question(pipeline['producer']),
                              'previous_error': reason,
                              'previous_partial_sessions': [str(self.session_dir(x)) for x in pipeline['previous_peers']]},
@@ -464,7 +463,7 @@ class Runner:
                  'session': sid, 'at': time.time()}
         if kind == 'record':
             pipeline = self.state['pipelines'][job['pipeline']]
-            event.update(producer_role=pipeline['role'], pipeline=pipeline['id'], node=pipeline.get('node'))
+            event.update(producer_role=pipeline['role'], pipeline=pipeline['id'], node=pipeline['node'])
         self.state['publication'] = {'event': event, 'job': job['id'], 'session': sid}
         self.state['sessions'][sid].update(status='publishing', record=rid)
         self.save()
@@ -633,7 +632,7 @@ class Runner:
                 continue
             proofs = [pid for pid in node['proofs'] if formal_ready(model, model['proofs'][pid])]
             if proofs:
-                previous = [p['record'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p.get('record') and canonical(model, p['node']) == nid]
+                previous = [p['record'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p['record'] and canonical(model, p['node']) == nid]
                 self.producer('formalizer', {'node': nid, 'proofs': proofs, 'previous_records': previous})
         due = [rid for rid in model['records'] if rid not in model['organized']]
         if len(due) >= self.settings['organizer_every_records'] and not any(j['role'] == 'organizer' for j in pending):

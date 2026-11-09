@@ -377,6 +377,10 @@ def organization_check(data, model, batch):
         need(rid in model['records'], 'unknown shared-context record')
     filed = set(data['shared_context']) | {r for m in modules for r in m['records']}
     need(set(batch) <= filed, 'place each assigned batch record in shared context or a module')
+    # Unfiled marks a placement still pending, and no later batch lists a record already organized,
+    # so a complete layout that left one out would leave it looking unprocessed for good.
+    dropped = sorted(set(model['organized']) - filed)
+    need(not dropped, 'keep each record already organized in shared context or a module: ' + ', '.join(dropped))
     glossary_check(data.get('glossary', []))
     for key in data.get('promote', []):
         need(key in model['terms'], 'promotion needs a published local term')

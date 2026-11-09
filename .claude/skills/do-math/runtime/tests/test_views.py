@@ -29,7 +29,7 @@ class ViewTests(InstanceCase):
         model = self.organized_model()
         knowledge.render(self.instance, model, [])
         rows = [{'pipeline': 'p1', 'session': 's1', 'role': 'attempt',
-                 'stage': 'producing', 'nodes': ['root']}]
+                 'stage': 'producing', 'nodes': ['root'], 'sections': [], 'question': None}]
         with patch('knowledge.write_text', wraps=knowledge.write_text) as text, \
                 patch('knowledge.write_json') as data:
             knowledge.render(self.instance, model, rows)

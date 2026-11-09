@@ -258,7 +258,7 @@ class KnowledgeTests(InstanceCase):
         for pid in ('r2/q', 'r1/reduce', 'r3/next', 'r3/onward'):
             self.assertTrue(m['proofs'][pid]['concerned'])
             self.assertIn('v1/boundary', m['proofs'][pid]['concerns'])
-        render(self.instance, m, [{'pipeline': 'p', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': []}])
+        render(self.instance, m, [{'pipeline': 'p', 'session': 'sp', 'role': 'attempt', 'stage': 'producing', 'nodes': ['S'], 'sections': [], 'question': None}])
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         for nid in ('R', 'S'):
             section = frontier.split('## ' + nid + '\n', 1)[1].split('\n## ', 1)[0]
@@ -310,8 +310,9 @@ class KnowledgeTests(InstanceCase):
         self.event('o2', 'organization', {'batch': [], 'modules': [], 'shared_context': [], 'promote': ['r1/t']})
         m = replay(self.instance)
         self.assertEqual(m['global_terms']['r1/t']['membership'], 'permanent')
-        with self.assertRaises(Invalid):
-            organization_check({'batch': [], 'modules': [], 'shared_context': [], 'refuse': ['r1/t']}, m, [])
+        # r1 keeps its place, so the refusal itself is what the check rejects.
+        with self.assertRaisesRegex(Invalid, 'pending candidate'):
+            organization_check({'batch': [], 'modules': [], 'shared_context': ['r1'], 'refuse': ['r1/t']}, m, [])
 
     def test_refuting_a_necessary_condition_refutes_the_node(self):
         # root implies K is accepted; K refuted therefore refutes root, with no second relation written.
@@ -432,6 +433,18 @@ class KnowledgeTests(InstanceCase):
             output = (self.instance / 'knowledge/index' / (name + '.md')).read_text(encoding='utf-8')
             self.assertIn('A precise contribution with its limitations.', output)
             self.assertIn('Supported within its scope.', output)
+
+    def test_a_complete_layout_keeps_every_organized_record_placed(self):
+        # Unfiled marks a placement still pending (reference/common.md), and no later batch lists an
+        # organized record, so a layout that left r1 out would leave it looking unprocessed for good.
+        self.publish('r1', record())
+        self.event('o1', 'organization', {'batch': ['r1'], 'modules': [], 'shared_context': ['r1']})
+        self.publish('r2', record())
+        model = replay(self.instance)
+        with self.assertRaisesRegex(Invalid, 'already organized'):
+            organization_check({'batch': ['r2'], 'modules': [], 'shared_context': ['r2']}, model, ['r2'])
+        moved = {'id': 'm', 'title': 'Area', 'description': 'An area of the research.', 'records': ['r1']}
+        organization_check({'batch': ['r2'], 'modules': [moved], 'shared_context': ['r2']}, model, ['r2'])
 
     def test_speculative_node_is_not_admitted(self):
         data = record([claim_row('hunch')], [{'id': 'Q', 'statement': 'Q', 'connection': 'hunch'}])

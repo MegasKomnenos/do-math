@@ -586,10 +586,11 @@ class BrokerTests(BrokerFixture):
             time.sleep(0.1)
         # Count the small jobs that started before the head did: under load the big job may already
         # have ended by now, letting the head start and one more small job follow it legitimately.
-        head_started = self.broker.state['jobs'][head].get('admitted_at') or float('inf')
-        started = [j for j in small if self.broker.state['jobs'][j].get('admitted_at')
-                   and self.broker.state['jobs'][j]['admitted_at'] < head_started]
-        self.assertEqual(len(started), passes)
+        # broker.log records each start as the broker makes it, so its order is the order of admission.
+        starts = [event["job"] for event in map(json.loads, self.paths.log.read_text(encoding="utf-8").splitlines())
+                  if event["event"] == "started"]
+        ahead = starts[:starts.index(head)] if head in starts else starts
+        self.assertEqual(len(set(small) & set(ahead)), passes)
         self.until(lambda: self.finished(head))
         self.assertGreaterEqual(self.broker.state["jobs"][head]["started_at"],
                                 self.broker.state["jobs"][big]["finished_at"] - 0.5)
@@ -936,6 +937,28 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.finished(job_id))
         self.until(lambda: self.broker.should_exit())
 
+    def test_a_replaced_broker_reports_no_version_until_it_has_read_its_own(self):
+        # restart-broker returns once the new broker is alive, before that broker has run version_command.
+        # A session asking for the version meanwhile must keep waiting, not receive the predecessor's.
+        self.start_broker()
+        state = runner.read_json(self.paths.state)
+        state.update(version="Lean (version 3.9.9-replaced)", version_error=None)
+        runner.write_json(self.paths.state, state)
+        asked = []
+        read_version = lean_broker.Broker.read_version
+        def ask_before_reading(broker):
+            with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                    patch.object(lean_broker, "READY_SECONDS", 0.5), \
+                    self.assertRaisesRegex(RuntimeError, "not reported a version"):
+                lean_broker.version(self.paths)
+            asked.append(broker)
+            read_version(broker)
+        with patch.object(lean_broker.Broker, "read_version", ask_before_reading):
+            self.start_broker()
+        self.assertEqual(asked, [self.broker])
+        with patch.object(lean_broker, "ensure_broker", return_value={}):
+            self.assertIn("4.0.0-fake", lean_broker.version(self.paths)["version"])
+
 
 class BuildTests(BrokerFixture):
     def test_cancellation_survives_ingestion_and_cached_completion(self):
@@ -1245,6 +1268,19 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
         self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
 
+    def test_pruning_keeps_a_finished_module_that_a_queued_module_still_imports(self):
+        # A queued module learns that its imports compiled only from their records in the state. With room
+        # for one finished job, B and C both finish before D starts; pruning either would fail D as unknown.
+        self.start_broker()
+        root = self.tree()
+        with patch.object(lean_broker, "KEEP_FINISHED", 1):
+            build_id = self.build(root, [root / "D.lean"])
+            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertTrue(all(m["status"] == "finished" and m["exit_code"] == 0 for m in record["modules"].values()))
+        self.assertEqual([j.get("module") for j in self.jobs(*lean_broker.FINISHED)], ["D"])  # pruning did run
+
 
 class LauncherTests(BrokerFixture):
     LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
@@ -1330,6 +1366,25 @@ class LauncherTests(BrokerFixture):
         self.assertEqual([(j["closure"], j["direct"]) for j in calibrations], [(through_lake, False)])
         self.assertEqual(self.broker.calibration.entry(through_lake)["excess_mb"], [job["measured"]["excess_mb"]])
         self.assertIsNone(self.broker.calibration.entry(queued))
+
+    def test_a_module_build_in_direct_mode_finds_its_own_modules_and_lakes_library(self):
+        # Review builds with `lake env lean` configured, so its module compiles run lean directly. Each one
+        # must search the build's lib folder for the modules built before it, which the fake lean checks,
+        # and then lake's LEAN_PATH for the library, which only the launch file shows here.
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)])
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        root = self.instance / "sessions/s1/work/lean"
+        source(root / "Basis.lean", imports=())
+        target = source(root / "Target.lean", imports=("Basis", "Mathlib.Data.Nat.Basic"))
+        build_id = self.build(root, [target])
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        record = self.build_record(build_id)
+        self.assertEqual(record["status"], "finished", record)
+        self.assertTrue(all(m["exit_code"] == 0 for m in record["modules"].values()), record)
+        launch = runner.read_json(self.paths.job(record["modules"]["Target"]["job"]) / "launch.json")
+        self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
+        self.assertEqual(launch["env"]["LEAN_PATH"].split(os.pathsep)[:2], [record["lib"], "fake-lake-lib"])
 
 
 class ClientAndLifecycleTests(BrokerFixture):

@@ -4,7 +4,7 @@ As a reviewer, you determine what the offered evidence establishes. The common i
 
 Most review assignments concern a new candidate prepared by a peer. You receive that candidate and the producing originals, assess its claims and fidelity, and decide which mathematical consequences it justifies. The candidate's publication value is a separate judgment: useful work can be retained with qualifications even when some claims are unsupported.
 
-A review can instead concern evidence already published. When a reported defect may affect other results, a comprehensive assignment asks you to investigate the original claim and follow its actual uses. This is the same review role working on existing evidence. The checking principles come first below, followed by the two assignment paths and the formal checks used when a Lean solution is claimed.
+A review can instead concern evidence already published. When a reported defect may affect other results, a comprehensive assignment asks you to investigate the original claim and follow its actual uses. This is the same review role working on existing evidence. The checking principles come first below, followed by the candidate assignment, the formal checks used when a Lean solution is claimed, and the comprehensive assignment.
 
 ## Be exacting, independent and fair
 
@@ -60,7 +60,7 @@ A formal solution requires your own compile of the final candidate sources, your
 
 Use the allowed-axiom list in your launch settings. `sorryAx` is never allowed. A compiler success can still depend on an unapproved axiom; searching for the string `sorry` misses transitive dependencies and is not the audit. Record the actual job, theorem, axiom list and source identities in `formal_check` as specified by the output reference.
 
-Compare the theorem type with the node object by object and quantifier by quantifier. A recurrence theorem settles a counting question only with an established correspondence to the counting object. A witness chosen for each input is not one witness common to every input. A successful Lean check of a weaker statement does not formally solve the node.
+Compare the theorem type with the node object by object and quantifier by quantifier. A recurrence theorem settles a node about counting only with an established correspondence to the counting object. A witness chosen for each input is not one witness common to every input. A successful Lean check of a weaker statement does not formally solve the node.
 
 If the broker could not run Lean or the environment is unavailable, record what remains unchecked. An execution failure is not Lean rejecting the source. If the attempt or peer already supplied the complete proof, the same independent checks can settle the node directly; the role name of its author does not require another formalizer.
 

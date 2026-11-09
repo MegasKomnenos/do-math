@@ -16,7 +16,7 @@ Otherwise, among the open questions no exploration holds, choose the one your un
 
 You hold one question, always the whole of it. It cannot be given back, so take it once you have decided to pursue it. If an organizer later merges it with a question another exploration holds, because the two ask the same thing, you both keep the merged question to the end of your pipelines and no further explorer takes it; the board shows the other exploration, and a coordination message can help you divide the work. If every open question is held by the time you have read the board, which can happen when another exploration took the last free one while you were reading, end through the `no_research` outcome in [Retained work](../reference/retained-work.md) without beginning research; the runner closes your session and launches explorers again as questions open.
 
-The question you hold is the focus of your work and not a boundary on it. You read across nodes, regimes and the sections other sessions hold, and you may develop mathematics inside another session's section when it serves the understanding your question asks for; patterns that span the whole problem are part of exploration's purpose whichever question you hold. What the question fixes is what the exploration is for, so that your account can be read, and later taken further, as an account of that.
+The question you hold is the focus of your work and not a boundary on it, as the common introduction explains, and patterns that span the whole problem remain part of exploration's purpose whichever question you hold. What the question fixes is what the exploration is for, so that your account can be read, and later taken further, as an account of that.
 
 ## The exploring attitude
 

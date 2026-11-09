@@ -478,8 +478,7 @@ def render(instance, model, board, leases=None):
             pass
         write_text(path, content)
 
-    state_path = Path(instance) / 'runner/state.json'
-    state = read_json(state_path) if state_path.exists() else {'jobs': {}}
+    state = read_json(Path(instance) / 'runner/state.json')
     investigations = [j for j in state['jobs'].values() if j['role'] == 'review' and j['task'].get('kind') == 'comprehensive']
     def assessment_link(source, prefix=''):
         path = f'records/{source}/review/assessment.json' if source in model['records'] else f'reviews/{source}/assessment.json'
@@ -635,17 +634,17 @@ def render(instance, model, board, leases=None):
     board_lines = ['# Research work and occupied sections', '', f"Research revision: {model['sequence']}", '',
                    'Saved pipeline state, not process liveness. Sections and questions remain occupied through peer and review.', '']
     for row in board:
-        producer = row.get('session') or '(not launched)'
+        producer = row['session'] or '(not launched)'
         if row['role'] == 'explore':
             # An explorer occupies one question; until it registers one, it is choosing. Its peer can
             # still register sections (reference/common.md), listed below as for any other pipeline.
-            held = row.get('question') or ('(choosing)' if row['stage'] in ('producing', 'queued') else '(none)')
+            held = row['question'] or ('(choosing)' if row['stage'] in ('producing', 'queued') else '(none)')
             board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · question: {held}"]
         else:
             # An attempt still producing may not have registered a section yet; it is choosing.
             holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
             board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
-        for section in row.get('sections', []):
+        for section in row['sections']:
             scope = 'the whole node' if section['whole'] else escape(section['statement'])
             board_lines.append(f"  Section {section['id']} on {section['node']} (session {section['session']}): {scope}")
         for nid in row['nodes']:

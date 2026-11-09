@@ -75,4 +75,7 @@ elif role == 'review':
             assessment['solutions'].append(verdict)
         write_json(output / 'assessment.json', assessment)
 elif role == 'organizer':
-    write_json(output / 'organization.json', {'batch': task['batch'], 'shared_context': task['batch'], 'modules': []})
+    # A complete layout carries the earlier placements forward and adds the batch (reference/organizer-output.md).
+    layout = read_json(Path(inp['instance']) / 'knowledge/state.json')
+    write_json(output / 'organization.json', {'batch': task['batch'], 'modules': layout['modules'],
+                                              'shared_context': sorted(set(layout['shared_context']) | set(task['batch']))})

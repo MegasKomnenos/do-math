@@ -102,7 +102,7 @@ def board(instance, state=None, model=None):
         question = None
         if pipeline['role'] == 'explore':
             held = question_entry(instance, pipeline['producer'], model)
-            assigned = state['jobs'].get(pid + ':producer', {}).get('task', {}).get('question')
+            assigned = state['jobs'][pid + ':producer']['task'].get('question')
             if held:
                 question = held['id']
             elif assigned and (assigned in model['questions'] or assigned in model['question_aliases']):
@@ -153,10 +153,10 @@ def normalize(table, state):
     """Drop holders and waiters whose sessions ended and give a free lease to the longest waiter."""
     result = {}
     for node, entry in table.items():
-        holders = [h for h in entry.get('holders', []) if session_live(state, h['session'])]
+        holders = [h for h in entry['holders'] if session_live(state, h['session'])]
         present = {h['session'] for h in holders}
         queue = []
-        for waiter in sorted(entry.get('queue', []), key=lambda w: w['since']):
+        for waiter in sorted(entry['queue'], key=lambda w: w['since']):
             if session_live(state, waiter['session']) and waiter['session'] not in present:
                 present.add(waiter['session'])
                 queue.append(waiter)
@@ -178,8 +178,8 @@ def lease_table(instance, state=None, model=None):
     for node, entry in (read_json(path) if path.exists() else {}).items():
         if node in model['nodes'] or node in model['aliases']:
             target = merged.setdefault(canonical(model, node), {'holders': [], 'queue': []})
-            target['holders'] += entry.get('holders', [])
-            target['queue'] += entry.get('queue', [])
+            target['holders'] += entry['holders']
+            target['queue'] += entry['queue']
     return normalize(merged, state)
 
 
@@ -193,8 +193,8 @@ def question_lease_table(instance, state=None, model=None):
     for question, entry in (read_json(path) if path.exists() else {}).items():
         if question in model['questions'] or question in model['question_aliases']:
             target = merged.setdefault(canonical_question(model, question), {'holders': [], 'queue': []})
-            target['holders'] += entry.get('holders', [])
-            target['queue'] += entry.get('queue', [])
+            target['holders'] += entry['holders']
+            target['queue'] += entry['queue']
     return normalize(merged, state)
 
 

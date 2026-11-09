@@ -103,7 +103,7 @@ def wait_to_resume(session, policy, state):
         if (session / 'CANCEL').exists():
             return False
         stopped = (instance / 'control/STOP').exists()
-        blocks = read_json(instance / 'runner/state.json').get('blocks', {})
+        blocks = read_json(instance / 'runner/state.json')['blocks']
         now = time.time()
         unavailable = any(blocks.get(key, {}).get('until', 0) > now
                           for key in ('provider:' + policy['provider'], 'model:' + policy['model']))

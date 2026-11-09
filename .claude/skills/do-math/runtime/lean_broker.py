@@ -485,10 +485,8 @@ class Broker:
         self.config_error = None
         self.direct = None  # {"argv", "env"} to run lean without lake in front of it, once lake's environment is known
         self.settings_stamp = None
-        self.state = read_json(self.paths.state) if self.paths.state.exists() else {}
-        self.state.setdefault("jobs", {})
-        self.state.setdefault("builds", {})
-        self.state.setdefault("version", None)
+        # start() reads the saved state under the lock; this is the state of an instance that has none yet.
+        self.state = {"jobs": {}, "builds": {}, "version": None}
         self.calibration = Calibration(self.paths.calibration)
         self.hosts = {}
         self.dirty = False
@@ -1214,7 +1212,6 @@ class Broker:
         job["measured"] = {"peak_mb": 0.0, "current_mb": 0.0, "seconds": None}
         job["status"] = "running"
         job["started_at"] = time.time()
-        job['admitted_at'] = job['started_at']
         if job.get("build") in self.state["builds"]:
             build = self.state["builds"][job["build"]]
             build["modules"][job["module"]]["status"] = build["status"] = "running"
@@ -1298,6 +1295,12 @@ class Broker:
     def start(self):
         """Everything a broker does before serving: settings, version, the jobs a predecessor left."""
         self.state = read_json(self.paths.state) if self.paths.state.exists() else self.state
+        # The version a predecessor recorded belongs to the installation it ran. `version` and `status`
+        # read this file while this broker is still starting (restart-broker returns once it is alive),
+        # so nothing is reported as the version until this broker has run version_command itself.
+        self.state.update(version=None, version_error=None)
+        self.dirty = True
+        self.save()
         self.reload_settings()
         if self.config is None:
             raise ValueError("settings.json rejected: " + str(self.config_error))

@@ -257,8 +257,10 @@ class AvailabilityTests(InstanceCase):
         model = replay(self.instance)
         previous = {'nodes': {'root': ['a'], 'Q': ['b']}}
         model['aliases']['Q'] = 'root'
-        current = {'nodes': {'root': ['a', 'b']}}
-        self.assertIsNone(opening_since(previous, current, model))
+        # Section b, observed on Q, continues on the merged node: it still covers work there,
+        # and its later end opens that work.
+        self.assertIsNone(opening_since(previous, {'nodes': {'root': ['a', 'b']}}, model))
+        self.assertEqual(opening_since(previous, {'nodes': {'root': ['a']}}, model), 'ended_occupancy')
 
     def test_tampered_snapshot_cannot_suppress_dispatch(self):
         sid, session, job = self.report()
