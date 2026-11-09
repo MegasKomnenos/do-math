@@ -56,7 +56,7 @@ def claims_lock(instance):
 
 def session_live(state, sid):
     """The broker's rule for an ended session: its stage is over, or its host and CLI are both gone."""
-    session = (state or {}).get('sessions', {}).get(sid)
+    session = state['sessions'].get(sid)
     if session is None or session['status'] not in ('starting', 'running'):
         return False
     return session.get('cli') is None or alive(session.get('host')) or alive(session.get('cli'))
@@ -561,7 +561,7 @@ def updates(session):
             'comprehensive_reviews': [{k: j.get(k) for k in ('id', 'status', 'session', 'record', 'task')}
                                for j in state['jobs'].values() if j['role'] == 'review' and j['task']['kind'] == 'comprehensive'],
             'messages': received,
-            'user_inputs': inp.get('user_inputs', [])}
+            'user_inputs': inp['user_inputs']}
 
 
 def message(session, target, message_file):

@@ -684,7 +684,7 @@ class Runner:
         # Track solved nodes disappearing, so a later reopening is a new opportunity.
         # Additions and publication revisions alone do not release suppression.
         gate['baseline'] = current
-        sid = gate.get('probe_session')
+        sid = gate['probe_session']
         if gate['mode'] == 'reassess' and sid:
             if section_entries(self.instance, sid, self.model):
                 self.state['attempt_dispatch_gate'] = None
@@ -694,7 +694,7 @@ class Runner:
                 gate['probe_session'] = None
         if before != json.dumps(gate, sort_keys=True):
             self.save()
-        return gate['mode'] == 'reassess' and gate.get('probe_session') is None
+        return gate['mode'] == 'reassess' and gate['probe_session'] is None
 
     def available_nodes(self):
         """Unresolved nodes where another attempt could still register a section.

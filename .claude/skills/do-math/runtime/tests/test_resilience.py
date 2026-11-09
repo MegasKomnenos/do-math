@@ -160,3 +160,31 @@ class PeerRecoveryTests(InstanceCase):
 
     def test_rename_failure_is_fatal_and_restart_creates_one_review(self):
         self.check_fatal_then_recover('runner.rename_directory')
+
+
+class LaunchFailureTests(InstanceCase):
+    def test_a_cli_that_cannot_start_moves_the_retry_to_the_next_model(self):
+        # Nothing stands in for the CLI: its configured executable is missing, so the session host's
+        # launch fails as it would in operation. That is an operational failure of the selected model,
+        # unlike invalid output, so the job's replacement takes the role's next model while this one
+        # is blocked (reference/operations.md). Only the host's spawn is replaced; the host itself runs
+        # in this process, as in test_ending.
+        engine = runtime.Runner(self.instance, self.skill)
+        engine.settings['cli']['codex'] = str(self.root / 'missing' / 'codex.exe')
+        key = engine.enqueue('organizer', {})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = engine.identity['pid']
+            self.assertTrue(engine.dispatch(key))
+        sid = engine.state['jobs'][key]['session']
+        session = engine.state['sessions'][sid]
+        self.assertEqual(session['model'], 'codex/gpt-6.1-sol')
+        self.assertEqual(support.session_host(engine.session_dir(sid)), 0)
+        session['host'] = None  # the host ran in this process and has returned
+        engine.collect()
+        job = engine.state['jobs'][key]
+        self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
+        self.assertTrue(session['launch_error'])
+        self.assertEqual(job['last_error'], session['launch_error'])
+        self.assertEqual(support.read_json(engine.session_dir(sid) / 'termination.json')['cause'], 'launch_error')
+        self.assertEqual(engine.state['blocks']['model:codex/gpt-6.1-sol']['source'], 'retry')
+        self.assertEqual(engine.selection('organizer')['model'], 'claude/opus')

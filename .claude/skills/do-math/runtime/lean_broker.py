@@ -349,7 +349,13 @@ def job_host(job_dir):
     job_dir = Path(job_dir)
     launch = read_json(job_dir / "launch.json")
     while not (job_dir / "GO").exists():
-        if (job_dir / "CANCEL").exists() or not alive(launch["broker"]):
+        if (job_dir / "CANCEL").exists():
+            return 1
+        if not alive(launch["broker"]):
+            # The broker writes GO once this host's identity is durable and can die right after it. A GO that
+            # appeared since the loop's test belongs to a job that the next broker adopts as started, so Lean runs.
+            if (job_dir / "GO").exists():
+                break
             return 1
         time.sleep(0.1)
     result = {"exit_code": None}

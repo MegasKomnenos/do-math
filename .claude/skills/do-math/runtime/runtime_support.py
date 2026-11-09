@@ -387,7 +387,13 @@ def session_host(session):
     """
     job = read_json(session / "launch.json")
     while not (session / "GO").exists():
-        if (session / "CANCEL").exists() or not alive(job["runner"]):
+        if (session / "CANCEL").exists():
+            return 1
+        if not alive(job["runner"]):
+            # The runner writes GO once this host's identity is durable and can die right after it. The host
+            # outlives the runner, so a GO that appeared since the loop's test still starts the session.
+            if (session / "GO").exists():
+                break
             return 1
         time.sleep(0.1)
     write_json(session / "process-job.json", {**contain_session_processes(), "at": time.time()})

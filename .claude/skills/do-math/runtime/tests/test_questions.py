@@ -293,7 +293,7 @@ class QuestionCoordinationTests(InstanceCase):
         folder.mkdir(parents=True)
         (folder / 'inbox').mkdir()
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': role,
-                                           'pipeline': job['pipeline'], 'task': {}})
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
         runner.state['pipelines'][job['pipeline']]['producer'] = sid
         runner.state['sessions'][sid] = {'id': sid, 'role': role, 'job': key, 'status': 'running'}
         job.update(status='running', session=sid)

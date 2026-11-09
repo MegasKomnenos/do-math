@@ -452,7 +452,7 @@ class KnowledgeTests(InstanceCase):
         (folder / 'record.md').write_text('A hunch.', encoding='utf-8')
         review = assessment(data)
         out = self.root / 'review'; out.mkdir(); (out / 'feedback.md').write_text('Review.', encoding='utf-8')
-        with self.assertRaises(Invalid):
+        with self.assertRaisesRegex(Invalid, 'admitted nodes must connect to existing research'):
             assessment_check(review, out, data, folder, replay(self.instance), self.instance, 's1')
 
 
@@ -692,7 +692,7 @@ class RunnerTests(InstanceCase):
         folder.mkdir(parents=True)
         (folder / 'inbox').mkdir()
         write_json(folder / 'input.json', {'instance': str(self.instance), 'session': sid, 'role': 'attempt',
-                                           'pipeline': job['pipeline'], 'task': {}})
+                                           'pipeline': job['pipeline'], 'task': {}, 'user_inputs': []})
         runner.state['pipelines'][job['pipeline']]['producer'] = sid
         runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'job': key, 'status': 'running'}
         job.update(status='running', session=sid)
@@ -766,6 +766,10 @@ class RunnerTests(InstanceCase):
         rows = {r['session']: [s['id'] for s in r['sections']] for r in board(self.instance)}
         self.assertEqual(rows, {'sa': [sid_a], 'sb': [second['section']['id']], 'sc': []})
         self.assertEqual(runner.available_nodes(), ['root'])
+        # A section's exact statement reaches board.md as written, as a node's statement reaches the frontier.
+        render(self.instance, replay(self.instance), board(self.instance))
+        self.assertIn(f'  Section {sid_a} on root (session sa): For every n, b is nondecreasing for l < n - 2.',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
 
     def test_lease_of_an_ended_session_passes_to_the_next_waiter(self):
         runner = self.runner()
@@ -1433,6 +1437,23 @@ class RunnerTests(InstanceCase):
             self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
         start.assert_called_once()
         self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])
+
+    def test_stop_holds_new_sessions_and_queued_follow_ups_until_resume(self):
+        # stop and resume write and remove control/STOP (reference/operations.md, Commands). The
+        # runner's own pass reads it: while it exists, neither a fresh attempt nor a queued follow-up
+        # launches, and after resume both do.
+        runner = self.runner()
+        peer = runner.enqueue('peer', {'source': str(self.instance / 'sessions/source'),
+                                       'source_role': 'attempt'})
+        with patch('runner.subprocess.Popen') as host, patch('builtins.print'):
+            host.return_value.pid = runner.identity['pid']
+            self.assertEqual(main(['stop', str(self.instance)]), 0)
+            runner.tick()
+            self.assertEqual(runner.active(), [])
+            self.assertEqual(runner.state['jobs'][peer]['status'], 'pending')
+            self.assertEqual(main(['resume', str(self.instance)]), 0)
+            runner.tick()
+        self.assertCountEqual([s['role'] for _, s in runner.active()], ['peer', 'attempt'])
 
     def test_operator_review_and_organize_requests_become_assignments(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('s', 'root', 'p')]))

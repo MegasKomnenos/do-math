@@ -63,7 +63,7 @@ def concerned(model, key, concern):
             return True
         if current not in visited:
             visited.add(current)
-            pending.extend(model['claims'].get(current, {}).get('dependencies', []))
+            pending.extend(model['claims'][current]['dependencies'])
     return False
 
 
@@ -85,7 +85,7 @@ def settle(model):
     """
     direct = {}
     for pid, proof in model['direct'].items():
-        if model['claims'].get(proof['claim'], {}).get('status') != 'supported':
+        if model['claims'][proof['claim']]['status'] != 'supported':
             continue
         node = canonical(model, proof['node'])
         concerns = sorted(cid for cid, c in model['concerns'].items() if concerned(model, proof['claim'], c))
@@ -93,7 +93,7 @@ def settle(model):
                        'formal_dependencies': model['dependency_overrides'].get(pid, proof['formal_dependencies']),
                        'concerns': concerns, 'concerned': bool(concerns)}
     relations = {rid: r for rid, r in model['relations'].items()
-                 if model['claims'].get(r['claim'], {}).get('status') == 'supported'}
+                 if model['claims'][r['claim']]['status'] == 'supported'}
 
     def derive(excluded):
         proofs = dict(direct)
@@ -221,7 +221,7 @@ def settle_questions(model):
         question['canonical'] = representative
         resolutions = [rid for rid, r in model['question_resolutions'].items()
                        if canonical_question(model, r['question']) == representative
-                       and model['claims'].get(r['claim'], {}).get('status') == 'supported']
+                       and model['claims'][r['claim']]['status'] == 'supported']
         question['resolutions'] = sorted(resolutions)
         root = representative == ROOT_QUESTION
         question['root_settlement'] = deepcopy(settlement) if root else None
@@ -244,7 +244,7 @@ def sufficient_closure(model):
     root = canonical(model, 'root')
     reachable = {(root, 'proved'), (root, 'refuted')}
     relations = [r for r in model['relations'].values()
-                 if model['claims'].get(r['claim'], {}).get('status') == 'supported']
+                 if model['claims'][r['claim']]['status'] == 'supported']
     changed = True
     while changed:
         changed = False
@@ -373,16 +373,15 @@ def assessment_event(model, event, folder):
 def apply_findings(model, findings, source, followup=True):
     for number, finding in enumerate(findings):
         affected = {claim_key(ref) for key in ('invalidates', 'validates') for ref in finding.get(key, [])}
-        for cid in finding.get('concerns', []):
-            affected.update(model['concerns'].get(cid, {}).get('targets', []))
+        for cid in finding['concerns']:
+            affected.update(model['concerns'][cid]['targets'])
         model['findings'].append({'source': source, 'reason': finding['reason'], 'status': finding['status'], 'claims': sorted(affected)})
         for update in finding.get('dependency_updates', []):
             model['dependency_overrides'][update['proof']] = deepcopy(update['dependencies'])
-        for cid in finding.get('concerns', []):
-            if cid in model['concerns']:
-                item = model['concerns'][cid]
-                item['status'] = finding['status']
-                item['finding'] = {'review': source, 'reason': finding['reason']}
+        for cid in finding['concerns']:
+            item = model['concerns'][cid]
+            item['status'] = finding['status']
+            item['finding'] = {'review': source, 'reason': finding['reason']}
         for ref in finding.get('invalidates', []):
             key = claim_key(ref)
             model['claims'][key]['status'] = 'unsupported'
@@ -391,7 +390,7 @@ def apply_findings(model, findings, source, followup=True):
             key = claim_key(ref)
             model['claims'][key]['status'] = 'supported'
             model['claims'][key]['later_review'] = source
-        if followup and finding.get('invalidates') and not finding.get('concerns'):
+        if followup and finding.get('invalidates') and not finding['concerns']:
             add_concerns(model, [{'id': 'withdrawal-' + str(number), 'targets': finding['invalidates'],
                                  'reason': finding['reason'], 'evidence': 'The source review explicitly withdrew these claims.'}], source)
 
@@ -565,7 +564,7 @@ def render(instance, model, board, leases=None):
                   'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
         for item in model['question_proposals']:
             duplicate = f" (duplicate of {item['duplicate_of']})" if item['duplicate_of'] else ''
-            lines.append(f"- {item['verdict']}{duplicate}: {escape(item['statement'])} — review: {item['reason']} "
+            lines.append(f"- {item['verdict']}{duplicate}: {item['statement']} — review: {item['reason']} "
                          f"— [{item['record']}](records/{item['record']}/record.json)")
         lines.append('')
     write_view(base / 'frontier.md', '\n'.join(lines) + '\n')
@@ -645,11 +644,11 @@ def render(instance, model, board, leases=None):
             holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
             board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
         for section in row['sections']:
-            scope = 'the whole node' if section['whole'] else escape(section['statement'])
+            scope = 'the whole node' if section['whole'] else section['statement']
             board_lines.append(f"  Section {section['id']} on {section['node']} (session {section['session']}): {scope}")
         for nid in row['nodes']:
-            node = model['nodes'].get(canonical(model, nid), {})
-            if node.get('concerns') or node.get('concern_history'):
+            node = model['nodes'][nid]
+            if node['concerns'] or node['concern_history']:
                 board_lines.append(f'  Concern: see [frontier](frontier.md) for {nid}.')
     if leases:
         board_lines += ['', '## Node leases', '', 'One session at a time chooses a section on a node; others wait in order.', '']

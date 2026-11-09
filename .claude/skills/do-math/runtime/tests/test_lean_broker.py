@@ -357,10 +357,13 @@ class JobHostTests(unittest.TestCase):
         self.job.mkdir()
         self.lean = source(Path(self.temp.name) / "A.lean", marker="MARK", stderr="WARN", exit=3)
 
-    def launch(self, broker):
+    def write_launch(self, broker):
         runner.write_json(self.job / "launch.json", {
             "argv": [sys.executable, "-B", str(FAKE), "--threads=1", str(self.lean)], "cwd": str(self.job),
             "env": {"FAKE_ENV": "1"}, "priority": "normal", "broker": broker})  # equal footing with the test machine's load
+
+    def launch(self, broker):
+        self.write_launch(broker)
         host = subprocess.Popen([sys.executable, "-B", str(lean_broker.SCRIPT), "_job", str(self.job)])
         self.addCleanup(self.stop_host, host)
         return host
@@ -400,6 +403,19 @@ class JobHostTests(unittest.TestCase):
         (self.job / "CANCEL").unlink()
         host = self.launch({"pid": os.getpid(), "birth": "not this process"})
         self.assertEqual(host.wait(timeout=10), 1)
+
+    def test_go_written_as_the_broker_dies_still_starts_lean(self):
+        # The broker writes GO once this host's identity is durable and can die right after it, between the
+        # host's look for GO and its look at the broker. The next broker adopts that job as started, so a host
+        # that ended here without an exit.json would leave the job failed; it must run Lean instead.
+        self.write_launch({"pid": os.getpid(), "birth": "a broker that has died"})
+        def died_after_go(identity):
+            (self.job / "GO").touch()
+            return False
+        with patch.object(lean_broker, "alive", side_effect=died_after_go):
+            self.assertEqual(lean_broker.job_host(self.job), 0)
+        self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
+        self.assertIn("MARK", (self.job / "stdout.log").read_text(encoding="utf-8"))
 
 
 class BrokerTests(BrokerFixture):
@@ -1238,7 +1254,8 @@ class BuildTests(BrokerFixture):
         build_id = self.build(root, [root / "D.lean"])
         self.until(lambda: self.build_record(build_id)["modules"]["A"]["status"] == "running")
         lean_broker.cancel(self.paths, build_id)
-        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+        # A sleeps for 30 seconds: the build ends within 20 only if the cancellation terminated A's Lean.
+        self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED, limit=20)
         record = self.build_record(build_id)
         self.assertEqual(record["status"], "cancelled")
         self.assertEqual(record["modules"]["A"]["status"], "cancelled")
