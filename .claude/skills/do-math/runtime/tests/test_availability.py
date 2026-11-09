@@ -223,6 +223,7 @@ class AvailabilityTests(InstanceCase):
         self.assertTrue((self.instance / 'control/STOP').exists())
 
     def test_suppression_stops_pending_attempt_and_fills_free_questions_with_explorers(self):
+        self.runner.settings['launch_interval'] = 0  # launch spacing has its own test
         self.occupied()
         sid, session, _ = self.report()
         self.runner.finish(sid, session)
@@ -271,31 +272,6 @@ class AvailabilityTests(InstanceCase):
         model['aliases']['Q'] = 'root'
         current = {'nodes': {'root': ['a', 'b']}}
         self.assertIsNone(opening_since(previous, current, model))
-
-    def test_exploration_counts_first_registration_not_no_work_or_expansions(self):
-        self.runner.settings['explore_every'] = 2
-        sid, session, _ = self.report(False)
-        self.runner.finish(sid, session)
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 0)
-        self.assertFalse(self.runner.state['explore_requested'])
-        first, _, _ = self.attempt()
-        self.assertTrue(take(self.runner.session_dir(first), 'root', 'First cases')['registered'])
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
-        self.assertTrue(take(self.runner.session_dir(first), 'root', 'More cases')['registered'])
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 1)
-        second, _, _ = self.attempt()
-        reasons = {x['id']: 'Disjoint' for row in updates(self.runner.session_dir(second))['board']
-                   for x in row['sections']}
-        self.assertTrue(take(self.runner.session_dir(second), 'root', 'Other cases', reasons)['registered'])
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 2)
-        self.assertTrue(self.runner.state['explore_requested'])
-        self.runner = Runner(self.instance, self.skill)
-        self.runner.observe_attempt_selections()
-        self.assertEqual(self.runner.state['attempt_research_starts'], 2)
 
     def test_tampered_snapshot_cannot_suppress_dispatch(self):
         sid, session, job = self.report()

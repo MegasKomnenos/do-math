@@ -34,6 +34,7 @@ class PipelineTests(InstanceCase):
     def test_full_pipeline_formalizes_and_drains_followups(self):
         config = read_json(self.instance / 'settings.json')
         config.update(max_sessions=2, organizer_every_records=1, retry_seconds=1, retry_max_seconds=2,
+                      launch_interval=0,  # launch spacing has its own test
                       roles={})  # the scripted CLI speaks the Codex stream for every role
         config['lean'].update(command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py')],
                               version_command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py'), '--version'],

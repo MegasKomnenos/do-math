@@ -853,34 +853,66 @@ class RunnerTests(InstanceCase):
                          ['Our sections meet at n = 7; I leave that case to you.'])
         self.assertEqual([(m['event'], m['revision']) for m in updates(sender)['messages']], [('r9', 1)])
 
-    def test_attempt_launches_are_spaced_and_a_queued_node_launches_none(self):
+    def test_attempts_and_explorations_share_one_spacing_and_a_queued_node_launches_none(self):
         self.publish('r1', self.reduction())  # root and Q are both available
         runner = self.runner()
-        self.assertEqual(runner.settings['attempt_launch_interval'], 180)
+        self.assertEqual(runner.settings['launch_interval'], 180)
+        def launched(role):
+            return [sid for sid, s in runner.active() if s['role'] == role]
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.schedule()
             runner.schedule()
-            self.assertEqual(len([s for _, s in runner.active() if s['role'] == 'attempt']), 1)
+            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 0))
+            # The attempt launch requested an exploration, which waits for the same interval.
+            self.assertTrue(runner.state['explore_requested'])
             # The spacing survives a restart.
             runner = self.runner()
             runner.schedule()
-            self.assertEqual(len([s for _, s in runner.active() if s['role'] == 'attempt']), 1)
-            runner.state['last_attempt_launch'] -= 181
+            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 0))
+            runner.state['last_launch'] -= 181
             runner.schedule()
-            attempts = [sid for sid, s in runner.active() if s['role'] == 'attempt']
-            self.assertEqual(len(attempts), 2)
+            # The requested exploration goes ahead of the next attempt and restarts the interval.
+            self.assertEqual((len(launched('attempt')), len(launched('explore'))), (1, 1))
+            self.assertFalse(runner.state['explore_requested'])
+            runner.state['last_launch'] -= 181
+            runner.schedule()
+            attempts = launched('attempt')
+            self.assertEqual((len(attempts), len(launched('explore'))), (2, 1))
         first, second = (runner.session_dir(sid) for sid in attempts)
         self.assertTrue(lease(first, 'root')['leased'])
         self.assertCountEqual(runner.available_nodes(), ['root', 'Q'])
         self.assertFalse(wait(second, 'root', timeout=0)['leased'])
         self.assertEqual(runner.available_nodes(), ['Q'])
 
-    def test_attempt_launch_interval_must_be_nonnegative_seconds(self):
+    def test_waiting_attempt_and_exploration_jobs_also_keep_the_shared_spacing(self):
+        # Pending or retried jobs launch from dispatch_pending(), not schedule(); they wait too.
+        self.publish('r1', self.reduction())
+        runner = self.runner()
+        def launched(role):
+            return [sid for sid, s in runner.active() if s['role'] == role]
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(runner.producer('attempt')))
+            explore = runner.producer('explore')
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][explore]['status'], 'pending')
+            runner.state['last_launch'] -= 181
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][explore]['status'], 'running')
+            attempt = runner.producer('attempt')
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][attempt]['status'], 'pending')
+            runner.state['last_launch'] -= 181
+            runner.dispatch_pending()
+            self.assertEqual(runner.state['jobs'][attempt]['status'], 'running')
+        self.assertEqual((len(launched('attempt')), len(launched('explore'))), (2, 1))
+
+    def test_launch_interval_must_be_nonnegative_seconds(self):
         for bad in (-1, 1.5, '180'):
             config = defaults()
-            config['attempt_launch_interval'] = bad
-            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'attempt_launch_interval'):
+            config['launch_interval'] = bad
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'launch_interval'):
                 validate(config)
 
     def test_default_pool_and_provider_fallback(self):
@@ -900,42 +932,39 @@ class RunnerTests(InstanceCase):
 
     def test_periodic_exploration_survives_restart_and_coalesces_requests(self):
         runner = self.runner()
-        # Every research start requests exploration by default; a longer cadence shows the counting.
+        # Every attempt launch requests exploration by default; a longer cadence shows the counting.
         self.assertEqual(runner.settings['explore_every'], 1)
         runner.settings['explore_every'] = 3
         write_json(self.instance / 'settings.json', runner.settings)
-        def start_research():
-            key = runner.producer('attempt')
-            self.assertTrue(runner.dispatch(key))
-            sid = runner.state['jobs'][key]['session']
-            write_json(runner.session_dir(sid) / 'declaration.json', {'sections': [
-                {'id': sid + '-1', 'node': 'root', 'whole': True, 'statement': None,
-                 'reasons': {}, 'at': 1}], 'at': 1})
-            runner.observe_attempt_selections()
-        self.assertEqual(runner.state['attempt_research_starts'], 0)
+        # An instance whose state predates the launch counter starts it at zero.
+        runner.state.pop('attempt_launches')
+        runner.save()
+        def launch_attempt():
+            # The launch alone counts; whether the attempt later registers a section does not matter.
+            self.assertTrue(runner.dispatch(runner.producer('attempt')))
         self.assertIs(runner.state['explore_requested'], False)
         with patch('runner.subprocess.Popen'), patch('runner.process_identity', return_value=None):
             for expected in (1, 2):
-                start_research()
-                self.assertEqual(runner.state['attempt_research_starts'], expected)
+                launch_attempt()
+                self.assertEqual(runner.state['attempt_launches'], expected)
                 self.assertIs(runner.state['explore_requested'], False)
 
             runner = self.runner()
-            self.assertEqual(runner.state['attempt_research_starts'], 2)
+            self.assertEqual(runner.state['attempt_launches'], 2)
             self.assertIs(runner.state['explore_requested'], False)
             for expected in (3, 4, 5, 6):
-                start_research()
-                self.assertEqual(runner.state['attempt_research_starts'], expected)
+                launch_attempt()
+                self.assertEqual(runner.state['attempt_launches'], expected)
                 self.assertIs(runner.state['explore_requested'], True)
 
             runner = self.runner()
-            self.assertEqual(runner.state['attempt_research_starts'], 6)
+            self.assertEqual(runner.state['attempt_launches'], 6)
             self.assertIs(runner.state['explore_requested'], True)
             self.assertTrue(runner.dispatch(runner.producer('explore')))
-            self.assertEqual(runner.state['attempt_research_starts'], 6)
+            self.assertEqual(runner.state['attempt_launches'], 6)
             self.assertIs(runner.state['explore_requested'], False)
-            start_research()
-            self.assertEqual(runner.state['attempt_research_starts'], 7)
+            launch_attempt()
+            self.assertEqual(runner.state['attempt_launches'], 7)
             self.assertIs(runner.state['explore_requested'], False)
 
     def test_retry_extends_short_blocks_and_preserves_long_blocks(self):
@@ -1013,6 +1042,7 @@ class RunnerTests(InstanceCase):
     def test_waiting_organizer_does_not_block_attempt_while_another_organizer_runs(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 3
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         first = runner.enqueue('organizer', {'batch': []})
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
@@ -1031,6 +1061,7 @@ class RunnerTests(InstanceCase):
                                  solutions=[solution('p', 'root', 'p')]))
         runner = self.runner()
         runner.settings['max_sessions'] = 1
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         # Reverse insertion order makes dictionary order an incorrect scheduler.
         runner.producer('attempt')
         runner.producer('explore')
@@ -1064,7 +1095,8 @@ class RunnerTests(InstanceCase):
                     runner.save()
         self.assertEqual(len(runner.state['sessions']), 6)
         self.assertTrue(all(j['status'] == 'done' for j in runner.state['jobs'].values()))
-        self.assertFalse(runner.state['explore_requested'])
+        # The last launch, the attempt, requests the next exploration (explore_every 1).
+        self.assertTrue(runner.state['explore_requested'])
 
     def test_eligible_exploration_precedes_a_pending_attempt_retry(self):
         runner = self.runner()
@@ -1131,7 +1163,7 @@ class RunnerTests(InstanceCase):
         runner.save()
         self.assertEqual(runner.model['nodes']['root']['state'], 'unresolved')
         self.assertLess(len(runner.active()), runner.settings['max_sessions'])
-        self.assertTrue(runner.attempt_launch_due())
+        self.assertTrue(runner.launch_due())
         self.assertIsNotNone(runner.selection('attempt'))
         before = set(runner.state['sessions'])
         with patch('runner.subprocess.Popen') as host:

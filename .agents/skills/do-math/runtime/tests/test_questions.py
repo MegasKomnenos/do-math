@@ -579,6 +579,7 @@ class QuestionDispatchTests(InstanceCase):
 
     def test_a_retried_explorer_is_assigned_the_root_question_its_failed_launch_was_given(self):
         runner = self.runner()
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             key = runner.producer('explore')
@@ -604,6 +605,7 @@ class QuestionDispatchTests(InstanceCase):
         self.questions('qops', [question('op-scale'), question('op-block')])
         runner = self.runner()
         runner.settings['max_sessions'] = 8
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         self.occupy_root(runner)
         self.assertEqual(runner.available_nodes(), [])
         self.assertFalse(runner.state['explore_requested'])
@@ -642,7 +644,7 @@ class QuestionDispatchTests(InstanceCase):
             self.assertTrue(runner.state['explore_requested'])
             pipeline['stage'] = 'done'
             runner.save()
-            runner.state['last_attempt_launch'] = 0
+            runner.state['last_launch'] = 0
             runner.schedule()
         self.assertEqual(sorted(s['role'] for _, s in runner.active()), ['attempt', 'explore'])
         self.assertFalse(runner.state['explore_requested'])
@@ -762,6 +764,9 @@ class QuestionDispatchTests(InstanceCase):
 
     def test_a_busy_coordination_lock_leaves_the_explorer_queued_and_the_runner_running(self):
         runner = self.runner()
+        # One slot, so the attempt launch that would follow the explorer (and request the next
+        # exploration) does not hide whether the explorer's launch consumed the request.
+        runner.settings['max_sessions'] = 1
         runner.state['explore_requested'] = True
         busy = RuntimeError('another coordination change is still in progress; run the command again')
         with patch('runner.claims_lock', side_effect=busy), patch('runner.subprocess.Popen') as host:

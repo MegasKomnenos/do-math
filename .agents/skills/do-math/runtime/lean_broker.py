@@ -1298,10 +1298,16 @@ def ensure_broker(paths):
     if info:
         return info
     paths.ensure()
+    argv = [sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)]
     with paths.log.open("ab") as log:
-        subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
-                         cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                         **popen_options(detached=True))
+        # A session's client may start the shared broker; it must not join that session's job and
+        # end with it. A caller in a job that forbids breakaway starts it as before.
+        try:
+            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                             **popen_options(detached=True, breakaway=True))
+        except PermissionError:
+            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                             **popen_options(detached=True))
     deadline = time.monotonic() + READY_SECONDS
     while time.monotonic() < deadline:
         info = broker_alive(paths)

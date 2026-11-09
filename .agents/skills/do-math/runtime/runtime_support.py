@@ -197,6 +197,28 @@ if os.name == "nt":
     WIN.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
     WIN.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
     WIN.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    WIN.CreateJobObjectW.argtypes = [wintypes.LPVOID, wintypes.LPCWSTR]
+    WIN.CreateJobObjectW.restype = wintypes.HANDLE
+    WIN.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    WIN.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    WIN.GetCurrentProcess.restype = wintypes.HANDLE
+
+    class _BasicLimits(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                    ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                    ("SchedulingClass", wintypes.DWORD)]
+
+    class _IoCounters(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_uint64) for name in
+                    ("ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+                     "ReadTransferCount", "WriteTransferCount", "OtherTransferCount")]
+
+    class _ExtendedLimits(ctypes.Structure):
+        _fields_ = [("BasicLimitInformation", _BasicLimits), ("IoInfo", _IoCounters),
+                    ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
 
 
 
@@ -275,10 +297,14 @@ def terminate_process(identity):
 
 
 
-def popen_options(detached=False):
+def popen_options(detached=False, breakaway=False):
+    """breakaway: on Windows, start the process outside the caller's job (contain_session_processes);
+    for shared infrastructure such as the Lean broker that must not end with one session."""
     if os.name == "nt":
         flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
                  if detached else subprocess.CREATE_NO_WINDOW)
+        if breakaway:
+            flags |= 0x01000000  # CREATE_BREAKAWAY_FROM_JOB
         return {"creationflags": flags, "close_fds": True}
     return {"start_new_session": True, "close_fds": True}
 
@@ -318,6 +344,41 @@ def lean_config(settings):
 
 
 
+_SESSION_JOB = None
+
+
+def contain_session_processes():
+    """Put this host, and every process it or its descendants start, in one Windows job that the
+    system terminates when the host exits.
+
+    A session's computations often outlive the shell that started them (nohup, background jobs),
+    and their parent link is then gone, so following the process tree at the end misses them.
+    Job membership is inherited regardless, so the whole session ends with its host: after its
+    last turn, through kill-session, or when the host itself dies. Turns do not end the host, so
+    work a session waits on across turns keeps running. Only a process started with an explicit
+    breakaway request leaves the job: the Lean broker a session's client may start
+    (popen_options(breakaway=True)), and tools that ask for it, which would otherwise fail to start.
+    Returns a short status for the session folder; failure leaves the session uncontained."""
+    global _SESSION_JOB
+    if os.name != "nt":
+        return {"contained": False, "reason": "not windows"}
+    if _SESSION_JOB is not None:
+        return {"contained": True}  # one job per process; repeated in-process calls reuse it
+    handle = WIN.CreateJobObjectW(None, None)
+    if not handle:
+        return {"contained": False, "reason": str(ctypes.WinError(ctypes.get_last_error()))}
+    info = _ExtendedLimits()
+    # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_BREAKAWAY_OK (explicit requests only)
+    info.BasicLimitInformation.LimitFlags = 0x2000 | 0x800
+    if (not WIN.SetInformationJobObject(handle, 9, ctypes.byref(info), ctypes.sizeof(info))
+            or not WIN.AssignProcessToJobObject(handle, WIN.GetCurrentProcess())):
+        error = ctypes.get_last_error()
+        WIN.CloseHandle(handle)
+        return {"contained": False, "reason": str(ctypes.WinError(error))}
+    _SESSION_JOB = handle  # held until the host exits; the system's close then ends the job
+    return {"contained": True}
+
+
 def session_host(session):
     """Supervise one logical session independently of the runner's lifetime.
 
@@ -329,6 +390,7 @@ def session_host(session):
         if (session / "CANCEL").exists() or not alive(job["runner"]):
             return 1
         time.sleep(0.1)
+    write_json(session / "process-job.json", {**contain_session_processes(), "at": time.time()})
     from ending import run_turn, supervise
     if job.get('end_check') is not None:
         result = supervise(session, job)

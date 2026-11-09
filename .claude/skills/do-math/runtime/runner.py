@@ -52,7 +52,7 @@ def initialize(instance, root_file, settings_file=None):
     write_json(instance / 'settings.json', config)
     write_text(instance / '.gitignore', '/sessions/\n/runner/\n/control/\n')
     state = {'schema': 1, 'sessions': {}, 'pipelines': {}, 'jobs': {}, 'blocks': {},
-             'attempt_research_starts': 0,
+             'attempt_launches': 0,
              'attempt_availability_epoch': 0, 'attempt_dispatch_gate': None,
              'explore_requested': False, 'complete': False,
              'processed_concerns': [], 'processed_conflicts': [], 'publication': None,
@@ -191,8 +191,15 @@ class Runner:
                          'reasons': {}, 'at': now}], 'at': now})
             else:
                 pipeline[job['role']] = sid
+        if job['role'] in ('attempt', 'explore'):
+            # One spacing for both roles: the next attempt or exploration waits for launch_interval.
+            self.state['last_launch'] = time.time()
         if job['role'] == 'attempt':
-            self.state['last_attempt_launch'] = time.time()
+            # Every explore_every-th attempt launch requests an exploration. Instances created before
+            # this counter existed start it at zero.
+            self.state['attempt_launches'] = self.state.get('attempt_launches', 0) + 1
+            if self.state['attempt_launches'] % self.settings['explore_every'] == 0:
+                self.state['explore_requested'] = True
             gate = self.state.get('attempt_dispatch_gate')
             if gate and gate['mode'] == 'reassess':
                 gate['probe_session'] = sid
@@ -660,18 +667,6 @@ class Runner:
         self.archive_due = True
         self.save()
 
-    def observe_attempt_selections(self):
-        selected = [s for sid, s in self.state['sessions'].items()
-                    if s['role'] == 'attempt' and not s.get('research_counted')
-                    and s.get('disposition') != 'no_research'
-                    and section_entries(self.instance, sid, self.model)]
-        for session in selected:
-            session['research_counted'] = True
-            self.state['attempt_research_starts'] += 1
-            if self.state['attempt_research_starts'] % self.settings['explore_every'] == 0:
-                self.state['explore_requested'] = True
-            self.save()
-
     def attempt_dispatch_ready(self):
         gate = self.state.get('attempt_dispatch_gate')
         if gate is None:
@@ -709,10 +704,11 @@ class Runner:
         return [n for n, v in self.model['nodes'].items()
                 if v['canonical'] == n and v['state'] == 'unresolved' and n not in whole and n not in queued]
 
-    def attempt_launch_due(self):
-        """Launches are spaced so each attempt can take a lease before the next one reads the board."""
-        last = self.state.get('last_attempt_launch')
-        return last is None or time.time() - last >= self.settings['attempt_launch_interval']
+    def launch_due(self):
+        """Attempt and exploration launches share one spacing, so each new attempt or explorer can
+        take its lease before the next one reads the board."""
+        last = self.state.get('last_launch')
+        return last is None or time.time() - last >= self.settings['launch_interval']
 
     def question_view(self, launching=False):
         """Free, occupied and choosing questions as the runner counts them.
@@ -755,7 +751,8 @@ class Runner:
                     self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                 changed = True
                 continue
-            if job['role'] == 'explore' and not self.question_slot(exclude_job=job['id']):
+            if job['role'] == 'explore' and (not self.launch_due()
+                                             or not self.question_slot(exclude_job=job['id'])):
                 continue
             if job['role'] == 'formalizer':
                 node = self.model['nodes'][canonical(self.model, job['task']['node'])]
@@ -775,7 +772,7 @@ class Runner:
                     continue
                 if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
                     continue
-                if not self.attempt_launch_due():
+                if not self.launch_due():
                     continue
                 if self.state['explore_requested'] and self.selection('explore') and self.question_slot():
                     # An exploration that can launch now outranks the attempt; schedule() creates it
@@ -794,7 +791,6 @@ class Runner:
             self.save()
 
     def schedule(self):
-        self.observe_attempt_selections()
         self.populate()
         self.dispatch_pending()
         if self.state['complete']:
@@ -809,9 +805,11 @@ class Runner:
                 if not self.state['explore_requested']:
                     self.state['explore_requested'] = True
                     self.save()
-            if self.state['explore_requested'] and self.selection('explore') and self.question_slot():
+            if (self.state['explore_requested'] and self.launch_due()
+                    and self.selection('explore') and self.question_slot()):
                 # The request is consumed by the launch; without a free question it stays
-                # in force until one opens, and attempts are not held for it.
+                # in force until one opens, and attempts are not held for it. Before the launch
+                # interval has passed the request waits; the attempt below waits for the same interval.
                 key = self.producer('explore')
                 if not self.dispatch(key):
                     # The queued exploration launches from dispatch_pending() on a later pass.
@@ -824,7 +822,7 @@ class Runner:
                                and j['not_before'] <= time.time() and self.selection(j['role'])
                                and (j['role'] != 'organizer' or not organizer_running)
                                for j in self.state['jobs'].values())
-            if (waiting or higher_ready or not nodes or not self.attempt_launch_due()
+            if (waiting or higher_ready or not nodes or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break
             key = self.producer('attempt')
@@ -898,7 +896,6 @@ class Runner:
             self.save()
 
     def tick(self):
-        self.observe_attempt_selections()
         self.collect()
         self.archive()
         self.reload_settings()

@@ -18,7 +18,7 @@ AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
 
 def defaults():
     return {'schema': 1, 'max_sessions': 8, 'explore_every': 1,
-            'organizer_every_records': 4, 'attempt_launch_interval': 180, 'models': deepcopy(MODELS),
+            'organizer_every_records': 4, 'launch_interval': 180, 'models': deepcopy(MODELS),
             'roles': {'peer': deepcopy(ASSESSORS), 'review': deepcopy(ASSESSORS)},
             'cli': {p: shutil.which(p) or p for p in ('codex', 'claude')},
             'retry_seconds': 60, 'retry_max_seconds': 1800, 'mcp_servers': {},
@@ -51,8 +51,8 @@ def validate(raw):
                 'retry_seconds', 'retry_max_seconds'):
         if type(value[key]) is not int or value[key] < 1:
             raise ValueError(f'{key} must be a positive integer')
-    if type(value['attempt_launch_interval']) is not int or value['attempt_launch_interval'] < 0:
-        raise ValueError('attempt_launch_interval must be a nonnegative integer number of seconds')
+    if type(value['launch_interval']) is not int or value['launch_interval'] < 0:
+        raise ValueError('launch_interval must be a nonnegative integer number of seconds')
     if type(value['max_end_resumptions']) is not int or value['max_end_resumptions'] < 0:
         raise ValueError('max_end_resumptions must be a nonnegative integer')
     if value['retry_max_seconds'] < value['retry_seconds']:

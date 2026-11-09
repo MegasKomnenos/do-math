@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import sys
 import threading
@@ -52,6 +53,8 @@ class EndingTests(InstanceCase):
     def run_host(self, directory):
         with patch('ending.worker_command', side_effect=self.command):
             self.assertEqual(session_host(directory), 0)
+        # The host contains its session before the first turn (runtime_support.contain_session_processes).
+        self.assertEqual(read_json(directory / 'process-job.json')['contained'], os.name == 'nt')
         return read_json(directory / 'end-check.json')
 
     def test_worker_end_resumes_exact_conversation_and_preserves_context(self):
