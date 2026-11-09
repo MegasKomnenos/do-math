@@ -340,11 +340,16 @@ class Runner:
             return
         # A cancellation recorded by the host, even after a clean CLI exit between turns,
         # leaves this stage unfinished; a replacement receives the partial material.
-        interrupted = s.get('end_check', {}).get('authorization', {}).get('basis') == 'interrupted'
-        if s.get('exit_code') != 0 or s.get('refusal') or s.get('launch_error') or interrupted:
+        authorization = s.get('end_check', {}).get('authorization') or {}
+        interrupted = authorization.get('basis') == 'interrupted'
+        # Any other end authorization by the host (a worker decision, the resumption limit or an
+        # unavailable resumption) ends a peer normally, even when its last turn stopped at the
+        # output-token cap with a nonzero exit; its output then goes to the structural check.
+        failed = s.get('exit_code') != 0 and not (authorization and not interrupted)
+        if failed or s.get('refusal') or s.get('launch_error') or interrupted:
             reason = (s.get('launch_error') or (s.get('refusal') or {}).get('reason') or
-                      (s['end_check']['authorization']['explanation'] if s.get('exit_code') == 0 else
-                       f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})"))
+                      (f"processing session ended without successful completion (exit_code={s.get('exit_code')!r})"
+                       if failed else authorization['explanation']))
             self.retry(job, s, reason,
                        availability=bool(s.get('refusal') or s.get('launch_error')))
             return
@@ -635,7 +640,7 @@ class Runner:
 
     def current_availability(self):
         return availability_view(self.model, board(self.instance, self.state, self.model),
-                                 self.state.get('attempt_availability_epoch', 0))
+                                 self.state['attempt_availability_epoch'])
 
     def finish_no_research(self, sid, session, job, outcome):
         """Terminal for this session even when its separate availability report is stale.
@@ -852,7 +857,7 @@ class Runner:
             elif request['kind'] == 'organize':
                 self.enqueue('organizer', {}, key='operator:' + path.stem)
             elif request['kind'] == 'reconsider-attempts':
-                self.state['attempt_availability_epoch'] = self.state.get('attempt_availability_epoch', 0) + 1
+                self.state['attempt_availability_epoch'] += 1
                 probe = (self.state.get('attempt_dispatch_gate') or {}).get('probe_session')
                 if self.state['sessions'].get(probe, {}).get('status') not in ('starting', 'running', 'publishing'):
                     probe = None

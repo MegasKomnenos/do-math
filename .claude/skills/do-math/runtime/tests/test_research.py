@@ -102,7 +102,7 @@ class InstanceCase(unittest.TestCase):
                    {'id': eid, 'sequence': self.seq, 'kind': kind, 'folder': sub + '/' + eid})
 
     def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
-        """An operator publication of questions, the form the migration script writes."""
+        """An operator publication of questions: a questions event written outside the runner (reference/operations.md)."""
         self.seq += 1
         folder = self.instance / 'knowledge/questions' / eid
         folder.mkdir(parents=True)
@@ -730,6 +730,10 @@ class RunnerTests(InstanceCase):
         self.assertTrue(lease(a, 'root')['leased'])
         self.assertEqual(wait(b, 'root', timeout=0)['position'], 1)
         self.assertEqual(wait(c, 'root', timeout=0)['position'], 2)
+        # The board view shows who holds the node's lease and who waits, in order.
+        render(self.instance, replay(self.instance), board(self.instance), lease_table(self.instance))
+        self.assertIn('- root · lease: sa · waiting: sb, sc',
+                      (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
         first = take(a, 'root', 'For every n, b is nondecreasing for l < n - 2.', leased=True)
         self.assertTrue(first['registered'], first)
         sid_a = first['section']['id']
@@ -1438,6 +1442,9 @@ class RunnerTests(InstanceCase):
         for name, config in (('legacy', legacy), ('misspelled', misspelled), ('executable', executable)):
             with self.subTest(name), self.assertRaisesRegex(ValueError, 'unknown setting'):
                 validate(config)
+        role = defaults(); role['roles']['reviewer'] = role['roles'].pop('review')
+        with self.assertRaisesRegex(ValueError, r'unknown setting: roles\.reviewer'):
+            validate(role)
 
     def test_malformed_setting_structure_is_rejected_by_name(self):
         cli_path = defaults(); cli_path['cli']['codex'] = 5

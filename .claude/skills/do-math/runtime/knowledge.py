@@ -22,8 +22,7 @@ def canonical(model, node):
 ROOT_QUESTION = 'q0'
 ROOT_QUESTION_STATEMENT = 'The root problem itself, taken as a whole.'
 ROOT_QUESTION_GROUNDS = ('An explorer holding this question investigates the root proposition, its objects and the '
-                         'mathematics accumulated around them without a narrower focus. No explanation resolves it: it '
-                         'stays open until the root is formally proved or refuted, and that settlement resolves it.')
+                         'mathematics accumulated around them without a narrower focus.')
 
 
 def canonical_question(model, question):
@@ -406,7 +405,7 @@ def organization_event(model, event, folder):
             model['aliases'][source] = target
     for merge in data.get('merge_questions', []):
         source, target = canonical_question(model, merge['from']), canonical_question(model, merge['into'])
-        if source != target and ROOT_QUESTION not in (source, target):
+        if source != target:
             model['question_aliases'][source] = target
     for key in data.get('promote', []):
         key = next((primary for primary, member in model['global_terms'].items() if key in member['merged']), key)
@@ -563,7 +562,7 @@ def render(instance, model, board, leases=None):
             lines.append('')
     if model['question_proposals']:
         lines += ['## Question proposals review did not admit', '',
-                  'A proposal marked revise lacked specificity or clarity; its review feedback says what would make it a question. '
+                  'A proposal marked revise lacked specificity or clarity; the review reason beside it says what would make it a question. '
                   'A declined proposal duplicated an existing question or did not meet the bar of importance.', '']
         for item in model['question_proposals']:
             duplicate = f" (duplicate of {item['duplicate_of']})" if item.get('duplicate_of') else ''

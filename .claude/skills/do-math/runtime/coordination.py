@@ -546,7 +546,7 @@ def updates(session):
         state = read_json(instance / 'runner/state.json')
         rows = board(instance, state, model)
         snapshot = (retain_snapshot(session, availability_view(
-            model, rows, state.get('attempt_availability_epoch', 0)))
+            model, rows, state['attempt_availability_epoch']))
             if inp['role'] == 'attempt' else None)
     received = [read_json(p) for p in sorted((session / 'inbox').glob('*.json'))]
     availability = question_availability(instance, state, model, rows)

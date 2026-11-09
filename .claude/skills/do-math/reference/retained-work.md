@@ -49,7 +49,7 @@ The initial turn's prompt and CLI streams remain at the session root. Resumed tu
 
 ## Ending before research starts
 
-An attempt may read the research context and check the frontier and board, yet find no section it can take on. An explorer launched without an assigned question may find, after reading the frontier's questions and the board, that every open question is already held. That assessment does not itself begin research. To end a session in which you have only assessed availability and have registered no section or question, write this to `output/outcome.json`:
+An attempt may read the research context and check the frontier and board, yet find no section it can take on. An explorer launched without an assigned question may find, after reading the frontier's questions and the board, that every open question is already held. That assessment does not itself begin research. To end a session in which you have only assessed availability, have registered no section and occupy no question, write this to `output/outcome.json`:
 
 ```json
 {"disposition": "no_research"}

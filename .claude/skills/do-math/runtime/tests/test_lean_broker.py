@@ -1100,7 +1100,7 @@ class BuildTests(BrokerFixture):
         self.assertIn('REVIEW-TARGET',
                       (self.paths.job(target['job']) / 'stdout.log').read_text(encoding='utf-8'))
 
-        # Old entries without a manifest and entries missing an artifact are cache misses.
+        # An entry whose manifest was never published (its caching was cut short) and an entry missing an artifact are cache misses.
         for missing in ('.artifacts.json', '.olean.server'):
             with self.subTest(missing=missing):
                 (self.paths.cache / (basis['key'] + missing)).unlink()
@@ -1247,7 +1247,7 @@ class LauncherTests(BrokerFixture):
         self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"], True))
         self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"]))
         self.assertTrue(self.broker.calibration.entry(job["closure"])["direct"])  # and the table says so in words
-        self.assertIn("launcher", lean_broker.broker_status(self.paths))
+        self.assertTrue(lean_broker.broker_status(self.paths)["launcher"]["direct"])  # status names the mode in use
 
     def test_a_lake_that_fails_leaves_the_configured_command_in_force(self):
         self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)], env={"FAKE_LAKE_FAIL": "1"})
@@ -1434,9 +1434,14 @@ class ClientAndLifecycleTests(BrokerFixture):
             self.assertEqual(lean_broker.main(["wait", str(self.instance), build_id, "--timeout", "60"]), 0)
         self.assertIn("TARGET-D", out.getvalue())  # replayed from the cache: nothing was compiled again
         self.assertIn('"cached": true', err.getvalue())
+        out = io.StringIO()
         with contextlib.redirect_stdout(out):
             self.assertEqual(lean_broker.main(["result", str(self.instance), build_id]), 0)
-        self.assertIn("builds", json.dumps(lean_broker.broker_status(self.paths)))
+        record = json.loads(out.getvalue())
+        self.assertEqual((record["id"], record["status"]), (build_id, "finished"))
+        # status lists builds finished within the last ten minutes; the first build is long recorded in the state.
+        listed = {b["id"]: b["status"] for b in lean_broker.broker_status(self.paths)["builds"]}
+        self.assertEqual(listed.get(summary["build"]), "finished")
 
 
 if __name__ == "__main__":

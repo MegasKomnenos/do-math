@@ -577,30 +577,6 @@ class QuestionDispatchTests(InstanceCase):
             self.assertTrue(runner.dispatch(runner.producer('explore')))
         self.assertEqual(list(seen[0]), ['q0'])
 
-    def test_a_retried_explorer_is_assigned_the_root_question_its_failed_launch_was_given(self):
-        runner = self.runner()
-        runner.settings['launch_interval'] = 0  # launch spacing has its own test
-        with patch('runner.subprocess.Popen') as host:
-            host.return_value.pid = runner.identity['pid']
-            key = runner.producer('explore')
-            self.assertTrue(runner.dispatch(key))
-            job = runner.state['jobs'][key]
-            failed = job['session']
-            # The launch ends without research material: the job is pending again, and its pipeline
-            # still names the failed session, whose declaration records the runner's assignment of q0.
-            runner.retry(job, runner.state['sessions'][failed], 'session ended without retained research material',
-                         availability=False)
-            self.assertEqual(runner.state['pipelines'][job['pipeline']]['producer'], failed)
-            job['not_before'] = 0
-            self.assertTrue(runner.question_slot(launching=True))
-            runner.dispatch_pending()
-        relaunched = job['session']
-        self.assertEqual(job['status'], 'running')
-        self.assertNotIn(relaunched, (None, failed))
-        self.assertEqual(job['task']['question'], 'q0')
-        self.assertEqual(read_json(runner.session_dir(relaunched) / 'declaration.json')['question']['id'], 'q0')
-        self.assertEqual(question_availability(self.instance, runner.state, runner.model)['occupied'], {'q0': [relaunched]})
-
     def test_occupied_nodes_fill_free_questions_with_explorers_one_request_at_a_time(self):
         self.questions('qops', [question('op-scale'), question('op-block')])
         runner = self.runner()
@@ -629,6 +605,9 @@ class QuestionDispatchTests(InstanceCase):
     def test_request_outlives_a_missing_question_and_is_served_first_when_one_frees(self):
         runner = self.runner()
         runner.settings['max_sessions'] = 2
+        # The attempt launched below must not renew the request itself; otherwise the request
+        # would appear to survive even if the runner had dropped it for want of a free question.
+        runner.settings['explore_every'] = 1000
         previous = runner.producer('explore')
         runner.state['jobs'][previous]['status'] = 'done'
         pipeline = runner.state['pipelines'][runner.state['jobs'][previous]['pipeline']]

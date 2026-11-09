@@ -121,12 +121,13 @@ def read_imports(path):
     return sorted(imports)
 
 
-def closure_key(version, imports, direct=False):
-    """One key per (Lean version, import set, launch mode); a new Lean makes old baselines invisible.
+def closure_key(environment, imports, direct=False):
+    """One key per (environment identity, import set, launch mode); a new Lean or a changed
+    environment_key makes old baselines invisible. `environment` is Broker.environment_identity().
 
     A compile launched directly, without `lake env` in front of it, costs about a gigabyte
     less on this machine, so its baselines are kept apart from those measured through lake."""
-    text = (version or "") + "\n" + "\n".join(imports) + ("\ndirect" if direct else "")
+    text = environment + "\n" + "\n".join(imports) + ("\ndirect" if direct else "")
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
@@ -181,8 +182,8 @@ def discover_modules(root, targets):
     return [(name, modules[name]) for name in order]
 
 
-def module_keys(version, modules):
-    """The cache key of each module: Lean version, module name, source bytes and the keys of its local imports.
+def module_keys(environment, modules):
+    """The cache key of each module: environment identity (Broker.environment_identity()), module name, source bytes and the keys of its local imports.
 
     A change anywhere below a module changes its key, so a stale .olean can never be
     reached; the same bytes built by two sessions get the same key and the same .olean."""
@@ -191,7 +192,7 @@ def module_keys(version, modules):
         digest = hashlib.sha256()
         source_bytes = Path(module['source']).read_bytes()
         module['source_sha256'] = hashlib.sha256(source_bytes).hexdigest()
-        for part in [version or "", name, source_bytes] + [keys[d] for d in module["local"]]:
+        for part in [environment, name, source_bytes] + [keys[d] for d in module["local"]]:
             digest.update(part if isinstance(part, bytes) else part.encode("utf-8"))
             digest.update(b"\n")
         keys[name] = digest.hexdigest()[:32]
@@ -618,6 +619,10 @@ class Broker:
     def lean_env(self):
         return {**os.environ, **self.settings["lean"]["env"]}
 
+    def environment_identity(self):
+        """The Lean version and environment_key in one string: the environment that calibration closures and module cache keys belong to."""
+        return (self.state['version'] or '') + '\n' + self.state['environment_key']
+
     def runner_sessions(self):
         path = self.paths.instance / "runner/state.json"
         try:
@@ -694,7 +699,7 @@ class Broker:
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
                               and j["source"] == source and j["kind"] == "compile" and not j.get("build")
                               and source_hash is not None and j.get("source_sha256") == source_hash
-                              and j.get("environment_key") == self.state["environment_key"]), None)
+                              and j["environment_key"] == self.state["environment_key"]), None)
             if duplicate:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
                 if (job_dir / "CANCEL").exists():
@@ -735,12 +740,12 @@ class Broker:
         try:
             build["targets"] = [module_name(root, t) for t in targets]
             modules = discover_modules(root, targets)
-            keys = module_keys((self.state['version'] or '') + '\n' + self.state['environment_key'], modules)
+            keys = module_keys(self.environment_identity(), modules)
             build.update(module_keys=keys, fresh_targets=bool(request.get("fresh_targets")))
             duplicate = next((b for b in self.state["builds"].values() if b["status"] in ACTIVE
                               and b["session"] == session and b["root"] == root
-                              and b["targets"] == build["targets"] and b.get("module_keys") == keys
-                              and b.get("fresh_targets", False) == build["fresh_targets"]), None)
+                              and b["targets"] == build["targets"] and b["module_keys"] == keys
+                              and b["fresh_targets"] == build["fresh_targets"]), None)
             if duplicate:
                 write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
                 if (folder / "CANCEL").exists():
@@ -819,7 +824,7 @@ class Broker:
                 "source_sha256": source_sha256,
                 'lean_version': self.state['version'], 'environment_key': self.state['environment_key'],
                 "cwd": self.lean_cwd(session), "expect_mb": request["expect_mb"], "imports": imports,
-                "external": external, "closure": closure_key((self.state['version'] or '') + '\n' + self.state['environment_key'], external, self.direct is not None),
+                "external": external, "closure": closure_key(self.environment_identity(), external, self.direct is not None),
                 "threads": self.config["threads"], "submitted_at": request.get("submitted_at", time.time()),
                 "status": "queued", "waiting_for": None, "passed": 0, "started_at": None, "finished_at": None,
                 "host": None, "lean": None, "pid": None, "measured": None, "reserve": None,
@@ -859,6 +864,12 @@ class Broker:
             self.samples_dirty = True
 
     def collect(self):
+        # A host can end just after the poll that finished its job. Every ended host is reaped here,
+        # whatever became of its job, so that no Popen keeps a finished job's host process (a zombie
+        # on POSIX, an open handle on Windows) for the rest of the broker's life.
+        for job_id, host in list(self.hosts.items()):
+            if host.poll() is not None:
+                del self.hosts[job_id]
         for build in list(self.state["builds"].values()):
             if build["status"] in ACTIVE and (self.paths.build(build["id"]) / "CANCEL").exists():
                 build["cancel_requested"] = True
@@ -875,9 +886,6 @@ class Broker:
             if job["status"] != "running":
                 continue
             job_dir = self.paths.job(job_id)
-            host = self.hosts.get(job_id)
-            if host is not None and host.poll() is not None:
-                self.hosts.pop(job_id, None)
             receipt = job_dir / "process.json"
             if job.get("lean") is None and receipt.exists():
                 try:
@@ -971,7 +979,7 @@ class Broker:
         self.settle_build(build)
 
     def restore_module(self, key, olean):
-        """Restore every emitted file; an incomplete or old cache entry is a miss."""
+        """Restore every emitted file; an entry whose manifest was never published (its caching was cut short) or that lacks a listed file is a miss."""
         try:
             suffixes = read_json(self.paths.cache / (key + ".artifacts.json")).get("artifacts")
         except (OSError, ValueError, AttributeError):
@@ -1125,7 +1133,7 @@ class Broker:
         jobs = self.state["jobs"]
         queued = sorted((j for j in jobs.values() if j["status"] == "queued"),
                         key=lambda j: (j["kind"] != "calibration", j["submitted_at"]))
-        stale = [j for j in queued if j.get('environment_key', self.state['environment_key']) != self.state['environment_key']]
+        stale = [j for j in queued if j['environment_key'] != self.state['environment_key']]
         for job in stale:
             self.finish(job, {'exit_code': None, 'launch_error': 'Lean environment changed while queued; resubmit in the current environment'})
         queued = [j for j in queued if j['status'] == 'queued']
@@ -1147,7 +1155,7 @@ class Broker:
             if job["closure"] not in pending_calibration:
                 # Only the external imports are calibrated: a local module's .olean exists in no
                 # calibration, and its cost is small beside the library's and is measured as excess.
-                created = self.calibration_job(job["closure"], job.get("external", job["imports"]))
+                created = self.calibration_job(job["closure"], job["external"])
                 pending_calibration[job["closure"]] = created["id"]
                 queued.insert(0, created)
             job["waiting_for"] = pending_calibration[job["closure"]]

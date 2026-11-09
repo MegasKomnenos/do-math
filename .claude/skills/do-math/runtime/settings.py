@@ -44,6 +44,9 @@ def validate(raw):
         nested = raw.get(section, {})
         if isinstance(nested, dict):
             unknown += [section + '.' + key for key in nested if key not in known[section]]
+    if isinstance(raw.get('roles'), dict):
+        # Role lists are keyed by role name, so a misspelled role is an unknown setting as well.
+        unknown += ['roles.' + key for key in raw['roles'] if key not in ROLES]
     if unknown:
         # A misspelled or earlier-runtime key would otherwise leave its default silently in force.
         raise ValueError('unknown setting: ' + ', '.join(unknown))
@@ -57,8 +60,8 @@ def validate(raw):
         raise ValueError('max_end_resumptions must be a nonnegative integer')
     if value['retry_max_seconds'] < value['retry_seconds']:
         raise ValueError('retry_max_seconds must be at least retry_seconds')
-    if not isinstance(value['roles'], dict) or set(value['roles']) - set(ROLES):
-        raise ValueError('roles contains an unknown role')
+    if not isinstance(value['roles'], dict):
+        raise ValueError('roles must be an object')
     if not isinstance(value['mcp_servers'], dict) or not all(isinstance(k, str) and isinstance(v, dict) for k, v in value['mcp_servers'].items()):
         raise ValueError('mcp_servers must map explicit server names to configurations')
     for role in ROLES:

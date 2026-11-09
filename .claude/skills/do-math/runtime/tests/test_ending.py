@@ -227,6 +227,22 @@ class EndingTests(InstanceCase):
         self.assertEqual(s['status'], 'ended')
         self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
 
+    def test_output_limit_at_the_last_allowed_peer_turn_sends_its_candidate_to_review(self):
+        engine, sid, directory = self.prepare_claude(maximum=1, role='peer', config={'output_limit_at': [0, 1]})
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        s.update(host=None, cli=None)
+        self.assertEqual(s['exit_code'], 1)
+        engine.finish(sid, s)
+        # The host's own end authorization is not an interruption: the candidate is frozen for
+        # review instead of the stage being handed to a replacement peer.
+        pipeline = engine.state['jobs'][s['job']]['pipeline']
+        self.assertEqual(s['status'], 'ended')
+        self.assertEqual(engine.state['pipelines'][pipeline]['stage'], 'review')
+        self.assertTrue((directory / 'candidate/record.json').is_file())
+
     def test_output_limit_is_resumable_only_for_the_claude_stream(self):
         _, _, directory = self.prepare(config={'output_limit_at': [0]})
         state = self.run_host(directory)

@@ -18,7 +18,7 @@ IDs use letters, digits, `_` and `-`, beginning with a letter or digit. Claim ID
 
 Use existing node IDs where the precise statement is already on the frontier. A proposed node has `id`, `statement`, and `connection`, the claim ID that establishes its connection to the research.
 
-For a new proposal, prefix a short local label with your peer session ID and a hyphen, for example `<your-session-id>-quotient-bound`. Your session ID is supplied in `input.json` and the launch context. Use the resulting full ID consistently in the candidate's relations and solutions. The runner gives each peer a unique session directory, and proposal IDs must also be unique within that peer's candidate. This keeps concurrent peers' identifiers distinct while their candidates are frozen for review; the output check rejects a proposal using another namespace before it can be frozen.
+For a new proposal, prefix a short local label with your peer session ID and a hyphen, for example `<your-session-id>-quotient-bound`. Your session ID is supplied in `input.json` and the launch context. Use the resulting full ID consistently in the candidate's relations and solutions. The runner gives each peer a unique session directory, and proposal IDs must also be unique within that peer's candidate. This keeps concurrent peers' identifiers distinct while their candidates are frozen for review; the transport check rejects a proposal using another namespace before it can be frozen.
 
 Review still compares statements and definitions. It may admit the proposal, identify it with an existing node, or decline it. A distinct technical ID does not establish a distinct mathematical proposition. Speculative statements stay in the exposition and do not need node proposals.
 

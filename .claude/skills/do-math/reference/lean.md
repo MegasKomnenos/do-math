@@ -18,7 +18,7 @@ Of the two, it is the private memory that has to be managed. The shared library 
 
 ## The Lean broker
 
-To prevent that, each instance runs a single process called the Lean broker, and every compile in the instance goes through it. The runner starts the broker when it starts and keeps it running for as long as the runner itself runs. A session does not run Lean itself; it asks the broker to compile a file, and the broker decides when to start that compile, runs it, and hands the result back.
+To prevent that, each instance runs a single process called the Lean broker, and every compile in the instance goes through it. The runner starts the broker, a session that finds none running starts one itself, and the broker keeps running when the runner exits or restarts, as explained under How the broker lives and recovers below. A session does not run Lean itself; it asks the broker to compile a file, and the broker decides when to start that compile, runs it, and hands the result back.
 
 Because the broker sees every compile of the instance, it can do several things that no session could do on its own.
 
