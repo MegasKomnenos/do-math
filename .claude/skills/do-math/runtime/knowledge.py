@@ -461,7 +461,7 @@ def formal_ready(model, proof):
 
 
 def root_solved(model):
-    return model['nodes'][canonical(model, 'root')]['state'] in ('formal_proved', 'formal_refuted')
+    return root_settlement(model) is not None
 
 
 def escape(text):

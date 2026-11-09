@@ -84,7 +84,9 @@ class ViewTests(InstanceCase):
         base = self.instance / 'knowledge'
         self.assertEqual(knowledge.read_json(base / 'state.json'), model)
         for name in ('frontier.md', 'glossary.md', 'index.md', 'board.md', 'index/a.md', 'index/b.md'):
-            self.assertIn(str(model['sequence']), (base / name).read_text(encoding='utf-8'))
+            # The frontier heads its revision line differently from the other views.
+            label = 'Revision' if name == 'frontier.md' else 'Research revision'
+            self.assertIn(f"{label}: {model['sequence']}\n", (base / name).read_text(encoding='utf-8'))
         for name in ('a', 'b'):
             module = (base / 'index' / (name + '.md')).read_text(encoding='utf-8')
             self.assertIn('Full reading guidance.', module)

@@ -8,7 +8,7 @@ What you write is read by later sessions and, in the end, by the user who runs t
 
 ## Develop the explanation around the reader's work
 
-Before drafting a passage, decide what its reader needs to understand and why. An exposition may need to show how a construction leads to a theorem. A review may need to explain exactly why one argument fails while another result survives. A module description may need only to tell a researcher whether the group concerns its work. Those purposes require different explanations and different lengths.
+Before drafting a passage, decide what its reader needs to understand and why. An exposition may need to show how a construction leads to a theorem. A review may need to explain exactly why one argument fails while another result survives. A glossary entry may need only the complete definition with its domains and conditions. Those purposes require different explanations and different lengths.
 
 Establish the subject before reasoning about it. Define an object before using a special property of that object, state the claim before assessing its proof, and explain a proposed correspondence before transferring results across it. Arrange the sections in the order a new reader needs those ideas. Your discovery chronology belongs in the retained evidence where useful; the exposition can arrange the resulting mathematics more clearly.
 
@@ -40,7 +40,7 @@ Develop the contributions and obstacles that change the next researcher's unders
 
 Descriptions used by the index introduce the whole contribution. Include an important failed route or restriction when leaving it out would make a partial result look like a solution. Conversely, a record with a failed main approach can contain valuable identities and exact obstructions. Describe those contributions so the next reader can recognize their relevance.
 
-A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research: what the area covers, what has been established and how the contributions relate, and where the area still resists. Those texts serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
+A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research, as the common introduction and the organizer's guide describe. Those texts serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
 
 ## Read back what you are handing on
 

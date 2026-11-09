@@ -24,15 +24,15 @@ Write each module's description the way such a section would be written. Say wha
 
 A record may appear in several modules. All placements refer to the same immutable record and description, accompanied by the same review and later annotations. Change the organization as the research develops, and weigh merging as seriously as splitting. An area that has grown to contain genuinely different questions may need to be split. Modules that turn out to treat the same difficulty under different names should usually be merged, so that the difficulty is described in one place.
 
-Select shared-context records for the general index when a new session benefits from knowing those contributions exist. Newly published records appear immediately as unfiled until placed. Shared context is a deliberate choice; unfiled is pending organization. Supply the complete intended module layout and shared-context selection in your output so the runner can render them consistently.
+Select shared-context records for the general index when a new session benefits from knowing those contributions exist. Supply the complete intended module layout and shared-context selection in your output so the runner can render them consistently.
 
 ## Maintain useful shared terminology
 
 Every session receives the full global glossary. A shared name can connect results across sessions, but an unnecessary entry consumes context for every reader. Consider what the term enables later work to express and whether existing names or expressions already serve that purpose. Importance within one proof is not by itself the need for a permanent shared name.
 
-When a record is published with its local glossary approved by review, globally flagged definitions enter the global glossary as usable candidates. You may promote a candidate permanently or refuse it and remove it from the current global glossary. Consider actual mathematical use during the candidate period; inclusion in startup contexts is not evidence that the term was useful. You may also promote suitable published local entries that were never flagged, including previously refused ones.
+The common introduction explains how flagged terms enter the global glossary as candidates and what promotion and refusal do. In deciding between them, consider actual mathematical use during the candidate period; inclusion in startup contexts is not evidence that the term was useful. The same consideration applies to a published local entry that was never flagged or was refused earlier, which you may also promote.
 
-Once promoted, membership is permanent. Equivalent entries can be merged by retaining one primary definition and appending the other names and symbols as aliases. Confirm identity across domains, values, boundary conventions and normalization before merging. New writing uses the primary name; aliases interpret existing records. A merge does not rewrite the primary definition or the source record's local glossary.
+Equivalent entries can be merged by retaining one primary definition and appending the other names and symbols as aliases. Confirm identity across domains, values, boundary conventions and normalization before merging. A merge does not rewrite the primary definition or the source record's local glossary.
 
 The glossary's definition comes from its published local source. Its source link leads readers to proofs and further properties. Keep broader research interpretation in those records and their organization. This preserves mathematical meaning while allowing the common vocabulary to become easier to use.
 

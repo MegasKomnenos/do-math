@@ -896,7 +896,12 @@ class Broker:
             if (job_dir / "exit.json").exists():
                 self.finish(job, read_json(job_dir / "exit.json"))
             elif not alive(job.get("host")) and not alive(job.get("lean")):
-                self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
+                # The host writes exit.json just before it ends, so the exit may have appeared since the
+                # check above; only a host that ended without one fails the job.
+                if (job_dir / "exit.json").exists():
+                    self.finish(job, read_json(job_dir / "exit.json"))
+                else:
+                    self.finish(job, {"exit_code": None, "launch_error": "the job host ended without recording an exit"})
 
     def finish(self, job, exit_info):
         now = exit_info.get("finished_at") or time.time()
@@ -914,14 +919,16 @@ class Broker:
                         "environment_key": job["environment_key"], "direct": job["direct"]}
             if job["exit_code"] == 0:
                 self.calibration.record_baseline(job["closure"], identity, measured["peak_mb"], measured["seconds"])
-            elif job["exit_code"] is not None and not job.get("cancel_requested"):
+            elif job["exit_code"] is not None and 0 < job["exit_code"] < 2 ** 31 and not job.get("cancel_requested"):
                 # Lean ran and rejected the imports: a verdict on the closure, kept until the Lean changes.
                 self.calibration.record_failure(job["closure"], identity, job["exit_code"],
                                                 "the calibration compile failed; see its stdout.log")
             else:
-                # A launch error or a cancellation records nothing, so the next compile calibrates again.
+                # A launch error, a cancellation or a crash records nothing, so the next compile calibrates
+                # again. A crash is a negative code (a POSIX signal) or a Windows code of 2**31 and above
+                # (0xC0000005 and the like): an execution failure, not Lean's verdict on the imports.
                 # The compiles that waited for this one go ahead on their own estimates rather than
-                # wait for another calibration that would fail the same way.
+                # wait for another calibration that might fail the same way.
                 for waiting in self.state["jobs"].values():
                     if waiting["status"] == "queued" and waiting.get("waiting_for") == job["id"]:
                         waiting["uncalibrated"] = job["id"]
@@ -1122,6 +1129,12 @@ class Broker:
         for job in stale:
             self.finish(job, {'exit_code': None, 'launch_error': 'Lean environment changed while queued; resubmit in the current environment'})
         queued = [j for j in queued if j['status'] == 'queued']
+        for job in queued:
+            # A queued compile starts with the lean.threads in force, as it does with the priority;
+            # a running one keeps the threads it started with (reference/lean.md, Settings).
+            if job["kind"] == "compile" and job["threads"] != self.config["threads"]:
+                job["threads"] = self.config["threads"]
+                self.dirty = True
         running = [j for j in jobs.values() if j["status"] == "running"]
         if not queued:
             return

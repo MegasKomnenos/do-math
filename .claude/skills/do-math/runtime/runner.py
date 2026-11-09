@@ -195,9 +195,8 @@ class Runner:
             # One spacing for both roles: the next attempt or exploration waits for launch_interval.
             self.state['last_launch'] = time.time()
         if job['role'] == 'attempt':
-            # Every explore_every-th attempt launch requests an exploration. Instances created before
-            # this counter existed start it at zero.
-            self.state['attempt_launches'] = self.state.get('attempt_launches', 0) + 1
+            # Every explore_every-th attempt launch requests an exploration.
+            self.state['attempt_launches'] += 1
             if self.state['attempt_launches'] % self.settings['explore_every'] == 0:
                 self.state['explore_requested'] = True
             gate = self.state.get('attempt_dispatch_gate')
@@ -728,16 +727,16 @@ class Runner:
             rows = [row for row in rows if row['pipeline'] not in pending]
         return question_availability(self.instance, self.state, self.model, rows)
 
-    def question_slot(self, exclude_job=None):
+    def question_slot(self, launching=False):
         """Whether one more explorer could still find a question of its own.
 
         Explorers whose pipelines hold no question yet are choosing among the free questions. With
-        exclude_job, a pending exploration is being launched, and every pending exploration's
+        launching, a pending exploration is being launched, and every pending exploration's
         pipeline is left out of the count (question_view): each waiting job is decided on its own
         pass, against the questions the launches before it leave free, and the one launched becomes
         a producing row that the next pass counts. Without a job to dispatch, waiting jobs count, so
         that schedule() does not create another exploration for a question a waiting one will take."""
-        view = self.question_view(launching=exclude_job is not None)
+        view = self.question_view(launching=launching)
         return len(view['free']) > len(view['choosing'])
 
     def dispatch_pending(self):
@@ -752,7 +751,7 @@ class Runner:
                 changed = True
                 continue
             if job['role'] == 'explore' and (not self.launch_due()
-                                             or not self.question_slot(exclude_job=job['id'])):
+                                             or not self.question_slot(launching=True)):
                 continue
             if job['role'] == 'formalizer':
                 node = self.model['nodes'][canonical(self.model, job['task']['node'])]

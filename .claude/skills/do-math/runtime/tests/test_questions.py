@@ -592,7 +592,7 @@ class QuestionDispatchTests(InstanceCase):
                          availability=False)
             self.assertEqual(runner.state['pipelines'][job['pipeline']]['producer'], failed)
             job['not_before'] = 0
-            self.assertTrue(runner.question_slot(exclude_job=key))
+            self.assertTrue(runner.question_slot(launching=True))
             runner.dispatch_pending()
         relaunched = job['session']
         self.assertEqual(job['status'], 'running')
@@ -677,7 +677,7 @@ class QuestionDispatchTests(InstanceCase):
         self.assertEqual((job['status'], session['status']), ('pending', 'failed'))
         job['not_before'] = 0
         runner.state['blocks'].clear()
-        self.assertTrue(runner.question_slot(exclude_job=job['id']))
+        self.assertTrue(runner.question_slot(launching=True))
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']
             runner.dispatch_pending()
@@ -692,7 +692,7 @@ class QuestionDispatchTests(InstanceCase):
         # Two explorations wait to launch and the root question is the only free one. Each job is
         # decided against the launches before it, not against the other waiting job; otherwise
         # both would yield and q0 would stay free with the request in force.
-        self.assertTrue(runner.question_slot(exclude_job=first))
+        self.assertTrue(runner.question_slot(launching=True))
         self.assertFalse(runner.question_slot())
         with patch('runner.subprocess.Popen') as host:
             host.return_value.pid = runner.identity['pid']

@@ -679,6 +679,18 @@ class BrokerTests(BrokerFixture):
         self.assertEqual((job["status"], job["exit_code"]), ("failed", None))
         self.assertTrue(job["launch_error"])
 
+    def test_crashed_calibration_is_not_a_verdict_on_its_imports(self):
+        # Lean rejecting the imports is recorded for the closure. A calibration ended by a signal or by a
+        # Windows crash code failed to execute, so the next compile with those imports calibrates again.
+        self.start_broker()
+        for code, verdict in ((1, True), (-9, False), (0xC0000005, False)):
+            with self.subTest(code=code):
+                job = self.broker.calibration_job(f"closure{code}", ["Mathlib.Data.Nat.Basic"])
+                job.update(status="running", started_at=time.time())
+                self.broker.finish(job, {"exit_code": code})
+                self.assertEqual(job["status"], "finished")
+                self.assertEqual(self.broker.calibration.known(job["closure"]), verdict)
+
     def test_failed_and_cancelled_jobs_report_their_own_exit_codes(self):
         self.start_broker()
         self.broker.config["cpu_threads_budget"] = 1
@@ -706,10 +718,30 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running" and self.broker.state["jobs"][job_id].get("pid"))
         job = self.broker.state["jobs"][job_id]
         lean_broker.terminate_tree(job["host"]["pid"])  # the host and its Lean, with no exit.json written
-        self.until(lambda: self.finished(job_id))
+        # Lean sleeps for 30 seconds: the job ends within 20 only if terminating the host reached its child.
+        self.until(lambda: self.finished(job_id), limit=20)
         self.assertEqual(job["status"], "failed")
         self.assertIn("without recording an exit", job["reason"])
         self.assertFalse((self.paths.job(job_id) / "exit.json").exists())
+
+    def test_exit_written_as_the_host_ends_is_not_lost(self):
+        # The host writes exit.json and then ends. A broker that finds no exit.json and then no live host
+        # may have looked between the two, so it must look for the exit once more before failing the job.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1", exit=5), expect_mb=40)
+        self.until(lambda: self.broker.state["jobs"][job_id]["status"] == "running")
+        job = self.broker.state["jobs"][job_id]
+        exit_file = self.paths.job(job_id) / "exit.json"
+        aside = exit_file.with_name("exit.aside")
+        self.wait_gone(job["host"], limit=30)
+        exit_file.replace(aside)  # the folder as the broker saw it just before the host wrote its exit
+        def host_ended_meanwhile(identity):
+            if identity == job["host"] and aside.exists():
+                aside.replace(exit_file)
+            return runner.alive(identity)
+        with patch.object(lean_broker, "alive", side_effect=host_ended_meanwhile):
+            self.broker.tick()
+        self.assertEqual((job["status"], job["exit_code"]), ("finished", 5))
 
     def test_finished_jobs_are_pruned_from_the_state_but_keep_their_results(self):
         self.start_broker()
@@ -829,6 +861,20 @@ class BrokerTests(BrokerFixture):
             self.assertEqual(self.jobs("running"), [])
         self.broker.config["min_free_memory_mb"] = 0
         self.until(lambda: self.finished(job_id))
+
+    def test_queued_compile_starts_with_the_threads_in_force(self):
+        # A change of lean.threads reaches a compile that is still queued, as a change of priority does.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+            self.assertEqual(self.broker.state["jobs"][job_id]["status"], "queued")
+            time.sleep(0.02)
+            self.write_settings(threads=3)
+            self.broker.tick()
+            self.assertEqual(self.jobs("running"), [])
+        self.until(lambda: self.finished(job_id))
+        self.assertIn("--threads=3", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
 
     def test_submission_requires_estimate_session_and_existing_file(self):
         with patch.object(lean_broker, "ensure_broker", return_value={}):

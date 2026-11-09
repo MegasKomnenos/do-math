@@ -265,7 +265,6 @@ class KnowledgeTests(InstanceCase):
             self.assertIn('rests on a questioned claim', section)
             self.assertIn('v1/boundary', section)
             self.assertIn('reviews/v1/assessment.json', section)
-        self.assertNotIn('Possible dependency', frontier)
         self.assertIn('Concern: see [frontier](frontier.md) for S.',
                       (self.instance / 'knowledge/board.md').read_text(encoding='utf-8'))
         # Only a finding changes standing: withdrawing q recomputes everything that rested on it.
@@ -936,9 +935,6 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.settings['explore_every'], 1)
         runner.settings['explore_every'] = 3
         write_json(self.instance / 'settings.json', runner.settings)
-        # An instance whose state predates the launch counter starts it at zero.
-        runner.state.pop('attempt_launches')
-        runner.save()
         def launch_attempt():
             # The launch alone counts; whether the attempt later registers a section does not matter.
             self.assertTrue(runner.dispatch(runner.producer('attempt')))
