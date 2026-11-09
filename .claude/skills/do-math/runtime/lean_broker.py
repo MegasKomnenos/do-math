@@ -1131,8 +1131,9 @@ class Broker:
     def schedule(self):
         """First fit in submission order, with aging: a job passed `max_passes` times closes the queue behind it."""
         jobs = self.state["jobs"]
-        queued = sorted((j for j in jobs.values() if j["status"] == "queued"),
-                        key=lambda j: (j["kind"] != "calibration", j["submitted_at"]))
+        def order(job):
+            return job["kind"] != "calibration", job["submitted_at"]
+        queued = sorted((j for j in jobs.values() if j["status"] == "queued"), key=order)
         stale = [j for j in queued if j['environment_key'] != self.state['environment_key']]
         for job in stale:
             self.finish(job, {'exit_code': None, 'launch_error': 'Lean environment changed while queued; resubmit in the current environment'})
@@ -1148,6 +1149,7 @@ class Broker:
             return
         pending_calibration = {j["closure"]: j["id"] for j in jobs.values()
                                if j["kind"] == "calibration" and j["status"] in ACTIVE}
+        created = []
         for job in queued:
             if job["kind"] != "compile" or self.calibration.known(job["closure"]) or job.get("uncalibrated"):
                 job["waiting_for"] = None
@@ -1155,10 +1157,13 @@ class Broker:
             if job["closure"] not in pending_calibration:
                 # Only the external imports are calibrated: a local module's .olean exists in no
                 # calibration, and its cost is small beside the library's and is measured as excess.
-                created = self.calibration_job(job["closure"], job["external"])
-                pending_calibration[job["closure"]] = created["id"]
-                queued.insert(0, created)
+                calibration = self.calibration_job(job["closure"], job["external"])
+                pending_calibration[job["closure"]] = calibration["id"]
+                created.append(calibration)
             job["waiting_for"] = pending_calibration[job["closure"]]
+        # Calibrations created here join the queue in creation order, behind those already waiting,
+        # as they will on the next tick.
+        queued = sorted(queued + created, key=order)
         eligible = [j for j in queued if not j.get("waiting_for") and self.deps_done(j)]
         if not eligible:
             return
@@ -1244,7 +1249,8 @@ class Broker:
         A running job is followed by identity and its exit read from the job host,
         never relaunched. A job whose host never received GO has not started Lean:
         its host exits on CANCEL and the job goes back to the queue."""
-        for job_id, job in self.state["jobs"].items():
+        # A copy: finishing a job below can prune older finished jobs from the state.
+        for job_id, job in list(self.state["jobs"].items()):
             if job["status"] != "running":
                 continue
             job_dir = self.paths.job(job_id)

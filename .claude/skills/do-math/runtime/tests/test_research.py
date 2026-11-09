@@ -1376,21 +1376,32 @@ class RunnerTests(InstanceCase):
 
     def test_restart_broker_admits_sessions_held_behind_stop(self):
         runner = self.runner()
-        (self.instance / 'control/STOP').touch()
         for sid in ('sheld', 'sturn'):
             runner.state['sessions'][sid] = {'id': sid, 'role': 'attempt', 'status': 'running', 'cli': None}
             runner.session_dir(sid).mkdir(parents=True, exist_ok=True)
         write_json(runner.session_dir('sheld') / 'end-check.json', {'status': 'waiting_dispatch'})
         runner.save()
-        idle = {'queued': 0, 'running': 0, 'broker_alive': False}
-        with patch('lean_broker.broker_status', return_value=idle), \
-                patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
-                patch('builtins.print') as shown:
-            # A session without a held turn is still an active turn and blocks replacement.
+        # The broker's own state file, which broker_status reads; no broker process is alive.
+        compiles = self.instance / 'runner/lean/state.json'
+        compiles.parent.mkdir(parents=True, exist_ok=True)
+        write_json(compiles, {'jobs': {'jrun': {'id': 'jrun', 'status': 'running', 'session': 'sheld'}}})
+
+        def refused(reason):
             self.assertEqual(main(['restart-broker', str(self.instance)]), 1)
-            start.assert_not_called()
+            self.assertIn(reason, json.loads(shown.call_args.args[0])['error'])
+
+        with patch('lean_broker.ensure_broker', return_value={'started': True}) as start, \
+                patch('builtins.print') as shown:
+            refused('stop new dispatch')
+            (self.instance / 'control/STOP').touch()
+            # A session without a held turn is still an active turn and blocks replacement.
+            refused('let active CLI turns finish')
             runner.state['sessions']['sturn']['status'] = 'ended'
             runner.save()
+            # A compile still running blocks it as well.
+            refused('Lean jobs')
+            start.assert_not_called()
+            write_json(compiles, {'jobs': {}})
             self.assertEqual(main(['restart-broker', str(self.instance)]), 0)
         start.assert_called_once()
         self.assertEqual(json.loads(shown.call_args.args[0])['held_sessions'], ['sheld'])

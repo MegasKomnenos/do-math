@@ -574,9 +574,6 @@ class Runner:
                 if s.get('end_check') != current:
                     s['end_check'] = current
                     self.save()
-            child = self.hosts.get(sid)
-            if child is not None and child.poll() is not None:
-                del self.hosts[sid]
             if not (session / 'GO').exists():
                 (session / 'CANCEL').touch()
             receipt = session / 'process.json'
@@ -587,6 +584,11 @@ class Runner:
                     self.save()
             if alive(s.get('host')) or alive(s.get('cli')):
                 continue
+            # The host has exited, so this poll reaps it. finish() takes the session off the active
+            # list, after which no later pass would poll its host again.
+            child = self.hosts.pop(sid, None)
+            if child is not None:
+                child.poll()
             exit_file = session / 'exit.json'
             if exit_file.exists():
                 s.update(read_json(exit_file))
@@ -850,9 +852,9 @@ class Runner:
                 continue
             request = read_json(path)
             if request['kind'] == 'review':
-                task = {'kind': 'comprehensive', 'concerns': request.get('concerns', []), 'conflicts': [],
-                        'requested_records': request.get('records', []), 'requested_nodes': request.get('nodes', []),
-                        'purpose': request.get('reason', 'Operator requested a renewed independent assessment.')}
+                task = {'kind': 'comprehensive', 'concerns': request['concerns'], 'conflicts': [],
+                        'requested_records': request['records'], 'requested_nodes': request['nodes'],
+                        'purpose': request['reason']}
                 self.enqueue('review', task, key='operator:' + path.stem)
             elif request['kind'] == 'organize':
                 self.enqueue('organizer', {}, key='operator:' + path.stem)

@@ -306,12 +306,7 @@ class PublicationTests(InstanceCase):
         verdict['claims'][0].update(status='unsupported', reason='The argument does not establish the claim.')
         verdict['solutions'][0].update(level='none', reason='No solution established.')
         write_json(session / 'output/assessment.json', verdict)
-        write_json(session / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
-                                           'role': 'review', 'task': job['task']})
-        (session / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
-        (session / 'cli.stderr.log').write_text('', encoding='utf-8')
         reviewer = runner.state['sessions']['sreview']
-        reviewer.update(provider='codex', model='codex/gpt-6.1-sol', started_at=1)
         runner.finish('sreview', reviewer)
         self.assertEqual((reviewer['status'], job['status'], pipeline['stage']),
                          ('integrated', 'done', 'done'))

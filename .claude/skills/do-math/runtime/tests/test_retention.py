@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -72,6 +73,38 @@ class ArchiveTests(unittest.TestCase):
                 archive_work(session)
             self.assertEqual((work / 'notes.md').read_bytes(), b'Work absent from the existing archive')
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
+
+    def test_linked_work_is_refused_and_left_in_place(self):
+        # A link leads outside the session. Archiving through it and then removing work/ would
+        # record or remove files the session does not own, so both forms of link are refused.
+        def link(path, target):
+            try:
+                os.symlink(target, path, target_is_directory=True)
+            except OSError:
+                if os.name != 'nt':
+                    raise
+                # Without the symlink privilege, a junction is the directory link Windows allows.
+                subprocess.run(['cmd', '/c', 'mklink', '/J', str(path), str(target)],
+                               check=True, capture_output=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            outside = Path(tmp) / 'outside'
+            outside.mkdir()
+            (outside / 'shared.md').write_bytes(b'Mathematics outside the session')
+            inner = Path(tmp) / 'inner'
+            (inner / 'work').mkdir(parents=True)
+            (inner / 'work/notes.md').write_bytes(b'Original mathematics')
+            link(inner / 'work/linked', outside)
+            whole = Path(tmp) / 'whole'
+            whole.mkdir()
+            link(whole / 'work', outside)
+            for session, message in ((inner, 'contains a link'), (whole, 'inside its session directory')):
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(ValueError, message):
+                        archive_work(session)
+                    self.assertFalse((session / 'work.tar.xz').exists())
+                    self.assertFalse((session / 'work.tar.xz.part').exists())
+            self.assertEqual((inner / 'work/notes.md').read_bytes(), b'Original mathematics')
+            self.assertEqual((outside / 'shared.md').read_bytes(), b'Mathematics outside the session')
 
 
 class RetentionTests(unittest.TestCase):

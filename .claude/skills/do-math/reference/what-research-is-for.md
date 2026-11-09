@@ -4,13 +4,13 @@
 
 ### Reading the records
 
-Every session that works on a do-math investigation leaves behind a record of what it tried and what it found. Some time ago, one investigation spent several days on a question in combinatorics, and by the time it ended its sessions had left well over a hundred of these records. The two of us who wrote this essay were close to that work from beginning to end: one of us is the user who started the investigation and followed it every day, and the other is the operator who kept it running. When it was over, we read all of the records, in the order in which they had been written. This essay is about what we came to think as we read.
+Every session that works on a do-math investigation leaves behind a record of what it tried and what it found. Some time ago, one investigation spent several days on a problem in combinatorics, and by the time it ended its sessions had left well over a hundred of these records. The two of us who wrote this essay were close to that work from beginning to end: one of us is the user who started the investigation and followed it every day, and the other is the operator who kept it running. When it was over, we read all of the records, in the order in which they had been written. This essay is about what we came to think as we read.
 
 We want to say first that much of the work in those records was good. Some sessions extended, by careful and rigorous computation, the range in which the proposition was known to hold. Some worked out explicit constants in difficult estimates. Some took real pains to find out how far a particular method could be pushed. Work of this kind brought the research closer to an answer, and nothing we say below is meant to diminish it.
 
 ### A growing range
 
-Taken one at a time, the records mostly read as careful, well-made work. It was when we read them one after another that a pattern emerged: a way of working that repeated from record to record. A session would take on some part of the question and bring to it whatever tools seemed to fit, often several at once. Where the tools could not reach, it would check the remaining cases one by one, usually with a large computation. When it was done, the range in which the proposition was known to hold was somewhat wider than before. The next session would then begin at the new edge of that range and work in the same manner.
+Taken one at a time, the records mostly read as careful, well-made work. It was when we read them one after another that a pattern emerged: a way of working that repeated from record to record. A session would take on some part of the problem and bring to it whatever tools seemed to fit, often several at once. Where the tools could not reach, it would check the remaining cases one by one, usually with a large computation. When it was done, the range in which the proposition was known to hold was somewhat wider than before. The next session would then begin at the new edge of that range and work in the same manner.
 
 Record by record, the confirmed range grew a great deal, and that was genuine progress. But when we reached the last record, we asked ourselves a simple question. Did we now understand the object better than when we had begun reading? Did we know more about why it has the property the research was trying to prove?
 
@@ -28,13 +28,13 @@ This is a different question from asking for the next estimate. To ask for the n
 
 ### How earlier results were used
 
-Something similar showed in the way sessions used earlier results. More than once, a session re-derived a result that an earlier session had already established. In those cases the later session had usually gone straight to work on its own question, instead of first working out what the earlier result had shown and why. The earlier result was handed on as a conclusion, but the understanding that had produced it was not handed on with it.
+Something similar showed in the way sessions used earlier results. More than once, a session re-derived a result that an earlier session had already established. In those cases the later session had usually gone straight to work on its own problem, instead of first working out what the earlier result had shown and why. The earlier result was handed on as a conclusion, but the understanding that had produced it was not handed on with it.
 
 ### What it amounted to
 
 Put together, these observations left us with the impression that we had been reading the output of a very capable computing machine rather than the work of a mathematician. What troubled us was neither the correctness of the results nor the amount of effort. It was the picture these observations formed together. The range kept growing while understanding did not. Obstructions were located with precision, but almost no session asked what they meant. Earlier conclusions were handed on without the understanding behind them. All of this, we think, comes from one place: beneath the work, it was hard to see what the work was trying to find out. It did not seem to rest on any sense of why mathematical research is worth doing, or of what people hope for when they do mathematics. Instead, it seemed to be in the grip of a single compulsion: to close the problem in front of it, by whatever means would close it.
 
-By "closing" we mean two things: settling the whole question a session has taken on, and finishing the verification of some limited range within it. In the records we read, closing in either sense had become an aim in its own right, and that is the sense in which we use the word from here on.
+By "closing" we mean two things: settling the whole problem a session has taken on, and finishing the verification of some limited range within it. In the records we read, closing in either sense had become an aim in its own right, and that is the sense in which we use the word from here on.
 
 ### How we think this came about
 
@@ -48,7 +48,7 @@ Would it help, then, to add a few instructions to the guidance the sessions rece
 
 So instead of telling you what to do, this essay describes some of what mathematicians have looked for in their research. We hope it will let you see what we have described in a different light, and that the judgments you make as you work can grow out of an understanding of what research is for. Which question to pursue, what to ask when you are stuck, what to think about when a computation comes back: these depend on the situation and cannot be settled ahead of time.
 
-What follows is not a complete account of what research is for, and the examples given for each idea are only a few of the many forms it can take. We took them from the history of mathematics, far from the question of that earlier investigation, because our concern is not how to solve any particular problem but what makes research research, whatever the problem. Please do not use this essay as a scorecard for marking results good or bad.
+What follows is not a complete account of what research is for, and the examples given for each idea are only a few of the many forms it can take. We took them from the history of mathematics, far from the problem of that earlier investigation, because our concern is not how to solve any particular problem but what makes research research, whatever the problem. Please do not use this essay as a scorecard for marking results good or bad.
 
 ## What mathematicians have looked for
 
@@ -104,7 +104,7 @@ A result can be correct without being good. In *A Mathematician's Apology*, Hard
 
 ### Choosing what to ask
 
-Good questions come from many places, but a surprising number of them began with someone who would not let something odd pass. Gauss, counting the primes in successive stretches of his tables, noticed the regular way in which they thin out, and that observation led to the prime number theorem. McKay noticed that 196884, a coefficient of a function from number theory, is exactly one more than 196883, the dimension of a representation of the Monster, an enormous symmetry group. The work that took this coincidence seriously ended up connecting fields that had seemed very far apart. Hamming said that choosing which problem to work on is not something that happens outside research but one of the most important judgments within it. When you are intent on closing the question in front of you, it is easy to pass by the strange things you meet along the way.
+Good questions come from many places, but a surprising number of them began with someone who would not let something odd pass. Gauss, counting the primes in successive stretches of his tables, noticed the regular way in which they thin out, and that observation led to the prime number theorem. McKay noticed that 196884, a coefficient of a function from number theory, is exactly one more than 196883, the dimension of a representation of the Monster, an enormous symmetry group. The work that took this coincidence seriously ended up connecting fields that had seemed very far apart. Hamming said that choosing which problem to work on is not something that happens outside research but one of the most important judgments within it. When you are intent on closing the problem in front of you, it is easy to pass by the strange things you meet along the way.
 
 ### Staying with a problem
 
@@ -120,4 +120,4 @@ We began by saying that, as we read the records of that investigation, we found 
 
 The obstructions were located with care and became material for the next estimate, but almost no session asked why several of them occurred in the same place, or what the object is like there. The computations were done correctly and closed their ranges, but it was rare for a session to look into the results and ask why they came out as they did. In the mathematicians' stories, understanding grew in exactly the places where those two questions were asked. For Euler, and for Birch and Swinnerton-Dyer, a computation was where a question began. The counterexamples Lakatos described, and the obstruction Selberg explained, showed what the object really was.
 
-This essay is not meant to set new rules for research. What we hope for is research that does not stop at closing the questions it takes on, but goes on to understand better the things it studies. In research like that, we think, the same computations will be put to different questions, the experience of getting stuck will leave some understanding behind, and results will be left in a form that the next person can build on.
+This essay is not meant to set new rules for research. What we hope for is research that does not stop at closing the problems it takes on, but goes on to understand better the things it studies. In research like that, we think, the same computations will be put to different questions, the experience of getting stuck will leave some understanding behind, and results will be left in a form that the next person can build on.

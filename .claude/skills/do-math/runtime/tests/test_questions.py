@@ -419,6 +419,7 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertEqual(rows, {'sroot': 'q0', 'sa': 'op-b', 'sb': 'op-b'})
         view = question_availability(self.instance, self.engine.state)
         self.assertEqual((sorted(view['occupied']['op-b']), view['free']), (['sa', 'sb'], []))
+        self.assertFalse(self.engine.question_slot())  # the runner launches no explorer for the merged question
         listed = {q['id']: (sorted(q['occupied_by']), q['free']) for q in updates(b)['questions']}
         self.assertEqual(listed['op-b'], (['sa', 'sb'], False))
         self.assertNotIn('op-a', listed)
@@ -432,7 +433,6 @@ class QuestionCoordinationTests(InstanceCase):
             self.assertFalse(refused['leased'])
             self.assertIn('hold this question', refused['reason'])
             self.assertEqual(sorted(refused['occupied_by']), ['sa', 'sb'])
-        self.assertFalse(self.engine.question_slot())  # no free question for the explorer still choosing
         # The occupations end separately; the question stays held while either lasts.
         pipelines = {sid: read_json(folder / 'input.json')['pipeline'] for sid, folder in (('sa', a), ('sb', b))}
         self.engine.state['pipelines'][pipelines['sa']]['stage'] = 'done'

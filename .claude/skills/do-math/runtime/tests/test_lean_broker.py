@@ -635,6 +635,28 @@ class BrokerTests(BrokerFixture):
         entry = self.broker.calibration.entry(job["closure"])
         self.assertEqual(entry["excess_mb"], [])
 
+    def test_every_status_of_an_ended_session_cancels_its_compiles(self):
+        # The runner records a session whose CLI has ended as ended, publishing or integrated, or as failed;
+        # under each status a compile has no reader. A running session with no CLI yet keeps its compile.
+        self.start_broker()
+        statuses = ("ended", "publishing", "integrated", "failed")
+        state = runner.read_json(self.instance / "runner/state.json")
+        for n, status in enumerate(statuses):
+            state["sessions"][f"s{n}"] = {"role": "attempt", "status": status, "host": None, "cli": None}
+        state["sessions"]["live"] = {"role": "attempt", "status": "running", "host": None, "cli": None}
+        runner.write_json(self.instance / "runner/state.json", state)
+        jobs = {status: self.submit(self.session_file(f"s{n}"), expect_mb=40, session=f"s{n}")
+                for n, status in enumerate(statuses)}
+        kept = self.submit(self.session_file("live"), expect_mb=40, session="live")
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+        for status, job_id in jobs.items():
+            with self.subTest(status=status):
+                job = self.broker.state["jobs"][job_id]
+                self.assertEqual(job["status"], "cancelled")
+                self.assertIn(f"ended ({status})", job["reason"])
+        self.assertEqual(self.broker.state["jobs"][kept]["status"], "queued")
+
     def test_job_of_a_dead_session_is_cancelled_but_a_live_one_is_kept(self):
         self.start_broker()
         gone = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)

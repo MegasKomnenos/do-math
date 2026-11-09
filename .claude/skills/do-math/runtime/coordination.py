@@ -1,6 +1,6 @@
 """Live coordination information, node and question leases, and session-owned declarations.
 
-A section is an exact part of a node's question that an attempt or peer works on. A question is
+A section is an exact part of what a node asserts, which an attempt or peer works on. A question is
 an object of understanding that one explorer at a time occupies whole. Both are kept in the
 registering session's declaration.json and last until that session's pipeline finishes review.
 Choosing is serialized per node or question: one session at a time holds the lease, registers

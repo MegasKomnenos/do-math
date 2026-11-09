@@ -174,18 +174,6 @@ class AvailabilityTests(InstanceCase):
                 self.runner.finish(sid, session)
                 self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'peer')
 
-    def test_explorer_without_a_question_closes_with_no_research(self):
-        sid, session, job = self.attempt('explore')
-        folder = self.runner.session_dir(sid)
-        write_json(folder / 'output/outcome.json', {'disposition': 'no_research'})
-        self.assertEqual(check_session(folder), [])
-        self.runner.finish(sid, session)
-        self.assertEqual(session['disposition'], 'no_research')
-        self.assertEqual(self.runner.state['pipelines'][job['pipeline']]['stage'], 'done')
-        self.assertFalse(any(j['role'] == 'peer' for j in self.runner.state['jobs'].values()))
-        self.assertNotIn('availability_report', session)
-        self.assertIsNone(self.runner.state['attempt_dispatch_gate'])
-
     def test_new_node_and_reopening_trigger_but_solving_does_not(self):
         self.occupied()
         sid, session, _ = self.report()

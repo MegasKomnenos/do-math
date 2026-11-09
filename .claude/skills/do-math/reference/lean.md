@@ -150,8 +150,6 @@ The broker bounds the harm of an expensive compile, but it cannot make a compile
 
 **Shape the file for how Lean runs it.** Prefer small lemmas to one large `by` block so that each proof is easier to elaborate, profile and revise. Splitting a proof does not guarantee lower process memory: Lean can retain allocated memory for reuse, and several declarations may elaborate in parallel. Estimate for the actual file and thread count. Give every `have` its type, so that Lean does not have to infer a large term. Mark heavy definitions `@[irreducible]`, or define them with `irreducible_def`, so that tactics do not unfold them by accident. Use `rw` for a single rewrite, and `show` or `change` to fix the goal before handing it to automation.
 
-**Across sessions.** Producers retain their sources and measured cost. Peers can develop those sources while preparing the record. Review independently compiles the final candidate with its axiom inspection commands. The candidate and reviewer working copies are linked by the source hashes described in [Review output](review-output.md).
-
 ## How the broker decides what runs
 
 A session does not need this section to use the broker, but it makes the output of `status` readable and explains why a compile is waiting. The broker has no limit on the number of compiles running at once. It has a memory budget and a thread budget, and it starts the next compile when both have room for it.
