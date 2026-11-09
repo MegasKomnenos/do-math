@@ -22,8 +22,8 @@ def canonical(model, node):
 ROOT_QUESTION = 'q0'
 ROOT_QUESTION_STATEMENT = 'The root problem itself, taken as a whole.'
 ROOT_QUESTION_GROUNDS = ('An explorer holding this question investigates the root proposition, its objects and the '
-                         'mathematics accumulated around them without a narrower focus. It stays open until the root '
-                         'is formally settled; no explanation resolves it.')
+                         'mathematics accumulated around them without a narrower focus. No explanation resolves it: it '
+                         'stays open until the root is formally proved or refuted, and that settlement resolves it.')
 
 
 def canonical_question(model, question):
@@ -192,12 +192,31 @@ def settle(model):
     settle_questions(model)
 
 
+def root_settlement(model):
+    """The root's formal settlement as the root question's answer, or None while the root lacks one.
+
+    Only a formal proof or refutation counts: research is complete on that, while an informal
+    settlement leaves exploration and formalization going. A contested root is not settled. The
+    proofs listed are the formal ones that carry the root's state."""
+    root = model['nodes'][canonical(model, 'root')]
+    if root['state'] not in ('formal_proved', 'formal_refuted'):
+        return None
+    return {'node': root['canonical'], 'state': root['state'],
+            'proofs': sorted(pid for pid in root['proofs'] if model['proofs'][pid]['level'] == 'formal')}
+
+
 def settle_questions(model):
     """A question is resolved while an accepted resolution's claim stays supported.
 
     Questions carry no relations, so nothing is derived between them. A finding that withdraws
     the claim behind a resolution reopens the question, and the finding stays visible beside it.
-    The root question is never resolved by an explanation."""
+    The root question is never resolved by an explanation. It asks the root problem itself, so it
+    is resolved while the root is formally proved or refuted, and root_settlement records that
+    ground in place of resolutions. The state is derived afresh on every replay: a finding that
+    withdraws the root's formal settlement reopens the root question, with the finding beside it."""
+    settlement = root_settlement(model)
+    root_evidence = {p['claim'] for p in model['direct'].values()
+                     if p['level'] == 'formal' and canonical(model, p['node']) == canonical(model, 'root')}
     for qid, question in model['questions'].items():
         representative = canonical_question(model, qid)
         question['canonical'] = representative
@@ -205,9 +224,13 @@ def settle_questions(model):
                        if canonical_question(model, r['question']) == representative
                        and model['claims'].get(r['claim'], {}).get('status') == 'supported']
         question['resolutions'] = sorted(resolutions)
-        question['state'] = 'resolved' if resolutions and representative != ROOT_QUESTION else 'open'
+        root = representative == ROOT_QUESTION
+        question['root_settlement'] = deepcopy(settlement) if root else None
+        question['state'] = 'resolved' if (settlement if root else resolutions) else 'open'
         evidence = {r['claim'] for r in model['question_resolutions'].values()
                     if canonical_question(model, r['question']) == representative}
+        if root:
+            evidence |= root_evidence
         question['annotations'] = [i for i, finding in enumerate(model['findings'])
                                    if evidence.intersection(finding['claims'])]
 
@@ -506,7 +529,8 @@ def render(instance, model, board, leases=None):
               'relations or sections; explorers occupy questions, one explorer per question, and the board shows who holds which. '
               'When an organizer merges two questions that explorers already held, both keep the merged question until '
               'their pipelines end, and no other explorer takes it meanwhile. '
-              f'Question {ROOT_QUESTION} is the root problem itself and stays open while the root is unsettled.', '']
+              f'Question {ROOT_QUESTION} is the root problem itself. No explanation resolves it; it stays open until the root '
+              'is formally proved or refuted, and that settlement resolves it.', '']
     for qid, question in model['questions'].items():
         if question['canonical'] != qid:
             continue
@@ -524,13 +548,18 @@ def render(instance, model, board, leases=None):
         for key in question['resolutions']:
             resolution = model['question_resolutions'][key]
             lines.append(f"- Resolved by [{key}](records/{resolution['record']}/record.json) through claim {resolution['claim']}")
+        settlement = question.get('root_settlement')
+        if settlement:
+            proofs = ', '.join(f"[{pid}](records/{model['proofs'][pid]['record']}/record.json)" for pid in settlement['proofs'])
+            lines.append(f"- Resolved by the root's formal settlement, not by an explanation: node {settlement['node']} "
+                         f"is {settlement['state']} through {proofs}")
         for number in question['annotations']:
             finding = model['findings'][number]
             lines.append(f"- Later review ({finding['status']}): {finding['reason']} — {assessment_link(finding['source'])}")
         aliases = [q for q in model['question_aliases'] if canonical_question(model, q) == qid]
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
-        if question['resolutions'] or question['annotations'] or aliases:
+        if question['resolutions'] or question.get('root_settlement') or question['annotations'] or aliases:
             lines.append('')
     if model['question_proposals']:
         lines += ['## Question proposals review did not admit', '',

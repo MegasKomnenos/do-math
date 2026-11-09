@@ -387,9 +387,16 @@ def question_blocked(model, rows, table, question, pipeline, sid):
     a whole whenever no exploration holds it, and the runner's assignment at launch cannot reach an
     explorer that is already choosing when question 0 becomes free.
 
+    Once the root is formally proved or refuted, question 0 is resolved by that settlement. It is then
+    neither taken nor free, so it no longer holds back a narrower question; an exploration that
+    already held it keeps it through its peer and review, since occupancy is read from declarations.
+
     After an organizer merges two held questions, both explorations hold the merged one; neither
     occupation is cut short, and no further explorer can take the question while either lasts."""
     if model['questions'][question]['state'] != 'open':
+        if question == ROOT_QUESTION:
+            return ('Question ' + ROOT_QUESTION + ' is resolved: the root is formally settled, as the frontier shows. '
+                    'It is not occupied any more.')
         return 'This question is resolved; read its resolution instead of occupying it.'
     holders = [r['session'] or r['pipeline'] for r in rows
                if r['role'] == 'explore' and r['pipeline'] != pipeline and r['question'] == question]
@@ -398,15 +405,17 @@ def question_blocked(model, rows, table, question, pipeline, sid):
     if holders:
         return ('Explorations ' + ' and '.join(holders) + ' hold this question; no further explorer occupies it '
                 'while either does.')
-    if question != ROOT_QUESTION and root_free(rows, table, sid):
+    if (question != ROOT_QUESTION and model['questions'][ROOT_QUESTION]['state'] == 'open'
+            and root_free(rows, table, sid)):
         return ('Question ' + ROOT_QUESTION + ', the root problem as a whole, is free, and an explorer takes it '
                 'before any narrower question. Lease and take ' + ROOT_QUESTION + ' instead.')
     return None
 
 
 def root_free(rows, table, sid):
-    """Whether question 0 is free to this session, as the runner counts it free: no exploration
-    holds it, and no other session holds or waits for its lease."""
+    """Whether no exploration holds question 0 and no other session holds or waits for its lease.
+
+    With question 0 open, this is the runner's count of it as free; the caller checks that it is open."""
     if any(r['role'] == 'explore' and r['question'] == ROOT_QUESTION for r in rows):
         return False
     entry = table.get(ROOT_QUESTION, {'holders': [], 'queue': []})

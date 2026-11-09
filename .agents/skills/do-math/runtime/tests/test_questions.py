@@ -46,6 +46,74 @@ class QuestionKnowledgeTests(InstanceCase):
         self.assertIn('Source: the root statement', frontier)
         self.assertIn('State: open', frontier.split('## q0\n', 1)[1])
 
+    def formal_root(self, rid, outcome='proved'):
+        data = record([claim_row('p')], solutions=[solution('p', 'root', 'p', outcome)])
+        self.publish(rid, data, assessment(data, ['p']), role='formalizer')
+
+    def test_root_question_is_resolved_by_the_root_formal_settlement(self):
+        for outcome in ('proved', 'refuted'):
+            with self.subTest(outcome=outcome):
+                self.setUp()
+                self.questions('qops', [question('op-scale')])
+                self.formal_root('r1', outcome)
+                model = replay(self.instance)
+                q0 = model['questions']['q0']
+                self.assertEqual(model['nodes']['root']['state'], 'formal_' + outcome)
+                self.assertEqual(q0['state'], 'resolved')
+                self.assertEqual(q0['resolutions'], [])
+                self.assertEqual(q0['root_settlement'],
+                                 {'node': 'root', 'state': 'formal_' + outcome, 'proofs': ['r1/p']})
+                self.assertIsNone(model['questions']['op-scale']['root_settlement'])
+                self.assertEqual(model['questions']['op-scale']['state'], 'open')
+                section = self.frontier(model).split('## q0\n', 1)[1].split('\n## ', 1)[0]
+                self.assertIn('State: resolved', section)
+                self.assertIn("Resolved by the root's formal settlement, not by an explanation: node root is formal_"
+                              + outcome + ' through [r1/p](records/r1/record.json)', section)
+                self.assertEqual(read_json(self.instance / 'knowledge/state.json')['questions']['q0'], q0)
+                # An explanation still cannot resolve it, and it is still never merged.
+                folder = self.root / 'candidate'
+                folder.mkdir(exist_ok=True)
+                (folder / 'record.md').write_text('An explanation.', encoding='utf-8')
+                with self.assertRaisesRegex(Invalid, 'root question'):
+                    record_check(record([claim_row('why')], question_resolutions=[resolution('r', 'q0', 'why')]),
+                                 folder, model)
+                with self.assertRaisesRegex(Invalid, 'root question'):
+                    organization_check({'batch': [], 'modules': [], 'shared_context': [], 'merge_questions': [
+                        {'from': 'op-scale', 'into': 'q0', 'reason': 'No.'}]}, model, [])
+
+    def test_an_informal_or_contested_root_leaves_the_root_question_open(self):
+        data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
+        self.publish('r1', data)
+        model = replay(self.instance)
+        self.assertEqual(model['nodes']['root']['state'], 'informal_proved')
+        self.assertEqual(model['questions']['q0']['state'], 'open')
+        self.assertIsNone(model['questions']['q0']['root_settlement'])
+        self.assertIn('State: open', self.frontier(model).split('## q0\n', 1)[1])
+        # A formal proof against an accepted refutation leaves the root contested, not settled.
+        self.formal_root('r2')
+        self.publish('r3', record([claim_row('n')], solutions=[solution('n', 'root', 'n', 'refuted')]))
+        model = replay(self.instance)
+        self.assertEqual(model['nodes']['root']['state'], 'contested')
+        self.assertEqual(model['questions']['q0']['state'], 'open')
+        self.assertIsNone(model['questions']['q0']['root_settlement'])
+
+    def test_withdrawing_the_root_formal_settlement_reopens_the_root_question(self):
+        self.formal_root('r1')
+        self.assertEqual(replay(self.instance)['questions']['q0']['state'], 'resolved')
+        self.event('v1', 'review', {'findings': [{'concerns': [], 'status': 'confirmed',
+                                                'reason': 'The Lean statement is not the root proposition.',
+                                                'invalidates': [{'record': 'r1', 'claim': 'p'}]}]})
+        model = replay(self.instance)
+        self.assertEqual(model['nodes']['root']['state'], 'unresolved')
+        self.assertEqual(model['questions']['q0']['state'], 'open')
+        self.assertIsNone(model['questions']['q0']['root_settlement'])
+        section = self.frontier(model).split('## q0\n', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('State: open', section)
+        self.assertNotIn("root's formal settlement, not", section)
+        # The withdrawal stays visible beside the reopened question, as for any other question.
+        self.assertIn('not the root proposition', section)
+        self.assertIn('reviews/v1/assessment.json', section)
+
     def test_operator_questions_enter_the_frontier_with_their_origin(self):
         self.questions('qops', [question('op-critical-scale'), question('op-common-block')])
         model = replay(self.instance)
@@ -303,6 +371,36 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertTrue(question_lease(b, 'op-scale')['leased'])
         self.assertTrue(question_take(a, 'q0')['taken'])
         self.assertTrue(question_take(b, 'op-scale')['taken'])
+
+    def test_a_formally_settled_root_closes_q0_without_cutting_its_holder_short(self):
+        self.questions('qops', [question('op-scale')])
+        self.engine.model = replay(self.instance)
+        root, a, b = self.session('sroot'), self.session('sa'), self.session('sb')
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_take(root, 'q0')['taken'])
+        data = record([claim_row('p')], solutions=[solution('p', 'root', 'p')])
+        self.publish('r1', data, assessment(data, ['p']), role='formalizer')
+        # The exploration that held q0 keeps it through its peer and review.
+        view = question_availability(self.instance, self.engine.state)
+        self.assertEqual((view['occupied'], view['free']), ({'q0': ['sroot']}, ['op-scale']))
+        self.assertEqual([r['question'] for r in board(self.instance, self.engine.state)
+                          if r['session'] == 'sroot'], ['q0'])
+        # Once that pipeline ends, the resolved q0 is neither free nor takeable, and it no longer
+        # holds back a narrower question for an explorer still choosing.
+        pipeline = self.engine.state['jobs'][self.engine.state['sessions']['sroot']['job']]['pipeline']
+        self.engine.state['pipelines'][pipeline]['stage'] = 'done'
+        self.engine.save()
+        view = question_availability(self.instance, self.engine.state)
+        self.assertEqual((view['occupied'], view['free']), ({}, ['op-scale']))
+        refused = question_lease(a, 'q0')
+        self.assertFalse(refused['leased'])
+        self.assertIn('formally settled', refused['reason'])
+        self.assertIn('formally settled', question_wait(a, 'q0', timeout=0)['reason'])
+        self.assertTrue(question_lease(b, 'op-scale')['leased'])
+        self.assertTrue(question_take(b, 'op-scale')['taken'])
+        listed = {q['id']: q for q in updates(a)['questions']}
+        self.assertEqual((listed['q0']['state'], listed['q0']['free']), ('resolved', False))
+        self.assertEqual(status(self.instance)['questions']['free'], [])
 
     def test_a_merge_of_two_held_questions_leaves_both_explorers_holding_it_until_each_pipeline_ends(self):
         # An organizer's merge is an exception to one explorer per question, as it is for a node's
