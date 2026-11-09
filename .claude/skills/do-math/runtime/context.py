@@ -10,13 +10,14 @@ from urllib.parse import quote, unquote
 from runtime_support import write_json, write_text
 
 
+RESEARCH_CONTEXT = ['what-research-is-for.md', 'user-writing-preferences.md']
 ROLE_REFERENCES = {
-    'attempt': ['retained-work.md'],
-    'explore': ['retained-work.md'],
+    'attempt': RESEARCH_CONTEXT + ['retained-work.md'],
+    'explore': RESEARCH_CONTEXT + ['retained-work.md'],
     'formalizer': ['retained-work.md', 'lean.md'],
-    'peer': ['record-format.md', 'retained-work.md'],
-    'review': ['record-format.md', 'review-output.md'],
-    'organizer': ['organizer-output.md'],
+    'peer': RESEARCH_CONTEXT + ['record-format.md', 'retained-work.md'],
+    'review': RESEARCH_CONTEXT + ['record-format.md', 'review-output.md'],
+    'organizer': RESEARCH_CONTEXT + ['organizer-output.md'],
 }
 
 

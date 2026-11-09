@@ -4,6 +4,8 @@ Your role guide identifies the work you will leave for another reader. This guid
 
 Start with what the reader must understand. An omitted condition can change the meaning of a correct result. An unexplained formula can force the next session to reconstruct an argument you already completed. Writing is therefore part of preserving the mathematics: develop the explanation that makes the result and its limits available.
 
+What you write is read by later sessions and, in the end, by the user who runs the research. [How this user likes to be written for](user-writing-preferences.md) describes the writing that user prefers, together with the scenes in which those preferences came to light. This guide is about making the mathematics usable by the next session; that document is about how the same writing reaches the user. Both apply to what you write.
+
 ## Develop the explanation around the reader's work
 
 Before drafting a passage, decide what its reader needs to understand and why. An exposition may need to show how a construction leads to a theorem. A review may need to explain exactly why one argument fails while another result survives. A module description may need only to tell a researcher whether the group concerns its work. Those purposes require different explanations and different lengths.
@@ -38,7 +40,7 @@ Develop the contributions and obstacles that change the next researcher's unders
 
 Descriptions used by the index introduce the whole contribution. Include an important failed route or restriction when leaving it out would make a partial result look like a solution. Conversely, a record with a failed main approach can contain valuable identities and exact obstructions. Describe those contributions so the next reader can recognize their relevance.
 
-A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should explain what the group contains and when a reader would consult it. Those texts serve navigation without becoming an independent account that changes the records' mathematical claims.
+A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research: what the area covers, what has been established and how the contributions relate, and where the area still resists. Those texts serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
 
 ## Read back what you are handing on
 

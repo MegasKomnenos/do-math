@@ -1,3 +1,3 @@
 Resume working toward a proof or refutation of the mathematics you took on.
 
-Stay with the unresolved difficulty. Develop the arguments you have not completed, and pursue other approaches when the present ones fail. Deciding what remains, examining an approach, or explaining an obstacle does not discharge your responsibility to pursue the solution.
+Stay with the unresolved difficulty. Develop the arguments you have not completed, and pursue other approaches when the present ones fail. Deciding what remains, examining an approach, or explaining an obstacle does not discharge your responsibility to pursue the solution. Continuing the research means pursuing what can change what is known about the node, as the common introduction describes; carrying a verification further when it has taught you nothing more about the object is not a continuation of it, and it is a sign to look at the problem differently.

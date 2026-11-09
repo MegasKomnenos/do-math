@@ -289,13 +289,14 @@ class ContextTests(InstanceCase):
         schedule.assert_called_once()
 
     def test_every_role_receives_its_ordered_guides_and_output_contract(self):
+        research = ['what-research-is-for.md', 'user-writing-preferences.md']
         references = {
-            'attempt': ['retained-work.md'],
-            'explore': ['retained-work.md'],
+            'attempt': research + ['retained-work.md'],
+            'explore': research + ['retained-work.md'],
             'formalizer': ['retained-work.md', 'lean.md'],
-            'peer': ['record-format.md', 'retained-work.md'],
-            'review': ['record-format.md', 'review-output.md'],
-            'organizer': ['organizer-output.md'],
+            'peer': research + ['record-format.md', 'retained-work.md'],
+            'review': research + ['record-format.md', 'review-output.md'],
+            'organizer': research + ['organizer-output.md'],
         }
         for role, specialized in references.items():
             with self.subTest(role=role):

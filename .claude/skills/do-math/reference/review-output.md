@@ -12,7 +12,7 @@ The assessment has these fields:
 |---|---|
 | `publish` | Boolean: whether useful material should be retained as a published record. |
 | `reason` | The reason for publication or exclusion. |
-| `index_assessment` | Short assessment displayed beside the immutable candidate description. |
+| `index_assessment` | Short assessment displayed beside the immutable candidate description: the supported scope, the limitations a reader needs, and what the record contributed to the research. |
 | `feedback` | Relative path to the full feedback document. |
 | `claims` | Exactly one `{claim, status, reason}` for each candidate claim ID. Status is `supported`, `unsupported` or `undetermined`. |
 | `nodes` | Exactly one `{proposal, node, reason}` for each proposed node. `node` is the proposal ID when admitted, an existing node ID when identified with that node, or null when declined. |
