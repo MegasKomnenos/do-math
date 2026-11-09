@@ -1100,16 +1100,15 @@ class Broker:
 
     # --- scheduling
 
-    def reserve(self, job, record=True):
+    def reserve(self, job):
         baseline = self.calibration.baseline(job["closure"]) if job["kind"] == "compile" else None
         expect = max(job["expect_mb"], baseline or 0)
         cv = (self.calibration.spread(job["closure"]) if baseline is not None else None) \
             or self.config["default_spread"]
         current = (job["measured"] or {}).get("current_mb", 0.0) if job["status"] == "running" else None
         certain, mean, sd = reservation(expect, baseline, cv, current)
-        if record:
-            job["reserve"] = {"expected_mb": round(expect, 1), "certain_mb": round(certain, 1),
-                              "mean_mb": round(mean, 1), "sd_mb": round(sd, 1)}
+        job["reserve"] = {"expected_mb": round(expect, 1), "certain_mb": round(certain, 1),
+                          "mean_mb": round(mean, 1), "sd_mb": round(sd, 1)}
         return certain, mean, sd
 
     def fits(self, job, running, free_mb):
@@ -1138,11 +1137,23 @@ class Broker:
         for job in stale:
             self.finish(job, {'exit_code': None, 'launch_error': 'Lean environment changed while queued; resubmit in the current environment'})
         queued = [j for j in queued if j['status'] == 'queued']
+        direct = self.direct is not None
         for job in queued:
             # A queued compile starts with the lean.threads in force, as it does with the priority;
             # a running one keeps the threads it started with (reference/lean.md, Settings).
             if job["kind"] == "compile" and job["threads"] != self.config["threads"]:
                 job["threads"] = self.config["threads"]
+                self.dirty = True
+            # A queued job is keyed by the launch mode in force as well. A settings change or a restart
+            # asks lake again (capture_environment) and can switch between lake and direct launch without
+            # changing environment_key; a baseline or an excess measured in one mode must not be recorded
+            # under the other mode's key. A queued calibration follows the compiles waiting for it.
+            imports = job["external"] if job["kind"] == "compile" else job["imports"]
+            closure = closure_key(self.environment_identity(), imports, direct)
+            if job["closure"] != closure:
+                job["closure"] = closure
+                if job["kind"] == "calibration":
+                    job["direct"] = direct
                 self.dirty = True
         running = [j for j in jobs.values() if j["status"] == "running"]
         if not queued:

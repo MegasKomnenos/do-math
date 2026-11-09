@@ -80,7 +80,6 @@ class AvailabilityTests(InstanceCase):
         sid, session, _ = self.report()
         self.assertEqual(check_session(self.runner.session_dir(sid)), [])
         self.runner.finish(sid, session)
-        self.assertTrue(self.runner.state['explore_requested'])
         self.assertFalse(self.runner.attempt_dispatch_ready())
         self.publish('rnote', record([claim_row('unrelated')]))
         self.runner = Runner(self.instance, self.skill)

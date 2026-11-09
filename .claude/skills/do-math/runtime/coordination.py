@@ -97,7 +97,7 @@ def board(instance, state=None, model=None):
     for pid, pipeline in state['pipelines'].items():
         if pipeline['stage'] == 'done':
             continue
-        owners = [pipeline['producer'], *pipeline.get('previous_peers', []), pipeline.get('peer')]
+        owners = [pipeline['producer'], *pipeline['previous_peers'], pipeline['peer']]
         sections = [s for sid in dict.fromkeys(x for x in owners if x) for s in section_entries(instance, sid, model)]
         question = None
         if pipeline['role'] == 'explore':

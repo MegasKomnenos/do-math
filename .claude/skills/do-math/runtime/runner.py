@@ -199,7 +199,7 @@ class Runner:
             self.state['attempt_launches'] += 1
             if self.state['attempt_launches'] % self.settings['explore_every'] == 0:
                 self.state['explore_requested'] = True
-            gate = self.state.get('attempt_dispatch_gate')
+            gate = self.state['attempt_dispatch_gate']
             if gate and gate['mode'] == 'reassess':
                 gate['probe_session'] = sid
         elif job['role'] == 'explore':
@@ -666,7 +666,6 @@ class Runner:
                     'baseline': current, 'probe_session': None,
                     'reason': 'all_unresolved_work_occupied'}
                 session['availability_report'] = {'status': 'accepted'}
-                self.state['explore_requested'] = True
         session.update(status='ended', disposition='no_research')
         job['status'] = 'done'
         self.state['pipelines'][job['pipeline']].update(stage='done', disposition='no_research')
@@ -674,7 +673,7 @@ class Runner:
         self.save()
 
     def attempt_dispatch_ready(self):
-        gate = self.state.get('attempt_dispatch_gate')
+        gate = self.state['attempt_dispatch_gate']
         if gate is None:
             return True
         before = json.dumps(gate, sort_keys=True)
@@ -804,7 +803,7 @@ class Runner:
         while len(self.active()) < self.settings['max_sessions']:
             nodes = self.available_nodes()
             self.attempt_dispatch_ready()
-            suppressed = (self.state.get('attempt_dispatch_gate') or {}).get('mode') == 'suppressed'
+            suppressed = (self.state['attempt_dispatch_gate'] or {}).get('mode') == 'suppressed'
             if not nodes or suppressed:
                 # Capacity that no attempt can use goes to understanding. The request is renewed
                 # after every exploration launched here, so free questions fill one by one.
@@ -860,7 +859,7 @@ class Runner:
                 self.enqueue('organizer', {}, key='operator:' + path.stem)
             elif request['kind'] == 'reconsider-attempts':
                 self.state['attempt_availability_epoch'] += 1
-                probe = (self.state.get('attempt_dispatch_gate') or {}).get('probe_session')
+                probe = (self.state['attempt_dispatch_gate'] or {}).get('probe_session')
                 if self.state['sessions'].get(probe, {}).get('status') not in ('starting', 'running', 'publishing'):
                     probe = None
                 self.state['attempt_dispatch_gate'] = {
@@ -991,7 +990,7 @@ def status(instance):
     return {'instance': str(instance), 'runner_alive': bool(receipt and alive(receipt['process'])),
             'root_state': model['nodes'][canonical(model, 'root')]['state'], 'finished': state['finished'],
             'stopped': (instance / 'control/STOP').exists(), 'board': rows,
-            'attempt_dispatch': state.get('attempt_dispatch_gate'),
+            'attempt_dispatch': state['attempt_dispatch_gate'],
             'questions': {**question_availability(instance, state, model, rows),
                           'explore_requested': state['explore_requested']},
             'blocks': state['blocks'], 'lean': broker_status(Paths(instance)), 'state': state}

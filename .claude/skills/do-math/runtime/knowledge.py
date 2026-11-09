@@ -637,13 +637,14 @@ def render(instance, model, board, leases=None):
     for row in board:
         producer = row.get('session') or '(not launched)'
         if row['role'] == 'explore':
-            # An explorer occupies one question; until it registers one, it is choosing.
+            # An explorer occupies one question; until it registers one, it is choosing. Its peer can
+            # still register sections (reference/common.md), listed below as for any other pipeline.
             held = row.get('question') or ('(choosing)' if row['stage'] in ('producing', 'queued') else '(none)')
             board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · question: {held}"]
-            continue
-        # An attempt still producing may not have registered a section yet; it is choosing.
-        holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
-        board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
+        else:
+            # An attempt still producing may not have registered a section yet; it is choosing.
+            holds = ', '.join(row['nodes']) or ('(choosing)' if row['role'] == 'attempt' and row['stage'] in ('producing', 'queued') else '(none)')
+            board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · nodes: {holds}"]
         for section in row.get('sections', []):
             scope = 'the whole node' if section['whole'] else escape(section['statement'])
             board_lines.append(f"  Section {section['id']} on {section['node']} (session {section['session']}): {scope}")

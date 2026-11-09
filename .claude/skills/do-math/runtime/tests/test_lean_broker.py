@@ -1226,6 +1226,25 @@ class BuildTests(BrokerFixture):
         self.assertNotIn("-R", runner.read_json(self.paths.job(job_id) / "launch.json")["argv"])
         self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
 
+    def test_a_pruned_build_loses_its_lib_folder_and_keeps_its_result(self):
+        # Pruning is the one place the broker deletes a folder. It takes the lib folder of the build it
+        # prunes from the state and nothing else, and that build's outcome stays readable from its result.json.
+        self.start_broker()
+        def build_once(name):
+            root = self.instance / "sessions/s1/work" / name
+            build_id = self.build(root, [source(root / "Target.lean", imports=(), marker=name)])
+            self.until(lambda: self.build_record(build_id)["status"] in lean_broker.FINISHED)
+            return build_id
+        with patch.object(lean_broker, "KEEP_FINISHED", 1):
+            first = build_once("first")
+            first_lib = Path(self.build_record(first)["lib"])
+            self.assertTrue((first_lib / "Target.olean").is_file())
+            second = build_once("second")
+        self.assertNotIn(first, self.broker.state["builds"])
+        self.assertFalse(first_lib.exists())
+        self.assertTrue((Path(self.build_record(second)["lib"]) / "Target.olean").is_file())
+        self.assertEqual(lean_broker.job_record(self.paths, first)["status"], "finished")
+
 
 class LauncherTests(BrokerFixture):
     LAKE = [sys.executable, "-B", str(FAKE.with_name("fake_lake.py")), "env"]
@@ -1281,6 +1300,36 @@ class LauncherTests(BrokerFixture):
         launch = runner.read_json(self.paths.job(job_id) / "launch.json")
         self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
         self.assertEqual(self.broker.state["jobs"][job_id]["exit_code"], 7)  # what the configured lake does
+
+    def test_a_queued_job_is_keyed_by_the_launch_mode_it_starts_in(self):
+        # An unrelated settings edit asks lake again, and its answer can switch the launch mode without
+        # changing the environment key. A compile and its calibration queued in one mode and started in
+        # the other must be measured and recorded under the key of the mode they ran in.
+        self.write_settings(command=self.LAKE + [sys.executable, "-B", str(FAKE)])
+        self.start_broker()
+        self.assertTrue(self.broker.state["launcher"]["direct"])
+        environment = self.broker.state["environment_key"]
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        with patch.object(lean_broker, "available_memory", return_value=0):  # the machine gate holds every start
+            self.broker.tick()
+            queued = self.broker.state["jobs"][job_id]["closure"]
+            time.sleep(0.02)
+            self.write_settings(memory_budget_mb=self.budget + 1)
+            with patch.dict(os.environ, {"FAKE_LAKE_FAIL": "1"}):  # lake now fails to load its workspace
+                self.broker.tick()
+        self.assertFalse(self.broker.state["launcher"]["direct"])
+        self.assertEqual(self.broker.state["environment_key"], environment)
+        self.until(lambda: self.finished(job_id))
+        job = self.broker.state["jobs"][job_id]
+        through_lake = lean_broker.closure_key(self.broker.environment_identity(), job["imports"])
+        self.assertNotEqual(queued, through_lake)
+        self.assertEqual(job["closure"], through_lake)
+        launch = runner.read_json(self.paths.job(job_id) / "launch.json")
+        self.assertEqual(launch["argv"][:len(self.LAKE)], self.LAKE)
+        calibrations = [j for j in self.broker.state["jobs"].values() if j["kind"] == "calibration"]
+        self.assertEqual([(j["closure"], j["direct"]) for j in calibrations], [(through_lake, False)])
+        self.assertEqual(self.broker.calibration.entry(through_lake)["excess_mb"], [job["measured"]["excess_mb"]])
+        self.assertIsNone(self.broker.calibration.entry(queued))
 
 
 class ClientAndLifecycleTests(BrokerFixture):

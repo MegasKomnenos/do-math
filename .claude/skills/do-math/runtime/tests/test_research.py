@@ -1485,6 +1485,25 @@ class RunnerTests(InstanceCase):
         self.assertIn('· attempt · queued · nodes: (choosing)', visible)
         self.assertIn('· explore · queued · question: (choosing)', visible)
 
+    def test_board_view_lists_the_sections_an_exploration_peer_registers(self):
+        # Any peer may register a further section through the node's lease (reference/common.md). The
+        # board rows already count it as occupancy; board.md must show it under the exploration as well.
+        runner = self.runner()
+        pipeline = runner.state['jobs'][runner.producer('explore')]['pipeline']
+        peer = runner.session_dir('speer')
+        peer.mkdir()
+        write_json(peer / 'input.json', {'instance': str(self.instance), 'session': 'speer', 'role': 'peer',
+                                         'pipeline': pipeline, 'task': {}})
+        runner.state['pipelines'][pipeline].update(producer='sexplore', peer='speer', stage='peer')
+        runner.state['sessions']['speer'] = {'id': 'speer', 'role': 'peer', 'status': 'running', 'job': 'peerjob'}
+        runner.save()
+        self.assertTrue(take(peer, 'root')['registered'])
+        self.assertEqual(runner.available_nodes(), [])
+        render(self.instance, replay(self.instance), board(self.instance, runner.state))
+        visible = (self.instance / 'knowledge/board.md').read_text(encoding='utf-8')
+        self.assertIn('· explore · peer · question: (none)', visible)
+        self.assertIn('  Section speer-1 on root (session speer): the whole node', visible)
+
     def test_render_command_rebuilds_the_views_only_while_the_runner_is_off(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))
         views = [self.instance / 'knowledge' / name for name in ('frontier.md', 'index.md', 'board.md')]
@@ -1499,6 +1518,18 @@ class RunnerTests(InstanceCase):
         self.assertIn('State: informal_proved', frontier)
         self.assertIn('Investigation', index)
         self.assertIn('Research work and occupied sections', board_view)
+
+    def test_start_does_not_replace_a_live_runner(self):
+        # A live runner holds the instance lock. The runner that start launches cannot take it and exits,
+        # and start reports that exit, not a readiness it never reached (reference/operations.md).
+        from runner import start
+        with InstanceLock(self.instance / 'runner/lock'):
+            with self.assertRaisesRegex(RuntimeError, 'exited before readiness'):
+                start(self.instance)
+        # The refused runner wrote no start record that could stand in for the live runner's receipt.
+        self.assertFalse((self.instance / 'runner/process.json').exists())
+        [log] = (self.instance / 'runner').glob('start-*.stderr.log')
+        self.assertIn('already has a running runner', log.read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':
