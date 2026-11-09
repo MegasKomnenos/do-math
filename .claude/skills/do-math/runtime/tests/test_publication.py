@@ -61,6 +61,34 @@ class ProposalIdentityTests(InstanceCase):
         self.assertEqual(model['nodes'][first_id]['statement'], 'First question.')
         self.assertEqual(model['nodes'][second_id]['statement'], 'Different question.')
 
+    def test_identification_with_an_existing_node_reuses_it_while_admission_needs_a_supported_connection(self):
+        # Admitting a proposal creates a node, so review must support the claim connecting it; identifying
+        # the proposal with an existing node reuses a node the research already connects
+        # (reference/review-output.md). The proposal here restates the root through an unsupported claim.
+        sid = 's' + '1' * 32
+        node_id = sid + '-q'
+        folder, data = self.peer_candidate(sid, node_id, 'For every natural number n, n + 0 = n, restated.')
+        candidate = folder / 'output'
+        reviewer = self.instance / 'sessions/sreview'
+        output = reviewer / 'output'
+        output.mkdir(parents=True)
+        write_json(reviewer / 'input.json', {'instance': str(self.instance), 'session': 'sreview',
+            'role': 'review', 'task': {'kind': 'candidate', 'candidate': str(candidate),
+                                     'candidate_hashes': runtime.tree_hashes(candidate)}})
+        (output / 'feedback.md').write_text('The proposal restates the root; its connecting argument has a gap.',
+                                            encoding='utf-8')
+        verdict = assessment(data)
+        verdict['claims'][0].update(status='unsupported', reason='The connecting argument has a gap.')
+        verdict['relations'][0].update(accepted=False, reason='Its claim is unsupported.')
+        write_json(output / 'assessment.json', verdict)
+        errors = check_session(reviewer)
+        self.assertTrue(any('new node needs supported connection' in error for error in errors), errors)
+        verdict['nodes'][0].update(node='root', reason='The proposal states the root itself.')
+        write_json(output / 'assessment.json', verdict)
+        self.assertEqual(check_session(reviewer), [])
+        self.publish('ridentified', data, verdict)
+        self.assertEqual(replay(self.instance)['aliases'][node_id], 'root')
+
 
 class PublicationTests(InstanceCase):
     def test_candidate_cannot_collide_with_publication_attachments(self):

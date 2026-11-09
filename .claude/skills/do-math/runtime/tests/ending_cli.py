@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import sys
+import time
 
 session = Path.cwd()
 config = json.loads((session / 'work/ending-test.json').read_text())
@@ -25,6 +26,10 @@ if json.loads((session / 'input.json').read_text())['role'] == 'peer':
         'title': 'Retained investigation', 'description': 'A developed contribution.',
         'exposition': 'report.md', 'claims': [], 'nodes': [], 'relations': [],
         'solutions': [], 'glossary': []}), encoding='utf-8')
+if config.get('hold_at') == number:
+    # A turn still running when the operator ends the session; only termination ends it early.
+    (session / 'work/holding').write_text('', encoding='utf-8')
+    time.sleep(120)
 if config.get('refuse_at') == number:
     print(json.dumps({'type': 'error', 'message': "You've hit your usage limit. Try again later."}), flush=True)
     raise SystemExit(1)

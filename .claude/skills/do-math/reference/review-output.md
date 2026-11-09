@@ -77,7 +77,7 @@ When a candidate review that publishes its candidate finds a defect in an earlie
 
 ## Comprehensive assessment
 
-For a comprehensive assignment, `assessment.json` contains `feedback`, `index_assessment`, `findings`, and optional `concerns`. It has no candidate publication decision. Address the assigned concerns and requested evidence in the feedback, following the actual uses described in the role guide. The runner publishes this assessment directly as a review record and attaches its findings to their sources. It does not require another peer/review cycle for your judgment to take effect.
+For a comprehensive assignment, `assessment.json` contains `feedback`, `findings`, and optional `concerns`. It has no candidate publication decision and no index assessment, because the review is not itself an index entry. Address the assigned concerns and requested evidence in the feedback, following the actual uses described in the role guide. The runner publishes this assessment directly as a review record and attaches its findings to their sources, where the index and frontier show them. It does not require another peer/review cycle for your judgment to take effect.
 
 If you introduce notation needed to explain your assessment, add a `glossary` array in the local entry format of [Record format](record-format.md), and use it in the feedback. No entries are needed when you introduce no terms. These local definitions explain your output; they do not create new mathematical proof claims.
 

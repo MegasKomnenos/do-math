@@ -382,6 +382,9 @@ class JobHostTests(unittest.TestCase):
         (self.job / "GO").touch()
         self.assertEqual(host.wait(timeout=30), 0)
         receipt = runner.read_json(self.job / "process.json")
+        # The identity recorded is the Lean process's own, not the host's; that process has ended by now.
+        self.assertEqual(receipt["process"]["pid"], receipt["pid"])
+        self.assertNotEqual(receipt["pid"], host.pid)
         self.assertFalse(runner.alive(receipt["process"]))
         self.assertEqual(runner.read_json(self.job / "exit.json")["exit_code"], 3)
         output = (self.job / "stdout.log").read_text(encoding="utf-8")
@@ -392,7 +395,7 @@ class JobHostTests(unittest.TestCase):
             # `normal` leaves the niceness as inherited, so this shows only that the host did not change it.
             # The lowered priorities are not exercised: a below-normal stand-in starves behind normal-priority
             # research load on the test machine, which is why every fixture here runs at `normal`.
-            self.assertIn(f"nice={lean_broker.NICE['normal']}", output)
+            self.assertIn(f"nice={os.nice(0)}", output)
         self.assertIn("WARN", (self.job / "stderr.log").read_text(encoding="utf-8"))
 
     def test_host_without_go_exits_on_cancel_or_dead_broker(self):
@@ -498,6 +501,27 @@ class BrokerTests(BrokerFixture):
                                          3 if boundary == "duplicate" else 0)
                     if boundary == "registration":
                         self.assertIn(f"{kind}-{boundary}", out.getvalue())
+
+    def test_a_request_registered_while_its_record_is_read_is_not_unknown(self):
+        # The broker records a request in its state and then removes it from the queue. A client that read
+        # the state just before the registration and looks at the queue just after it must still find the job;
+        # `wait` would otherwise end with "unknown job" for a job that is queued.
+        self.start_broker()
+        job_id = self.submit(self.session_file("s1"), expect_mb=40)
+        original_read = lean_broker.read_json
+        registered = []
+        def register_after_the_read(path, *args, **kwargs):
+            value = original_read(path, *args, **kwargs)
+            if Path(path) == self.paths.state and not registered:
+                registered.append(job_id)
+                self.broker.ingest()
+            return value
+        with patch.object(lean_broker, "read_json", side_effect=register_after_the_read):
+            record = lean_broker.job_record(self.paths, job_id)
+        self.assertEqual(registered, [job_id])
+        self.assertFalse((self.paths.queue / (job_id + ".json")).exists())
+        self.assertEqual(record, {"id": job_id, "status": "submitted"})
+        self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "queued")
 
     def test_first_closure_is_calibrated_then_the_job_runs_and_is_measured(self):
         self.start_broker()

@@ -327,7 +327,6 @@ def assessment_check(data, root, record, candidate, model, instance, sid):
 
 def comprehensive_check(data, root, model):
     file(root, data.get('feedback'))
-    text(data.get('index_assessment'), 'index_assessment')
     findings_check(data.get('findings'), model)
     concerns_check(data.get('concerns', []), model)
     glossary_check(data.get('glossary', []))

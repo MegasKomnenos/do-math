@@ -359,8 +359,8 @@ def questions_event(model, event, folder):
     data = read_json(folder / 'questions.json')
     for item in data['questions']:
         model['questions'].setdefault(item['id'], {
-            'id': item['id'], 'statement': item['statement'], 'grounds': item.get('grounds', ''),
-            'source': event['id'], 'origin': data.get('source', 'operator')})
+            'id': item['id'], 'statement': item['statement'], 'grounds': item['grounds'],
+            'source': event['id'], 'origin': data['source']})
 
 
 def assessment_event(model, event, folder):

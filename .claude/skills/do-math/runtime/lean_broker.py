@@ -1418,13 +1418,17 @@ def job_record(paths, job_id):
     """The job's or build's current record from the result or the broker state, or None if unknown."""
     is_build = BUILD_ID.match(job_id) is not None
     result = (paths.build(job_id) if is_build else paths.job(job_id)) / "result.json"
+    # The broker records a request in its state, or answers it with a result, before it removes the
+    # request from the queue. So the queue is looked at first: a request that leaves it after this look
+    # has left its record for the reads below, and one already gone was recorded before this look.
+    submitted = (paths.queue / (job_id + ".json")).exists()
     if result.exists():
         return read_json(result)
     if paths.state.exists():
         record = read_json(paths.state).get("builds" if is_build else "jobs", {}).get(job_id)
         if record:
             return record
-    if (paths.queue / (job_id + ".json")).exists():
+    if submitted:
         return {"id": job_id, "status": "submitted"}
     return None
 

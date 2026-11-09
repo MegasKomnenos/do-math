@@ -37,7 +37,7 @@ Tell the user the absolute instance path, runner PID, new log paths, current run
 
 The runner sends retained research from attempts, explorations and formalizers through peer and review. Useful imperfect records publish with feedback, and reviewed informal solutions can be used within their supported scope while formalization continues. An attempt that only checked availability, or an explorer that found no free question to occupy, can report `no_research` and end without peer or review; the runner retains that session's files and conversation.
 
-Each session runs under a **session host**, the process through which the runner launched its CLI; the host stays alive for the whole session, across the CLI turns, and survives a runner restart. Before closing an attempt that undertook research, an explorer, a formalizer or a peer, its host resumes the same conversation with common and role-specific continuation guidance, up to `max_end_resumptions` additional turns (default 3). A valid worker end decision or reaching that limit authorizes the handoff to peer or review; the recorded issuer distinguishes the two.
+Each session runs under a **session host**, the process through which the runner launched its CLI; the host stays alive for the whole session, across the CLI turns, and survives a runner restart. Before closing an attempt or explorer that undertook research, a formalizer or a peer, its host resumes the same conversation with common and role-specific continuation guidance, up to `max_end_resumptions` additional turns (default 3). A valid worker end decision or reaching that limit authorizes the handoff to peer or review; the recorded issuer distinguishes the two.
 
 ## Read results in their mathematical scope
 

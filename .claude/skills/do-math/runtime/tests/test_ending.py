@@ -12,7 +12,7 @@ from coordination import board, session_live
 from ending import request_prompt, run_turn
 from launch import worker_command
 from runner import Runner, main
-from runtime_support import read_json, session_host, write_json
+from runtime_support import alive, read_json, session_host, write_json
 from settings import defaults, validate
 from test_research import InstanceCase, take
 
@@ -347,6 +347,47 @@ class EndingTests(InstanceCase):
         state = read_json(directory / 'end-check.json')
         self.assertEqual(state['authorization']['basis'], 'interrupted')
         self.assertEqual(state['resumptions'], 0)
+
+    def test_kill_session_ends_a_running_turn_and_retained_work_reaches_peer(self):
+        # kill-session while a CLI turn is still running: the command terminates the identified CLI,
+        # the host records an interruption without launching another turn, and the producer's
+        # retained work goes to peer (reference/operations.md, Commands).
+        engine, sid, directory = self.prepare(config={'hold_at': 0})
+        errors = []
+        def run():
+            try:
+                session_host(directory)
+            except Exception as exc:
+                errors.append(exc)
+        with patch('ending.worker_command', side_effect=self.command):
+            thread = threading.Thread(target=run, daemon=True)
+            thread.start()
+            try:
+                deadline = time.monotonic() + 30
+                while time.monotonic() < deadline and not (
+                        (directory / 'work/holding').exists() and (directory / 'process.json').exists()):
+                    time.sleep(.05)
+                cli = read_json(directory / 'process.json')['process']
+                self.assertTrue(alive(cli))
+                import io
+                with patch('sys.stdout', new=io.StringIO()):
+                    self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
+                thread.join(10)
+                self.assertFalse(thread.is_alive())
+                self.assertEqual(errors, [])
+            finally:
+                (directory / 'CANCEL').touch()
+                thread.join(10)
+        self.assertFalse(alive(cli))
+        state = read_json(directory / 'end-check.json')
+        self.assertEqual((state['authorization']['basis'], state['resumptions']), ('interrupted', 0))
+        self.assertEqual(len((directory / 'work/turns.jsonl').read_text().splitlines()), 1)
+        s = engine.state['sessions'][sid]
+        s.update(read_json(directory / 'exit.json'))
+        self.assertNotIn(s['exit_code'], (0, None))
+        s.update(host=None, cli=None)
+        engine.finish(sid, s)
+        self.assertEqual(engine.state['pipelines'][engine.state['jobs'][s['job']]['pipeline']]['stage'], 'peer')
 
     def test_cancelled_peer_resumption_gets_a_replacement_instead_of_review(self):
         engine, sid, directory = self.prepare(role='peer')

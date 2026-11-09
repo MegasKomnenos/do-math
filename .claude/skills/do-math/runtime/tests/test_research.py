@@ -1041,6 +1041,11 @@ class RunnerTests(InstanceCase):
         self.check_refusal_handoff({'type': 'error', 'message': 'Selected model is at capacity'},
                                    'model:codex/gpt-6.1-sol', 'codex/other')
 
+    def test_model_refusal_in_a_failed_turn_is_read_as_the_same_refusal(self):
+        # retention.refusal reads the capacity message from a turn.failed error as well as from an error event.
+        self.check_refusal_handoff({'type': 'turn.failed', 'error': {'message': 'Selected model is at capacity'}},
+                                   'model:codex/gpt-6.1-sol', 'codex/other')
+
     def test_claude_model_refusal_blocks_only_that_model_and_retains_work(self):
         # Claude's typed refusal for one model blocks that model, not the claude provider.
         self.check_refusal_handoff({'type': 'assistant', 'is_api_error_message': True,
