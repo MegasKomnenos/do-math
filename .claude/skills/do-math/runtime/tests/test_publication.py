@@ -1,6 +1,8 @@
 import hashlib
+import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import unittest
 from unittest.mock import patch
@@ -219,6 +221,27 @@ class PublicationTests(InstanceCase):
         self.assertEqual(len(list((self.instance / 'knowledge/events').glob('*.json'))), 1)
         history = original(self.instance, 'log', '--format=%s')
         self.assertEqual(history.count('Publish ' + identity), 1)
+
+    def test_restart_replaces_a_stale_stage_that_holds_a_read_only_file(self):
+        # copytree keeps a read-only flag, which Git gives its object files, and Windows refuses to
+        # delete a read-only file. The stage an interrupted publication left is still replaced, and
+        # the restart completes the same publication from the frozen candidate.
+        runner, job = self.candidate_pipeline()
+        runner.prepare_publication('sreview', job, 'record')
+        stage = self.instance / 'runner' / ('stage-' + runner.state['publication']['event']['id'])
+        stored = stage / 'evidence/repo/.git/objects/ab/cdef'
+        stored.parent.mkdir(parents=True)
+        stored.write_bytes(b'A Git object')
+        os.chmod(stored, stat.S_IREAD)
+        recovered = runtime.Runner(self.instance, self.skill)
+        recovered.publish()
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(recovered.state['jobs'][job['id']]['status'], 'done')
+        self.assertEqual(list((self.instance / 'runner').glob('stage-*')), [])
+        event = read_json(next((self.instance / 'knowledge/events').glob('*.json')))
+        published = self.instance / 'knowledge' / event['folder']
+        self.assertEqual((published / 'record.md').read_bytes(), b'The proof.')
+        self.assertFalse((published / 'evidence').exists())
 
     def test_review_finish_publishes_the_unchanged_assigned_candidate(self):
         runner, job = self.candidate_pipeline()

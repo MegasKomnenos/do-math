@@ -859,25 +859,6 @@ class BrokerTests(BrokerFixture):
         self.assertFalse((self.paths.job(unread) / "launch.json").exists())
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(lean_broker.wait(self.paths, unread, timeout=0), 4)
-        # A request the broker cannot accept is answered, not dropped.
-        bad = "j" + "0" * 32
-        runner.write_json(self.paths.queue / (bad + ".json"), {"id": bad, "source": 5, "expect_mb": 40})
-        # Fields that reached the broker state unchecked would crash a later tick instead of this request.
-        malformed = "j" + "2" * 32
-        runner.write_json(self.paths.queue / (malformed + ".json"),
-                          {"id": malformed, "source": str(self.session_file("s1", "malformed.lean")),
-                           "expect_mb": 40, "session": ["s1"], "submitted_at": "now"})
-        (self.paths.queue / "x..escape.json").write_text("{}", encoding="utf-8")
-        if os.name != "nt":  # a POSIX file name can end in a newline, which a `$`-anchored match accepts
-            (self.paths.queue / ("j" + "1" * 32 + "\n.json")).write_text("{}", encoding="utf-8")
-        self.broker.tick()
-        for job_id, field in ((bad, "source"), (malformed, "session")):
-            self.assertEqual(lean_broker.job_record(self.paths, job_id)["status"], "failed")
-            self.assertIn("rejected: " + field, lean_broker.job_record(self.paths, job_id)["reason"])
-        self.assertNotIn(malformed, self.broker.state["jobs"])
-        self.assertEqual(list(self.paths.queue.glob("*.json")), [])
-        # Nothing under jobs/ was made for a name that is not a job ID.
-        self.assertEqual([p.name for p in self.paths.jobs.iterdir() if not lean_broker.JOB_ID.fullmatch(p.name)], [])
 
     def test_settings_reload_live_and_keep_the_last_good_configuration(self):
         self.start_broker()

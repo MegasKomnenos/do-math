@@ -23,7 +23,7 @@ from knowledge import (ROOT_QUESTION, canonical, formal_ready, render, replay, r
 from retention import capture, refusal
 from ending import ROLES as END_CHECK_ROLES, authorize, turn_directory
 from runtime_support import (EmergencyMemory, InstanceLock, alive, archive_work, available_memory, file_stamp, git,
-                             popen_options, process_identity, read_json, rename_directory, session_host,
+                             popen_options, process_identity, read_json, remove_tree, rename_directory, session_host,
                              terminate_process, write_json, write_text)
 from settings import PRODUCERS, defaults, load_settings, validate
 
@@ -372,7 +372,7 @@ class Runner:
                 if staging.exists():
                     if staging.resolve().parent != session.resolve():
                         raise ValueError('invalid candidate staging path')
-                    shutil.rmtree(staging)
+                    remove_tree(staging)
                 shutil.copytree(session / 'output', staging)
                 rename_directory(staging, candidate)
             # Finish all candidate reads before marking the peer complete. A
@@ -433,7 +433,7 @@ class Runner:
                 if staging.exists():
                     if staging.is_symlink() or staging.is_junction() or staging.resolve().parent != peer.resolve():
                         raise ValueError('invalid candidate recovery staging path')
-                    shutil.rmtree(staging)
+                    remove_tree(staging)
                 shutil.copytree(original, staging)
                 if tree_hashes(staging) != expected:
                     raise ValueError('peer output changed during candidate recovery')
@@ -485,14 +485,14 @@ class Runner:
             if stage.exists():
                 if stage.resolve().parent != (self.instance / 'runner').resolve():
                     raise ValueError('invalid staging directory')
-                shutil.rmtree(stage)
+                remove_tree(stage)
             if event['kind'] == 'record':
                 candidate = Path(job['task']['candidate'])
                 regular_tree(candidate)
                 shutil.copytree(candidate, stage)
                 if tree_hashes(stage) != job['task']['candidate_hashes']:
                     # The damaged candidate stays where review read it; its staged copy is not evidence.
-                    shutil.rmtree(stage)
+                    remove_tree(stage)
                     self.state['publication'] = None
                     session = self.state['sessions'][sid]
                     session['record'] = None
@@ -719,16 +719,24 @@ class Runner:
         return last is None or time.time() - last >= self.settings['launch_interval']
 
     def waits_for_its_kind(self, job):
-        """Whether a pending comprehensive review or organizer is held only by another of its kind.
+        """Whether a comprehensive review or organizer waits for another of its kind that is running.
 
-        Those launch one at a time. The waiting one takes the slot the running one frees, ahead of any
-        attempt, so it does not hold fresh attempts back as peer or review work waiting for capacity or
-        an available model does."""
+        Those launch one at a time: dispatch_pending() holds the waiting one back. It then takes the slot
+        the running one frees, ahead of any attempt, so it does not hold fresh attempts back as peer or
+        review work waiting for capacity or an available model does."""
         if job['role'] == 'organizer' or (job['role'] == 'review' and job['task']['kind'] == 'comprehensive'):
             return any(other['status'] == 'running' and other['role'] == job['role']
                        and other['task'].get('kind') == job['task'].get('kind')
                        for other in self.state['jobs'].values())
         return False
+
+    def peer_or_review_waiting(self):
+        """Whether a peer or review job waits to launch; fresh attempts are held back while one does.
+
+        A comprehensive review that waits only for another of its kind does not count: it takes the slot
+        that one frees, ahead of any attempt (waits_for_its_kind)."""
+        return any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
+                   for j in self.state['jobs'].values())
 
     def question_view(self, launching=False):
         """Free, occupied and choosing questions as the runner counts them.
@@ -790,8 +798,7 @@ class Runner:
                     continue
                 if not self.available_nodes():
                     continue
-                if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
-                       for j in self.state['jobs'].values()):
+                if self.peer_or_review_waiting():
                     continue
                 if not self.launch_due():
                     continue
@@ -799,13 +806,9 @@ class Runner:
                     # An exploration that can launch now outranks the attempt; schedule() creates it
                     # after this pass. A request without a free question does not hold the attempt.
                     continue
-            if job['role'] == 'review' and job['task']['kind'] == 'comprehensive' and any(
-                    other['status'] == 'running' and other['role'] == 'review' and other['task']['kind'] == 'comprehensive'
-                    for other in self.state['jobs'].values()):
+            if self.waits_for_its_kind(job):
                 continue
             if job['not_before'] <= time.time() and self.selection(job['role']):
-                if job['role'] == 'organizer' and any(j['role'] == 'organizer' and j['status'] == 'running' for j in self.state['jobs'].values()):
-                    continue
                 self.dispatch(job['id'])
                 changed = True
         if changed:
@@ -836,15 +839,11 @@ class Runner:
                     # The queued exploration launches from dispatch_pending() on a later pass.
                     break
                 continue
-            # A comprehensive review or organizer held only by another of its kind takes the slot that
-            # one frees, so neither holds the attempt back (waits_for_its_kind).
-            waiting = any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
-                          for j in self.state['jobs'].values())
-            higher_ready = any(j['status'] == 'pending' and j['role'] not in PRODUCERS
-                               and j['not_before'] <= time.time() and self.selection(j['role'])
-                               and not self.waits_for_its_kind(j)
-                               for j in self.state['jobs'].values())
-            if (waiting or higher_ready or not nodes or not self.launch_due()
+            waiting = self.peer_or_review_waiting()
+            # dispatch_pending() above has already launched each peer, review or organizer job that could
+            # launch; what remains waits for its retry time, a model or another of its kind. Of those, only
+            # a waiting peer or review holds the attempt back.
+            if (waiting or not nodes or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break
             key = self.producer('attempt')

@@ -64,7 +64,7 @@ For such compiles, submit and wait in two steps:
 
 ```text
 python <broker> submit <instance> <file.lean> --session <session ID> --expect-mb <MiB>
-python <broker> wait <instance> <job> --timeout 500
+python <broker> wait <instance> <job> --timeout 50
 ```
 
 `submit` returns at once and prints the job ID. `wait` returns either the finished result, printed exactly as `run` would print it, or, if the timeout passes first, exit code 124 and a note that the job is still running. Nothing is lost between calls; `wait` can be run again and again until the result is there. If a `run` was started and its shell tool gave up, the same recovery works, because the job ID is the first thing `run` prints on standard error.

@@ -521,13 +521,7 @@ def render(instance, model, board, leases=None):
         if aliases:
             lines.append('Aliases: ' + ', '.join(aliases))
         lines.append('')
-    lines += ['# Questions', '',
-              'A question names something the research wants to understand about the problem. It has no premises, '
-              'relations or sections; explorers occupy questions, one explorer per question, and the board shows who holds which. '
-              'When an organizer merges two questions that explorers already held, both keep the merged question until '
-              'their pipelines end, and no other explorer takes it meanwhile. '
-              f'Question {ROOT_QUESTION} is the root problem itself. No explanation resolves it; it stays open until the root '
-              'is formally proved or refuted, and that settlement resolves it.', '']
+    lines += ['# Questions', '']
     for qid, question in model['questions'].items():
         if question['canonical'] != qid:
             continue
@@ -651,7 +645,7 @@ def render(instance, model, board, leases=None):
             if node['concerns'] or node['concern_history']:
                 board_lines.append(f'  Concern: see [frontier](frontier.md) for {nid}.')
     if leases:
-        board_lines += ['', '## Node leases', '', 'One session at a time chooses a section on a node; others wait in order.', '']
+        board_lines += ['', '## Node leases', '']
         for nid, entry in sorted(leases.items()):
             holders = ', '.join(h['session'] for h in entry['holders']) or '(free)'
             queue = ', '.join(w['session'] for w in entry['queue']) or '(none)'

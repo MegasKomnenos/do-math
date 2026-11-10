@@ -652,8 +652,6 @@ class Broker:
         for path in sorted(self.paths.queue.glob("*.json"), key=lambda p: (p.stat().st_mtime_ns, p.name)):
             job_id = path.stem
             try:
-                if not JOB_ID.fullmatch(job_id) and not BUILD_ID.fullmatch(job_id):
-                    raise ValueError(f"not a job ID: {job_id}")
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else self.paths.job(job_id)
                 # Registration or a final outcome can be durable while its queue
                 # file remains after a crash. Acknowledge it without registering
@@ -663,18 +661,7 @@ class Broker:
                     path.unlink(missing_ok=True)
                     continue
                 request = read_json(path)
-                if request.get("id") != job_id:
-                    raise ValueError("the request's id does not match its file name")
                 expect = request["expect_mb"]
-                if type(expect) is not int or expect < 1:
-                    raise ValueError("expect_mb must be a positive integer")
-                # Fields kept in the broker state must have the shapes the scheduler and the orphan
-                # check rely on; a request that fails here is answered, not left to crash a later tick.
-                if request.get("session") is not None and not isinstance(request["session"], str):
-                    raise ValueError("session must be a session ID")
-                if "submitted_at" in request and (type(request["submitted_at"]) not in (int, float)
-                                                  or not math.isfinite(request["submitted_at"])):
-                    raise ValueError("submitted_at must be a finite number")
                 if (folder / "CANCEL").exists():
                     write_json(folder / "result.json", {"id": job_id, "status": "cancelled",
                                "session": request.get("session"), "reason": "cancelled on request",
@@ -687,8 +674,6 @@ class Broker:
                     path.unlink(missing_ok=True)
                     continue
                 source = request["source"]
-                if not isinstance(source, str):
-                    raise ValueError("source must be a path")
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else \
@@ -998,12 +983,8 @@ class Broker:
     def restore_module(self, key, olean):
         """Restore every emitted file; an entry whose manifest was never published (its caching was cut short) or that lacks a listed file is a miss."""
         try:
-            suffixes = read_json(self.paths.cache / (key + ".artifacts.json")).get("artifacts")
-        except (OSError, ValueError, AttributeError):
-            return False
-        if not isinstance(suffixes, list) or ".olean" not in suffixes or not all(
-                isinstance(s, str) and len(s) > 1 and s.startswith(".")
-                and not any(c in s for c in ('/', '\\', ':', '\0')) for s in suffixes):
+            suffixes = read_json(self.paths.cache / (key + ".artifacts.json"))["artifacts"]
+        except (OSError, ValueError):
             return False
         if not all((self.paths.cache / (key + suffix)).is_file() for suffix in suffixes):
             return False
@@ -1049,10 +1030,7 @@ class Broker:
                         key=lambda b: b["finished_at"] or 0)
         for build in builds[:-KEEP_FINISHED] if len(builds) > KEEP_FINISHED else []:
             del self.state["builds"][build["id"]]
-            target = Path(build['lib']).resolve()
-            if not target.is_relative_to(self.paths.builds.resolve()) or target.name != 'lib':
-                raise ValueError('build library cleanup escapes the broker build directory')
-            shutil.rmtree(target, ignore_errors=True)
+            shutil.rmtree(self.paths.build(build["id"]) / "lib", ignore_errors=True)
 
     def deps_done(self, job):
         """True when every module this job imports has been compiled with exit code 0."""

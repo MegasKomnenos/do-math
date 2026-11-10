@@ -446,6 +446,22 @@ def _archive_entries(archive):
 
 
 
+def remove_tree(path):
+    """Remove a directory tree whose contents the runtime keeps elsewhere.
+
+    Windows refuses to remove a read-only file or directory. Git creates its object files read-only,
+    and shutil.copytree keeps the flag in its copy. Every caller removes a tree whose contents remain
+    elsewhere: a finished work/ in its verified archive, or a stale staging copy in the files it was
+    copied from. The flag protects nothing there, so it is cleared where Windows refuses."""
+    def clear_read_only(function, name, error):
+        if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
+            raise error
+        os.chmod(name, stat.S_IWRITE)
+        function(name)
+    shutil.rmtree(path, onexc=clear_read_only)
+
+
+
 def archive_work(session):
     """Replace a finished session's work/ with work.tar.xz, verified file by file.
 
@@ -474,12 +490,5 @@ def archive_work(session):
             part.unlink(missing_ok=True)
     if any(stored.get(name, "missing") != value for name, value in entries.items()):
         raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
-    def clear_read_only(function, path, error):
-        # Windows refuses to remove a read-only file or directory, and Git creates its object files
-        # read-only. Every file here was just found intact in the archive, so the flag protects nothing.
-        if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
-            raise error
-        os.chmod(path, stat.S_IWRITE)
-        function(path)
-    shutil.rmtree(work, onexc=clear_read_only)
+    remove_tree(work)
     return True
