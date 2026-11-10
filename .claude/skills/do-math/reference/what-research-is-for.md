@@ -6,13 +6,13 @@
 
 Every session that works on a do-math investigation leaves behind a record of what it tried and what it found. Some time ago, one investigation spent several days on a problem in combinatorics, and by the time it ended its sessions had left well over a hundred of these records. The two of us who wrote this essay were close to that work from beginning to end: one of us is the user who started the investigation and followed it every day, and the other is the operator who kept it running. When it was over, we read all of the records, in the order in which they had been written. This essay is about what we came to think as we read.
 
-We want to say first that much of the work in those records was good. Some sessions extended, by careful and rigorous computation, the range in which the proposition was known to hold. Some worked out explicit constants in difficult estimates. Some took real pains to find out how far a particular method could be pushed. Work of this kind brought the research closer to an answer, and nothing we say below is meant to diminish it.
+We want to say first that much of the work in those records was good. Some sessions extended, by careful and rigorous computation, the range in which the proposition was known to hold. Some worked out explicit constants in difficult estimates. Some took real pains to find out how far a particular method could be pushed. This was correct work into which a great deal of care had gone, and nothing we say below is meant to diminish it.
 
 ### A growing range
 
 Taken one at a time, the records mostly read as careful, well-made work. It was when we read them one after another that a pattern emerged: a way of working that repeated from record to record. A session would take on some part of the problem and bring to it whatever tools seemed to fit, often several at once. Where the tools could not reach, it would check the remaining cases one by one, usually with a large computation. When it was done, the range in which the proposition was known to hold was somewhat wider than before. The next session would then begin at the new edge of that range and work in the same manner.
 
-Record by record, the confirmed range grew a great deal, and that was genuine progress. But when we reached the last record, we asked ourselves a simple question. Did we now understand the object better than when we had begun reading? Did we know more about why it has the property the research was trying to prove?
+Record by record, the confirmed range grew a great deal, and each record added real knowledge of where the proposition holds. But when we reached the last record, we asked ourselves a simple question. Did we now understand the object better than when we had begun reading? Did we know more about why it has the property the research was trying to prove?
 
 We could not honestly say that we did. We knew far more about where the proposition holds. About why it holds, about what in the structure of the object gives rise to the property, we knew hardly more than at the start. Our knowledge of the range had grown enormously, while our understanding of the object had barely grown at all.
 
