@@ -1,4 +1,4 @@
-"""Replay reviewed publications into research state. Prose is never interpreted."""
+"""Replay the instance's published events into research state. Prose is never interpreted."""
 from copy import deepcopy
 from pathlib import Path
 from urllib.parse import quote

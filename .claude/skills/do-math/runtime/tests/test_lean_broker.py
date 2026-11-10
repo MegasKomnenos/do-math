@@ -130,7 +130,7 @@ class BrokerFixture(unittest.TestCase):
             return lean_broker.build(self.paths, root, targets, expect_mb, session)["build"]
 
     def tree(self, session="s1", **overrides):
-        """A, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
+        """A imports the library, B and C import A, D imports B and C; `overrides` replaces a module's fake options."""
         root = self.instance / "sessions" / session / "work" / "lean"
         plan = {"A": (("Mathlib.Data.Nat.Basic",), {"sleep": 0.3}), "B": (("A",), {"sleep": 0.5}),
                 "C": (("A",), {"sleep": 0.5}), "D": (("B", "C"), {"marker": "TARGET-D"})}
@@ -1320,6 +1320,12 @@ class BuildTests(BrokerFixture):
         shadowing = self.build(root, [root / "Shadow.lean"])
         self.until(lambda: self.build_record(shadowing)["status"] in lean_broker.FINISHED)
         self.assertIn("shadow", self.build_record(shadowing)["reason"])
+        # A module of yours under a toolchain root is refused even when no library import shares that root.
+        source(root / "Std" / "Extra.lean", imports=())
+        source(root / "UsesStd.lean", imports=("Std.Extra",))
+        toolchain = self.build(root, [root / "UsesStd.lean"])
+        self.until(lambda: self.build_record(toolchain)["status"] in lean_broker.FINISHED)
+        self.assertIn("shadow the toolchain", self.build_record(toolchain)["reason"])
         # An import with no file under the root is read as the library's; the reason also names a missing file.
         source(root / "Notes" / "Main.lean", imports=("Notes.Lemma",))
         missing = self.build(root, [root / "Notes" / "Main.lean"])

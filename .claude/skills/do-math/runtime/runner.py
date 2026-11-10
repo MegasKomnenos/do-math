@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
@@ -12,7 +11,7 @@ import time
 import traceback
 import uuid
 
-from check import check_session, regular_tree, tree_hashes
+from check import IDENTIFIER, check_session, regular_tree, taken_question_ids, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
 from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
@@ -32,7 +31,6 @@ SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
 SKILL = RUNTIME.parent
 PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 4, 'attempt': 5}
-QUESTION_ID = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
 
 
 def uid(prefix):
@@ -54,7 +52,7 @@ def operator_questions(data, model):
         raise ValueError('a questions file needs a nonempty "reason"')
     if not isinstance(items, list) or not items:
         raise ValueError('a questions file needs a nonempty "questions" array')
-    taken = set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases'])
+    taken = taken_question_ids(model)
     seen = set()
     for item in items:
         if not isinstance(item, dict):
@@ -63,7 +61,7 @@ def operator_questions(data, model):
         if extra:
             raise ValueError('unknown key in a question: ' + ', '.join(extra))
         qid = item.get('id')
-        if not isinstance(qid, str) or not QUESTION_ID.fullmatch(qid):
+        if not isinstance(qid, str) or not IDENTIFIER.fullmatch(qid):
             raise ValueError(f'invalid question id: {qid!r}')
         if qid == ROOT_QUESTION:
             raise ValueError('q0 is the root question, which the runtime creates')

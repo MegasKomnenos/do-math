@@ -709,7 +709,6 @@ class Broker:
                 imports = []
                 self.log(event="imports_unreadable", job=job_id, error=str(exc))
             job = self.new_job(job_id, request, source, imports, imports, source_sha256=source_hash)
-            write_json(job_dir / "job.json", job)
             self.state["jobs"][job_id] = job
             if (job_dir / "CANCEL").exists():
                 self.cancel(job, "cancelled on request")
@@ -763,7 +762,6 @@ class Broker:
                                        build=build_id, module=name, root=root, lib=str(lib), olean=str(olean),
                                         deps=deps, key=keys[name], source_sha256=module['source_sha256'])
                     self.paths.job(job_id).mkdir(exist_ok=True)
-                    write_json(self.paths.job(job_id) / "job.json", job)
                     self.state["jobs"][job_id] = job
                     jobs[name] = job_id
                     entry.update(job=job_id, status="queued")
@@ -774,7 +772,6 @@ class Broker:
                 self.cancel(self.state["jobs"][job_id], f"build {build_id} failed: {exc}")
             self.log(event="build_failed", build=build_id, session=session, reason=str(exc))
         self.state["builds"][build_id] = build
-        write_json(folder / "build.json", build)
         self.dirty = True
         if build["status"] == "queued":
             if (folder / "CANCEL").exists():
@@ -842,7 +839,6 @@ class Broker:
                "lean": None, "pid": None, "measured": None, "reserve": None, "exit_code": None,
                "launch_error": None, "reason": None}
         self.paths.job(job_id).mkdir(exist_ok=True)
-        write_json(self.paths.job(job_id) / "job.json", job)
         self.state["jobs"][job_id] = job
         self.dirty = True
         self.log(event="calibration_queued", job=job_id, closure=closure, imports=imports)
@@ -1269,6 +1265,9 @@ class Broker:
                     continue
                 (job_dir / "launch.json").unlink(missing_ok=True)
                 job.update(status="queued", host=None, lean=None, pid=None, started_at=None, measured=None)
+                if job.get("build") in self.state["builds"]:
+                    # launch() marked the module running in its build; the build reports it queued again.
+                    self.state["builds"][job["build"]]["modules"][job["module"]]["status"] = "queued"
                 if cancelled:
                     self.cancel(job, "cancelled on request")
                     continue

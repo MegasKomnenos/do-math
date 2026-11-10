@@ -24,9 +24,19 @@ def text(value, name):
     return value
 
 
+# The ID rule of the record format. The questions command applies it to operator questions as well.
+IDENTIFIER = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
+
+
 def identifier(value):
-    need(isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', value), 'invalid identifier')
+    need(isinstance(value, str) and IDENTIFIER.fullmatch(value), 'invalid identifier')
     return value
+
+
+def taken_question_ids(model):
+    """IDs a new question cannot take, whether a peer proposes it or the operator publishes it:
+    one ID names one question or node."""
+    return set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases'])
 
 
 def array(value, name):
@@ -126,7 +136,7 @@ def record_check(data, root, model, proposal_owner=None):
         prefix = identifier(proposal_owner) + '-'
         need(all(q.startswith(prefix) and len(q) > len(prefix) for q in proposed_questions),
              'new question proposals must use their peer session prefix: ' + prefix)
-    taken = set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases']) | proposed
+    taken = taken_question_ids(model) | proposed
     need(not proposed_questions & taken, 'question proposal ID already names a question or node')
     for question in questions:
         text(question.get('statement'), 'question.statement')

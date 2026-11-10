@@ -102,6 +102,5 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     write_text(session / 'prompt.txt',
                f'You are a do-math {role} session. Your working directory is {session}.\n'
                f'Read {session / "pack.md"} in full, then carry out the role it describes.\n'
-               f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n'
-               'The runner launches the research sessions. Work in this session and retain your mathematics in your own folder.\n')
+               f'Your exact assignment, user conditions, settings and tool argv are in {session / "input.json"}.\n')
     return inp

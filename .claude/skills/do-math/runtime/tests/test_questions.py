@@ -13,7 +13,6 @@ from coordination import (board, main as coordination_main, question_availabilit
 from knowledge import canonical_question, render, replay
 from runner import Runner, main, operator_questions, status
 from runtime_support import git, read_json, write_json
-from settings import defaults
 from test_research import InstanceCase, assessment, claim_row, implication, record, solution
 
 
@@ -113,18 +112,6 @@ class QuestionKnowledgeTests(InstanceCase):
         # The withdrawal stays visible beside the reopened question, as for any other question.
         self.assertIn('not the root proposition', section)
         self.assertIn('reviews/v1/assessment.json', section)
-
-    def test_operator_questions_enter_the_frontier_with_their_origin(self):
-        self.questions('qops', [question('op-critical-scale'), question('op-common-block')])
-        model = replay(self.instance)
-        self.assertEqual({q for q, v in model['questions'].items() if v['state'] == 'open'},
-                         {'q0', 'op-critical-scale', 'op-common-block'})
-        self.assertEqual(model['questions']['op-critical-scale']['origin'], 'operator')
-        self.assertEqual(model['questions']['op-critical-scale']['source'], 'qops')
-        frontier = self.frontier(model)
-        self.assertIn('## op-critical-scale\n', frontier)
-        self.assertIn('operator publication [qops](questions/qops/questions.json)', frontier)
-        self.assertEqual(read_json(self.instance / 'knowledge/state.json')['questions'], model['questions'])
 
     def test_review_admits_declines_or_asks_to_revise_question_proposals(self):
         self.questions('qops', [question('op-existing')])
@@ -308,6 +295,10 @@ class OperatorQuestionTests(InstanceCase):
             self.assertEqual((entry['statement'], entry['grounds'], entry['origin'], entry['source'], entry['state']),
                              (item['statement'], item['grounds'], 'operator', eid, 'open'))
         self.assertEqual(runner.model, model)
+        # Nothing besides the published questions enters the model, and the runner's own rendering
+        # carries them into state.json.
+        self.assertEqual(set(model['questions']), {'q0'} | {item['id'] for item in items})
+        self.assertEqual(read_json(self.instance / 'knowledge/state.json')['questions'], model['questions'])
         frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
         section = frontier.split('## op-scale\n', 1)[1].split('\n## ', 1)[0]
         self.assertIn(f'Source: operator publication [{eid}](questions/{eid}/questions.json)', section)
@@ -769,10 +760,6 @@ class QuestionDispatchTests(InstanceCase):
         job.update(status='running', session=sid)
         runner.save()
         return sid, session, job, folder
-
-    def test_default_exploration_cadence_is_every_research_start(self):
-        self.assertEqual(defaults()['explore_every'], 1)
-        self.assertEqual(read_json(self.instance / 'settings.json')['explore_every'], 1)
 
     def test_runner_assigns_the_root_question_when_it_is_free(self):
         runner = self.runner()

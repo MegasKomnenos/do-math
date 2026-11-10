@@ -332,39 +332,6 @@ class EndingTests(InstanceCase):
                 (directory / 'CANCEL').touch()
                 thread.join(10)
 
-    def test_cancel_while_dispatch_stopped_never_launches_another_turn(self):
-        _, sid, directory = self.prepare()
-        (self.instance / 'control/STOP').touch()
-        errors = []
-        def run():
-            try:
-                session_host(directory)
-            except Exception as exc:
-                errors.append(exc)
-        with patch('ending.worker_command', side_effect=self.command):
-            thread = threading.Thread(target=run, daemon=True)
-            thread.start()
-            try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    path = directory / 'end-check.json'
-                    if path.exists() and read_json(path)['status'] == 'waiting_dispatch':
-                        break
-                    time.sleep(.05)
-                self.assertEqual(read_json(path)['status'], 'waiting_dispatch')
-                import io
-                with patch('sys.stdout', new=io.StringIO()):
-                    self.assertEqual(main(['kill-session', str(self.instance), sid]), 0)
-                thread.join(10)
-                self.assertFalse(thread.is_alive())
-                self.assertEqual(errors, [])
-            finally:
-                (directory / 'CANCEL').touch()
-                thread.join(10)
-        state = read_json(directory / 'end-check.json')
-        self.assertEqual(state['authorization']['basis'], 'interrupted')
-        self.assertEqual(state['resumptions'], 0)
-
     def test_kill_session_ends_a_running_turn_and_retained_work_reaches_peer(self):
         # kill-session while a CLI turn is still running: the command terminates the identified CLI,
         # the host records an interruption without launching another turn, and the producer's
@@ -434,7 +401,8 @@ class EndingTests(InstanceCase):
         s.update(read_json(directory / 'exit.json'))
         s.update(host=None, cli=None)
         engine.finish(sid, s)
-        self.assertEqual(s['end_check']['authorization']['basis'], 'interrupted')
+        # kill-session cancelled the pending resumption, so no further turn was launched.
+        self.assertEqual((s['end_check']['authorization']['basis'], s['end_check']['resumptions']), ('interrupted', 0))
         self.assertFalse((directory / 'candidate').exists())
         job = engine.state['jobs'][s['job']]
         self.assertEqual((job['status'], s['status']), ('pending', 'failed'))
