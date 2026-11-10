@@ -28,6 +28,7 @@ import sys
 import time
 import uuid
 
+from coordination import session_live
 from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
                     popen_options, process_identity, read_json, terminate_process, write_json)
 from settings import load_settings
@@ -673,7 +674,7 @@ class Broker:
                     self.ingest_build(job_id, request)
                     path.unlink(missing_ok=True)
                     continue
-                source = request["source"]
+                source, source_hash = request["source"], request["source_sha256"]  # hashed by the client at submission
             except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
                 self.log(event="request_rejected", file=path.name, error=str(exc))
                 folder = self.paths.build(job_id) if BUILD_ID.fullmatch(job_id) else \
@@ -686,10 +687,6 @@ class Broker:
                 continue
             job_dir = self.paths.job(job_id)
             job_dir.mkdir(exist_ok=True)
-            try:
-                source_hash = request.get("source_sha256") or hashlib.sha256(Path(source).read_bytes()).hexdigest()
-            except (OSError, ValueError):  # unreadable, or a path with a character the OS rejects
-                source_hash = None
             # A module compile of a build runs with -R, -o and the build's lib on the search path;
             # a single-file submission of the same bytes is a different compile, not its duplicate.
             # Nor is a job whose cancellation has been requested: it ends cancelled, and a submission
@@ -697,7 +694,7 @@ class Broker:
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
                               and j["source"] == source and j["kind"] == "compile" and not j.get("build")
-                              and source_hash is not None and j.get("source_sha256") == source_hash
+                              and j.get("source_sha256") == source_hash
                               and j["environment_key"] == self.state["environment_key"]
                               and not (self.paths.job(jid) / "CANCEL").exists()), None)
             if duplicate:
@@ -819,8 +816,8 @@ class Broker:
     def new_job(self, job_id, request, source, imports, external, source_sha256, **extra):
         """A queued compile job; `external` imports alone key its calibration closure.
 
-        `source_sha256` is the hash the caller has already read, or None when the source
-        could not be read; the job does not read the source a second time."""
+        `source_sha256` is the hash of the source bytes, read by the client at submission for a
+        single file and at build expansion for a module; the job does not read the source again."""
         session = request.get("session") or "unknown"
         return {"id": job_id, "kind": "compile", "session": session, "source": source,
                 "source_sha256": source_sha256,
@@ -1072,7 +1069,10 @@ class Broker:
         self.log(event="cancelling", job=job["id"], reason=reason)
 
     def cancel_orphans(self):
-        """A job whose session has ended has no reader; its compile only costs memory."""
+        """A job whose session has ended has no reader; its compile only costs memory.
+
+        A session has ended by the rule that coordination.session_live also applies to leases.
+        A job naming a session the runner has not recorded is kept."""
         now = time.monotonic()
         if now - self.last_sessions_check < 1.0:
             return
@@ -1085,13 +1085,12 @@ class Broker:
             if job["status"] not in ACTIVE or job["session"] == BROKER_SESSION or job.get("cancel_requested"):
                 continue
             session = sessions.get(job["session"])
-            if session is None:
+            if session is None or session_live(state, job["session"]):
                 continue
-            if session["status"] in ("ended", "integrated", "failed", "publishing"):
-                self.cancel(job, f"session {job['session']} ended ({session['status']})")
-            elif session["status"] == "running" and session.get("cli") is not None \
-                    and not alive(session.get("host")) and not alive(session.get("cli")):
+            if session["status"] in ("starting", "running"):
                 self.cancel(job, f"session {job['session']} is no longer alive")
+            else:
+                self.cancel(job, f"session {job['session']} ended ({session['status']})")
 
     # --- scheduling
 

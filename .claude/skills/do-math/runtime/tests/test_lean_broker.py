@@ -254,7 +254,8 @@ class AdmissionRuleTests(unittest.TestCase):
         # Four spreads pooled grow like sqrt(4) = 2, not 4, so the total stays well under the peak sum.
         certain, mean, sd = rows[0]
         self.assertAlmostEqual(total, 4 * certain + 4 * mean + 1.3 * 2 * sd, places=6)
-        # With no pooling (z large) or no spread to pool, the rule is a plain sum.
+        # A larger confidence widens the pooled margin until the same four no longer fit; with no
+        # spread to pool, the rule is a plain sum.
         self.assertFalse(lean_broker.admission(rows, rows[0], 3600, 20)[0])
         self.assertEqual(lean_broker.admission([(100, 0, 0)], (200, 0, 0), 300, 1.3), (True, 300))
 

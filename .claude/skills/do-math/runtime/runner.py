@@ -31,6 +31,8 @@ SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
 SKILL = RUNTIME.parent
 PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 4, 'attempt': 5}
+# A session in one of these states holds a concurrency slot: launched and not yet ended, failed or integrated.
+ACTIVE_STATUSES = ('starting', 'running', 'publishing')
 
 
 def uid(prefix):
@@ -99,7 +101,7 @@ class Runner:
         return self.instance / 'sessions' / sid
 
     def active(self):
-        return [(sid, s) for sid, s in self.state['sessions'].items() if s['status'] in ('starting', 'running', 'publishing')]
+        return [(sid, s) for sid, s in self.state['sessions'].items() if s['status'] in ACTIVE_STATUSES]
 
     def enqueue(self, role, task, pipeline=None, key=None):
         key = key or uid('j')
@@ -232,9 +234,14 @@ class Runner:
             self.save()
         return True
 
+    def backoff(self, attempts):
+        """The wait after the given number of consecutive failures: retry_seconds, doubling each time up to
+        retry_max_seconds. A job's retry and a refusal without a known reset both wait this long."""
+        return min(self.settings['retry_max_seconds'], self.settings['retry_seconds'] * 2 ** min(attempts - 1, 20))
+
     def retry(self, job, session, reason, *, availability=True):
         job['retries'] += 1
-        delay = min(self.settings['retry_max_seconds'], self.settings['retry_seconds'] * 2 ** min(job['retries'] - 1, 20))
+        delay = self.backoff(job['retries'])
         now = time.time()
         job.update(status='pending', session=None,
                    not_before=now + (min(delay, 1) if availability else delay), last_error=reason)
@@ -288,7 +295,7 @@ class Runner:
                 previous = self.state['blocks'].get(signal['key'], {})
                 signal['attempts'] = previous.get('attempts', 0) + 1
                 if signal['source'] in ('fallback', 'backoff'):
-                    signal['until'] = time.time() + min(self.settings['retry_max_seconds'], self.settings['retry_seconds'] * 2 ** min(signal['attempts'] - 1, 20))
+                    signal['until'] = time.time() + self.backoff(signal['attempts'])
             write_json(session / 'termination.json', {'cause': 'refusal' if signal else 'launch_error' if s.get('launch_error') else 'process_exit',
                                                       'exit_code': s.get('exit_code'), 'refusal': signal,
                                                       'at': time.time()})
@@ -370,8 +377,6 @@ class Runner:
             if not candidate.exists():
                 staging = session / 'candidate.part'
                 if staging.exists():
-                    if staging.resolve().parent != session.resolve():
-                        raise ValueError('invalid candidate staging path')
                     remove_tree(staging)
                 shutil.copytree(session / 'output', staging)
                 rename_directory(staging, candidate)
@@ -431,8 +436,6 @@ class Runner:
             if not restored.exists():
                 staging = restored.with_name(restored.name + '.part')
                 if staging.exists():
-                    if staging.is_symlink() or staging.is_junction() or staging.resolve().parent != peer.resolve():
-                        raise ValueError('invalid candidate recovery staging path')
                     remove_tree(staging)
                 shutil.copytree(original, staging)
                 if tree_hashes(staging) != expected:
@@ -483,8 +486,6 @@ class Runner:
         if not destination.exists():
             stage = self.instance / 'runner' / ('stage-' + event['id'])
             if stage.exists():
-                if stage.resolve().parent != (self.instance / 'runner').resolve():
-                    raise ValueError('invalid staging directory')
                 remove_tree(stage)
             if event['kind'] == 'record':
                 candidate = Path(job['task']['candidate'])
@@ -616,6 +617,19 @@ class Runner:
                                           cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                           **popen_options(detached=True))
 
+    def formalizable(self, nid, closure):
+        """The proofs a formalizer is sent to formalize on canonical node nid, or none.
+
+        A node qualifies while it is informally proved or refuted and an accepted relation carries that
+        outcome to the root (closure, from sufficient_closure); a settled node off every such path is not
+        formalized. Its qualifying proofs are those formal_ready accepts."""
+        node = self.model['nodes'][nid]
+        if node['state'] not in ('informal_proved', 'informal_refuted'):
+            return []
+        if (nid, node['state'].split('_', 1)[1]) not in closure:
+            return []
+        return [p for p in node['proofs'] if formal_ready(self.model, self.model['proofs'][p])]
+
     def populate(self):
         model = self.model
         pending = [j for j in self.state['jobs'].values() if j['status'] in ('pending', 'running')]
@@ -628,13 +642,11 @@ class Runner:
                                         'purpose': 'Trace the questioned claims to their evidence and through actual dependent uses; report precise findings.'})
         closure = sufficient_closure(model)
         for nid, node in model['nodes'].items():
-            if node['canonical'] != nid or node['state'] not in ('informal_proved', 'informal_refuted'):
+            if node['canonical'] != nid:
                 continue
-            if (nid, node['state'].split('_', 1)[1]) not in closure:
-                continue  # settled, but no accepted relation carries this outcome to the root
             if any(p['role'] == 'formalizer' and p['stage'] != 'done' and canonical(model, p['node']) == nid for p in self.state['pipelines'].values()):
                 continue
-            proofs = [pid for pid in node['proofs'] if formal_ready(model, model['proofs'][pid])]
+            proofs = self.formalizable(nid, closure)
             if proofs:
                 previous = [p['record'] for p in self.state['pipelines'].values() if p['role'] == 'formalizer' and p['record'] and canonical(model, p['node']) == nid]
                 self.producer('formalizer', {'node': nid, 'proofs': proofs, 'previous_records': previous})
@@ -694,7 +706,7 @@ class Runner:
                 self.state['attempt_dispatch_gate'] = None
                 self.save()
                 return True
-            if self.state['sessions'][sid]['status'] not in ('starting', 'running', 'publishing'):
+            if self.state['sessions'][sid]['status'] not in ACTIVE_STATUSES:
                 gate['probe_session'] = None
         if before != json.dumps(gate, sort_keys=True):
             self.save()
@@ -783,11 +795,8 @@ class Runner:
                                              or not self.question_slot(launching=True)):
                 continue
             if job['role'] == 'formalizer':
-                node = self.model['nodes'][canonical(self.model, job['task']['node'])]
-                ready = [p for p in node['proofs'] if formal_ready(self.model, self.model['proofs'][p])]
-                settled = node['state'] in ('informal_proved', 'informal_refuted')
-                carries = settled and (node['canonical'], node['state'].split('_', 1)[1]) in sufficient_closure(self.model)
-                if not settled or not ready or not carries:
+                ready = self.formalizable(canonical(self.model, job['task']['node']), sufficient_closure(self.model))
+                if not ready:
                     job['status'] = 'cancelled'
                     self.state['pipelines'][job['pipeline']]['stage'] = 'done'
                     changed = True
@@ -876,7 +885,7 @@ class Runner:
             elif request['kind'] == 'reconsider-attempts':
                 self.state['attempt_availability_epoch'] += 1
                 probe = (self.state['attempt_dispatch_gate'] or {}).get('probe_session')
-                if self.state['sessions'].get(probe, {}).get('status') not in ('starting', 'running', 'publishing'):
+                if self.state['sessions'].get(probe, {}).get('status') not in ACTIVE_STATUSES:
                     probe = None
                 self.state['attempt_dispatch_gate'] = {
                     'mode': 'reassess', 'reported_by': None, 'snapshot': None,
@@ -1025,7 +1034,7 @@ def archive_finished(instance):
                 job = state['jobs'][session['job']]
                 pipeline = state['pipelines'].get(job['pipeline'])
                 finished = pipeline['stage'] == 'done' if pipeline else job['status'] in ('done', 'cancelled')
-                if finished and session['status'] not in ('starting', 'running', 'publishing'):
+                if finished and session['status'] not in ACTIVE_STATUSES:
                     try:
                         archive_work(Path(instance) / 'sessions' / sid)
                     except (OSError, ValueError, RuntimeError, tarfile.TarError, lzma.LZMAError, EOFError) as exc:
@@ -1122,7 +1131,7 @@ def main(argv=None):
             # continues with the replaced broker after resume.
             held, active = [], []
             for sid, s in state['sessions'].items():
-                if s['status'] not in ('starting', 'running', 'publishing'):
+                if s['status'] not in ACTIVE_STATUSES:
                     continue
                 check = instance / 'sessions' / sid / 'end-check.json'
                 waiting = check.is_file() and read_json(check)['status'] == 'waiting_dispatch'

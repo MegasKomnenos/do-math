@@ -38,7 +38,7 @@ Describe failures with their mathematical scope. A gap in a proof, a counterexam
 
 Develop the contributions and obstacles that change the next researcher's understanding. Standard background can be cited or stated briefly for a reader who knows it. A new construction or a difficult inference needs its actual explanation, even when it is only a small part of the final result. Do not give every artifact equal space merely because it exists.
 
-A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research, as the common introduction and the organizer's guide describe. Those texts serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
+A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research, as the common introduction and the organizer's guide describe. Glossary entries and module descriptions serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
 
 ## Read back what you are handing on
 

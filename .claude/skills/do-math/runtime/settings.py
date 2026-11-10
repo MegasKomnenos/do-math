@@ -10,7 +10,8 @@ ROLES = ('attempt', 'explore', 'formalizer', 'peer', 'review', 'organizer')
 PRODUCERS = ('attempt', 'explore', 'formalizer')
 MODELS = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'},
           {'model': 'claude/opus', 'effort': 'xhigh'}]
-# A record and its review come from a different model than the work they assess.
+# Peer and review come from a different model than the producing roles (reference/operations.md),
+# so by default a candidate's review comes from the same model as the peer that wrote it.
 ASSESSORS = [{'model': 'claude/opus', 'effort': 'xhigh'},
              {'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
 AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']

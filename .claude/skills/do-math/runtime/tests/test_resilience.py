@@ -194,6 +194,10 @@ class PeerRecoveryTests(InstanceCase):
         self.assertEqual(tick.call_count, 1)
         self.assertIn('Traceback (most recent call last)', stderr.getvalue())
         saved = support.read_json(engine.state_path)
+        # The runner state's top-level last_error holds the failure and its time for status,
+        # apart from the errors of individual jobs (reference/operations.md).
+        self.assertEqual(saved['last_error']['error'], 'injected persistent failure')
+        self.assertIsInstance(saved['last_error']['at'], float)
         self.assertEqual(saved['sessions']['speer']['status'], 'running')
         self.assertEqual(saved['jobs'][key]['status'], 'running')
         self.assertEqual(saved['pipelines'][pipeline]['stage'], 'peer')
@@ -214,6 +218,41 @@ class PeerRecoveryTests(InstanceCase):
 
     def test_rename_failure_is_fatal_and_restart_creates_one_review(self):
         self.check_fatal_then_recover('runner.rename_directory')
+
+
+class MemoryReserveTests(InstanceCase):
+    def test_lack_of_memory_pauses_every_pass_until_free_memory_returns(self):
+        # Running out of memory does not end the runner (reference/operations.md, Restarts, runner
+        # failures and installation updates). It releases its reserve and makes no pass while free memory
+        # stays below 512 MiB; once free memory reaches 512 MiB it takes the reserve back, reloads its
+        # saved state and the published research, and continues without recording last_error. Runner.run
+        # is the runner's own loop; only the failing pass and the machine's free memory are injected.
+        engine = runtime.Runner(self.instance, self.skill)
+        free = iter([256 * 1024 * 1024, 512 * 1024 * 1024])
+        passes = []
+
+        def tick():
+            passes.append((engine.reserve.buffer is not None, engine.state))
+            if len(passes) == 1:
+                engine.state['explore_requested'] = True  # an unsaved change of the pass that fails
+                raise MemoryError
+            return True
+
+        with patch.object(engine, 'tick', side_effect=tick), \
+                patch('runner.available_memory', side_effect=lambda: next(free)), \
+                patch('runner.replay', wraps=runtime.replay) as reload, \
+                patch('runner.time.sleep') as sleep, \
+                patch('runtime_support.os.write') as written, \
+                patch('builtins.print'):
+            engine.run()
+        written.assert_called_once_with(2, b'Runner memory reserve released; dispatch will wait for recovery.\n')
+        # No pass ran while free memory was below 512 MiB; the next one held the reserve again.
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [0.25, 5])
+        self.assertEqual([held for held, _ in passes], [True, True])
+        # The state and the published research were read again, so the failed pass's change is gone.
+        self.assertFalse(passes[1][1]['explore_requested'])
+        self.assertEqual(reload.call_count, 1)
+        self.assertIsNone(support.read_json(engine.state_path)['last_error'])
 
 
 class LaunchFailureTests(InstanceCase):
