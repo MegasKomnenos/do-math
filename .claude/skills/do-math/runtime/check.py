@@ -217,6 +217,9 @@ def audit_formal(instance, session, check, solution, candidate):
 
 
 def assessment_check(data, root, record, candidate, model, instance, sid):
+    for path in Path(root).iterdir():
+        need(path.name.casefold() != 'lean-evidence',
+             'review output top-level name lean-evidence is reserved for the broker evidence attached at publication')
     need(type(data.get('publish')) is bool, 'publish must be Boolean')
     text(data.get('reason'), 'assessment.reason')
     text(data.get('index_assessment'), 'index_assessment')

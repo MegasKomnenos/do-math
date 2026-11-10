@@ -59,14 +59,21 @@ class ArchiveTests(unittest.TestCase):
             self.assertFalse(archive_work(session))
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
 
-    def test_existing_archive_mismatch_keeps_both_archive_and_remaining_work(self):
+    def test_existing_archive_finishes_an_interrupted_removal_and_keeps_mismatched_work(self):
         with tempfile.TemporaryDirectory() as tmp:
             session = Path(tmp)
             work = session / 'work'
-            work.mkdir()
+            (work / 'nested').mkdir(parents=True)
             (work / 'notes.md').write_bytes(b'Original mathematics')
+            (work / 'nested/table.csv').write_bytes(b'n,value')
             self.assertTrue(archive_work(session))
             saved = (session / 'work.tar.xz').read_bytes()
+            # A removal interrupted partway leaves part of work/, all of it already in the archive.
+            (work / 'nested').mkdir(parents=True)
+            (work / 'nested/table.csv').write_bytes(b'n,value')
+            self.assertTrue(archive_work(session))
+            self.assertFalse(work.exists())
+            self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
             work.mkdir()
             (work / 'notes.md').write_bytes(b'Work absent from the existing archive')
             with self.assertRaisesRegex(RuntimeError, 'does not match'):
@@ -317,6 +324,8 @@ class RetentionTests(unittest.TestCase):
                 self.assertEqual(capture(session, 'claude')['native_companions'], [copy.name])
             self.assertEqual((copy / 'tool-results/call1.txt').read_text(encoding='utf-8'), full_output)
             self.assertTrue((copy / 'subagents/agent-a1.jsonl').is_file())
+            # The readable conversation holds the preview and names the copy that holds the full output.
+            self.assertIn(copy.name + '/', (session / 'conversation.md').read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

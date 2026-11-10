@@ -372,6 +372,27 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertTrue(question_take(a, 'q0')['taken'])
         self.assertTrue(question_take(b, 'op-scale')['taken'])
 
+    def test_a_take_is_refused_once_the_question_is_resolved_or_q0_is_free_under_the_lease(self):
+        self.questions('qops', [question('op-scale'), question('op-block')])
+        self.engine.model = replay(self.instance)
+        root, a, b = self.session('sroot'), self.session('sa'), self.session('sb')
+        # A lease on q0 keeps q0 from counting as free, so both narrower questions can be leased.
+        self.assertTrue(question_lease(root, 'q0')['leased'])
+        self.assertTrue(question_lease(a, 'op-scale')['leased'])
+        self.assertTrue(question_lease(b, 'op-block')['leased'])
+        self.publish('r1', record([claim_row('e')], question_resolutions=[resolution('res', 'op-scale', 'e')]))
+        resolved = question_take(a, 'op-scale')
+        self.assertFalse(resolved['taken'])
+        self.assertIn('resolved', resolved['reason'])
+        question_release(root, 'q0')
+        overtaken = question_take(b, 'op-block')
+        self.assertFalse(overtaken['taken'])
+        self.assertIn('Lease and take q0', overtaken['reason'])
+        # Each refusal records nothing and keeps the lease.
+        for folder, qid, sid in ((a, 'op-scale', 'sa'), (b, 'op-block', 'sb')):
+            self.assertFalse((folder / 'declaration.json').exists())
+            self.assertEqual([h['session'] for h in question_lease_table(self.instance)[qid]['holders']], [sid])
+
     def test_a_formally_settled_root_closes_q0_without_cutting_its_holder_short(self):
         self.questions('qops', [question('op-scale')])
         self.engine.model = replay(self.instance)

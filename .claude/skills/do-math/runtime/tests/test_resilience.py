@@ -102,6 +102,60 @@ class DirectoryRenameTests(unittest.TestCase):
                     kernel.CloseHandle(handle)
 
 
+class StateFileSharingTests(unittest.TestCase):
+    # Every state and view file is written through write_json or write_text and read through read_json.
+    # On Windows a reader holding the destination without delete sharing fails the replacement, and one
+    # holding the file without read sharing fails the read; both calls wait for the handle instead.
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_replacement_waits_for_a_held_destination_and_keeps_the_complete_version(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'state.json'
+            support.write_json(path, {'version': 1})
+            replace = os.replace
+            held = [windows_error(5), windows_error(32)]
+
+            def held_destination(source, destination):
+                if held:
+                    # Meanwhile readers still see the complete earlier version.
+                    self.assertEqual(support.read_json(path), {'version': 1})
+                    raise held.pop(0)
+                replace(source, destination)
+
+            with patch('runtime_support.os.replace', side_effect=held_destination), \
+                    patch('runtime_support.time.sleep') as sleep:
+                support.write_json(path, {'version': 2})
+            self.assertEqual(sleep.call_count, 2)
+            self.assertEqual(support.read_json(path), {'version': 2})
+            self.assertEqual(list(Path(temp).iterdir()), [path])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows sharing semantics')
+    def test_read_waits_for_a_held_file_and_does_not_retry_other_refusals(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'state.json'
+            support.write_json(path, {'version': 1})
+            read_text = Path.read_text
+            held = []
+
+            def held_source(self, *args, **kwargs):
+                if held:
+                    raise held.pop(0)
+                return read_text(self, *args, **kwargs)
+
+            sharing = PermissionError('injected sharing violation')
+            sharing.winerror = 32
+            refused = PermissionError('injected privilege refusal')
+            refused.winerror = 1314
+            with patch.object(Path, 'read_text', held_source), patch('runtime_support.time.sleep') as sleep:
+                held.append(sharing)
+                self.assertEqual(support.read_json(path), {'version': 1})
+                self.assertEqual(sleep.call_count, 1)
+                held.append(refused)
+                with self.assertRaises(PermissionError) as caught:
+                    support.read_json(path)
+                self.assertIs(caught.exception, refused)
+                self.assertEqual(sleep.call_count, 1)
+
+
 class PeerRecoveryTests(InstanceCase):
     def peer(self):
         engine = runtime.Runner(self.instance, self.skill)

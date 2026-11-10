@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, findings_check, organization_check
-from coordination import board, lease, lease_table, message, release, section, updates, wait
+from coordination import board, lease, lease_table, main as coordination_main, message, release, section, updates, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
 from runner import Runner, archive_finished, initialize, main
 from runtime_support import InstanceLock, read_json, write_json
@@ -787,6 +787,33 @@ class RunnerTests(InstanceCase):
         runner.save()
         self.assertTrue(wait(c, 'root', timeout=0)['leased'])
 
+    def test_node_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
+        # Attempts and peers reach these commands only through the argv in input.json (reference/tools.md).
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        request = a / 'section.json'
+        write_json(request, {'statement': 'For every n, the last three terms decrease.'})
+
+        def run(*argv):
+            with patch('sys.argv', ['coordination.py', *argv]), patch('builtins.print') as shown:
+                code = coordination_main()
+            return code, json.loads(shown.call_args.args[0])
+
+        code, answer = run('section', str(a), 'root', '--file', str(request))
+        self.assertEqual((code, answer['registered']), (1, False))
+        code, answer = run('lease', str(a), 'root')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('wait', str(b), 'root', '--timeout', '0')
+        self.assertEqual((code, answer['timeout'], answer['position']), (124, True, 1))
+        code, answer = run('section', str(a), 'root', '--file', str(request))
+        self.assertEqual((code, answer['registered']), (0, True))
+        code, answer = run('wait', str(b), 'root', '--timeout', '0')
+        self.assertEqual((code, answer['leased']), (0, True))
+        code, answer = run('release', str(b), 'root')
+        self.assertEqual((code, answer['released']), (0, True))
+        code, answer = run('lease', str(b), 'missing')
+        self.assertEqual((code, answer['error']), (1, 'unknown node'))
+
     def test_a_session_stands_in_one_lease_relation(self):
         self.publish('r1', self.reduction())
         runner = self.runner()
@@ -817,6 +844,27 @@ class RunnerTests(InstanceCase):
         runner.save()
         self.assertEqual(runner.available_nodes(), ['root'])
         self.assertTrue(lease(b, 'root')['leased'])
+
+    def test_a_node_settled_under_the_lease_refuses_registration_waiting_and_leasing(self):
+        self.publish('r1', self.reduction())
+        runner = self.runner()
+        a, b = (self.running_attempt(runner, sid) for sid in ('sa', 'sb'))
+        self.assertTrue(lease(a, 'Q')['leased'])
+        self.assertFalse(wait(b, 'Q', timeout=0)['leased'])
+        # Q becomes informally proved while sa holds its lease and sb waits for it.
+        self.publish('r2', record([claim_row('q')], solutions=[solution('s', 'Q', 'q')]))
+        request = a / 'section.json'
+        write_json(request, {'whole': False, 'statement': 'Q for every even case.', 'reasons': {}})
+        refused = section(a, 'Q', request)
+        self.assertFalse(refused['registered'])
+        self.assertIn('not unresolved', refused['reason'])
+        self.assertEqual(refused['holders'], ['sa'])  # the refusal keeps the lease for its release
+        self.assertFalse((a / 'declaration.json').exists())
+        waiting = wait(b, 'Q', timeout=0)
+        self.assertFalse(waiting['leased'])
+        self.assertIn('not unresolved', waiting['reason'])
+        self.assertEqual(lease_table(self.instance)['Q']['queue'], [])  # the waiting place is given up
+        self.assertIn('not unresolved', lease(b, 'Q')['reason'])
 
     def test_sections_expand_through_the_lease_and_are_not_released(self):
         runner = self.runner()

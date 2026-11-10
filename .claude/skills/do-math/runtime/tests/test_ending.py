@@ -12,7 +12,7 @@ from coordination import board, session_live
 from ending import request_prompt, run_turn
 from launch import worker_command
 from runner import Runner, main
-from runtime_support import alive, read_json, session_host, write_json
+from runtime_support import alive, process_identity, read_json, session_host, write_json
 from settings import defaults, validate
 from test_research import InstanceCase, take
 
@@ -259,17 +259,24 @@ class EndingTests(InstanceCase):
         self.assertEqual(receipt['result']['exit_code'], 2)
         self.assertIsNone(receipt['refusal'])
 
-    def test_only_the_two_ending_bases_authorize_a_worker_end(self):
-        for basis, expected in (('task_completed', 'task_completed'), ('partial_result', 'resumption_limit')):
-            with self.subTest(basis=basis):
-                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, 'basis': basis})
+    def test_only_a_complete_decision_on_the_two_ending_bases_authorizes_a_worker_end(self):
+        # reference/retained-work.md asks for exactly four fields, one of the two bases and an explanation
+        # of the grounds; any other decision is rejected and the session continues to the limit.
+        cases = (({'basis': 'task_completed'}, 'task_completed', None),
+                 ({'basis': 'partial_result'}, 'resumption_limit', 'task_completed or no_way_forward'),
+                 ({'explanation': ' '}, 'resumption_limit', 'nonempty explanation'),
+                 ({'extra_fields': {'confidence': 'high'}}, 'resumption_limit',
+                  'request_id, decision, basis and explanation'))
+        for decision, expected, error in cases:
+            with self.subTest(decision=decision):
+                engine, sid, directory = self.prepare(maximum=1, config={'end_after': 1, **decision})
                 state = self.run_host(directory)
                 self.assertEqual(state['authorization']['basis'], expected)
-                error = read_json(directory / 'turns/0001/decision-check.json')['error']
-                if basis == 'partial_result':
-                    self.assertIn('task_completed or no_way_forward', error)
+                found = read_json(directory / 'turns/0001/decision-check.json')['error']
+                if error is None:
+                    self.assertIsNone(found)
                 else:
-                    self.assertIsNone(error)
+                    self.assertIn(error, found)
                 pipeline = engine.state['jobs'][engine.state['sessions'][sid]['job']]['pipeline']
                 engine.state['pipelines'][pipeline]['stage'] = 'done'
                 engine.save()
@@ -508,6 +515,48 @@ class EndingConfigurationTests(unittest.TestCase):
                     self.assertEqual(command.argv[-2:], ['--resume', identity])
                     self.assertIn('--strict-mcp-config', command.argv)
                     self.assertIn('opus[1m]', command.argv)
+
+
+class SessionGateTests(unittest.TestCase):
+    # The runner records a host's identity in its state and only then writes GO, so a host that never
+    # sees GO starts no CLI the runner could not follow (runtime_support.session_host). The broker's
+    # job host keeps the same gate; test_lean_broker tests that one.
+    def launch(self, folder, runner):
+        # The stand-in CLI only marks that it was started.
+        write_json(folder / 'launch.json', {'runner': runner, 'command': {
+            'argv': [sys.executable, '-c', "open('started', 'w').close()"], 'cwd': str(folder)}})
+        (folder / 'prompt.txt').write_bytes(b'')
+
+    def test_host_without_go_exits_on_cancel_or_dead_runner_without_starting_a_cli(self):
+        # A failed dispatch, or a restarted runner finding no GO, writes CANCEL (runner.dispatch, Runner.collect).
+        import tempfile
+        dead = {'pid': os.getpid(), 'birth': 'a runner that has died'}
+        for gate, runner in (('CANCEL', process_identity(os.getpid())), (None, dead)):
+            with self.subTest(gate=gate), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp)
+                self.launch(folder, runner)
+                if gate:
+                    (folder / gate).write_bytes(b'')
+                self.assertEqual(session_host(folder), 1)
+                self.assertFalse((folder / 'started').exists())
+                self.assertFalse((folder / 'exit.json').exists())
+
+    def test_go_written_as_the_runner_dies_still_starts_the_session(self):
+        # The runner can die right after writing GO, between the host's look for GO and its look at the
+        # runner. The runner's state already names this host, so the host must start the session.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            self.launch(folder, {'pid': os.getpid(), 'birth': 'a runner that has died'})
+
+            def died_after_go(identity):
+                (folder / 'GO').write_bytes(b'go\n')
+                return False
+
+            with patch('runtime_support.alive', side_effect=died_after_go):
+                self.assertEqual(session_host(folder), 0)
+            self.assertTrue((folder / 'started').exists())
+            self.assertEqual(read_json(folder / 'exit.json')['exit_code'], 0)
 
 
 if __name__ == '__main__':

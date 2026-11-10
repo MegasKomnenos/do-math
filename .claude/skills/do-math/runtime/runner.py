@@ -971,7 +971,10 @@ def start(instance):
             receipt = read_json(path)
             if receipt.get('token') == token and token in stdout.read_text(encoding='utf-8'):
                 if alive(receipt['process']) or read_json(instance / 'runner/state.json')['finished']:
-                    return {'pid': child.pid, 'stdout': str(stdout), 'stderr': str(stderr), 'instance': str(instance)}
+                    # The runner's own start record names the process to end. On Windows a virtual
+                    # environment's python.exe is a redirector, and the runner is its child process.
+                    return {'pid': receipt['process']['pid'], 'stdout': str(stdout), 'stderr': str(stderr),
+                            'instance': str(instance)}
         if child.poll() is not None:
             raise RuntimeError('runner exited before readiness; read ' + str(stderr))
         time.sleep(0.05)

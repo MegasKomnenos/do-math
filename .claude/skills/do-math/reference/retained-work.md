@@ -1,6 +1,6 @@
 # Retaining a session's work
 
-Attempts, explorations and formalizers use `output/report.md` as the entry point to their retained work. Start it while researching and keep it current. Use the sections below to make important information findable, adding mathematical subsections or companion files wherever the argument needs them. The peer reads the producing session's complete retained work, including work outside this report and the available conversation.
+Attempts, explorations and formalizers use `output/report.md` as the entry point to their retained work. Start it while researching and keep it current. Use the sections below to make important information findable, adding mathematical subsections or companion files wherever the argument needs them. The peer reads the producing session's complete retained work, including work outside this report and the available conversation. A peer also receives this guide. The report and outcome described here belong to the producing session whose work it develops; the peer's own output is the record candidate that [Record format](record-format.md) describes, and the section below on continuing a session applies to the peer as well.
 
 | Section | What the next researcher needs |
 |---|---|

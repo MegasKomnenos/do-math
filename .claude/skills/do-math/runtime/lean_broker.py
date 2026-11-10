@@ -529,7 +529,8 @@ class Broker:
         except OSError as exc:
             stamp = None
             error = str(exc)
-        if stamp == self.settings_stamp and self.config_error is None:
+        # Before the first read the recorded stamp is None, as is the stamp of a missing file.
+        if stamp is not None and stamp == self.settings_stamp and self.config_error is None:
             return
         self.settings_stamp = stamp
         try:
@@ -699,11 +700,14 @@ class Broker:
                 source_hash = None
             # A module compile of a build runs with -R, -o and the build's lib on the search path;
             # a single-file submission of the same bytes is a different compile, not its duplicate.
+            # Nor is a job whose cancellation has been requested: it ends cancelled, and a submission
+            # made after that request asks for the compile anew.
             duplicate = next((jid for jid, j in self.state["jobs"].items()
                               if j["status"] in ACTIVE and j["session"] == request.get("session")
                               and j["source"] == source and j["kind"] == "compile" and not j.get("build")
                               and source_hash is not None and j.get("source_sha256") == source_hash
-                              and j["environment_key"] == self.state["environment_key"]), None)
+                              and j["environment_key"] == self.state["environment_key"]
+                              and not (self.paths.job(jid) / "CANCEL").exists()), None)
             if duplicate:
                 write_json(job_dir / "result.json", {"id": job_id, "status": "duplicate", "duplicate_of": duplicate})
                 if (job_dir / "CANCEL").exists():
@@ -746,10 +750,12 @@ class Broker:
             modules = discover_modules(root, targets)
             keys = module_keys(self.environment_identity(), modules)
             build.update(module_keys=keys, fresh_targets=bool(request.get("fresh_targets")))
+            # A build whose cancellation has been requested ends cancelled; a request after it is new work.
             duplicate = next((b for b in self.state["builds"].values() if b["status"] in ACTIVE
                               and b["session"] == session and b["root"] == root
                               and b["targets"] == build["targets"] and b["module_keys"] == keys
-                              and b["fresh_targets"] == build["fresh_targets"]), None)
+                              and b["fresh_targets"] == build["fresh_targets"]
+                              and not (self.paths.build(b["id"]) / "CANCEL").exists()), None)
             if duplicate:
                 write_json(folder / "result.json", {"id": build_id, "status": "duplicate", "duplicate_of": duplicate["id"]})
                 if (folder / "CANCEL").exists():

@@ -120,6 +120,26 @@ class PublicationTests(InstanceCase):
         (evidence / 'provenance.json').write_text('Historical evidence.', encoding='utf-8')
         self.assertEqual(check_session(session), [])
 
+    def test_review_output_cannot_collide_with_the_formal_evidence_attachment(self):
+        # Publication adds a formal solution's broker evidence under review/lean-evidence/
+        # (Runner.copy_formal_evidence), as it adds review/ and provenance.json beside a candidate.
+        runner, _ = self.candidate_pipeline()
+        output = runner.session_dir('sreview') / 'output'
+        self.assertEqual(check_session(output.parent), [])
+        for name, directory in (('lean-evidence', True), ('Lean-Evidence', True), ('lean-evidence', False)):
+            with self.subTest(name=name, directory=directory):
+                path = output / name
+                if directory:
+                    path.mkdir()
+                else:
+                    path.write_text('Copied compile output.', encoding='utf-8')
+                try:
+                    errors = check_session(output.parent)
+                    self.assertTrue(errors)
+                    self.assertIn('reserved', errors[0])
+                finally:
+                    path.rmdir() if directory else path.unlink()
+
     def candidate_pipeline(self):
         runner = runtime.Runner(self.instance, self.skill)
         producer = runner.producer('attempt')

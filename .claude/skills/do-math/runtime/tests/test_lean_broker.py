@@ -887,6 +887,11 @@ class BrokerTests(BrokerFixture):
         with self.assertRaisesRegex(ValueError, "settings.json rejected"):
             lean_broker.Broker(self.instance, log_path=self.paths.log).start()
         self.assertTrue(lean_broker.broker_status(self.paths)["config_error"])
+        # A file that is missing when the broker starts is a rejection with its own reason, too.
+        (self.instance / "settings.json").unlink()
+        with self.assertRaisesRegex(ValueError, r"settings.json rejected: .*settings\.json"):
+            lean_broker.Broker(self.instance, log_path=self.paths.log).start()
+        self.assertIn("settings.json", lean_broker.broker_status(self.paths)["config_error"])
 
     def test_environment_change_fails_queued_jobs_and_calibrates_the_new_environment_anew(self):
         # An environment change reaches the broker through settings.json. A job queued under the earlier
@@ -1105,6 +1110,29 @@ class BuildTests(BrokerFixture):
                 self.assertEqual(lean_broker.job_record(self.paths, original)["status"], "cancelled")
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(lean_broker.wait(self.paths, duplicate, timeout=0), 4)
+
+    def test_resubmission_after_a_cancellation_is_new_work(self):
+        # A session that cancels running work and submits the same bytes again asks for that work anew.
+        # Redirected to the work whose cancellation it requested, the new ID would end cancelled as well.
+        self.start_broker()
+        for kind in ("job", "build"):
+            with self.subTest(kind=kind):
+                root = self.instance / "sessions/s1/work" / f"resubmitted-{kind}"
+                target = source(root / "Target.lean", imports=(), sleep=30)
+                def enqueue():
+                    return self.submit(target) if kind == "job" else self.build(root, [target])
+                original = enqueue()
+                self.until(lambda: lean_broker.job_record(self.paths, original)["status"] == "running")
+                lean_broker.cancel(self.paths, original)
+                again = enqueue()
+                self.broker.tick()  # takes up the cancellation, then reads the new request
+                self.assertIn(lean_broker.job_record(self.paths, again)["status"], lean_broker.ACTIVE)
+                lean_broker.cancel(self.paths, again)
+                # Each Lean sleeps for 30 seconds: both end within 20 only if each cancellation reached its own work.
+                self.until(lambda: all(lean_broker.job_record(self.paths, i)["status"] in lean_broker.FINISHED
+                                       for i in (original, again)), limit=20)
+                self.assertEqual([lean_broker.job_record(self.paths, i)["status"] for i in (original, again)],
+                                 ["cancelled", "cancelled"])
 
     def test_build_follows_imports_caches_and_rebuilds_only_what_changed(self):
         self.start_broker()

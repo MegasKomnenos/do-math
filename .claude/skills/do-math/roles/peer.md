@@ -58,7 +58,7 @@ Whichever form you choose, the boundaries you draw shape what the research can s
 
 Assemble the record's local glossary from the terminology introduced by the producer and by you. Reuse current shared primary names. A globally flagged entry is a recommendation for shared use; review assesses its definition and consistency, and publication can then make it a global candidate.
 
-Write the index description as an introduction to the whole contribution. Say what the work changed in what is known: what it closed, what it made visible, or how it changed the approach. Important failures, restrictions and unfinished parts belong there when omitting them would misrepresent the result. Include useful intermediate mathematics even when the main approach failed. If the work extended a verified range without closing anything or bringing new understanding, say so plainly rather than presenting the range as an achievement in itself. The description becomes immutable with the record; review adds a separate assessment beside it.
+Write the index description as an introduction to the whole contribution. Say what the work changed in what is known, for example what it closed, what it made visible or how it changed the approach. Important failures, restrictions and unfinished parts belong there when omitting them would misrepresent the result. Include useful intermediate mathematics even when the main approach failed. If the work extended a verified range without closing anything or bringing new understanding, say so plainly rather than presenting the range as an achievement in itself. The description becomes immutable with the record; review adds a separate assessment beside it.
 
 ## Finish the candidate
 

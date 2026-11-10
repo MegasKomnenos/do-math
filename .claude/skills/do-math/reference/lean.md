@@ -69,7 +69,7 @@ python <broker> wait <instance> <job> --timeout 500
 
 `submit` returns at once and prints the job ID. `wait` returns either the finished result, printed exactly as `run` would print it, or, if the timeout passes first, exit code 124 and a note that the job is still running. Nothing is lost between calls; `wait` can be run again and again until the result is there. If a `run` was started and its shell tool gave up, the same recovery works, because the job ID is the first thing `run` prints on standard error.
 
-Submitting the same unchanged file again from the same session, while its earlier job is still queued or running in the same Lean environment, does not start a second compile. The broker answers the new submission with the ID of the job already in progress, and waiting on either ID gives the same result. A file edited after its submission is a different source. Its new submission becomes a job of its own, and an earlier job that has not yet started fails with the reason that its source changed after submission.
+Submitting the same unchanged file again from the same session, while its earlier job is still queued or running in the same Lean environment and no cancellation of that job has been requested, does not start a second compile. The broker answers the new submission with the ID of the job already in progress, and waiting on either ID gives the same result. A file edited after its submission is a different source. Its new submission becomes a job of its own, and an earlier job that has not yet started fails with the reason that its source changed after submission.
 
 ### The other commands
 

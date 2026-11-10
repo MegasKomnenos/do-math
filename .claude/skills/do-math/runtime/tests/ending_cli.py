@@ -60,4 +60,6 @@ if number:
     elif number >= config.get('end_after', 100):
         target.write_text(json.dumps({'request_id': request['id'], 'decision': 'end',
                                      'basis': config.get('basis', 'no_way_forward'),
-                                     'explanation': 'The scripted investigation has reached its endpoint.'}))
+                                     'explanation': config.get('explanation',
+                                                               'The scripted investigation has reached its endpoint.'),
+                                     **config.get('extra_fields', {})}))
