@@ -1183,7 +1183,7 @@ class BuildTests(BrokerFixture):
         self.assertTrue((Path(record["lib"]) / "D.olean").is_file())
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 4)
         # External imports alone key the calibration: B's closure is the empty one, not "A".
-        self.assertEqual(b["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], []))
+        self.assertEqual(b["closure"], lean_broker.closure_key(self.broker.environment_identity(), []))
         # The same bytes again: every module comes from the cache, no compile runs, the output is replayed.
         jobs_before = len(self.broker.state["jobs"])
         second = self.build(root, [root / "D.lean"])
@@ -1206,6 +1206,15 @@ class BuildTests(BrokerFixture):
         statuses = {n: m["status"] for n, m in self.build_record(third)["modules"].items()}
         self.assertEqual(statuses, {"A": "cached", "B": "finished", "C": "cached", "D": "finished"})
         self.assertEqual(len(list(self.paths.cache.glob("*.olean"))), 6)
+        # The environment identity is part of every module key. After a change of cache_epoch, which the
+        # operator makes when the libraries change in place, no module compiled before it is reused.
+        time.sleep(0.02)
+        self.write_settings(cache_epoch="second")
+        fourth = self.build(root, [root / "D.lean"])
+        self.until(lambda: self.build_record(fourth)["status"] in lean_broker.FINISHED)
+        modules = self.build_record(fourth)["modules"]
+        self.assertEqual({n: (m["status"], m["exit_code"]) for n, m in modules.items()},
+                         {n: ("finished", 0) for n in "ABCD"})
 
     def test_fresh_review_target_recompiles_while_unchanged_dependency_is_cached(self):
         self.start_broker()
@@ -1329,6 +1338,12 @@ class BuildTests(BrokerFixture):
         shadowing = self.build(root, [root / "Shadow.lean"])
         self.until(lambda: self.build_record(shadowing)["status"] in lean_broker.FINISHED)
         self.assertIn("shadow", self.build_record(shadowing)["reason"])
+        # An import with no file under the root is read as the library's; the reason also names a missing file.
+        source(root / "Notes" / "Main.lean", imports=("Notes.Lemma",))
+        missing = self.build(root, [root / "Notes" / "Main.lean"])
+        self.until(lambda: self.build_record(missing)["status"] in lean_broker.FINISHED)
+        self.assertIn("Notes.Lemma", self.build_record(missing)["reason"])
+        self.assertIn("file is missing", self.build_record(missing)["reason"])
         self.assertFalse(self.jobs("queued", "running"))
 
     def test_cancelling_a_build_stops_its_queue(self):
@@ -1432,8 +1447,8 @@ class LauncherTests(BrokerFixture):
         self.assertEqual(launch["argv"][:3], [sys.executable, "-B", str(FAKE)])  # lean itself, no lake in front
         self.assertEqual(launch["env"]["FAKE_LAKE"], "1")
         # Baselines measured directly are keyed apart from those measured through lake.
-        self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"], True))
-        self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.state['version'] + '\n' + self.broker.state['environment_key'], job["imports"]))
+        self.assertEqual(job["closure"], lean_broker.closure_key(self.broker.environment_identity(), job["imports"], True))
+        self.assertNotEqual(job["closure"], lean_broker.closure_key(self.broker.environment_identity(), job["imports"]))
         self.assertTrue(self.broker.calibration.entry(job["closure"])["direct"])  # and the table says so in words
         self.assertTrue(lean_broker.broker_status(self.paths)["launcher"]["direct"])  # status names the mode in use
 

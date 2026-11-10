@@ -154,7 +154,6 @@ class ContextTests(InstanceCase):
         self.assertIn('Full current global glossary', text)
         self.assertIn('General index at launch', text)
         self.assertIn('/retained/source', text)
-        self.assertNotIn('Revised format', text)
 
     def test_worker_commands_keep_auth_separate_from_customizations(self):
         folder = self.session('isolated')

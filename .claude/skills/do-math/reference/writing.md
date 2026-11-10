@@ -38,8 +38,6 @@ Describe failures with their mathematical scope. A gap in a proof, a counterexam
 
 Develop the contributions and obstacles that change the next researcher's understanding. Standard background can be cited or stated briefly for a reader who knows it. A new construction or a difficult inference needs its actual explanation, even when it is only a small part of the final result. Do not give every artifact equal space merely because it exists.
 
-Descriptions used by the index introduce the whole contribution. Include an important failed route or restriction when leaving it out would make a partial result look like a solution. Conversely, a record with a failed main approach can contain valuable identities and exact obstructions. Describe those contributions so the next reader can recognize their relevance.
-
 A glossary entry should communicate the complete definition economically. Domains and necessary conditions belong in the entry. Long proofs, applications and research history belong in linked records. A module description should read like a section of a survey of the research, as the common introduction and the organizer's guide describe. Those texts serve the reader's understanding of the records without becoming an independent account that changes the records' mathematical claims.
 
 ## Read back what you are handing on

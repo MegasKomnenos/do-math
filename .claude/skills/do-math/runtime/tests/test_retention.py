@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import stat
 import subprocess
 import sys
 import tarfile
@@ -80,6 +81,20 @@ class ArchiveTests(unittest.TestCase):
                 archive_work(session)
             self.assertEqual((work / 'notes.md').read_bytes(), b'Work absent from the existing archive')
             self.assertEqual((session / 'work.tar.xz').read_bytes(), saved)
+
+    def test_read_only_work_files_are_removed_once_archived(self):
+        # Git creates its object files read-only, and Windows refuses to delete a read-only file;
+        # a session that used Git in work/ must still have that work replaced by its archive.
+        with tempfile.TemporaryDirectory() as tmp:
+            session = Path(tmp)
+            stored = session / 'work/repo/.git/objects/ab/cdef'
+            stored.parent.mkdir(parents=True)
+            stored.write_bytes(b'A Git object')
+            os.chmod(stored, stat.S_IREAD)
+            self.assertTrue(archive_work(session))
+            self.assertFalse((session / 'work').exists())
+            with tarfile.open(session / 'work.tar.xz', 'r:xz') as archive:
+                self.assertEqual(archive.extractfile('work/repo/.git/objects/ab/cdef').read(), b'A Git object')
 
     def test_linked_work_is_refused_and_left_in_place(self):
         # A link leads outside the session. Archiving through it and then removing work/ would

@@ -1,6 +1,6 @@
 """Durable files and process supervision shared by the fresh-instance runtime."""
 
-import ctypes, gc, hashlib, json, os, shutil, signal, subprocess, tarfile, time, uuid
+import ctypes, gc, hashlib, json, os, shutil, signal, stat, subprocess, tarfile, time, uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
 
@@ -474,5 +474,12 @@ def archive_work(session):
             part.unlink(missing_ok=True)
     if any(stored.get(name, "missing") != value for name, value in entries.items()):
         raise RuntimeError(f"work/ does not match {archive.name}; work/ kept: {session}")
-    shutil.rmtree(work)
+    def clear_read_only(function, path, error):
+        # Windows refuses to remove a read-only file or directory, and Git creates its object files
+        # read-only. Every file here was just found intact in the archive, so the flag protects nothing.
+        if os.name != "nt" or function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
+            raise error
+        os.chmod(path, stat.S_IWRITE)
+        function(path)
+    shutil.rmtree(work, onexc=clear_read_only)
     return True

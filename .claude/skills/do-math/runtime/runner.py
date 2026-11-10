@@ -325,7 +325,11 @@ class Runner:
             material = (s['retention']['cli_activity'] or s['retention']['native_activity']
                         or any((session / name).is_dir() and any((session / name).rglob('*')) for name in ('output', 'work')))
             if not material:
-                self.retry(job, s, s.get('launch_error') or 'session ended without retained research material')
+                # A failed launch or a CLI that ended without work counts against its model, so the retry
+                # can take the role's next one. A cancellation, such as kill-session, says nothing about the model.
+                cancelled = (session / 'CANCEL').exists() and not s.get('launch_error')
+                self.retry(job, s, s.get('launch_error') or 'session ended without retained research material',
+                           availability=not cancelled)
                 return
             s['status'] = 'ended'
             job['status'] = 'done'
@@ -714,6 +718,18 @@ class Runner:
         last = self.state.get('last_launch')
         return last is None or time.time() - last >= self.settings['launch_interval']
 
+    def waits_for_its_kind(self, job):
+        """Whether a pending comprehensive review or organizer is held only by another of its kind.
+
+        Those launch one at a time. The waiting one takes the slot the running one frees, ahead of any
+        attempt, so it does not hold fresh attempts back as peer or review work waiting for capacity or
+        an available model does."""
+        if job['role'] == 'organizer' or (job['role'] == 'review' and job['task']['kind'] == 'comprehensive'):
+            return any(other['status'] == 'running' and other['role'] == job['role']
+                       and other['task'].get('kind') == job['task'].get('kind')
+                       for other in self.state['jobs'].values())
+        return False
+
     def question_view(self, launching=False):
         """Free, occupied and choosing questions as the runner counts them.
 
@@ -774,7 +790,8 @@ class Runner:
                     continue
                 if not self.available_nodes():
                     continue
-                if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values()):
+                if any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
+                       for j in self.state['jobs'].values()):
                     continue
                 if not self.launch_due():
                     continue
@@ -819,12 +836,13 @@ class Runner:
                     # The queued exploration launches from dispatch_pending() on a later pass.
                     break
                 continue
-            waiting = any(j['status'] == 'pending' and j['role'] in ('peer', 'review') for j in self.state['jobs'].values())
-            organizer_running = any(j['role'] == 'organizer' and j['status'] == 'running'
-                                    for j in self.state['jobs'].values())
+            # A comprehensive review or organizer held only by another of its kind takes the slot that
+            # one frees, so neither holds the attempt back (waits_for_its_kind).
+            waiting = any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
+                          for j in self.state['jobs'].values())
             higher_ready = any(j['status'] == 'pending' and j['role'] not in PRODUCERS
                                and j['not_before'] <= time.time() and self.selection(j['role'])
-                               and (j['role'] != 'organizer' or not organizer_running)
+                               and not self.waits_for_its_kind(j)
                                for j in self.state['jobs'].values())
             if (waiting or higher_ready or not nodes or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):

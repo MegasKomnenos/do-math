@@ -175,10 +175,17 @@ def discover_modules(root, targets):
 
     for target in targets:
         visit(module_name(root, target))
-    external_roots = {i.split(".")[0] for m in modules.values() for i in m["external"]} | set(TOOLCHAIN_ROOTS)
+    external = sorted({i for m in modules.values() for i in m["external"]})
     for name in order:
-        if name.split(".")[0] in external_roots:
-            raise ValueError(f"local module {name} would shadow a library module of the same name")
+        first = name.split(".")[0]
+        if first in TOOLCHAIN_ROOTS:
+            raise ValueError(f"local module {name} would shadow the toolchain's {first} modules")
+        # An import with no file under the root is read as the library's, so a mistyped or missing
+        # module of the session's own lands here as well; the reason names both readings.
+        clash = next((i for i in external if i.split(".")[0] == first), None)
+        if clash:
+            raise ValueError(f"local module {name} would shadow the library's {first} modules, such as the import "
+                             f"{clash}; if {clash} is meant to be a module of yours, its file is missing under the root")
     return [(name, modules[name]) for name in order]
 
 

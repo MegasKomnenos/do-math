@@ -631,6 +631,22 @@ class RunnerTests(InstanceCase):
         self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
         self.assertTrue(session['retention']['native_transcripts'])
 
+    def test_a_cancelled_producer_without_research_is_relaunched_without_blocking_its_model(self):
+        # kill-session ends a producer as an interruption; one that left no research material is
+        # launched again (reference/operations.md, Commands). The cancellation is not a refusal or a
+        # failed launch, so the role keeps its configured first model.
+        runner = self.runner()
+        sid, session, job = self.ended(runner, 'attempt')
+        folder = runner.session_dir(sid)
+        (folder / 'work/notes.md').unlink()
+        (folder / 'cli.stdout.jsonl').write_text('', encoding='utf-8')
+        (folder / 'CANCEL').touch()
+        runner.finish(sid, session)
+        self.assertEqual((session['status'], job['status']), ('failed', 'pending'))
+        self.assertNotIn(job['pipeline'] + ':peer', runner.state['jobs'])
+        self.assertEqual(runner.state['blocks'], {})
+        self.assertEqual(runner.selection('attempt')['model'], 'codex/gpt-6.1-sol')
+
     def test_archiver_keeps_producer_work_until_its_pipeline_is_done(self):
         runner = self.runner()
         sid, session, job = self.ended(runner, 'attempt')
@@ -1123,6 +1139,25 @@ class RunnerTests(InstanceCase):
         self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
         self.assertCountEqual([s['role'] for _, s in runner.active()],
                               ['organizer', 'explore', 'attempt'])
+
+    def test_waiting_comprehensive_review_does_not_block_attempt_while_another_runs(self):
+        # As for organizers: the waiting review takes the slot the running one frees, ahead of any
+        # attempt, so holding attempts back for it would leave capacity idle without serving it sooner.
+        runner = self.runner()
+        runner.settings['max_sessions'] = 3
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
+        task = {'kind': 'comprehensive', 'concerns': [], 'conflicts': []}
+        first = runner.enqueue('review', dict(task))
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            self.assertTrue(runner.dispatch(first))
+            second = runner.enqueue('review', dict(task))
+            self.assertTrue(runner.dispatch(runner.producer('explore')))
+            runner.schedule()
+        self.assertEqual(runner.state['jobs'][first]['status'], 'running')
+        self.assertEqual(runner.state['jobs'][second]['status'], 'pending')
+        self.assertCountEqual([s['role'] for _, s in runner.active()],
+                              ['review', 'explore', 'attempt'])
 
     def test_a_requested_comprehensive_review_waits_while_another_runs(self):
         # Comprehensive reviews launch one at a time, as organizers do (reference/operations.md).
