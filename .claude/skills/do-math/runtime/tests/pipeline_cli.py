@@ -49,7 +49,7 @@ elif role == 'peer':
 elif role == 'review':
     (output / 'feedback.md').write_text('The precise argument was assessed.', encoding='utf-8')
     if task['kind'] == 'comprehensive':
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'index_assessment': 'No new verdict.', 'findings': [], 'concerns': []})
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
     else:
         candidate = Path(task['candidate'])
         data = read_json(candidate / 'record.json')

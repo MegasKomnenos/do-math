@@ -571,6 +571,24 @@ class BrokerTests(BrokerFixture):
         self.until(lambda: all(self.finished(j) for j in [first, *others]))
         self.assertTrue(all(self.broker.state["jobs"][j]["exit_code"] == 0 for j in [first, *others]))
 
+    def test_a_closure_reserves_with_its_measured_spread_once_two_excesses_differ(self):
+        # The memory rule takes the spread the broker has observed for a closure's excess (reference/lean.md);
+        # default_spread stands in until two excesses are recorded and while they do not differ.
+        self.start_broker()
+        calibration, default = self.broker.calibration, self.broker.config["default_spread"]
+        calibration.record_baseline("closure", {"imports": []}, 400, 1)
+        job = {"kind": "compile", "closure": "closure", "expect_mb": 1000, "status": "queued", "measured": None}
+        def reserves_with(spread):
+            for reserved, expected in zip(self.broker.reserve(job), lean_broker.reservation(1000, 400, spread)):
+                self.assertAlmostEqual(reserved, expected)
+        reserves_with(default)
+        calibration.record_job("closure", 100, 1)
+        reserves_with(default)
+        calibration.record_job("closure", 100, 1)
+        reserves_with(default)
+        calibration.record_job("closure", 200, 1)
+        reserves_with(2 ** 0.5 / 4)  # excesses 100, 100 and 200: a deviation of 47.1 over a mean of 133.3
+
     def serial(self, jobs):
         """Tick through the jobs and confirm that no two of them ever run at once."""
         self.until(lambda: self.jobs("running"))
@@ -1014,6 +1032,19 @@ class BrokerTests(BrokerFixture):
         self.assertEqual(asked, [self.broker])
         with patch.object(lean_broker, "ensure_broker", return_value={}):
             self.assertIn("4.0.0-fake", lean_broker.version(self.paths)["version"])
+
+    def test_a_version_command_that_fails_is_reported_rather_than_waited_for(self):
+        # A Lean whose version cannot be read leaves nothing to wait for: `version` answers with the error,
+        # and `status` reports it beside the missing version.
+        self.write_settings(version_command=[str(self.root / "no-such-lean"), "--version"])
+        self.start_broker()
+        with patch.object(lean_broker, "ensure_broker", return_value={}), \
+                patch.object(lean_broker, "READY_SECONDS", 0.5):
+            reported = lean_broker.version(self.paths)
+        self.assertIsNone(reported["version"])
+        self.assertTrue(reported["error"])
+        status = lean_broker.broker_status(self.paths)
+        self.assertEqual((status["version"], status["version_error"]), (None, reported["error"]))
 
 
 class BuildTests(BrokerFixture):
@@ -1515,9 +1546,13 @@ class ClientAndLifecycleTests(BrokerFixture):
         late = self.cli("wait", str(self.instance), submitted["job"])
         self.assertEqual(late.returncode, 0, late.stderr)
         self.assertIn("compiled", late.stdout)
-        unknown = self.cli("wait", str(self.instance), "jnobody")
+        # A well-formed ID that names no job is answered at once rather than waited on; a malformed one is refused.
+        unknown = self.cli("wait", str(self.instance), "j" + "0" * 32)
         self.assertEqual(unknown.returncode, 1)
-        self.assertIn("invalid job ID", unknown.stderr)
+        self.assertIn("unknown job", unknown.stderr)
+        invalid = self.cli("wait", str(self.instance), "jnobody")
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn("invalid job ID", invalid.stderr)
 
     def test_serve_for_a_deleted_instance_creates_nothing(self):
         gone = self.root / "deleted instance"

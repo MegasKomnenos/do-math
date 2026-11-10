@@ -349,8 +349,7 @@ class KnowledgeTests(InstanceCase):
             wrong = {**finding, 'dependency_updates': [{**finding['dependency_updates'][0], 'proof': proof}]}
             with self.subTest(proof=proof), self.assertRaisesRegex(Invalid, 'existing proof route'):
                 findings_check([wrong], m)
-        self.event('v1', 'review', {'feedback': 'feedback.md', 'index_assessment': 'Dependencies corrected.',
-                                    'findings': [finding]})
+        self.event('v1', 'review', {'feedback': 'feedback.md', 'findings': [finding]})
         self.assertEqual(replay(self.instance)['proofs']['r1/necessary~0']['formal_dependencies'], [])
 
     def test_multi_premise_relation_derives_in_every_direction(self):
@@ -1428,8 +1427,7 @@ class RunnerTests(InstanceCase):
         output = runner.session_dir(sid) / 'output'
         output.mkdir(parents=True)
         # The review could not settle the concern, so the concern itself stays open.
-        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'index_assessment': 'Still undetermined.',
-                                                'findings': [], 'concerns': []})
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
         (output / 'feedback.md').write_text('The boundary case remains undetermined.', encoding='utf-8')
         runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
         job.update(status='running', session=sid)
@@ -1438,6 +1436,45 @@ class RunnerTests(InstanceCase):
         runner.populate()
         self.assertEqual([j['id'] for j in runner.state['jobs'].values()
                           if j['task'].get('kind') == 'comprehensive'], [job['id']])
+
+    def test_published_comprehensive_review_is_not_reassigned_for_a_node_it_left_contested(self):
+        # A contested node's opposing routes are assigned once, as <node>:<proof IDs> (roles/review.md).
+        # A review that leaves the node contested is not assigned again; a changed set of routes is
+        # (reference/operations.md, Read progress and results).
+        self.publish('r1', self.reduction())
+        self.publish('r2', record([claim_row('q')], solutions=[solution('q', 'Q', 'q')]))
+        self.publish('r3', record([claim_row('notq')], solutions=[solution('notq', 'Q', 'notq', 'refuted')]))
+        runner = self.runner()
+        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
+        runner.populate()
+        job = next(j for j in runner.state['jobs'].values() if j['task'].get('kind') == 'comprehensive')
+        self.assertEqual((job['task']['concerns'], len(job['task']['conflicts'])), ([], 1))
+        node, _, routes = job['task']['conflicts'][0].partition(':')
+        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq']))
+        sid = 'scomprehensive'
+        output = runner.session_dir(sid) / 'output'
+        output.mkdir(parents=True)
+        # The review could not locate the failure, so the node stays contested.
+        write_json(output / 'assessment.json', {'feedback': 'feedback.md', 'findings': [], 'concerns': []})
+        (output / 'feedback.md').write_text('Neither route could be shown defective.', encoding='utf-8')
+        runner.state['sessions'][sid] = {'id': sid, 'role': 'review', 'status': 'running', 'job': job['id']}
+        job.update(status='running', session=sid)
+        runner.prepare_publication(sid, job, 'review')
+        runner.publish()
+        self.assertEqual(runner.model['nodes']['Q']['state'], 'contested')
+        runner.populate()
+        self.assertEqual([j['id'] for j in runner.state['jobs'].values()
+                          if j['task'].get('kind') == 'comprehensive'], [job['id']])
+        # A further accepted route changes the opposing set, which has not been assigned yet.
+        self.seq = runner.model['sequence']
+        self.publish('r4', record([claim_row('q2')], solutions=[solution('q2', 'Q', 'q2')]))
+        runner.model = replay(self.instance)
+        runner.populate()
+        pending = [j['task']['conflicts'] for j in runner.state['jobs'].values()
+                   if j['task'].get('kind') == 'comprehensive' and j['status'] == 'pending']
+        self.assertEqual([len(conflicts) for conflicts in pending], [1])
+        node, _, routes = pending[0][0].partition(':')
+        self.assertEqual((node, sorted(routes.split(','))), ('Q', ['r2/q', 'r3/notq', 'r4/q2']))
 
     def test_candidate_review_withdrawal_without_a_named_concern_opens_a_comprehensive_review(self):
         self.publish('r1', record([claim_row('p')], solutions=[solution('p', 'root', 'p')]))

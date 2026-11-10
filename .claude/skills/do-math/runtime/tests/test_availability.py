@@ -151,7 +151,8 @@ class AvailabilityTests(InstanceCase):
         self.assertEqual(len(self.runner.state['jobs']), 1)
 
     def test_claimed_or_interrupted_work_cannot_opt_out(self):
-        for kind in ('claimed', 'interrupted', 'refused', 'occupied_question', 'explorer_reports_availability'):
+        for kind in ('claimed', 'interrupted', 'refused', 'occupied_question', 'explorer_reports_availability',
+                     'other_disposition'):
             with self.subTest(kind=kind):
                 explorer = kind in ('occupied_question', 'explorer_reports_availability')
                 sid, session, job = self.attempt('explore' if explorer else 'attempt')
@@ -166,6 +167,9 @@ class AvailabilityTests(InstanceCase):
                 elif kind == 'explorer_reports_availability':
                     write_json(folder / 'output/outcome.json', {'disposition': 'no_research', 'availability': {
                         'status': 'all_unresolved_work_occupied', 'snapshot': '0' * 64}})
+                elif kind == 'other_disposition':
+                    # Only no_research closes the pipeline; any other disposition leaves the research for peer.
+                    write_json(folder / 'output/outcome.json', {'disposition': 'research_done'})
                 elif kind == 'interrupted':
                     session['exit_code'] = 1
                 elif kind == 'refused':
