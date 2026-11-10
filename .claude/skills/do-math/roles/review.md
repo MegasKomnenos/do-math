@@ -60,7 +60,7 @@ Your short index assessment appears beside the candidate's unchanged description
 
 ## Independently validate formal solutions
 
-A formal solution requires your own compile of the final candidate sources, your own audit of the target theorem's transitive axioms, and a mathematical comparison with the exact node or its negation. Read [Lean](../reference/lean.md) before compiling. Copy the final sources and their dependencies into your own working directory, append the target's `#print axioms`, and compile through the broker. For a module build use `--fresh-targets` so the reviewed target is compiled again.
+A formal solution requires your own compile of the final candidate sources, your own audit of the target theorem's transitive axioms, and a mathematical comparison with the exact node or its negation. Read [Lean](../reference/lean.md) before compiling. Copy the final sources and their dependencies into your own working directory with the same module layout, append the target's `#print axioms`, and compile through the broker. For a module build use `--fresh-targets` so the reviewed target is compiled again.
 
 Use the allowed-axiom list in your launch settings. `sorryAx` is never allowed. A compiler success can still depend on an unapproved axiom; searching for the string `sorry` misses transitive dependencies and is not the audit. Record the actual job, theorem, axiom list and source identities in `formal_check` as specified by the output reference.
 

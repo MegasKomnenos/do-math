@@ -85,7 +85,7 @@ def reported_availability(session, outcome):
     if report is None:
         return None
     if not isinstance(report, dict) or set(report) != {'status', 'snapshot'}:
-        raise ValueError('availability needs status and snapshot')
+        raise ValueError('availability needs exactly the fields status and snapshot, and no others')
     if report['status'] != 'all_unresolved_work_occupied':
         raise ValueError('unknown availability status')
     token = report['snapshot']

@@ -35,6 +35,9 @@ class PipelineTests(InstanceCase):
         config = read_json(self.instance / 'settings.json')
         config.update(max_sessions=2, organizer_every_records=1, retry_seconds=1, retry_max_seconds=2,
                       launch_interval=0,  # launch spacing has its own test
+                      # A reconsideration turn is launched by the session host with the configured CLI, which
+                      # the stand-in below does not replace; test_ending covers end reconsideration.
+                      max_end_resumptions=0,
                       roles={})  # the scripted CLI speaks the Codex stream for every role
         config['lean'].update(command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py')],
                               version_command=[sys.executable, '-B', str(HERE / 'pipeline_lean.py'), '--version'],
@@ -54,6 +57,9 @@ class PipelineTests(InstanceCase):
         roles = {s['role'] for s in runner.state['sessions'].values()}
         self.assertTrue({'attempt', 'peer', 'review', 'formalizer', 'explore', 'organizer'} <= roles)
         self.assertEqual(sum(s['role'] == 'attempt' for s in runner.state['sessions'].values()), 1)
+        # Each producer and peer handed over at the configured limit, not through a failed resumption.
+        self.assertEqual({s['end_check']['authorization']['basis'] for s in runner.state['sessions'].values()
+                          if s['role'] in ('attempt', 'explore', 'formalizer', 'peer')}, {'resumption_limit'})
         # The real dispatch assigns q0 to an explorer, and the question its peer proposes reaches the
         # frontier through the actual checks, review and publication.
         held = [read_json(self.instance / 'sessions' / sid / 'declaration.json')['question']

@@ -8,7 +8,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from availability import no_research_outcome
 from check import Invalid, assessment_check, check_session, organization_check, record_check
-from coordination import (board, lease, main as coordination_main, question_availability, question_lease,
+from coordination import (board, main as coordination_main, question_availability, question_lease,
                           question_lease_table, question_release, question_take, question_wait, updates)
 from knowledge import canonical_question, render, replay
 from runner import Runner, status
@@ -471,14 +471,10 @@ class QuestionCoordinationTests(InstanceCase):
         self.assertEqual(taken['question'], 'op-b')
 
     def test_only_explorers_use_question_commands(self):
+        # The converse, that explorers do not register sections, is tested with the node commands (test_research).
         attempt = self.session('sattempt', role='attempt')
         with self.assertRaisesRegex(ValueError, 'only explorers'):
             question_lease(attempt, 'q0')
-        explorer = self.session('sexplore')
-        with self.assertRaisesRegex(ValueError, 'only attempts and peers'):
-            lease(explorer, 'root')
-        with self.assertRaisesRegex(ValueError, 'unknown question'):
-            question_lease(explorer, 'nope')
 
     def test_question_commands_answer_through_the_command_line_with_the_documented_exit_codes(self):
         # Explorers reach these commands only through the argv in input.json; the entry point is checked here.

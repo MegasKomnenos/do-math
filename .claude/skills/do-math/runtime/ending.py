@@ -51,7 +51,7 @@ def end_decision(path, request):
     except (ValueError, TypeError):
         return None, 'end-decision.json is not valid JSON.'
     if not isinstance(data, dict) or set(data) != {'request_id', 'decision', 'basis', 'explanation'}:
-        return None, 'End decision needs request_id, decision, basis and explanation.'
+        return None, 'End decision needs exactly the fields request_id, decision, basis and explanation, and no others.'
     if data['request_id'] != request['id']:
         return None, 'End decision belongs to another reconsideration request.'
     if data['decision'] != 'end' or data['basis'] not in ('task_completed', 'no_way_forward'):
@@ -179,10 +179,12 @@ def supervise(session, launch):
             authorize(session, state, 'runner', 'interrupted',
                       'Execution ended by cancellation, failure or provider/model refusal.')
             return result
+        rejected = None
         try:
             empty = no_research_outcome(session, policy['role']) if limit is None else None
-        except (OSError, ValueError, TypeError, KeyError):
-            empty = None
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            # The session goes on, so the next turn is told why, as the transport check would tell it.
+            empty, rejected = None, 'output/outcome.json: ' + str(exc)
         if empty is not None:
             authorize(session, state, 'runner', 'no_research', 'Valid availability-only outcome.')
             return result
@@ -194,13 +196,15 @@ def supervise(session, launch):
             except ValueError as exc:
                 authorize(session, state, 'runner', 'resume_unavailable', str(exc))
                 return result
-        error = None
+        error = rejected
         if state['request'] is not None:
-            decision, error = end_decision(submitted, state['request'])
-            write_json(folder / 'decision-check.json', {'decision': decision, 'error': error})
+            decision, problem = end_decision(submitted, state['request'])
+            write_json(folder / 'decision-check.json', {'decision': decision, 'error': problem})
             if decision is not None:
                 authorize(session, state, 'worker', decision['basis'], decision['explanation'])
                 return result
+            if problem is not None:
+                error = problem if error is None else error + ' Ending decision check: ' + problem
         if limit is not None:
             notice = OUTPUT_LIMIT_NOTICE.format(message=limit)
             error = notice if error is None else notice + ' Ending decision check: ' + error

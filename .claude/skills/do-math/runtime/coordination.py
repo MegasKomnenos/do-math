@@ -21,6 +21,9 @@ CLAIM_LOCK_SECONDS = 30.0
 WAIT_POLL_SECONDS = 1.0
 SECTION_ROLES = ('attempt', 'peer')
 QUESTION_ROLES = ('explore',)
+# A session in one of these states holds a concurrency slot: launched and not yet ended, failed or integrated.
+# The runner counts its sessions by it, and the Lean broker does not exit while any session is in one.
+ACTIVE_STATUSES = ('starting', 'running', 'publishing')
 
 
 @contextmanager

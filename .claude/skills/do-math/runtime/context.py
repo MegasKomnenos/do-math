@@ -96,7 +96,7 @@ def assemble(skill, instance, session, role, task, pipeline, revision, settings)
     for item in inputs:
         parts += ['', '## ' + item['id'], '', item['text']]
     parts += ['', '# Assignment and executable commands', '',
-              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot. An attempt has no assigned mathematical task. An exploration whose task names a question already occupies that question; one whose task names none chooses a free question itself.', '',
+              'This is the task-and-commands excerpt from input.json; that file also holds your session identity, settings and user-condition snapshot.', '',
               '```json', json.dumps({'task': task, 'commands': commands}, ensure_ascii=False, indent=2), '```', '']
     write_text(session / 'pack.md', '\n'.join(parts))
     write_text(session / 'prompt.txt',

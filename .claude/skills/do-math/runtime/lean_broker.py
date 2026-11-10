@@ -28,7 +28,7 @@ import sys
 import time
 import uuid
 
-from coordination import session_live
+from coordination import ACTIVE_STATUSES, session_live
 from runtime_support import (InstanceLock, alive, available_memory, file_stamp, lean_config,
                     popen_options, process_identity, read_json, terminate_process, write_json)
 from settings import load_settings
@@ -1243,7 +1243,7 @@ class Broker:
         state = self.runner_sessions()
         if not state or not state.get("finished"):
             return False
-        if any(s["status"] in ("starting", "running", "publishing") for s in state.get("sessions", {}).values()):
+        if any(s["status"] in ACTIVE_STATUSES for s in state.get("sessions", {}).values()):
             return False
         return not any(j["status"] in ACTIVE for j in self.state["jobs"].values())
 
@@ -1331,22 +1331,28 @@ def broker_alive(paths):
         return None
 
 
+def launch_broker(paths, breakaway=False):
+    """Start a detached broker for the instance, its output going to broker.log, and return its Popen.
+
+    The runner and a session's client both start the broker this way; the lock settles a race between two starts."""
+    paths.ensure()
+    with paths.log.open("ab") as log:
+        return subprocess.Popen([sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)],
+                                cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                **popen_options(detached=True, breakaway=breakaway))
+
+
 def ensure_broker(paths):
     """The live broker's receipt, launching one if none is alive; the lock settles any race."""
     info = broker_alive(paths)
     if info:
         return info
-    paths.ensure()
-    argv = [sys.executable, "-B", str(SCRIPT), "serve", str(paths.instance)]
-    with paths.log.open("ab") as log:
-        # A session's client may start the shared broker; it must not join that session's job and
-        # end with it. A caller in a job that forbids breakaway starts it as before.
-        try:
-            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                             **popen_options(detached=True, breakaway=True))
-        except PermissionError:
-            subprocess.Popen(argv, cwd=paths.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                             **popen_options(detached=True))
+    # A session's client may start the shared broker; it must not join that session's job and
+    # end with it. A caller in a job that forbids breakaway starts it as before.
+    try:
+        launch_broker(paths, breakaway=True)
+    except PermissionError:
+        launch_broker(paths)
     deadline = time.monotonic() + READY_SECONDS
     while time.monotonic() < deadline:
         info = broker_alive(paths)

@@ -14,8 +14,8 @@ import uuid
 from check import check_session, regular_tree, tree_hashes
 from cli_adapter import provider_for_model
 from launch import worker_command as build_command
-from coordination import (board, claims_lock, lease_table, question_availability, question_entry,
-                          section_entries)
+from coordination import (ACTIVE_STATUSES, board, claims_lock, lease_table, question_availability,
+                          question_entry, section_entries)
 from availability import (availability_view, no_research_outcome, opening_since,
                           reported_availability)
 from knowledge import (ROOT_QUESTION, canonical, formal_ready, render, replay, root_solved,
@@ -31,8 +31,6 @@ SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
 SKILL = RUNTIME.parent
 PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 4, 'attempt': 5}
-# A session in one of these states holds a concurrency slot: launched and not yet ended, failed or integrated.
-ACTIVE_STATUSES = ('starting', 'running', 'publishing')
 
 
 def uid(prefix):
@@ -599,23 +597,15 @@ class Runner:
             self.finish(sid, s)
 
     def ensure_broker(self):
+        """Start the Lean broker when none is alive, at most every ten seconds, without waiting for it."""
+        from lean_broker import Paths, broker_alive, launch_broker
         if self.broker is not None and self.broker.poll() is not None:
             self.broker = None
-        receipt = self.instance / 'runner/lean/process.json'
-        try:
-            if receipt.exists() and alive(read_json(receipt)['process']):
-                return
-        except (OSError, ValueError, KeyError):
-            pass
-        if time.monotonic() - self.broker_attempt < 10:
+        paths = Paths(self.instance)
+        if broker_alive(paths) or time.monotonic() - self.broker_attempt < 10:
             return
         self.broker_attempt = time.monotonic()
-        directory = self.instance / 'runner/lean'
-        directory.mkdir(exist_ok=True)
-        with (directory / 'broker.log').open('ab') as log:
-            self.broker = subprocess.Popen([sys.executable, '-B', str(RUNTIME / 'lean_broker.py'), 'serve', str(self.instance)],
-                                          cwd=self.instance, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                                          **popen_options(detached=True))
+        self.broker = launch_broker(paths)
 
     def formalizable(self, nid, closure):
         """The proofs a formalizer is sent to formalize on canonical node nid, or none.

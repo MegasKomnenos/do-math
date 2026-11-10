@@ -173,6 +173,16 @@ class EndingTests(InstanceCase):
         self.assertEqual(state['authorization']['basis'], 'no_research')
         self.assertEqual(state['resumptions'], 0)
 
+    def test_a_rejected_no_research_outcome_is_reported_to_the_next_turn(self):
+        # An attempt that registered a section cannot close through no_research (reference/retained-work.md).
+        # The host resumes it and names the reason, as the transport check would.
+        _, _, directory = self.prepare(maximum=1, config={'no_research': True})
+        self.assertTrue(take(directory, 'root')['registered'])
+        state = self.run_host(directory)
+        self.assertEqual(state['authorization']['basis'], 'resumption_limit')
+        self.assertIn('no_research is incompatible with registered sections',
+                      read_json(directory / 'turns/0001/request.json')['previous_error'])
+
     def test_refusal_is_interruption_not_worker_authorization(self):
         _, _, directory = self.prepare(config={'refuse_at': 1})
         state = self.run_host(directory)
