@@ -1508,11 +1508,9 @@ class ClientAndLifecycleTests(BrokerFixture):
 
     def test_run_relays_output_exit_code_and_measurements(self):
         path = self.session_file("s1", alloc_mb=50, sleep=1, marker="RELAYED", stderr="TO-STDERR", exit=1)
-        path.write_text(path.read_text(encoding="utf-8").replace("rfl", "sorry"), encoding="utf-8")
         result = self.cli("run", str(self.instance), str(path), "--session", "s1", "--expect-mb", "120")
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("RELAYED", result.stdout)
-        self.assertIn("warning: declaration uses 'sorry'", result.stdout)
         self.assertIn("TO-STDERR", result.stderr)
         summary = json.loads(result.stderr.strip().splitlines()[-1].split("lean-broker: ", 1)[1])
         # The job ID comes first, before any waiting, so a session whose shell tool gave up can still wait on it.

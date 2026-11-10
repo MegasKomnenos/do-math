@@ -629,8 +629,8 @@ def render(instance, model, board, leases=None):
     for row in board:
         producer = row['session'] or '(not launched)'
         if row['role'] == 'explore':
-            # An explorer occupies one question; until it registers one, it is choosing. Its peer can
-            # still register sections (reference/common.md), listed below as for any other pipeline.
+            # An explorer occupies one question; until it registers one, it is choosing. Its peer can still
+            # register sections (roles/peer.md, Work the mathematics yourself), listed below as for any other pipeline.
             held = row['question'] or ('(choosing)' if row['stage'] in ('producing', 'queued') else '(none)')
             board_lines += [f"- {row['pipeline']} · producer: {producer} · {row['role']} · {row['stage']} · question: {held}"]
         else:

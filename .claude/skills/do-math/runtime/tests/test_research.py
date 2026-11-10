@@ -1671,8 +1671,9 @@ class RunnerTests(InstanceCase):
         self.assertIn('· explore · queued · question: (choosing)', visible)
 
     def test_board_view_lists_the_sections_an_exploration_peer_registers(self):
-        # Any peer may register a further section through the node's lease (reference/common.md). The
-        # board rows already count it as occupancy; board.md must show it under the exploration as well.
+        # Any peer may register a further section through the node's lease (roles/peer.md, Work the
+        # mathematics yourself). The board rows already count it as occupancy; board.md must show it under
+        # the exploration as well.
         runner = self.runner()
         pipeline = runner.state['jobs'][runner.producer('explore')]['pipeline']
         peer = runner.session_dir('speer')

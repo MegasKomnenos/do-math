@@ -927,9 +927,8 @@ class Runner:
                 continue
             request = read_json(path)
             if request['kind'] == 'questions':
-                if self.state['publication']:
-                    # Its event holds the next sequence number; the questions wait for a later pass.
-                    break
+                # collect() has completed any saved publication earlier in this pass, so this
+                # publication takes the next sequence number.
                 try:
                     reason, questions = operator_questions(
                         {key: value for key, value in request.items() if key != 'kind'}, self.model)
