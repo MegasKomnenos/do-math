@@ -784,22 +784,13 @@ class Runner:
     def waits_for_its_kind(self, job):
         """Whether a comprehensive review or organizer waits for another of its kind that is running.
 
-        Those launch one at a time: dispatch_pending() holds the waiting one back. It then takes the slot
-        the running one frees, ahead of any attempt, so it does not hold fresh attempts back as peer or
-        review work waiting for capacity or an available model does."""
+        Those launch one at a time: dispatch_pending() holds the waiting one back until the running one
+        has finished."""
         if job['role'] == 'organizer' or (job['role'] == 'review' and job['task']['kind'] == 'comprehensive'):
             return any(other['status'] == 'running' and other['role'] == job['role']
                        and other['task'].get('kind') == job['task'].get('kind')
                        for other in self.state['jobs'].values())
         return False
-
-    def peer_or_review_waiting(self):
-        """Whether a peer or review job waits to launch; fresh attempts are held back while one does.
-
-        A comprehensive review that waits only for another of its kind does not count: it takes the slot
-        that one frees, ahead of any attempt (waits_for_its_kind)."""
-        return any(j['status'] == 'pending' and j['role'] in ('peer', 'review') and not self.waits_for_its_kind(j)
-                   for j in self.state['jobs'].values())
 
     def question_view(self, launching=False):
         """Free, occupied and choosing questions as the runner counts them.
@@ -858,8 +849,6 @@ class Runner:
                     continue
                 if not self.available_nodes():
                     continue
-                if self.peer_or_review_waiting():
-                    continue
                 if not self.launch_due():
                     continue
                 if self.state['explore_requested'] and self.selection('explore') and self.question_slot():
@@ -899,11 +888,10 @@ class Runner:
                     # The queued exploration launches from dispatch_pending() on a later pass.
                     break
                 continue
-            waiting = self.peer_or_review_waiting()
-            # dispatch_pending() above has already launched each peer, review or organizer job that could
-            # launch; what remains waits for its retry time, a model or another of its kind. Of those, only
-            # a waiting peer or review holds the attempt back.
-            if (waiting or not nodes or not self.launch_due()
+            # dispatch_pending() above has already filled free capacity in priority order, so a slot that
+            # opened went to waiting review or peer work before any attempt. Work still pending waits for
+            # its retry time, a model or another of its kind, not for capacity, and holds no attempt back.
+            if (not nodes or not self.launch_due()
                     or not self.attempt_dispatch_ready() or not self.selection('attempt')):
                 break
             key = self.producer('attempt')

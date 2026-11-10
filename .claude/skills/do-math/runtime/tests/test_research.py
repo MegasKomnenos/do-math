@@ -1127,13 +1127,20 @@ class RunnerTests(InstanceCase):
                                    'model:claude/opus', 'claude/sonnet', model='claude/opus',
                                    peers=('claude/opus', 'claude/sonnet', 'codex/gpt-6.1-sol'))
 
-    def test_waiting_review_blocks_fresh_attempt_even_when_other_provider_free(self):
+    def test_review_waiting_for_a_model_does_not_hold_attempts_while_slots_are_free(self):
+        # A freed slot goes to waiting review work first through the priority order, which the
+        # priority test below checks; a review that waits for a model rather than for capacity
+        # leaves the free slots to attempts (reference/operations.md).
         runner = self.runner()
+        runner.settings['launch_interval'] = 0  # launch spacing has its own test
         runner.settings['roles']['review'] = [{'model': 'codex/gpt-6.1-sol', 'effort': 'xhigh'}]
         runner.state['blocks']['provider:codex'] = {'until': 10**12}
-        runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
-        runner.schedule()
-        self.assertFalse(any(p['role'] == 'attempt' for p in runner.state['pipelines'].values()))
+        review = runner.enqueue('review', {'kind': 'comprehensive', 'concerns': [], 'conflicts': []})
+        with patch('runner.subprocess.Popen') as host:
+            host.return_value.pid = runner.identity['pid']
+            runner.schedule()
+        self.assertEqual(runner.state['jobs'][review]['status'], 'pending')
+        self.assertIn('attempt', [s['role'] for _, s in runner.active()])
 
     def test_waiting_organizer_does_not_block_attempt_while_another_organizer_runs(self):
         runner = self.runner()
