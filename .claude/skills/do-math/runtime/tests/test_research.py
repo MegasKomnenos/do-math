@@ -13,9 +13,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check import Invalid, assessment_check, findings_check, organization_check
 from coordination import board, lease, lease_table, main as coordination_main, message, release, section, updates, wait
 from knowledge import canonical, formal_ready, render, replay, root_solved, sufficient_closure
-from runner import Runner, archive_finished, initialize, main
+from runner import Runner, archive_finished, initialize, main, uid
 from runtime_support import InstanceLock, read_json, write_json
 from settings import defaults, validate
+
+POPEN = subprocess.Popen  # captured before any test patches it
 
 
 def record(claims=None, nodes=None, relations=None, solutions=None, glossary=None,
@@ -102,13 +104,22 @@ class InstanceCase(unittest.TestCase):
                    {'id': eid, 'sequence': self.seq, 'kind': kind, 'folder': sub + '/' + eid})
 
     def questions(self, eid, items, reason='The operator placed these questions on the frontier.'):
-        """An operator publication of questions: a questions event written outside the runner (reference/operations.md)."""
-        self.seq += 1
-        folder = self.instance / 'knowledge/questions' / eid
-        folder.mkdir(parents=True)
-        write_json(folder / 'questions.json', {'source': 'operator', 'reason': reason, 'questions': items})
-        write_json(self.instance / 'knowledge/events' / (eid + '.json'),
-                   {'id': eid, 'sequence': self.seq, 'kind': 'questions', 'folder': 'questions/' + eid})
+        """An operator publication of questions, made as the operator makes it: the questions command
+        writes a request and the runner collects and publishes it (reference/operations.md). Only the
+        publication's identifier is fixed, to eid, so that a test can name it."""
+        source = self.root / ('questions-' + uuid.uuid4().hex + '.json')
+        write_json(source, {'reason': reason, 'questions': items})
+        with patch('builtins.print') as shown:
+            self.assertEqual(main(['questions', str(self.instance), '--file', str(source)]), 0, shown.call_args)
+        # A caller may stand in for session launches by patching subprocess.Popen, which Git also
+        # uses; the publication commits with the real Git, and the original patch returns afterwards.
+        with patch.object(subprocess, 'Popen', POPEN), \
+                patch('runner.uid', side_effect=lambda prefix: eid if prefix == 'q' else uid(prefix)):
+            engine = Runner(self.instance, self.skill)
+            engine.ingest_inputs()
+        event = self.instance / 'knowledge/events' / (eid + '.json')
+        self.assertTrue(event.is_file(), engine.state['last_error'])
+        self.seq = read_json(event)['sequence']
 
     def reduction(self):
         return record([claim_row('reduce')], [{'id': 'Q', 'statement': 'Q', 'connection': 'reduce'}],

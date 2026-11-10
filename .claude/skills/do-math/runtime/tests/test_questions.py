@@ -11,8 +11,8 @@ from check import Invalid, assessment_check, check_session, organization_check, 
 from coordination import (board, main as coordination_main, question_availability, question_lease,
                           question_lease_table, question_release, question_take, question_wait, updates)
 from knowledge import canonical_question, render, replay
-from runner import Runner, status
-from runtime_support import read_json, write_json
+from runner import Runner, main, operator_questions, status
+from runtime_support import git, read_json, write_json
 from settings import defaults
 from test_research import InstanceCase, assessment, claim_row, implication, record, solution
 
@@ -200,6 +200,226 @@ class QuestionKnowledgeTests(InstanceCase):
         frontier = self.frontier(model)
         self.assertNotIn('\n## op-a\n', frontier)
         self.assertIn('Aliases: op-a', frontier)
+
+
+class OperatorQuestionTests(InstanceCase):
+    """The questions command: the operator's publication of questions, outside peer and review."""
+
+    def command(self, content):
+        """Run the questions command on a file with the given JSON value, or raw text when a str is given."""
+        source = self.root / 'operator-questions.json'
+        source.write_text(content if isinstance(content, str) else json.dumps(content), encoding='utf-8')
+        with patch('builtins.print') as shown:
+            code = main(['questions', str(self.instance), '--file', str(source)])
+        return code, json.loads(shown.call_args.args[0])
+
+    def requests(self):
+        return sorted(p.name for p in (self.instance / 'control/requests').glob('*.json'))
+
+    def events(self):
+        return sorted(p.name for p in (self.instance / 'knowledge/events').glob('*.json'))
+
+    def test_the_command_refuses_a_file_outside_the_format_or_the_identifier_rules(self):
+        self.publish('rq', self.reduction())  # node Q
+        # Review identifies proposal P with the root, so P is a node alias without being a node.
+        data = record([claim_row('same')], [{'id': 'P', 'statement': 'The root again.', 'connection': 'same'}])
+        review = assessment(data)
+        review['nodes'] = [{'proposal': 'P', 'node': 'root', 'reason': 'The same statement.'}]
+        self.publish('rp', data, review)
+        self.questions('qops', [question('op-a'), question('op-b')])
+        self.event('o1', 'organization', {'batch': [], 'modules': [], 'shared_context': [],
+                                          'merge_questions': [{'from': 'op-a', 'into': 'op-b', 'reason': 'Same.'}]})
+        model = replay(self.instance)
+        self.assertEqual((model['aliases'], model['question_aliases']), ({'P': 'root'}, {'op-a': 'op-b'}))
+        self.assertNotIn('P', model['nodes'])
+        good = question('op-new')
+        cases = (
+            ('Expecting', '{not json'),
+            ('is an object', [good]),
+            ('unknown key in a questions file: note', {'reason': 'R.', 'questions': [good], 'note': 'x'}),
+            ('nonempty "reason"', {'questions': [good]}),
+            ('nonempty "reason"', {'reason': '  ', 'questions': [good]}),
+            ('nonempty "reason"', {'reason': 5, 'questions': [good]}),
+            ('nonempty "questions" array', {'reason': 'R.'}),
+            ('nonempty "questions" array', {'reason': 'R.', 'questions': []}),
+            ('nonempty "questions" array', {'reason': 'R.', 'questions': {'id': 'op-new'}}),
+            ('each question is an object', {'reason': 'R.', 'questions': ['op-new']}),
+            ('unknown key in a question: why', {'reason': 'R.', 'questions': [{**good, 'why': 'x'}]}),
+            ('invalid question id', {'reason': 'R.', 'questions': [{**good, 'id': '-leading'}]}),
+            ('invalid question id', {'reason': 'R.', 'questions': [{**good, 'id': 'with space'}]}),
+            ('invalid question id', {'reason': 'R.', 'questions': [{**good, 'id': 7}]}),
+            ('invalid question id', {'reason': 'R.', 'questions': [{k: v for k, v in good.items() if k != 'id'}]}),
+            ('q0 is the root question', {'reason': 'R.', 'questions': [{**good, 'id': 'q0'}]}),
+            ('duplicate question id: op-new', {'reason': 'R.', 'questions': [good, good]}),
+            ('already names a question', {'reason': 'R.', 'questions': [{**good, 'id': 'op-b'}]}),
+            ('already names a question', {'reason': 'R.', 'questions': [{**good, 'id': 'op-a'}]}),
+            ('already names a question', {'reason': 'R.', 'questions': [{**good, 'id': 'Q'}]}),
+            ('already names a question', {'reason': 'R.', 'questions': [{**good, 'id': 'root'}]}),
+            ('already names a question', {'reason': 'R.', 'questions': [{**good, 'id': 'P'}]}),
+            ('needs a nonempty "statement"', {'reason': 'R.', 'questions': [{**good, 'statement': ' '}]}),
+            ('needs a nonempty "statement"', {'reason': 'R.', 'questions': [{**good, 'statement': None}]}),
+            ('needs a nonempty "grounds"', {'reason': 'R.', 'questions': [{**good, 'grounds': ''}]}),
+            ('needs a nonempty "grounds"', {'reason': 'R.', 'questions': [{k: v for k, v in good.items() if k != 'grounds'}]}),
+        )
+        requests, events = self.requests(), self.events()
+        for pattern, content in cases:
+            with self.subTest(pattern=pattern, content=content):
+                code, answer = self.command(content)
+                self.assertEqual(code, 1)
+                self.assertIn(pattern, answer['error'])
+        # A refused file leaves no request for the runner and nothing in the published research.
+        self.assertEqual((self.requests(), self.events()), (requests, events))
+        code, answer = self.command({'reason': 'R.', 'questions': [good]})
+        self.assertEqual(code, 0)
+        self.assertEqual(self.requests(), sorted(requests + [Path(answer['request']).name]))
+
+    def test_the_runner_publishes_the_request_and_the_frontier_shows_the_operator_as_its_source(self):
+        items = [question('op-scale'), question('op-block')]
+        reason = 'Two places the records keep stalling.'
+        code, answer = self.command({'reason': reason, 'questions': items})
+        self.assertEqual(code, 0)
+        request = Path(answer['request'])
+        self.assertEqual(self.requests(), [request.name])
+        self.assertEqual(read_json(request), {'kind': 'questions', 'reason': reason, 'questions': items})
+        # The command writes no research: the runner is the one writer of the published events.
+        self.assertEqual(self.events(), [])
+        self.assertFalse((self.instance / 'knowledge/questions').exists())
+        runner = Runner(self.instance, self.skill)
+        runner.ingest_inputs()
+        [name] = self.events()
+        event = read_json(self.instance / 'knowledge/events' / name)
+        eid = event['id']
+        self.assertEqual(name, eid + '.json')
+        self.assertEqual((event['kind'], event['folder'], event['sequence'], event['source']),
+                         ('questions', 'questions/' + eid, 1, 'operator'))
+        published = read_json(self.instance / 'knowledge/questions' / eid / 'questions.json')
+        self.assertEqual(published, {'source': 'operator', 'reason': reason, 'questions': items, 'at': event['at']})
+        self.assertEqual(sorted(p.name for p in (self.instance / 'knowledge/questions' / eid).iterdir()),
+                         ['questions.json'])
+        self.assertEqual(git(self.instance, 'log', '--format=%s').count('Publish ' + eid), 1)
+        self.assertIn('knowledge/questions/' + eid + '/questions.json',
+                      git(self.instance, 'ls-files', '--', 'knowledge/questions'))
+        self.assertIsNone(runner.state['publication'])
+        self.assertIn(request.name, read_json(self.instance / 'runner/state.json')['seen_requests'])
+        self.assertIsNone(runner.state['last_error'])
+        model = replay(self.instance)
+        for item in items:
+            entry = model['questions'][item['id']]
+            self.assertEqual((entry['statement'], entry['grounds'], entry['origin'], entry['source'], entry['state']),
+                             (item['statement'], item['grounds'], 'operator', eid, 'open'))
+        self.assertEqual(runner.model, model)
+        frontier = (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8')
+        section = frontier.split('## op-scale\n', 1)[1].split('\n## ', 1)[0]
+        self.assertIn(f'Source: operator publication [{eid}](questions/{eid}/questions.json)', section)
+        # The request is collected once.
+        runner.ingest_inputs()
+        Runner(self.instance, self.skill).ingest_inputs()
+        self.assertEqual(self.events(), [name])
+
+    def test_a_restart_completes_the_same_questions_publication_after_a_failed_commit(self):
+        code, answer = self.command({'reason': 'R.', 'questions': [question('op-scale')]})
+        self.assertEqual(code, 0)
+        runner = Runner(self.instance, self.skill)
+
+        def broken(instance, *args):
+            if args[0] == 'commit':
+                raise RuntimeError('simulated unavailable commit')
+            return git(instance, *args)
+
+        with patch('runner.git', side_effect=broken), self.assertRaisesRegex(RuntimeError, 'simulated'):
+            runner.ingest_inputs()
+        saved = read_json(self.instance / 'runner/state.json')
+        prepared = saved['publication']
+        self.assertEqual(prepared['event']['kind'], 'questions')
+        self.assertIn(Path(answer['request']).name, saved['seen_requests'])
+        recovered = Runner(self.instance, self.skill)
+        recovered.collect()
+        recovered.ingest_inputs()
+        recovered.collect()
+        eid = prepared['event']['id']
+        self.assertEqual(self.events(), [eid + '.json'])
+        self.assertEqual(read_json(self.instance / 'knowledge/events' / (eid + '.json')), prepared['event'])
+        self.assertEqual(read_json(self.instance / 'knowledge/questions' / eid / 'questions.json'), prepared['questions'])
+        self.assertEqual(git(self.instance, 'log', '--format=%s').count('Publish ' + eid), 1)
+        self.assertIsNone(recovered.state['publication'])
+        self.assertEqual(replay(self.instance)['questions']['op-scale']['source'], eid)
+
+    def test_a_restart_replaces_a_stale_stage_and_writes_the_saved_content(self):
+        code, answer = self.command({'reason': 'R.', 'questions': [question('op-scale')]})
+        self.assertEqual(code, 0)
+        runner = Runner(self.instance, self.skill)
+        request = read_json(Path(answer['request']))
+        reason, items = operator_questions({k: v for k, v in request.items() if k != 'kind'}, runner.model)
+        # The runner ended after saving the prepared publication and while staging its files.
+        runner.prepare_questions(Path(answer['request']).name, reason, items)
+        prepared = runner.state['publication']
+        stage = self.instance / 'runner' / ('stage-' + prepared['event']['id'])
+        stage.mkdir()
+        (stage / 'questions.json').write_text('{"partial', encoding='utf-8')
+        recovered = Runner(self.instance, self.skill)
+        recovered.ingest_inputs()  # the request counts as collected; the prepared publication waits
+        self.assertEqual(self.events(), [])
+        recovered.collect()
+        eid = prepared['event']['id']
+        self.assertEqual(self.events(), [eid + '.json'])
+        self.assertEqual(read_json(self.instance / 'knowledge/questions' / eid / 'questions.json'), prepared['questions'])
+        self.assertEqual(list((self.instance / 'runner').glob('stage-*')), [])
+        self.assertIsNone(recovered.state['publication'])
+
+    def test_an_identifier_taken_before_collection_is_refused_and_the_runner_continues(self):
+        code, first = self.command({'reason': 'R.', 'questions': [question('op-scale')]})
+        self.assertEqual(code, 0)
+        code, second = self.command({'reason': 'R.', 'questions': [question('op-block')]})
+        self.assertEqual(code, 0)
+        # Between the command's check and the runner's collection, a record's review admits op-scale.
+        self.publish('r1', record([claim_row('c')], questions=[question('op-scale')]))
+        runner = Runner(self.instance, self.skill)
+        runner.ingest_inputs()
+        refused = Path(first['request']).name
+        error = runner.state['last_error']
+        self.assertIn('questions request ' + refused + ' refused', error['error'])
+        self.assertIn('already names a question', error['error'])
+        self.assertIn('op-scale', error['error'])
+        saved = read_json(self.instance / 'runner/state.json')
+        self.assertEqual(saved['last_error'], error)
+        self.assertCountEqual(saved['seen_requests'], [refused, Path(second['request']).name])
+        self.assertEqual(status(self.instance)['state']['last_error'], error)
+        model = replay(self.instance)
+        self.assertEqual((model['questions']['op-scale']['origin'], model['questions']['op-scale']['source']),
+                         ('record', 'r1'))
+        # The other request is published in the same pass; the refused one is not collected again.
+        self.assertEqual(model['questions']['op-block']['origin'], 'operator')
+        self.assertEqual(len([n for n in self.events() if n != 'r1.json']), 1)
+        runner.ingest_inputs()
+        self.assertEqual(runner.state['last_error'], error)
+        self.assertEqual(len(self.events()), 2)
+
+    def test_the_question_migration_event_keeps_replaying_as_an_operator_publication(self):
+        # The running instance holds one questions event that the one-time migration script wrote outside
+        # the runner; its event and file carry the extra keys source and migration. Replay reads both forms.
+        folder = self.instance / 'knowledge/questions/qmigrated'
+        folder.mkdir(parents=True)
+        write_json(folder / 'questions.json', {
+            'source': 'operator', 'reason': 'Initial questions.', 'questions': [question('op-scale')], 'at': 1.0,
+            'migration': 'do-math question introduction; placed by the operator, not through peer and review'})
+        write_json(self.instance / 'knowledge/events/qmigrated.json',
+                   {'id': 'qmigrated', 'kind': 'questions', 'sequence': 1, 'folder': 'questions/qmigrated',
+                    'at': 1.0, 'source': 'operator-migration'})
+        model = replay(self.instance)
+        entry = model['questions']['op-scale']
+        self.assertEqual((entry['origin'], entry['source'], entry['state']), ('operator', 'qmigrated', 'open'))
+        render(self.instance, model, [])
+        self.assertIn('Source: operator publication [qmigrated](questions/qmigrated/questions.json)',
+                      (self.instance / 'knowledge/frontier.md').read_text(encoding='utf-8'))
+        # An operator publication through the command after it takes the next revision.
+        self.assertEqual(self.command({'reason': 'R.', 'questions': [question('op-block')]})[0], 0)
+        self.assertEqual(self.command({'reason': 'R.', 'questions': [question('op-scale')]})[0], 1)
+        runner = Runner(self.instance, self.skill)
+        runner.ingest_inputs()
+        model = replay(self.instance)
+        self.assertEqual(model['sequence'], 2)
+        self.assertEqual(model['questions']['op-scale']['source'], 'qmigrated')
+        self.assertEqual(model['questions']['op-block']['origin'], 'operator')
 
 
 class QuestionCheckTests(InstanceCase):

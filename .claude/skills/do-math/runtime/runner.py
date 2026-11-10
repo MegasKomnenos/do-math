@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -31,10 +32,50 @@ SCRIPT = Path(__file__).resolve()
 RUNTIME = SCRIPT.parent
 SKILL = RUNTIME.parent
 PRIORITY = {'review': 0, 'peer': 1, 'formalizer': 2, 'organizer': 3, 'explore': 4, 'attempt': 5}
+QUESTION_ID = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]*')
 
 
 def uid(prefix):
     return prefix + uuid.uuid4().hex
+
+
+def operator_questions(data, model):
+    """The reason and questions of an operator publication, checked against the current research.
+
+    The questions command checks its file with this, and the runner checks the request again when it
+    collects it, because a question or node with the same ID can be published in between."""
+    if not isinstance(data, dict):
+        raise ValueError('a questions file is an object with "reason" and "questions"')
+    extra = sorted(set(data) - {'reason', 'questions'})
+    if extra:
+        raise ValueError('unknown key in a questions file: ' + ', '.join(extra))
+    reason, items = data.get('reason'), data.get('questions')
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValueError('a questions file needs a nonempty "reason"')
+    if not isinstance(items, list) or not items:
+        raise ValueError('a questions file needs a nonempty "questions" array')
+    taken = set(model['questions']) | set(model['question_aliases']) | set(model['nodes']) | set(model['aliases'])
+    seen = set()
+    for item in items:
+        if not isinstance(item, dict):
+            raise ValueError('each question is an object with "id", "statement" and "grounds"')
+        extra = sorted(set(item) - {'id', 'statement', 'grounds'})
+        if extra:
+            raise ValueError('unknown key in a question: ' + ', '.join(extra))
+        qid = item.get('id')
+        if not isinstance(qid, str) or not QUESTION_ID.fullmatch(qid):
+            raise ValueError(f'invalid question id: {qid!r}')
+        if qid == ROOT_QUESTION:
+            raise ValueError('q0 is the root question, which the runtime creates')
+        if qid in seen:
+            raise ValueError('duplicate question id: ' + qid)
+        if qid in taken:
+            raise ValueError('question id already names a question, question alias, node or node alias: ' + qid)
+        for key in ('statement', 'grounds'):
+            if not isinstance(item.get(key), str) or not item[key].strip():
+                raise ValueError(f'question {qid} needs a nonempty "{key}"')
+        seen.add(qid)
+    return reason, [{'id': q['id'], 'statement': q['statement'], 'grounds': q['grounds']} for q in items]
 
 
 def initialize(instance, root_file, settings_file=None):
@@ -473,13 +514,28 @@ class Runner:
         self.state['sessions'][sid].update(status='publishing', record=rid)
         self.save()
 
+    def prepare_questions(self, request, reason, questions):
+        """An operator publication of questions, which has no session or job behind it.
+
+        Its content is saved with the publication's identity, so a restart writes the same files, and
+        the request counts as collected in the same save, so it is never published twice."""
+        eid = uid('q')
+        now = time.time()
+        event = {'id': eid, 'kind': 'questions', 'sequence': self.model['sequence'] + 1,
+                 'folder': 'questions/' + eid, 'at': now, 'source': 'operator'}
+        self.state['publication'] = {'event': event, 'job': None, 'session': None,
+                                     'questions': {'source': 'operator', 'reason': reason,
+                                                   'questions': questions, 'at': now}}
+        self.state['seen_requests'].append(request)
+        self.save()
+
     def publish(self):
         publication = self.state['publication']
         if not publication:
             return
         event = publication['event']
         sid = publication['session']
-        job = self.state['jobs'][publication['job']]
+        job = self.state['jobs'][publication['job']] if publication['job'] else None
         destination = self.instance / 'knowledge' / event['folder']
         if not destination.exists():
             stage = self.instance / 'runner' / ('stage-' + event['id'])
@@ -502,8 +558,13 @@ class Runner:
                 write_json(stage / 'provenance.json', {'producer_session': pipeline['producer'], 'peer_session': pipeline['peer'],
                                                       'review_session': sid, 'pipeline': pipeline['id']})
                 self.copy_formal_evidence(stage, sid)
+            elif event['kind'] == 'questions':
+                stage.mkdir()
+                write_json(stage / 'questions.json', publication['questions'])
             else:
                 shutil.copytree(self.session_dir(sid) / 'output', stage)
+            # knowledge/questions/ appears with an instance's first operator publication of questions.
+            destination.parent.mkdir(exist_ok=True)
             rename_directory(stage, destination)
         event_path = self.instance / 'knowledge/events' / (event['id'] + '.json')
         if not event_path.exists():
@@ -515,10 +576,12 @@ class Runner:
         if not git(self.instance, 'log', '-1', '--format=%H', '--', 'knowledge/' + event['folder']):
             git(self.instance, 'add', '-A', '--', 'knowledge')
             git(self.instance, 'commit', '-m', 'Publish ' + event['id'], '--', 'knowledge')
-        self.state['sessions'][sid]['status'] = 'integrated'
-        job.update(status='done', record=event['id'])
-        if job['pipeline']:
-            self.state['pipelines'][job['pipeline']].update(stage='done', record=event['id'])
+        if sid:
+            self.state['sessions'][sid]['status'] = 'integrated'
+        if job:
+            job.update(status='done', record=event['id'])
+            if job['pipeline']:
+                self.state['pipelines'][job['pipeline']].update(stage='done', record=event['id'])
         if event['kind'] == 'review':
             self.state['processed_concerns'] = sorted(set(self.state['processed_concerns']) | set(job['task']['concerns']))
             self.state['processed_conflicts'] = sorted(set(self.state['processed_conflicts']) | set(job['task']['conflicts']))
@@ -865,6 +928,24 @@ class Runner:
             if path.name in self.state['seen_requests']:
                 continue
             request = read_json(path)
+            if request['kind'] == 'questions':
+                if self.state['publication']:
+                    # Its event holds the next sequence number; the questions wait for a later pass.
+                    break
+                try:
+                    reason, questions = operator_questions(
+                        {key: value for key, value in request.items() if key != 'kind'}, self.model)
+                except ValueError as exc:
+                    # A question or node published since the command checked the file can take an ID.
+                    # The refusal is left in status for the operator, and the runner continues.
+                    self.state['last_error'] = {'at': time.time(),
+                                                'error': f'questions request {path.name} refused: {exc}'}
+                    self.state['seen_requests'].append(path.name)
+                    self.save()
+                    continue
+                self.prepare_questions(path.name, reason, questions)
+                self.publish()
+                continue
             if request['kind'] == 'review':
                 task = {'kind': 'comprehensive', 'concerns': request['concerns'], 'conflicts': [],
                         'requested_records': request['records'], 'requested_nodes': request['nodes'],
@@ -1037,7 +1118,7 @@ def archive_finished(instance):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'render', 'review', 'organize', 'reconsider-attempts', 'restart-broker', 'kill-session', '_session', '_archive'):
+    for name in ('init', 'start', 'run', 'status', 'stop', 'resume', 'input', 'render', 'review', 'organize', 'reconsider-attempts', 'questions', 'restart-broker', 'kill-session', '_session', '_archive'):
         p = sub.add_parser(name)
         p.add_argument('instance', type=Path)
         if name == 'init':
@@ -1045,7 +1126,7 @@ def main(argv=None):
             p.add_argument('--settings', type=Path)
         if name == 'run':
             p.add_argument('--token')
-        if name == 'input':
+        if name in ('input', 'questions'):
             p.add_argument('--file', required=True, type=Path)
         if name == 'kill-session':
             p.add_argument('session')
@@ -1111,6 +1192,12 @@ def main(argv=None):
                 request.update(records=args.record, nodes=args.node, concerns=args.concern, reason=args.reason)
             path = instance / 'control/requests' / (uid('request') + '.json')
             write_json(path, request)
+            result['request'] = str(path)
+        elif args.command == 'questions':
+            reason, questions = operator_questions(json.loads(args.file.read_text(encoding='utf-8-sig')),
+                                                   replay(instance))
+            path = instance / 'control/requests' / (uid('request') + '.json')
+            write_json(path, {'kind': 'questions', 'reason': reason, 'questions': questions})
             result['request'] = str(path)
         elif args.command == 'restart-broker':
             from lean_broker import Paths, broker_status, ensure_broker

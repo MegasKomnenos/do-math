@@ -51,7 +51,7 @@ When reporting completion, distinguish formal settlement of the root from the ru
 
 ## Operate and recover
 
-Use the commands in [Operations](reference/operations.md). `status` is read-only. `stop` blocks new dispatch while active CLI turns finish; reconsideration turns and queued follow-ups wait. `resume` removes that stop and requires `start` as well if the runner is no longer alive. `input` preserves new standing information for future sessions. `review` requests independent examination of existing evidence, and `organize` requests a repository organization pass.
+Use the commands in [Operations](reference/operations.md). `status` is read-only. `stop` blocks new dispatch while active CLI turns finish; reconsideration turns and queued follow-ups wait. `resume` removes that stop and requires `start` as well if the runner is no longer alive. `input` preserves new standing information for future sessions. `review` requests independent examination of existing evidence, `organize` requests a repository organization pass, and `questions` publishes questions of your own on the frontier without peer or review.
 
 A provider or model refusal causes a scoped wait and permits configured fallback for later launches. A producing session interrupted after doing work ends and its retained material goes to peer. Partial peer, review or organizer processing is supplied to a replacement session. Read the actual block or error in status before diagnosing a failure as mathematical.
 
