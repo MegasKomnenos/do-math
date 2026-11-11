@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>parking unimodality · research film</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #F5F2EC; }
+  canvas { display: block; }
+</style>
+<script src="timeline.js"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// Every drawn element below comes from a field of timeline.json. Nothing moves
+// without an event: births, state transitions, session lifetimes, rule changes.
+// Positions are computed once over the final supergraph (foresighted layout),
+// so an element never moves after it appears.
+// ---------------------------------------------------------------------------
+const T = window.TIMELINE;
+const Q = new URLSearchParams(location.search);
+const LAYOUT = Q.get('layout') || 'radial';          // radial | layered | timeline
+const W = +(Q.get('w') || 1920), H = +(Q.get('h') || 1080);
+const OPEN = 4, BODY = 180, HOLD = 3;                  // screen seconds
+const t0 = T.meta.t0, cutoff = T.meta.cutoff;
+const RATE = (cutoff - t0) / BODY;                    // real seconds per screen second
+// Time runs uniformly except at a cascade: when one publication settles nodes on several depth
+// levels at once, the clock holds while the levels light up in derivation order (0.3 s per level).
+// The hold is inserted screen time, so the clock never shows a derivation taking hours.
+const holds = [];                                      // filled after the transitions are grouped
+function secToT(sec) {
+  let extra = 0;
+  for (const h of holds) { if (sec < h.sec) break; if (sec < h.sec + h.len) return h.t; extra += h.len; }
+  return t0 + Math.min(Math.max(sec - OPEN - extra, 0), BODY) * RATE;
+}
+function tToSec(t) {
+  let extra = 0;
+  for (const h of holds) { if (h.t < t) extra += h.len; else break; }
+  return OPEN + (t - t0) / RATE + extra;
+}
+
+const PAPER = '#F5F2EC', INK = '#1C1B19', GREY = '#8F8B84', HAIR = '#C9C5BD', ACCENT = '#B5452B';
+const SERIF = '"Noto Serif KR", "Noto Serif CJK KR", serif';
+const SANS = '"Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", sans-serif';
+const STATEMENT = '모든 n에 대해, 주차 함수의 최대 변위 분포는 단봉인가?';
+const WT_POW = +(Q.get('wt') || 0.85);
+const PRODUCER = new Set(['attempt', 'explore', 'formalizer']);
+const JUDGE = new Set(['peer', 'review']);
+
+// ---------- data ----------
+const nodes = Object.values(T.nodes).filter(n => !n.alias_of);
+const nodeById = Object.fromEntries(nodes.map(n => [n.id, n]));
+nodes.forEach(n => { n.transitions.sort((a, b) => a[0] - b[0]); n.attemptStarts = []; });
+nodeById.root.birth = t0;                              // the root exists from the instance's creation
+const relations = Object.values(T.relations).sort((a, b) => a.birth - b.birth);
+const questions = Object.values(T.questions).filter(q => q.id !== 'q0' && q.birth != null).sort((a, b) => a.birth - b.birth);
+const qById = Object.fromEntries(questions.map(q => [q.id, q]));
+const sessions = Object.values(T.sessions).filter(s => s.start != null).sort((a, b) => a.start - b.start);
+for (const s of sessions) {
+  s.endT = s.end == null ? Infinity : s.end;
+  if (s.nodes.length && nodeById[s.nodes[0]]) s.target = s.nodes[0];
+  else if (s.question && qById[s.question]) s.target = s.question;
+  else s.target = 'root';                               // q0 is the root problem itself; untargeted work sits at the root
+  s.cls = PRODUCER.has(s.role) ? 'producer' : JUDGE.has(s.role) ? 'judge' : 'organizer';
+  if (s.role === 'attempt') for (const nid of s.nodes) if (nodeById[nid]) nodeById[nid].attemptStarts.push(s.start);
+}
+nodes.forEach(n => n.attemptStarts.sort((a, b) => a - b));
+const rules = T.rules.filter(r => r.shown).sort((a, b) => a.t - b.t);
+
+// tree parent: the other end of the earliest relation that involves the node
+for (const n of nodes) {
+  n.parent = null;
+  if (n.id === 'root') continue;
+  let best = null, rel = null;
+  for (const r of relations) {
+    const asPremise = r.premises.find(p => p[0] === n.id);
+    if (asPremise) { best = r.conclusion[0]; rel = r.id; break; }
+    if (r.conclusion[0] === n.id) { best = r.premises[0][0]; rel = r.id; break; }
+  }
+  n.parent = (best && nodeById[best] && best !== n.id) ? best : 'root';
+  n.parentRel = n.parent === best ? rel : null;
+}
+// a relation that gave some node its place in the tree is drawn straight; other relations are cross-links
+for (const r of relations) r.tree = nodes.some(n => n.parentRel === r.id);
+// break parent cycles and compute tree depth
+for (const n of nodes) {
+  const seen = new Set([n.id]); let p = n.parent, ok = true;
+  while (p) { if (seen.has(p)) { ok = false; break; } seen.add(p); p = nodeById[p].parent; }
+  if (!ok) n.parent = 'root';
+}
+const children = {}; nodes.forEach(n => { children[n.id] = []; });
+for (const n of nodes) if (n.parent) children[n.parent].push(n.id);
+for (const k in children) children[k].sort((a, b) => nodeById[a].birth - nodeById[b].birth);
+function depthOf(id) { let d = 0, p = nodeById[id].parent; while (p) { d++; p = nodeById[p].parent; } return d; }
+nodes.forEach(n => { n.tdepth = depthOf(n.id); });
+const maxDepth = Math.max(...nodes.map(n => n.tdepth));
+const leaves = {};
+(function count(id) { const c = children[id]; leaves[id] = c.length ? c.reduce((s, k) => s + count(k), 0) : 1; return leaves[id]; })('root');
+const order = []; (function pre(id) { order.push(id); children[id].forEach(pre); })('root');
+
+// ---------- staged transitions ----------
+// Transitions published by one event share a time; they are shown in derivation order,
+// deepest level first, 0.3 s per level, while the clock holds (see holds above).
+const STEP = 0.3;
+const trans = [];
+for (const n of nodes) for (const [t, st] of n.transitions) if (st !== 'unresolved' || n.transitions[0][0] !== t) trans.push({ node: n.id, t, st });
+const gdepth = id => nodeById[id].depth ?? 99;
+trans.sort((a, b) => a.t - b.t || (gdepth(b.node) - gdepth(a.node)));
+for (let i = 0; i < trans.length;) {
+  let j = i; while (j < trans.length && trans[j].t === trans[i].t) j++;
+  const levels = [...new Set(trans.slice(i, j).map(x => gdepth(x.node)))].sort((a, b) => b - a);
+  if (levels.length > 1) holds.push({ t: trans[i].t, len: (levels.length - 1) * STEP, levels });
+  for (let k = i; k < j; k++) trans[k].level = levels.indexOf(gdepth(trans[k].node));
+  i = j;
+}
+holds.sort((a, b) => a.t - b.t);
+for (const h of holds) h.sec = tToSec(h.t);            // tToSec counts only earlier holds, so this is the hold's start
+for (const x of trans) x.sec = tToSec(x.t) + x.level * STEP;
+const TOTAL = OPEN + BODY + HOLD + holds.reduce((s, h) => s + h.len, 0);
+const transByNode = {}; for (const x of trans) (transByNode[x.node] ||= []).push(x);
+function nodeState(n, sec) {
+  let st = 'unresolved', last = null;
+  for (const x of (transByNode[n.id] || [])) { if (x.sec <= sec) { st = x.st; last = x; } else break; }
+  return { st, age: last ? sec - last.sec : Infinity };
+}
+function questionState(q, t) { let st = 'open'; for (const [tt, s] of q.transitions) if (tt <= t) st = s; return st; }
+
+// ---------- layouts ----------
+const pos = {};                                        // id -> {x, y, a}
+const cx = W / 2, cy = H / 2;
+const wt = id => Math.pow(leaves[id], WT_POW); // sub-linear weighting keeps one large subtree from swallowing the space
+function spans(id, a0, a1, fn) {              // divide [a0,a1] among children by weight
+  fn(id, (a0 + a1) / 2, a0, a1);
+  let a = a0; const total = children[id].reduce((s, k) => s + wt(k), 0);
+  for (const k of children[id]) { const w = (a1 - a0) * wt(k) / total; spans(k, a, a + w, fn); a += w; }
+}
+let rowH = 0, xOf = null, rowOf = {}, bandTop = 0, qBandTop = 0;
+if (LAYOUT === 'radial') {
+  // Ring radii equalise density: the radius of level d grows with the square root of the share of
+  // nodes on levels <= d, with a floor between rings, so sparse inner levels stay thin.
+  const Rmax = Math.min(W, H) / 2 - 95;
+  const perLevel = {}; nodes.forEach(n => { perLevel[n.tdepth] = (perLevel[n.tdepth] || 0) + 1; });
+  const rOf = [0]; let cum = perLevel[0] || 1;
+  for (let d = 1; d <= maxDepth; d++) { cum += perLevel[d] || 0; rOf[d] = Math.max(Rmax * Math.sqrt(cum / nodes.length), rOf[d - 1] + 34); }
+  const scale = Rmax / rOf[maxDepth]; for (let d = 0; d <= maxDepth; d++) rOf[d] *= scale;
+  const angle = {};
+  spans('root', -Math.PI / 2, 3 * Math.PI / 2, (id, mid) => { angle[id] = mid; });
+  const heavy = children.root.reduce((a, b) => leaves[a] >= leaves[b] ? a : b);   // centre the largest branch on the right
+  const rot = heavy ? -angle[heavy] : 0;
+  for (const n of nodes) { const a = angle[n.id] + rot, r = rOf[n.tdepth]; pos[n.id] = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), a }; }
+  const qRadius = Rmax + 44;
+  questions.forEach((q, i) => { const a = -Math.PI / 2 + (i + 0.5) * 2 * Math.PI / questions.length; pos[q.id] = { x: cx + qRadius * Math.cos(a), y: cy + qRadius * Math.sin(a), a }; });
+} else if (LAYOUT === 'layered') {
+  const top = 120, bottom = H - 150, left = 110, right = W - 110;
+  rowH = (bottom - top) / Math.max(maxDepth, 1);
+  spans('root', left, right, (id, mid) => { pos[id] = { x: mid, y: top + nodeById[id].tdepth * rowH, a: Math.PI / 2 }; });
+  questions.forEach((q, i) => { pos[q.id] = { x: left + (i + 0.5) * (right - left) / questions.length, y: H - 78, a: -Math.PI / 2 }; });
+} else {                                               // timeline: x is real time, rows follow the tree pre-order
+  const left = 70, right = W - 70; bandTop = 96; const qRows = questions.length;
+  const bottom = H - 70; rowH = (bottom - bandTop) / (order.length + qRows + 3);
+  xOf = t => left + (Math.min(Math.max(t, t0), cutoff) - t0) / (cutoff - t0) * (right - left);
+  order.forEach((id, i) => { rowOf[id] = bandTop + (i + 0.5) * rowH; });
+  rowOf.repo = bandTop + (order.length + 1) * rowH;      // organizers work on the repository as a whole
+  qBandTop = bandTop + (order.length + 2.5) * rowH;
+  questions.forEach((q, i) => { rowOf[q.id] = qBandTop + (i + 0.5) * rowH; });
+  for (const s of sessions) if (s.cls === 'organizer') s.target = 'repo';
+}
+
+// ---------- stable session slots ----------
+// A session takes the innermost free slot around its target when it starts and keeps it until it
+// ends, so a marker never shifts because another session ended. A session that declared a node
+// minutes before that node was published holds a root slot until the birth, then its own slot.
+const intervals = [];
+for (const s of sessions) {
+  const tn = nodeById[s.target];
+  if (tn && tn.birth > s.start) {
+    intervals.push({ key: s.id + '@root', target: 'root', start: s.start, end: Math.min(s.endT, tn.birth) });
+    intervals.push({ key: s.id, target: s.target, start: tn.birth, end: s.endT });
+  } else intervals.push({ key: s.id, target: s.target, start: s.start, end: s.endT });
+}
+intervals.sort((a, b) => a.start - b.start);
+const slotByKey = {}; const occupancy = {};
+for (const iv of intervals) {
+  const occ = (occupancy[iv.target] ||= []);
+  const used = new Set(occ.filter(o => o.end > iv.start).map(o => o.slot));
+  let k = 0; while (used.has(k)) k++;
+  occ.push({ slot: k, end: iv.end }); slotByKey[iv.key] = k;
+}
+
+// ---------- drawing helpers ----------
+const canvas = document.getElementById('c');
+const dpr = window.devicePixelRatio || 1;
+canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+const ctx = canvas.getContext('2d');
+const easeOut = u => 1 - Math.pow(1 - Math.min(Math.max(u, 0), 1), 3);
+const clamp01 = u => Math.min(Math.max(u, 0), 1);
+function nodeRadius(n, t) { let k = 0; for (const s of n.attemptStarts) { if (s <= t) k++; else break; } return 3.2 + 1.15 * Math.log2(1 + k); }
+function circle(x, y, r, fill, stroke, lw) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+function square(x, y, s, fill, stroke, lw) {
+  ctx.beginPath(); ctx.rect(x - s / 2, y - s / 2, s, s);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+function line(x1, y1, x2, y2, color, lw) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke(); }
+// Cross-links are bundled along the tree (hierarchical edge bundling): the curve passes near the
+// ancestors between the two nodes, straightened by BETA, so it reads as a path through the structure.
+const BETA = 0.82;
+function ancestors(id) { const a = [id]; let p = nodeById[id].parent; while (p) { a.push(p); p = nodeById[p].parent; } return a; }
+function treePath(a, b) {
+  const A = ancestors(a), B = ancestors(b); const setB = new Set(B);
+  const lca = A.find(x => setB.has(x));
+  const up = A.slice(0, A.indexOf(lca)), down = B.slice(0, B.indexOf(lca)).reverse();
+  const path = [...up, lca, ...down];
+  return path.length > 3 ? path.filter(x => x !== lca) : path;        // drop the LCA on longer paths (less bulge)
+}
+function bundled(a, b, color, lw) {
+  const P = treePath(a, b).map(id => pos[id]); const n = P.length;
+  if (n < 3) { line(P[0].x, P[0].y, P[n - 1].x, P[n - 1].y, color, lw); return; }
+  const Q = P.map((p, i) => ({ x: BETA * p.x + (1 - BETA) * (P[0].x + (P[n - 1].x - P[0].x) * i / (n - 1)),
+                                y: BETA * p.y + (1 - BETA) * (P[0].y + (P[n - 1].y - P[0].y) * i / (n - 1)) }));
+  ctx.beginPath(); ctx.moveTo(Q[0].x, Q[0].y);
+  for (let i = 0; i < n - 1; i++) {                                     // Catmull-Rom through Q, as cubic Beziers
+    const p0 = Q[Math.max(i - 1, 0)], p1 = Q[i], p2 = Q[i + 1], p3 = Q[Math.min(i + 2, n - 1)];
+    ctx.bezierCurveTo(p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y);
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke();
+}
+const isTreePair = (a, b) => nodeById[a].parent === b || nodeById[b].parent === a;
+const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+function clockText(t) {
+  const d = new Date(t * 1000);
+  const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${DAYS[d.getDay()]}요일  ${hh}:${mm}`;
+}
+function relationCarried(r, sec) {
+  // a relation carries its conclusion once every premise is established in the stated outcome
+  return r.premises.every(([nid, out]) => { const s = nodeState(nodeById[nid], sec).st; return s !== 'unresolved' && s.endsWith(out); })
+    && nodeState(nodeById[r.conclusion[0]], sec).st !== 'unresolved';
+}
+
+// ---------- frame ----------
+function renderFrame(sec) {
+  const t = secToT(sec);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const alive = sessions.filter(s => s.start <= t && t < s.endT);
+  const fadeIn = s => clamp01((t - s.start) / (0.25 * RATE));
+  const fadeOut = s => s.endT === Infinity ? 1 : clamp01((s.endT - t) / (0.25 * RATE));
+  const sessionAlpha = s => Math.min(fadeIn(s), fadeOut(s));
+
+  if (LAYOUT !== 'timeline') {
+    // relations
+    for (const r of relations) {
+      if (r.birth > t) continue;
+      const c = pos[r.conclusion[0]]; if (!c) continue;
+      const prem = r.premises.map(p => pos[p[0]]).filter(Boolean); if (!prem.length) continue;
+      const carried = relationCarried(r, sec);
+      const born = clamp01((t - r.birth) / (0.4 * RATE));
+      const cid = r.conclusion[0];
+      const allTree = r.premises.every(p => isTreePair(p[0], cid));
+      if (prem.length > 1 && allTree) {                                  // a node split into sibling pieces: Y junction
+        ctx.globalAlpha = born;
+        const col = carried ? INK : HAIR, lw = carried ? 1.1 : 0.8;
+        const mx = prem.reduce((s, p) => s + p.x, 0) / prem.length, my = prem.reduce((s, p) => s + p.y, 0) / prem.length;
+        const jx = mx + (c.x - mx) * 0.38, jy = my + (c.y - my) * 0.38;
+        for (const p of prem) line(p.x, p.y, jx, jy, col, lw);
+        line(jx, jy, c.x, c.y, col, lw);
+        circle(jx, jy, 1.6, col);
+      } else {
+        for (const [pid] of r.premises) {
+          const p = pos[pid]; if (!p) continue;
+          if (isTreePair(pid, cid)) { ctx.globalAlpha = born; line(p.x, p.y, c.x, c.y, carried ? INK : HAIR, carried ? 1.1 : 0.8); }
+          else { ctx.globalAlpha = born * (carried ? 1 : 0.55); bundled(pid, cid, carried ? INK : HAIR, carried ? 0.9 : 0.7); }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    // nodes
+    for (const n of nodes) {
+      if (n.birth > t) continue;
+      const p = pos[n.id]; const { st, age } = nodeState(n, sec);
+      const r0 = nodeRadius(n, t);
+      const born = easeOut((t - n.birth) / (0.5 * RATE));
+      const pulse = age < 0.8 ? 1 + 0.9 * (1 - easeOut(age / 0.8)) : 1;
+      const r = r0 * born * pulse;
+      ctx.globalAlpha = Math.max(born, 0.001);
+      if (st === 'unresolved') circle(p.x, p.y, r, PAPER, INK, 1.2);
+      else {
+        circle(p.x, p.y, r, INK);
+        if (st.startsWith('formal')) circle(p.x, p.y, r + 3.2, null, INK, 1);
+        if (age < 0.8) { ctx.globalAlpha = 1 - age / 0.8; circle(p.x, p.y, r0 + 4 + 14 * easeOut(age / 0.8), null, INK, 1); }
+      }
+      ctx.globalAlpha = 1;
+    }
+    // questions
+    for (const q of questions) {
+      if (q.birth > t) continue;
+      const p = pos[q.id]; const st = questionState(q, t);
+      ctx.globalAlpha = easeOut((t - q.birth) / (0.5 * RATE));
+      if (st === 'resolved') square(p.x, p.y, 7.5, INK); else square(p.x, p.y, 7.5, PAPER, INK, 1.1);
+      ctx.globalAlpha = 1;
+    }
+    // sessions orbit their target
+    for (const s of alive) {
+      // a session never points at a node that has not been born yet; until then it sits at the root
+      const tgt = (nodeById[s.target] && nodeById[s.target].birth > t) ? 'root' : s.target;
+      const p = pos[tgt]; if (!p) continue;
+      const base = tgt === 'root' ? 0 : (nodeById[tgt] ? nodeRadius(nodeById[tgt], t) : 4);
+      const k = (tgt === 'root' && s.target !== 'root') ? slotByKey[s.id + '@root'] : slotByKey[s.id];
+      const ring = Math.floor(k / 8), ang = (p.a || 0) + Math.PI + (k % 8) * Math.PI / 4 + ring * Math.PI / 8;
+      const rr = base + 7.5 + ring * 6;
+      const x = p.x + rr * Math.cos(ang), y = p.y + rr * Math.sin(ang);
+      ctx.globalAlpha = sessionAlpha(s);
+      if (s.cls === 'producer') circle(x, y, 2.3, GREY);
+      else if (s.cls === 'judge') circle(x, y, 2.3, null, GREY, 1);
+      else line(x - 3, y, x + 3, y, GREY, 1.2);
+      ctx.globalAlpha = 1;
+    }
+    // rule changes accumulate as accent ticks beside the clock
+    rules.forEach((r, i) => {
+      if (r.t > t) return;
+      ctx.globalAlpha = clamp01((t - r.t) / (0.3 * RATE));
+      line(372 + i * 10, H - 60, 372 + i * 10, H - 48, ACCENT, 1.6);
+      ctx.globalAlpha = 1;
+    });
+  } else {
+    // ---- timeline layout ----
+    const xNow = xOf(t);
+    // rule changes on the time axis
+    for (const r of rules) { if (r.t > t) continue; const x = xOf(r.t); line(x, 44, x, 60, ACCENT, 1.6); }
+    // relations as vertical connectors at their birth
+    for (const r of relations) {
+      if (r.birth > t) continue;
+      const x = xOf(r.birth); const rows = [rowOf[r.conclusion[0]], ...r.premises.map(p => rowOf[p[0]])].filter(v => v != null);
+      if (rows.length < 2) continue;
+      const carried = relationCarried(r, sec); const col = carried ? INK : HAIR;
+      line(x, Math.min(...rows), x, Math.max(...rows), col, carried ? 1.0 : 0.8);
+      circle(x, rowOf[r.conclusion[0]], 1.6, col);
+    }
+    // node lines
+    for (const n of nodes) {
+      if (n.birth > t) continue;
+      const y = rowOf[n.id], xb = xOf(n.birth);
+      line(xb, y, xNow, y, HAIR, 0.9);
+      const xs = (transByNode[n.id] || []).filter(x => x.sec <= sec && x.st !== 'unresolved');
+      if (xs.length) {
+        const first = xs[0]; const xp = xOf(first.t);
+        line(xp, y, xNow, y, INK, first.st.startsWith('formal') ? 3.2 : 2.0);
+        const age = sec - first.sec;
+        if (age < 0.8) { ctx.globalAlpha = 1 - age / 0.8; circle(xp, y, 3 + 12 * easeOut(age / 0.8), null, INK, 1); ctx.globalAlpha = 1; }
+      }
+      circle(xb, y, 2.2, PAPER, INK, 1);
+    }
+    // questions
+    for (const q of questions) {
+      if (q.birth > t) continue;
+      const y = rowOf[q.id], xb = xOf(q.birth);
+      line(xb, y, xNow, y, HAIR, 0.9);
+      const res = q.transitions.find(([tt, s]) => s === 'resolved' && tt <= t);
+      if (res) line(xOf(res[0]), y, xNow, y, INK, 2.0);
+      square(xb, y, 5.5, PAPER, INK, 1);
+    }
+    // sessions as lifetime segments beside their row
+    for (const s of sessions) {
+      if (s.start > t) continue;
+      const y = rowOf[s.target]; if (y == null) continue;
+      const x1 = xOf(s.start), x2 = xOf(Math.min(s.endT, t));
+      const dy = s.cls === 'producer' ? -2.6 : s.cls === 'judge' ? 2.6 : 0;
+      ctx.globalAlpha = s.cls === 'organizer' ? 0.55 : 0.85;
+      line(x1, y + dy, Math.max(x2, x1 + 0.6), y + dy, GREY, s.cls === 'organizer' ? 1 : 1.3);
+      ctx.globalAlpha = 1;
+    }
+    // playhead
+    line(xNow, 70, xNow, H - 56, INK, 0.6);
+  }
+
+  // clock
+  ctx.fillStyle = INK; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.font = `400 21px ${SANS}`;
+  if ('fontVariantNumeric' in ctx) ctx.fontVariantNumeric = 'tabular-nums';
+  ctx.fillText(clockText(t), 64, H - 48);
+
+  // opening statement
+  if (sec < OPEN + 0.6) {
+    const a = Math.min(easeOut(sec / 0.8), 1 - easeOut((sec - (OPEN - 0.9)) / 0.9));
+    ctx.globalAlpha = clamp01(a);
+    ctx.font = `400 34px ${SERIF}`; ctx.textAlign = 'center';
+    ctx.fillText(STATEMENT, W / 2, H / 2 - (LAYOUT === 'layered' ? 0 : 0) + 12);
+    ctx.globalAlpha = 1;
+  }
+}
+window.renderFrame = renderFrame;
+window.FILM = { OPEN, BODY, HOLD, total: TOTAL, holds, tToSec, secToT };
+window.POS = pos; window.NODES = nodes;
+const s0 = Q.has('t') ? tToSec(+Q.get('t')) : +(Q.get('sec') || 0);
+document.fonts.ready.then(() => renderFrame(s0));
+</script>
+</body>
+</html>

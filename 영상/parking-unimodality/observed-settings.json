@@ -1,0 +1,6 @@
+{
+  "note": "Settings changes leave no log in the instance. A change is visible only in the settings snapshot each session saves at launch and in the live settings.json. When no session launched between two edits, the earlier edit is invisible to extract.py. The entries below are values of settings.json that the operator session read directly, with the file's modification time, and extract.py merges them into the rule-change marks.",
+  "observations": [
+    { "mtime_local": "2026-11-12 01:48", "epoch": 1794415680, "max_sessions": 4, "explore_every": 1, "read_at_local": "2026-11-12 02:58" }
+  ]
+}

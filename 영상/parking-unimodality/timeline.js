@@ -1,0 +1,24283 @@
+window.TIMELINE={
+"meta": {
+"instance": "C:\\math\\.skill-workspace\\do-math\\parking-unimodality-fresh-20261105-150803",
+"t0": 1793858902.7216792,
+"cutoff": 1794423069.9778507,
+"extracted_at": 1794423069.9778507,
+"root_statement": "# 주차 함수의 최대 변위 분포 단봉성\n\n양의 정수 n에 대해 주차 자리는 1부터 n까지 일렬로 있다. 차도 1부터 n까지 있으며 번호 순서대로 도착한다. 선호 목록 α=(a₁,…,aₙ)는 각 aᵢ가 1부터 n 사이인 정수열이다. 차 i는 aᵢ가 비어 있으면 그곳에, 차 있으면 그보다 오른쪽의 첫 빈자리에 주차한다. 오른쪽에 빈자리가 없으면 실패한다.\n\n모든 차가 성공하는 목록을 **주차 함수**라고 하며 그 집합을 PFₙ이라 한다. 차 i가 실제로 주차한 자리를 sᵢ라 할 때 변위는 dᵢ=sᵢ−aᵢ이고, **최대 변위**는 M(α)=maxᵢ dᵢ다. 차의 도착 순서를 바꾸거나 선호 목록을 정렬하면 최대 변위가 달라질 수 있다.\n\n정수 n≥1과 ℓ≥0에 대해 다음 두 개수를 구별한다.\n\n\\[\nA_{n,\\ell}=\\#\\{\\alpha\\in PF_n:M(\\alpha)\\le\\ell\\},\\qquad\nb_{n,\\ell}=\\#\\{\\alpha\\in PF_n:M(\\alpha)=\\ell\\}.\n\\]\n\nAₙ,₋₁=0으로 두면 bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁이다. 최대 변위는 n−1 이하이므로 ℓ≥n−1에서는 Aₙ,ℓ=|PFₙ|이고, ℓ≥n에서는 bₙ,ℓ=0이다. 점화식에서 사용하는 빈 목록의 개수는 A₀,ℓ=1(ℓ≥0)로 정한다. 따라서 더 작은 크기 j에 대해 Aⱼ,ℓ를 사용할 때 ℓ>j−1인 경우도 정의되어 있다. A는 허용 거리가 커지면 증가하는 누적 개수다. 연구 대상은 b의 0≤ℓ≤n−1 구간이다.\n\n**P. 모든 정수 n≥1에 대해 어떤 정수 c∈{0,…,n−1}가 존재하여,**\n\n\\[\n\\begin{aligned}\n&b_{n,k}\\le b_{n,k+1} &&(0\\le k<c),\\\\\n&b_{n,k}\\ge b_{n,k+1} &&(c\\le k<n-1)\n\\end{aligned}\n\\]\n\n**가 성립하는가?**\n\n이것이 단봉성의 정확한 의미다. 봉우리가 하나의 원소일 필요는 없으며, c는 n에 따라 달라도 된다. n=1은 한 항 [1], n=2는 [2,1]이므로 각각 c=0으로 조건을 만족한다. 이 문제의 양화는 모든 n이며, 특정 n이나 특정 형태의 목록에 한정한 결과로 전체 해결을 대신하지 않는다.\n",
+"counts": {
+"events": 378,
+"nodes": 100,
+"relations": 116,
+"proofs": 29,
+"questions": 13,
+"sessions": 1125,
+"rules_shown": 12
+}
+},
+"events": [
+{
+"id": "r81e7051b155a41b3b4daad1893bb328a",
+"kind": "record",
+"seq": 1,
+"t": 1793861705.4954176,
+"session": "s5f4427b149bb434a84832b700bdfcf1d",
+"role": "explore"
+},
+{
+"id": "r15524fdd79e8424596ee63c8b9073784",
+"kind": "record",
+"seq": 2,
+"t": 1793861707.315722,
+"session": "s891d1452d0e942cea8d13828e31a3a3c",
+"role": "attempt"
+},
+{
+"id": "rf09e7ef06a264590b1c114c3e2b49b90",
+"kind": "record",
+"seq": 3,
+"t": 1793864411.6007981,
+"session": "s9a27cbea65fe43f394d2d0d468607326",
+"role": "explore"
+},
+{
+"id": "r42d9a173849b49488786d1f4073d1d1e",
+"kind": "record",
+"seq": 4,
+"t": 1793865169.813905,
+"session": "s7a0d27b9d09444ff8e863bd1918ffc30",
+"role": "attempt"
+},
+{
+"id": "rccf1da82635540c49cd41c3b87cb84f3",
+"kind": "record",
+"seq": 5,
+"t": 1793865547.1218603,
+"session": "sd840d4d48b654049849e26b64b32ce5a",
+"role": "attempt"
+},
+{
+"id": "rfb9f618e36b6461bb5ab8a923fc1a2e6",
+"kind": "record",
+"seq": 6,
+"t": 1793865685.7975268,
+"session": "s4f93e3cfeb05443489cb14c4d1cb5fe2",
+"role": "attempt"
+},
+{
+"id": "o028ba7441b044ff48261e8c3ff0d3087",
+"kind": "organization",
+"seq": 7,
+"t": 1793865768.4193978,
+"session": "s4c496925e0e64217b899376155884016",
+"role": null
+},
+{
+"id": "r1aa0be604814486a83920af9bd27970b",
+"kind": "record",
+"seq": 8,
+"t": 1793869030.9347012,
+"session": "s884cdb52164941baa2594de5f179d794",
+"role": "attempt"
+},
+{
+"id": "r6bfc34ecdfaf41829957a830c9b89287",
+"kind": "record",
+"seq": 9,
+"t": 1793869222.968146,
+"session": "s13ebee8c05ed4c2eb6f8939d0e8dec9d",
+"role": "explore"
+},
+{
+"id": "r7c635a7ba4cf462f9e0fbcdd95e7619a",
+"kind": "record",
+"seq": 10,
+"t": 1793869669.9312456,
+"session": "se457f2d15a824b8a88f98576d1f2742e",
+"role": "attempt"
+},
+{
+"id": "o0c60062f2ad247f987c52fc70797efc9",
+"kind": "organization",
+"seq": 11,
+"t": 1793870028.1349943,
+"session": "sbeeb270eed7649c49e69730a9ff9f68d",
+"role": null
+},
+{
+"id": "r91f681e023874480ac1166cba3966391",
+"kind": "record",
+"seq": 12,
+"t": 1793872772.1208751,
+"session": "sbfc5dbff0dc942d2aa0ba2c225728cbf",
+"role": "attempt"
+},
+{
+"id": "r39ea75d8cd1c4be4a12da9217bc3427e",
+"kind": "record",
+"seq": 13,
+"t": 1793873489.1899502,
+"session": "s7aa5070dc45e4c768f19c4be4971caf2",
+"role": "explore"
+},
+{
+"id": "r7eeaca03f4c049dd9e535056c1b42af8",
+"kind": "record",
+"seq": 14,
+"t": 1793875121.9672012,
+"session": "se4ea2a021d534ac6a82d85fa1d5831ab",
+"role": "attempt"
+},
+{
+"id": "o61c8f6cc80fe45d9aa70c4707570e568",
+"kind": "organization",
+"seq": 15,
+"t": 1793875575.5065022,
+"session": "s890da393b8f543db9ec9a0d2124a577f",
+"role": null
+},
+{
+"id": "r253365ac07a1481e85ab1b57a5b347af",
+"kind": "record",
+"seq": 16,
+"t": 1793876840.252469,
+"session": "s0a5460aea12d411b80cdc224b0f303a7",
+"role": "attempt"
+},
+{
+"id": "r3e68860edddf4ff2bd3b8fc6a77356a1",
+"kind": "record",
+"seq": 17,
+"t": 1793877232.927925,
+"session": "s264ccdaecf504e598a52dc6dbb9c23b0",
+"role": "explore"
+},
+{
+"id": "ra88ba51bd28b432fa06bdb9478f1c284",
+"kind": "record",
+"seq": 18,
+"t": 1793894053.9092221,
+"session": "s0e6afd5d45d940fbb3c173ecc2f55522",
+"role": "attempt"
+},
+{
+"id": "r39ba7c119c5b46dab844e50120eb3c41",
+"kind": "record",
+"seq": 19,
+"t": 1793894276.9724598,
+"session": "s3055ca6ef12049bfbe33568e98b2207c",
+"role": "attempt"
+},
+{
+"id": "rd8387569a1404e28ade070b6515b0ddb",
+"kind": "record",
+"seq": 20,
+"t": 1793894485.2154706,
+"session": "sd451acf3de354d2bb2ec6f3f8d8ed220",
+"role": "explore"
+},
+{
+"id": "oa00bc09d19024bc6b6a56ddeca3173b9",
+"kind": "organization",
+"seq": 21,
+"t": 1793894935.8478515,
+"session": "sfac4a29800bb4efdadda82407391faaf",
+"role": null
+},
+{
+"id": "r60a6f55766964d57a3d9b89199aefc19",
+"kind": "record",
+"seq": 22,
+"t": 1793897490.7124405,
+"session": "sf4d35e3050354c24a88b50f76093b17e",
+"role": "attempt"
+},
+{
+"id": "r4f6dd55ac8f146edaa3618e8c1ff5bb1",
+"kind": "record",
+"seq": 23,
+"t": 1793897764.7289023,
+"session": "se31b1d88e4104d86a7149c075ee898cd",
+"role": "attempt"
+},
+{
+"id": "r7c079be1d3fe429db8df1d53fd15b96e",
+"kind": "record",
+"seq": 24,
+"t": 1793898391.2386622,
+"session": "seb60591aa5984a40bd84ce8e349c0246",
+"role": "explore"
+},
+{
+"id": "occ2f2a790b5945b3b4f93231b8cf107d",
+"kind": "organization",
+"seq": 25,
+"t": 1793898884.9739723,
+"session": "s50d934efa1444fa096ed56bf9d5279aa",
+"role": null
+},
+{
+"id": "rca714427dc924c2eb26c4e0089bf2e49",
+"kind": "record",
+"seq": 26,
+"t": 1793900831.3067997,
+"session": "s832aaaa6daf840e397ee52e60f3a2ee2",
+"role": "attempt"
+},
+{
+"id": "r6a8c8b6e11f24725b1125cddfd7ab4b6",
+"kind": "record",
+"seq": 27,
+"t": 1793901535.180088,
+"session": "se2b8b08e7a2d437d8069b3ec11a68d38",
+"role": "explore"
+},
+{
+"id": "rd8b6f6e648b24814b1dccbad13a897e6",
+"kind": "record",
+"seq": 28,
+"t": 1793901902.4509122,
+"session": "se22aa989a0274420864745378f0d98ad",
+"role": "attempt"
+},
+{
+"id": "r9417914567b44529a1ab94f6e6f0c314",
+"kind": "record",
+"seq": 29,
+"t": 1793904652.2195501,
+"session": "sf66bcf3e3dc0418a8606d53a77426830",
+"role": "explore"
+},
+{
+"id": "r99471147fd16419ea9be95dedd715bc8",
+"kind": "record",
+"seq": 30,
+"t": 1793904973.4176176,
+"session": "s252607e0f9204205b559ce842eee076f",
+"role": "attempt"
+},
+{
+"id": "o35ed3ae88b29487fab00d09a06124454",
+"kind": "organization",
+"seq": 31,
+"t": 1793905119.047254,
+"session": "s23998533cf034fa6bd921db91708e626",
+"role": null
+},
+{
+"id": "r03b7a27e5fb348e289d1a1de2b8cff7d",
+"kind": "record",
+"seq": 32,
+"t": 1793905591.1426504,
+"session": "s137d24847fd74bfab1ee946f028df4c8",
+"role": "attempt"
+},
+{
+"id": "r801ec2207be148f59da02b551bf49259",
+"kind": "record",
+"seq": 33,
+"t": 1793908127.1135883,
+"session": "s774fe94d0f9846079f0e8e462e8e260e",
+"role": "attempt"
+},
+{
+"id": "rb07e2081161047a1a4150c2a44aaf231",
+"kind": "record",
+"seq": 34,
+"t": 1793908242.1613545,
+"session": "sb9daea70b2bb4902acb618cadd171479",
+"role": "explore"
+},
+{
+"id": "o325aef15c8cd41f18ff4953285ab86aa",
+"kind": "organization",
+"seq": 35,
+"t": 1793908742.7407675,
+"session": "s1f5cbd831c514659bcc284f5816c45c2",
+"role": null
+},
+{
+"id": "rc70a0941b86d45f0981cd2b5dcf797fb",
+"kind": "record",
+"seq": 36,
+"t": 1793908953.4757547,
+"session": "s85f21fdeccd0414388bc3ed7551ecfaf",
+"role": "attempt"
+},
+{
+"id": "r0cdc213bed9245d38c9bb1c278e65eee",
+"kind": "record",
+"seq": 37,
+"t": 1793910239.8730614,
+"session": "sa353a7e6623246dfa71bc8459bf36c81",
+"role": "attempt"
+},
+{
+"id": "r9559c8d4abde42578afe023b20a33148",
+"kind": "record",
+"seq": 38,
+"t": 1793911571.8043537,
+"session": "s2bb2f0e57f4f473684bce2720707422c",
+"role": "attempt"
+},
+{
+"id": "r564c86a8c96f44b492d816486f8b209a",
+"kind": "record",
+"seq": 39,
+"t": 1793911613.7371569,
+"session": "s162f80ff85f343c4a4d2de9ee3cb6bef",
+"role": "explore"
+},
+{
+"id": "oa07042bcc03e4eafa8ca5e9627a1349b",
+"kind": "organization",
+"seq": 40,
+"t": 1793912112.7917843,
+"session": "s216e8f5a1a8c43cfaff23241baa87576",
+"role": null
+},
+{
+"id": "r9881f3a52f664a8b9ca7ce45459e2cef",
+"kind": "record",
+"seq": 41,
+"t": 1793912940.5194929,
+"session": "sf09ee3b96dc1494283d43bab0b1e84ec",
+"role": "formalizer"
+},
+{
+"id": "ra3e85e42f7574b4eb820ff9d46e63778",
+"kind": "record",
+"seq": 42,
+"t": 1793912994.2097206,
+"session": "s2f664b17b54b48f3aa2310532e053a6e",
+"role": "attempt"
+},
+{
+"id": "rf6c29787c34a4ac3a1fbf708204ebd7f",
+"kind": "record",
+"seq": 43,
+"t": 1793913298.640718,
+"session": "sa105232df90b48a3a284a9c9c5b8bdda",
+"role": "attempt"
+},
+{
+"id": "r0a9f3419ede448ccb5038e9f7f3d63af",
+"kind": "record",
+"seq": 44,
+"t": 1793913637.4077532,
+"session": "s40b9efbaed7947cfb9a78565cffd8b3b",
+"role": "attempt"
+},
+{
+"id": "o6a57be0c05dd443083eb47fd9100d194",
+"kind": "organization",
+"seq": 45,
+"t": 1793914026.7608886,
+"session": "s78abc6c46406495a8ec01afec3252d00",
+"role": null
+},
+{
+"id": "r87066eaeaaa041f3a98063907004d0c3",
+"kind": "record",
+"seq": 46,
+"t": 1793914398.1871128,
+"session": "s4746dbcedc9d43ee99f5236933e9f47f",
+"role": "explore"
+},
+{
+"id": "r32d23ad6a5154ea9957d0236ad56d83c",
+"kind": "record",
+"seq": 47,
+"t": 1793914765.7946393,
+"session": "s0b57133a518f418f9109dc2df9d53cc4",
+"role": "attempt"
+},
+{
+"id": "r3f7c0044b4cd4c9ab4d2eb6e6b098a31",
+"kind": "record",
+"seq": 48,
+"t": 1793915067.644593,
+"session": "s80a1555984bf47a6804d0f5ce3393e8e",
+"role": "attempt"
+},
+{
+"id": "ra4cb62d49fdd4c5bbb8dd10256df6a85",
+"kind": "record",
+"seq": 49,
+"t": 1793915131.4233513,
+"session": "sbe72674967d44f5ea13ab1745ca7e1b5",
+"role": "attempt"
+},
+{
+"id": "o6eb01d889ee043c0ae53aa49a59676ab",
+"kind": "organization",
+"seq": 50,
+"t": 1793919585.8967435,
+"session": "s1f37a6bae5794e12bf2d177b1b96bbab",
+"role": null
+},
+{
+"id": "r631b0f49624f4e2789e5efeff41560c8",
+"kind": "record",
+"seq": 51,
+"t": 1793920186.1457527,
+"session": "s75ea05e51146439e82982f6f5330e881",
+"role": "attempt"
+},
+{
+"id": "r1646a6c446984f93ae139cffe4c61e19",
+"kind": "record",
+"seq": 52,
+"t": 1793920239.2352278,
+"session": "s3ad471907df345c2a7f2e516c14d4eda",
+"role": "formalizer"
+},
+{
+"id": "r5675b6b9379846c79906e0563741c2d1",
+"kind": "record",
+"seq": 53,
+"t": 1793921116.68765,
+"session": "s0adc05ca37d14e57bdf3f6dc7589cabc",
+"role": "explore"
+},
+{
+"id": "r4f3093ea42584db88c69e41d7756f005",
+"kind": "record",
+"seq": 54,
+"t": 1793921215.9268265,
+"session": "s047ecf02298f4f5d9a5e6027641f9fdd",
+"role": "attempt"
+},
+{
+"id": "r243ba1675a2e49bebc28f681d818c334",
+"kind": "record",
+"seq": 55,
+"t": 1793921279.2999318,
+"session": "sd07a28ffb02b4daf99627339641684d6",
+"role": "attempt"
+},
+{
+"id": "oa24455d5e40c4ceba5f5e3614e27b7c2",
+"kind": "organization",
+"seq": 56,
+"t": 1793921684.4329946,
+"session": "s0233b381202a431fa4817a400efe3544",
+"role": null
+},
+{
+"id": "rf02ebbfb89c24507bea640400a0cd708",
+"kind": "record",
+"seq": 57,
+"t": 1793922518.96655,
+"session": "sa563935f77e744288d7a8333d9faaffd",
+"role": "attempt"
+},
+{
+"id": "rf145155c83204af0afe57b74c9d877d9",
+"kind": "record",
+"seq": 58,
+"t": 1793923240.159677,
+"session": "s58d1ade0bfae47cdab5232d8cb2debda",
+"role": "attempt"
+},
+{
+"id": "rab9d424cedbc4065a1e7da24d8d0d4ac",
+"kind": "record",
+"seq": 59,
+"t": 1793923688.6323874,
+"session": "s9fe56f34dd6549dcadaaa7fce5dfd383",
+"role": "formalizer"
+},
+{
+"id": "r066acf270b2d4b929fe6a3470831bf4a",
+"kind": "record",
+"seq": 60,
+"t": 1793923865.4497938,
+"session": "s130edca28db64119a4a8b68d3e4f796b",
+"role": "explore"
+},
+{
+"id": "oa64de2e3b57a4d9993a5d343d4cbd0c5",
+"kind": "organization",
+"seq": 61,
+"t": 1793928763.4034185,
+"session": "sa11cb9a71fec4e06ae3fff07b56ac92b",
+"role": null
+},
+{
+"id": "r2d892ef2f6004ccb9b24a37b4c7e4e6c",
+"kind": "record",
+"seq": 62,
+"t": 1793928924.0136578,
+"session": "s446a52fbfbc4440ea99ffbc96cfe4c2f",
+"role": "attempt"
+},
+{
+"id": "r8fb2f8dab20d46669cd446424e06816e",
+"kind": "record",
+"seq": 63,
+"t": 1793929067.0581038,
+"session": "sc232c82ba26d409f9d14a2b023f74a40",
+"role": "attempt"
+},
+{
+"id": "r1ce49d195cdc4efd8c5eb844e46b3371",
+"kind": "record",
+"seq": 64,
+"t": 1793930323.4010367,
+"session": "s33328f993eb34f0984c3e5c6380249d1",
+"role": "attempt"
+},
+{
+"id": "r0259f5d9323a4bc78d99c4dfd5a5f6a8",
+"kind": "record",
+"seq": 65,
+"t": 1793931272.2739496,
+"session": "s6ba5d275b2a4415ca9e1f213dc721c68",
+"role": "explore"
+},
+{
+"id": "oaeae7790c2e44b69ac292c8044c2562b",
+"kind": "organization",
+"seq": 66,
+"t": 1793931806.5692554,
+"session": "se920a154dbae4adbafb4446a219d71de",
+"role": null
+},
+{
+"id": "rd74283e691844e00a460fef9782a4ac5",
+"kind": "record",
+"seq": 67,
+"t": 1793931910.7155478,
+"session": "sa9fb663c6e4f46279f2256d8911b4d4c",
+"role": "attempt"
+},
+{
+"id": "r971819e04e7a4f8fbd8bc606005c173f",
+"kind": "record",
+"seq": 68,
+"t": 1793932025.961428,
+"session": "s3f788a73f3c34055a6843fec71c955bb",
+"role": "attempt"
+},
+{
+"id": "r0d1ddf7156974288b664fa853da7e420",
+"kind": "record",
+"seq": 69,
+"t": 1793932126.7296295,
+"session": "sfd7d63e20608497888378aaf5f45761c",
+"role": "formalizer"
+},
+{
+"id": "r01f6c783c4264bbdac083a336f874890",
+"kind": "record",
+"seq": 70,
+"t": 1793932485.1292179,
+"session": "sd47a5097e8eb4cf6a2c32ad3b5b609b6",
+"role": "attempt"
+},
+{
+"id": "r46886e4cf0b045458e91efb09dab7640",
+"kind": "record",
+"seq": 71,
+"t": 1793932816.7526953,
+"session": "sd261cd281204432ea4d1114d32cd0c0f",
+"role": "attempt"
+},
+{
+"id": "o4106b60dae1e4eeabf2ce6ee27dd4056",
+"kind": "organization",
+"seq": 72,
+"t": 1793932918.2359583,
+"session": "s0d7946223f2a493992629a45dcbd2269",
+"role": null
+},
+{
+"id": "rd4015a89a3404ccebcb8f09326ca562b",
+"kind": "record",
+"seq": 73,
+"t": 1793934396.629761,
+"session": "s597f0f11406b4234a5bdcdb280cb3148",
+"role": "explore"
+},
+{
+"id": "rb4078e130bea4d869e90841be85ef06b",
+"kind": "record",
+"seq": 74,
+"t": 1793935591.3118725,
+"session": "se7d6c6464f74400f9c99bd0ff6c23c8b",
+"role": "attempt"
+},
+{
+"id": "r4daca3d01e904b479b0ac377493ab068",
+"kind": "record",
+"seq": 75,
+"t": 1793935710.858768,
+"session": "s777409b28c114f96aa82ba4ccfa89003",
+"role": "attempt"
+},
+{
+"id": "r04772d0ba1864f2eac58b984d6d2d836",
+"kind": "record",
+"seq": 76,
+"t": 1793935891.1698437,
+"session": "see50061f2c87477aac88b76f5fc0de31",
+"role": "attempt"
+},
+{
+"id": "od4ed62e1bc7a4cf18ef68c8c21265321",
+"kind": "organization",
+"seq": 77,
+"t": 1793936368.9337842,
+"session": "s5dd81592e60b45b9b80c9a75bdf04b6c",
+"role": null
+},
+{
+"id": "r7c568b0a5c464118b3f0e28cf33ba444",
+"kind": "record",
+"seq": 78,
+"t": 1793936566.728316,
+"session": "sc926200592d84f71b670bfdfd637c90f",
+"role": "formalizer"
+},
+{
+"id": "re60556ca6da440148d9fe05ead70c94a",
+"kind": "record",
+"seq": 79,
+"t": 1793937673.5395758,
+"session": "s1cf8a01d8a4d4c449ddfc32da32f58cc",
+"role": "explore"
+},
+{
+"id": "r9e782f504fc44462b7d8c10988216622",
+"kind": "record",
+"seq": 80,
+"t": 1793938549.2786076,
+"session": "s446e9fdb5ca142c288926751b724fb6a",
+"role": "attempt"
+},
+{
+"id": "o39555876cd394506bdec5324d8605a50",
+"kind": "organization",
+"seq": 81,
+"t": 1793942824.7942767,
+"session": "s9cc594934b36478c87eb6632260762bf",
+"role": null
+},
+{
+"id": "rfec601e6a586454aa3637b2306dfd870",
+"kind": "record",
+"seq": 82,
+"t": 1793942965.9189284,
+"session": "sed538f741c084d11ab6a7748c20827d9",
+"role": "attempt"
+},
+{
+"id": "r6c7b08949da14051bcc20c2f3a4d5b65",
+"kind": "record",
+"seq": 83,
+"t": 1793943006.8609366,
+"session": "s7d1ef7f847464238b3a8ce2cadb63dc1",
+"role": "attempt"
+},
+{
+"id": "r7ce1907a0c744faaa40076dd7b615577",
+"kind": "record",
+"seq": 84,
+"t": 1793943168.514656,
+"session": "sfcfe942cff604764a75d4742d6629ea2",
+"role": "attempt"
+},
+{
+"id": "r0b8c49e1605b4556977132f6180e8b50",
+"kind": "record",
+"seq": 85,
+"t": 1793943657.6126587,
+"session": "s4053c08efda94892a3794850da8bbde4",
+"role": "formalizer"
+},
+{
+"id": "od1e2a4762c65488c8e5fd22b64516979",
+"kind": "organization",
+"seq": 86,
+"t": 1793944182.6898434,
+"session": "scf7cf67878f64ec4ab16d8bfadd60e95",
+"role": null
+},
+{
+"id": "r90feea8f4f5b45bdb60a1818991041c7",
+"kind": "record",
+"seq": 87,
+"t": 1793944246.2162511,
+"session": "s186c0207e42f4cd3b0706cd87579fd08",
+"role": "explore"
+},
+{
+"id": "refd31c987cb94022b5a43da2edcc3ed7",
+"kind": "record",
+"seq": 88,
+"t": 1793946407.785072,
+"session": "sa84966cfd6ec439fa1b070e4abc357f4",
+"role": "attempt"
+},
+{
+"id": "rcb773cfb0eff4433a67eedde4b95667d",
+"kind": "record",
+"seq": 89,
+"t": 1793947007.2770076,
+"session": "sadcc00fa723b446ab2d06d50142c488a",
+"role": "attempt"
+},
+{
+"id": "rb4b77718cd1546f0a90c357574d32f83",
+"kind": "record",
+"seq": 90,
+"t": 1793947179.8699126,
+"session": "sd0190744882246c69d22c98ec7bbcc31",
+"role": "attempt"
+},
+{
+"id": "o0aa065d5a6e241cd8cceeba769d6095a",
+"kind": "organization",
+"seq": 91,
+"t": 1793947734.041802,
+"session": "s075e4943765e4ebfbf0eed4af6d5350c",
+"role": null
+},
+{
+"id": "r8b93634643354230ae2ae064bf45872f",
+"kind": "record",
+"seq": 92,
+"t": 1793948176.3369882,
+"session": "s3dc6a15121824d97a504fcdb10e127e5",
+"role": "explore"
+},
+{
+"id": "r7eda8bac0baa40139f980d1e7b579704",
+"kind": "record",
+"seq": 93,
+"t": 1793948582.0098212,
+"session": "se62f5bc9ac8a4453b5450a59b0105c4a",
+"role": "attempt"
+},
+{
+"id": "ra7615a01c92847ac9b5142c501e20d15",
+"kind": "record",
+"seq": 94,
+"t": 1793949245.1957946,
+"session": "sda3fb9efc5e14176a6b164c0ecc31ca8",
+"role": "attempt"
+},
+{
+"id": "r0af7f414c9ea4bc5847ce2e9f6d0c6a7",
+"kind": "record",
+"seq": 95,
+"t": 1793952818.4551294,
+"session": "s497e7ab822ea41b3af717cb4b064b9ba",
+"role": "formalizer"
+},
+{
+"id": "o838e70c49cdf47fc9f7a6e275fe6d9a5",
+"kind": "organization",
+"seq": 96,
+"t": 1793953533.339454,
+"session": "s8bd25971962d4972a85a0a3ea9a679b3",
+"role": null
+},
+{
+"id": "rc32d3c03942d485287dd91e4032df0d3",
+"kind": "record",
+"seq": 97,
+"t": 1793954445.852829,
+"session": "sf78c6e73c27b4e55bddf3a213d4a6f62",
+"role": "explore"
+},
+{
+"id": "rc189724c0f224289b5a66634a468442b",
+"kind": "record",
+"seq": 98,
+"t": 1793955653.4861794,
+"session": "se120c2a5173f4a819626c4fdc52f9e09",
+"role": "attempt"
+},
+{
+"id": "r77983552ef714100b038b18367877aa6",
+"kind": "record",
+"seq": 99,
+"t": 1793956182.9594336,
+"session": "s53e83aac85514ed5ade36093ef8189be",
+"role": "attempt"
+},
+{
+"id": "r6bc815eb5cbe4a0a9c09879db487f50f",
+"kind": "record",
+"seq": 100,
+"t": 1793958135.7563863,
+"session": "s8edb63d7ea4548ee84fa23410daba6e4",
+"role": "attempt"
+},
+{
+"id": "oe56ac0632f6f4f7398e01b5f46874774",
+"kind": "organization",
+"seq": 101,
+"t": 1793958730.9563396,
+"session": "s6bc0d516e0af441482766410536903e4",
+"role": null
+},
+{
+"id": "rf665dbb20f0b47ecbc4ab206ff1cba58",
+"kind": "record",
+"seq": 102,
+"t": 1793959597.024391,
+"session": "s09803936f3464f508a4d979b500c6368",
+"role": "attempt"
+},
+{
+"id": "r24b9bf114837488c8a376c830c0906f3",
+"kind": "record",
+"seq": 103,
+"t": 1793960021.5969706,
+"session": "sb578001792534b54a540aee805bb62bb",
+"role": "attempt"
+},
+{
+"id": "r15cd43fd6d6e426cb323f11577ce1ece",
+"kind": "record",
+"seq": 104,
+"t": 1793962876.8947074,
+"session": "sdc2e8279c36b49ef83e7b03c22c1fa16",
+"role": "explore"
+},
+{
+"id": "r003f2130d4e74177a54ea17459cde13e",
+"kind": "record",
+"seq": 105,
+"t": 1793964445.8216488,
+"session": "sc9ca30b786124d96aadc16dbc3bf6a87",
+"role": "attempt"
+},
+{
+"id": "of5d9390c36ce445782f010cbd806c2f5",
+"kind": "organization",
+"seq": 106,
+"t": 1793965093.2681034,
+"session": "s796757a3983745c493888801d66db0e8",
+"role": null
+},
+{
+"id": "rda45d0e66c4a44ab9e3968826f2b1495",
+"kind": "record",
+"seq": 107,
+"t": 1793969532.8989491,
+"session": "s282ce842b87c433ebb75c58cf8070f59",
+"role": "attempt"
+},
+{
+"id": "rc238726dcbfa439999132ab32b363fe6",
+"kind": "record",
+"seq": 108,
+"t": 1793972664.097704,
+"session": "sf27a7f067d994ab9b057fe9ea11dbfbf",
+"role": "attempt"
+},
+{
+"id": "rba2ecf4d2b3f4575b98dfa675e281842",
+"kind": "record",
+"seq": 109,
+"t": 1793974965.4018383,
+"session": "s6d9c4d5968f448daa4460d9c27b61564",
+"role": "attempt"
+},
+{
+"id": "rde86d3dfd4b8447496d87b34b609fd8c",
+"kind": "record",
+"seq": 110,
+"t": 1793976221.7554355,
+"session": "s489f7fc0f1d845e8b002558c11111297",
+"role": "explore"
+},
+{
+"id": "obb8dd3d450f04cc28d54f74bfaeef753",
+"kind": "organization",
+"seq": 111,
+"t": 1793977079.4583507,
+"session": "scc8ac90a98be44d8972fd872144f1830",
+"role": null
+},
+{
+"id": "rc9e1d70257124d179d4846bbef534135",
+"kind": "record",
+"seq": 112,
+"t": 1793978641.6800418,
+"session": "s9ccffc614a1b4bef821cb48aa2591ed5",
+"role": "attempt"
+},
+{
+"id": "ra4b7c441156b41fb84a35700c8da457e",
+"kind": "record",
+"seq": 113,
+"t": 1793982568.4172432,
+"session": "s98ca6fd4e33147129f15a53404392f29",
+"role": "attempt"
+},
+{
+"id": "rbeae3a3a598f4739b56050807801ab8f",
+"kind": "record",
+"seq": 114,
+"t": 1793991079.4311376,
+"session": "s875438b082e24bde91c51b80691b96ef",
+"role": "attempt"
+},
+{
+"id": "ra420517677274c20a5f3477850b9b0f8",
+"kind": "record",
+"seq": 115,
+"t": 1793992354.1382127,
+"session": "sd366f96ebf334eeba594f03c3f0774a3",
+"role": "explore"
+},
+{
+"id": "r37c204b600284a66a472d2c1f2c86356",
+"kind": "record",
+"seq": 116,
+"t": 1793992782.471158,
+"session": "se65f44d6c36a4933857bd7e3b3ddb349",
+"role": "attempt"
+},
+{
+"id": "ra6587477cf954ac5a29043d2dab3be4e",
+"kind": "record",
+"seq": 117,
+"t": 1793993104.6173487,
+"session": "sadf69be0552446ff8ccd33654dfeb74e",
+"role": "attempt"
+},
+{
+"id": "oe1e2ee3c57114401b54f7e22301545c9",
+"kind": "organization",
+"seq": 118,
+"t": 1793993233.7564182,
+"session": "sf83de96cf66e465b962e59dbbf518c08",
+"role": null
+},
+{
+"id": "r6373c701c0bb48fca5803f5578c75e60",
+"kind": "record",
+"seq": 119,
+"t": 1793994959.7833254,
+"session": "s8b74ad85303647c0a3bcadd2ca9cf348",
+"role": "attempt"
+},
+{
+"id": "re79cb4d5d2494b638a0de5f1e031c125",
+"kind": "record",
+"seq": 120,
+"t": 1793997922.566069,
+"session": "sa026e036b0d0467dbc557449edf022e3",
+"role": "attempt"
+},
+{
+"id": "o9b6f4621e24d456cbd7941ba0a148653",
+"kind": "organization",
+"seq": 121,
+"t": 1793998767.770714,
+"session": "s8cbb17d0699749558a5eb3d2b11d5558",
+"role": null
+},
+{
+"id": "r8d6850af987244b6b8e2bd46d3078fe0",
+"kind": "record",
+"seq": 122,
+"t": 1794004474.6481054,
+"session": "s4a6a2e66afc44c96930673e58ff3a1f8",
+"role": "attempt"
+},
+{
+"id": "r1ce014438f1c4cd3bd057047ab90284e",
+"kind": "record",
+"seq": 123,
+"t": 1794005363.9490223,
+"session": "sf56e2ecff89c44fa82d37a71aaf14dce",
+"role": "attempt"
+},
+{
+"id": "r708d99cec0604c698f2362e68068ad8d",
+"kind": "record",
+"seq": 124,
+"t": 1794006703.0393877,
+"session": "sea2b206e072b444abb9524f885502815",
+"role": "attempt"
+},
+{
+"id": "red157d83c0e84651abc12eec04c33963",
+"kind": "record",
+"seq": 125,
+"t": 1794013192.2174084,
+"session": "seae874f1d74a4a3585eb2b003bd33e49",
+"role": "explore"
+},
+{
+"id": "oe62a3588bcac462688c2ac25d24985f3",
+"kind": "organization",
+"seq": 126,
+"t": 1794014132.8711932,
+"session": "s993b44922da84efaaa8d416878a10db2",
+"role": null
+},
+{
+"id": "rc837b09e253f4b379a175f43ade14393",
+"kind": "record",
+"seq": 127,
+"t": 1794018394.5904524,
+"session": "saa2fc6547769469aa1b5a92f0ccef075",
+"role": "attempt"
+},
+{
+"id": "r8f492b64e2e343c2bff4748d14e46128",
+"kind": "record",
+"seq": 128,
+"t": 1794020089.0771117,
+"session": "s95a43b96e6af4222b9a29a8fd438aad3",
+"role": "attempt"
+},
+{
+"id": "r5ddf8a81137c482f8db8317e127cf4be",
+"kind": "record",
+"seq": 129,
+"t": 1794020180.153189,
+"session": "se36fd5983c084ecc86353b8254d091ad",
+"role": "attempt"
+},
+{
+"id": "r39d72f62177d4d419717cc7009587c45",
+"kind": "record",
+"seq": 130,
+"t": 1794020315.7424572,
+"session": "s625fd734b0ba445b943519fa3bb114b1",
+"role": "attempt"
+},
+{
+"id": "ob29d1daeebcb4126aef5b35b20af3eb6",
+"kind": "organization",
+"seq": 131,
+"t": 1794021329.354645,
+"session": "s78c273875ef342e7857d4695f1a3b1d1",
+"role": null
+},
+{
+"id": "rc9aee436a1c34c438719b6c5d5ed79b5",
+"kind": "record",
+"seq": 132,
+"t": 1794022641.8128161,
+"session": "s5411855f2de344bfbed1b35d6218d8b1",
+"role": "attempt"
+},
+{
+"id": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"kind": "record",
+"seq": 133,
+"t": 1794023407.9128346,
+"session": "s09c11bfd544740dfa94154a3fc3d8083",
+"role": "attempt"
+},
+{
+"id": "r19de912cab694b4f803d322834e9500a",
+"kind": "record",
+"seq": 134,
+"t": 1794025401.219005,
+"session": "s01a10dd7f2f9468593a67b41c929a695",
+"role": "attempt"
+},
+{
+"id": "r9d97cea47d494fa2949e4aed8088152c",
+"kind": "record",
+"seq": 135,
+"t": 1794026132.169749,
+"session": "s4589050c39f143049bc4eea7483a4844",
+"role": "explore"
+},
+{
+"id": "oc7f1e90fea79432ebcfc3ad3592c9705",
+"kind": "organization",
+"seq": 136,
+"t": 1794026743.886887,
+"session": "sb5d9eabfb1244defb91c0650f45a60ca",
+"role": null
+},
+{
+"id": "r0dc57fab33ca460ba929db8de09b26a0",
+"kind": "record",
+"seq": 137,
+"t": 1794030024.280683,
+"session": "s8400f373e3a74bfa8f852edb939f28a7",
+"role": "attempt"
+},
+{
+"id": "r656206ced5f04f29be24507607f74cc8",
+"kind": "record",
+"seq": 138,
+"t": 1794030663.9731998,
+"session": "s43db608a654b4aff87bee05e3a4b530b",
+"role": "attempt"
+},
+{
+"id": "rcb97a9491b8d468884b87de300085a2f",
+"kind": "record",
+"seq": 139,
+"t": 1794031829.9071393,
+"session": "s3300dad5702b46ea87f362dc7b2c59ee",
+"role": "attempt"
+},
+{
+"id": "rdc276812ff254431a63e3909875cbda6",
+"kind": "record",
+"seq": 140,
+"t": 1794032472.3735774,
+"session": "sa3f3e740e9d64261a8d170f47e13b329",
+"role": "attempt"
+},
+{
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"kind": "record",
+"seq": 141,
+"t": 1794032970.1953306,
+"session": "sb47d3273fdba4153bd5c41b6738b2f49",
+"role": "attempt"
+},
+{
+"id": "ob87f5d3f0c954a1fb4fed4324fb59c5b",
+"kind": "organization",
+"seq": 142,
+"t": 1794033299.0301669,
+"session": "saeafaeadda0845db8c7fbd42aab59e07",
+"role": null
+},
+{
+"id": "r1892593d9770428d8e72e67d504d1601",
+"kind": "record",
+"seq": 143,
+"t": 1794033593.2934105,
+"session": "sd671f3807b6a4aa6800d8fa7e21e1d9e",
+"role": "attempt"
+},
+{
+"id": "rc1cf1c1ab83c4c7cb4951c47ccab50a9",
+"kind": "record",
+"seq": 144,
+"t": 1794037486.5255759,
+"session": "scfaf0408251147a78a467ee571e0d611",
+"role": "explore"
+},
+{
+"id": "r13b0b8f020b04cd8869347c2af7ff7e6",
+"kind": "record",
+"seq": 145,
+"t": 1794041252.0708249,
+"session": "s8e53ab3fcb79405090635b98fb74e443",
+"role": "attempt"
+},
+{
+"id": "rea42db53ccba4891a4d0a7b34c4709af",
+"kind": "record",
+"seq": 146,
+"t": 1794041374.970994,
+"session": "s87bf3a0780dc4eccae41e58f07bad1ce",
+"role": "attempt"
+},
+{
+"id": "obb0675c1e6dc472ebdf0338ebcf471c3",
+"kind": "organization",
+"seq": 147,
+"t": 1794041830.0619392,
+"session": "s61b1a8292b634a59a27fc683fb97e300",
+"role": null
+},
+{
+"id": "rb6423c6f2b0e4e599251501f82cdd681",
+"kind": "record",
+"seq": 148,
+"t": 1794041979.2116723,
+"session": "s63cdcfe2b79a448596aa052b098698cf",
+"role": "attempt"
+},
+{
+"id": "r07f7e4f9c6094327b8d2e168cbcab6da",
+"kind": "record",
+"seq": 149,
+"t": 1794044154.0232282,
+"session": "sb80c555b325f44558e3e2a81561411fd",
+"role": "attempt"
+},
+{
+"id": "r65023f72e94149a3a73b40d74626c233",
+"kind": "record",
+"seq": 150,
+"t": 1794046455.252633,
+"session": "se6e167684c5044f78bf2122c2e25cf2a",
+"role": "explore"
+},
+{
+"id": "r56698e9b653143e9aac3f93fad76cfed",
+"kind": "record",
+"seq": 151,
+"t": 1794047138.9265358,
+"session": "sbf2966ae50ed4b6cb6cece114028d96c",
+"role": "attempt"
+},
+{
+"id": "o6a9daf4a919b42438573c19ca0074e59",
+"kind": "organization",
+"seq": 152,
+"t": 1794047389.1291173,
+"session": "s8aa7a14f1fe94e14965dd6636440cafb",
+"role": null
+},
+{
+"id": "r47b23222bd0b4f3aaa86c0ff68139b8e",
+"kind": "record",
+"seq": 153,
+"t": 1794052693.7569375,
+"session": "sc08dcfc6e4384dc9815bf48d6438303d",
+"role": "attempt"
+},
+{
+"id": "r7c26b8b96f164cd38f8beca514c4ff74",
+"kind": "record",
+"seq": 154,
+"t": 1794053560.675374,
+"session": "s30d1833d73d3401382cb736a3129f872",
+"role": "attempt"
+},
+{
+"id": "r3e8c9527a8a24dd1a66105050f79c8df",
+"kind": "record",
+"seq": 155,
+"t": 1794053633.943043,
+"session": "sb3e410d783234faa8b0196fc80df5068",
+"role": "attempt"
+},
+{
+"id": "o45d86b2c0a6f4f10b877570f4c84f6ea",
+"kind": "organization",
+"seq": 156,
+"t": 1794054595.3901289,
+"session": "s87bea7c8eff34b489e16801924d75602",
+"role": null
+},
+{
+"id": "r15df76b551d04c339b06b6f48cdb0891",
+"kind": "record",
+"seq": 157,
+"t": 1794068086.8631825,
+"session": "s39f7032da2ab430fa297b7177d80b076",
+"role": "attempt"
+},
+{
+"id": "r89888a14ef2d476fa18d96aba80fb962",
+"kind": "record",
+"seq": 158,
+"t": 1794069000.2413173,
+"session": "s743a6b05cb554d4d89c4fa656dbd3a7e",
+"role": "explore"
+},
+{
+"id": "r58b4caa693ea4de293444695413441e7",
+"kind": "record",
+"seq": 159,
+"t": 1794070999.5081441,
+"session": "sf0af59cb00af499682d4bee85fe9dc4c",
+"role": "attempt"
+},
+{
+"id": "r22fae40b2c934387a66c75090daf6d80",
+"kind": "record",
+"seq": 160,
+"t": 1794073606.6544857,
+"session": "s5c3e78372c36406db7b0bfbf5492b641",
+"role": "attempt"
+},
+{
+"id": "o1132d0d16c96477d9ff4b18b3a5b5ade",
+"kind": "organization",
+"seq": 161,
+"t": 1794074362.1328263,
+"session": "s92131e8e25054ee2b82c5e1b744423d5",
+"role": null
+},
+{
+"id": "rb7effe026f8f4ede880c2b723eef9ff4",
+"kind": "record",
+"seq": 162,
+"t": 1794079782.7638183,
+"session": "s718bc0bbb5244514b7ec159356fea6e9",
+"role": "attempt"
+},
+{
+"id": "rad00a59b22bd42a5a16cc0aa67e8841a",
+"kind": "record",
+"seq": 163,
+"t": 1794083469.5653832,
+"session": "s8b670cffaeb34cd8ba32484edc6cb343",
+"role": "attempt"
+},
+{
+"id": "r23f10e9249bc4c22ae7b512bcfcfb5cf",
+"kind": "record",
+"seq": 164,
+"t": 1794089025.221618,
+"session": "s44c1e315d31049bc8167f4c521137219",
+"role": "attempt"
+},
+{
+"id": "rbb61ab57893641fda52747cfd192c2ee",
+"kind": "record",
+"seq": 165,
+"t": 1794094728.8681126,
+"session": "sf8b9267bc7c142fa9ca519a3f566b2a7",
+"role": "attempt"
+},
+{
+"id": "oa2c1806b20f04d8a8e601f99149a76f6",
+"kind": "organization",
+"seq": 166,
+"t": 1794095821.1805673,
+"session": "s9b250136aca64a64b96a353b9a518840",
+"role": null
+},
+{
+"id": "r059f11ed8b6a47e7bd97bf2ed60c1c00",
+"kind": "record",
+"seq": 167,
+"t": 1794096802.1312616,
+"session": "s315652a3f61c4853bbecb05cf486ecaa",
+"role": "explore"
+},
+{
+"id": "r59c82d760e9c4ddcaae2d587db28a914",
+"kind": "record",
+"seq": 168,
+"t": 1794103154.606649,
+"session": "sbe95d6e740e3422e9b49076af6e768ae",
+"role": "attempt"
+},
+{
+"id": "r8e6678c1a61d475797e7df39b41e800e",
+"kind": "record",
+"seq": 169,
+"t": 1794103274.757547,
+"session": "s87f2924b60d34a6eab2fdd07a507c4e5",
+"role": "attempt"
+},
+{
+"id": "r475ada30aba5458c84e522929d6eaeb2",
+"kind": "record",
+"seq": 170,
+"t": 1794119403.2678428,
+"session": "s6f45e29e50fa4afb86175af930969618",
+"role": "attempt"
+},
+{
+"id": "o6d8079185b2e48f681800c5c0b4ffa51",
+"kind": "organization",
+"seq": 171,
+"t": 1794120625.583019,
+"session": "sa0e233a920e94b72b197aa65e58dec89",
+"role": null
+},
+{
+"id": "ra52a3c060b0f40b7970d351167c347d7",
+"kind": "record",
+"seq": 172,
+"t": 1794125526.2033365,
+"session": "s3039b7d2962049468f436da006c9c90b",
+"role": "explore"
+},
+{
+"id": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"kind": "record",
+"seq": 173,
+"t": 1794144746.934579,
+"session": "sc917874fb9f740c28add5985b0f5e905",
+"role": "attempt"
+},
+{
+"id": "r89eb039f714148a8b5c470572e07305f",
+"kind": "record",
+"seq": 174,
+"t": 1794146062.6692863,
+"session": "sfdf7a465bf4b4355a3d84f1e3592e159",
+"role": "attempt"
+},
+{
+"id": "r1b79fabdacb045ecb15f82ec513d5641",
+"kind": "record",
+"seq": 175,
+"t": 1794153254.556697,
+"session": "s6a683c2e58bc4f5f947204d4485c6c82",
+"role": "explore"
+},
+{
+"id": "o1059a6e7105543bb957705d489081ba9",
+"kind": "organization",
+"seq": 176,
+"t": 1794154518.3921351,
+"session": "s2a177d09cd804cfc9f9c88a4b1564480",
+"role": null
+},
+{
+"id": "r8a9b11e78fec43758f25737fc14c961e",
+"kind": "record",
+"seq": 177,
+"t": 1794154586.3409915,
+"session": "s6fcff7f57ca24dd2ba075b75d07d0e12",
+"role": "attempt"
+},
+{
+"id": "rf451d83e888a4e1886ca1950b9a819a1",
+"kind": "record",
+"seq": 178,
+"t": 1794158059.2397974,
+"session": "sef65cc3d9a9741058917e86170175249",
+"role": "attempt"
+},
+{
+"id": "r6b37c7e5758a4664aabb0af7f2de82d9",
+"kind": "record",
+"seq": 179,
+"t": 1794159193.2633016,
+"session": "s6f37efffd70c41c690b793c032cb63ce",
+"role": "attempt"
+},
+{
+"id": "r20df549f99594cfcab9fa8acbfaeac74",
+"kind": "record",
+"seq": 180,
+"t": 1794160706.5200145,
+"session": "sf7aae073504d4974a0a8aea4650777ff",
+"role": "attempt"
+},
+{
+"id": "od75e44b82af84de8a47089aad8bf9fbd",
+"kind": "organization",
+"seq": 181,
+"t": 1794161509.237427,
+"session": "s59925cec195149079051248293bbf565",
+"role": null
+},
+{
+"id": "r10ff8c2a7fb244dab041d6a6b080cb50",
+"kind": "record",
+"seq": 182,
+"t": 1794162725.0859914,
+"session": "s1e65745e3f634134853757d406971c54",
+"role": "attempt"
+},
+{
+"id": "r5f5cf7334317436bab893b06bcd6d0b3",
+"kind": "record",
+"seq": 183,
+"t": 1794166847.6956816,
+"session": "s3be884cd9eec48709913668a95bf186d",
+"role": "attempt"
+},
+{
+"id": "r359ba037a56b454189f91903dfae7782",
+"kind": "record",
+"seq": 184,
+"t": 1794171080.470294,
+"session": "sdcf07882555748b58d79274f370096d0",
+"role": "explore"
+},
+{
+"id": "r317289416fc34a7fa905902285e74f05",
+"kind": "record",
+"seq": 185,
+"t": 1794179241.8735425,
+"session": "sbb83db0e3f8a478bace8b410d520016c",
+"role": "attempt"
+},
+{
+"id": "rfab92df6ddf140f7a244c480fa6c49db",
+"kind": "record",
+"seq": 186,
+"t": 1794179600.1510465,
+"session": "s662af04a9b2d4a65b11ee596660520db",
+"role": "attempt"
+},
+{
+"id": "o0388ab68dd124a3b9397149688bd720b",
+"kind": "organization",
+"seq": 187,
+"t": 1794179934.7241344,
+"session": "s51681a5c7d7c48a6bb5de96862f1b6d3",
+"role": null
+},
+{
+"id": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"kind": "questions",
+"seq": 188,
+"t": 1794180656.563124,
+"session": null,
+"role": null
+},
+{
+"id": "r3889c6ac15e94743b3cf11ac83cd22d7",
+"kind": "record",
+"seq": 189,
+"t": 1794194083.6579561,
+"session": "s3db27e57234e43629daebdbf2d2b2852",
+"role": "explore"
+},
+{
+"id": "r207f12442349469083b31851e184ec65",
+"kind": "record",
+"seq": 190,
+"t": 1794195295.2145402,
+"session": "s1ee4cef90d1144efbe9a04e083e67eee",
+"role": "attempt"
+},
+{
+"id": "r88bed8a53c7c40e5a706ec7aa2a1e118",
+"kind": "record",
+"seq": 191,
+"t": 1794210517.4279296,
+"session": "s6768e452a7554d02b3f028d8291ef31b",
+"role": "explore"
+},
+{
+"id": "ob2a1ea2c3c8440c98e426546a94c6e50",
+"kind": "organization",
+"seq": 192,
+"t": 1794211641.0266373,
+"session": "sb1973bad8d6e4d72abaaec12232b910a",
+"role": null
+},
+{
+"id": "r43289845101546f48cb930a51c4cc5c3",
+"kind": "record",
+"seq": 193,
+"t": 1794214280.4377334,
+"session": "sc6d520c4ee9e4826bf9bfa02b11665a9",
+"role": "explore"
+},
+{
+"id": "ra9c7bb2697594d0ebcc9457a212031d2",
+"kind": "record",
+"seq": 194,
+"t": 1794215563.923288,
+"session": "sef212e8a93ab4c68b4861370d36edd4b",
+"role": "attempt"
+},
+{
+"id": "r237079f5cca44fbda9f14d5ba54f10ab",
+"kind": "record",
+"seq": 195,
+"t": 1794217137.1090693,
+"session": "s270fc095678548f9870d63ff9bfe6d68",
+"role": "attempt"
+},
+{
+"id": "r79ee9e020cbf4231881b540fa262eb31",
+"kind": "record",
+"seq": 196,
+"t": 1794218635.0850825,
+"session": "s314e3e13758c4601a39e5a1cf2d608e4",
+"role": "attempt"
+},
+{
+"id": "r3ee8ab13be774a729c867815cf30693f",
+"kind": "record",
+"seq": 197,
+"t": 1794219540.9091341,
+"session": "se8ae8dbb1eed42f89c770a1c4c6dc879",
+"role": "attempt"
+},
+{
+"id": "r5bbc534e59964320bfca440a19bf3be8",
+"kind": "record",
+"seq": 198,
+"t": 1794219749.8192837,
+"session": "s36b5200e4ba44e2bb8f93a3e4b3e0b74",
+"role": "attempt"
+},
+{
+"id": "o7869605fd2e04d6e876c3f2a1e1fd75c",
+"kind": "organization",
+"seq": 199,
+"t": 1794219777.9506273,
+"session": "s3805a37dc2914e5e8da7dea7c1b29430",
+"role": null
+},
+{
+"id": "r8456f59b3726483c95f4a74a498ace7d",
+"kind": "record",
+"seq": 200,
+"t": 1794220969.0939205,
+"session": "s9ec857d44ad84fb98287e70afcb8b1e5",
+"role": "attempt"
+},
+{
+"id": "rad9d6055bb0c49f69bbf4cefdfbf4c7f",
+"kind": "record",
+"seq": 201,
+"t": 1794222577.586743,
+"session": "s80e40306a91c468fb9c20eb34be1f96e",
+"role": "attempt"
+},
+{
+"id": "re004ae40169f40b28c69e9bb30b7b13a",
+"kind": "record",
+"seq": 202,
+"t": 1794223011.1907609,
+"session": "sd9ad5b75a4d144ebbaf69e737e642b65",
+"role": "explore"
+},
+{
+"id": "r7e396da5c85e4c7a9bb41fbb8eb4966b",
+"kind": "record",
+"seq": 203,
+"t": 1794223383.2673357,
+"session": "s83e82623a1c74d55b415cf3965102aa3",
+"role": "attempt"
+},
+{
+"id": "o73092d86df7a4139878a543ce3206830",
+"kind": "organization",
+"seq": 204,
+"t": 1794223955.6604714,
+"session": "sddd6618c934e4695839c3cada6faaa69",
+"role": null
+},
+{
+"id": "r706463207544414c9759c2c512ec501e",
+"kind": "record",
+"seq": 205,
+"t": 1794226427.6633837,
+"session": "sad2e4c179ed642ff9a578836310061ba",
+"role": "explore"
+},
+{
+"id": "rf7e46856a2444d829d350ba1d88c6a03",
+"kind": "record",
+"seq": 206,
+"t": 1794231817.511136,
+"session": "s97506026efc34406bc601f29a3757439",
+"role": "explore"
+},
+{
+"id": "r2e227260f0b64c4c90fc7af4c8699a6c",
+"kind": "record",
+"seq": 207,
+"t": 1794232681.6975296,
+"session": "s597d51f267dd462fb4a65a4c280ed8fb",
+"role": "attempt"
+},
+{
+"id": "o2306bdc886e54f35a5386f4ef49e3bac",
+"kind": "organization",
+"seq": 208,
+"t": 1794232779.176321,
+"session": "scaf2f882bbcf4190949b136b4840dbc5",
+"role": null
+},
+{
+"id": "r0ee343a79304453a8096fe295b01dabb",
+"kind": "record",
+"seq": 209,
+"t": 1794235981.120213,
+"session": "s7f194492eea44fe38a5ba77c073936ed",
+"role": "attempt"
+},
+{
+"id": "r46313b0792c14f17af0d814ae5f1a62d",
+"kind": "record",
+"seq": 210,
+"t": 1794237127.018722,
+"session": "sbeffb173e8ea4a03be0232c95070fd5f",
+"role": "explore"
+},
+{
+"id": "r22df70d6f8eb4d69b5675e3e43471b18",
+"kind": "record",
+"seq": 211,
+"t": 1794237936.9481597,
+"session": "s86926ff73c054a6c8987b450f53eae24",
+"role": "attempt"
+},
+{
+"id": "r0213c2bbcb784becb22e50ebe7c10c9d",
+"kind": "record",
+"seq": 212,
+"t": 1794237948.9894347,
+"session": "s57e774f5eeb248a68b196e4d86b0ac47",
+"role": "explore"
+},
+{
+"id": "rc5ca6347f07a47968d2e243c84ea2a80",
+"kind": "record",
+"seq": 213,
+"t": 1794237974.6292055,
+"session": "scbf83f57989644fdac75f7f8a2067fb8",
+"role": "attempt"
+},
+{
+"id": "oe42362bc7c4f4196ad789c5a88abd6b1",
+"kind": "organization",
+"seq": 214,
+"t": 1794238926.3454251,
+"session": "seb2912b22156468b87e50131a3173dcd",
+"role": null
+},
+{
+"id": "rfbe72a804096466cbf483f74036814ce",
+"kind": "record",
+"seq": 215,
+"t": 1794239599.9101965,
+"session": "sdd3be6bdab3140e1ac8ac65dcc90a86a",
+"role": "explore"
+},
+{
+"id": "r86e33757d763403da28b6ca399b60aaf",
+"kind": "record",
+"seq": 216,
+"t": 1794239607.2377763,
+"session": "sb50b95e16b7340eaa80d399045f94cd1",
+"role": "explore"
+},
+{
+"id": "r9e82bb0caf3b41b5981e062a4f3d3ebd",
+"kind": "record",
+"seq": 217,
+"t": 1794239836.1188521,
+"session": "s4ed9c0c62b364824af40bf1153cae565",
+"role": "attempt"
+},
+{
+"id": "odc048b274fe34169804a9ec540745ac1",
+"kind": "organization",
+"seq": 218,
+"t": 1794240548.605803,
+"session": "s2c3749e0398d488f9b702f82d2e92732",
+"role": null
+},
+{
+"id": "r051bfe18ee7448c2aa4d067eab9e8c6c",
+"kind": "record",
+"seq": 219,
+"t": 1794246280.906873,
+"session": "s815263db8e8e49d4892c627e35f2c506",
+"role": "attempt"
+},
+{
+"id": "r67b63f0481d0434aab71f1c59c74bf8a",
+"kind": "record",
+"seq": 220,
+"t": 1794247106.83199,
+"session": "s3d96604d25774490a368fef260c41594",
+"role": "explore"
+},
+{
+"id": "r6e82a66949d448f6955a745e9efb52a5",
+"kind": "record",
+"seq": 221,
+"t": 1794248334.9597812,
+"session": "s7fe4240f2dff49408c390a12fe6597cb",
+"role": "explore"
+},
+{
+"id": "od40628e79d9749448db33534fcf7297d",
+"kind": "organization",
+"seq": 222,
+"t": 1794249041.2558563,
+"session": "s865ceb3b118c4ae1a2c6bbf23661a9f2",
+"role": null
+},
+{
+"id": "r42317b1e21a64cdaae6052fb0ca79bdd",
+"kind": "record",
+"seq": 223,
+"t": 1794251714.309662,
+"session": "s8baac2609c9046a8ac89dfa7ac4a6d26",
+"role": "attempt"
+},
+{
+"id": "r05cf8c9e90704aebbe42f8729b4be48d",
+"kind": "record",
+"seq": 224,
+"t": 1794252116.106409,
+"session": "s0dc1405f7063465e950cfbff2eb05824",
+"role": "attempt"
+},
+{
+"id": "rfbd91ce3913a4092894adc37c6efb84e",
+"kind": "record",
+"seq": 225,
+"t": 1794252683.414528,
+"session": "sb92033db4cb04646aa1905529e36a768",
+"role": "attempt"
+},
+{
+"id": "rd3cb5ba1d5444db79456dcfaa3530b47",
+"kind": "record",
+"seq": 226,
+"t": 1794252760.0773857,
+"session": "s44a0528a5afb47b5a836faf42772c56a",
+"role": "attempt"
+},
+{
+"id": "r29c10cde89dc4f1fb7d87b4c47427be3",
+"kind": "record",
+"seq": 227,
+"t": 1794252775.2787597,
+"session": "s54823e8b3f524f1799c25fb39bf77eaf",
+"role": "attempt"
+},
+{
+"id": "rc881c9ec7322400eac3b489f4455a3b7",
+"kind": "record",
+"seq": 228,
+"t": 1794253214.0335667,
+"session": "seab3cea82cd248da8a72bdb7e6436de6",
+"role": "explore"
+},
+{
+"id": "o3919db76a17543cfa5f5b8aa8c30fe98",
+"kind": "organization",
+"seq": 229,
+"t": 1794253629.5500064,
+"session": "s0771378852e74a469bd4365c55e75cb5",
+"role": null
+},
+{
+"id": "r1ae4ec77232b44c5813c6743a404a7e3",
+"kind": "record",
+"seq": 230,
+"t": 1794257793.7231708,
+"session": "s34d7a8385c8844dc948a54e76f9d4654",
+"role": "attempt"
+},
+{
+"id": "r5364fb9e58a14cc8bb48fddcdccf247f",
+"kind": "record",
+"seq": 231,
+"t": 1794258649.911243,
+"session": "sd46ecca0642947829050dede0b8aa95e",
+"role": "explore"
+},
+{
+"id": "r1b43caf725c2438abac2e65bdcf54932",
+"kind": "record",
+"seq": 232,
+"t": 1794259218.9829361,
+"session": "s77985a7b185f43d7a1a98c09fe166028",
+"role": "explore"
+},
+{
+"id": "o53a3fbe9f3c141bca9cb343bdd272c7d",
+"kind": "organization",
+"seq": 233,
+"t": 1794259325.1019526,
+"session": "s56f81d41b43441b783794aa6041d082a",
+"role": null
+},
+{
+"id": "rd457474f8a2a4cd3a18d9fcc8a3d58ff",
+"kind": "record",
+"seq": 234,
+"t": 1794259372.6056013,
+"session": "s0db4d173b97947a0891254ddf91a4f30",
+"role": "attempt"
+},
+{
+"id": "r05c817cfaecf470abb2eda807b90b0e5",
+"kind": "record",
+"seq": 235,
+"t": 1794262587.7725036,
+"session": "sea8a51a77c594542bd8889d99c441df2",
+"role": "attempt"
+},
+{
+"id": "r6f5f48f2e4084772a978ab59f2c48e93",
+"kind": "record",
+"seq": 236,
+"t": 1794264115.5639884,
+"session": "s3f1254bae6094cb2a9b9469e1318233b",
+"role": "attempt"
+},
+{
+"id": "oab0ee919ab4b426fb5606e90b67e45a5",
+"kind": "organization",
+"seq": 237,
+"t": 1794264869.1413255,
+"session": "sb7863829367841b3baea5a6428315195",
+"role": null
+},
+{
+"id": "rc10dce53a1fc4b5f90a9f68dc68f614f",
+"kind": "record",
+"seq": 238,
+"t": 1794265100.675841,
+"session": "s166b348f213f463a8acc1413400f4551",
+"role": "attempt"
+},
+{
+"id": "r32a9449452664a68822da6b7d316761f",
+"kind": "record",
+"seq": 239,
+"t": 1794266632.0633366,
+"session": "s90db50ae6e6d4f2da81f59f1077bad93",
+"role": "explore"
+},
+{
+"id": "ra2b010ba3fa64cc5a35007665698b0cd",
+"kind": "record",
+"seq": 240,
+"t": 1794266757.648566,
+"session": "s3d7e39871fea40ce939f5131e8a5ee8e",
+"role": "attempt"
+},
+{
+"id": "r69e7d176c4f34e9f8295853aa91d17ae",
+"kind": "record",
+"seq": 241,
+"t": 1794268325.2638772,
+"session": "s1dfbe00384fe49babdb94bcc19066f94",
+"role": "explore"
+},
+{
+"id": "o3fcaa556ae9445c789ee2b3e382136e8",
+"kind": "organization",
+"seq": 242,
+"t": 1794268939.6496048,
+"session": "se0947baedb0e4fb8b213405ee6b740ea",
+"role": null
+},
+{
+"id": "r829eefd84fa548f9b1dd295e895a3a1b",
+"kind": "record",
+"seq": 243,
+"t": 1794269030.105795,
+"session": "s5006110db6cd46e5be16c90daed6f57f",
+"role": "attempt"
+},
+{
+"id": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"kind": "record",
+"seq": 244,
+"t": 1794269324.9758792,
+"session": "sf08b056520d24d2bb8ca8b4d81d9ceba",
+"role": "attempt"
+},
+{
+"id": "r3dd61e24b54a479fbb2dbed13eb6ac15",
+"kind": "record",
+"seq": 245,
+"t": 1794271969.9738657,
+"session": "sc2aab4be17334004a2975de7e29ea40f",
+"role": "explore"
+},
+{
+"id": "r7dd34dc8e9fd41b88072f3d5d4d22797",
+"kind": "record",
+"seq": 246,
+"t": 1794275715.893211,
+"session": "s2895e58526044c67b8c8571a3befed1e",
+"role": "attempt"
+},
+{
+"id": "re597c0e7ca8e40ed8912589a84d9e216",
+"kind": "record",
+"seq": 247,
+"t": 1794275879.106878,
+"session": "s3e0726ec64bb4daf98684a74d83534d2",
+"role": "attempt"
+},
+{
+"id": "r650977000d4d45bb906ccec1eba3cc79",
+"kind": "record",
+"seq": 248,
+"t": 1794276538.469804,
+"session": "sc79969a7f56440cf8999cd2655fe012e",
+"role": "attempt"
+},
+{
+"id": "oef81af1dbd8941fe903446beced57783",
+"kind": "organization",
+"seq": 249,
+"t": 1794276565.03895,
+"session": "s64392220dce24724ae9d4fc96e0e673f",
+"role": null
+},
+{
+"id": "rec3627cdf5234562877159da99a582b0",
+"kind": "record",
+"seq": 250,
+"t": 1794279277.585167,
+"session": "s56b0fcaab6a445b9a702b08b6a1cf26e",
+"role": "attempt"
+},
+{
+"id": "r3514683174704598bf04b5fa98146e6f",
+"kind": "record",
+"seq": 251,
+"t": 1794279488.9874432,
+"session": "sbe91ee0e5b45472a9335096e1dcf16bd",
+"role": "attempt"
+},
+{
+"id": "raf9e09e03e6e4888b43818ea87dd729d",
+"kind": "record",
+"seq": 252,
+"t": 1794279619.058864,
+"session": "se2683821f9464cf38896b6eb9d87092f",
+"role": "attempt"
+},
+{
+"id": "rd22bda3171d747be93d5609489b9e49d",
+"kind": "record",
+"seq": 253,
+"t": 1794279773.0571241,
+"session": "s45a126e10e534c5f8ba012cc4c1a57ce",
+"role": "attempt"
+},
+{
+"id": "rd98ca46a757b49fdb72941813af43027",
+"kind": "record",
+"seq": 254,
+"t": 1794279850.2911494,
+"session": "s6bea2af065164aedb3f3daf5869a8783",
+"role": "explore"
+},
+{
+"id": "r5826c1e543544bd2a4fd14cc96177b1c",
+"kind": "record",
+"seq": 255,
+"t": 1794280036.63752,
+"session": "s8a81ad5882494d6995357a126835a281",
+"role": "explore"
+},
+{
+"id": "rcb2e2d4253524c3989e9e803401183e5",
+"kind": "record",
+"seq": 256,
+"t": 1794280124.744304,
+"session": "sd9486486177b4de1973853b81f730da0",
+"role": "attempt"
+},
+{
+"id": "ob6f716cd5d2b414a9569899f5aedbf67",
+"kind": "organization",
+"seq": 257,
+"t": 1794280311.740203,
+"session": "s0924027e397a4da088d926dbba1d51e2",
+"role": null
+},
+{
+"id": "r4a537c225afc43eca9e2657e8bd1318d",
+"kind": "record",
+"seq": 258,
+"t": 1794280590.8413677,
+"session": "sc9ea7d329cc34d969200ea836e74c28b",
+"role": "explore"
+},
+{
+"id": "obbd0449c34a947e5a0f671b67817c506",
+"kind": "organization",
+"seq": 259,
+"t": 1794281262.2646358,
+"session": "s63e8b1d12135496c9a621b466d3b9ac0",
+"role": null
+},
+{
+"id": "rc3918294dab54bd5820dfdd6596f136b",
+"kind": "record",
+"seq": 260,
+"t": 1794286950.226229,
+"session": "s69e625843fdf49c6a92d39737efed273",
+"role": "attempt"
+},
+{
+"id": "r319d86604c4344509b8e324fa93897cf",
+"kind": "record",
+"seq": 261,
+"t": 1794290062.39511,
+"session": "se50277dbb32448eb9029df371d8f4e8f",
+"role": "attempt"
+},
+{
+"id": "r5c5657a4c7b94ccda0275b4461c8d4eb",
+"kind": "record",
+"seq": 262,
+"t": 1794294899.3234544,
+"session": "s6ffdf224b58e4f2f8c69f69736fcb8f6",
+"role": "explore"
+},
+{
+"id": "raad7e6d531824745a8b9ac1a562d6331",
+"kind": "record",
+"seq": 263,
+"t": 1794295747.1100018,
+"session": "sdb180a3db8e745778edb0f763bfcc526",
+"role": "attempt"
+},
+{
+"id": "r29b01e8e0a86457d8946dd26cc20f754",
+"kind": "record",
+"seq": 264,
+"t": 1794295958.8187513,
+"session": "s96d1c94435834de4abfc7b77de5c28bd",
+"role": "attempt"
+},
+{
+"id": "rb6155b5265994d0fa1b05ddb73c57816",
+"kind": "record",
+"seq": 265,
+"t": 1794296223.2428002,
+"session": "s282bfee0433640a7962660fbcbf3b1e8",
+"role": "attempt"
+},
+{
+"id": "o077dd20324dd4941a4207507712e541f",
+"kind": "organization",
+"seq": 266,
+"t": 1794296421.7520747,
+"session": "sd3e4ceef10b64e0c9e800ec477b47d74",
+"role": null
+},
+{
+"id": "r97dbedcfa38b4a8e8747f42e331fe133",
+"kind": "record",
+"seq": 267,
+"t": 1794297087.8120942,
+"session": "s389ade3b1b7d4aceb22b055df362819a",
+"role": "explore"
+},
+{
+"id": "r54152af3cfb14c1dadf807cf5e7efaac",
+"kind": "record",
+"seq": 268,
+"t": 1794297308.8070383,
+"session": "s73b9599e6de0440682d39d1ac0fc25d8",
+"role": "attempt"
+},
+{
+"id": "o8075f0423f3d433085116ff1a35d196e",
+"kind": "organization",
+"seq": 269,
+"t": 1794298373.9652162,
+"session": "s0e78f615a15b45778d2cea8f98aad988",
+"role": null
+},
+{
+"id": "r7248450eba6d4be2b9d15f51309ff603",
+"kind": "record",
+"seq": 270,
+"t": 1794301334.5509393,
+"session": "se9f2917b7cce4ddaad3daeda8932a499",
+"role": "attempt"
+},
+{
+"id": "rbca832432c744c9cbf720dcf89005c9b",
+"kind": "record",
+"seq": 271,
+"t": 1794301924.9593108,
+"session": "sca50b80b28134834b14ac831cfc7806b",
+"role": "attempt"
+},
+{
+"id": "re6a228d52d754d34940332b30fbf62f3",
+"kind": "record",
+"seq": 272,
+"t": 1794306794.6541595,
+"session": "sc63721c280ed42b497f4d84f8286772b",
+"role": "explore"
+},
+{
+"id": "o4bb2b18e8bfe44ca95419a92f9f75105",
+"kind": "organization",
+"seq": 273,
+"t": 1794307979.5724463,
+"session": "s57bb02de16c548519a6f3a4a410c38d8",
+"role": null
+},
+{
+"id": "rec21ee39284f4296be4c92e99c14d5ea",
+"kind": "record",
+"seq": 274,
+"t": 1794308860.8206127,
+"session": "s3e0bad642aa94a2483dd95b850bfb2b5",
+"role": "attempt"
+},
+{
+"id": "rba0262126a0e4669b09d0ee9cbdd4c90",
+"kind": "record",
+"seq": 275,
+"t": 1794311592.798114,
+"session": "sb1338ce36e604b1e89ee0126f7bc37e6",
+"role": "attempt"
+},
+{
+"id": "r9bf2dc6070134fad99681ca44cff25cb",
+"kind": "record",
+"seq": 276,
+"t": 1794313445.1456087,
+"session": "sf89cd690127b4a19b1d8e1293db5ba48",
+"role": "attempt"
+},
+{
+"id": "r2ec875c7605c4ddeb28da2c3a4566663",
+"kind": "record",
+"seq": 277,
+"t": 1794314307.394969,
+"session": "s998c893f89374dcf89edab5cd7185327",
+"role": "attempt"
+},
+{
+"id": "r696d62c0f01a40e7a2da52d0342f67d5",
+"kind": "record",
+"seq": 278,
+"t": 1794315768.9888952,
+"session": "s7d5ee32e04ca4a4fa1f4c35dbd4f69b3",
+"role": "explore"
+},
+{
+"id": "r63168f3b1d784220a42e7fc3313b391f",
+"kind": "record",
+"seq": 279,
+"t": 1794316299.9452243,
+"session": "s30ccba7348b046cd9cc0e7ec9dac87fc",
+"role": "attempt"
+},
+{
+"id": "od620e002024045568acea6c9f6679977",
+"kind": "organization",
+"seq": 280,
+"t": 1794316324.7966774,
+"session": "s0e54df9246434605a73f4fd8a0c47201",
+"role": null
+},
+{
+"id": "r2fe0259ff994498199a719dfcc85d4fb",
+"kind": "record",
+"seq": 281,
+"t": 1794316664.8150105,
+"session": "scc3fdedaddfd4c3a878ea10943b57a1a",
+"role": "explore"
+},
+{
+"id": "r6203aef4c8ab4970a3fc2d2a90dd8931",
+"kind": "record",
+"seq": 282,
+"t": 1794316973.4741611,
+"session": "s10d4c7c908294494a0077277ec9012f8",
+"role": "attempt"
+},
+{
+"id": "raa111ead6ef243dca993f2eacd0899cb",
+"kind": "record",
+"seq": 283,
+"t": 1794316989.9774334,
+"session": "se448ea678687491c9327d17f150fecd1",
+"role": "attempt"
+},
+{
+"id": "r742adf36299f4225998cc485000d028d",
+"kind": "record",
+"seq": 284,
+"t": 1794317785.75975,
+"session": "se2a1e4093f2048ac9a62a22bcc38fd40",
+"role": "attempt"
+},
+{
+"id": "o3919ce5a128f414e85a3e5d0eedc9ccd",
+"kind": "organization",
+"seq": 285,
+"t": 1794317886.3992558,
+"session": "s233b5747476a41f5989ebb9844c2de7f",
+"role": null
+},
+{
+"id": "rdfe3dece99a64ff9bffa37df53b335a8",
+"kind": "record",
+"seq": 286,
+"t": 1794320411.6760788,
+"session": "s67a550b3bc844257909a50ecfc924ce1",
+"role": "attempt"
+},
+{
+"id": "rf7540215ac3c4fdd8b14366a593448a9",
+"kind": "record",
+"seq": 287,
+"t": 1794320788.2416384,
+"session": "s7009b4c6137449ea8f1e2d6d598cc30a",
+"role": "attempt"
+},
+{
+"id": "r6f71c1efc8fd47e7ade95394f40378c7",
+"kind": "record",
+"seq": 288,
+"t": 1794321142.4506445,
+"session": "sb8edcabc9caf48258f3939ccfc12026f",
+"role": "attempt"
+},
+{
+"id": "o2a9bc1de98f848e2b5ffb9010cad4122",
+"kind": "organization",
+"seq": 289,
+"t": 1794321868.3078892,
+"session": "sf014f830816e40369422afe2131cf1bc",
+"role": null
+},
+{
+"id": "rd6200d9cf9714392b4ef022ce5e6855d",
+"kind": "record",
+"seq": 290,
+"t": 1794322037.086575,
+"session": "s96fd69259b3944c0a6d482ada6e74e07",
+"role": "explore"
+},
+{
+"id": "r845b2055d18c40c6894cca76b1dff184",
+"kind": "record",
+"seq": 291,
+"t": 1794323578.2807856,
+"session": "s87933fbeb129469aad0ffb189eddc251",
+"role": "attempt"
+},
+{
+"id": "v6b80dd5f605e4c8e927548ceb2a0a72f",
+"kind": "review",
+"seq": 292,
+"t": 1794323974.812163,
+"session": "s76fd59c67d93411a8e0ae748983968f4",
+"role": null
+},
+{
+"id": "re9461abdb48e49a88f11e8ed5fb80391",
+"kind": "record",
+"seq": 293,
+"t": 1794326550.6219628,
+"session": "s38630e1c73d947ac8f3275b97cbb7fec",
+"role": "attempt"
+},
+{
+"id": "o45bf5d3ab7844f94ad521696d4634f98",
+"kind": "organization",
+"seq": 294,
+"t": 1794327527.544907,
+"session": "s7a7f175e13eb4b64909785ab3f9d8fca",
+"role": null
+},
+{
+"id": "r030ffaebcd164eb492cc4215ce1c2e56",
+"kind": "record",
+"seq": 295,
+"t": 1794327956.0818138,
+"session": "sa2c9917ef5fd420f9783b537e0a4576a",
+"role": "attempt"
+},
+{
+"id": "r0a57c86df6ee47388fa5cd3bfae6bacb",
+"kind": "record",
+"seq": 296,
+"t": 1794328427.2198246,
+"session": "s16804cd0756e49638136148972a210db",
+"role": "attempt"
+},
+{
+"id": "rc16c8db1b3294edc8f9bb7ab5adc3672",
+"kind": "record",
+"seq": 297,
+"t": 1794331594.3298776,
+"session": "sd3f2fd1c6e73496b8fe59210ad1e5ff7",
+"role": "explore"
+},
+{
+"id": "r74646f5ebf114f1ea5010ea3f5188ae3",
+"kind": "record",
+"seq": 298,
+"t": 1794331681.2780533,
+"session": "s38f30162e3964b63adb3a7e1b09fa278",
+"role": "explore"
+},
+{
+"id": "o0c923a5bf81045b3a6d849f9bacc88c9",
+"kind": "organization",
+"seq": 299,
+"t": 1794332788.7311757,
+"session": "se931af5b8e8a44dfaf672252fcf815a2",
+"role": null
+},
+{
+"id": "raa86c0b57fee400f86a9ccf150f2be3b",
+"kind": "record",
+"seq": 300,
+"t": 1794334172.2761176,
+"session": "s993af0fb7d254f59b6541f1a5025aa80",
+"role": "attempt"
+},
+{
+"id": "ra61bca534f3f4b36abc9dc15a97c29bf",
+"kind": "record",
+"seq": 301,
+"t": 1794334660.4405158,
+"session": "s343536334cb84997a5d8d197eda9d11c",
+"role": "attempt"
+},
+{
+"id": "r0d8807130cdd4022ae91bf2d374faa33",
+"kind": "record",
+"seq": 302,
+"t": 1794335954.275842,
+"session": "see8ee2125ee341bcb45a6b5bb3bb5721",
+"role": "explore"
+},
+{
+"id": "r317d67810d1240bc9b19b5e9dd44eead",
+"kind": "record",
+"seq": 303,
+"t": 1794336264.8638206,
+"session": "sa4f3767257a24e01992fe75be8c9c16f",
+"role": "attempt"
+},
+{
+"id": "o672a002995514b5caa713fd8db70ad19",
+"kind": "organization",
+"seq": 304,
+"t": 1794337351.1640828,
+"session": "s2174ea6bba7b448f8e4dabef297d1fe5",
+"role": null
+},
+{
+"id": "r1b2b20d5835d475caf067fb3cbb1303b",
+"kind": "record",
+"seq": 305,
+"t": 1794338562.430254,
+"session": "sfddaee8805d74dc1a217b635dc066884",
+"role": "attempt"
+},
+{
+"id": "r686f30fde8374c31bfd84bf4d221633b",
+"kind": "record",
+"seq": 306,
+"t": 1794340285.6752992,
+"session": "s291f8e7b04a24e3d90bbbcda8d26fdc8",
+"role": "attempt"
+},
+{
+"id": "r736ae526fe704131b78be1f3dc16bbe8",
+"kind": "record",
+"seq": 307,
+"t": 1794343137.182555,
+"session": "s34decfad0a764bd08d53c12c1eff2ea4",
+"role": "explore"
+},
+{
+"id": "r98fb348cdb3f47cd99325318f279072d",
+"kind": "record",
+"seq": 308,
+"t": 1794343212.6278958,
+"session": "se9a94470d6a84fac9428e627d92463e2",
+"role": "attempt"
+},
+{
+"id": "r7850ff4f82784bd399d8f0ba69aefc9a",
+"kind": "record",
+"seq": 309,
+"t": 1794343840.730513,
+"session": "s4f66783fd6d04fe49b8f896d0e6a3419",
+"role": "attempt"
+},
+{
+"id": "o8444ae0fddf34dfcafc61797f4bda68e",
+"kind": "organization",
+"seq": 310,
+"t": 1794344080.5605268,
+"session": "sb125274956e744e19e978b1c21070b18",
+"role": null
+},
+{
+"id": "r126914e3832d4208b6f3367c94c8fdc2",
+"kind": "record",
+"seq": 311,
+"t": 1794344129.64943,
+"session": "seb439206bec2489c835c205268928428",
+"role": "attempt"
+},
+{
+"id": "r2c9a689c1be14f369d52f9512c658e31",
+"kind": "record",
+"seq": 312,
+"t": 1794344246.4668956,
+"session": "sd9beb1fc7d8b412c99d9f3b59d474435",
+"role": "attempt"
+},
+{
+"id": "r143d1ceeb03444169d73edab6acad310",
+"kind": "record",
+"seq": 313,
+"t": 1794346384.0988955,
+"session": "sefc92bb7260544e4be04d7a82215a9d3",
+"role": "attempt"
+},
+{
+"id": "o9944242f766149a888192d6beb580b35",
+"kind": "organization",
+"seq": 314,
+"t": 1794347800.6551738,
+"session": "s81ec9bb2b40f41fa9a3b39c606a622ee",
+"role": null
+},
+{
+"id": "r42097165cf6b4b64ab4ee60f0c93b869",
+"kind": "record",
+"seq": 315,
+"t": 1794347887.921946,
+"session": "s327ee8bcdb4e4e97bd9becc164fc6f69",
+"role": "attempt"
+},
+{
+"id": "re9a905a043bc44879ee714802f39a7f0",
+"kind": "record",
+"seq": 316,
+"t": 1794349098.9561908,
+"session": "s47f0ee090a7841879f4d23e2e94825c7",
+"role": "explore"
+},
+{
+"id": "r7abc9af00c3846939cc40eca375b2a80",
+"kind": "record",
+"seq": 317,
+"t": 1794350943.7222323,
+"session": "s116844d230844d599a6044004537e3b4",
+"role": "attempt"
+},
+{
+"id": "r31a74ea35c7542aa9e1ba018c2ab2d28",
+"kind": "record",
+"seq": 318,
+"t": 1794352513.0106187,
+"session": "s876867bff2834220868f94df709c53e7",
+"role": "explore"
+},
+{
+"id": "o75751c50a4d7428ca7eabb9c33d69fbb",
+"kind": "organization",
+"seq": 319,
+"t": 1794353514.211155,
+"session": "s83273dea8d8c4c64bc476247296543c6",
+"role": null
+},
+{
+"id": "re0d48693a18d49d6b24b572471c4f756",
+"kind": "record",
+"seq": 320,
+"t": 1794354572.0040588,
+"session": "s21da1a52ce844729b05e4d50f1f8d51b",
+"role": "attempt"
+},
+{
+"id": "r77e234e1a47c4d92bf96c87938f3ac2d",
+"kind": "record",
+"seq": 321,
+"t": 1794354603.6033828,
+"session": "s36da5071f59a4d4aa66feab8fa718c87",
+"role": "attempt"
+},
+{
+"id": "rbd1947b0bdb344bc8174a34bb27bf066",
+"kind": "record",
+"seq": 322,
+"t": 1794357116.3263278,
+"session": "s2f4f3a6478ea4f2ab9f456ee4fbb657d",
+"role": "explore"
+},
+{
+"id": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"kind": "record",
+"seq": 323,
+"t": 1794359689.8245285,
+"session": "s7b56537e9b58481183479ca911f5a757",
+"role": "attempt"
+},
+{
+"id": "r3d0856b811f14f8c8d71335597036243",
+"kind": "record",
+"seq": 324,
+"t": 1794359738.8914013,
+"session": "sc9a5cb3ffd9b4b808eb54d3a4de1662c",
+"role": "attempt"
+},
+{
+"id": "r5c13beecd43540e5a455aa720e3fa1b5",
+"kind": "record",
+"seq": 325,
+"t": 1794360354.4302766,
+"session": "s76b4a17e6294419fac22fea60a773d80",
+"role": "attempt"
+},
+{
+"id": "of50543fb8b824279ba6e8eed155d44af",
+"kind": "organization",
+"seq": 326,
+"t": 1794360512.5990732,
+"session": "s5fbdeedbc4204857b96da63a55be2d1d",
+"role": null
+},
+{
+"id": "r491b04585706486f952d54b8ab0292e4",
+"kind": "record",
+"seq": 327,
+"t": 1794361518.4637988,
+"session": "sd790b8342aa3433e9d9195efd5547a3a",
+"role": "explore"
+},
+{
+"id": "r33475a7cfc744a5994c185e88660b710",
+"kind": "record",
+"seq": 328,
+"t": 1794362352.6331322,
+"session": "s360c589b2429420aa850754b484ffe34",
+"role": "attempt"
+},
+{
+"id": "r1f0c13faf9fb4bd7a0bbc90239d117a4",
+"kind": "record",
+"seq": 329,
+"t": 1794362576.8596637,
+"session": "sa961c931970c434fa34d2c7ed99f34e7",
+"role": "explore"
+},
+{
+"id": "r1292bab963e240679e8cc03f96886b78",
+"kind": "record",
+"seq": 330,
+"t": 1794362896.5370774,
+"session": "s8537ef330bac4a699b0751159e3184ad",
+"role": "attempt"
+},
+{
+"id": "r56110301e5d647df9f7b81f4a2851d38",
+"kind": "record",
+"seq": 331,
+"t": 1794363046.2392733,
+"session": "s5a0f41b5a543492daa47122d2dd590e5",
+"role": "attempt"
+},
+{
+"id": "oe723419671a648e8a112aa28a073d4c3",
+"kind": "organization",
+"seq": 332,
+"t": 1794363380.9605362,
+"session": "sc9ca44ee68304cde84684fde366d21da",
+"role": null
+},
+{
+"id": "r52e9c834df53433689568c7d2e1c4626",
+"kind": "record",
+"seq": 333,
+"t": 1794366275.1640792,
+"session": "s4708ef1a1f98491088a9029e48275daf",
+"role": "attempt"
+},
+{
+"id": "ob29055cb41974b9fbde53672916fd460",
+"kind": "organization",
+"seq": 334,
+"t": 1794367071.6142788,
+"session": "s4c730726570f43d58544afdddc66020a",
+"role": null
+},
+{
+"id": "r4868e309d6cd455086bb06b059252128",
+"kind": "record",
+"seq": 335,
+"t": 1794371217.0765293,
+"session": "s7682a6ef5bc4439682c5651fae5c5f8a",
+"role": "attempt"
+},
+{
+"id": "r51968231edad4eca95df3e1df0650a20",
+"kind": "record",
+"seq": 336,
+"t": 1794371675.765406,
+"session": "sec808efe787c47d299ee9dab60067bc0",
+"role": "attempt"
+},
+{
+"id": "rae1f20952bcc4e19bb256dca69412704",
+"kind": "record",
+"seq": 337,
+"t": 1794372139.7113657,
+"session": "s207e743647da479b84a60f9230a3afc4",
+"role": "attempt"
+},
+{
+"id": "r3b38ffdeb5f1449d8a2f0de50e25be06",
+"kind": "record",
+"seq": 338,
+"t": 1794374023.907328,
+"session": "sd1f96d9e4aea45b6a05b010958a3c564",
+"role": "attempt"
+},
+{
+"id": "ra92bcfc4066a431aa6a0e18e57c80ce5",
+"kind": "record",
+"seq": 339,
+"t": 1794374547.5050209,
+"session": "sd458f29a7fa6492891ad935a8c0881ef",
+"role": "explore"
+},
+{
+"id": "o1ef58c24017148f2879b5ccb3dd1a4e5",
+"kind": "organization",
+"seq": 340,
+"t": 1794375164.1417873,
+"session": "s1fbc75e7df454385a37bc1f40811abdf",
+"role": null
+},
+{
+"id": "rb6a2cd0e6d434a8eb512088619fe9be7",
+"kind": "record",
+"seq": 341,
+"t": 1794377091.2989314,
+"session": "sa7a122ca1089414b8ac7ba26ccc4c953",
+"role": "attempt"
+},
+{
+"id": "rb1d8cd535d9f4a9da52ab599dbc201a9",
+"kind": "record",
+"seq": 342,
+"t": 1794380343.1441565,
+"session": "se230a2619cf343e2a8d84f648b25c2ee",
+"role": "attempt"
+},
+{
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"kind": "record",
+"seq": 343,
+"t": 1794381046.2930894,
+"session": "s8eeff86bb60a4961b9fa2b2cc42c5135",
+"role": "explore"
+},
+{
+"id": "r5909c9e73b34492cbe5e197cf65c02e8",
+"kind": "record",
+"seq": 344,
+"t": 1794381259.086477,
+"session": "s275ad05d50784b139ee7695b2eb52c10",
+"role": "attempt"
+},
+{
+"id": "oea6138aa3604448791f17920e85196fa",
+"kind": "organization",
+"seq": 345,
+"t": 1794382304.3953626,
+"session": "s61df0c3f297d49ac87ad54d06dba57b6",
+"role": null
+},
+{
+"id": "r476e54dacca042b9a0c35ffc4fc4dff9",
+"kind": "record",
+"seq": 346,
+"t": 1794383358.3783605,
+"session": "sfac9cec5aa6b41ea89c49554420c2fa6",
+"role": "attempt"
+},
+{
+"id": "r781caf392d7d4a768a1f94cca4d5526d",
+"kind": "record",
+"seq": 347,
+"t": 1794383747.3118193,
+"session": "s4fd63c54d2174e698bd1ea25359a2511",
+"role": "attempt"
+},
+{
+"id": "r9119bc5055ed4a50a992ba0e7b2f4855",
+"kind": "record",
+"seq": 348,
+"t": 1794388230.2408793,
+"session": "sf9f361a88b494d1db9cd79285aff15a8",
+"role": "attempt"
+},
+{
+"id": "r4e1cfdc9529a4386aeb4c7be70a43f5a",
+"kind": "record",
+"seq": 349,
+"t": 1794388332.4370167,
+"session": "sbd0661da2c53453f8873a9d86cb93a48",
+"role": "explore"
+},
+{
+"id": "o9723efdbab6f4e85816694c2d7834de5",
+"kind": "organization",
+"seq": 350,
+"t": 1794389760.004906,
+"session": "s59ced08fb21c4180841c687a16bf6c72",
+"role": null
+},
+{
+"id": "rc6a434e535db47f3aaed1f2d12c01b94",
+"kind": "record",
+"seq": 351,
+"t": 1794390189.8757002,
+"session": "se3d78e511b4d417c827f0f60bc731a64",
+"role": "attempt"
+},
+{
+"id": "re71a735a86714433829f386919576084",
+"kind": "record",
+"seq": 352,
+"t": 1794390846.6009681,
+"session": "s95e3cdfba07846f3affd74174102bd19",
+"role": "attempt"
+},
+{
+"id": "rb269257b8a6f45d794a2c61cc6f4a144",
+"kind": "record",
+"seq": 353,
+"t": 1794392177.0646398,
+"session": "s36933721f0254ad68616ebe33a5da9b1",
+"role": "attempt"
+},
+{
+"id": "r1ec68d7ed3ea4d6bb54c94a00fdbaee8",
+"kind": "record",
+"seq": 354,
+"t": 1794392852.09727,
+"session": "s45f76d65557d40f1950f2195c1dad7d5",
+"role": "attempt"
+},
+{
+"id": "o78442ee5f9604ca4ac1dbe03dbaeeb55",
+"kind": "organization",
+"seq": 355,
+"t": 1794393727.1332846,
+"session": "s015409de55fb4281b46e71476b2003dd",
+"role": null
+},
+{
+"id": "r1ba4f0b071ee4976aeee489559c78774",
+"kind": "record",
+"seq": 356,
+"t": 1794394000.9923775,
+"session": "sc30064763308447493080e791119e5df",
+"role": "attempt"
+},
+{
+"id": "rd7967b4176d34f289a1f53eff5e04f89",
+"kind": "record",
+"seq": 357,
+"t": 1794394267.8362472,
+"session": "s31a1567b71264a2783b33087efc5a360",
+"role": "explore"
+},
+{
+"id": "r2230661c504a493db62c1667237bd14d",
+"kind": "record",
+"seq": 358,
+"t": 1794396517.7855842,
+"session": "s2249cb9999c843d4871d345a8d9aad8f",
+"role": "attempt"
+},
+{
+"id": "ra403b606031440aeb119bce744570594",
+"kind": "record",
+"seq": 359,
+"t": 1794396686.8771124,
+"session": "s6c6efbb81fb94819bd59f45b6463fc82",
+"role": "explore"
+},
+{
+"id": "o2317826781b544f3ad8ecddd064695f0",
+"kind": "organization",
+"seq": 360,
+"t": 1794397713.7912855,
+"session": "s11195b3beb3344299df9a814a1bb3621",
+"role": null
+},
+{
+"id": "ra35d81836909450e966ae9d46c246792",
+"kind": "record",
+"seq": 361,
+"t": 1794401363.315124,
+"session": "sdaf4654d2e48408a950b4d0a283dc247",
+"role": "attempt"
+},
+{
+"id": "r5c5975f9dcb745df85d2e8468cb118d2",
+"kind": "record",
+"seq": 362,
+"t": 1794401885.2771103,
+"session": "s1c46f1029c144b08a4c6d0e93b49c1b4",
+"role": "attempt"
+},
+{
+"id": "r77d0f738c25843378705604d7c6b5276",
+"kind": "record",
+"seq": 363,
+"t": 1794403895.5065844,
+"session": "sf64e5b3de23b45bcae8ed4beea3d542a",
+"role": "attempt"
+},
+{
+"id": "o44bf1c9aa938499ab7ba9b8919fa8c73",
+"kind": "organization",
+"seq": 364,
+"t": 1794404760.0623157,
+"session": "s93e238f4574a460da5e7eba4f62ad1e5",
+"role": null
+},
+{
+"id": "r0cece3445bf8401a8324877691060890",
+"kind": "record",
+"seq": 365,
+"t": 1794405163.039407,
+"session": "s75a81be7854a484382a2bb0ab10bc01e",
+"role": "attempt"
+},
+{
+"id": "r67b6dcfc67f44f118320203c15b7dd21",
+"kind": "record",
+"seq": 366,
+"t": 1794407298.3797796,
+"session": "s7e4da7a55d0a4b4c95245b1f49a644cc",
+"role": "attempt"
+},
+{
+"id": "rfcc6c6b3faaa47faa9a1499832f14d5d",
+"kind": "record",
+"seq": 367,
+"t": 1794407814.78584,
+"session": "sdf94179fbb004afbbe61375558c3ff14",
+"role": "explore"
+},
+{
+"id": "rc7f68d3e034646a2811a3816e2e6c704",
+"kind": "record",
+"seq": 368,
+"t": 1794407962.3630104,
+"session": "s4aedc27e68ac4105b87c4d051911d637",
+"role": "explore"
+},
+{
+"id": "o7439014c31004761b8122e4e42a82579",
+"kind": "organization",
+"seq": 369,
+"t": 1794408970.031112,
+"session": "s22884773129942188de33661c04e7037",
+"role": null
+},
+{
+"id": "raac2ee7c9f954723888af085df0469ee",
+"kind": "record",
+"seq": 370,
+"t": 1794409684.879906,
+"session": "sd85d8252130c48c891068d3552451b9c",
+"role": "attempt"
+},
+{
+"id": "r7c70f1638fad4c3ebd8eba7c95a05844",
+"kind": "record",
+"seq": 371,
+"t": 1794411863.5039904,
+"session": "sc87e9a5a9328440cbbd36fe0c8c97a6f",
+"role": "attempt"
+},
+{
+"id": "rc47c77916f6a466c9af8eef3ee559186",
+"kind": "record",
+"seq": 372,
+"t": 1794412056.7081482,
+"session": "s82ef83ae8dd9497fb4da4c13c077057b",
+"role": "attempt"
+},
+{
+"id": "rc5c7228871294e59b670906018a1a0f8",
+"kind": "record",
+"seq": 373,
+"t": 1794413497.0563023,
+"session": "sa9de2ac86b9043519e25ee8ab05ede78",
+"role": "explore"
+},
+{
+"id": "rddf23e71f1274d36ae07866033bdbc8b",
+"kind": "record",
+"seq": 374,
+"t": 1794413778.14998,
+"session": "se5f2bcca9e0e460fa10b5c3d7af5f2a9",
+"role": "attempt"
+},
+{
+"id": "r4be8d76f58d0402fae7456412de3a9e4",
+"kind": "record",
+"seq": 375,
+"t": 1794414287.674206,
+"session": "s315fb25cd7c34136b3dde1488707c1c3",
+"role": "attempt"
+},
+{
+"id": "o660a957cbba74880b432f6d732191e7a",
+"kind": "organization",
+"seq": 376,
+"t": 1794414476.592942,
+"session": "se56e200912c14e579f94842b09976770",
+"role": null
+},
+{
+"id": "r84781b32936a435690e320796be570c1",
+"kind": "record",
+"seq": 377,
+"t": 1794422628.573456,
+"session": "s2a081186a0d94c648746698d4141f8ec",
+"role": "explore"
+},
+{
+"id": "re5b24347f4c74957aa127feeaf9913d5",
+"kind": "record",
+"seq": 378,
+"t": 1794422940.526704,
+"session": "sb134c28fa42f4c56999665ee9179b4f7",
+"role": "explore"
+}
+],
+"records": {
+"r81e7051b155a41b3b4daad1893bb328a": {
+"id": "r81e7051b155a41b3b4daad1893bb328a",
+"t": 1793861705.4954176,
+"seq": 1,
+"role": "explore",
+"session": "s5f4427b149bb434a84832b700bdfcf1d",
+"title": "최대 변위 분포의 섬유 포화와 극한의 엄격한 단봉성"
+},
+"r15524fdd79e8424596ee63c8b9073784": {
+"id": "r15524fdd79e8424596ee63c8b9073784",
+"t": 1793861707.315722,
+"seq": 2,
+"role": "attempt",
+"session": "s891d1452d0e942cea8d13828e31a3a3c",
+"title": "최대 변위의 고정 꼬리: 선형화·극한·로그오목성과 단봉성의 장애"
+},
+"rf09e7ef06a264590b1c114c3e2b49b90": {
+"id": "rf09e7ef06a264590b1c114c3e2b49b90",
+"t": 1793864411.6007981,
+"seq": 3,
+"role": "explore",
+"session": "s9a27cbea65fe43f394d2d0d468607326",
+"title": "소인 주차 구간의 비단봉성과 큰 구간이 만드는 최대 변위 극한"
+},
+"r42d9a173849b49488786d1f4073d1d1e": {
+"id": "r42d9a173849b49488786d1f4073d1d1e",
+"t": 1793865169.813905,
+"seq": 4,
+"role": "attempt",
+"session": "s7a0d27b9d09444ff8e863bd1918ffc30",
+"title": "최대 변위의 움직이는 꼬리: 중첩 부분나무와 차분 포함배제"
+},
+"rccf1da82635540c49cd41c3b87cb84f3": {
+"id": "rccf1da82635540c49cd41c3b87cb84f3",
+"t": 1793865547.1218603,
+"seq": 5,
+"role": "attempt",
+"session": "sd840d4d48b654049849e26b64b32ce5a",
+"title": "소 주차 함수의 영구적 국소 골과 같은 최대 변위 극한: 지배 극점과 큰 소 조각"
+},
+"rfb9f618e36b6461bb5ab8a923fc1a2e6": {
+"id": "rfb9f618e36b6461bb5ab8a923fc1a2e6",
+"t": 1793865685.7975268,
+"seq": 6,
+"role": "attempt",
+"session": "s4f93e3cfeb05443489cb14c4d1cb5fe2",
+"title": "증가하는 꼬리의 균등 추정, 원시 블록의 골짜기와 극한 밀도의 오목성"
+},
+"r1aa0be604814486a83920af9bd27970b": {
+"id": "r1aa0be604814486a83920af9bd27970b",
+"t": 1793869030.9347012,
+"seq": 8,
+"role": "attempt",
+"session": "s884cdb52164941baa2594de5f179d794",
+"title": "최대 변위의 임계 국소 극한과 끝점에서 봉우리까지의 엄격한 오목성"
+},
+"r6bfc34ecdfaf41829957a830c9b89287": {
+"id": "r6bfc34ecdfaf41829957a830c9b89287",
+"t": 1793869222.968146,
+"seq": 9,
+"role": "explore",
+"session": "s13ebee8c05ed4c2eb6f8939d0e8dec9d",
+"title": "최대 변위의 임계 격자 차분과 큰 변위 차의 수 전체 분포"
+},
+"r7c635a7ba4cf462f9e0fbcdd95e7619a": {
+"id": "r7c635a7ba4cf462f9e0fbcdd95e7619a",
+"t": 1793869669.9312456,
+"seq": 10,
+"role": "attempt",
+"session": "se457f2d15a824b8a88f98576d1f2742e",
+"title": "최대 변위의 오목 꼬리와 두 부분나무 간섭의 첫 보정항"
+},
+"r91f681e023874480ac1166cba3966391": {
+"id": "r91f681e023874480ac1166cba3966391",
+"t": 1793872772.1208751,
+"seq": 12,
+"role": "attempt",
+"session": "sbfc5dbff0dc942d2aa0ba2c225728cbf",
+"title": "최대 변위의 전역 최빈점과 음의 모멘트의 끝점 전이"
+},
+"r39ea75d8cd1c4be4a12da9217bc3427e": {
+"id": "r39ea75d8cd1c4be4a12da9217bc3427e",
+"t": 1793873489.1899502,
+"seq": 13,
+"role": "explore",
+"session": "s7aa5070dc45e4c768f19c4be4971caf2",
+"title": "최대 변위 분포의 먼 왼쪽 영역: 최대 나무 사슬, 벌크 윤곽 n^(-1/2)g(λ)와 증가의 메커니즘"
+},
+"r7eeaca03f4c049dd9e535056c1b42af8": {
+"id": "r7eeaca03f4c049dd9e535056c1b42af8",
+"t": 1793875121.9672012,
+"seq": 14,
+"role": "attempt",
+"session": "se4ea2a021d534ac6a82d85fa1d5831ab",
+"title": "최대 변위의 양의 사슬 재귀와 고정 비율 가중 분포의 정확한 골 경계"
+},
+"r253365ac07a1481e85ab1b57a5b347af": {
+"id": "r253365ac07a1481e85ab1b57a5b347af",
+"t": 1793876840.252469,
+"seq": 16,
+"role": "attempt",
+"session": "s0a5460aea12d411b80cdc224b0f303a7",
+"title": "최대 변위의 선형 크기 희귀 사건: 고차 모멘트와 모든 벌크 구간의 로그 곡률 장애"
+},
+"r3e68860edddf4ff2bd3b8fc6a77356a1": {
+"id": "r3e68860edddf4ff2bd3b8fc6a77356a1",
+"t": 1793877232.927925,
+"seq": 17,
+"role": "explore",
+"session": "s264ccdaecf504e598a52dc6dbb9c23b0",
+"title": "여러 큰 나무의 위계와 최대 변위의 두 번째 벌크 점근식"
+},
+"ra88ba51bd28b432fa06bdb9478f1c284": {
+"id": "ra88ba51bd28b432fa06bdb9478f1c284",
+"t": 1793894053.9092221,
+"seq": 18,
+"role": "attempt",
+"session": "s0e6afd5d45d940fbb3c173ecc2f55522",
+"title": "최대 변위의 오른쪽 102항: 유리 인증과 최적 오목성 문턱 546"
+},
+"r39ba7c119c5b46dab844e50120eb3c41": {
+"id": "r39ba7c119c5b46dab844e50120eb3c41",
+"t": 1793894276.9724598,
+"seq": 19,
+"role": "attempt",
+"session": "s3055ca6ef12049bfbe33568e98b2207c",
+"title": "대칭 마지막 차 재귀와 모양별 최적 이차 증가 문턱"
+},
+"rd8387569a1404e28ade070b6515b0ddb": {
+"id": "rd8387569a1404e28ade070b6515b0ddb",
+"t": 1793894485.2154706,
+"seq": 20,
+"role": "explore",
+"session": "sd451acf3de354d2bb2ec6f3f8d8ed220",
+"title": "최대 변위의 명시적 왼쪽 증가와 절반 아래의 로그오목성 장애"
+},
+"r60a6f55766964d57a3d9b89199aefc19": {
+"id": "r60a6f55766964d57a3d9b89199aefc19",
+"t": 1793897490.7124405,
+"seq": 22,
+"role": "attempt",
+"session": "sf4d35e3050354c24a88b50f76093b17e",
+"title": "최대 변위의 크기 결합과 로그오목성 전달의 정확한 곡률 보정"
+},
+"r4f6dd55ac8f146edaa3618e8c1ff5bb1": {
+"id": "r4f6dd55ac8f146edaa3618e8c1ff5bb1",
+"t": 1793897764.7289023,
+"seq": 23,
+"role": "attempt",
+"session": "se31b1d88e4104d86a7149c075ee898cd",
+"title": "절반 문턱의 누적 전이와 허용 숲의 두 성분 조건부 법칙"
+},
+"r7c079be1d3fe429db8df1d53fd15b96e": {
+"id": "r7c079be1d3fe429db8df1d53fd15b96e",
+"t": 1793898391.2386622,
+"seq": 24,
+"role": "explore",
+"session": "seb60591aa5984a40bd84ce8e349c0246",
+"title": "허용 거리 증가에 따른 극점 군집과 소인 크기의 격자 집중"
+},
+"rca714427dc924c2eb26c4e0089bf2e49": {
+"id": "rca714427dc924c2eb26c4e0089bf2e49",
+"t": 1793900831.3067997,
+"seq": 26,
+"role": "attempt",
+"session": "s832aaaa6daf840e397ee52e60f3a2ee2",
+"title": "최대 변위 인접 차의 양의 경계 보정과 최적 섬유별 절단 오차"
+},
+"r6a8c8b6e11f24725b1125cddfd7ab4b6": {
+"id": "r6a8c8b6e11f24725b1125cddfd7ab4b6",
+"t": 1793901535.180088,
+"seq": 27,
+"role": "explore",
+"session": "se2b8b08e7a2d437d8069b3ec11a68d38",
+"title": "큰 변위의 결합 Cox 극한과 큰 부분나무 사슬의 Borel 갱신 근사"
+},
+"rd8b6f6e648b24814b1dccbad13a897e6": {
+"id": "rd8b6f6e648b24814b1dccbad13a897e6",
+"t": 1793901902.4509122,
+"seq": 28,
+"role": "attempt",
+"session": "se22aa989a0274420864745378f0d98ad",
+"title": "움직이는 극점의 전역 제어와 (n log n)^(3/4) 초기 증가"
+},
+"r9417914567b44529a1ab94f6e6f0c314": {
+"id": "r9417914567b44529a1ab94f6e6f0c314",
+"t": 1793904652.2195501,
+"seq": 29,
+"role": "explore",
+"session": "sf66bcf3e3dc0418a8606d53a77426830",
+"title": "큰 부분나무 경로의 거시적 종점 편향과 전변동 보정"
+},
+"r99471147fd16419ea9be95dedd715bc8": {
+"id": "r99471147fd16419ea9be95dedd715bc8",
+"t": 1793904973.4176176,
+"seq": 30,
+"role": "attempt",
+"session": "s252607e0f9204205b559ce842eee076f",
+"title": "잎 조건부 최대 변위의 반복 골과 정규 포화 전이"
+},
+"r03b7a27e5fb348e289d1a1de2b8cff7d": {
+"id": "r03b7a27e5fb348e289d1a1de2b8cff7d",
+"t": 1793905591.1426504,
+"seq": 32,
+"role": "attempt",
+"session": "s137d24847fd74bfab1ee946f028df4c8",
+"title": "크기 귀납 하한의 무한 실패와 작은 곡률 보정의 복원"
+},
+"r801ec2207be148f59da02b551bf49259": {
+"id": "r801ec2207be148f59da02b551bf49259",
+"t": 1793908127.1135883,
+"seq": 33,
+"role": "attempt",
+"session": "s774fe94d0f9846079f0e8e462e8e260e",
+"title": "첫 벌크의 임계 착지 보정과 조건부 모멘트의 두 척도"
+},
+"rb07e2081161047a1a4150c2a44aaf231": {
+"id": "rb07e2081161047a1a4150c2a44aaf231",
+"t": 1793908242.1613545,
+"seq": 34,
+"role": "explore",
+"session": "sb9daea70b2bb4902acb618cadd171479",
+"title": "역수 경계의 두 성분 전이와 로그·격자 경계 법칙"
+},
+"rc70a0941b86d45f0981cd2b5dcf797fb": {
+"id": "rc70a0941b86d45f0981cd2b5dcf797fb",
+"t": 1793908953.4757547,
+"seq": 36,
+"role": "attempt",
+"session": "s85f21fdeccd0414388bc3ed7551ecfaf",
+"title": "최대 변위의 임계 크기 전이와 모든 고정 차수의 부호 장애"
+},
+"r0cdc213bed9245d38c9bb1c278e65eee": {
+"id": "r0cdc213bed9245d38c9bb1c278e65eee",
+"t": 1793910239.8730614,
+"seq": 37,
+"role": "attempt",
+"session": "sa353a7e6623246dfa71bc8459bf36c81",
+"title": "임계 EGF 증분 D의 양의 평활화와 첫 벌크 점질량"
+},
+"r9559c8d4abde42578afe023b20a33148": {
+"id": "r9559c8d4abde42578afe023b20a33148",
+"t": 1793911571.8043537,
+"seq": 38,
+"role": "attempt",
+"session": "s2bb2f0e57f4f473684bce2720707422c",
+"title": "최대 변위의 혼합 곡률과 모든 큰 열의 두 번 부호 전환"
+},
+"r564c86a8c96f44b492d816486f8b209a": {
+"id": "r564c86a8c96f44b492d816486f8b209a",
+"t": 1793911613.7371569,
+"seq": 39,
+"role": "explore",
+"session": "s162f80ff85f343c4a4d2de9ee3cb6bef",
+"title": "최대 변위 동률의 격자 충돌률, 원 용량의 감마 법칙과 첫 분기 장애"
+},
+"r9881f3a52f664a8b9ca7ce45459e2cef": {
+"id": "r9881f3a52f664a8b9ca7ce45459e2cef",
+"t": 1793912940.5194929,
+"seq": 41,
+"role": "formalizer",
+"session": "sf09ee3b96dc1494283d43bab0b1e84ec",
+"title": "원 주차 과정의 Lean 기초와 임계 커널의 균등 오차"
+},
+"ra3e85e42f7574b4eb820ff9d46e63778": {
+"id": "ra3e85e42f7574b4eb820ff9d46e63778",
+"t": 1793912994.2097206,
+"seq": 42,
+"role": "attempt",
+"session": "s2f664b17b54b48f3aa2310532e053a6e",
+"title": "최대 변위 단봉성의 세 부분 분해와 접합 조건"
+},
+"rf6c29787c34a4ac3a1fbf708204ebd7f": {
+"id": "rf6c29787c34a4ac3a1fbf708204ebd7f",
+"t": 1793913298.640718,
+"seq": 43,
+"role": "attempt",
+"session": "sa105232df90b48a3a284a9c9c5b8bdda",
+"title": "단봉성의 두 구간 접합: 감소 뒤 증가 판정과 일반 Lean 보조정리"
+},
+"r0a9f3419ede448ccb5038e9f7f3d63af": {
+"id": "r0a9f3419ede448ccb5038e9f7f3d63af",
+"t": 1793913637.4077532,
+"seq": 44,
+"role": "attempt",
+"session": "s40b9efbaed7947cfb9a78565cffd8b3b",
+"title": "머묾 확률의 전역 상계, 임계 EGF 차분과 경계점 골의 반복"
+},
+"r87066eaeaaa041f3a98063907004d0c3": {
+"id": "r87066eaeaaa041f3a98063907004d0c3",
+"t": 1793914398.1871128,
+"seq": 46,
+"role": "explore",
+"session": "s4746dbcedc9d43ee99f5236933e9f47f",
+"title": "큰 변위를 만드는 원 차 번호와 상위 순위의 감마 혼합"
+},
+"r32d23ad6a5154ea9957d0236ad56d83c": {
+"id": "r32d23ad6a5154ea9957d0236ad56d83c",
+"t": 1793914765.7946393,
+"seq": 47,
+"role": "attempt",
+"session": "s0b57133a518f418f9109dc2df9d53cc4",
+"title": "첫 벌크의 실제 인접 증가와 고차 대각선 합산·절단점 진동"
+},
+"r3f7c0044b4cd4c9ab4d2eb6e6b098a31": {
+"id": "r3f7c0044b4cd4c9ab4d2eb6e6b098a31",
+"t": 1793915067.644593,
+"seq": 48,
+"role": "attempt",
+"session": "s80a1555984bf47a6804d0f5ce3393e8e",
+"title": "중앙 사슬 차분의 고정 절단 장애와 최상위 초과의 양의 모멘트"
+},
+"ra4cb62d49fdd4c5bbb8dd10256df6a85": {
+"id": "ra4cb62d49fdd4c5bbb8dd10256df6a85",
+"t": 1793915131.4233513,
+"seq": 49,
+"role": "attempt",
+"session": "sbe72674967d44f5ea13ab1745ca7e1b5",
+"title": "포화 곡률의 상쇄와 n/(log n)^3 초기 증가"
+},
+"r631b0f49624f4e2789e5efeff41560c8": {
+"id": "r631b0f49624f4e2789e5efeff41560c8",
+"t": 1793920186.1457527,
+"seq": 51,
+"role": "attempt",
+"session": "s75ea05e51146439e82982f6f5330e881",
+"title": "동률과 용량 포화의 정확한 상쇄, 막힌 최대값의 조건부 점프 법칙"
+},
+"r1646a6c446984f93ae139cffe4c61e19": {
+"id": "r1646a6c446984f93ae139cffe4c61e19",
+"t": 1793920239.2352278,
+"seq": 52,
+"role": "formalizer",
+"session": "s3ad471907df345c2a7f2e516c14d4eda",
+"title": "원 주차 개수의 임계 수렴과 용량 절단의 균등 오차"
+},
+"r5675b6b9379846c79906e0563741c2d1": {
+"id": "r5675b6b9379846c79906e0563741c2d1",
+"t": 1793921116.68765,
+"seq": 53,
+"role": "explore",
+"session": "s0adc05ca37d14e57bdf3f6dc7589cabc",
+"title": "고정 선호의 끝점 봉우리, 구멍 없는 지지집합과 Dickman 1/n 결합"
+},
+"r4f3093ea42584db88c69e41d7756f005": {
+"id": "r4f3093ea42584db88c69e41d7756f005",
+"t": 1793921215.9268265,
+"seq": 54,
+"role": "attempt",
+"session": "s047ecf02298f4f5d9a5e6027641f9fdd",
+"title": "중간 꼬리의 착지 흡수, 오른쪽 절반 단봉성과 조건부 Pareto 법칙"
+},
+"r243ba1675a2e49bebc28f681d818c334": {
+"id": "r243ba1675a2e49bebc28f681d818c334",
+"t": 1793921279.2999318,
+"seq": 55,
+"role": "attempt",
+"session": "sd07a28ffb02b4daf99627339641684d6",
+"title": "중앙 진입의 실제 증가와 위반 성분 보정의 선도계수"
+},
+"rf02ebbfb89c24507bea640400a0cd708": {
+"id": "rf02ebbfb89c24507bea640400a0cd708",
+"t": 1793922518.96655,
+"seq": 57,
+"role": "attempt",
+"session": "sa563935f77e744288d7a8333d9faaffd",
+"title": "복소 극점의 열핵 재합산과 32에 접근하는 초기 증가"
+},
+"rf145155c83204af0afe57b74c9d877d9": {
+"id": "rf145155c83204af0afe57b74c9d877d9",
+"t": 1793923240.159677,
+"seq": 58,
+"role": "attempt",
+"session": "s58d1ade0bfae47cdab5232d8cb2debda",
+"title": "지수 가중 끝점의 Borel·기하 법칙과 움직이는 첫 보정"
+},
+"rab9d424cedbc4065a1e7da24d8d0d4ac": {
+"id": "rab9d424cedbc4065a1e7da24d8d0d4ac",
+"t": 1793923688.6323874,
+"seq": 59,
+"role": "formalizer",
+"session": "s9fe56f34dd6549dcadaaa7fce5dfd383",
+"title": "원 주차 개수의 정확한 상수와 명시적 용량 오차의 Lean 증명"
+},
+"r066acf270b2d4b929fe6a3470831bf4a": {
+"id": "r066acf270b2d4b929fe6a3470831bf4a",
+"t": 1793923865.4497938,
+"seq": 60,
+"role": "explore",
+"session": "s130edca28db64119a4a8b68d3e4f796b",
+"title": "선호 경험과정과 극단 변위의 분리: 원 목록 재생과 결합 독립성"
+},
+"r2d892ef2f6004ccb9b24a37b4c7e4e6c": {
+"id": "r2d892ef2f6004ccb9b24a37b4c7e4e6c",
+"t": 1793928924.0136578,
+"seq": 62,
+"role": "attempt",
+"session": "s446a52fbfbc4440ea99ffbc96cfe4c2f",
+"title": "중앙 허용 사건의 활성 용량과 불균형 양끝의 법칙"
+},
+"r8fb2f8dab20d46669cd446424e06816e": {
+"id": "r8fb2f8dab20d46669cd446424e06816e",
+"t": 1793929067.0581038,
+"seq": 63,
+"role": "attempt",
+"session": "sc232c82ba26d409f9d14a2b023f74a40",
+"title": "막힌 최대값의 세제곱 임계 질량과 고정 동률 위계, 생성·손실 비율의 장애"
+},
+"r1ce49d195cdc4efd8c5eb844e46b3371": {
+"id": "r1ce49d195cdc4efd8c5eb844e46b3371",
+"t": 1793930323.4010367,
+"seq": 64,
+"role": "attempt",
+"session": "s33328f993eb34f0984c3e5c6380249d1",
+"title": "중앙 아래의 실제 인접 증가와 두 성분 곡률의 Beta 혼합"
+},
+"r0259f5d9323a4bc78d99c4dfd5a5f6a8": {
+"id": "r0259f5d9323a4bc78d99c4dfd5a5f6a8",
+"t": 1793931272.2739496,
+"seq": 65,
+"role": "explore",
+"session": "s6ba5d275b2a4415ca9e1f213dc721c68",
+"title": "총변위 기울임의 1/k 꼬리와 곡률 전이, 기하 끝점의 동률·도착 법칙"
+},
+"rd74283e691844e00a460fef9782a4ac5": {
+"id": "rd74283e691844e00a460fef9782a4ac5",
+"t": 1793931910.7155478,
+"seq": 67,
+"role": "attempt",
+"session": "sa9fb663c6e4f46279f2256d8911b4d4c",
+"title": "생성 교차곱의 전칭 실패와 동률 극한의 Poisson–감마 대기 분해"
+},
+"r971819e04e7a4f8fbd8bc606005c173f": {
+"id": "r971819e04e7a4f8fbd8bc606005c173f",
+"t": 1793932025.961428,
+"seq": 68,
+"role": "attempt",
+"session": "s3f788a73f3c34055a6843fec71c955bb",
+"title": "세 용량 원천의 √k·k^(1/4) 전이와 유계 격자 오차, 중앙 Green 환원"
+},
+"r0d1ddf7156974288b664fa853da7e420": {
+"id": "r0d1ddf7156974288b664fa853da7e420",
+"t": 1793932126.7296295,
+"seq": 69,
+"role": "formalizer",
+"session": "sfd7d63e20608497888378aaf5f45761c",
+"title": "원 마지막 차 점화식·임계 양의 적분과 크기 원천 합의 Lean 연결"
+},
+"r01f6c783c4264bbdac083a336f874890": {
+"id": "r01f6c783c4264bbdac083a336f874890",
+"t": 1793932485.1292179,
+"seq": 70,
+"role": "attempt",
+"session": "sd47a5097e8eb4cf6a2c32ad3b5b609b6",
+"title": "오른쪽 꼬리의 공통 인자 인증과 끝부분 섬유의 반복 골"
+},
+"r46886e4cf0b045458e91efb09dab7640": {
+"id": "r46886e4cf0b045458e91efb09dab7640",
+"t": 1793932816.7526953,
+"seq": 71,
+"role": "attempt",
+"session": "sd261cd281204432ea4d1114d32cd0c0f",
+"title": "소인 곡률의 유한 전파와 재진동, 고정 용량의 준선형 성장 보정"
+},
+"rd4015a89a3404ccebcb8f09326ca562b": {
+"id": "rd4015a89a3404ccebcb8f09326ca562b",
+"t": 1793934396.629761,
+"seq": 73,
+"role": "explore",
+"session": "s597f0f11406b4234a5bdcdb280cb3148",
+"title": "빈자리 가중 숲의 삭제 결합과 희박 충돌의 감소 중 곡률"
+},
+"rb4078e130bea4d869e90841be85ef06b": {
+"id": "rb4078e130bea4d869e90841be85ef06b",
+"t": 1793935591.3118725,
+"seq": 74,
+"role": "attempt",
+"session": "se7d6c6464f74400f9c99bd0ff6c23c8b",
+"title": "명시적 꼬리 오목성 128과 절단 계보의 두 분산, 용량 표시 Riccati 식"
+},
+"r4daca3d01e904b479b0ac377493ab068": {
+"id": "r4daca3d01e904b479b0ac377493ab068",
+"t": 1793935710.858768,
+"seq": 75,
+"role": "attempt",
+"session": "s777409b28c114f96aa82ba4ccfa89003",
+"title": "중앙 Green 원천의 유한 양의 부분합과 끝점 곡률의 유일 용량 문턱"
+},
+"r04772d0ba1864f2eac58b984d6d2d836": {
+"id": "r04772d0ba1864f2eac58b984d6d2d836",
+"t": 1793935891.1698437,
+"seq": 76,
+"role": "attempt",
+"session": "see50061f2c87477aac88b76f5fc0de31",
+"title": "사슬 삽입의 명시적 계승 오차와 12/5 오른쪽 꼬리 감소 인증"
+},
+"r7c568b0a5c464118b3f0e28cf33ba444": {
+"id": "r7c568b0a5c464118b3f0e28cf33ba444",
+"t": 1793936566.728316,
+"seq": 78,
+"role": "formalizer",
+"session": "sc926200592d84f71b670bfdfd637c90f",
+"title": "원 나무 좌표·세제곱 커널의 Lean 연결과 인접 잔여의 양의 평활화"
+},
+"re60556ca6da440148d9fe05ead70c94a": {
+"id": "re60556ca6da440148d9fe05ead70c94a",
+"t": 1793937673.5395758,
+"seq": 79,
+"role": "explore",
+"session": "s1cf8a01d8a4d4c449ddfc32da32f58cc",
+"title": "변위 제한의 모멘트 장애: 모든 머리 삭제, 계승 정규화와 최초 제곱 증거"
+},
+"r9e782f504fc44462b7d8c10988216622": {
+"id": "r9e782f504fc44462b7d8c10988216622",
+"t": 1793938549.2786076,
+"seq": 80,
+"role": "attempt",
+"session": "s446e9fdb5ca142c288926751b724fb6a",
+"title": "원 최대 변위의 120개 인접 비교: 유한 인증과 최적 시작점 143"
+},
+"rfec601e6a586454aa3637b2306dfd870": {
+"id": "rfec601e6a586454aa3637b2306dfd870",
+"t": 1793942965.9189284,
+"seq": 82,
+"role": "attempt",
+"session": "sed538f741c084d11ab6a7748c20827d9",
+"title": "중앙 원천의 움직이는 끝점 상쇄와 부드러운 절단·두 크기 용량 경계"
+},
+"r6c7b08949da14051bcc20c2f3a4d5b65": {
+"id": "r6c7b08949da14051bcc20c2f3a4d5b65",
+"t": 1793943006.8609366,
+"seq": 83,
+"role": "attempt",
+"session": "s7d1ef7f847464238b3a8ce2cadb63dc1",
+"title": "비막힘 확장의 확률적 감소와 분산·막힘 손실의 분리"
+},
+"r7ce1907a0c744faaa40076dd7b615577": {
+"id": "r7ce1907a0c744faaa40076dd7b615577",
+"t": 1793943168.514656,
+"seq": 84,
+"role": "attempt",
+"session": "sfcfe942cff604764a75d4742d6629ea2",
+"title": "임계 첫 보정의 정량 잔차와 O(1) 모드 위치, 서로 반대인 분위수 편향"
+},
+"r0b8c49e1605b4556977132f6180e8b50": {
+"id": "r0b8c49e1605b4556977132f6180e8b50",
+"t": 1793943657.6126587,
+"seq": 85,
+"role": "formalizer",
+"session": "s4053c08efda94892a3794850da8bbde4",
+"title": "실제 원천 약수렴에서 임계 증분으로 가는 Lean 연결과 정확한 커널 꼬리"
+},
+"r90feea8f4f5b45bdb60a1818991041c7": {
+"id": "r90feea8f4f5b45bdb60a1818991041c7",
+"t": 1793944246.2162511,
+"seq": 87,
+"role": "explore",
+"session": "s186c0207e42f4cd3b0706cd87579fd08",
+"title": "주차 병합의 흡수 집합분할과 포화 영역의 균형화 경계 여섯"
+},
+"refd31c987cb94022b5a43da2edcc3ed7": {
+"id": "refd31c987cb94022b5a43da2edcc3ed7",
+"t": 1793946407.785072,
+"seq": 88,
+"role": "attempt",
+"session": "sa84966cfd6ec439fa1b070e4abc357f4",
+"title": "고정 차수 Fourier 보정의 재합산과 상한 없는 초기 증가 상수"
+},
+"rcb773cfb0eff4433a67eedde4b95667d": {
+"id": "rcb773cfb0eff4433a67eedde4b95667d",
+"t": 1793947007.2770076,
+"seq": 89,
+"role": "attempt",
+"session": "sadcc00fa723b446ab2d06d50142c488a",
+"title": "두 음의 사슬로 넓힌 명시적 꼬리 오목성과 지속하는 크기 모멘트 장애"
+},
+"rb4b77718cd1546f0a90c357574d32f83": {
+"id": "rb4b77718cd1546f0a90c357574d32f83",
+"t": 1793947179.8699126,
+"seq": 90,
+"role": "attempt",
+"session": "sd0190744882246c69d22c98ec7bbcc31",
+"title": "효과적 감소 꼬리의 대수 인증과 실제 문턱의 두 항"
+},
+"r8b93634643354230ae2ae064bf45872f": {
+"id": "r8b93634643354230ae2ae064bf45872f",
+"t": 1793948176.3369882,
+"seq": 92,
+"role": "explore",
+"session": "s3dc6a15121824d97a504fcdb10e127e5",
+"title": "실제 빈자리의 정확 TV 등식과 고정 빈자리 꼬리에 남는 가중 골"
+},
+"r7eda8bac0baa40139f980d1e7b579704": {
+"id": "r7eda8bac0baa40139f980d1e7b579704",
+"t": 1793948582.0098212,
+"seq": 93,
+"role": "attempt",
+"session": "se62f5bc9ac8a4453b5450a59b0105c4a",
+"title": "원 주차 개수의 약수 합동식과 중앙 등호 배제의 범위"
+},
+"ra7615a01c92847ac9b5142c501e20d15": {
+"id": "ra7615a01c92847ac9b5142c501e20d15",
+"t": 1793949245.1957946,
+"seq": 94,
+"role": "attempt",
+"session": "sda3fb9efc5e14176a6b164c0ecc31ca8",
+"title": "중앙 동률·막힘의 상쇄와 Borel 퍼텐셜의 두 척도"
+},
+"r0af7f414c9ea4bc5847ce2e9f6d0c6a7": {
+"id": "r0af7f414c9ea4bc5847ce2e9f6d0c6a7",
+"t": 1793952818.4551294,
+"seq": 95,
+"role": "formalizer",
+"session": "s497e7ab822ea41b3af717cb4b064b9ba",
+"title": "임계 EGF 증분의 Lean 증명과 두 척도의 경계층"
+},
+"rc32d3c03942d485287dd91e4032df0d3": {
+"id": "rc32d3c03942d485287dd91e4032df0d3",
+"t": 1793954445.852829,
+"seq": 97,
+"role": "explore",
+"session": "sf78c6e73c27b4e55bddf3a213d4a6f62",
+"title": "임계 빈자리 구간 혼합의 세 보정항과 문턱 이동 조건부 법칙"
+},
+"rc189724c0f224289b5a66634a468442b": {
+"id": "rc189724c0f224289b5a66634a468442b",
+"t": 1793955653.4861794,
+"seq": 98,
+"role": "attempt",
+"session": "se120c2a5173f4a819626c4fdc52f9e09",
+"title": "오른쪽 차분의 지수 보정과 달성되는 정확한 계수 경계"
+},
+"r77983552ef714100b038b18367877aa6": {
+"id": "r77983552ef714100b038b18367877aa6",
+"t": 1793956182.9594336,
+"seq": 99,
+"role": "attempt",
+"session": "s53e83aac85514ed5ade36093ef8189be",
+"title": "곡률 선도 경계의 달성과 로그 보정의 전칭 양성"
+},
+"r6bc815eb5cbe4a0a9c09879db487f50f": {
+"id": "r6bc815eb5cbe4a0a9c09879db487f50f",
+"t": 1793958135.7563863,
+"seq": 100,
+"role": "attempt",
+"session": "s8edb63d7ea4548ee84fa23410daba6e4",
+"title": "Green 응답의 최대 라벨 숲·뿌리 집합 혼합과 용량 부호"
+},
+"rf665dbb20f0b47ecbc4ab206ff1cba58": {
+"id": "rf665dbb20f0b47ecbc4ab206ff1cba58",
+"t": 1793959597.024391,
+"seq": 102,
+"role": "attempt",
+"session": "s09803936f3464f508a4d979b500c6368",
+"title": "중앙 차분의 모든 4의 배수 비영성과 홀수 원천의 균등 2진 근사"
+},
+"r24b9bf114837488c8a376c830c0906f3": {
+"id": "r24b9bf114837488c8a376c830c0906f3",
+"t": 1793960021.5969706,
+"seq": 103,
+"role": "attempt",
+"session": "sb578001792534b54a540aee805bb62bb",
+"title": "고정 벌크 계층과 1/5 위 증가, 표시 고립 시간의 Ewens 혼합과 해석적 5잎 비교"
+},
+"r15cd43fd6d6e426cb323f11577ce1ece": {
+"id": "r15cd43fd6d6e426cb323f11577ce1ece",
+"t": 1793962876.8947074,
+"seq": 104,
+"role": "explore",
+"session": "sdc2e8279c36b49ef83e7b03c22c1fa16",
+"title": "선호 이동의 약우세·드리프트 Cox 전이와 모든 n≥29의 Gibbs 끝층 odds 역전"
+},
+"r003f2130d4e74177a54ea17459cde13e": {
+"id": "r003f2130d4e74177a54ea17459cde13e",
+"t": 1793964445.8216488,
+"seq": 105,
+"role": "attempt",
+"session": "sc9ca30b786124d96aadc16dbc3bf6a87",
+"title": "오른쪽 지수 비교의 열린 경계·실제 3차 보정과 유한 허용구간"
+},
+"rda45d0e66c4a44ab9e3968826f2b1495": {
+"id": "rda45d0e66c4a44ab9e3968826f2b1495",
+"t": 1793969532.8989491,
+"seq": 107,
+"role": "attempt",
+"session": "s282ce842b87c433ebb75c58cf8070f59",
+"title": "임계 동률 비율의 유일한 전환점·날카로운 승수 창과 문턱 용량 제거 구조"
+},
+"rc238726dcbfa439999132ab32b363fe6": {
+"id": "rc238726dcbfa439999132ab32b363fe6",
+"t": 1793972664.097704,
+"seq": 108,
+"role": "attempt",
+"session": "sf27a7f067d994ab9b057fe9ea11dbfbf",
+"title": "모든 고정 비율 위의 실제 인접 증가: 일반 영 잎 비교, 정수 경계의 등급 보조정리, 3q 교차 윤곽과 고정 계층 방법의 한계"
+},
+"rba2ecf4d2b3f4575b98dfa675e281842": {
+"id": "rba2ecf4d2b3f4575b98dfa675e281842",
+"t": 1793974965.4018383,
+"seq": 109,
+"role": "attempt",
+"session": "s6d9c4d5968f448daa4460d9c27b61564",
+"title": "중앙 차분의 유한 Hermite 적분: 첫 두 계수, n=1024의 다중근, 영 질량 Gaussian 윤곽과 중앙 증가의 n≤20000 검증"
+},
+"rde86d3dfd4b8447496d87b34b609fd8c": {
+"id": "rde86d3dfd4b8447496d87b34b609fd8c",
+"t": 1793976221.7554355,
+"seq": 110,
+"role": "explore",
+"session": "s489f7fc0f1d845e8b002558c11111297",
+"title": "최대 변위 차와 첫 빈자리: 정확한 방향 법칙, 임계 희귀 법칙과 벌크 연장"
+},
+"rc9e1d70257124d179d4846bbef534135": {
+"id": "rc9e1d70257124d179d4846bbef534135",
+"t": 1793978641.6800418,
+"seq": 112,
+"role": "attempt",
+"session": "s9ccffc614a1b4bef821cb48aa2591ed5",
+"title": "홀수 크기 중앙 차분의 2진 영점 구조: 깊이 17의 증명과 모든 활성 수의 영 잎 비교"
+},
+"ra4b7c441156b41fb84a35700c8da457e": {
+"id": "ra4b7c441156b41fb84a35700c8da457e",
+"t": 1793982568.4172432,
+"seq": 113,
+"role": "attempt",
+"session": "s98ca6fd4e33147129f15a53404392f29",
+"title": "복사 귀납 잔차 R_λ: Cayley 삭제 커널의 N^(1/3) Green 증폭, 임계 양성, 고정 r 극한과 n≈4000까지의 지도"
+},
+"rbeae3a3a598f4739b56050807801ab8f": {
+"id": "rbeae3a3a598f4739b56050807801ab8f",
+"t": 1793991079.4311376,
+"seq": 114,
+"role": "attempt",
+"session": "s875438b082e24bde91c51b80691b96ef",
+"title": "감소 측 로그오목성 Q의 사슬 영역 구조: 인접 문턱 조건부 법칙, 양의 응답 핵, 갱신 응답의 Palm 단조성·로그볼록성과 날카로운 경계 n=2k+1, n≤1000 정확 검증"
+},
+"ra420517677274c20a5f3477850b9b0f8": {
+"id": "ra420517677274c20a5f3477850b9b0f8",
+"t": 1793992354.1382127,
+"seq": 115,
+"role": "explore",
+"session": "sd366f96ebf334eeba594f03c3f0774a3",
+"title": "활성 용량의 드문 큰 군집: 얼린 압력·복합 Poisson 극한과 C=1 모멘트 비교의 일차 상쇄"
+},
+"r37c204b600284a66a472d2c1f2c86356": {
+"id": "r37c204b600284a66a472d2c1f2c86356",
+"t": 1793992782.471158,
+"seq": 116,
+"role": "attempt",
+"session": "se65f44d6c36a4933857bd7e3b3ddb349",
+"title": "중앙 간격 절의 두 차 동률–막힘 충분조건: 정확 하계, 16≤n≤60000 인증, 보조 계수 간극을 닫는 원 위 Cauchy 적분과 δ 극한에 독립인 최종적 중앙 증가"
+},
+"ra6587477cf954ac5a29043d2dab3be4e": {
+"id": "ra6587477cf954ac5a29043d2dab3be4e",
+"t": 1793993104.6173487,
+"seq": 117,
+"role": "attempt",
+"session": "sadf69be0552446ff8ccd33654dfeb74e",
+"title": "왼쪽 내부 절의 기울인 모멘트 경로: 원 동률·막힘 사전, 근사 동치성, n≤10000·k≤400 인증과 열 방향 구조"
+},
+"r6373c701c0bb48fca5803f5578c75e60": {
+"id": "r6373c701c0bb48fca5803f5578c75e60",
+"t": 1793994959.7833254,
+"seq": 119,
+"role": "attempt",
+"session": "s8b74ad85303647c0a3bcadd2ca9cf348",
+"title": "횡단 절의 유한 인증과 유한 머리 원천 부등식: 정확 재표현, 중앙 극한 4(1+Pr(ξ>t)), 고정 용량 종료와 숲 수술의 경계 폭 장애"
+},
+"re79cb4d5d2494b638a0de5f1e031c125": {
+"id": "re79cb4d5d2494b638a0de5f1e031c125",
+"t": 1793997922.566069,
+"seq": 120,
+"role": "attempt",
+"session": "sa026e036b0d0467dbc557449edf022e3",
+"title": "오른쪽 내부 절: 고정 꼬리 첫 보정의 양의 측도 표현, 모든 r의 ρ_∞>0, 유리 승수 후보의 유한·임계 검사"
+},
+"r8d6850af987244b6b8e2bd46d3078fe0": {
+"id": "r8d6850af987244b6b8e2bd46d3078fe0",
+"t": 1794004474.6481054,
+"seq": 122,
+"role": "attempt",
+"session": "s4a6a2e66afc44c96930673e58ff3a1f8",
+"title": "횡단 절의 중앙 왼쪽 두 대각선: 비선형 보정의 부호, 두 도함수 Green 하계의 k^(-1/3) 상대 여유, 큰 n에서 횡단 절·왼쪽 내부 절·왼쪽 절반 단조성의 일치"
+},
+"r1ce014438f1c4cd3bd057047ab90284e": {
+"id": "r1ce014438f1c4cd3bd057047ab90284e",
+"t": 1794005363.9490223,
+"seq": 123,
+"role": "attempt",
+"session": "sf56e2ecff89c44fa82d37a71aaf14dce",
+"title": "왼쪽 내부 절의 양의 재생 분해: 절단점 d≤k의 날카로운 양성, 보조 군집 극한과 주기 안 Gamma 법칙, 부호 전달의 실패와 고정 부모 변경 장애"
+},
+"r708d99cec0604c698f2362e68068ad8d": {
+"id": "r708d99cec0604c698f2362e68068ad8d",
+"t": 1794006703.0393877,
+"seq": 124,
+"role": "attempt",
+"session": "sea2b206e072b444abb9524f885502815",
+"title": "오른쪽 절반의 감소 뒤 오목성: 두 경계 응답 부등식 (S), 원천별 강화 (G)의 반증, 갱신 응답의 전칭 로그볼록성"
+},
+"red157d83c0e84651abc12eec04c33963": {
+"id": "red157d83c0e84651abc12eec04c33963",
+"t": 1794013192.2174084,
+"seq": 125,
+"role": "explore",
+"session": "seae874f1d74a4a3585eb2b003bd33e49",
+"title": "문턱 용량 자리 수 H의 구조: 압력 곡률, k자리 배타성, 두 Poisson 척도, 활성 군집과의 혼합 모멘트, 부호 있는 재생 계수의 Hermite–Airy 전환점"
+},
+"rc837b09e253f4b379a175f43ade14393": {
+"id": "rc837b09e253f4b379a175f43ade14393",
+"t": 1794018394.5904524,
+"seq": 127,
+"role": "attempt",
+"session": "saa2fc6547769469aa1b5a92f0ccef075",
+"title": "오른쪽 내부 절: 첫 보정의 볼록성, 유리 승수의 연속 감소, 절단 복사 잔차의 임계 양성과 유한 문턱 66/113, 두 충분조건과 n≤3000 구간 인증"
+},
+"r8f492b64e2e343c2bff4748d14e46128": {
+"id": "r8f492b64e2e343c2bff4748d14e46128",
+"t": 1794020089.0771117,
+"seq": 128,
+"role": "attempt",
+"session": "s95a43b96e6af4222b9a29a8fd438aad3",
+"title": "횡단 절: 고정 용량 중첩 쌍의 log n 응답과 중첩 유한 머리 원천, 원 선호 좌표 수술의 도달성·최적성과 단사 장애"
+},
+"r5ddf8a81137c482f8db8317e127cf4be": {
+"id": "r5ddf8a81137c482f8db8317e127cf4be",
+"t": 1794020180.153189,
+"seq": 129,
+"role": "attempt",
+"session": "se36fd5983c084ecc86353b8254d091ad",
+"title": "경계 응답 부등식 S_R의 명시적 꼬리: 원천별 비교 (G)의 k≥(22/5)m^(3/2)+15m 및 k≥2m^(3/2)+8m 정리, 집계 전달 (C)∧(J)와 계수 판정의 반증, (G)의 실제 성립 범위와 크기 편향 기전"
+},
+"r39d72f62177d4d419717cc7009587c45": {
+"id": "r39d72f62177d4d419717cc7009587c45",
+"t": 1794020315.7424572,
+"seq": 130,
+"role": "attempt",
+"session": "s625fd734b0ba445b943519fa3bb114b1",
+"title": "왼쪽 절반의 감소 뒤 로그오목성 Q_L: P⇒Q_L, 명시적 봉우리 하계, 큰 n에서 Q_L⇔LH⁺⇔P, 네 용량 충분조건과 그 중앙 상쇄"
+},
+"rc9aee436a1c34c438719b6c5d5ed79b5": {
+"id": "rc9aee436a1c34c438719b6c5d5ed79b5",
+"t": 1794022641.8128161,
+"seq": 132,
+"role": "attempt",
+"session": "s5411855f2de344bfbed1b35d6218d8b1",
+"title": "왼쪽 내부 절: 정수 구간 열 인증의 완성(121≤k≤500, 모든 n), n≤10000의 모형 없는 행 인증, 보조 계층 영 잎 비교의 쌍 조건 전체 영역"
+},
+"rce3dc75b9fc040fd8925fa3a73b0d753": {
+"id": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"t": 1794023407.9128346,
+"seq": 133,
+"role": "attempt",
+"session": "s09c11bfd544740dfa94154a3fc3d8083",
+"title": "중앙 간격 부분의 완결: 명시적 중앙 증가(n≥19999), 정수 구간 인증(n≤20000), root의 네 위치쌍 분할"
+},
+"r19de912cab694b4f803d322834e9500a": {
+"id": "r19de912cab694b4f803d322834e9500a",
+"t": 1794025401.219005,
+"seq": 134,
+"role": "attempt",
+"session": "s01a10dd7f2f9468593a67b41c929a695",
+"title": "오른쪽 절반 Q_R: n≤20000 정수 구간 인증, 고정 꼬리 여유의 명시적 하한과 감소 위치 여유의 꼬리 극한 구조, 양의 원천 원뿔·역크기 전달·막힘 모멘트의 장애와 Γ 계수 TP2의 가정 구조"
+},
+"r9d97cea47d494fa2949e4aed8088152c": {
+"id": "r9d97cea47d494fa2949e4aed8088152c",
+"t": 1794026132.169749,
+"seq": 135,
+"role": "explore",
+"session": "s4589050c39f143049bc4eea7483a4844",
+"title": "용량 조건부 활성 수의 기하와 드문 군집: 중심점 침투, 정확 Palm 분해, 아임계 Borel 응답의 전칭 비교, 첫 벌크의 평균 결손과 C=1 여유의 극한"
+},
+"r0dc57fab33ca460ba929db8de09b26a0": {
+"id": "r0dc57fab33ca460ba929db8de09b26a0",
+"t": 1794030024.280683,
+"seq": 137,
+"role": "attempt",
+"session": "s8400f373e3a74bfa8f852edb939f28a7",
+"title": "경계 응답 부등식 S_R: 임계 극한 H>0과 모든 충분히 큰 n의 S_R, 명시적 꼬리 k≥m^(3/2)+8m, 날카로운 전칭 경계비, ρ-형태 퍼텐셜과 사용률 2/3, Q_R의 증가 명제 W로의 환원"
+},
+"r656206ced5f04f29be24507607f74cc8": {
+"id": "r656206ced5f04f29be24507607f74cc8",
+"t": 1794030663.9731998,
+"seq": 138,
+"role": "attempt",
+"session": "s43db608a654b4aff87bee05e3a4b530b",
+"title": "횡단 위치쌍 부분 P_X: 오른쪽 절반 증가의 전칭 존재, P_X⇔P_L의 명시적 증명, 얼린 용량 평균의 전 크기 하계와 그 인증법의 한계"
+},
+"rcb97a9491b8d468884b87de300085a2f": {
+"id": "rcb97a9491b8d468884b87de300085a2f",
+"t": 1794031829.9071393,
+"seq": 139,
+"role": "attempt",
+"session": "s3300dad5702b46ea87f362dc7b2c59ee",
+"title": "오른쪽 내부 절의 세제곱 지수 승수: 절단 없는 복사 생성자의 닫힌 식과 계수 허용구간, 작은 자식 상계, 벌크·중앙 잔차 극한, 유한 계수 구간과 선형 장애, Q_R⇒P_R"
+},
+"rdc276812ff254431a63e3909875cbda6": {
+"id": "rdc276812ff254431a63e3909875cbda6",
+"t": 1794032472.3735774,
+"seq": 140,
+"role": "attempt",
+"session": "sa3f3e740e9d64261a8d170f47e13b329",
+"title": "Q_L⇔P_L(왼쪽 내부)의 전 크기 동치와 n≤10000의 Q_L; 얼린 용량의 무거운 자리 첫 모멘트: 모양별 최적 하계, 최댓값 위치·마지막 차로 본 성분 질량 조건, 뿌리 분할 항등식, 머리 기준의 반증"
+},
+"r690be93802cc4cd1af3b6d76cb16d4e5": {
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"t": 1794032970.1953306,
+"seq": 141,
+"role": "attempt",
+"session": "sb47d3273fdba4153bd5c41b6738b2f49",
+"title": "Q_R·오른쪽 내부 R·오른쪽 벌크 증가 W의 전 크기 동치: 명시적 꼬리 오목성 n≥r^{3/2}+12r와 임계 창의 명시적 증가 간격"
+},
+"r1892593d9770428d8e72e67d504d1601": {
+"id": "r1892593d9770428d8e72e67d504d1601",
+"t": 1794033593.2934105,
+"seq": 143,
+"role": "attempt",
+"session": "sd671f3807b6a4aa6800d8fa7e21e1d9e",
+"title": "왼쪽 내부 절: 균등 순열의 꼬리 공분산과 모멘트 부등식, 용량 전달 조건 (TC)·(Cov)와 그 첫 단계, 얼린 가족의 무거운 자리 하계, E_kT_k의 부호 지도, 왼쪽 모멘트 노드로의 환원"
+},
+"rc1cf1c1ab83c4c7cb4951c47ccab50a9": {
+"id": "rc1cf1c1ab83c4c7cb4951c47ccab50a9",
+"t": 1794037486.5255759,
+"seq": 144,
+"role": "explore",
+"session": "scfaf0408251147a78a467ee571e0d611",
+"title": "첫 벌크 정확 최대 변위 조건화의 구조: 성분 수 Poisson+Bernoulli 법칙, 잠재 임계 핵의 결합, 두 도착 시계와 n^(−1/3) 유한 크기 보정"
+},
+"r13b0b8f020b04cd8869347c2af7ff7e6": {
+"id": "r13b0b8f020b04cd8869347c2af7ff7e6",
+"t": 1794041252.0708249,
+"seq": 145,
+"role": "attempt",
+"session": "s8e53ab3fcb79405090635b98fb74e443",
+"title": "오른쪽 벌크 증가 W의 임계 가장자리: 첫·둘째 크기 보정 사슬 포락선에 의한 명시적 증가 띠(정리 A: r≥598, 0.73≤r^{3/2}/n≤6/5; peer 정리 A⁺: n≥20001에서 9/5까지), 정확한 잔여, 사슬 방법의 정량적 한계, 크기 방향 전파의 장애"
+},
+"rea42db53ccba4891a4d0a7b34c4709af": {
+"id": "rea42db53ccba4891a4d0a7b34c4709af",
+"t": 1794041374.970994,
+"seq": 146,
+"role": "attempt",
+"session": "s87bf3a0780dc4eccae41e58f07bad1ce",
+"title": "경계 응답 부등식 S_R의 집계 전달 경로: (J)의 대칭 상쇄와 k≥2m(m≥171)에서의 완결, (C) 전역 강화의 정수 구간 반증·아임계 극한, 용량 전이창에서 (C)의 선도 상쇄, 벌크 S 여유 계수"
+},
+"rb6423c6f2b0e4e599251501f82cdd681": {
+"id": "rb6423c6f2b0e4e599251501f82cdd681",
+"t": 1794041979.2116723,
+"seq": 148,
+"role": "attempt",
+"session": "s63cdcfe2b79a448596aa052b098698cf",
+"title": "변위 고정 선형 확장 비교: 마지막 차 위치와 큰 선호 용량 평균의 전 크기 정리, 공표 (SM_k)·정리 I의 해결, 이차 증가 문턱의 반감 N♯_k≈(log φ)k², 왼쪽 잔여 노드 W_L"
+},
+"r07f7e4f9c6094327b8d2e168cbcab6da": {
+"id": "r07f7e4f9c6094327b8d2e168cbcab6da",
+"t": 1794044154.0232282,
+"seq": 149,
+"role": "attempt",
+"session": "sb80c555b325f44558e3e2a81561411fd",
+"title": "오른쪽 내부 절 P_R: 실제 Γ 첫 두 열의 전칭 TP2와 모멘트 구조만으로의 TP2 실패, 전체 복사 잔차의 두 모멘트(접선) 판정과 (20001,600) 복구, 섬유 인접비 상계, 경계 소거 승수의 벌크 실패"
+},
+"r65023f72e94149a3a73b40d74626c233": {
+"id": "r65023f72e94149a3a73b40d74626c233",
+"t": 1794046455.252633,
+"seq": 150,
+"role": "explore",
+"session": "se6e167684c5044f78bf2122c2e25cf2a",
+"title": "최대값 나무 핵의 TP2 실패와 최대값 블록의 희귀 크기 법칙: 정확 반례·완전 부호 지도·로그 변곡점 경계, 성분 역 TP2의 n≤300 여유, 중간·바깥 블록 극한"
+},
+"r56698e9b653143e9aac3f93fad76cfed": {
+"id": "r56698e9b653143e9aac3f93fad76cfed",
+"t": 1794047138.9265358,
+"seq": 151,
+"role": "attempt",
+"session": "sbf2966ae50ed4b6cb6cece114028d96c",
+"title": "왼쪽 모멘트 노드: 무할인 모멘트의 정확한 나머지·문턱 자리 갱신 항등식, 모든 고정 크기비와 다극점 초기 범위의 점근적 양성(비명시적), 소인 블록 분해와 남는 이동 창"
+},
+"r47b23222bd0b4f3aaa86c0ff68139b8e": {
+"id": "r47b23222bd0b4f3aaa86c0ff68139b8e",
+"t": 1794052693.7569375,
+"seq": 153,
+"role": "attempt",
+"session": "sc08dcfc6e4384dc9815bf48d6438303d",
+"title": "변위 부분순서의 연속 구간 숲과 위치 여유: 숲별 증가의 장애, 선형 여유 하계와 누적 비 전달의 점근적 실패, 최소 극점의 정확한 O(1) 방정식"
+},
+"r7c26b8b96f164cd38f8beca514c4ff74": {
+"id": "r7c26b8b96f164cd38f8beca514c4ff74",
+"t": 1794053560.675374,
+"seq": 154,
+"role": "attempt",
+"session": "s30d1833d73d3401382cb736a3129f872",
+"title": "문턱 자리 평균의 첫 명시적 상수 상계 E[kH_k]≤(k/(k+1))^(k−1)n: 중첩 블록 경로의 수준 분해, 왼쪽 모멘트 노드 윗부분 해결, 왼쪽 명시 증가 문턱 (log φ)k²→0.2668k²"
+},
+"r3e8c9527a8a24dd1a66105050f79c8df": {
+"id": "r3e8c9527a8a24dd1a66105050f79c8df",
+"t": 1794053633.943043,
+"seq": 155,
+"role": "attempt",
+"session": "sb3e410d783234faa8b0196fc80df5068",
+"title": "경계 응답 부등식 S_R의 집계 경로 (C)∧(J): 막힌 최대값 인접비의 1/k 항, (C)의 벌크·임계·근접 꼬리 부호, 최종적 (C), S 여유의 세 척도 분해"
+},
+"r15df76b551d04c339b06b6f48cdb0891": {
+"id": "r15df76b551d04c339b06b6f48cdb0891",
+"t": 1794068086.8631825,
+"seq": 157,
+"role": "attempt",
+"session": "s39f7032da2ab430fa297b7177d80b076",
+"title": "왼쪽 내부 절의 10001≤n≤20000 부분: 두 독립 산술(정수 구간·IEEE 방향 반올림)에 의한 왼쪽 절반 엄격 증가 인증과 n≤20000의 모형 없는 P"
+},
+"r89888a14ef2d476fa18d96aba80fb962": {
+"id": "r89888a14ef2d476fa18d96aba80fb962",
+"t": 1794069000.2413173,
+"seq": 158,
+"role": "explore",
+"session": "s743a6b05cb554d4d89c4fa656dbd3a7e",
+"title": "행운 차 가중 최대 변위 행: 섬유 항등식과 원형 모형, 희박 극한의 증명된 비단봉 창, 행운 1대·비행운 2대 조각의 단봉성, 마지막 칸의 x=1 임계성과 시작점 12/(1−x), 고정 꼬리 칸의 x↔1/x 대칭, 균등 주차 꼬리 상수 θ_r의 닫힌 꼴과 모든 r의 단조성, 변위 가중·가법 조각의 단봉성 지도"
+},
+"r58b4caa693ea4de293444695413441e7": {
+"id": "r58b4caa693ea4de293444695413441e7",
+"t": 1794070999.5081441,
+"seq": 159,
+"role": "attempt",
+"session": "sf0af59cb00af499682d4bee85fe9dc4c",
+"title": "오른쪽 벌크 증가 W: 최대 나무 핵의 Abel 재배열과 두 번 기울인 핵에 의한 단일 입력 (G†)로의 환원 — 열 누적 증가 형식, 임계 가장자리까지의 명시적 여유, 열 질량의 EGF 곡선 적분"
+},
+"r22fae40b2c934387a66c75090daf6d80": {
+"id": "r22fae40b2c934387a66c75090daf6d80",
+"t": 1794073606.6544857,
+"seq": 160,
+"role": "attempt",
+"session": "s5c3e78372c36406db7b0bfbf5492b641",
+"title": "왼쪽 내부 절(n≥20001)의 소인 분해 연구: 소인 용량 곡률의 창(2≤k≤300 정확 부호 인증), 첫 왼쪽 대각선과 띠의 양의 전달 항등식, 출판 식과의 대응 정정 (절 미해결)"
+},
+"rb7effe026f8f4ede880c2b723eef9ff4": {
+"id": "rb7effe026f8f4ede880c2b723eef9ff4",
+"t": 1794079782.7638183,
+"seq": 162,
+"role": "attempt",
+"session": "s718bc0bbb5244514b7ec159356fea6e9",
+"title": "문턱 자리 밀도 𝔓_k(n)=E[kH_k]/n의 정확한 구조: 도함수 항등식의 유한 크기 공식, 소인 절단으로 무조건화한 큰 n 극한의 명시 상계, W_L♭의 유한 크기 전달 분할, 원 위 감김수에 의한 열별 인증(열 501–840 완결)"
+},
+"rad00a59b22bd42a5a16cc0aa67e8841a": {
+"id": "rad00a59b22bd42a5a16cc0aa67e8841a",
+"t": 1794083469.5653832,
+"seq": 163,
+"role": "attempt",
+"session": "s8b670cffaeb34cd8ba32484edc6cb343",
+"title": "왼쪽 모멘트 아래 노드 LM♭: 막힌 비 하계(보조정리 R)와 골격 수준 자기일관 상계로 E[kH_k]≤kα+βn(β=0.0985, k≥6098에서 β≤1.131k^(−1/3)), 해결 범위 n≥0.13k²(k≥501)·0.08k²(k≥1855)·0.055k²(k≥6098)·1.3k^(5/3)(k≥6098), 조상 경로 사슬의 구조와 남은 노드 LM♭♭"
+},
+"r23f10e9249bc4c22ae7b512bcfcfb5cf": {
+"id": "r23f10e9249bc4c22ae7b512bcfcfb5cf",
+"t": 1794089025.221618,
+"seq": 164,
+"role": "attempt",
+"session": "s44c1e315d31049bc8167f4c521137219",
+"title": "정확 결손 확률의 크기 방향 하계(정리 A)와 오른쪽 벌크 증가 W의 상수 정밀도 환원: (G†)의 무조건 성립, 나무 기저항의 면적 이득 분해, 열 값과 Borel 모멘트만의 충분조건"
+},
+"rbb61ab57893641fda52747cfd192c2ee": {
+"id": "rbb61ab57893641fda52747cfd192c2ee",
+"t": 1794094728.8681126,
+"seq": 165,
+"role": "attempt",
+"session": "sf8b9267bc7c142fa9ca519a3f566b2a7",
+"title": "왼쪽 잔여 W_L: 열 501–2000의 완결(직접 재귀의 두 산술 인증)과 용량 가중 결과 순열의 표시 생성함수·착지 해석·경계점 단사"
+},
+"r059f11ed8b6a47e7bd97bf2ed60c1c00": {
+"id": "r059f11ed8b6a47e7bd97bf2ed60c1c00",
+"t": 1794096802.1312616,
+"seq": 167,
+"role": "explore",
+"session": "s315652a3f61c4853bbecb05cf486ecaa",
+"title": "최대 변위의 누적·꼬리 로그오목성: 누적 로그오목성의 첫 반례 n=780과 극한 꼬리에 의한 국소화된 최종적 실패, 꼬리 로그오목성(IFR)의 n≤20000 성립·극한 DRHR·큰 n 환원, 승산비·열 재정식화와 열 단조성 CMc의 반례"
+},
+"r59c82d760e9c4ddcaae2d587db28a914": {
+"id": "r59c82d760e9c4ddcaae2d587db28a914",
+"t": 1794103154.606649,
+"seq": 168,
+"role": "attempt",
+"session": "sbe95d6e740e3422e9b49076af6e768ae",
+"title": "Q_R의 n≤50000 인증과 중간 창 첫 크기 보정의 증명: 최대 나무 사슬 열 재귀의 양의 합성곱 형태와 사전 오차 해석, 생산자 가설의 정정과 증명(정리 M1–M3, 균등 질량 전개 M2u, 왼쪽 꼬리 정리 LT), 벌크 차분의 추측 D2"
+},
+"r8e6678c1a61d475797e7df39b41e800e": {
+"id": "r8e6678c1a61d475797e7df39b41e800e",
+"t": 1794103274.757547,
+"seq": 169,
+"role": "attempt",
+"session": "s87f2924b60d34a6eab2fdd07a507c4e5",
+"title": "W_L♭ 블록 841≤k≤2000, 20001≤n≤⌈0.836k^{3/2}⌉의 정수 전용 재인증과 열 501–541의 부동소수점 모형 없는 완결: b_(n,k−1)<b_(n,k)의 두 독립 구간 인증(IEEE 방향 반올림·정수 전용)과 여유의 단일 극 구조"
+},
+"r475ada30aba5458c84e522929d6eaeb2": {
+"id": "r475ada30aba5458c84e522929d6eaeb2",
+"t": 1794119403.2678428,
+"seq": 170,
+"role": "attempt",
+"session": "s6f45e29e50fa4afb86175af930969618",
+"title": "중앙 왼쪽 띠 1≤n−2k≤40에서 왼쪽 잔여 𝓡_L의 완결: 사슬 초과 항등식·강화한 쌍별 볼록성 판정·중앙 명시 경계의 이전, 같은 띠의 왼쪽 모멘트 핵 LM♭♭, 그리고 공표 부등식 d≥𝒦″−J^G의 도달 한계 n−2k≈2k^(2/3)와 참 표지 J로 본 장애의 위치"
+},
+"ra52a3c060b0f40b7970d351167c347d7": {
+"id": "ra52a3c060b0f40b7970d351167c347d7",
+"t": 1794125526.2033365,
+"seq": 172,
+"role": "explore",
+"session": "s3039b7d2962049468f436da006c9c90b",
+"title": "평균 활성 자리 수의 기울임 항등식과 오른쪽 절반의 늦은 최댓값 사슬: 탐색 결과의 재검증·정정, 정확한 사슬·블록 공식, 𝒮_k–Δ_k 격차 전개와 최빈점 상수"
+},
+"ra4c01fca85d24f5cb35be1ec80d8e1c8": {
+"id": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"t": 1794144746.934579,
+"seq": 173,
+"role": "attempt",
+"session": "sc917874fb9f740c28add5985b0f5e905",
+"title": "오른쪽 내부 R의 임계 창: 두 차 동률–막힘 Lagrange 표현의 단위원 지배·호 위 Borel 유한합의 절단 표현과 1.4≤(n−ℓ)(ℓ+1)^(−2/3)≤10, ℓ≥10000의 구간 산술 증가 인증(정리 D), peer 감사·정정, 남은 오른쪽 잔여 W♯"
+},
+"r89eb039f714148a8b5c470572e07305f": {
+"id": "r89eb039f714148a8b5c470572e07305f",
+"t": 1794146062.6692863,
+"seq": 174,
+"role": "attempt",
+"session": "sfdf7a465bf4b4355a3d84f1e3592e159",
+"title": "W_L♭의 단일 극 영역: 모든 k≥2001, n≥⌈2k^(3/2)⌉에서 b_(n,k−1)≤b_(n,k) — 극 꼬리의 Laplace 항등식(정리 A·B), 제한 모멘트 상계 결함의 발견·수정과 k-블록 재인증, 점근 사슬, 남은 왼쪽 창 𝓦={k≥2001, max(2k+41,20001)≤n≤⌈2k^(3/2)⌉−1}"
+},
+"r1b79fabdacb045ecb15f82ec513d5641": {
+"id": "r1b79fabdacb045ecb15f82ec513d5641",
+"t": 1794153254.556697,
+"seq": 175,
+"role": "explore",
+"session": "s6a683c2e58bc4f5f947204d4485c6c82",
+"title": "상대 둘째 차분의 k-단조성이 깨지는 구조: 계층 윤곽 Φ_r″/Φ_r와 중앙 창의 S=X⁽¹⁾+X⁽²⁾ 밀도 — S1·SL·P⁺의 유한 반례와 '충분히 큰 모든 n'의 실패 정리"
+},
+"r8a9b11e78fec43758f25737fc14c961e": {
+"id": "r8a9b11e78fec43758f25737fc14c961e",
+"t": 1794154586.3409915,
+"seq": 177,
+"role": "attempt",
+"session": "s6fcff7f57ca24dd2ba075b75d07d0e12",
+"title": "오른쪽 벌크 증가 W의 증명: 경로 A의 닫힌 꼴 하계(생산자)와 꼭대기 행 흡수·α=0·역방향 Borel 걸음에 의한 열 1차 모멘트 균일 상계(peer)"
+},
+"rf451d83e888a4e1886ca1950b9a819a1": {
+"id": "rf451d83e888a4e1886ca1950b9a819a1",
+"t": 1794158059.2397974,
+"seq": 178,
+"role": "attempt",
+"session": "sef65cc3d9a9741058917e86170175249",
+"title": "노드 X′(유한 크기 전달)의 증명: 극에서의 소인 블록 갱신열, 단위원 Fourier 인증과 다섯 층의 덮개 (모든 k≥501)"
+},
+"r6b37c7e5758a4664aabb0af7f2de82d9": {
+"id": "r6b37c7e5758a4664aabb0af7f2de82d9",
+"t": 1794159193.2633016,
+"seq": 179,
+"role": "attempt",
+"session": "s6f37efffd70c41c690b793c032cb63ce",
+"title": "왼쪽 창 𝓦의 벌크-왼쪽 절: 띠 n−2k≤102의 완결(정리 4.A·4.B), 꼬리 보조정리 Pr_(k+a−1)(M≥k)≤C·a^(3/2)/k, 중첩 사슬의 정확 항등식, 그리고 둘째 층에서 모멘트 판정의 여유가 사라지는 이유"
+},
+"r20df549f99594cfcab9fa8acbfaeac74": {
+"id": "r20df549f99594cfcab9fa8acbfaeac74",
+"t": 1794160706.5200145,
+"seq": 180,
+"role": "attempt",
+"session": "sf7aae073504d4974a0a8aea4650777ff",
+"title": "오른쪽 절반의 동률 이득과 막힘 손실이 사는 곳: 사슬 급의 끝점별 정확 분해, 문턱 크기 자식의 극한 위험률, 생산자 추측 C2의 정수 반증, root 전체 시도의 재발견 감사"
+},
+"r10ff8c2a7fb244dab041d6a6b080cb50": {
+"id": "r10ff8c2a7fb244dab041d6a6b080cb50",
+"t": 1794162725.0859914,
+"seq": 182,
+"role": "attempt",
+"session": "s1e65745e3f634134853757d406971c54",
+"title": "왼쪽 모멘트 핵 LM♭♭: 마디별 분산–포화 분해, 유한 인증과 극 영역의 닫힘으로 확립된 부분 𝓢_M과 남은 창 𝓦_M={k≥2001, max(2k+41,10001)≤n≤⌈2k^(3/2)⌉−1}, 그리고 참 평균으로 본 1차 모멘트 판정의 실제 도달 범위"
+},
+"r5f5cf7334317436bab893b06bcd6d0b3": {
+"id": "r5f5cf7334317436bab893b06bcd6d0b3",
+"t": 1794166847.6956816,
+"seq": 183,
+"role": "attempt",
+"session": "s3be884cd9eec48709913668a95bf186d",
+"title": "오른쪽 두 항 부등식 X의 증명(2E2_(n,c)>B_(n,c−1), c≥25001, x̂>10): 중앙 명시 증명의 η-균일 확장과 구간 산술 덮개, W♯의 독립 둘째 증명, 그리고 X가 실제로 성립하는 범위"
+},
+"r359ba037a56b454189f91903dfae7782": {
+"id": "r359ba037a56b454189f91903dfae7782",
+"t": 1794171080.470294,
+"seq": 184,
+"role": "explore",
+"session": "sdcf07882555748b58d79274f370096d0",
+"title": "왼쪽 창에서 '두 모멘트 상쇄'는 무엇인가: 극점 영역의 누율 항등식(정확 극한 비율 검산), 중앙 n=2k의 배경×군집 분해와 중앙을 가로지르는 정합 공식, 탐색 기록의 정정"
+},
+"r317289416fc34a7fa905902285e74f05": {
+"id": "r317289416fc34a7fa905902285e74f05",
+"t": 1794179241.8735425,
+"seq": 185,
+"role": "attempt",
+"session": "sbb83db0e3f8a478bace8b410d520016c",
+"title": "왼쪽 창 𝓦^(>102)의 꼭짓점별 원천 표현과 한 걸음 판정: 정확 항등식의 검증·정정, 흡수 귀납과 국소 충분조건 Q⋆, 음의 원천의 Borel 극한, 중앙 옆 띠의 큰 k 지도"
+},
+"rfab92df6ddf140f7a244c480fa6c49db": {
+"id": "rfab92df6ddf140f7a244c480fa6c49db",
+"t": 1794179600.1510465,
+"seq": 186,
+"role": "attempt",
+"session": "s662af04a9b2d4a65b11ee596660520db",
+"title": "왼쪽 내부 L의 극 영역: 원 차분의 극/과도 분해, 극 압력 둘째 차분 D2_k의 덩어리 공식·균형 항등식·활성 밀도 재정식화, 모멘트 통계의 극 극한, 그리고 크기 방향 전달의 실패(열 비의 다층 감소, TP2A-left 반증)"
+},
+"r3889c6ac15e94743b3cf11ac83cd22d7": {
+"id": "r3889c6ac15e94743b3cf11ac83cd22d7",
+"t": 1794194083.6579561,
+"seq": 189,
+"role": "explore",
+"session": "s3db27e57234e43629daebdbf2d2b2852",
+"title": "왼쪽 절반 둘째 차분의 지도와 두 점근 그림, 그리고 첫 층 소인 생존 비율 2λ−1의 증명과 유한 크기 정확성의 이유"
+},
+"r207f12442349469083b31851e184ec65": {
+"id": "r207f12442349469083b31851e184ec65",
+"t": 1794195295.2145402,
+"seq": 190,
+"role": "attempt",
+"session": "s1ee4cef90d1144efbe9a04e083e67eee",
+"title": "왼쪽 창의 한 걸음 양: 대각선 접기와 공표 단조성이 주는 원천 하계, 하나의 생존 감소 부등식(DIP), 극 영역의 갱신 인증서로 닫히는 Q⋆의 열 2001–3130, 그리고 생존 확률의 크기 차분"
+},
+"r88bed8a53c7c40e5a706ec7aa2a1e118": {
+"id": "r88bed8a53c7c40e5a706ec7aa2a1e118",
+"t": 1794210517.4279296,
+"seq": 191,
+"role": "explore",
+"session": "s6768e452a7554d02b3f028d8291ef31b",
+"title": "최대 변위 분포의 단봉성은 무엇에 관한 명제인가: 섬유의 톱니와 혼합 평균, 자손 법칙을 바꾼 비교, 그리고 k/σ² 척도 붕괴"
+},
+"r43289845101546f48cb930a51c4cc5c3": {
+"id": "r43289845101546f48cb930a51c4cc5c3",
+"t": 1794214280.4377334,
+"seq": 193,
+"role": "explore",
+"session": "sc6d520c4ee9e4826bf9bfa02b11665a9",
+"title": "왼쪽 절반은 무엇이 다른가: 블록의 여집합이 무거운 꼭짓점을 품기 시작하는 곳 — 무거운 나무의 급 분해, 오른쪽 절반 블록으로의 정확 전달, 여집합 생존 기울임, 오른쪽 장치의 왼쪽 판"
+},
+"ra9c7bb2697594d0ebcc9457a212031d2": {
+"id": "ra9c7bb2697594d0ebcc9457a212031d2",
+"t": 1794215563.923288,
+"seq": 194,
+"role": "attempt",
+"session": "sef212e8a93ab4c68b4861370d36edd4b",
+"title": "왼쪽 창 둘째 층(2k+1≤n≤3k−1)의 소인 블록 구조: 공표 항등식 D=F_k²B_k 위의 두 정확한 환원과 그 경계가 결손 밀도의 최빈점 y₀=0.5996에 놓이는 이유. 소인 임계 국소 극한, 창 끝 부호 변화의 유일성, 결손 짝 여유의 극한(정리 C가 ν=w_k+4에서 시작하는 이유)을 포함한다 (절 미해결)"
+},
+"r237079f5cca44fbda9f14d5ba54f10ab": {
+"id": "r237079f5cca44fbda9f14d5ba54f10ab",
+"t": 1794217137.1090693,
+"seq": 195,
+"role": "attempt",
+"session": "s270fc095678548f9870d63ff9bfe6d68",
+"title": "왼쪽 모멘트 창 𝓦_M: 두 모멘트 항의 갱신열 표현, 열 2001–3131의 자급식 인증(감사·보수), 여유가 생기는 곳(뿌리 영역)과 부등식이 거짓인 곳(행 최빈점)"
+},
+"r79ee9e020cbf4231881b540fa262eb31": {
+"id": "r79ee9e020cbf4231881b540fa262eb31",
+"t": 1794218635.0850825,
+"seq": 196,
+"role": "attempt",
+"session": "s314e3e13758c4601a39e5a1cf2d608e4",
+"title": "노드 Q⋆의 원천 쪽 완결과 가운데 영역의 첫 층 부등식 하나로의 환원, 그 부등식의 점근 증명: 수준 질량의 망원 합, 꼭대기 뿌리의 무게, 위험률 항등식, 원천 선형 몫과 FL의 결합, 첫 층 대각선 분해"
+},
+"r3ee8ab13be774a729c867815cf30693f": {
+"id": "r3ee8ab13be774a729c867815cf30693f",
+"t": 1794219540.9091341,
+"seq": 197,
+"role": "attempt",
+"session": "se8ae8dbb1eed42f89c770a1c4c6dc879",
+"title": "왼쪽 창의 한 걸음 차를 무거운 뼈대로 보기: 정확한 분해, 둘째 층의 여유가 실제로 사는 곳(드문 문턱 군집), 그리고 크기 방향 위험률의 층 경계가 요구하는 것"
+},
+"r5bbc534e59964320bfca440a19bf3be8": {
+"id": "r5bbc534e59964320bfca440a19bf3be8",
+"t": 1794219749.8192837,
+"seq": 198,
+"role": "attempt",
+"session": "s36b5200e4ba44e2bb8f93a3e4b3e0b74",
+"title": "W_L과 크기 방향 생존 위험률: 임계 창 결손 확률의 명시 경계, 첫 층 위험률의 명시 하계와 그 기원(되먹임과 문턱 주입), 강제 잎 부착의 Beta(2,2) 극한과 모든 층의 정확 재귀"
+},
+"r8456f59b3726483c95f4a74a498ace7d": {
+"id": "r8456f59b3726483c95f4a74a498ace7d",
+"t": 1794220969.0939205,
+"seq": 200,
+"role": "attempt",
+"session": "s9ec857d44ad84fb98287e70afcb8b1e5",
+"title": "왼쪽 내부 L의 중앙과 띠: 한 단계 재귀의 대각 짝짓기, 띠의 부임계 갱신, 그리고 첫 층 생존의 기하 탈출 하계, 감소율의 극한, 첫 층 끝을 건너는 DIP"
+},
+"rad9d6055bb0c49f69bbf4cefdfbf4c7f": {
+"id": "rad9d6055bb0c49f69bbf4cefdfbf4c7f",
+"t": 1794222577.586743,
+"seq": 201,
+"role": "attempt",
+"session": "s80e40306a91c468fb9c20eb34be1f96e",
+"title": "왼쪽 모멘트 노드 LM: 두 큰 항이 같아지는 까닭(창 걸음의 오름 계승 모멘트 = k×문턱 질량), 첫 층·둘째 층 여유의 조각과 중앙 창 윤곽 4f_S/E(S−t)_+, 그리고 τ_k의 고장률 — 왼쪽 성장 재귀, 첫 층 원천 부호, 모든 크기의 사슬 하계, 명시 상수의 장애, 초곱셈성의 NBU 읽기"
+},
+"re004ae40169f40b28c69e9bb30b7b13a": {
+"id": "re004ae40169f40b28c69e9bb30b7b13a",
+"t": 1794223011.1907609,
+"seq": 202,
+"role": "explore",
+"session": "sd9ad5b75a4d144ebbaf69e737e642b65",
+"title": "층과 극은 같은 소인 블록 법칙을 다르게 읽는다: 소인 층과 숲 전개를 잇는 로그 항등식, 잎 수 격자의 두 인계 척도, 1/σ 읽기가 놓치는 임계 창, 첫 영점 쌍이 정하는 둘째 층"
+},
+"r7e396da5c85e4c7a9bb41fbb8eb4966b": {
+"id": "r7e396da5c85e4c7a9bb41fbb8eb4966b",
+"t": 1794223383.2673357,
+"seq": 203,
+"role": "attempt",
+"session": "s83e82623a1c74d55b415cf3965102aa3",
+"title": "Q⋆(k≥3131)의 원천 쪽에 이르는 두 번째 길과 그 구조: 경계점 읽기(정리 A), 무게를 낮춘 망원(정리 T), 쌍 사상에 의한 반감의 전파(정리 I), 첫 층의 기하 하계(보조정리 GL), 공표 SRC 뒤에 노드에 남은 것 (노드 미해결)"
+},
+"r706463207544414c9759c2c512ec501e": {
+"id": "r706463207544414c9759c2c512ec501e",
+"t": 1794226427.6633837,
+"seq": 205,
+"role": "explore",
+"session": "sad2e4c179ed642ff9a578836310061ba",
+"title": "q0 탐색: 한 칸 차분이 재는 것 — 조각 다항식의 세 구적 형태(사다리꼴·조합적 볼록–꺾임), 극 체제까지 이어지는 격자 상쇄와 평균장 교차(공표 문턱 상수 2B_0의 식별), 무거운 자리 평균의 첫 복소 극 흔들림과 Jensen 실패 지도, 원형 주차로 읽은 Riccati 방정식"
+},
+"rf7e46856a2444d829d350ba1d88c6a03": {
+"id": "rf7e46856a2444d829d350ba1d88c6a03",
+"t": 1794231817.511136,
+"seq": 206,
+"role": "explore",
+"session": "s97506026efc34406bc601f29a3757439",
+"title": "막힘을 동률로 옮기는 수송의 비국소성: 역방향 Borel 걸음 표현과 Palm 모멘트 상계에 의한 증명, 끝점 급의 두 Borel 윤곽, 국소성의 위계, 상쇄 항등식의 수송 핵과 대칭"
+},
+"r2e227260f0b64c4c90fc7af4c8699a6c": {
+"id": "r2e227260f0b64c4c90fc7af4c8699a6c",
+"t": 1794232681.6975296,
+"seq": 207,
+"role": "attempt",
+"session": "s597d51f267dd462fb4a65a4c280ed8fb",
+"title": "한 단계 양 λ_k(m)는 어디서 빠듯한가: 소인 갱신·첫 진입 표현, 안쪽 가장자리의 세 영역, 그리고 노드를 m 없는 첫 층 부등식과 크기 방향 감소 조건으로 바꾸는 기울인 Abel 판정 (노드 onelevel-attachment 미해결)"
+},
+"r0ee343a79304453a8096fe295b01dabb": {
+"id": "r0ee343a79304453a8096fe295b01dabb",
+"t": 1794235981.120213,
+"seq": 209,
+"role": "attempt",
+"session": "s7f194492eea44fe38a5ba77c073936ed",
+"title": "둘째 층의 왼쪽 비교와 중앙 창의 국소 법칙: 용량 로그 지수생성함수, 큰 꼭짓점의 Borel 갱신, 추측 LW의 증명"
+},
+"r46313b0792c14f17af0d814ae5f1a62d": {
+"id": "r46313b0792c14f17af0d814ae5f1a62d",
+"t": 1794237127.018722,
+"seq": 210,
+"role": "explore",
+"session": "sbeffb173e8ea4a03be0232c95070fd5f",
+"title": "동률과 막힘의 연속 극한: 정리 C의 두 보편 함수는 창 함수 h₂와 q₀이고 한 걸음 차는 곱의 법칙이다 — 섬유 사전, 꺾임·평탄 측도, 중앙 창의 두 블록 법칙(정리 D′)"
+},
+"r22df70d6f8eb4d69b5675e3e43471b18": {
+"id": "r22df70d6f8eb4d69b5675e3e43471b18",
+"t": 1794237936.9481597,
+"seq": 211,
+"role": "attempt",
+"session": "s86926ff73c054a6c8987b450f53eae24",
+"title": "둘째 층 Q⋆₂의 충분히 큰 열 증명과 root의 최종적 성립, 그리고 크기 2k 바로 위 수준 질량의 무거운 자식 분해: 중앙 상수 4/√π와 X⁽¹⁾+X⁽²⁾의 출처"
+},
+"r0213c2bbcb784becb22e50ebe7c10c9d": {
+"id": "r0213c2bbcb784becb22e50ebe7c10c9d",
+"t": 1794237948.9894347,
+"seq": 212,
+"role": "explore",
+"session": "s57e774f5eeb248a68b196e4d86b0ac47",
+"title": "중앙 창 n=2k+t·k^(2/3)의 구조: 두 블록의 합성곱, 공표 하계의 도달점 t_J=2.0347, 정확한 두 나무 분해 d=λ+X, 그 위에서 증명되는 점별 창 법칙, 그리고 중앙의 줄기 이득 재생"
+},
+"rc5ca6347f07a47968d2e243c84ea2a80": {
+"id": "rc5ca6347f07a47968d2e243c84ea2a80",
+"t": 1794237974.6292055,
+"seq": 213,
+"role": "attempt",
+"session": "scbf83f57989644fdac75f7f8a2067fb8",
+"title": "한 칸 차분을 꼭짓점마다 끝까지 벗기기: 문턱 꺾임만 음수인 순열 단위 항등식, 1차 모멘트 판정과 모멘트 판정의 정확한 관계, 중앙의 k^(−1/3)이 오른쪽 절반의 한 줄기 상쇄라는 것"
+},
+"rfbe72a804096466cbf483f74036814ce": {
+"id": "rfbe72a804096466cbf483f74036814ce",
+"t": 1794239599.9101965,
+"seq": 215,
+"role": "explore",
+"session": "sdd3be6bdab3140e1ac8ac65dcc90a86a",
+"title": "왼쪽 절반은 무엇이 다른가: 사슬 부분과 비교 불가능 부분의 정확한 분리, 죽인 Borel 걸음으로 읽는 사슬 부분, 창에서 두 반쪽이 같아지는 이유"
+},
+"r86e33757d763403da28b6ca399b60aaf": {
+"id": "r86e33757d763403da28b6ca399b60aaf",
+"t": 1794239607.2377763,
+"seq": 216,
+"role": "explore",
+"session": "sb50b95e16b7340eaa80d399045f94cd1",
+"title": "문턱 인접 성분이 체제 상수에 남기는 것: 정확한 보편성, 첫 보정의 세 몫, 첫 차수의 국소 상수 −3/2, 그리고 1/F_n(1/e)의 정확한 Borel 표현에 의한 이계 임계 증분 D₂의 비형식 증명"
+},
+"r9e82bb0caf3b41b5981e062a4f3d3ebd": {
+"id": "r9e82bb0caf3b41b5981e062a4f3d3ebd",
+"t": 1794239836.1188521,
+"seq": 217,
+"role": "attempt",
+"session": "s4ed9c0c62b364824af40bf1153cae565",
+"title": "왼쪽 내부 L의 점근적 완결: 큰 열 전체의 왼쪽 증가(정리 E)와 충분히 큰 모든 n의 단봉성, 중앙 옆 띠의 두 번째 증명, 중앙 행 수준 질량의 나무 분해"
+},
+"r051bfe18ee7448c2aa4d067eab9e8c6c": {
+"id": "r051bfe18ee7448c2aa4d067eab9e8c6c",
+"t": 1794246280.906873,
+"seq": 219,
+"role": "attempt",
+"session": "s815263db8e8e49d4892c627e35f2c506",
+"title": "노드 tilted-survival-decay(H′)의 증명: 마지막 차가 보지 못하는 오른쪽을 키우면 짝 없는 항 하나만 남고, 그것은 Cayley 구간 망원 합의 끝항이다 — 성장비는 N=k−1에서만 최대, onelevel은 T 하나로"
+},
+"r67b63f0481d0434aab71f1c59c74bf8a": {
+"id": "r67b63f0481d0434aab71f1c59c74bf8a",
+"t": 1794247106.83199,
+"seq": 220,
+"role": "explore",
+"session": "s3d96604d25774490a368fef260c41594",
+"title": "자손 법칙을 바꾸면 단봉성은 어디서 깨지는가: 꼭대기 극한 정리와 격자 법칙의 모든 n 비단봉(숲판·나무판), 완전 단조 크기 법칙의 판정과 숲판 반례, 무한분산 허브 모집단의 극한 법칙과 그 느린 수렴"
+},
+"r6e82a66949d448f6955a745e9efb52a5": {
+"id": "r6e82a66949d448f6955a745e9efb52a5",
+"t": 1794248334.9597812,
+"seq": 221,
+"role": "explore",
+"session": "s7fe4240f2dff49408c390a12fe6597cb",
+"title": "한 행을 이웃 비로 읽은 여유 지도: 층 비 상수의 하계, 왼쪽 잔여 창 안까지 이어지는 중앙 바닥, n=4064부터 나타나는 왼쪽 안쪽의 로그볼록 구간"
+},
+"r42317b1e21a64cdaae6052fb0ca79bdd": {
+"id": "r42317b1e21a64cdaae6052fb0ca79bdd",
+"t": 1794251714.309662,
+"seq": 223,
+"role": "attempt",
+"session": "s8baac2609c9046a8ac89dfa7ac4a6d26",
+"title": "노드 T(기울인 원천 꼬리합)는 무엇을 비교하는가: 기울인 임계 나무의 두 사건, 두 번의 상쇄, 볼록성이 정하는 셋째 차수 여유와 중앙 두 칸의 절단 꼬리 (노드 미해결)"
+},
+"r05cf8c9e90704aebbe42f8729b4be48d": {
+"id": "r05cf8c9e90704aebbe42f8729b4be48d",
+"t": 1794252116.106409,
+"seq": 224,
+"role": "attempt",
+"session": "s0dc1405f7063465e950cfbff2eb05824",
+"title": "왼쪽 내부 L의 숲–나무 재생 원천 (FS): 정확한 분해의 확인과 공표 재생 틀과의 대응, 원천 조각의 k^(1/3) 상쇄(중앙 경계층과 층)와 꼬리 합 묶음에서의 소멸, 경계층 여유의 Borel 윤곽과 거의 통째 나무의 장부, 그리고 onelevel보다 약한 노드 FS-window"
+},
+"rfbd91ce3913a4092894adc37c6efb84e": {
+"id": "rfbd91ce3913a4092894adc37c6efb84e",
+"t": 1794252683.414528,
+"seq": 225,
+"role": "attempt",
+"session": "sb92033db4cb04646aa1905529e36a768",
+"title": "왼쪽 절반 증가를 나무 단위로 읽기: 생존 곡선의 볼록성, 왼쪽 Abel 기준과 그 여유의 출처, 문턱 손실의 부모 귀속, 임계 Galton–Watson 나무의 최대 변위 법칙"
+},
+"rd3cb5ba1d5444db79456dcfaa3530b47": {
+"id": "rd3cb5ba1d5444db79456dcfaa3530b47",
+"t": 1794252760.0773857,
+"seq": 226,
+"role": "attempt",
+"session": "s44a0528a5afb47b5a836faf42772c56a",
+"title": "왼쪽 절반은 새 손실을 만들지 않는다: 꼭짓점 판정의 뿌리 갱신 꼴, 뿌리 원천의 양성과 √k 띠, 그리고 생산자 결과의 공표 대응"
+},
+"r29c10cde89dc4f1fb7d87b4c47427be3": {
+"id": "r29c10cde89dc4f1fb7d87b4c47427be3",
+"t": 1794252775.2787597,
+"seq": 227,
+"role": "attempt",
+"session": "s54823e8b3f524f1799c25fb39bf77eaf",
+"title": "첫 층 가중 꼬리 합 UL의 구조: 경로 이동 항등식과 근접 실패 질량, 최댓값에서 잰 보상자의 Exp(1) 법칙, Laplace 닫힌 꼴과 착지 높이별 극한 (노드 미해결)"
+},
+"rc881c9ec7322400eac3b489f4455a3b7": {
+"id": "rc881c9ec7322400eac3b489f4455a3b7",
+"t": 1794253214.0335667,
+"seq": 228,
+"role": "explore",
+"session": "seab3cea82cd248da8a72bdb7e6436de6",
+"title": "층과 극의 인계를 무거운 자리로 읽기: 실극 몫의 평균장, 유한한 층 평균과 착지 매개변수 𝔏=EX·D_r·k^(−1/3)(접근 가능한 k에서 1–5), 그리고 생산자의 조각 읽기가 공표 기울인 Abel 장부(감소율 η 대 Borel 지수 3/2)와 만나는 자리"
+},
+"r1ae4ec77232b44c5813c6743a404a7e3": {
+"id": "r1ae4ec77232b44c5813c6743a404a7e3",
+"t": 1794257793.7231708,
+"seq": 230,
+"role": "attempt",
+"session": "s34d7a8385c8844dc948a54e76f9d4654",
+"title": "왼쪽 극점 잔여의 n≥3k 절: 1−C_k의 모든 영점에 대한 정확한 전개와, 그 영점 합의 극한이 공표 계층 윤곽 Φ_m의 곡률이라는 사실"
+},
+"r5364fb9e58a14cc8bb48fddcdccf247f": {
+"id": "r5364fb9e58a14cc8bb48fddcdccf247f",
+"t": 1794258649.911243,
+"seq": 231,
+"role": "explore",
+"session": "sd46ecca0642947829050dede0b8aa95e",
+"title": "자손 법칙을 바꾼 단봉성: 일반 자손 법칙의 둘째 층 층 윤곽 정리(계층 무게 m_3/σ⁴), 문턱 질량=무작위 걸음의 국소 확률, 톱니를 만드는 이차 안장점, 마지막 위반을 정하는 유한 크기의 균형 (질문 branching-universality 해소 제안)"
+},
+"r1b43caf725c2438abac2e65bdcf54932": {
+"id": "r1b43caf725c2438abac2e65bdcf54932",
+"t": 1794259218.9829361,
+"seq": 232,
+"role": "explore",
+"session": "s77985a7b185f43d7a1a98c09fe166028",
+"title": "문턱 성분의 첫 유한 크기 보정과 층 여유 상수: 오른쪽 창 부족분 D(x̂)의 유도(작은 x̂의 16/3, 큰 x̂의 27/(2I_0), 국소 합 규칙 ∫d_1=−2/3), 여집합 위험률 비 ϑ_r(아래 끝 r, 둘째 층 [2.93834, 3.11266], 넷째 층 위 끝 27/7), 중앙 읽기의 귀속"
+},
+"rd457474f8a2a4cd3a18d9fcc8a3d58ff": {
+"id": "rd457474f8a2a4cd3a18d9fcc8a3d58ff",
+"t": 1794259372.6056013,
+"seq": 234,
+"role": "attempt",
+"session": "s0db4d173b97947a0891254ddf91a4f30",
+"title": "행 전체의 저울과 임계점의 닫힌 꼴: root 전체 attempt의 종합, 임계 볼츠만 수준의 정확한 분해, 첫 층 사슬 공식, 가운데 영역 판정의 약화 (UL′)"
+},
+"r05c817cfaecf470abb2eda807b90b0e5": {
+"id": "r05c817cfaecf470abb2eda807b90b0e5",
+"t": 1794262587.7725036,
+"seq": 235,
+"role": "attempt",
+"session": "sea8a51a77c594542bd8889d99c441df2",
+"title": "사슬 부분의 나무 합 재귀와 사슬판 정리 R⁺: 왼쪽 창의 사슬 부분도 공표 줄기 판정으로 정해진다 — chain-part-window의 k≥3131 부분을 stem-attachment로 환원, 열 단위 판정, 행 2k·2k+1과 극 영역"
+},
+"r6f5f48f2e4084772a978ab59f2c48e93": {
+"id": "r6f5f48f2e4084772a978ab59f2c48e93",
+"t": 1794264115.5639884,
+"seq": 236,
+"role": "attempt",
+"session": "s3f1254bae6094cb2a9b9469e1318233b",
+"title": "둘째 층의 왼쪽 비교: UL로 첫 층 반응을 걷어 내면 '큰 블록의 줄기 이득 대 문턱 나무 손실'이 남고, 그 행별 비는 층의 시작에서 정확히 2로 간다"
+},
+"rc10dce53a1fc4b5f90a9f68dc68f614f": {
+"id": "rc10dce53a1fc4b5f90a9f68dc68f614f",
+"t": 1794265100.675841,
+"seq": 238,
+"role": "attempt",
+"session": "s166b348f213f463a8acc1413400f4551",
+"title": "cross-pairs attempt의 기록: 한 칸 비교의 초등 정리들과 '조각의 수'로 읽은 행 전체를 공표 결과에 맞대어 정리하고, 크기 구성을 고정하면 단봉성이 깨지는 이유(꼭대기 원자 1/s의 국소화)를 더함 (노드 미해결)"
+},
+"r32a9449452664a68822da6b7d316761f": {
+"id": "r32a9449452664a68822da6b7d316761f",
+"t": 1794266632.0633366,
+"seq": 239,
+"role": "explore",
+"session": "s90db50ae6e6d4f2da81f59f1077bad93",
+"title": "한 행을 나무 곡률의 기울어진 혼합으로 읽기: 문턱 쪽은 거의 지워지고, 벌크의 극한 곡률은 머묾이 불린 양의 원천들의 합이다 — q0 탐색의 확인·출처 정정, 행 전체 지도, 두 벌크 층의 원천 분해"
+},
+"ra2b010ba3fa64cc5a35007665698b0cd": {
+"id": "ra2b010ba3fa64cc5a35007665698b0cd",
+"t": 1794266757.648566,
+"seq": 240,
+"role": "attempt",
+"session": "s3d7e39871fea40ce939f5131e8a5ee8e",
+"title": "열 방향으로 본 왼쪽 비교: 상대 곡률 u_n(k)=d_(n,k)/p_n의 모양, 층 내부의 단조 감소(둘째 층 Φ_3‴>0 인증), 층 경계 창 법칙 추측 W(할당 부피의 둘째 도함수), μ와 u의 상보적 실패와 섞은 열 환원"
+},
+"r69e7d176c4f34e9f8295853aa91d17ae": {
+"id": "r69e7d176c4f34e9f8295853aa91d17ae",
+"t": 1794268325.2638772,
+"seq": 241,
+"role": "explore",
+"session": "s1dfbe00384fe49babdb94bcc19066f94",
+"title": "층 극한의 한 걸음 항등식: 이진 질량 재귀(공표 계층 공식과 동치), 층 방정식은 움직이는 경계의 Leibniz 규칙(κ_r의 값은 정해지고 수렴만 남음), 창 첫 모멘트 = 쌍 이득 − 문턱, 결손 좌표의 층 윤곽(계층 순열 법칙과 큰 층의 꼴), 층–극 인계의 몫 지도와 척도 정정"
+},
+"r829eefd84fa548f9b1dd295e895a3a1b": {
+"id": "r829eefd84fa548f9b1dd295e895a3a1b",
+"t": 1794269030.105795,
+"seq": 243,
+"role": "attempt",
+"session": "s5006110db6cd46e5be16c90daed6f57f",
+"title": "왼쪽 잔여 증가 노드 W_L: 첫 층의 비교는 결손 밀도의 기울기 −f′이고 두 큰 항의 맞비김은 적분한 곱의 법칙이다 — 한 경로 정확 모형과 중앙 여유 장부의 표현 의존성 (노드 미해결)"
+},
+"r7e03176bca8242f8ad7d3348dd2b32c5": {
+"id": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"t": 1794269324.9758792,
+"seq": 244,
+"role": "attempt",
+"session": "sf08b056520d24d2bb8ca8b4d81d9ceba",
+"title": "UL: 근접 실패 평균은 최댓값 꼭짓점의 표지와 대각선 결손으로 정확히 갈리고(peer), 첫 층 생존의 손 증명과 행의 증가가 경계항 E_3를 균일하게 눌러 임계 창 앞쪽 14≤L−k≤L^(2/3)/2를 닫는다(peer) — 재추첨 초과 수의 꼬리합(생산자)과 UL의 네 부분 분할 제안 (노드 미해결)"
+},
+"r3dd61e24b54a479fbb2dbed13eb6ac15": {
+"id": "r3dd61e24b54a479fbb2dbed13eb6ac15",
+"t": 1794271969.9738657,
+"seq": 245,
+"role": "explore",
+"session": "sc2aab4be17334004a2975de7e29ea40f",
+"title": "한 나무의 선속과 숲의 환경으로 다시 읽은 문턱 인접 성분: 오른쪽 절반 행의 문턱 나무 단위 극한 Θ_thr(λ)=(16λ³−8λ²+10λ−3)/(2(1−λ)²), 중앙의 두 겹 상쇄와 '동률' 읽기의 정정, 노드 UL이 노드 T의 위쪽 꼬리합을 주는 Abel 관계와 UL의 핵 없이 노드 T로 가는 둘째 관계, 나무 판 첫 모멘트 항등식 (질문 op-threshold-block, 해소 미제안)"
+},
+"r7dd34dc8e9fd41b88072f3d5d4d22797": {
+"id": "r7dd34dc8e9fd41b88072f3d5d4d22797",
+"t": 1794275715.893211,
+"seq": 246,
+"role": "attempt",
+"session": "s2895e58526044c67b8c8571a3befed1e",
+"title": "UL 아래의 왼쪽 비교는 모든 n에서 '큰 블록의 줄기 이득 대 문턱 나무 손실'이 된다: 3k 경계는 항등식의 경계였다 — W_L♭ attempt의 꼭대기 원천·기울인 Abel 판정·노드 T의 동률, ω_j≥δ_j의 증명, n≥3k 노드 (노드 미해결)"
+},
+"re597c0e7ca8e40ed8912589a84d9e216": {
+"id": "re597c0e7ca8e40ed8912589a84d9e216",
+"t": 1794275879.106878,
+"seq": 247,
+"role": "attempt",
+"session": "s3e0726ec64bb4daf98684a74d83534d2",
+"title": "마지막 차 재귀를 두 연산으로 읽기: 한 칸 차분의 평활 분해, 첫 보정의 행·열 일치, 중앙의 접힌 항등식과 크기 방향 합(체류 항등식, 크기 감소율 하계), 거친 귀납 가설 (RS)이 n=3187에서 실패하는 자리"
+},
+"r650977000d4d45bb906ccec1eba3cc79": {
+"id": "r650977000d4d45bb906ccec1eba3cc79",
+"t": 1794276538.469804,
+"seq": 248,
+"role": "attempt",
+"session": "sc79969a7f56440cf8999cd2655fe012e",
+"title": "왼쪽 모멘트 노드 LM의 두 번째 attempt: 갱신 경로 위의 정확한 부분합(정리 A)과 그 부호, 공표 창 걸음과의 장부 대응, 그리고 크기 방향으로 층마다 오르내리는 모멘트 여유 (노드 미해결)"
+},
+"rec3627cdf5234562877159da99a582b0": {
+"id": "rec3627cdf5234562877159da99a582b0",
+"t": 1794279277.585167,
+"seq": 250,
+"role": "attempt",
+"session": "s56b0fcaab6a445b9a702b08b6a1cf26e",
+"title": "노드 Q를 막힘과 동률의 비로 읽기: 이웃 비의 세 가지 분해, 봉우리 뒤의 두 단조성, 고정 결손의 Borel 갱신 극한 — attempt 작업과 공표 결과의 대조와 정정 (노드 미해결)"
+},
+"r3514683174704598bf04b5fa98146e6f": {
+"id": "r3514683174704598bf04b5fa98146e6f",
+"t": 1794279488.9874432,
+"seq": 251,
+"role": "attempt",
+"session": "sbe91ee0e5b45472a9335096e1dcf16bd",
+"title": "같은 비교를 여러 집계 수준에 놓고 읽기: 고정 크기의 꼭대기 실패(정정), 섞인 수준의 톱니와 둘째 모멘트, 열 방향 한 번 부호 변화 노드 — cross-pairs attempt의 기록 (노드 미해결)"
+},
+"raf9e09e03e6e4888b43818ea87dd729d": {
+"id": "raf9e09e03e6e4888b43818ea87dd729d",
+"t": 1794279619.058864,
+"seq": 252,
+"role": "attempt",
+"session": "se2683821f9464cf38896b6eb9d87092f",
+"title": "Q_L attempt: 열마다 한 번의 부호 변화를 변동 감소로 얻으려는 생각과 그 두 겹의 장애(재생 Green 함수의 경로 분해, Borel 법칙의 로그볼록성), FS 원천과의 일치, Green 분해의 얇아지는 중앙 여유, 부호 배열의 계단 모양"
+},
+"rd22bda3171d747be93d5609489b9e49d": {
+"id": "rd22bda3171d747be93d5609489b9e49d",
+"t": 1794279773.0571241,
+"seq": 253,
+"role": "attempt",
+"session": "s45a126e10e534c5f8ba012cc4c1a57ce",
+"title": "왼쪽 절반의 한 칸 비교 다시 읽기: 공표 분해와의 대응, 열 꼭대기 음의 꼬리합을 정하는 고정 꼬리 법칙, 첫 층 쌍극자 총합의 정확한 꼴 (노드 L 미해결)"
+},
+"rd98ca46a757b49fdb72941813af43027": {
+"id": "rd98ca46a757b49fdb72941813af43027",
+"t": 1794279850.2911494,
+"seq": 254,
+"role": "explore",
+"session": "s6bea2af065164aedb3f3daf5869a8783",
+"title": "층–극 인계 질문의 다섯째 탐색: 결손 갱신 뼈대와 그 순환 꼴 쌍둥이(공표 Lambert 모형), 용량을 넘는 블록이 접근 가능한 k의 갱신 윤곽에 남기는 것, 부호를 나르는 용량 로그 오목 비 ϑ가 얇아지는 유일한 자리"
+},
+"r5826c1e543544bd2a4fd14cc96177b1c": {
+"id": "r5826c1e543544bd2a4fd14cc96177b1c",
+"t": 1794280036.63752,
+"seq": 255,
+"role": "explore",
+"session": "s8a81ad5882494d6995357a126835a281",
+"title": "문턱 인접 성분의 첫 보정은 원 과정의 임계 첫 보정 정리에서 나온다: 성분 선속의 두 차수 전개(비형식 정리), 국소 합 규칙 H′(0)=κ_B, 기울인 총합의 느린 보정이 사는 곳, 그리고 질문 op-threshold-block의 현재 답(해소 제안)"
+},
+"rcb2e2d4253524c3989e9e803401183e5": {
+"id": "rcb2e2d4253524c3989e9e803401183e5",
+"t": 1794280124.744304,
+"seq": 256,
+"role": "attempt",
+"session": "sd9486486177b4de1973853b81f730da0",
+"title": "왼쪽 잔여 증가 노드 W_L을 표시 나무 무게로 읽기: 무게의 단조성과 중앙에서만 평평한 문턱 걸음, 창 나무 항 W와 공표 한 단계 양 λ의 관계, 작은 열의 정확 해부 (노드 미해결)"
+},
+"r4a537c225afc43eca9e2657e8bd1318d": {
+"id": "r4a537c225afc43eca9e2657e8bd1318d",
+"t": 1794280590.8413677,
+"seq": 258,
+"role": "explore",
+"session": "sc9ea7d329cc34d969200ea836e74c28b",
+"title": "차를 한 대씩 더하는 수송으로 본 단봉성: 상속·세금 항등식이 실제로 보여 주는 것과 보여 주지 않는 것 — q0 탐색의 정리·검증·정정과 peer의 보강"
+},
+"rc3918294dab54bd5820dfdd6596f136b": {
+"id": "rc3918294dab54bd5820dfdd6596f136b",
+"t": 1794286950.226229,
+"seq": 260,
+"role": "attempt",
+"session": "s69e625843fdf49c6a92d39737efed273",
+"title": "왼쪽 극점 잔여(LRP)의 띠 판정: 한 번 교차로 본 왼쪽 비교 — 거의 맞먹음은 열 질량 보존 한 항에 모이고, 첫 층 전제(공표 노드 SC 또는 새 노드 H*) 아래 남는 것은 상쇄 없는 양의 부등식 하나(새 노드 Q_B·H*·Q_H, 관계 SC∧Q_B⇒LRP·H*∧Q_H⇒LRP) (노드 미해결)"
+},
+"r319d86604c4344509b8e324fa93897cf": {
+"id": "r319d86604c4344509b8e324fa93897cf",
+"t": 1794290062.39511,
+"seq": 261,
+"role": "attempt",
+"session": "se50277dbb32448eb9029df371d8f4e8f",
+"title": "이음새를 꼬리 합으로 다시 묶기: 문턱 나무 단위의 장부, 꼬리 합의 대각선 꼴, 꼭대기 행의 Borel 갱신 횟수 — root 전체 attempt와 peer의 기록 (root 미해결, 노드 TSP(10)·STEM(10)과 관계 셋 제안)"
+},
+"r5c5657a4c7b94ccda0275b4461c8d4eb": {
+"id": "r5c5657a4c7b94ccda0275b4461c8d4eb",
+"t": 1794294899.3234544,
+"seq": 262,
+"role": "explore",
+"session": "s6ffdf224b58e4f2f8c69f69736fcb8f6",
+"title": "최대 변위 행을 연속 변수의 창 히스토그램으로 읽기: 실수 오프셋과 격자 창의 단봉성, 위상 이동이 한 칸에 묶이는 이유, 동률 행으로 본 보간 오차와 3≤n≤100의 정확 확정, 그리고 그것이 P보다 얼마나 더 말하는가 (q0 탐색)"
+},
+"raad7e6d531824745a8b9ac1a562d6331": {
+"id": "raad7e6d531824745a8b9ac1a562d6331",
+"t": 1794295747.1100018,
+"seq": 263,
+"role": "attempt",
+"session": "sdb180a3db8e745778edb0f763bfcc526",
+"title": "최댓값의 두 쪽으로 읽은 왼쪽 절반 비교: 두 쪽은 같은 첫 층 합을 보고 뿌리 용량만 다르다 — 첫 층 크기 편향 꼬리합 (V)의 여유 2와, 공표 정리 M의 UL을 더 약한 (V)·(V*)로 바꾸는 환원 (노드 Q_L 미해결)"
+},
+"r29b01e8e0a86457d8946dd26cc20f754": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754",
+"t": 1794295958.8187513,
+"seq": 264,
+"role": "attempt",
+"session": "s96d1c94435834de4abfc7b77de5c28bd",
+"title": "왼쪽 비교의 평평한 핵: 첫 층 나무 열 질량의 보존 결손으로 읽기 — 노드 left-interior attempt(평평한 꼬리합 UL♭, 경계 분해, 정준 사슬 환원)와 peer의 짝 분해 φ♭=Π−Υ·극한 면적 윤곽 A=x^(3/2)E_x[𝒜]·관계 제안 (노드 미해결)"
+},
+"rb6155b5265994d0fa1b05ddb73c57816": {
+"id": "rb6155b5265994d0fa1b05ddb73c57816",
+"t": 1794296223.2428002,
+"seq": 265,
+"role": "attempt",
+"session": "s282bfee0433640a7962660fbcbf3b1e8",
+"title": "노드 Q(감소 뒤 로그오목성) attempt의 기록: 용량 방향 역위험률·한 걸음 장부의 정확 재정식화와 독립 검증, 공표 대조, 그리고 큰 k에서 달라지는 것 — 중앙의 상쇄는 첫 층 상속 안으로 옮겨 가고, 강한 줄기 부등식의 중앙 비는 4/e로 내려간다 (노드 미해결)"
+},
+"r97dbedcfa38b4a8e8747f42e331fe133": {
+"id": "r97dbedcfa38b4a8e8747f42e331fe133",
+"t": 1794297087.8120942,
+"seq": 267,
+"role": "explore",
+"session": "s389ade3b1b7d4aceb22b055df362819a",
+"title": "문턱 인접 성분은 어느 체제에서나 같은 갱신 다리다: 원 과정의 정확식, 오른쪽 창 첫 보정의 정리화, 층과 중앙에서 바뀌는 것은 진입 구조뿐"
+},
+"r54152af3cfb14c1dadf807cf5e7efaac": {
+"id": "r54152af3cfb14c1dadf807cf5e7efaac",
+"t": 1794297308.8070383,
+"seq": 268,
+"role": "attempt",
+"session": "s73b9599e6de0440682d39d1ac0fc25d8",
+"title": "기울임 방향의 한 번 교차와 임계 창의 균형: 열 방향 재생 방정식을 꺾임과 볼록 부분의 두 주입으로 나누어 본 cross-pairs attempt의 기록 (노드 미해결)"
+},
+"r7248450eba6d4be2b9d15f51309ff603": {
+"id": "r7248450eba6d4be2b9d15f51309ff603",
+"t": 1794301334.5509393,
+"seq": 270,
+"role": "attempt",
+"session": "se9f2917b7cce4ddaad3daeda8932a499",
+"title": "열 방향 한 번 부호 변화(SC)를 '차 한 대 더하기'로 읽기: 성장 확률에 의한 환원(정리 A·A′), 나무 행의 상속·세금 장부(정리 T), 열 걸음의 정확한 분해(행 오목성 + 척도 보정), 명시 증명에 남는 것 (노드 미해결)"
+},
+"rbca832432c744c9cbf720dcf89005c9b": {
+"id": "rbca832432c744c9cbf720dcf89005c9b",
+"t": 1794301924.9593108,
+"seq": 271,
+"role": "attempt",
+"session": "sca50b80b28134834b14ac831cfc7806b",
+"title": "왼쪽 비교의 볼츠만 저울: 환경의 감소율은 죽임이 켜지는 순간 3/2를 넘고, 그 초과분은 위치 y에서 F(y)만큼만 쓰인다 — 정리 R의 정정과 정련, 판정량의 정확한 세 몫 분해, 기울기 33/20의 원천·환경 노드 쌍 제안 (노드 W_L♭ 미해결)"
+},
+"re6a228d52d754d34940332b30fbf62f3": {
+"id": "re6a228d52d754d34940332b30fbf62f3",
+"t": 1794306794.6541595,
+"seq": 272,
+"role": "explore",
+"session": "sc63721c280ed42b497f4d84f8286772b",
+"title": "층–극 인계 영역을 착지 블록의 수로 읽기: 착지 없는 부분은 유한부분 적분으로 끝까지 정해지고, 딱딱한 벽은 중심에서 지며, 느린 구조와 중심의 여유는 모두 착지 배치에 있다 — 첫 층 정리와 층을 잇는 포함–배제, 가장 큰 소인 블록 법칙의 비단봉성, 착지 수의 갱신 직선, 합성 소인 법칙이 μ를 재현하는 조건, 공표 블록 항등식 위의 부호 장부"
+},
+"rec21ee39284f4296be4c92e99c14d5ea": {
+"id": "rec21ee39284f4296be4c92e99c14d5ea",
+"t": 1794308860.8206127,
+"seq": 274,
+"role": "attempt",
+"session": "s3e0bad642aa94a2483dd95b850bfb2b5",
+"title": "첫 층 합의 꼬리를 임계점 모멘트로 누르기: 노드 ul-core를 가정 없이 한 닫힌 꼴 부등식으로 환원(peer)하고, 그 부등식이 잃는 몫의 정확한 장부와 생산자의 절단 항등식·명시 상계를 정리 (노드 미해결)"
+},
+"rba0262126a0e4669b09d0ee9cbdd4c90": {
+"id": "rba0262126a0e4669b09d0ee9cbdd4c90",
+"t": 1794311592.798114,
+"seq": 275,
+"role": "attempt",
+"session": "sb1338ce36e604b1e89ee0126f7bc37e6",
+"title": "최대 변위 행은 '사다리'들의 개체 수다: 연속 최댓값의 톱니 밀도, 근접 동률–천장 포화의 한 칸 밀기, 세 장부의 포개짐, 톱니 평탄화가 깨지는 자리(창의 동률 비 2h₂/h₁의 꼭대기 x≈1.72)와 세 최빈점의 간격 Δ_*≈0.299 — root 전체 attempt(sa0d3bcd…)와 peer의 기록 (root 미해결)"
+},
+"r9bf2dc6070134fad99681ca44cff25cb": {
+"id": "r9bf2dc6070134fad99681ca44cff25cb",
+"t": 1794313445.1456087,
+"seq": 276,
+"role": "attempt",
+"session": "sf89cd690127b4a19b1d8e1293db5ba48",
+"title": "먼 창과 작은 k 벌크(UL의 두 조각 N2·N3)의 증명: 무거운 사슬의 점질량 하계(보조정리 H), 그 양쪽 끼움과 연속체 극한 f=E[R e^(−Λ)] — 쿠션은 창에서 손실의 k^(1/3)배이고 L=k에서 0이다"
+},
+"r2ec875c7605c4ddeb28da2c3a4566663": {
+"id": "r2ec875c7605c4ddeb28da2c3a4566663",
+"t": 1794314307.394969,
+"seq": 277,
+"role": "attempt",
+"session": "s998c893f89374dcf89edab5cd7185327",
+"title": "머리 합 조건 H*의 증명: 짝 없는 마지막 수준 하나가 부호를 정하고, 무거운 사슬의 두 모멘트가 창 결손 확률을 상수 정밀도로 붙잡는다 (노드 head-sum-condition 비형식 해결)"
+},
+"r696d62c0f01a40e7a2da52d0342f67d5": {
+"id": "r696d62c0f01a40e7a2da52d0342f67d5",
+"t": 1794315768.9888952,
+"seq": 278,
+"role": "explore",
+"session": "s7d5ee32e04ca4a4fa1f4c35dbd4f69b3",
+"title": "같은 결손의 대각선 하계 (Diag)는 첫 층과 그 한 칸 아래(m≥2d−2)에서 성립한다: 무거운 사슬의 깊이 부류, 한 점 삽입 항등식, 여유의 조건부 면적 해부 — 질문 diagonal-lower-bound 탐색(s727002…)과 peer의 증명, 보조정리 D의 날카로운 판, 노드 Q_B♮"
+},
+"r63168f3b1d784220a42e7fc3313b391f": {
+"id": "r63168f3b1d784220a42e7fc3313b391f",
+"t": 1794316299.9452243,
+"seq": 279,
+"role": "attempt",
+"session": "s30ccba7348b046cd9cc0e7ec9dac87fc",
+"title": "cross-pairs attempt의 기록: 블록 곱 공식과 열 질량 항등식, 그리고 용량 방향 단조 비 네 후보의 실패 — 공표 극한 지도에 맞대어 다시 읽고 바로잡은 기록 (노드 미해결)"
+},
+"r2fe0259ff994498199a719dfcc85d4fb": {
+"id": "r2fe0259ff994498199a719dfcc85d4fb",
+"t": 1794316664.8150105,
+"seq": 281,
+"role": "explore",
+"session": "scc3fdedaddfd4c3a878ea10943b57a1a",
+"title": "결손은 공통 위험률 시계의 첫 울림이다: 척추 시계 모형이 재현하는 것과 놓치는 것, 중앙이 얇은 까닭인 무게중심 (q0 탐색과 peer)"
+},
+"r6203aef4c8ab4970a3fc2d2a90dd8931": {
+"id": "r6203aef4c8ab4970a3fc2d2a90dd8931",
+"t": 1794316973.4741611,
+"seq": 282,
+"role": "attempt",
+"session": "s10d4c7c908294494a0077277ec9012f8",
+"title": "가장 큰 나무로 읽은 왼쪽 비교: 정확한 분해, 그 틀의 한계(따라잡기 점은 k^(4/5)로 자란다), 그리고 공표 정리 L의 재묶음으로 본 창 극한 — 거대 나무가 부호를 나르는 것처럼 보이는 것은 두 블록 곡률 적분의 장부 방식이다 (노드 Q 미해결)"
+},
+"raa111ead6ef243dca993f2eacd0899cb": {
+"id": "raa111ead6ef243dca993f2eacd0899cb",
+"t": 1794316989.9774334,
+"seq": 283,
+"role": "attempt",
+"session": "se448ea678687491c9327d17f150fecd1",
+"title": "왼쪽 한 칸 비교를 용량 제한 없는 숲(Cayley 환경)에 맞대어 보기: '두 수준 질량 × 반으로 줄어드는 환경'의 저울과 그 기전(환경 윤곽 J, 결손 높이에서 본 환경 = 문턱 환경의 균등 분율), 한 환경 안의 정확한 비교식, 항별 분리가 중앙에서 k≈310부터 무너진다는 것 (노드 W_L 미해결)"
+},
+"r742adf36299f4225998cc485000d028d": {
+"id": "r742adf36299f4225998cc485000d028d",
+"t": 1794317785.75975,
+"seq": 284,
+"role": "attempt",
+"session": "se2a1e4093f2048ac9a62a22bcc38fd40",
+"title": "왼쪽 비교를 나무 단위로 다시 읽기: q-left-half attempt의 입구–응답 해부를 공표 결과에 맞대고, 평평한 핵을 문턱 원자의 장부로 설명하기 — φ♭=1−(갚지 못한 몫)−(첫 층 밖의 몫), 열 질량의 망원 합 C(0)=Σn!/nⁿ와 예산 명제, μ 열 단조성의 k=86 반례 (노드 미해결)"
+},
+"rdfe3dece99a64ff9bffa37df53b335a8": {
+"id": "rdfe3dece99a64ff9bffa37df53b335a8",
+"t": 1794320411.6760788,
+"seq": 286,
+"role": "attempt",
+"session": "s67a550b3bc844257909a50ecfc924ce1",
+"title": "왼쪽 증가를 블록 원천으로 읽은 attempt의 기록: 크기 방향 단조 원리는 하나도 남지 않고(생산자가 남긴 두 단조 명제와 참 E[Z_k]도 큰 k에서 깨짐), 원천 양수성의 '단순 추측' b_(N,k−1)≥|Γ_N|은 k≥1807에서 거짓이며 중앙에서 2/e로 진다 — 원천의 중앙 여유 6:1의 장부 (노드 left-interior 미해결)"
+},
+"rf7540215ac3c4fdd8b14366a593448a9": {
+"id": "rf7540215ac3c4fdd8b14366a593448a9",
+"t": 1794320788.2416384,
+"seq": 287,
+"role": "attempt",
+"session": "s7009b4c6137449ea8f1e2d6d598cc30a",
+"title": "fs-window의 귀납 항은 큰 나무 안의 상대 둘째 차분이다: 뿌리 제거 항등식과 부호 구조, 극 정규화 판정, 평탄성 가정의 한계, 그리고 큰 k에서 여유가 가장 얇아지는 둘째 이음새 (노드 fs-window 미해결)"
+},
+"r6f71c1efc8fd47e7ade95394f40378c7": {
+"id": "r6f71c1efc8fd47e7ade95394f40378c7",
+"t": 1794321142.4506445,
+"seq": 288,
+"role": "attempt",
+"session": "sb8edcabc9caf48258f3939ccfc12026f",
+"title": "왼쪽 모멘트 부등식(LM)을 나무 단위로 읽기: 기울인 첫 층 판정(정확 계산으로 k=503 거짓·504 참, 추측 FT: 모든 k≥504), 그 판정이 d판보다 빠듯한 정확한 몫(극한 E[X]/4·k^(−1/3)u), LM 길이 d의 길에 지배된다는 판단 (노드 미해결)"
+},
+"rd6200d9cf9714392b4ef022ce5e6855d": {
+"id": "rd6200d9cf9714392b4ef022ce5e6855d",
+"t": 1794322037.086575,
+"seq": 290,
+"role": "explore",
+"session": "s96fd69259b3944c0a6d482ada6e74e07",
+"title": "층–극 인계를 거대 블록의 수와 '벽으로 한 칸 옮기기'로 읽기: 층 극한 곡률을 벽 경쟁·소인 행의 증가·반응 쌍의 음 아닌 몫으로 나누기(공표 동률 극한의 정정 포함), 딱딱한 벽 골격의 척도 함수 I(s), 극 합을 관측량마다 다르게 보는 무게 — 인계 질문 탐색(sb3e0732…)과 peer"
+},
+"r845b2055d18c40c6894cca76b1dff184": {
+"id": "r845b2055d18c40c6894cca76b1dff184",
+"t": 1794323578.2807856,
+"seq": 291,
+"role": "attempt",
+"session": "s87933fbeb129469aad0ffb189eddc251",
+"title": "첫 층 꼬리합 (V)의 증명: L=k 한 자리로 줄이고, 거기 남는 Borel 걸음의 기울임 곡률을 명시적으로 누른다 — 대각선 볼록성의 정확한 분해, 체류 항등식·극한 상수 K(d)·결손 3 대각선의 검증"
+},
+"re9461abdb48e49a88f11e8ed5fb80391": {
+"id": "re9461abdb48e49a88f11e8ed5fb80391",
+"t": 1794326550.6219628,
+"seq": 293,
+"role": "attempt",
+"session": "s38630e1c73d947ac8f3275b97cbb7fec",
+"title": "노드 T(기울인 원천 꼬리합)의 나무 판 세 인수 꼴과 사슬 길이별 장부: 겹친 동률이 사슬 길이마다 풀리는 방식 (노드 미해결)"
+},
+"r030ffaebcd164eb492cc4215ce1c2e56": {
+"id": "r030ffaebcd164eb492cc4215ce1c2e56",
+"t": 1794327956.0818138,
+"seq": 295,
+"role": "attempt",
+"session": "sa2c9917ef5fd420f9783b537e0a4576a",
+"title": "둘째 층 BVΘ(줄기 이득 ≥ 문턱 손실)를 n−2k≤0.48k에서 모든 k에 대해 증명: 창 수준 질량의 결손 상위해, 크기 단조성에 의한 생존 인자의 상쇄, 생존 1 착지의 용량–크기 보조정리, 층 꼭대기의 깊은 낙하와 BVΘ 분할 (LRP₂ 미해결)"
+},
+"r0a57c86df6ee47388fa5cd3bfae6bacb": {
+"id": "r0a57c86df6ee47388fa5cd3bfae6bacb",
+"t": 1794328427.2198246,
+"seq": 296,
+"role": "attempt",
+"session": "s16804cd0756e49638136148972a210db",
+"title": "왼쪽 둘째 층(2k+1≤n≤3k−1)의 한 칸 차분 장부: 두 나무 몫은 교차 짝 항보다 작아지지 않는다(정리 SB, 항별 짝짓기의 증명), 그래서 거의 맞먹는 비교는 한 나무 핵심 안에 있다 — root 전체 attempt(se8afabd…)와 peer"
+},
+"rc16c8db1b3294edc8f9bb7ab5adc3672": {
+"id": "rc16c8db1b3294edc8f9bb7ab5adc3672",
+"t": 1794331594.3298776,
+"seq": 297,
+"role": "explore",
+"session": "sd3f2fd1c6e73496b8fe59210ad1e5ff7",
+"title": "시계의 첫 울림이 한 번만 꺾이는 까닭: 모집과 쌍의 저울, 나이에서 본 낙차 위험률, 그리고 감소 위험률이 막는 '모집 급등' (질문 clock-counting-path 탐색)"
+},
+"r74646f5ebf114f1ea5010ea3f5188ae3": {
+"id": "r74646f5ebf114f1ea5010ea3f5188ae3",
+"t": 1794331681.2780533,
+"seq": 298,
+"role": "explore",
+"session": "s38f30162e3964b63adb3a7e1b09fa278",
+"title": "첫 층의 'M = v' 조건부 무거운 사슬: 창에서는 기울인 Brownian 기록 집합(정리), (Diag) 여유는 창에서 x·A(ξ)로·벌크에서 x·λP(λ)로, 평평한 핵은 1로 수렴(Π_k → ∫Af = 1; 충분히 큰 k에서 FC), 첫 층의 착지/비착지 두 유형(조건 없는 정리), 작은 면적 보조정리, 나무 열 질량 수치의 정정 — 질문 conditional-chain-law 탐색(s9326e05…)과 peer"
+},
+"raa86c0b57fee400f86a9ccf150f2be3b": {
+"id": "raa86c0b57fee400f86a9ccf150f2be3b",
+"t": 1794334172.2761176,
+"seq": 300,
+"role": "attempt",
+"session": "s993af0fb7d254f59b6541f1a5025aa80",
+"title": "왼쪽 증가를 시간 순서로 다시 세기: 거의 맞먹는 두 개수의 정확한 짝(d/p_n=2𝒯+ℛ−ℬ)과 동률–막힘 분해의 순서족, 첫 통과 시각별로는 맨 끝을 빼고 부호가 국소화된다는 관찰(역시간 벗기기 알고리즘), 문턱 자리 수 비교의 정정 (노드 left-interior 미해결)"
+},
+"ra61bca534f3f4b36abc9dc15a97c29bf": {
+"id": "ra61bca534f3f4b36abc9dc15a97c29bf",
+"t": 1794334660.4405158,
+"seq": 301,
+"role": "attempt",
+"session": "s343536334cb84997a5d8d197eda9d11c",
+"title": "행을 따라 읽은 동률–막힘 저울: 생산자의 정확 측정과 ul-core 닫힌 꼴 장부, 그리고 그 모양이 큰 n에서 무엇이 되는가 — 언덕은 중앙의 k^(−1/3) 맞먹음, 골은 오른쪽 임계 창의 여유 최댓값 (노드 W_L 미해결)"
+},
+"r0d8807130cdd4022ae91bf2d374faa33": {
+"id": "r0d8807130cdd4022ae91bf2d374faa33",
+"t": 1794335954.275842,
+"seq": 302,
+"role": "explore",
+"session": "see8ee2125ee341bcb45a6b5bb3bb5721",
+"title": "층–극 인계에서 부호를 정하는 것: 기울인 갱신열의 창 최솟값 전파로 가장 큰 소인 블록 법칙의 왼쪽 계단을 모두 닫고(모든 n≥15에서 골 하나), 원 과정의 면 항을 같은 틀로 다시 읽기"
+},
+"r317d67810d1240bc9b19b5e9dd44eead": {
+"id": "r317d67810d1240bc9b19b5e9dd44eead",
+"t": 1794336264.8638206,
+"seq": 303,
+"role": "attempt",
+"session": "sa4f3767257a24e01992fe75be8c9c16f",
+"title": "첫 층 꼬리합의 핵심 V-core의 증명(k≥3131에서 Ũ(k)>0.082, k≥6667에서 ≥0.765)과 둘째 층의 정리: Q⋆₂ ⟺ d_(t,k)≥KD′_t, Q⋆₂의 마지막 행 t=3k, 셋째 층 위의 자동 전파, 그리고 root를 기존 노드 LRP₂로 잇는 관계 (Q⋆₂·LRP₂ 미해결)"
+},
+"r1b2b20d5835d475caf067fb3cbb1303b": {
+"id": "r1b2b20d5835d475caf067fb3cbb1303b",
+"t": 1794338562.430254,
+"seq": 305,
+"role": "attempt",
+"session": "sfddaee8805d74dc1a217b635dc066884",
+"title": "왼쪽 절반의 한 칸 증가는 어디서 결정되는가: 첫 층 걸음 위의 사슬 초과 면적, 깊은 자식을 모두 흡수하는 정리 M′(열 3131–6666을 열마다 부등식 하나로), 깊은 생존의 기하 감쇠 (노드 cross-pairs 미해결)"
+},
+"r686f30fde8374c31bfd84bf4d221633b": {
+"id": "r686f30fde8374c31bfd84bf4d221633b",
+"t": 1794340285.6752992,
+"seq": 306,
+"role": "attempt",
+"session": "s291f8e7b04a24e3d90bbbcda8d26fdc8",
+"title": "기울인 첫 층 꼬리합(노드 tilted-full-tail)을 첫 넘김의 흐름으로 읽기: 성장 선속의 볼록성 보너스, 머묾 선속의 비교, 첫 층 끝의 손실 — attempt s6b6077f…의 작업, 독립 검증, 크기 결합·정리 F 없이 증명되는 더 넉넉한 충분조건 N_flow, 그리고 큰 k 판의 지배 조건 하나로의 환원 (노드 미해결)"
+},
+"r736ae526fe704131b78be1f3dc16bbe8": {
+"id": "r736ae526fe704131b78be1f3dc16bbe8",
+"t": 1794343137.182555,
+"seq": 307,
+"role": "explore",
+"session": "s34decfad0a764bd08d53c12c1eff2ea4",
+"title": "결손 시계의 β-족 X_β: 법칙의 닫힌 꼴(Stieltjes 꼴, 첫 통과 시각 B와 Bessel–Laplace), 그리고 시계 속도의 곡률형 성질(선형 좌표 로그오목성 등)은 β→1에서 차례로 깨지지만 국소 로그 기울기의 한 번 꺾임은 남아 단봉성을 지키며, β=1/2에서는 그 꺾임이 꼬리를 곧게 편 좌표의 오목성으로 증명된다 — q0 탐색(sd625ad9…)과 peer"
+},
+"r98fb348cdb3f47cd99325318f279072d": {
+"id": "r98fb348cdb3f47cd99325318f279072d",
+"t": 1794343212.6278958,
+"seq": 308,
+"role": "attempt",
+"session": "se9a94470d6a84fac9428e627d92463e2",
+"title": "ul-core(첫 층 볼츠만 핵)의 대각선 이동 장부와 체류 법칙의 증명 — 같은 핵을 쓰는 방문·체류의 두 재귀로 θ=1 체류 법칙이 Borel 부등식이 된다(최악 비 (10+7√7)/54); 남는 것은 Borel 가중 대각선 볼록성(N1; 갱신·Green 꼴로 음의 곡률이 결손 √k 아래에 갇힘을 보이고 명시 Borel 부등식 N1x로 환원)과 두 열의 방문 모멘트 부등식(N2) (노드 미해결)"
+},
+"r7850ff4f82784bd399d8f0ba69aefc9a": {
+"id": "r7850ff4f82784bd399d8f0ba69aefc9a",
+"t": 1794343840.730513,
+"seq": 309,
+"role": "attempt",
+"session": "s4f66783fd6d04fe49b8f896d0e6a3419",
+"title": "왼쪽 절반 비교를 표시 나무와 환경으로 읽기: 크기를 섞은 행의 감소(임계 나무 한 그루의 차분), 창 나무의 두 번 지워짐, 중앙의 여유를 나르는 거대 나무 — 노드 q-left-half attempt(s134205e9…)와 peer (노드 미해결; 남은 내용은 LRP₂)"
+},
+"r126914e3832d4208b6f3367c94c8fdc2": {
+"id": "r126914e3832d4208b6f3367c94c8fdc2",
+"t": 1794344129.64943,
+"seq": 311,
+"role": "attempt",
+"session": "seb439206bec2489c835c205268928428",
+"title": "노드 Q(감소 쪽 로그오목성) attempt와 peer: 한 칸 차분을 줄기의 쌍과 문턱의 투표로 읽기, 그리고 '차를 더할수록 같은 쪽이 더 크게 이긴다'는 목표가 깨지는 까닭 — 결손 극한 법칙의 x^(−3/2) 꼬리가 정하는 위험률의 꼭대기(첫 벌크 λ_A=(1+√3)/4, 오른쪽 창 x_hz≈1.31, 중앙 창 t_mrl≈1.45·t_hz≈3.35) (노드 Q 미해결)"
+},
+"r2c9a689c1be14f369d52f9512c658e31": {
+"id": "r2c9a689c1be14f369d52f9512c658e31",
+"t": 1794344246.4668956,
+"seq": 312,
+"role": "attempt",
+"session": "sd9beb1fc7d8b412c99d9f3b59d474435",
+"title": "노드 tsp10을 하나의 첫 차수 부등식으로: 꼬리 합의 두 얼굴(전역 Borel 감소와 국소 대각 하계), 살아남은 큰 나무 확률의 볼록성, 그리고 남는 \"왼쪽 누출\" — tsp10 attempt(s5a0c52ce…)와 peer의 기록 (tsp10 미해결, 새 노드 left-leak과 관계 left-leak∧right-bulk-increase⟹tsp10 제안)"
+},
+"r143d1ceeb03444169d73edab6acad310": {
+"id": "r143d1ceeb03444169d73edab6acad310",
+"t": 1794346384.0988955,
+"seq": 313,
+"role": "attempt",
+"session": "sefc92bb7260544e4be04d7a82215a9d3",
+"title": "줄기 이득 대 문턱 나무 손실(노드 BVΘ₃)을 크기 성장 확률 하나로 읽기: 정확한 핵 가중 꼴, '두 수준 × 머묾'의 조건부 하계(정리 2), 성장 확률이 y/m 근처에 머무는 까닭과 그 골짜기 모양, 추측 M의 정정 — attempt s86d94d9…와 peer의 기록 (노드 미해결)"
+},
+"r42097165cf6b4b64ab4ee60f0c93b869": {
+"id": "r42097165cf6b4b64ab4ee60f0c93b869",
+"t": 1794347887.921946,
+"seq": 315,
+"role": "attempt",
+"session": "s327ee8bcdb4e4e97bd9becc164fc6f69",
+"title": "빈자리가 하나라는 것: 유리 주차 함수의 최대 변위 단봉성은 빈자리 r≈c√m(c<√3(√2−1))에서 결국 깨진다 — 기울어진 그릇 극한 밀도, 정확 반례, 그리고 P의 오른쪽 절반이 기대는 교환 대칭"
+},
+"re9a905a043bc44879ee714802f39a7f0": {
+"id": "re9a905a043bc44879ee714802f39a7f0",
+"t": 1794349098.9561908,
+"seq": 316,
+"role": "explore",
+"session": "s47f0ee090a7841879f4d23e2e94825c7",
+"title": "공통 위험률 시계에서 본 단봉성: 출생 이득은 줄고 늙음 손실은 자란다 — 독립 출생의 정리(묶음판 포함), 갱신 시계의 장부와 셋째 누적률 장애, 극한 e-윤곽, 실제 사슬의 욕조 위험률과 3/4 (질문 clock-counting-path 탐색)"
+},
+"r7abc9af00c3846939cc40eca375b2a80": {
+"id": "r7abc9af00c3846939cc40eca375b2a80",
+"t": 1794350943.7222323,
+"seq": 317,
+"role": "attempt",
+"session": "s116844d230844d599a6044004537e3b4",
+"title": "둘째 층 LRP₂를 한 열을 따라 읽기: 고정한 k에서 μ_n(k)는 왜 n에 단조롭지 않고, 접합부 최솟값 추측은 왜 큰 k에서 깨지는가 — LRP₂ attempt(s35465b65…)와 peer (노드 미해결)"
+},
+"r31a74ea35c7542aa9e1ba018c2ab2d28": {
+"id": "r31a74ea35c7542aa9e1ba018c2ab2d28",
+"t": 1794352513.0106187,
+"seq": 318,
+"role": "explore",
+"session": "s876867bff2834220868f94df709c53e7",
+"title": "층–극 인계를 크기 방향에서 읽기: 수송 항등식의 정확한 분해(차수 결손; 극 이동을 넣으면 x≥2.2에서 0.7% 안), 기울인 개수는 감소하는 핵의 갱신열(c-sharp로 엄격 감소)이라는 것, Gauss 극 모형이 어기는 공표 부등식 — 인계 질문 탐색(s2c3c7a…)과 peer (질문 미해소)"
+},
+"re0d48693a18d49d6b24b572471c4f756": {
+"id": "re0d48693a18d49d6b24b572471c4f756",
+"t": 1794354572.0040588,
+"seq": 320,
+"role": "attempt",
+"session": "s21da1a52ce844729b05e4d50f1f8d51b",
+"title": "왼쪽 한 칸 비교의 섬유 안 장부들은 하나의 마틴게일이다 — 노드 left-interior attempt(sdec3b98…)의 재유도와 그 공표 대응, 그리고 조상 수준 장부·이항 솎음으로 본 '동률–막힘 장부는 섬유 장부보다 더 상쇄할 수밖에 없다'; 첫 통과 시각 장부의 끝 손실은 문턱 첫 통과의 수이고 끝에서 j번째 시각마다 d의 (2^(j+1)−1)/2^(j+3)으로 간다 (노드 L 미해결)"
+},
+"r77e234e1a47c4d92bf96c87938f3ac2d": {
+"id": "r77e234e1a47c4d92bf96c87938f3ac2d",
+"t": 1794354603.6033828,
+"seq": 321,
+"role": "attempt",
+"session": "s36da5071f59a4d4aa66feab8fa718c87",
+"title": "bvtheta-bulk(둘째 층 벌크의 줄기 이득 ≥ 문턱 손실): 한 블록 항등식·귀납 틀·첫 층 끝 상위해와 예산 모형, 공표 행별 환원과의 대조, 큰 k에서 여유의 수렴, 생존 없는 바닥 하계 (노드 미해결)"
+},
+"rbd1947b0bdb344bc8174a34bb27bf066": {
+"id": "rbd1947b0bdb344bc8174a34bb27bf066",
+"t": 1794357116.3263278,
+"seq": 322,
+"role": "explore",
+"session": "s2f4f3a6478ea4f2ab9f456ee4fbb657d",
+"title": "첫 통과 시각은 무거운 사슬의 깊이다 — 중앙의 시각 그림은 공표 공정한 동전(정리 S)을 깊이별로 펼친 것이고, 같은 깊이 윤곽이 층 안쪽 어디서나 나타난다 (질문 first-passage-time-profile 탐색과 peer)"
+},
+"r71b1a6d1f9b04a9fb7bbbba51064c82e": {
+"id": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"t": 1794359689.8245285,
+"seq": 323,
+"role": "attempt",
+"session": "s7b56537e9b58481183479ca911f5a757",
+"title": "UL의 핵 L=k: 첫 층 열을 남기는 선형화 꼬리의 네 조각 분해와 상쇄 없는 부등식 N_R로의 환원 — 보조정리 15의 틈과 보수, 가장 큰 두 조각의 k-균일 증명(한 번 도약 원리, Borel–Tanner 항등식, 줄어드는 착지 무게; peer), 남은 노드 N_AT — Abel 꼬리 (노드 미해결)"
+},
+"r3d0856b811f14f8c8d71335597036243": {
+"id": "r3d0856b811f14f8c8d71335597036243",
+"t": 1794359738.8914013,
+"seq": 324,
+"role": "attempt",
+"session": "sc9a5cb3ffd9b4b808eb54d3a4de1662c",
+"title": "둘째 층 Q⋆₂를 1/p 장부로 다시 읽기: 첫 층 핵과 문턱 예산의 동률과 그 정확한 체류 꼴, 노드의 실제 범위, 그리고 Q⋆₂를 첫 층 부등식으로 줄이는 관계 FLQ ∧ bvtheta-band ⇒ Q⋆₂ (Q⋆₂ 미해결)"
+},
+"r5c13beecd43540e5a455aa720e3fa1b5": {
+"id": "r5c13beecd43540e5a455aa720e3fa1b5",
+"t": 1794360354.4302766,
+"seq": 325,
+"role": "attempt",
+"session": "s76b4a17e6294419fac22fea60a773d80",
+"title": "첫 층에서 부호를 정하는 것은 평평한 핵 하나다: 빚 뺀 머리 합의 음성(정리 H♭)과 관계 flat-core ⟹ flat-first-layer-tail, 첫 층 선속의 환경 이득(명제 E♭)과 노드 N3(벌크의 줄기 이득+환경 이득 ≥ 문턱), 그리고 W_L♭ attempt의 숲–경보 항등식·명제 A′·B·보조정리 C (노드 W_L♭ 미해결)"
+},
+"r491b04585706486f952d54b8ab0292e4": {
+"id": "r491b04585706486f952d54b8ab0292e4",
+"t": 1794361518.4637988,
+"seq": 327,
+"role": "explore",
+"session": "sd790b8342aa3433e9d9195efd5547a3a",
+"title": "한 칸 차분의 부호를 무엇이 정하는가: 무거운 꼭짓점 수의 평균과 요동의 지도(n≤240 정확, 창 가운데의 평균의 섬), 면적 좌표에서 쌍과 문턱이 나누어 갖는 공유 항, 큰 k에서 층마다 요동이 나른다는 것 (q0 탐색과 peer)"
+},
+"r33475a7cfc744a5994c185e88660b710": {
+"id": "r33475a7cfc744a5994c185e88660b710",
+"t": 1794362352.6331322,
+"seq": 328,
+"role": "attempt",
+"session": "s360c589b2429420aa850754b484ffe34",
+"title": "왼쪽 잔여 W_L의 둘째 층: 머리 합의 여유가 첫 층의 상쇄를 대신 치르므로, 남는 것은 줄기 이득과 문턱 손실의 (1+Υ_k)배 비교 하나다 (attempt s26b5d…와 peer, 노드 미해결)"
+},
+"r1f0c13faf9fb4bd7a0bbc90239d117a4": {
+"id": "r1f0c13faf9fb4bd7a0bbc90239d117a4",
+"t": 1794362576.8596637,
+"seq": 329,
+"role": "explore",
+"session": "sa961c931970c434fa34d2c7ed99f34e7",
+"title": "척추 시계를 최댓값 재귀와 생성함수로 읽기: 첫 초과 꼭짓점 분해, 닫힌 v-꼴과 창 극한·첫 보정, 먼 왼쪽의 정확한 점근, 얇은 중앙을 옮기는 포크 모형 (질문 clock-counting-path 탐색과 peer)"
+},
+"r1292bab963e240679e8cc03f96886b78": {
+"id": "r1292bab963e240679e8cc03f96886b78",
+"t": 1794362896.5370774,
+"seq": 330,
+"role": "attempt",
+"session": "s8537ef330bac4a699b0751159e3184ad",
+"title": "가장 큰 나무로 나눈 행: 오른쪽 창에서 단봉성을 강제하는 변동 감소 구조(명제 E), 그 핵의 대각선 문턱 3n/8−53/360(정리 Δ), 공표 결과와의 대조와 정정 (root attempt s86e4ff61…와 peer; root 미해결)"
+},
+"r56110301e5d647df9f7b81f4a2851d38": {
+"id": "r56110301e5d647df9f7b81f4a2851d38",
+"t": 1794363046.2392733,
+"seq": 331,
+"role": "attempt",
+"session": "s5a0f41b5a543492daa47122d2dd590e5",
+"title": "노드 SC의 열 걸음을 성장 확률로 다시 읽기: 열 증분 항등식은 공표 열 분해의 크기 보정을 '머묾 확률 × 행 걸음'으로 정확히 적는다 — attempt s0ed03…의 기록, 공표 r7248450과의 대조, 한 행에 부등식 하나로 남는 일 (노드 미해결)"
+},
+"r52e9c834df53433689568c7d2e1c4626": {
+"id": "r52e9c834df53433689568c7d2e1c4626",
+"t": 1794366275.1640792,
+"seq": 333,
+"role": "attempt",
+"session": "s4708ef1a1f98491088a9029e48275daf",
+"title": "한 단계 양 λ_k(m)을 환경의 생존으로 가르기: 생존 Abel 분해, 공표 위험률 하계로 만든 m-의존 판정과 그 가정 (C1)의 큰 m 실패·수정(정리 2′), 그리고 참값과 판정이 빠듯한 자리가 서로 다른 까닭 (노드 onelevel-attachment 미해결)"
+},
+"r4868e309d6cd455086bb06b059252128": {
+"id": "r4868e309d6cd455086bb06b059252128",
+"t": 1794371217.0765293,
+"seq": 335,
+"role": "attempt",
+"session": "s7682a6ef5bc4439682c5651fae5c5f8a",
+"title": "왼쪽 절반(left-interior) attempt의 기록: 착지 분해 위의 재유도와 측정, 그리고 문턱 덩어리의 정체 — 나무 곡률의 음의 몫은 크기가 정확히 k인 부분나무의 기대 개수로 막히고 그 극한은 Borel 갱신 핵 c_j=j^je^(−j)/j!이다 (노드 미해결)"
+},
+"r51968231edad4eca95df3e1df0650a20": {
+"id": "r51968231edad4eca95df3e1df0650a20",
+"t": 1794371675.765406,
+"seq": 336,
+"role": "attempt",
+"session": "sec808efe787c47d299ee9dab60067bc0",
+"title": "N2의 볼츠만 몫의 증명과 두 행 모양 양으로의 환원: 방문 질량의 두 쪽 경계 q_T(c)=Bor(c)[1−(5/6)μc^(−1/3)+O(c^(−1/2))](정리 R·정리 L)와 N2 ⟸ (π_(2k)(k−1)≤1/(8k)) ∧ (오른쪽 창 감소 합 ≤Bor(k)/150)"
+},
+"rae1f20952bcc4e19bb256dca69412704": {
+"id": "rae1f20952bcc4e19bb256dca69412704",
+"t": 1794372139.7113657,
+"seq": 337,
+"role": "attempt",
+"session": "s207e743647da479b84a60f9230a3afc4",
+"title": "둘째 층 벌크의 줄기 이득 대 문턱 손실(bvtheta-bulk): 짝 없는 문턱 손실을 쌍 항으로 갚는 약한 진술 B⁺, '각 수준은 한 번은 지나간다'는 보존, 그리고 행 조건의 k-균일 해석적 증명으로 B⁺를 생존 없는 쌍 부등식 하나로 줄이기 (attempt s8ee97…와 peer, 노드 미해결)"
+},
+"r3b38ffdeb5f1449d8a2f0de50e25be06": {
+"id": "r3b38ffdeb5f1449d8a2f0de50e25be06",
+"t": 1794374023.907328,
+"seq": 338,
+"role": "attempt",
+"session": "sd1f96d9e4aea45b6a05b010958a3c564",
+"title": "둘째 층 왼쪽 비교를 큰 사슬로 풀기: 제한된 원천 정리 B의 자리, 원천이 k^(2/5)에서 얇아지는 까닭, 그리고 사슬 한 단계를 남긴 첫 층 판정 σ^G — 노드 lrp-second-layer attempt(s9f6e4958…)와 peer (노드 미해결; 노드 1개·관계 1개 제안)"
+},
+"ra92bcfc4066a431aa6a0e18e57c80ce5": {
+"id": "ra92bcfc4066a431aa6a0e18e57c80ce5",
+"t": 1794374547.5050209,
+"seq": 339,
+"role": "explore",
+"session": "sd458f29a7fa6492891ad935a8c0881ef",
+"title": "층의 둘째 차분은 왜 아래 끝에서는 극한을 넘고 위 끝에서는 극한에 못 미치는가: 착지한 블록의 곡률과 층 곡률의 혼합(교차점 1.4373 닫힌 꼴, 2.3388, 3.2359를 예측하고 셋째 층 정확값으로 확인), 끝점 지수 규칙, 창 법칙 꼬리의 1/y 계수 EX/2의 증명, 숲 장부 — 층–극 인계 탐색(s4c83523…)과 peer (질문 미해소)"
+},
+"rb6a2cd0e6d434a8eb512088619fe9be7": {
+"id": "rb6a2cd0e6d434a8eb512088619fe9be7",
+"t": 1794377091.2989314,
+"seq": 341,
+"role": "attempt",
+"session": "sa7a122ca1089414b8ac7ba26ccc4c953",
+"title": "fs-window의 둘째 층: 첫 층 곡률의 평평한 Abel 합, 꼬리 질량의 위치, 줄기 이득의 여유로 k≥6668의 띠 전체를 닫고, 노드 B⁺ 하나가 LRP₂(따라서 root)를 함의함을 보이다 (attempt se2fe369…와 peer, 노드 미해결)"
+},
+"rb1d8cd535d9f4a9da52ab599dbc201a9": {
+"id": "rb1d8cd535d9f4a9da52ab599dbc201a9",
+"t": 1794380343.1441565,
+"seq": 342,
+"role": "attempt",
+"session": "se230a2619cf343e2a8d84f648b25c2ee",
+"title": "평평한 핵 φ♭_k≥0은 모든 k≥3131에서 성립한다: 무거운 사슬의 면적 좌표에서 짝 합이 망원되는 구조(열 질량 x·E[1−e^(−𝔄/x)]의 미분 ≈ E[ψ(𝔄/x)]), 사슬별 비·Poisson 걸음 비교·구간 인증서·점근 보조정리에 의한 증명과 peer의 독립 검증 (노드 flat-core 해 제안; 공표 입력 위의 비형식 증명)"
+},
+"r5c20a946b41f45c3bddeec3a6e5cfb13": {
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"t": 1794381046.2930894,
+"seq": 343,
+"role": "explore",
+"session": "s8eeff86bb60a4961b9fa2b2cc42c5135",
+"title": "둘째 층의 첫 층 장부: 창 끝 Abel 분할로 상쇄가 열 상수 1−φ♭_k에 모이는 구조, 띠에서 상수 상계가 지는 까닭, 총 빚의 짝짓기, 그리고 평평한 핵 가정 없이 LRP₂에 이르는 벌크의 첫 층 노드 (q0 탐색 s802049ae… 와 peer; 노드 미해결)"
+},
+"r5909c9e73b34492cbe5e197cf65c02e8": {
+"id": "r5909c9e73b34492cbe5e197cf65c02e8",
+"t": 1794381259.086477,
+"seq": 344,
+"role": "attempt",
+"session": "s275ad05d50784b139ee7695b2eb52c10",
+"title": "둘째 층 벌크의 쌍 부등식 (P◇)의 증명: 창에 떨어진 두 나무가 조각난 환경을 이긴다 — 극한 비 (1+θ′)²/(2θ′(1−θ′))≥4, 수준 질량 상계의 정정, 그리고 승인된 사슬 (P◇)⇒B⁺⇒LRP₂⇒W_L♭⇒root의 마지막 열린 전제 (attempt s3ad034…와 peer)"
+},
+"r476e54dacca042b9a0c35ffc4fc4dff9": {
+"id": "r476e54dacca042b9a0c35ffc4fc4dff9",
+"t": 1794383358.3783605,
+"seq": 346,
+"role": "attempt",
+"session": "sfac9cec5aa6b41ea89c49554420c2fa6",
+"title": "ul-core(첫 층 볼츠만 핵)를 죽임 붙은 Borel 걸음으로 읽기: 공표 선형화 틀(𝒰̃_k, T̃_k)과의 일치, 1/2 극한의 초등 증명, 절단 항의 유효한 o(Bor(k)) 상계와 공표 bracket을 합친 'k≥10^35에서 U_k>0', 절단 항이 둘째 층 몫과 Bonferroni 초과만큼만 다르다는 항등식, 나무 하나의 머리합으로 본 첫 층 합의 Borel 평균 꼴, 그리고 Abel 꼬리 N_AT의 증명 설계와 예산의 나눔 — attempt s6c038976…와 peer (ul-core·N_AT 미해결)"
+},
+"r781caf392d7d4a768a1f94cca4d5526d": {
+"id": "r781caf392d7d4a768a1f94cca4d5526d",
+"t": 1794383747.3118193,
+"seq": 347,
+"role": "attempt",
+"session": "s4fd63c54d2174e698bd1ea25359a2511",
+"title": "N1(Borel 가중 대각선 볼록성)을 결손마다의 원천 양성으로: 환원 정리와 노드 '국소 원천', 체류 질량 = 공표 크기 차분과 창의 극한 정리, 창 배수 아래의 결국 성립 — attempt sb3d0355…와 peer (N1 미해결)"
+},
+"r9119bc5055ed4a50a992ba0e7b2f4855": {
+"id": "r9119bc5055ed4a50a992ba0e7b2f4855",
+"t": 1794388230.2408793,
+"seq": 348,
+"role": "attempt",
+"session": "sf9f361a88b494d1db9cd79285aff15a8",
+"title": "왼쪽 증가를 뿌리 나무로 가르기: 문턱 손실은 평평한 핵이 갚고 부호는 행 무게의 기울기가 정한다 — left-interior attempt(sbd5a09…)의 지수 공식 분해를 공표 다섯 조각에 맞추고 가중 대각 Abel 항등식과 기울기 규칙의 극한 정리로 다시 읽기 (이 기록으로 닫힌 위치 없음)"
+},
+"r4e1cfdc9529a4386aeb4c7be70a43f5a": {
+"id": "r4e1cfdc9529a4386aeb4c7be70a43f5a",
+"t": 1794388332.4370167,
+"seq": 349,
+"role": "explore",
+"session": "sbd0661da2c53453f8873a9d86cb93a48",
+"title": "시계의 중복도 γ로 읽은 단봉성: 위험률이 0으로 가는 낙차의 척추 시계는 γ=1에서 먼 왼쪽 임계(넘어 달아나는 낙차)이고, 실제 숲의 곡률은 모든 γ에서 '착지(창·단체) × 접근 증폭'에서 온다"
+},
+"rc6a434e535db47f3aaed1f2d12c01b94": {
+"id": "rc6a434e535db47f3aaed1f2d12c01b94",
+"t": 1794390189.8757002,
+"seq": 351,
+"role": "attempt",
+"session": "se3d78e511b4d417c827f0f60bc731a64",
+"title": "둘째 층의 줄기 이득 대 문턱 손실(BVΘ⁺): 무거운 꼭짓점 비의 갱신 꼴, 큰 k에서 n=3k 쪽 띠를 뺀 전부를 닫는 두 정리(정리 P: k≥10⁵, ν≤0.35k; 정리 E: 고정 θ<1마다 명시 문턱 이상의 k), 그리고 여유를 나르는 두 인자 — 두 수준과 두 덩이 (attempt s059e97…와 peer, 노드 미해결; root는 다른 경로로 비형식 해결)"
+},
+"re71a735a86714433829f386919576084": {
+"id": "re71a735a86714433829f386919576084",
+"t": 1794390846.6009681,
+"seq": 352,
+"role": "attempt",
+"session": "s95e3cdfba07846f3affd74174102bd19",
+"title": "노드 FLQ(qstar2-first-layer-tail)의 비형식 증명: 생산자의 첫 층 명시 통제(생존·머묾·점질량)와 peer의 모든 k 균일화(갱신 다리, ν에 무관한 머묾 상계), 그리고 Q⋆₂를 거쳐 root에 이르는 둘째 경로"
+},
+"rb269257b8a6f45d794a2c61cc6f4a144": {
+"id": "rb269257b8a6f45d794a2c61cc6f4a144",
+"t": 1794392177.0646398,
+"seq": 353,
+"role": "attempt",
+"session": "s36933721f0254ad68616ebe33a5da9b1",
+"title": "한 행을 블록 하나의 열과 오르는 무게로 읽기: attempt sdf12cd0…(root 전체)의 그림과 독립 검증·정정, 열의 한 번 교차(SC)의 한 점 꼴과 그 여유 |f″(x_*)|/s, 연속한 두 행의 한 번 교차(CR), 그리고 중앙에서 깨지는 나무 수 부류"
+},
+"r1ec68d7ed3ea4d6bb54c94a00fdbaee8": {
+"id": "r1ec68d7ed3ea4d6bb54c94a00fdbaee8",
+"t": 1794392852.09727,
+"seq": 354,
+"role": "attempt",
+"session": "s45f76d65557d40f1950f2195c1dad7d5",
+"title": "둘째 층의 원 비교(LRP₂)를 최대를 떠받치는 나무 하나로 읽기: 정확 분해, 거의 비김의 실제 차수(창·큰 나무 몫 k^(−2/3), 평평한 합 k^(−4/3) 안팎), 무게 단조성만으로는 부호가 정해지지 않음과 경계항 하나로의 환원, 그리고 자유 토막 수 증가 후보의 반례(n=3000)와 그 극한(왼쪽 절반에서 결국 감소) (attempt se22c209…와 peer; LRP₂는 공표 사슬로 이미 informal_proved, 새 해 없음)"
+},
+"r1ba4f0b071ee4976aeee489559c78774": {
+"id": "r1ba4f0b071ee4976aeee489559c78774",
+"t": 1794394000.9923775,
+"seq": 356,
+"role": "attempt",
+"session": "sc30064763308447493080e791119e5df",
+"title": "노드 N3(둘째 층 벌크의 줄기 이득+환경 이득 ≥ 문턱): 환경 이득은 첫 층 생존의 위험률이고, 꼭대기 띠(3k−1−n≤35)는 모든 k에서, 노드 전체는 충분히 큰 k에서 닫히며, 남은 명시 범위는 두 첫 층 부등식(두 항 생존 상계와 감소량 하계)의 문제로 줄어든다"
+},
+"rd7967b4176d34f289a1f53eff5e04f89": {
+"id": "rd7967b4176d34f289a1f53eff5e04f89",
+"t": 1794394267.8362472,
+"seq": 357,
+"role": "explore",
+"session": "s31a1567b71264a2783b33087efc5a360",
+"title": "극의 잎 수 법칙: 층 혹의 질량·극 방정식·층마다의 어긋남이 한 갱신열에서 나온다, 그리고 부호를 잎 수 성분의 곡률 평균으로 읽기 (인계 질문의 여섯째 탐색과 peer)"
+},
+"r2230661c504a493db62c1667237bd14d": {
+"id": "r2230661c504a493db62c1667237bd14d",
+"t": 1794396517.7855842,
+"seq": 358,
+"role": "attempt",
+"session": "s2249cb9999c843d4871d345a8d9aad8f",
+"title": "노드 N2b(오른쪽 창 감소, 모든 k≥665)와 N2a(중앙 점질량, 모든 k≥3131)의 증명, 그리고 N2: 행의 감소는 막힌 최댓값이 치르고 그 증인은 나무의 수 C(m,k)k^(k−2)(m−k+1)^(m−k)로 닫힌다 — 중앙 점질량은 얼린 용량 다항식의 도함수로 끼이고, 주항은 극한 상수 4/√π 근처에서 명시적으로 눌리며, 보조 간극은 선도 함수의 적분이 정확히 0이라서 작다 (attempt sada4344…와 두 peer)"
+},
+"ra403b606031440aeb119bce744570594": {
+"id": "ra403b606031440aeb119bce744570594",
+"t": 1794396686.8771124,
+"seq": 359,
+"role": "explore",
+"session": "s6c6efbb81fb94819bd59f45b6463fc82",
+"title": "행은 얼마나 로그오목에서 먼가: 중앙의 4/n은 공표 정리 C의 재발견이고, 새로 남는 것은 1/b 볼록성의 실패와 행의 오목성 지수 5/4다 (q0 탐색 s71b132…와 peer; root·q0 미해결)"
+},
+"ra35d81836909450e966ae9d46c246792": {
+"id": "ra35d81836909450e966ae9d46c246792",
+"t": 1794401363.315124,
+"seq": 361,
+"role": "attempt",
+"session": "sdaf4654d2e48408a950b4d0a283dc247",
+"title": "경계 응답 부등식 S_R의 (C) 조각을 착지 사슬과 자유 사슬의 길이 비교로 읽기: 꼬리 상수 κ(m)과 그 양수성, 벌크에서 선도 차수가 정확히 상쇄되는 이유(적분한 보존 법칙), 첫 차수 여유의 세 기전과 공표 벌크 상수 H_blk(r)의 기전 분해(중앙의 2R은 꼭대기 접두 사슬) (attempt sec80c854…와 peer; S_R 미해결)"
+},
+"r5c5975f9dcb745df85d2e8468cb118d2": {
+"id": "r5c5975f9dcb745df85d2e8468cb118d2",
+"t": 1794401885.2771103,
+"seq": 362,
+"role": "attempt",
+"session": "s1c46f1029c144b08a4c6d0e93b49c1b4",
+"title": "열 방향 한 번 부호 변화(SC)를 착지 확률로 나누어 읽기: 손실 쪽은 Borel 갱신 다리의 확률 순서로 모든 k에서 닫히고, 이득 쪽은 창의 크기로만 닫힌다 — 창 밖 양성, 정수 전파 부등식, 창 함수족의 Green 위계, 그리고 lrp-from-3k의 범위 제한 (attempt s9eebd48…와 peer, 노드 SC 미해결)"
+},
+"r77d0f738c25843378705604d7c6b5276": {
+"id": "r77d0f738c25843378705604d7c6b5276",
+"t": 1794403895.5065844,
+"seq": 363,
+"role": "attempt",
+"session": "sf64e5b3de23b45bcae8ed4beea3d542a",
+"title": "노드 OL₂ᴮ(onelevel-bulk)의 증명: 첫 층 선속을 확률 단위로 다시 읽으면 문턱 하나를 위 두 수준의 방문 질량 2가 갚고 환경은 덧붙이기만 한다 — 판정 V1–V5, 첫 층 끝 성장비의 되먹임 하계(정리 HZ), V-core 단위 여유의 칸별 증명(정리 Q), 생산자의 첫 층 감소율 정리 J·K·K′(표는 구간 산술 재인증) (attempt s4f28ad…와 peer)"
+},
+"r0cece3445bf8401a8324877691060890": {
+"id": "r0cece3445bf8401a8324877691060890",
+"t": 1794405163.039407,
+"seq": 365,
+"role": "attempt",
+"session": "s75a81be7854a484382a2bb0ab10bc01e",
+"title": "노드 stem-attachment: 부모 있는 첫 층 블록의 합 λ⁺≥0을 상쇄 없이 증명하다(수준 방문의 보존 — 쌍 이득은 방문 수의 합, 꼭대기의 맨 곡률은 그 차), 그리고 남은 절반 S_k(n)≥0을 첫 층 기울인 꼬리의 선도 차수 하계 하나 t_k≥0.82로 줄이기 — 줄기 비는 마지막 차의 반사로, 첫 왼쪽 대각선 n=2k+1은 공표 인증의 여유로 닫힌다 (attempt s8d1531c…와 peer)"
+},
+"r67b6dcfc67f44f118320203c15b7dd21": {
+"id": "r67b6dcfc67f44f118320203c15b7dd21",
+"t": 1794407298.3797796,
+"seq": 366,
+"role": "attempt",
+"session": "s7e4da7a55d0a4b4c95245b1f49a644cc",
+"title": "왼쪽 누출(left-leak)을 첫 층의 갱신형 꼬리 부등식으로: 모든 k≥9999에서의 증명, 최소해 증명서, 그리고 균일성의 값 — attempt sfd40e8f…와 peer의 기록 (left-leak의 k≥9999 부분 증명; 남은 3131≤k≤9998을 노드로 분할 제안)"
+},
+"rfcc6c6b3faaa47faa9a1499832f14d5d": {
+"id": "rfcc6c6b3faaa47faa9a1499832f14d5d",
+"t": 1794407814.78584,
+"seq": 367,
+"role": "explore",
+"session": "sdf94179fbb004afbbe61375558c3ff14",
+"title": "창 극한에서 시계 기전이 정확해지는 까닭: 위험률 기울기는 강제항의 앞쪽 평균이고 강제항은 기울인 면적이 몸통에 있는 동안 줄어든다 — 극한 위험률 e_∞의 봉우리 하나·오목한 오름·출생 이득 감소의 손 증명 (질문 clock-counting-path, 탐색 sef727b7…와 peer)"
+},
+"rc7f68d3e034646a2811a3816e2e6c704": {
+"id": "rc7f68d3e034646a2811a3816e2e6c704",
+"t": 1794407962.3630104,
+"seq": 368,
+"role": "explore",
+"session": "s4aedc27e68ac4105b87c4d051911d637",
+"title": "중앙의 얇은 여유는 장부가 만든다: 면 항을 같은 결손끼리 짝지으면 창의 손실은 상수 (2/3)y₁f(y₁)≈0.29로 줄고 순이익은 가장 큰 소인 블록의 중간점 곡률이 든다 — 층–극 인계 탐색(s5092238…)과 peer (질문 미해소; 생산자의 두 항 항등식은 공표 결과의 재유도)"
+},
+"raac2ee7c9f954723888af085df0469ee": {
+"id": "raac2ee7c9f954723888af085df0469ee",
+"t": 1794409684.879906,
+"seq": 370,
+"role": "attempt",
+"session": "sd85d8252130c48c891068d3552451b9c",
+"title": "tsp10의 볼츠만 창 합을 용량에 대한 둘째 차분으로 읽기: 사슬 장부의 −1과 +1이 지워지는 까닭, 첫 층 열 합의 누출 없는 정확한 꼴과 새 노드 \"첫 층 열 하계\"(3131≤k≤9998에서 T_k≥−5.1u), 그 볼록성의 기전, 문턱 7·11·16 (attempt s748531…와 peer; 노드 미해결)"
+},
+"r7c70f1638fad4c3ebd8eba7c95a05844": {
+"id": "r7c70f1638fad4c3ebd8eba7c95a05844",
+"t": 1794411863.5039904,
+"seq": 371,
+"role": "attempt",
+"session": "sc87e9a5a9328440cbbd36fe0c8c97a6f",
+"title": "노드 tilted-full-tail: 충분히 큰 모든 k에서 성립하고, 그 정규화 여유 k^(1/3)·k𝔗_k(k)/W_k는 정확히 (23/18)μ로 간다 — 원자를 재생산하는 면적 망원, 자유 걸음의 첫째 차수 범함수, Brown 첫 통과 종속자로 계산한 정확한 값 (attempt sc424fbb…와 peer; 명시 범위 k≥3131은 미해결)"
+},
+"rc47c77916f6a466c9af8eef3ee559186": {
+"id": "rc47c77916f6a466c9af8eef3ee559186",
+"t": 1794412056.7081482,
+"seq": 372,
+"role": "attempt",
+"session": "s82ef83ae8dd9497fb4da4c13c077057b",
+"title": "N1(Borel 가중 대각선 볼록성)을 방문마다의 국소 여유로 다시 쓰기: 체류 구간 분해와 방문 분해(결손마다의 항등식의 Abel 합), 결손마다의 상쇄의 정확한 원인(고정 결손 정리와 창 극한), 여유의 벌크 극한 5/3→5/4와 중앙의 가장 빠듯함, attempt의 환원 조건 (K_a)의 실패, 그리고 새 분할 (A)∧(B)∧(T)⇒N1 (attempt s5446aeff…와 peer)"
+},
+"rc5c7228871294e59b670906018a1a0f8": {
+"id": "rc5c7228871294e59b670906018a1a0f8",
+"t": 1794413497.0563023,
+"seq": 373,
+"role": "explore",
+"session": "sa9de2ac86b9043519e25ee8ab05ede78",
+"title": "q0 탐색: 한 칸 차분의 동률–막힘 장부에서 두 겹의 상쇄와 오른쪽 절반의 사슬 원천까지 — 그림의 조각들이 어떤 공표 결과와 같은지의 대응, 사슬 모형 읽기의 정정, 새 관찰(높이층 장부, 두 무거운 자식 규칙, 기울기 몫 대 끝 몫)과 나무 판 사슬 원천의 첫 차수 이론(얇은 음의 층의 두 항 교차, 공표 숲 판 상수와의 정확한 다리) (explore s09ce95c…와 peer)"
+},
+"rddf23e71f1274d36ae07866033bdbc8b": {
+"id": "rddf23e71f1274d36ae07866033bdbc8b",
+"t": 1794413778.14998,
+"seq": 374,
+"role": "attempt",
+"session": "se5f2bcca9e0e460fa10b5c3d7af5f2a9",
+"title": "노드 flow-remainder(N_flow)의 해부: N_flow ⟺ 𝔗_k ≥ Jensen 손실, J_0 ≥ 1.66·u_k·k^(−1/3)(k≥3131)의 해석적 증명, 평평한 핵 결손을 거쳐 둘째 층 증분에 이르는 왼쪽 변, 그리고 W_corr의 부호를 정하는 같은 결손 크기 차분의 한 번 교차(교차점 → ξf의 최빈점 y₁) — attempt sab07013…와 peer (노드 미해결; 노드 둘·관계 하나 제안)"
+},
+"r4be8d76f58d0402fae7456412de3a9e4": {
+"id": "r4be8d76f58d0402fae7456412de3a9e4",
+"t": 1794414287.674206,
+"seq": 375,
+"role": "attempt",
+"session": "s315fb25cd7c34136b3dde1488707c1c3",
+"title": "첫 층 국소 원천 H₁의 증명: 결손 d≤k/10(정리 C, 고친 판)과 꼬리 d>k/10(정리 U) — 체류 법칙의 차분 꼴, 정지 확률의 정확 항등식, 꼬리 전체의 생존 아해"
+},
+"r84781b32936a435690e320796be570c1": {
+"id": "r84781b32936a435690e320796be570c1",
+"t": 1794422628.573456,
+"seq": 377,
+"role": "explore",
+"session": "s2a081186a0d94c648746698d4141f8ec",
+"title": "오목성 지수는 왜 5/4 아래에서 다가가는가: 착지 창이 하드 월의 곡률을 기울기로 옮기는 유한 크기 보정(n^(−1/3)의 닫힌 꼴 계수, 중심점 항등식이 드는 n^(−1/2) 항)과 중앙 왼쪽 격자 윤곽의 생성함수 (질문 concavity-exponent의 탐색 s3aaed22…와 peer; 질문 미해결)"
+},
+"re5b24347f4c74957aa127feeaf9913d5": {
+"id": "re5b24347f4c74957aa127feeaf9913d5",
+"t": 1794422940.526704,
+"seq": 378,
+"role": "explore",
+"session": "sb134c28fa42f4c56999665ee9179b4f7",
+"title": "크기 좌표에서 본 시계 세기 경로: 이미 공표된 골격, 척추 시계의 윗방 법칙과 변곡점, 그리고 최빈점 옆 '가장 빠듯한 자리'가 실은 두 칸 전진의 문제라는 것"
+}
+},
+"nodes": {
+"root": {
+"id": "root",
+"birth": 1793861705.4954176,
+"source": null,
+"transitions": [
+[
+1793861705.4954176,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 0
+},
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity": {
+"id": "sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+"birth": 1793861707.315722,
+"source": "r15524fdd79e8424596ee63c8b9073784",
+"transitions": [
+[
+1793861707.315722,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment": {
+"id": "sfeee897c69244a0bba059fb685290d63-critical-egf-increment",
+"birth": 1793908127.1135883,
+"source": "r801ec2207be148f59da02b551bf49259",
+"transitions": [
+[
+1793908127.1135883,
+"unresolved"
+],
+[
+1793910239.8730614,
+"informal_proved"
+],
+[
+1793952818.4551294,
+"formal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"s570b0e977ad645fb831b27f850048913-q-right-half": {
+"id": "s570b0e977ad645fb831b27f850048913-q-right-half",
+"birth": 1794006703.0393877,
+"source": "r708d99cec0604c698f2362e68068ad8d",
+"transitions": [
+[
+1794006703.0393877,
+"unresolved"
+],
+[
+1794154586.3409915,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 2
+},
+"s570b0e977ad645fb831b27f850048913-q-left-half": {
+"id": "s570b0e977ad645fb831b27f850048913-q-left-half",
+"birth": 1794006703.0393877,
+"source": "r708d99cec0604c698f2362e68068ad8d",
+"transitions": [
+[
+1794006703.0393877,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 2
+},
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality": {
+"id": "s570b0e977ad645fb831b27f850048913-boundary-response-inequality",
+"birth": 1794006703.0393877,
+"source": "r708d99cec0604c698f2362e68068ad8d",
+"transitions": [
+[
+1794006703.0393877,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 3
+},
+"s5b3c5b51660b401d8e6144fa61df2d8e-central-gap": {
+"id": "s5b3c5b51660b401d8e6144fa61df2d8e-central-gap",
+"birth": 1794023407.9128346,
+"source": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"transitions": [
+[
+1794023407.9128346,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior": {
+"id": "s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"birth": 1794023407.9128346,
+"source": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"transitions": [
+[
+1794023407.9128346,
+"unresolved"
+],
+[
+1794154586.3409915,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs": {
+"id": "s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"birth": 1794023407.9128346,
+"source": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"transitions": [
+[
+1794023407.9128346,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior": {
+"id": "s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"birth": 1794023407.9128346,
+"source": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"transitions": [
+[
+1794023407.9128346,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 1
+},
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase": {
+"id": "s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"birth": 1794030024.280683,
+"source": "r0dc57fab33ca460ba929db8de09b26a0",
+"transitions": [
+[
+1794030024.280683,
+"unresolved"
+],
+[
+1794154586.3409915,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 3
+},
+"s4df6b5432c4041a3aef869b9328818c7-left-moment": {
+"id": "s4df6b5432c4041a3aef869b9328818c7-left-moment",
+"birth": 1794033593.2934105,
+"source": "r1892593d9770428d8e72e67d504d1601",
+"transitions": [
+[
+1794033593.2934105,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 2
+},
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase": {
+"id": "s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"birth": 1794041979.2116723,
+"source": "rb6423c6f2b0e4e599251501f82cdd681",
+"transitions": [
+[
+1794041979.2116723,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 2
+},
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower": {
+"id": "s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+"birth": 1794053560.675374,
+"source": "r7c26b8b96f164cd38f8beca514c4ff74",
+"transitions": [
+[
+1794053560.675374,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 3
+},
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced": {
+"id": "s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"birth": 1794053560.675374,
+"source": "r7c26b8b96f164cd38f8beca514c4ff74",
+"transitions": [
+[
+1794053560.675374,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 3
+},
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer": {
+"id": "seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer",
+"birth": 1794079782.7638183,
+"source": "rb7effe026f8f4ede880c2b723eef9ff4",
+"transitions": [
+[
+1794079782.7638183,
+"unresolved"
+],
+[
+1794158059.2397974,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole": {
+"id": "seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"birth": 1794079782.7638183,
+"source": "rb7effe026f8f4ede880c2b723eef9ff4",
+"transitions": [
+[
+1794079782.7638183,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core": {
+"id": "sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core",
+"birth": 1794083469.5653832,
+"source": "rad00a59b22bd42a5a16cc0aa67e8841a",
+"transitions": [
+[
+1794083469.5653832,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder": {
+"id": "s1a605a95abea486298b3e99fc7951a81-right-window-remainder",
+"birth": 1794144746.934579,
+"source": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"transitions": [
+[
+1794144746.934579,
+"unresolved"
+],
+[
+1794154586.3409915,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality": {
+"id": "s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality",
+"birth": 1794144746.934579,
+"source": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"transitions": [
+[
+1794144746.934579,
+"unresolved"
+],
+[
+1794166847.6956816,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled": {
+"id": "s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled",
+"birth": 1794162725.0859914,
+"source": "r10ff8c2a7fb244dab041d6a6b080cb50",
+"transitions": [
+[
+1794162725.0859914,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window": {
+"id": "s61b074045da947f8b4600d1ee2bf22c2-lmcore-window",
+"birth": 1794162725.0859914,
+"source": "r10ff8c2a7fb244dab041d6a6b080cb50",
+"transitions": [
+[
+1794162725.0859914,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sa285576b08e84713a85bbec88889e550-one-step-local": {
+"id": "sa285576b08e84713a85bbec88889e550-one-step-local",
+"birth": 1794179241.8735425,
+"source": "r317289416fc34a7fa905902285e74f05",
+"transitions": [
+[
+1794179241.8735425,
+"unresolved"
+],
+[
+1794390846.6009681,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130": {
+"id": "sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"birth": 1794195295.2145402,
+"source": "r207f12442349469083b31851e184ec65",
+"transitions": [
+[
+1794195295.2145402,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131": {
+"id": "sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131",
+"birth": 1794195295.2145402,
+"source": "r207f12442349469083b31851e184ec65",
+"transitions": [
+[
+1794195295.2145402,
+"unresolved"
+],
+[
+1794390846.6009681,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment": {
+"id": "s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"birth": 1794214280.4377334,
+"source": "r43289845101546f48cb930a51c4cc5c3",
+"transitions": [
+[
+1794214280.4377334,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s36a005723f034a3aa8ab7c81d3ffe29d-source-side": {
+"id": "s36a005723f034a3aa8ab7c81d3ffe29d-source-side",
+"birth": 1794218635.0850825,
+"source": "r79ee9e020cbf4231881b540fa262eb31",
+"transitions": [
+[
+1794218635.0850825,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail": {
+"id": "s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"birth": 1794218635.0850825,
+"source": "r79ee9e020cbf4231881b540fa262eb31",
+"transitions": [
+[
+1794218635.0850825,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer": {
+"id": "s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"birth": 1794218635.0850825,
+"source": "r79ee9e020cbf4231881b540fa262eb31",
+"transitions": [
+[
+1794218635.0850825,
+"unresolved"
+],
+[
+1794390846.6009681,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"s263f85f424c447b3861de59bef4ea551-stem-attachment": {
+"id": "s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"birth": 1794219540.9091341,
+"source": "r3ee8ab13be774a729c867815cf30693f",
+"transitions": [
+[
+1794219540.9091341,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails": {
+"id": "sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"birth": 1794232681.6975296,
+"source": "r2e227260f0b64c4c90fc7af4c8699a6c",
+"transitions": [
+[
+1794232681.6975296,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay": {
+"id": "sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay",
+"birth": 1794232681.6975296,
+"source": "r2e227260f0b64c4c90fc7af4c8699a6c",
+"transitions": [
+[
+1794232681.6975296,
+"unresolved"
+],
+[
+1794246280.906873,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sb1afca696d7f4aa6a9b80f9b8236bb7a-eventual-root": {
+"id": "sb1afca696d7f4aa6a9b80f9b8236bb7a-eventual-root",
+"birth": 1794237936.9481597,
+"source": "r22df70d6f8eb4d69b5675e3e43471b18",
+"transitions": [
+[
+1794237936.9481597,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": null
+},
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window": {
+"id": "s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window",
+"birth": 1794239599.9101965,
+"source": "rfbe72a804096466cbf483f74036814ce",
+"transitions": [
+[
+1794239599.9101965,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s90bbdfa587234656b52195f0b901569a-eventual-left-columns": {
+"id": "s90bbdfa587234656b52195f0b901569a-eventual-left-columns",
+"birth": 1794239836.1188521,
+"source": "r9e82bb0caf3b41b5981e062a4f3d3ebd",
+"transitions": [
+[
+1794239836.1188521,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": null
+},
+"se0f20dc63d0741e09b4cc2305252734b-fs-window": {
+"id": "se0f20dc63d0741e09b4cc2305252734b-fs-window",
+"birth": 1794252116.106409,
+"source": "r05cf8c9e90704aebbe42f8729b4be48d",
+"transitions": [
+[
+1794252116.106409,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s5c2c7a8958434274a337bcdc72efacd8-chain-window-high": {
+"id": "s5c2c7a8958434274a337bcdc72efacd8-chain-window-high",
+"birth": 1794262587.7725036,
+"source": "r05c817cfaecf470abb2eda807b90b0e5",
+"transitions": [
+[
+1794262587.7725036,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s5c2c7a8958434274a337bcdc72efacd8-chain-window-low": {
+"id": "s5c2c7a8958434274a337bcdc72efacd8-chain-window-low",
+"birth": 1794262587.7725036,
+"source": "r05c817cfaecf470abb2eda807b90b0e5",
+"transitions": [
+[
+1794262587.7725036,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer": {
+"id": "s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"birth": 1794264115.5639884,
+"source": "r6f5f48f2e4084772a978ab59f2c48e93",
+"transitions": [
+[
+1794264115.5639884,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k": {
+"id": "s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"birth": 1794264115.5639884,
+"source": "r6f5f48f2e4084772a978ab59f2c48e93",
+"transitions": [
+[
+1794264115.5639884,
+"unresolved"
+],
+[
+1794401885.2771103,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold": {
+"id": "s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"birth": 1794264115.5639884,
+"source": "r6f5f48f2e4084772a978ab59f2c48e93",
+"transitions": [
+[
+1794264115.5639884,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"scae5188c08ea43568e3108c30a46cdd5-ul-near-window": {
+"id": "scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"birth": 1794269324.9758792,
+"source": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"transitions": [
+[
+1794269324.9758792,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"scae5188c08ea43568e3108c30a46cdd5-ul-core": {
+"id": "scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"birth": 1794269324.9758792,
+"source": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"transitions": [
+[
+1794269324.9758792,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window": {
+"id": "scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"birth": 1794269324.9758792,
+"source": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"transitions": [
+[
+1794269324.9758792,
+"unresolved"
+],
+[
+1794313445.1456087,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk": {
+"id": "scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"birth": 1794269324.9758792,
+"source": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"transitions": [
+[
+1794269324.9758792,
+"unresolved"
+],
+[
+1794313445.1456087,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail": {
+"id": "sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"birth": 1794271969.9738657,
+"source": "r3dd61e24b54a479fbb2dbed13eb6ac15",
+"transitions": [
+[
+1794271969.9738657,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k": {
+"id": "sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k",
+"birth": 1794275715.893211,
+"source": "r7dd34dc8e9fd41b88072f3d5d4d22797",
+"transitions": [
+[
+1794275715.893211,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change": {
+"id": "scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change",
+"birth": 1794279488.9874432,
+"source": "r3514683174704598bf04b5fa98146e6f",
+"transitions": [
+[
+1794279488.9874432,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s78ad5461287a4643be4dc44e715eda51-band-criterion-inequality": {
+"id": "s78ad5461287a4643be4dc44e715eda51-band-criterion-inequality",
+"birth": 1794286950.226229,
+"source": "rc3918294dab54bd5820dfdd6596f136b",
+"transitions": [
+[
+1794286950.226229,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition": {
+"id": "s78ad5461287a4643be4dc44e715eda51-head-sum-condition",
+"birth": 1794286950.226229,
+"source": "rc3918294dab54bd5820dfdd6596f136b",
+"transitions": [
+[
+1794286950.226229,
+"unresolved"
+],
+[
+1794314307.394969,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s78ad5461287a4643be4dc44e715eda51-head-sum-criterion-inequality": {
+"id": "s78ad5461287a4643be4dc44e715eda51-head-sum-criterion-inequality",
+"birth": 1794286950.226229,
+"source": "rc3918294dab54bd5820dfdd6596f136b",
+"transitions": [
+[
+1794286950.226229,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s1709ac2907b449dbae39e3b439a86203-tsp10": {
+"id": "s1709ac2907b449dbae39e3b439a86203-tsp10",
+"birth": 1794290062.39511,
+"source": "r319d86604c4344509b8e324fa93897cf",
+"transitions": [
+[
+1794290062.39511,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s1709ac2907b449dbae39e3b439a86203-stem10": {
+"id": "s1709ac2907b449dbae39e3b439a86203-stem10",
+"birth": 1794290062.39511,
+"source": "r319d86604c4344509b8e324fa93897cf",
+"transitions": [
+[
+1794290062.39511,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail": {
+"id": "s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail",
+"birth": 1794295747.1100018,
+"source": "raad7e6d531824745a8b9ac1a562d6331",
+"transitions": [
+[
+1794295747.1100018,
+"unresolved"
+],
+[
+1794336264.8638206,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s7a2a959f478e4009a2dba3c577ae5e6b-critical-tilt-first-layer-tail": {
+"id": "s7a2a959f478e4009a2dba3c577ae5e6b-critical-tilt-first-layer-tail",
+"birth": 1794295747.1100018,
+"source": "raad7e6d531824745a8b9ac1a562d6331",
+"transitions": [
+[
+1794295747.1100018,
+"unresolved"
+],
+[
+1794336264.8638206,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail": {
+"id": "sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"birth": 1794295958.8187513,
+"source": "r29b01e8e0a86457d8946dd26cc20f754",
+"transitions": [
+[
+1794295958.8187513,
+"unresolved"
+],
+[
+1794380343.1441565,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sf6d08848fee64e6996d91ea811992a50-flat-core": {
+"id": "sf6d08848fee64e6996d91ea811992a50-flat-core",
+"birth": 1794295958.8187513,
+"source": "r29b01e8e0a86457d8946dd26cc20f754",
+"transitions": [
+[
+1794295958.8187513,
+"unresolved"
+],
+[
+1794380343.1441565,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s233c7f2a2f0445f0a2e7551f6948d0b9-refined-source-33-20": {
+"id": "s233c7f2a2f0445f0a2e7551f6948d0b9-refined-source-33-20",
+"birth": 1794301924.9593108,
+"source": "rbca832432c744c9cbf720dcf89005c9b",
+"transitions": [
+[
+1794301924.9593108,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20": {
+"id": "s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20",
+"birth": 1794301924.9593108,
+"source": "rbca832432c744c9cbf720dcf89005c9b",
+"transitions": [
+[
+1794301924.9593108,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 4
+},
+"s7400900706fc46979a5a44f149dbea97-ul-core-closed-moment": {
+"id": "s7400900706fc46979a5a44f149dbea97-ul-core-closed-moment",
+"birth": 1794308860.8206127,
+"source": "rec21ee39284f4296be4c92e99c14d5ea",
+"transitions": [
+[
+1794308860.8206127,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"sd7cd6139ee4a4ebfb61d476996bde609-band-criterion-flat": {
+"id": "sd7cd6139ee4a4ebfb61d476996bde609-band-criterion-flat",
+"birth": 1794315768.9888952,
+"source": "r696d62c0f01a40e7a2da52d0342f67d5",
+"transitions": [
+[
+1794315768.9888952,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core": {
+"id": "sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core",
+"birth": 1794323578.2807856,
+"source": "r845b2055d18c40c6894cca76b1dff184",
+"transitions": [
+[
+1794323578.2807856,
+"unresolved"
+],
+[
+1794336264.8638206,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band": {
+"id": "s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"birth": 1794327956.0818138,
+"source": "r030ffaebcd164eb492cc4215ce1c2e56",
+"transitions": [
+[
+1794327956.0818138,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk": {
+"id": "s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"birth": 1794327956.0818138,
+"source": "r030ffaebcd164eb492cc4215ce1c2e56",
+"transitions": [
+[
+1794327956.0818138,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder": {
+"id": "sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder",
+"birth": 1794340285.6752992,
+"source": "r686f30fde8374c31bfd84bf4d221633b",
+"transitions": [
+[
+1794340285.6752992,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity": {
+"id": "s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity",
+"birth": 1794343212.6278958,
+"source": "r98fb348cdb3f47cd99325318f279072d",
+"transitions": [
+[
+1794343212.6278958,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment": {
+"id": "s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment",
+"birth": 1794343212.6278958,
+"source": "r98fb348cdb3f47cd99325318f279072d",
+"transitions": [
+[
+1794343212.6278958,
+"unresolved"
+],
+[
+1794396517.7855842,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity-explicit": {
+"id": "s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity-explicit",
+"birth": 1794343212.6278958,
+"source": "r98fb348cdb3f47cd99325318f279072d",
+"transitions": [
+[
+1794343212.6278958,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"sbc78ebbbd815476194858a30df8bc356-left-leak": {
+"id": "sbc78ebbbd815476194858a30df8bc356-left-leak",
+"birth": 1794344246.4668956,
+"source": "r2c9a689c1be14f369d52f9512c658e31",
+"transitions": [
+[
+1794344246.4668956,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"s747c26e46c6442b8948b31c328499564-ul-core-cancellation-free": {
+"id": "s747c26e46c6442b8948b31c328499564-ul-core-cancellation-free",
+"birth": 1794359689.8245285,
+"source": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"transitions": [
+[
+1794359689.8245285,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"s747c26e46c6442b8948b31c328499564-ul-core-remainder-bt-at": {
+"id": "s747c26e46c6442b8948b31c328499564-ul-core-remainder-bt-at",
+"birth": 1794359689.8245285,
+"source": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"transitions": [
+[
+1794359689.8245285,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail": {
+"id": "s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"birth": 1794359689.8245285,
+"source": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"transitions": [
+[
+1794359689.8245285,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 9
+},
+"s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail": {
+"id": "s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail",
+"birth": 1794359738.8914013,
+"source": "r3d0856b811f14f8c8d71335597036243",
+"transitions": [
+[
+1794359738.8914013,
+"unresolved"
+],
+[
+1794390846.6009681,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux": {
+"id": "sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux",
+"birth": 1794360354.4302766,
+"source": "r5c13beecd43540e5a455aa720e3fa1b5",
+"transitions": [
+[
+1794360354.4302766,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s1fdba016d0454a5eac323cb18a67655a-qh-second-layer": {
+"id": "s1fdba016d0454a5eac323cb18a67655a-qh-second-layer",
+"birth": 1794362352.6331322,
+"source": "r33475a7cfc744a5994c185e88660b710",
+"transitions": [
+[
+1794362352.6331322,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s1fdba016d0454a5eac323cb18a67655a-head-sum-margin": {
+"id": "s1fdba016d0454a5eac323cb18a67655a-head-sum-margin",
+"birth": 1794362352.6331322,
+"source": "r33475a7cfc744a5994c185e88660b710",
+"transitions": [
+[
+1794362352.6331322,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus": {
+"id": "s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus",
+"birth": 1794362352.6331322,
+"source": "r33475a7cfc744a5994c185e88660b710",
+"transitions": [
+[
+1794362352.6331322,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sa3f2213741804894b82c2689f4b2a217-central-point-mass": {
+"id": "sa3f2213741804894b82c2689f4b2a217-central-point-mass",
+"birth": 1794371675.765406,
+"source": "r51968231edad4eca95df3e1df0650a20",
+"transitions": [
+[
+1794371675.765406,
+"unresolved"
+],
+[
+1794396517.7855842,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"sa3f2213741804894b82c2689f4b2a217-right-window-decrease": {
+"id": "sa3f2213741804894b82c2689f4b2a217-right-window-decrease",
+"birth": 1794371675.765406,
+"source": "r51968231edad4eca95df3e1df0650a20",
+"transitions": [
+[
+1794371675.765406,
+"unresolved"
+],
+[
+1794396517.7855842,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk": {
+"id": "sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk",
+"birth": 1794372139.7113657,
+"source": "rae1f20952bcc4e19bb256dca69412704",
+"transitions": [
+[
+1794372139.7113657,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold": {
+"id": "sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold",
+"birth": 1794372139.7113657,
+"source": "rae1f20952bcc4e19bb256dca69412704",
+"transitions": [
+[
+1794372139.7113657,
+"unresolved"
+],
+[
+1794381259.086477,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sc4a7168c1ebe41b0a4998867841cc235-restricted-stem-source": {
+"id": "sc4a7168c1ebe41b0a4998867841cc235-restricted-stem-source",
+"birth": 1794374023.907328,
+"source": "r3b38ffdeb5f1449d8a2f0de50e25be06",
+"transitions": [
+[
+1794374023.907328,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk": {
+"id": "s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk",
+"birth": 1794381046.2930894,
+"source": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"transitions": [
+[
+1794381046.2930894,
+"unresolved"
+],
+[
+1794403895.5065844,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-gain": {
+"id": "s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-gain",
+"birth": 1794381046.2930894,
+"source": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"transitions": [
+[
+1794381046.2930894,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-mass-gain": {
+"id": "s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-mass-gain",
+"birth": 1794381046.2930894,
+"source": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"transitions": [
+[
+1794381046.2930894,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source": {
+"id": "s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source",
+"birth": 1794383747.3118193,
+"source": "r781caf392d7d4a768a1f94cca4d5526d",
+"transitions": [
+[
+1794383747.3118193,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"scd5c5c0b07b94d9abb04fe509829839b-stem-plus-half": {
+"id": "scd5c5c0b07b94d9abb04fe509829839b-stem-plus-half",
+"birth": 1794405163.039407,
+"source": "r0cece3445bf8401a8324877691060890",
+"transitions": [
+[
+1794405163.039407,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"scd5c5c0b07b94d9abb04fe509829839b-stem-sum-half": {
+"id": "scd5c5c0b07b94d9abb04fe509829839b-stem-sum-half",
+"birth": 1794405163.039407,
+"source": "r0cece3445bf8401a8324877691060890",
+"transitions": [
+[
+1794405163.039407,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 5
+},
+"scd5c5c0b07b94d9abb04fe509829839b-relaxed-tilted-tail": {
+"id": "scd5c5c0b07b94d9abb04fe509829839b-relaxed-tilted-tail",
+"birth": 1794405163.039407,
+"source": "r0cece3445bf8401a8324877691060890",
+"transitions": [
+[
+1794405163.039407,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-large": {
+"id": "sbf927e82d73e4d698bb6a6a5db7ecb27-leak-large",
+"birth": 1794407298.3797796,
+"source": "r67b6dcfc67f44f118320203c15b7dd21",
+"transitions": [
+[
+1794407298.3797796,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-finite": {
+"id": "sbf927e82d73e4d698bb6a6a5db7ecb27-leak-finite",
+"birth": 1794407298.3797796,
+"source": "r67b6dcfc67f44f118320203c15b7dd21",
+"transitions": [
+[
+1794407298.3797796,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 7
+},
+"sbf927e82d73e4d698bb6a6a5db7ecb27-pair-moment-finite": {
+"id": "sbf927e82d73e4d698bb6a6a5db7ecb27-pair-moment-finite",
+"birth": 1794407298.3797796,
+"source": "r67b6dcfc67f44f118320203c15b7dd21",
+"transitions": [
+[
+1794407298.3797796,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"sdee623984bfe4cac9f0282946ec8640b-first-layer-column-finite": {
+"id": "sdee623984bfe4cac9f0282946ec8640b-first-layer-column-finite",
+"birth": 1794409684.879906,
+"source": "raac2ee7c9f954723888af085df0469ee",
+"transitions": [
+[
+1794409684.879906,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 6
+},
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-level": {
+"id": "s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-level",
+"birth": 1794412056.7081482,
+"source": "rc47c77916f6a466c9af8eef3ee559186",
+"transitions": [
+[
+1794412056.7081482,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-deficit": {
+"id": "s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-deficit",
+"birth": 1794412056.7081482,
+"source": "rc47c77916f6a466c9af8eef3ee559186",
+"transitions": [
+[
+1794412056.7081482,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-top-term": {
+"id": "s2bdb1de522354137b97b2619713a7aa8-ul-core-top-term",
+"birth": 1794412056.7081482,
+"source": "rc47c77916f6a466c9af8eef3ee559186",
+"transitions": [
+[
+1794412056.7081482,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"s1638d97f39d847d49aeafbdc96d6d01d-diag-single-crossing": {
+"id": "s1638d97f39d847d49aeafbdc96d6d01d-diag-single-crossing",
+"birth": 1794413778.14998,
+"source": "rddf23e71f1274d36ae07866033bdbc8b",
+"transitions": [
+[
+1794413778.14998,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"s1638d97f39d847d49aeafbdc96d6d01d-flat-deficit-budget": {
+"id": "s1638d97f39d847d49aeafbdc96d6d01d-flat-deficit-budget",
+"birth": 1794413778.14998,
+"source": "rddf23e71f1274d36ae07866033bdbc8b",
+"transitions": [
+[
+1794413778.14998,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 8
+},
+"se09cad02864943228b4edcd6a08f26de-h1-up-to-tenth": {
+"id": "se09cad02864943228b4edcd6a08f26de-h1-up-to-tenth",
+"birth": 1794414287.674206,
+"source": "r4be8d76f58d0402fae7456412de3a9e4",
+"transitions": [
+[
+1794414287.674206,
+"informal_proved"
+]
+],
+"alias_of": null,
+"depth": 9
+},
+"se09cad02864943228b4edcd6a08f26de-h1-tail": {
+"id": "se09cad02864943228b4edcd6a08f26de-h1-tail",
+"birth": 1794414287.674206,
+"source": "r4be8d76f58d0402fae7456412de3a9e4",
+"transitions": [
+[
+1794414287.674206,
+"unresolved"
+]
+],
+"alias_of": null,
+"depth": 9
+}
+},
+"relations": {
+"r15524fdd79e8424596ee63c8b9073784/conditional-lc-suffices": {
+"id": "r15524fdd79e8424596ee63c8b9073784/conditional-lc-suffices",
+"birth": 1793861707.315722,
+"record": "r15524fdd79e8424596ee63c8b9073784",
+"premises": [
+[
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+"proved"
+]
+],
+"conclusion": [
+"root",
+"proved"
+]
+},
+"r801ec2207be148f59da02b551bf49259/root-implies-critical-increment": {
+"id": "r801ec2207be148f59da02b551bf49259/root-implies-critical-increment",
+"birth": 1793908127.1135883,
+"record": "r801ec2207be148f59da02b551bf49259",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment",
+"proved"
+]
+},
+"r801ec2207be148f59da02b551bf49259/failed-increment-refutes-root": {
+"id": "r801ec2207be148f59da02b551bf49259/failed-increment-refutes-root",
+"birth": 1793908127.1135883,
+"record": "r801ec2207be148f59da02b551bf49259",
+"premises": [
+[
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment",
+"refuted"
+]
+],
+"conclusion": [
+"root",
+"refuted"
+]
+},
+"r708d99cec0604c698f2362e68068ad8d/split-q-by-half": {
+"id": "r708d99cec0604c698f2362e68068ad8d/split-q-by-half",
+"birth": 1794006703.0393877,
+"record": "r708d99cec0604c698f2362e68068ad8d",
+"premises": [
+[
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"proved"
+],
+[
+"s570b0e977ad645fb831b27f850048913-q-left-half",
+"proved"
+]
+],
+"conclusion": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+"proved"
+]
+},
+"r708d99cec0604c698f2362e68068ad8d/boundary-inequality-implies-right-half": {
+"id": "r708d99cec0604c698f2362e68068ad8d/boundary-inequality-implies-right-half",
+"birth": 1794006703.0393877,
+"record": "r708d99cec0604c698f2362e68068ad8d",
+"premises": [
+[
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality",
+"proved"
+]
+],
+"conclusion": [
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"proved"
+]
+},
+"r39d72f62177d4d419717cc7009587c45/rel-root-implies-qleft": {
+"id": "r39d72f62177d4d419717cc7009587c45/rel-root-implies-qleft",
+"birth": 1794020315.7424572,
+"record": "r39d72f62177d4d419717cc7009587c45",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"s570b0e977ad645fb831b27f850048913-q-left-half",
+"proved"
+]
+},
+"rce3dc75b9fc040fd8925fa3a73b0d753/split-four-position-pairs": {
+"id": "rce3dc75b9fc040fd8925fa3a73b0d753/split-four-position-pairs",
+"birth": 1794023407.9128346,
+"record": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-central-gap",
+"proved"
+],
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+],
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"proved"
+],
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+],
+"conclusion": [
+"root",
+"proved"
+]
+},
+"rce3dc75b9fc040fd8925fa3a73b0d753/left-implies-cross-rel": {
+"id": "rce3dc75b9fc040fd8925fa3a73b0d753/left-implies-cross-rel",
+"birth": 1794023407.9128346,
+"record": "rce3dc75b9fc040fd8925fa3a73b0d753",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"proved"
+]
+},
+"r0dc57fab33ca460ba929db8de09b26a0/qright-implies-right-interior": {
+"id": "r0dc57fab33ca460ba929db8de09b26a0/qright-implies-right-interior",
+"birth": 1794030024.280683,
+"record": "r0dc57fab33ca460ba929db8de09b26a0",
+"premises": [
+[
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+]
+},
+"r0dc57fab33ca460ba929db8de09b26a0/right-bulk-increase-implies-qright": {
+"id": "r0dc57fab33ca460ba929db8de09b26a0/right-bulk-increase-implies-qright",
+"birth": 1794030024.280683,
+"record": "r0dc57fab33ca460ba929db8de09b26a0",
+"premises": [
+[
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+],
+"conclusion": [
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"proved"
+]
+},
+"r656206ced5f04f29be24507607f74cc8/rel-cross-implies-left": {
+"id": "r656206ced5f04f29be24507607f74cc8/rel-cross-implies-left",
+"birth": 1794030663.9731998,
+"record": "r656206ced5f04f29be24507607f74cc8",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+},
+"r656206ced5f04f29be24507607f74cc8/rel-root-implies-cross": {
+"id": "r656206ced5f04f29be24507607f74cc8/rel-root-implies-cross",
+"birth": 1794030663.9731998,
+"record": "r656206ced5f04f29be24507607f74cc8",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"proved"
+]
+},
+"rdc276812ff254431a63e3909875cbda6/rel-QL-implies-PL": {
+"id": "rdc276812ff254431a63e3909875cbda6/rel-QL-implies-PL",
+"birth": 1794032472.3735774,
+"record": "rdc276812ff254431a63e3909875cbda6",
+"premises": [
+[
+"s570b0e977ad645fb831b27f850048913-q-left-half",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+},
+"rdc276812ff254431a63e3909875cbda6/rel-PL-implies-QL": {
+"id": "rdc276812ff254431a63e3909875cbda6/rel-PL-implies-QL",
+"birth": 1794032472.3735774,
+"record": "rdc276812ff254431a63e3909875cbda6",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+],
+"conclusion": [
+"s570b0e977ad645fb831b27f850048913-q-left-half",
+"proved"
+]
+},
+"r690be93802cc4cd1af3b6d76cb16d4e5/rel-R-implies-W": {
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5/rel-R-implies-W",
+"birth": 1794032970.1953306,
+"record": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+]
+],
+"conclusion": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+},
+"r690be93802cc4cd1af3b6d76cb16d4e5/rel-R-implies-QR": {
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5/rel-R-implies-QR",
+"birth": 1794032970.1953306,
+"record": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+]
+],
+"conclusion": [
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"proved"
+]
+},
+"r690be93802cc4cd1af3b6d76cb16d4e5/rel-root-implies-R": {
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5/rel-root-implies-R",
+"birth": 1794032970.1953306,
+"record": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+]
+},
+"r690be93802cc4cd1af3b6d76cb16d4e5/rel-root-implies-Q": {
+"id": "r690be93802cc4cd1af3b6d76cb16d4e5/rel-root-implies-Q",
+"birth": 1794032970.1953306,
+"record": "r690be93802cc4cd1af3b6d76cb16d4e5",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity",
+"proved"
+]
+},
+"r1892593d9770428d8e72e67d504d1601/left-moment-implies-left-interior": {
+"id": "r1892593d9770428d8e72e67d504d1601/left-moment-implies-left-interior",
+"birth": 1794033593.2934105,
+"record": "r1892593d9770428d8e72e67d504d1601",
+"premises": [
+[
+"s4df6b5432c4041a3aef869b9328818c7-left-moment",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+},
+"rb6423c6f2b0e4e599251501f82cdd681/rel-wl-implies-left-interior": {
+"id": "rb6423c6f2b0e4e599251501f82cdd681/rel-wl-implies-left-interior",
+"birth": 1794041979.2116723,
+"record": "rb6423c6f2b0e4e599251501f82cdd681",
+"premises": [
+[
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"proved"
+]
+],
+"conclusion": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+},
+"rb6423c6f2b0e4e599251501f82cdd681/rel-left-interior-implies-wl": {
+"id": "rb6423c6f2b0e4e599251501f82cdd681/rel-left-interior-implies-wl",
+"birth": 1794041979.2116723,
+"record": "rb6423c6f2b0e4e599251501f82cdd681",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+],
+"conclusion": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"proved"
+]
+},
+"r7c26b8b96f164cd38f8beca514c4ff74/rel-lmflat-implies-lm": {
+"id": "r7c26b8b96f164cd38f8beca514c4ff74/rel-lmflat-implies-lm",
+"birth": 1794053560.675374,
+"record": "r7c26b8b96f164cd38f8beca514c4ff74",
+"premises": [
+[
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+"proved"
+]
+],
+"conclusion": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment",
+"proved"
+]
+},
+"r7c26b8b96f164cd38f8beca514c4ff74/rel-lm-implies-lmflat": {
+"id": "r7c26b8b96f164cd38f8beca514c4ff74/rel-lm-implies-lmflat",
+"birth": 1794053560.675374,
+"record": "r7c26b8b96f164cd38f8beca514c4ff74",
+"premises": [
+[
+"s4df6b5432c4041a3aef869b9328818c7-left-moment",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+"proved"
+]
+},
+"r7c26b8b96f164cd38f8beca514c4ff74/rel-wlflat-implies-wl": {
+"id": "r7c26b8b96f164cd38f8beca514c4ff74/rel-wlflat-implies-wl",
+"birth": 1794053560.675374,
+"record": "r7c26b8b96f164cd38f8beca514c4ff74",
+"premises": [
+[
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+],
+"conclusion": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"proved"
+]
+},
+"r7c26b8b96f164cd38f8beca514c4ff74/rel-wl-implies-wlflat": {
+"id": "r7c26b8b96f164cd38f8beca514c4ff74/rel-wl-implies-wlflat",
+"birth": 1794053560.675374,
+"record": "r7c26b8b96f164cd38f8beca514c4ff74",
+"premises": [
+[
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"rb7effe026f8f4ede880c2b723eef9ff4/rel-transfer-split": {
+"id": "rb7effe026f8f4ede880c2b723eef9ff4/rel-transfer-split",
+"birth": 1794079782.7638183,
+"record": "rb7effe026f8f4ede880c2b723eef9ff4",
+"premises": [
+[
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer",
+"proved"
+],
+[
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"rb7effe026f8f4ede880c2b723eef9ff4/rel-restrict-to-pole-residual": {
+"id": "rb7effe026f8f4ede880c2b723eef9ff4/rel-restrict-to-pole-residual",
+"birth": 1794079782.7638183,
+"record": "rb7effe026f8f4ede880c2b723eef9ff4",
+"premises": [
+[
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+],
+"conclusion": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+},
+"rad00a59b22bd42a5a16cc0aa67e8841a/rel-core-implies-lmflat": {
+"id": "rad00a59b22bd42a5a16cc0aa67e8841a/rel-core-implies-lmflat",
+"birth": 1794083469.5653832,
+"record": "rad00a59b22bd42a5a16cc0aa67e8841a",
+"premises": [
+[
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+"proved"
+]
+},
+"rad00a59b22bd42a5a16cc0aa67e8841a/rel-lmflat-implies-core": {
+"id": "rad00a59b22bd42a5a16cc0aa67e8841a/rel-lmflat-implies-core",
+"birth": 1794083469.5653832,
+"record": "rad00a59b22bd42a5a16cc0aa67e8841a",
+"premises": [
+[
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower",
+"proved"
+]
+],
+"conclusion": [
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core",
+"proved"
+]
+},
+"ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-wsharp-implies-w": {
+"id": "ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-wsharp-implies-w",
+"birth": 1794144746.934579,
+"record": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"premises": [
+[
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder",
+"proved"
+]
+],
+"conclusion": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+},
+"ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-w-implies-wsharp": {
+"id": "ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-w-implies-wsharp",
+"birth": 1794144746.934579,
+"record": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"premises": [
+[
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+],
+"conclusion": [
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder",
+"proved"
+]
+},
+"ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-x-implies-wsharp": {
+"id": "ra4c01fca85d24f5cb35be1ec80d8e1c8/rel-x-implies-wsharp",
+"birth": 1794144746.934579,
+"record": "ra4c01fca85d24f5cb35be1ec80d8e1c8",
+"premises": [
+[
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality",
+"proved"
+]
+],
+"conclusion": [
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder",
+"proved"
+]
+},
+"r10ff8c2a7fb244dab041d6a6b080cb50/rel-lmcore-split": {
+"id": "r10ff8c2a7fb244dab041d6a6b080cb50/rel-lmcore-split",
+"birth": 1794162725.0859914,
+"record": "r10ff8c2a7fb244dab041d6a6b080cb50",
+"premises": [
+[
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled",
+"proved"
+],
+[
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window",
+"proved"
+]
+],
+"conclusion": [
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core",
+"proved"
+]
+},
+"r317289416fc34a7fa905902285e74f05/rel-qstar-implies-wlflat": {
+"id": "r317289416fc34a7fa905902285e74f05/rel-qstar-implies-wlflat",
+"birth": 1794179241.8735425,
+"record": "r317289416fc34a7fa905902285e74f05",
+"premises": [
+[
+"sa285576b08e84713a85bbec88889e550-one-step-local",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r207f12442349469083b31851e184ec65/rel-qstar-column-split": {
+"id": "r207f12442349469083b31851e184ec65/rel-qstar-column-split",
+"birth": 1794195295.2145402,
+"record": "r207f12442349469083b31851e184ec65",
+"premises": [
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131",
+"proved"
+]
+],
+"conclusion": [
+"sa285576b08e84713a85bbec88889e550-one-step-local",
+"proved"
+]
+},
+"r43289845101546f48cb930a51c4cc5c3/rel-onelevel-implies-wlflat": {
+"id": "r43289845101546f48cb930a51c4cc5c3/rel-onelevel-implies-wlflat",
+"birth": 1794214280.4377334,
+"record": "r43289845101546f48cb930a51c4cc5c3",
+"premises": [
+[
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r79ee9e020cbf4231881b540fa262eb31/rel-qstar-from-3131-three-parts": {
+"id": "r79ee9e020cbf4231881b540fa262eb31/rel-qstar-from-3131-three-parts",
+"birth": 1794218635.0850825,
+"record": "r79ee9e020cbf4231881b540fa262eb31",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-source-side",
+"proved"
+],
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+],
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"proved"
+]
+],
+"conclusion": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131",
+"proved"
+]
+},
+"r3ee8ab13be774a729c867815cf30693f/rel-stem-implies-wlflat": {
+"id": "r3ee8ab13be774a729c867815cf30693f/rel-stem-implies-wlflat",
+"birth": 1794219540.9091341,
+"record": "r3ee8ab13be774a729c867815cf30693f",
+"premises": [
+[
+"s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r3ee8ab13be774a729c867815cf30693f/rel-onelevel-implies-stem": {
+"id": "r3ee8ab13be774a729c867815cf30693f/rel-onelevel-implies-stem",
+"birth": 1794219540.9091341,
+"record": "r3ee8ab13be774a729c867815cf30693f",
+"premises": [
+[
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+]
+],
+"conclusion": [
+"s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"proved"
+]
+},
+"r2e227260f0b64c4c90fc7af4c8699a6c/rel-tilted-abel": {
+"id": "r2e227260f0b64c4c90fc7af4c8699a6c/rel-tilted-abel",
+"birth": 1794232681.6975296,
+"record": "r2e227260f0b64c4c90fc7af4c8699a6c",
+"premises": [
+[
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+],
+[
+"sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay",
+"proved"
+]
+],
+"conclusion": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+]
+},
+"r22df70d6f8eb4d69b5675e3e43471b18/rel-root-implies-eventual-root": {
+"id": "r22df70d6f8eb4d69b5675e3e43471b18/rel-root-implies-eventual-root",
+"birth": 1794237936.9481597,
+"record": "r22df70d6f8eb4d69b5675e3e43471b18",
+"premises": [
+[
+"root",
+"proved"
+]
+],
+"conclusion": [
+"sb1afca696d7f4aa6a9b80f9b8236bb7a-eventual-root",
+"proved"
+]
+},
+"rfbe72a804096466cbf483f74036814ce/rel-chain-implies-wlflat": {
+"id": "rfbe72a804096466cbf483f74036814ce/rel-chain-implies-wlflat",
+"birth": 1794239599.9101965,
+"record": "rfbe72a804096466cbf483f74036814ce",
+"premises": [
+[
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r9e82bb0caf3b41b5981e062a4f3d3ebd/rel-L-implies-Ecol": {
+"id": "r9e82bb0caf3b41b5981e062a4f3d3ebd/rel-L-implies-Ecol",
+"birth": 1794239836.1188521,
+"record": "r9e82bb0caf3b41b5981e062a4f3d3ebd",
+"premises": [
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior",
+"proved"
+]
+],
+"conclusion": [
+"s90bbdfa587234656b52195f0b901569a-eventual-left-columns",
+"proved"
+]
+},
+"r9e82bb0caf3b41b5981e062a4f3d3ebd/rel-Ecol-R-implies-Pev": {
+"id": "r9e82bb0caf3b41b5981e062a4f3d3ebd/rel-Ecol-R-implies-Pev",
+"birth": 1794239836.1188521,
+"record": "r9e82bb0caf3b41b5981e062a4f3d3ebd",
+"premises": [
+[
+"s90bbdfa587234656b52195f0b901569a-eventual-left-columns",
+"proved"
+],
+[
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"proved"
+]
+],
+"conclusion": [
+"sb1afca696d7f4aa6a9b80f9b8236bb7a-eventual-root",
+"proved"
+]
+},
+"r051bfe18ee7448c2aa4d067eab9e8c6c/rel-T-implies-onelevel": {
+"id": "r051bfe18ee7448c2aa4d067eab9e8c6c/rel-T-implies-onelevel",
+"birth": 1794246280.906873,
+"record": "r051bfe18ee7448c2aa4d067eab9e8c6c",
+"premises": [
+[
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+],
+"conclusion": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+]
+},
+"r05cf8c9e90704aebbe42f8729b4be48d/rel-onelevel-implies-fs-window": {
+"id": "r05cf8c9e90704aebbe42f8729b4be48d/rel-onelevel-implies-fs-window",
+"birth": 1794252116.106409,
+"record": "r05cf8c9e90704aebbe42f8729b4be48d",
+"premises": [
+[
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+]
+],
+"conclusion": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window",
+"proved"
+]
+},
+"r05cf8c9e90704aebbe42f8729b4be48d/rel-fs-window-implies-wlflat": {
+"id": "r05cf8c9e90704aebbe42f8729b4be48d/rel-fs-window-implies-wlflat",
+"birth": 1794252116.106409,
+"record": "r05cf8c9e90704aebbe42f8729b4be48d",
+"premises": [
+[
+"se0f20dc63d0741e09b4cc2305252734b-fs-window",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r05c817cfaecf470abb2eda807b90b0e5/rel-chain-window-split": {
+"id": "r05c817cfaecf470abb2eda807b90b0e5/rel-chain-window-split",
+"birth": 1794262587.7725036,
+"record": "r05c817cfaecf470abb2eda807b90b0e5",
+"premises": [
+[
+"s5c2c7a8958434274a337bcdc72efacd8-chain-window-high",
+"proved"
+],
+[
+"s5c2c7a8958434274a337bcdc72efacd8-chain-window-low",
+"proved"
+]
+],
+"conclusion": [
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window",
+"proved"
+]
+},
+"r05c817cfaecf470abb2eda807b90b0e5/rel-stem-implies-chain-high": {
+"id": "r05c817cfaecf470abb2eda807b90b0e5/rel-stem-implies-chain-high",
+"birth": 1794262587.7725036,
+"record": "r05c817cfaecf470abb2eda807b90b0e5",
+"premises": [
+[
+"s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"proved"
+]
+],
+"conclusion": [
+"s5c2c7a8958434274a337bcdc72efacd8-chain-window-high",
+"proved"
+]
+},
+"r6f5f48f2e4084772a978ab59f2c48e93/s986857c908dd43ef81627c166fed82eb-rel-split-lrp": {
+"id": "r6f5f48f2e4084772a978ab59f2c48e93/s986857c908dd43ef81627c166fed82eb-rel-split-lrp",
+"birth": 1794264115.5639884,
+"record": "r6f5f48f2e4084772a978ab59f2c48e93",
+"premises": [
+[
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"proved"
+]
+],
+"conclusion": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+},
+"r6f5f48f2e4084772a978ab59f2c48e93/s986857c908dd43ef81627c166fed82eb-rel-ul-bvtheta-lrp2": {
+"id": "r6f5f48f2e4084772a978ab59f2c48e93/s986857c908dd43ef81627c166fed82eb-rel-ul-bvtheta-lrp2",
+"birth": 1794264115.5639884,
+"record": "r6f5f48f2e4084772a978ab59f2c48e93",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r7e03176bca8242f8ad7d3348dd2b32c5/rel-ul-four-parts": {
+"id": "r7e03176bca8242f8ad7d3348dd2b32c5/rel-ul-four-parts",
+"birth": 1794269324.9758792,
+"record": "r7e03176bca8242f8ad7d3348dd2b32c5",
+"premises": [
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+]
+},
+"r3dd61e24b54a479fbb2dbed13eb6ac15/sd40f5ffeab9649bf9f79ca6666a6b688-rel-ul-full-tail-implies-t": {
+"id": "r3dd61e24b54a479fbb2dbed13eb6ac15/sd40f5ffeab9649bf9f79ca6666a6b688-rel-ul-full-tail-implies-t",
+"birth": 1794271969.9738657,
+"record": "r3dd61e24b54a479fbb2dbed13eb6ac15",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+],
+[
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+]
+],
+"conclusion": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+},
+"r3dd61e24b54a479fbb2dbed13eb6ac15/sd40f5ffeab9649bf9f79ca6666a6b688-rel-t-without-core": {
+"id": "r3dd61e24b54a479fbb2dbed13eb6ac15/sd40f5ffeab9649bf9f79ca6666a6b688-rel-t-without-core",
+"birth": 1794271969.9738657,
+"record": "r3dd61e24b54a479fbb2dbed13eb6ac15",
+"premises": [
+[
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"proved"
+]
+],
+"conclusion": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+},
+"r7dd34dc8e9fd41b88072f3d5d4d22797/sf08503670bbf48a4b4203c6ec4e109c9-rel-ul-lrp2-bvtheta3-lrp3": {
+"id": "r7dd34dc8e9fd41b88072f3d5d4d22797/sf08503670bbf48a4b4203c6ec4e109c9-rel-ul-lrp2-bvtheta3-lrp3",
+"birth": 1794275715.893211,
+"record": "r7dd34dc8e9fd41b88072f3d5d4d22797",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+],
+[
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"proved"
+]
+},
+"r3514683174704598bf04b5fa98146e6f/scf9ee1ba989d47fe85b5c729259d71b7-rel-sc-core-implies-ul": {
+"id": "r3514683174704598bf04b5fa98146e6f/scf9ee1ba989d47fe85b5c729259d71b7-rel-sc-core-implies-ul",
+"birth": 1794279488.9874432,
+"record": "r3514683174704598bf04b5fa98146e6f",
+"premises": [
+[
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"proved"
+]
+],
+"conclusion": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+]
+},
+"r3514683174704598bf04b5fa98146e6f/scf9ee1ba989d47fe85b5c729259d71b7-rel-sc-fulltail-implies-t": {
+"id": "r3514683174704598bf04b5fa98146e6f/scf9ee1ba989d47fe85b5c729259d71b7-rel-sc-fulltail-implies-t",
+"birth": 1794279488.9874432,
+"record": "r3514683174704598bf04b5fa98146e6f",
+"premises": [
+[
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change",
+"proved"
+],
+[
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+]
+],
+"conclusion": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+},
+"rc3918294dab54bd5820dfdd6596f136b/s78ad5461287a4643be4dc44e715eda51-rel-sc-qb-implies-lrp": {
+"id": "rc3918294dab54bd5820dfdd6596f136b/s78ad5461287a4643be4dc44e715eda51-rel-sc-qb-implies-lrp",
+"birth": 1794286950.226229,
+"record": "rc3918294dab54bd5820dfdd6596f136b",
+"premises": [
+[
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change",
+"proved"
+],
+[
+"s78ad5461287a4643be4dc44e715eda51-band-criterion-inequality",
+"proved"
+]
+],
+"conclusion": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+},
+"rc3918294dab54bd5820dfdd6596f136b/s78ad5461287a4643be4dc44e715eda51-rel-hs-qh-implies-lrp": {
+"id": "rc3918294dab54bd5820dfdd6596f136b/s78ad5461287a4643be4dc44e715eda51-rel-hs-qh-implies-lrp",
+"birth": 1794286950.226229,
+"record": "rc3918294dab54bd5820dfdd6596f136b",
+"premises": [
+[
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition",
+"proved"
+],
+[
+"s78ad5461287a4643be4dc44e715eda51-head-sum-criterion-inequality",
+"proved"
+]
+],
+"conclusion": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+},
+"r319d86604c4344509b8e324fa93897cf/rel-tsp-stem-fs": {
+"id": "r319d86604c4344509b8e324fa93897cf/rel-tsp-stem-fs",
+"birth": 1794290062.39511,
+"record": "r319d86604c4344509b8e324fa93897cf",
+"premises": [
+[
+"s1709ac2907b449dbae39e3b439a86203-tsp10",
+"proved"
+],
+[
+"s1709ac2907b449dbae39e3b439a86203-stem10",
+"proved"
+]
+],
+"conclusion": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window",
+"proved"
+]
+},
+"r319d86604c4344509b8e324fa93897cf/rel-tsp-ul-far": {
+"id": "r319d86604c4344509b8e324fa93897cf/rel-tsp-ul-far",
+"birth": 1794290062.39511,
+"record": "r319d86604c4344509b8e324fa93897cf",
+"premises": [
+[
+"s1709ac2907b449dbae39e3b439a86203-tsp10",
+"proved"
+]
+],
+"conclusion": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"proved"
+]
+},
+"r319d86604c4344509b8e324fa93897cf/rel-tsp-ul-smallk": {
+"id": "r319d86604c4344509b8e324fa93897cf/rel-tsp-ul-smallk",
+"birth": 1794290062.39511,
+"record": "r319d86604c4344509b8e324fa93897cf",
+"premises": [
+[
+"s1709ac2907b449dbae39e3b439a86203-tsp10",
+"proved"
+]
+],
+"conclusion": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"proved"
+]
+},
+"raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-ul-implies-v": {
+"id": "raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-ul-implies-v",
+"birth": 1794295747.1100018,
+"record": "raad7e6d531824745a8b9ac1a562d6331",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+]
+],
+"conclusion": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail",
+"proved"
+]
+},
+"raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-v-implies-vstar": {
+"id": "raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-v-implies-vstar",
+"birth": 1794295747.1100018,
+"record": "raad7e6d531824745a8b9ac1a562d6331",
+"premises": [
+[
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail",
+"proved"
+]
+],
+"conclusion": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-critical-tilt-first-layer-tail",
+"proved"
+]
+},
+"raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-vstar-implies-qstar": {
+"id": "raad7e6d531824745a8b9ac1a562d6331/s7a2a959f478e4009a2dba3c577ae5e6b-rel-vstar-implies-qstar",
+"birth": 1794295747.1100018,
+"record": "raad7e6d531824745a8b9ac1a562d6331",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-source-side",
+"proved"
+],
+[
+"s7a2a959f478e4009a2dba3c577ae5e6b-critical-tilt-first-layer-tail",
+"proved"
+],
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"proved"
+]
+],
+"conclusion": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131",
+"proved"
+]
+},
+"r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-ul-implies-flat-tail": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-ul-implies-flat-tail",
+"birth": 1794295958.8187513,
+"record": "r29b01e8e0a86457d8946dd26cc20f754",
+"premises": [
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"proved"
+]
+],
+"conclusion": [
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+]
+},
+"r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-sc-fc-implies-flat-tail": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-sc-fc-implies-flat-tail",
+"birth": 1794295958.8187513,
+"record": "r29b01e8e0a86457d8946dd26cc20f754",
+"premises": [
+[
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change",
+"proved"
+],
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-core",
+"proved"
+]
+],
+"conclusion": [
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+]
+},
+"r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-implies-fc": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-implies-fc",
+"birth": 1794295958.8187513,
+"record": "r29b01e8e0a86457d8946dd26cc20f754",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+]
+],
+"conclusion": [
+"sf6d08848fee64e6996d91ea811992a50-flat-core",
+"proved"
+]
+},
+"r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-bvtheta-lrp2": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-bvtheta-lrp2",
+"birth": 1794295958.8187513,
+"record": "r29b01e8e0a86457d8946dd26cc20f754",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-lrp3": {
+"id": "r29b01e8e0a86457d8946dd26cc20f754/sf6d08848fee64e6996d91ea811992a50-rel-flat-tail-lrp3",
+"birth": 1794295958.8187513,
+"record": "r29b01e8e0a86457d8946dd26cc20f754",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+],
+[
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"proved"
+]
+},
+"rbca832432c744c9cbf720dcf89005c9b/s233c7f2a2f0445f0a2e7551f6948d0b9-rel-FE-implies-wlflat": {
+"id": "rbca832432c744c9cbf720dcf89005c9b/s233c7f2a2f0445f0a2e7551f6948d0b9-rel-FE-implies-wlflat",
+"birth": 1794301924.9593108,
+"record": "rbca832432c744c9cbf720dcf89005c9b",
+"premises": [
+[
+"s233c7f2a2f0445f0a2e7551f6948d0b9-refined-source-33-20",
+"proved"
+],
+[
+"s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"rbca832432c744c9cbf720dcf89005c9b/s233c7f2a2f0445f0a2e7551f6948d0b9-rel-T-implies-F": {
+"id": "rbca832432c744c9cbf720dcf89005c9b/s233c7f2a2f0445f0a2e7551f6948d0b9-rel-T-implies-F",
+"birth": 1794301924.9593108,
+"record": "rbca832432c744c9cbf720dcf89005c9b",
+"premises": [
+[
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+],
+"conclusion": [
+"s233c7f2a2f0445f0a2e7551f6948d0b9-refined-source-33-20",
+"proved"
+]
+},
+"rec21ee39284f4296be4c92e99c14d5ea/s7400900706fc46979a5a44f149dbea97-rel-closed-moment-implies-ul-core": {
+"id": "rec21ee39284f4296be4c92e99c14d5ea/s7400900706fc46979a5a44f149dbea97-rel-closed-moment-implies-ul-core",
+"birth": 1794308860.8206127,
+"record": "rec21ee39284f4296be4c92e99c14d5ea",
+"premises": [
+[
+"s7400900706fc46979a5a44f149dbea97-ul-core-closed-moment",
+"proved"
+]
+],
+"conclusion": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"proved"
+]
+},
+"r696d62c0f01a40e7a2da52d0342f67d5/rel-qbflat-implies-qb": {
+"id": "r696d62c0f01a40e7a2da52d0342f67d5/rel-qbflat-implies-qb",
+"birth": 1794315768.9888952,
+"record": "r696d62c0f01a40e7a2da52d0342f67d5",
+"premises": [
+[
+"sd7cd6139ee4a4ebfb61d476996bde609-band-criterion-flat",
+"proved"
+]
+],
+"conclusion": [
+"s78ad5461287a4643be4dc44e715eda51-band-criterion-inequality",
+"proved"
+]
+},
+"r845b2055d18c40c6894cca76b1dff184/sb3bdcc77aa3a4451809bf65574fe07d8-rel-core-implies-v": {
+"id": "r845b2055d18c40c6894cca76b1dff184/sb3bdcc77aa3a4451809bf65574fe07d8-rel-core-implies-v",
+"birth": 1794323578.2807856,
+"record": "r845b2055d18c40c6894cca76b1dff184",
+"premises": [
+[
+"sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail",
+"proved"
+]
+},
+"r030ffaebcd164eb492cc4215ce1c2e56/s72a79340e4cd411691b0fe6d923db6ea-rel-split-bvtheta": {
+"id": "r030ffaebcd164eb492cc4215ce1c2e56/s72a79340e4cd411691b0fe6d923db6ea-rel-split-bvtheta",
+"birth": 1794327956.0818138,
+"record": "r030ffaebcd164eb492cc4215ce1c2e56",
+"premises": [
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"proved"
+],
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"proved"
+]
+},
+"r317d67810d1240bc9b19b5e9dd44eead/s5a4a7531a2d8409f8720f0e0511e8320-rel-v-lrp2-implies-wlflat": {
+"id": "r317d67810d1240bc9b19b5e9dd44eead/s5a4a7531a2d8409f8720f0e0511e8320-rel-v-lrp2-implies-wlflat",
+"birth": 1794336264.8638206,
+"record": "r317d67810d1240bc9b19b5e9dd44eead",
+"premises": [
+[
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail",
+"proved"
+],
+[
+"s36a005723f034a3aa8ab7c81d3ffe29d-source-side",
+"proved"
+],
+[
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+],
+"conclusion": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+},
+"r317d67810d1240bc9b19b5e9dd44eead/s5a4a7531a2d8409f8720f0e0511e8320-rel-wlflat-implies-lrp2": {
+"id": "r317d67810d1240bc9b19b5e9dd44eead/s5a4a7531a2d8409f8720f0e0511e8320-rel-wlflat-implies-lrp2",
+"birth": 1794336264.8638206,
+"record": "r317d67810d1240bc9b19b5e9dd44eead",
+"premises": [
+[
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r686f30fde8374c31bfd84bf4d221633b/sa16630c9a4c54aebb9dac8a73573e76b-rel-flow-remainder-implies-tft": {
+"id": "r686f30fde8374c31bfd84bf4d221633b/sa16630c9a4c54aebb9dac8a73573e76b-rel-flow-remainder-implies-tft",
+"birth": 1794340285.6752992,
+"record": "r686f30fde8374c31bfd84bf4d221633b",
+"premises": [
+[
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder",
+"proved"
+]
+],
+"conclusion": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+]
+},
+"r98fb348cdb3f47cd99325318f279072d/s2da0487e03dd42f296bd299c8861dfd1-rel-n1-n2-implies-ul-core": {
+"id": "r98fb348cdb3f47cd99325318f279072d/s2da0487e03dd42f296bd299c8861dfd1-rel-n1-n2-implies-ul-core",
+"birth": 1794343212.6278958,
+"record": "r98fb348cdb3f47cd99325318f279072d",
+"premises": [
+[
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity",
+"proved"
+],
+[
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment",
+"proved"
+]
+],
+"conclusion": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"proved"
+]
+},
+"r98fb348cdb3f47cd99325318f279072d/s2da0487e03dd42f296bd299c8861dfd1-rel-n1x-implies-n1": {
+"id": "r98fb348cdb3f47cd99325318f279072d/s2da0487e03dd42f296bd299c8861dfd1-rel-n1x-implies-n1",
+"birth": 1794343212.6278958,
+"record": "r98fb348cdb3f47cd99325318f279072d",
+"premises": [
+[
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity-explicit",
+"proved"
+]
+],
+"conclusion": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity",
+"proved"
+]
+},
+"r2c9a689c1be14f369d52f9512c658e31/rel-leak-implies-tsp10": {
+"id": "r2c9a689c1be14f369d52f9512c658e31/rel-leak-implies-tsp10",
+"birth": 1794344246.4668956,
+"record": "r2c9a689c1be14f369d52f9512c658e31",
+"premises": [
+[
+"sbc78ebbbd815476194858a30df8bc356-left-leak",
+"proved"
+],
+[
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+],
+"conclusion": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10",
+"proved"
+]
+},
+"r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nr-implies-ulcore": {
+"id": "r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nr-implies-ulcore",
+"birth": 1794359689.8245285,
+"record": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"premises": [
+[
+"s747c26e46c6442b8948b31c328499564-ul-core-cancellation-free",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"proved"
+],
+[
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"proved"
+]
+],
+"conclusion": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core",
+"proved"
+]
+},
+"r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nrprime-implies-nr": {
+"id": "r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nrprime-implies-nr",
+"birth": 1794359689.8245285,
+"record": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"premises": [
+[
+"s747c26e46c6442b8948b31c328499564-ul-core-remainder-bt-at",
+"proved"
+]
+],
+"conclusion": [
+"s747c26e46c6442b8948b31c328499564-ul-core-cancellation-free",
+"proved"
+]
+},
+"r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nat-implies-nrprime": {
+"id": "r71b1a6d1f9b04a9fb7bbbba51064c82e/s747c26e46c6442b8948b31c328499564-rel-nat-implies-nrprime",
+"birth": 1794359689.8245285,
+"record": "r71b1a6d1f9b04a9fb7bbbba51064c82e",
+"premises": [
+[
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"proved"
+]
+],
+"conclusion": [
+"s747c26e46c6442b8948b31c328499564-ul-core-remainder-bt-at",
+"proved"
+]
+},
+"r3d0856b811f14f8c8d71335597036243/s3ecdd70238dc414eb88520eb4c580813-rel-flq-band-implies-qstar2": {
+"id": "r3d0856b811f14f8c8d71335597036243/s3ecdd70238dc414eb88520eb4c580813-rel-flq-band-implies-qstar2",
+"birth": 1794359738.8914013,
+"record": "r3d0856b811f14f8c8d71335597036243",
+"premises": [
+[
+"s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail",
+"proved"
+],
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"proved"
+]
+],
+"conclusion": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"proved"
+]
+},
+"r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-fc-implies-flat-tail": {
+"id": "r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-fc-implies-flat-tail",
+"birth": 1794360354.4302766,
+"record": "r5c13beecd43540e5a455aa720e3fa1b5",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-core",
+"proved"
+]
+],
+"conclusion": [
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+]
+},
+"r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-fc-band-n3-lrp2": {
+"id": "r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-fc-band-n3-lrp2",
+"birth": 1794360354.4302766,
+"record": "r5c13beecd43540e5a455aa720e3fa1b5",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-core",
+"proved"
+],
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"proved"
+],
+[
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-bulk-implies-n3": {
+"id": "r5c13beecd43540e5a455aa720e3fa1b5/sa5da526d8c98421eb1ce821b04aa0eae-rel-bulk-implies-n3",
+"birth": 1794360354.4302766,
+"record": "r5c13beecd43540e5a455aa720e3fa1b5",
+"premises": [
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"proved"
+]
+],
+"conclusion": [
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux",
+"proved"
+]
+},
+"r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hs-qh2-implies-lrp2": {
+"id": "r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hs-qh2-implies-lrp2",
+"birth": 1794362352.6331322,
+"record": "r33475a7cfc744a5994c185e88660b710",
+"premises": [
+[
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition",
+"proved"
+],
+[
+"s1fdba016d0454a5eac323cb18a67655a-qh-second-layer",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hplus-bvtplus-implies-lrp2": {
+"id": "r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hplus-bvtplus-implies-lrp2",
+"birth": 1794362352.6331322,
+"record": "r33475a7cfc744a5994c185e88660b710",
+"premises": [
+[
+"s1fdba016d0454a5eac323cb18a67655a-head-sum-margin",
+"proved"
+],
+[
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hplus-fc-bvt-implies-lrp2": {
+"id": "r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-hplus-fc-bvt-implies-lrp2",
+"birth": 1794362352.6331322,
+"record": "r33475a7cfc744a5994c185e88660b710",
+"premises": [
+[
+"s1fdba016d0454a5eac323cb18a67655a-head-sum-margin",
+"proved"
+],
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-core",
+"proved"
+],
+[
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-bvtplus-implies-bvt": {
+"id": "r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-rel-bvtplus-implies-bvt",
+"birth": 1794362352.6331322,
+"record": "r33475a7cfc744a5994c185e88660b710",
+"premises": [
+[
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold",
+"proved"
+]
+},
+"r51968231edad4eca95df3e1df0650a20/sa3f2213741804894b82c2689f4b2a217-rel-n2a-n2b-implies-n2": {
+"id": "r51968231edad4eca95df3e1df0650a20/sa3f2213741804894b82c2689f4b2a217-rel-n2a-n2b-implies-n2",
+"birth": 1794371675.765406,
+"record": "r51968231edad4eca95df3e1df0650a20",
+"premises": [
+[
+"sa3f2213741804894b82c2689f4b2a217-central-point-mass",
+"proved"
+],
+[
+"sa3f2213741804894b82c2689f4b2a217-right-window-decrease",
+"proved"
+]
+],
+"conclusion": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment",
+"proved"
+]
+},
+"rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-flt-band-bplus-lrp2": {
+"id": "rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-flt-band-bplus-lrp2",
+"birth": 1794372139.7113657,
+"record": "rae1f20952bcc4e19bb256dca69412704",
+"premises": [
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+],
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"proved"
+],
+[
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-bulk-implies-bplus": {
+"id": "rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-bulk-implies-bplus",
+"birth": 1794372139.7113657,
+"record": "rae1f20952bcc4e19bb256dca69412704",
+"premises": [
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"proved"
+]
+],
+"conclusion": [
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk",
+"proved"
+]
+},
+"rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-pairnode-band-implies-bplus": {
+"id": "rae1f20952bcc4e19bb256dca69412704/sbc38cd5566204ef29cb705f612bd6e97-rel-pairnode-band-implies-bplus",
+"birth": 1794372139.7113657,
+"record": "rae1f20952bcc4e19bb256dca69412704",
+"premises": [
+[
+"sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold",
+"proved"
+],
+[
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"proved"
+]
+],
+"conclusion": [
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk",
+"proved"
+]
+},
+"r3b38ffdeb5f1449d8a2f0de50e25be06/sc4a7168c1ebe41b0a4998867841cc235-rel-restricted-stem-lrp2": {
+"id": "r3b38ffdeb5f1449d8a2f0de50e25be06/sc4a7168c1ebe41b0a4998867841cc235-rel-restricted-stem-lrp2",
+"birth": 1794374023.907328,
+"record": "r3b38ffdeb5f1449d8a2f0de50e25be06",
+"premises": [
+[
+"sc4a7168c1ebe41b0a4998867841cc235-restricted-stem-source",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"rb6a2cd0e6d434a8eb512088619fe9be7/s6fd65c6e63714bdeb8a19d6230b440f7-rel-bplus-implies-lrp2": {
+"id": "rb6a2cd0e6d434a8eb512088619fe9be7/s6fd65c6e63714bdeb8a19d6230b440f7-rel-bplus-implies-lrp2",
+"birth": 1794377091.2989314,
+"record": "rb6a2cd0e6d434a8eb512088619fe9be7",
+"premises": [
+[
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-ol2b-implies-lrp2": {
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-ol2b-implies-lrp2",
+"birth": 1794381046.2930894,
+"record": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"premises": [
+[
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"proved"
+]
+},
+"r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-abwb-implies-ol2b": {
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-abwb-implies-ol2b",
+"birth": 1794381046.2930894,
+"record": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"premises": [
+[
+"s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-gain",
+"proved"
+]
+],
+"conclusion": [
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk",
+"proved"
+]
+},
+"r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-abwmb-implies-abwb": {
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-abwmb-implies-abwb",
+"birth": 1794381046.2930894,
+"record": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"premises": [
+[
+"s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-mass-gain",
+"proved"
+]
+],
+"conclusion": [
+"s87a38ae6444b4437aa8c1208bc793d21-first-layer-bulk-gain",
+"proved"
+]
+},
+"r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-onelevel-implies-ol2b": {
+"id": "r5c20a946b41f45c3bddeec3a6e5cfb13/s87a38ae6444b4437aa8c1208bc793d21-rel-onelevel-implies-ol2b",
+"birth": 1794381046.2930894,
+"record": "r5c20a946b41f45c3bddeec3a6e5cfb13",
+"premises": [
+[
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"proved"
+]
+],
+"conclusion": [
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk",
+"proved"
+]
+},
+"r781caf392d7d4a768a1f94cca4d5526d/s7bca88e02f2044258089b09872ed8bd0-rel-local-source-implies-n1": {
+"id": "r781caf392d7d4a768a1f94cca4d5526d/s7bca88e02f2044258089b09872ed8bd0-rel-local-source-implies-n1",
+"birth": 1794383747.3118193,
+"record": "r781caf392d7d4a768a1f94cca4d5526d",
+"premises": [
+[
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source",
+"proved"
+]
+],
+"conclusion": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity",
+"proved"
+]
+},
+"r5c5975f9dcb745df85d2e8468cb118d2/s07e5e04cc6c34867ad5fa76d7705f9de-rel-lrp-restrict-3k": {
+"id": "r5c5975f9dcb745df85d2e8468cb118d2/s07e5e04cc6c34867ad5fa76d7705f9de-rel-lrp-restrict-3k",
+"birth": 1794401885.2771103,
+"record": "r5c5975f9dcb745df85d2e8468cb118d2",
+"premises": [
+[
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole",
+"proved"
+]
+],
+"conclusion": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"proved"
+]
+},
+"r0cece3445bf8401a8324877691060890/rel-stem-split": {
+"id": "r0cece3445bf8401a8324877691060890/rel-stem-split",
+"birth": 1794405163.039407,
+"record": "r0cece3445bf8401a8324877691060890",
+"premises": [
+[
+"scd5c5c0b07b94d9abb04fe509829839b-stem-plus-half",
+"proved"
+],
+[
+"scd5c5c0b07b94d9abb04fe509829839b-stem-sum-half",
+"proved"
+]
+],
+"conclusion": [
+"s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"proved"
+]
+},
+"r0cece3445bf8401a8324877691060890/rel-relaxed-tail-implies-sum-half": {
+"id": "r0cece3445bf8401a8324877691060890/rel-relaxed-tail-implies-sum-half",
+"birth": 1794405163.039407,
+"record": "r0cece3445bf8401a8324877691060890",
+"premises": [
+[
+"scd5c5c0b07b94d9abb04fe509829839b-relaxed-tilted-tail",
+"proved"
+]
+],
+"conclusion": [
+"scd5c5c0b07b94d9abb04fe509829839b-stem-sum-half",
+"proved"
+]
+},
+"r0cece3445bf8401a8324877691060890/rel-tft-implies-relaxed-tail": {
+"id": "r0cece3445bf8401a8324877691060890/rel-tft-implies-relaxed-tail",
+"birth": 1794405163.039407,
+"record": "r0cece3445bf8401a8324877691060890",
+"premises": [
+[
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+]
+],
+"conclusion": [
+"scd5c5c0b07b94d9abb04fe509829839b-relaxed-tilted-tail",
+"proved"
+]
+},
+"r0cece3445bf8401a8324877691060890/rel-tft-flt-implies-t": {
+"id": "r0cece3445bf8401a8324877691060890/rel-tft-flt-implies-t",
+"birth": 1794405163.039407,
+"record": "r0cece3445bf8401a8324877691060890",
+"premises": [
+[
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail",
+"proved"
+],
+[
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail",
+"proved"
+]
+],
+"conclusion": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails",
+"proved"
+]
+},
+"r67b6dcfc67f44f118320203c15b7dd21/rel-split-leak": {
+"id": "r67b6dcfc67f44f118320203c15b7dd21/rel-split-leak",
+"birth": 1794407298.3797796,
+"record": "r67b6dcfc67f44f118320203c15b7dd21",
+"premises": [
+[
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-large",
+"proved"
+],
+[
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-finite",
+"proved"
+]
+],
+"conclusion": [
+"sbc78ebbbd815476194858a30df8bc356-left-leak",
+"proved"
+]
+},
+"r67b6dcfc67f44f118320203c15b7dd21/rel-pair-finite-implies-leak-finite": {
+"id": "r67b6dcfc67f44f118320203c15b7dd21/rel-pair-finite-implies-leak-finite",
+"birth": 1794407298.3797796,
+"record": "r67b6dcfc67f44f118320203c15b7dd21",
+"premises": [
+[
+"sbf927e82d73e4d698bb6a6a5db7ecb27-pair-moment-finite",
+"proved"
+]
+],
+"conclusion": [
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-finite",
+"proved"
+]
+},
+"raac2ee7c9f954723888af085df0469ee/sdee623984bfe4cac9f0282946ec8640b-rel-column-tsp10": {
+"id": "raac2ee7c9f954723888af085df0469ee/sdee623984bfe4cac9f0282946ec8640b-rel-column-tsp10",
+"birth": 1794409684.879906,
+"record": "raac2ee7c9f954723888af085df0469ee",
+"premises": [
+[
+"sdee623984bfe4cac9f0282946ec8640b-first-layer-column-finite",
+"proved"
+],
+[
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-large",
+"proved"
+],
+[
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"proved"
+]
+],
+"conclusion": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10",
+"proved"
+]
+},
+"raac2ee7c9f954723888af085df0469ee/sdee623984bfe4cac9f0282946ec8640b-rel-leak-column": {
+"id": "raac2ee7c9f954723888af085df0469ee/sdee623984bfe4cac9f0282946ec8640b-rel-leak-column",
+"birth": 1794409684.879906,
+"record": "raac2ee7c9f954723888af085df0469ee",
+"premises": [
+[
+"sbf927e82d73e4d698bb6a6a5db7ecb27-leak-finite",
+"proved"
+]
+],
+"conclusion": [
+"sdee623984bfe4cac9f0282946ec8640b-first-layer-column-finite",
+"proved"
+]
+},
+"rc47c77916f6a466c9af8eef3ee559186/s2bdb1de522354137b97b2619713a7aa8-rel-abt-implies-n1": {
+"id": "rc47c77916f6a466c9af8eef3ee559186/s2bdb1de522354137b97b2619713a7aa8-rel-abt-implies-n1",
+"birth": 1794412056.7081482,
+"record": "rc47c77916f6a466c9af8eef3ee559186",
+"premises": [
+[
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-level",
+"proved"
+],
+[
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-deficit",
+"proved"
+],
+[
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-top-term",
+"proved"
+]
+],
+"conclusion": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity",
+"proved"
+]
+},
+"rddf23e71f1274d36ae07866033bdbc8b/s1638d97f39d847d49aeafbdc96d6d01d-rel-crossing-budget-implies-flow": {
+"id": "rddf23e71f1274d36ae07866033bdbc8b/s1638d97f39d847d49aeafbdc96d6d01d-rel-crossing-budget-implies-flow",
+"birth": 1794413778.14998,
+"record": "rddf23e71f1274d36ae07866033bdbc8b",
+"premises": [
+[
+"s1638d97f39d847d49aeafbdc96d6d01d-diag-single-crossing",
+"proved"
+],
+[
+"s1638d97f39d847d49aeafbdc96d6d01d-flat-deficit-budget",
+"proved"
+]
+],
+"conclusion": [
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder",
+"proved"
+]
+},
+"r4be8d76f58d0402fae7456412de3a9e4/rel-h1-split": {
+"id": "r4be8d76f58d0402fae7456412de3a9e4/rel-h1-split",
+"birth": 1794414287.674206,
+"record": "r4be8d76f58d0402fae7456412de3a9e4",
+"premises": [
+[
+"se09cad02864943228b4edcd6a08f26de-h1-up-to-tenth",
+"proved"
+],
+[
+"se09cad02864943228b4edcd6a08f26de-h1-tail",
+"proved"
+]
+],
+"conclusion": [
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source",
+"proved"
+]
+}
+},
+"proofs": {
+"r0cdc213bed9245d38c9bb1c278e65eee/solve-critical-increment": {
+"id": "r0cdc213bed9245d38c9bb1c278e65eee/solve-critical-increment",
+"birth": 1793910239.8730614,
+"node": "sfeee897c69244a0bba059fb685290d63-critical-egf-increment",
+"level": "informal",
+"outcome": "proved",
+"record": "r0cdc213bed9245d38c9bb1c278e65eee"
+},
+"r0af7f414c9ea4bc5847ce2e9f6d0c6a7/formal-critical-increment": {
+"id": "r0af7f414c9ea4bc5847ce2e9f6d0c6a7/formal-critical-increment",
+"birth": 1793952818.4551294,
+"node": "sfeee897c69244a0bba059fb685290d63-critical-egf-increment",
+"level": "formal",
+"outcome": "proved",
+"record": "r0af7f414c9ea4bc5847ce2e9f6d0c6a7"
+},
+"rce3dc75b9fc040fd8925fa3a73b0d753/solve-central-gap": {
+"id": "rce3dc75b9fc040fd8925fa3a73b0d753/solve-central-gap",
+"birth": 1794023407.9128346,
+"node": "s5b3c5b51660b401d8e6144fa61df2d8e-central-gap",
+"level": "informal",
+"outcome": "proved",
+"record": "rce3dc75b9fc040fd8925fa3a73b0d753"
+},
+"r8a9b11e78fec43758f25737fc14c961e/sol-W-proved": {
+"id": "r8a9b11e78fec43758f25737fc14c961e/sol-W-proved",
+"birth": 1794154586.3409915,
+"node": "s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"level": "informal",
+"outcome": "proved",
+"record": "r8a9b11e78fec43758f25737fc14c961e"
+},
+"rf451d83e888a4e1886ca1950b9a819a1/sol-xprime": {
+"id": "rf451d83e888a4e1886ca1950b9a819a1/sol-xprime",
+"birth": 1794158059.2397974,
+"node": "seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer",
+"level": "informal",
+"outcome": "proved",
+"record": "rf451d83e888a4e1886ca1950b9a819a1"
+},
+"r10ff8c2a7fb244dab041d6a6b080cb50/sol-lmcore-settled": {
+"id": "r10ff8c2a7fb244dab041d6a6b080cb50/sol-lmcore-settled",
+"birth": 1794162725.0859914,
+"node": "s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled",
+"level": "informal",
+"outcome": "proved",
+"record": "r10ff8c2a7fb244dab041d6a6b080cb50"
+},
+"r5f5cf7334317436bab893b06bcd6d0b3/sol-X-proved": {
+"id": "r5f5cf7334317436bab893b06bcd6d0b3/sol-X-proved",
+"birth": 1794166847.6956816,
+"node": "s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality",
+"level": "informal",
+"outcome": "proved",
+"record": "r5f5cf7334317436bab893b06bcd6d0b3"
+},
+"r207f12442349469083b31851e184ec65/sol-qstar-columns-2001-3130": {
+"id": "r207f12442349469083b31851e184ec65/sol-qstar-columns-2001-3130",
+"birth": 1794195295.2145402,
+"node": "sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-2001-3130",
+"level": "informal",
+"outcome": "proved",
+"record": "r207f12442349469083b31851e184ec65"
+},
+"r79ee9e020cbf4231881b540fa262eb31/sol-source-side": {
+"id": "r79ee9e020cbf4231881b540fa262eb31/sol-source-side",
+"birth": 1794218635.0850825,
+"node": "s36a005723f034a3aa8ab7c81d3ffe29d-source-side",
+"level": "informal",
+"outcome": "proved",
+"record": "r79ee9e020cbf4231881b540fa262eb31"
+},
+"r22df70d6f8eb4d69b5675e3e43471b18/sol-eventual-root": {
+"id": "r22df70d6f8eb4d69b5675e3e43471b18/sol-eventual-root",
+"birth": 1794237936.9481597,
+"node": "sb1afca696d7f4aa6a9b80f9b8236bb7a-eventual-root",
+"level": "informal",
+"outcome": "proved",
+"record": "r22df70d6f8eb4d69b5675e3e43471b18"
+},
+"r9e82bb0caf3b41b5981e062a4f3d3ebd/sol-Ecol": {
+"id": "r9e82bb0caf3b41b5981e062a4f3d3ebd/sol-Ecol",
+"birth": 1794239836.1188521,
+"node": "s90bbdfa587234656b52195f0b901569a-eventual-left-columns",
+"level": "informal",
+"outcome": "proved",
+"record": "r9e82bb0caf3b41b5981e062a4f3d3ebd"
+},
+"r051bfe18ee7448c2aa4d067eab9e8c6c/sol-tilted-survival-decay": {
+"id": "r051bfe18ee7448c2aa4d067eab9e8c6c/sol-tilted-survival-decay",
+"birth": 1794246280.906873,
+"node": "sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay",
+"level": "informal",
+"outcome": "proved",
+"record": "r051bfe18ee7448c2aa4d067eab9e8c6c"
+},
+"r7e03176bca8242f8ad7d3348dd2b32c5/sol-ul-near-window": {
+"id": "r7e03176bca8242f8ad7d3348dd2b32c5/sol-ul-near-window",
+"birth": 1794269324.9758792,
+"node": "scae5188c08ea43568e3108c30a46cdd5-ul-near-window",
+"level": "informal",
+"outcome": "proved",
+"record": "r7e03176bca8242f8ad7d3348dd2b32c5"
+},
+"r9bf2dc6070134fad99681ca44cff25cb/sol-ul-far-window": {
+"id": "r9bf2dc6070134fad99681ca44cff25cb/sol-ul-far-window",
+"birth": 1794313445.1456087,
+"node": "scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"level": "informal",
+"outcome": "proved",
+"record": "r9bf2dc6070134fad99681ca44cff25cb"
+},
+"r9bf2dc6070134fad99681ca44cff25cb/sol-ul-small-k-bulk": {
+"id": "r9bf2dc6070134fad99681ca44cff25cb/sol-ul-small-k-bulk",
+"birth": 1794313445.1456087,
+"node": "scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"level": "informal",
+"outcome": "proved",
+"record": "r9bf2dc6070134fad99681ca44cff25cb"
+},
+"r2ec875c7605c4ddeb28da2c3a4566663/sol-head-sum-condition": {
+"id": "r2ec875c7605c4ddeb28da2c3a4566663/sol-head-sum-condition",
+"birth": 1794314307.394969,
+"node": "s78ad5461287a4643be4dc44e715eda51-head-sum-condition",
+"level": "informal",
+"outcome": "proved",
+"record": "r2ec875c7605c4ddeb28da2c3a4566663"
+},
+"r2ec875c7605c4ddeb28da2c3a4566663/sol-head-sum-condition-no-W": {
+"id": "r2ec875c7605c4ddeb28da2c3a4566663/sol-head-sum-condition-no-W",
+"birth": 1794314307.394969,
+"node": "s78ad5461287a4643be4dc44e715eda51-head-sum-condition",
+"level": "informal",
+"outcome": "proved",
+"record": "r2ec875c7605c4ddeb28da2c3a4566663"
+},
+"r030ffaebcd164eb492cc4215ce1c2e56/s72a79340e4cd411691b0fe6d923db6ea-sol-bvtheta-band": {
+"id": "r030ffaebcd164eb492cc4215ce1c2e56/s72a79340e4cd411691b0fe6d923db6ea-sol-bvtheta-band",
+"birth": 1794327956.0818138,
+"node": "s72a79340e4cd411691b0fe6d923db6ea-bvtheta-band",
+"level": "informal",
+"outcome": "proved",
+"record": "r030ffaebcd164eb492cc4215ce1c2e56"
+},
+"r317d67810d1240bc9b19b5e9dd44eead/sol-vcore": {
+"id": "r317d67810d1240bc9b19b5e9dd44eead/sol-vcore",
+"birth": 1794336264.8638206,
+"node": "sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core",
+"level": "informal",
+"outcome": "proved",
+"record": "r317d67810d1240bc9b19b5e9dd44eead"
+},
+"r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-sol-head-sum-margin": {
+"id": "r33475a7cfc744a5994c185e88660b710/s1fdba016d0454a5eac323cb18a67655a-sol-head-sum-margin",
+"birth": 1794362352.6331322,
+"node": "s1fdba016d0454a5eac323cb18a67655a-head-sum-margin",
+"level": "informal",
+"outcome": "proved",
+"record": "r33475a7cfc744a5994c185e88660b710"
+},
+"rb1d8cd535d9f4a9da52ab599dbc201a9/sol-flat-core": {
+"id": "rb1d8cd535d9f4a9da52ab599dbc201a9/sol-flat-core",
+"birth": 1794380343.1441565,
+"node": "sf6d08848fee64e6996d91ea811992a50-flat-core",
+"level": "informal",
+"outcome": "proved",
+"record": "rb1d8cd535d9f4a9da52ab599dbc201a9"
+},
+"r5909c9e73b34492cbe5e197cf65c02e8/sol-pair-beats-capped-threshold": {
+"id": "r5909c9e73b34492cbe5e197cf65c02e8/sol-pair-beats-capped-threshold",
+"birth": 1794381259.086477,
+"node": "sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold",
+"level": "informal",
+"outcome": "proved",
+"record": "r5909c9e73b34492cbe5e197cf65c02e8"
+},
+"re71a735a86714433829f386919576084/sol-flq": {
+"id": "re71a735a86714433829f386919576084/sol-flq",
+"birth": 1794390846.6009681,
+"node": "s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail",
+"level": "informal",
+"outcome": "proved",
+"record": "re71a735a86714433829f386919576084"
+},
+"r2230661c504a493db62c1667237bd14d/sol-n2b-proved": {
+"id": "r2230661c504a493db62c1667237bd14d/sol-n2b-proved",
+"birth": 1794396517.7855842,
+"node": "sa3f2213741804894b82c2689f4b2a217-right-window-decrease",
+"level": "informal",
+"outcome": "proved",
+"record": "r2230661c504a493db62c1667237bd14d"
+},
+"r2230661c504a493db62c1667237bd14d/sol-n2a-proved": {
+"id": "r2230661c504a493db62c1667237bd14d/sol-n2a-proved",
+"birth": 1794396517.7855842,
+"node": "sa3f2213741804894b82c2689f4b2a217-central-point-mass",
+"level": "informal",
+"outcome": "proved",
+"record": "r2230661c504a493db62c1667237bd14d"
+},
+"r77d0f738c25843378705604d7c6b5276/s3e500018d9144166b0f2d2d66a9751ed-sol-ol2b": {
+"id": "r77d0f738c25843378705604d7c6b5276/s3e500018d9144166b0f2d2d66a9751ed-sol-ol2b",
+"birth": 1794403895.5065844,
+"node": "s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk",
+"level": "informal",
+"outcome": "proved",
+"record": "r77d0f738c25843378705604d7c6b5276"
+},
+"r0cece3445bf8401a8324877691060890/sol-stem-plus-half": {
+"id": "r0cece3445bf8401a8324877691060890/sol-stem-plus-half",
+"birth": 1794405163.039407,
+"node": "scd5c5c0b07b94d9abb04fe509829839b-stem-plus-half",
+"level": "informal",
+"outcome": "proved",
+"record": "r0cece3445bf8401a8324877691060890"
+},
+"r67b6dcfc67f44f118320203c15b7dd21/sol-leak-large": {
+"id": "r67b6dcfc67f44f118320203c15b7dd21/sol-leak-large",
+"birth": 1794407298.3797796,
+"node": "sbf927e82d73e4d698bb6a6a5db7ecb27-leak-large",
+"level": "informal",
+"outcome": "proved",
+"record": "r67b6dcfc67f44f118320203c15b7dd21"
+},
+"r4be8d76f58d0402fae7456412de3a9e4/sol-h1-up-to-tenth": {
+"id": "r4be8d76f58d0402fae7456412de3a9e4/sol-h1-up-to-tenth",
+"birth": 1794414287.674206,
+"node": "se09cad02864943228b4edcd6a08f26de-h1-up-to-tenth",
+"level": "informal",
+"outcome": "proved",
+"record": "r4be8d76f58d0402fae7456412de3a9e4"
+}
+},
+"questions": {
+"q0": {
+"id": "q0",
+"birth": null,
+"origin": "root",
+"source": null,
+"transitions": [
+[
+1793861705.4954176,
+"open"
+]
+]
+},
+"op-central-window": {
+"id": "op-central-window",
+"birth": 1794180656.563124,
+"origin": "operator",
+"source": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"transitions": [
+[
+1794180656.563124,
+"open"
+],
+[
+1794237948.9894347,
+"resolved"
+]
+]
+},
+"op-left-right-asymmetry": {
+"id": "op-left-right-asymmetry",
+"birth": 1794180656.563124,
+"origin": "operator",
+"source": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"transitions": [
+[
+1794180656.563124,
+"open"
+],
+[
+1794239599.9101965,
+"resolved"
+]
+]
+},
+"op-threshold-block": {
+"id": "op-threshold-block",
+"birth": 1794180656.563124,
+"origin": "operator",
+"source": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"transitions": [
+[
+1794180656.563124,
+"open"
+],
+[
+1794297087.8120942,
+"resolved"
+]
+]
+},
+"op-tie-block-transport": {
+"id": "op-tie-block-transport",
+"birth": 1794180656.563124,
+"origin": "operator",
+"source": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"transitions": [
+[
+1794180656.563124,
+"open"
+],
+[
+1794231817.511136,
+"resolved"
+]
+]
+},
+"op-continuum-ties-blocks": {
+"id": "op-continuum-ties-blocks",
+"birth": 1794180656.563124,
+"origin": "operator",
+"source": "q5e6e6c3c07fe46058029bbcd1a0c272b",
+"transitions": [
+[
+1794180656.563124,
+"open"
+],
+[
+1794237127.018722,
+"resolved"
+]
+]
+},
+"sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover": {
+"id": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"birth": 1794194083.6579561,
+"origin": "record",
+"source": "r3889c6ac15e94743b3cf11ac83cd22d7",
+"transitions": [
+[
+1794194083.6579561,
+"open"
+]
+]
+},
+"s7216ebedc7884d188175f4e9865df930-branching-universality": {
+"id": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"birth": 1794210517.4279296,
+"origin": "record",
+"source": "r88bed8a53c7c40e5a706ec7aa2a1e118",
+"transitions": [
+[
+1794210517.4279296,
+"open"
+],
+[
+1794258649.911243,
+"resolved"
+]
+]
+},
+"sf6d08848fee64e6996d91ea811992a50-diagonal-lower-bound": {
+"id": "sf6d08848fee64e6996d91ea811992a50-diagonal-lower-bound",
+"birth": 1794295958.8187513,
+"origin": "record",
+"source": "r29b01e8e0a86457d8946dd26cc20f754",
+"transitions": [
+[
+1794295958.8187513,
+"open"
+],
+[
+1794315768.9888952,
+"resolved"
+]
+]
+},
+"sd7cd6139ee4a4ebfb61d476996bde609-conditional-chain-law": {
+"id": "sd7cd6139ee4a4ebfb61d476996bde609-conditional-chain-law",
+"birth": 1794315768.9888952,
+"origin": "record",
+"source": "r696d62c0f01a40e7a2da52d0342f67d5",
+"transitions": [
+[
+1794315768.9888952,
+"open"
+],
+[
+1794331681.2780533,
+"resolved"
+]
+]
+},
+"s86c2176292f1483baa123415353b7cef-clock-counting-path": {
+"id": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"birth": 1794316664.8150105,
+"origin": "record",
+"source": "r2fe0259ff994498199a719dfcc85d4fb",
+"transitions": [
+[
+1794316664.8150105,
+"open"
+]
+]
+},
+"s1843e065cb474e45acc402336ab1e070-first-passage-time-profile": {
+"id": "s1843e065cb474e45acc402336ab1e070-first-passage-time-profile",
+"birth": 1794334172.2761176,
+"origin": "record",
+"source": "raa86c0b57fee400f86a9ccf150f2be3b",
+"transitions": [
+[
+1794334172.2761176,
+"open"
+],
+[
+1794357116.3263278,
+"resolved"
+]
+]
+},
+"s7a50feafd0d74dde9c5ac37f50f5ccbd-concavity-exponent": {
+"id": "s7a50feafd0d74dde9c5ac37f50f5ccbd-concavity-exponent",
+"birth": 1794396686.8771124,
+"origin": "record",
+"source": "ra403b606031440aeb119bce744570594",
+"transitions": [
+[
+1794396686.8771124,
+"open"
+]
+]
+}
+},
+"sessions": {
+"s00863396f9bf4e88b21cb509782e6372": {
+"id": "s00863396f9bf4e88b21cb509782e6372",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794135912.0480127,
+"end": 1794148769.2275162,
+"pipeline": "p180de72ecf3748c3b0cf6e88e4b67683",
+"nodes": [],
+"question": "q0",
+"producer": "s2bd3a58f017e450aa36f02747a1b259a",
+"producer_role": "explore"
+},
+"s015409de55fb4281b46e71476b2003dd": {
+"id": "s015409de55fb4281b46e71476b2003dd",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794392218.21211,
+"end": 1794393722.674689,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s01a10dd7f2f9468593a67b41c929a695": {
+"id": "s01a10dd7f2f9468593a67b41c929a695",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794021371.2290828,
+"end": 1794025400.4858205,
+"pipeline": "p6cd5010633b946d883c37bd7b2c27b9a",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": "se6e7a6d1f6064769a9c688b9913d462f",
+"producer_role": "attempt"
+},
+"s01cc7006e79a44af912f23c83affab56": {
+"id": "s01cc7006e79a44af912f23c83affab56",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794363390.9737406,
+"end": 1794378965.0564764,
+"pipeline": "pabd0cc1da71746438724bbb1eb06bef6",
+"nodes": [
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794367116.4517756
+},
+"s0233b381202a431fa4817a400efe3544": {
+"id": "s0233b381202a431fa4817a400efe3544",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793921218.080552,
+"end": 1793921684.298446,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0253ca510f1b4becbc8bfd0146491ba8": {
+"id": "s0253ca510f1b4becbc8bfd0146491ba8",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1793954449.1097991,
+"end": 1793959871.6907685,
+"pipeline": "pdd691b2e687949c6821b01a624fff469",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s0254089925814d40a75bb48b0be0ee6a": {
+"id": "s0254089925814d40a75bb48b0be0ee6a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794297512.5262465,
+"end": 1794308897.9381282,
+"pipeline": "p9a7747981ac6410e9bb6e5791d0d9857",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa0d3bcdf27bd41b99ebc37d51281f563",
+"producer_role": "attempt"
+},
+"s02738f0396be497f9a02a1415fb0df47": {
+"id": "s02738f0396be497f9a02a1415fb0df47",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794023135.3972802,
+"end": 1794027884.2367618,
+"pipeline": "pc177e90b28444fa5881e2c97f7b982cf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "sf57b7125c775474e92ba50b92c5dd2e8",
+"producer_role": "attempt"
+},
+"s02be9a8e55b044d4bdc98abb10c74810": {
+"id": "s02be9a8e55b044d4bdc98abb10c74810",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794400512.7974906,
+"end": 1794406296.4406476,
+"pipeline": "p8637da8435874e578de069f57f4da405",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s5092238a484c4643840bf053cfc1d130",
+"producer_role": "explore"
+},
+"s02e4b1c653d5423f840a5c5eb4bdbe11": {
+"id": "s02e4b1c653d5423f840a5c5eb4bdbe11",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793931335.2021148,
+"end": 1793932214.6727448,
+"pipeline": "p993d949388fe429592e67afb02796d1f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1cb30f1d5fb34d20818a390d34f46b3f",
+"producer_role": "attempt"
+},
+"s031aeef8a0ae4d489959bcc95c61125a": {
+"id": "s031aeef8a0ae4d489959bcc95c61125a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793936672.3312736,
+"end": 1793937977.1900866,
+"pipeline": "p14f5a29c28d643d59991c0cff54bfb87",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s063915c64a8a476090d389b009cd2f11",
+"producer_role": "attempt"
+},
+"s037dde7307bf4c52ae909ca91bd21b97": {
+"id": "s037dde7307bf4c52ae909ca91bd21b97",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794268946.7050128,
+"end": 1794274259.3570588,
+"pipeline": "pa4e30015b6ca4cb2b885cae7c995af92",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794269120.7760313
+},
+"s03cb393323b245e3a883dba36be66b96": {
+"id": "s03cb393323b245e3a883dba36be66b96",
+"role": "peer",
+"model": "opus",
+"start": 1793888647.641549,
+"end": 1793891493.8052294,
+"pipeline": "pa94e33cbdc1a4c008b1cd855f8859117",
+"nodes": [],
+"question": null,
+"producer": "s77215860f2264d118e2cb0266da174f9",
+"producer_role": "attempt"
+},
+"s047254d111dd45bb93a2e477091e6c21": {
+"id": "s047254d111dd45bb93a2e477091e6c21",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794301962.0752516,
+"end": 1794311907.1810906,
+"pipeline": "p44b9e06042694e3fa724acb1ecc9f323",
+"nodes": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794305569.4838219
+},
+"s047ecf02298f4f5d9a5e6027641f9fdd": {
+"id": "s047ecf02298f4f5d9a5e6027641f9fdd",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920546.2184231,
+"end": 1793921215.785244,
+"pipeline": "p1f2cff4cb4304f9bb0a8c3745f2ca3fb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8d2d2537aab54e718ef34b98760b279c",
+"producer_role": "attempt"
+},
+"s049f58fed1674c698ee816d03ef35daf": {
+"id": "s049f58fed1674c698ee816d03ef35daf",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794020280.342774,
+"end": 1794024730.1003063,
+"pipeline": "pfb9f4a99a06b43cc893bcf89601a77fe",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794020485.8264644
+},
+"s04ec7af70fdf47849a51a966c106a957": {
+"id": "s04ec7af70fdf47849a51a966c106a957",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793931913.1961174,
+"end": 1793933492.6963546,
+"pipeline": "p7e7ce74178ab444d894eaf0279a2783d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793932029.821941
+},
+"s052518a5b9324705af8559d451ac833a": {
+"id": "s052518a5b9324705af8559d451ac833a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794159208.371209,
+"end": 1794170085.807897,
+"pipeline": "p997abfee6ebe4765a2df3a03ce1690b7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794160796.6496117
+},
+"s058aa0ee461f4250b4614649d17bb9b4": {
+"id": "s058aa0ee461f4250b4614649d17bb9b4",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793923282.307848,
+"end": 1793923467.7528594,
+"pipeline": "p950adf9a311542caaf3b06a63a7934ed",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s059e9716dd69473d840e642cf11a7ddc": {
+"id": "s059e9716dd69473d840e642cf11a7ddc",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794363099.1523228,
+"end": 1794377853.8929675,
+"pipeline": "p3d6500f3553544dbb631ab8f556ff8e5",
+"nodes": [
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794367185.1379676
+},
+"s05d29cdefc684f60b530b5d93333478b": {
+"id": "s05d29cdefc684f60b530b5d93333478b",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920904.6560838,
+"end": 1793921147.7849264,
+"pipeline": "p53b29167f80c45259d1587775b667ea8",
+"nodes": [],
+"question": null,
+"producer": "s17da963aa6c742e99f489342c9bc637e",
+"producer_role": "attempt"
+},
+"s05d97d5bc87b4e29bae95ecde3f8e507": {
+"id": "s05d97d5bc87b4e29bae95ecde3f8e507",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793959781.0839033,
+"end": 1793959906.9629238,
+"pipeline": "p629c8528635b43b181499a253ffc5d48",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s063915c64a8a476090d389b009cd2f11": {
+"id": "s063915c64a8a476090d389b009cd2f11",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793932848.432953,
+"end": 1793936671.7702613,
+"pipeline": "p14f5a29c28d643d59991c0cff54bfb87",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793932941.5224957
+},
+"s06f918c425b64041a9c20c34481af66d": {
+"id": "s06f918c425b64041a9c20c34481af66d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793921328.957863,
+"end": 1793922910.1869085,
+"pipeline": "p86e5bf5bee914b23929977e84e0ead96",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793921421.6078644
+},
+"s071a824820e24c45be1298fa5dcf31ab": {
+"id": "s071a824820e24c45be1298fa5dcf31ab",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794240165.3516872,
+"end": 1794245926.0511909,
+"pipeline": "pbc737b57e82849b4a46150e92c0d24ce",
+"nodes": [],
+"question": "q0",
+"producer": "s75c71821d46a42a8a3d0eaab8997d252",
+"producer_role": "explore"
+},
+"s075e4943765e4ebfbf0eed4af6d5350c": {
+"id": "s075e4943765e4ebfbf0eed4af6d5350c",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793947183.106554,
+"end": 1793947733.840597,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s07661db4fcff4e40a70be03e024b0bc3": {
+"id": "s07661db4fcff4e40a70be03e024b0bc3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794340344.5549598,
+"end": 1794354206.658394,
+"pipeline": "p757b084c868f446f8da151736c007b0e",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794343889.6843853
+},
+"s0771378852e74a469bd4365c55e75cb5": {
+"id": "s0771378852e74a469bd4365c55e75cb5",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794252773.2217312,
+"end": 1794253628.971499,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s07b2df20a2f5413dacedc74e031e5b08": {
+"id": "s07b2df20a2f5413dacedc74e031e5b08",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793942282.043475,
+"end": 1793944739.751474,
+"pipeline": "paf29d348856449fba084ddc3162534eb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793942390.8651326
+},
+"s07e5e04cc6c34867ad5fa76d7705f9de": {
+"id": "s07e5e04cc6c34867ad5fa76d7705f9de",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794394658.7125466,
+"end": 1794399717.198414,
+"pipeline": "p93b8e3607bb04b3b99c68fba23588f17",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k"
+],
+"question": null,
+"producer": "s9eebd486719a47f0bd8df99188bab6e7",
+"declared_at": 1794396998.7974901,
+"producer_role": "attempt"
+},
+"s08674bc282eb49fc853cd190c7ebbcc6": {
+"id": "s08674bc282eb49fc853cd190c7ebbcc6",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793869224.3750248,
+"end": 1793869457.076996,
+"pipeline": "p4fdb05f7c5804b6f8d72d02641b22e8d",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s08729df3ff3c4d978df76a1e3f347bcd": {
+"id": "s08729df3ff3c4d978df76a1e3f347bcd",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793975333.626518,
+"end": 1793975517.2676249,
+"pipeline": "pf27cfe470cfa44ed9777d370e64c7ad4",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s090663bc9e6d4272af56bb179cd4b9a4": {
+"id": "s090663bc9e6d4272af56bb179cd4b9a4",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794004952.0968816,
+"end": 1794005283.6291127,
+"pipeline": "p66a9b67822c5429db84c9e5992dbcf72",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0924027e397a4da088d926dbba1d51e2": {
+"id": "s0924027e397a4da088d926dbba1d51e2",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794279497.572528,
+"end": 1794280310.945874,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s09705679806c4bcd9b64812b2c53d39a": {
+"id": "s09705679806c4bcd9b64812b2c53d39a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793908921.5829034,
+"end": 1793909749.540497,
+"pipeline": "pb83910459b7949ec9a179d242d2fe553",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s3ff96b4ac80b49c8aa014fc1206aa3fe",
+"producer_role": "attempt"
+},
+"s09803936f3464f508a4d979b500c6368": {
+"id": "s09803936f3464f508a4d979b500c6368",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793958551.5293157,
+"end": 1793959596.7476366,
+"pipeline": "pc2e2c97895554c0cb285de391e4dfbb2",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc644223e447240c090a407b77ed2eb09",
+"producer_role": "attempt"
+},
+"s09961e10267a46a4b68f574193f281f5": {
+"id": "s09961e10267a46a4b68f574193f281f5",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793922700.3999348,
+"end": 1793922945.3326614,
+"pipeline": "pdb2c5fa8856d475f89b852c4d5de29ac",
+"nodes": [],
+"question": null,
+"producer": "s34e0462a2cec4f7c9de4c68867cd2a58",
+"producer_role": "attempt"
+},
+"s09c11bfd544740dfa94154a3fc3d8083": {
+"id": "s09c11bfd544740dfa94154a3fc3d8083",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794018549.509507,
+"end": 1794023407.3259907,
+"pipeline": "p859f11d22c324ade81cb836dd04f2d63",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s49d43ea1c5ce4095a31675c3e1c1c534",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s09c7e1b94be84365b4a0ed1ee9b5e586": {
+"id": "s09c7e1b94be84365b4a0ed1ee9b5e586",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794033779.474599,
+"end": 1794033946.089455,
+"pipeline": "pfcdd999a458644c09a2106338d25f55a",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s09ce95cf63804e628f363bc02819982a": {
+"id": "s09ce95cf63804e628f363bc02819982a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794397756.361062,
+"end": 1794404875.371881,
+"pipeline": "p36953a756b104155b446794bf83878fa",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794397753.2889879
+},
+"s0a4a301d82fe43daa4078ea2a1d35e03": {
+"id": "s0a4a301d82fe43daa4078ea2a1d35e03",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793912114.5310922,
+"end": 1793912231.2202578,
+"pipeline": "p6e3aca8a905b49eea3b7a449e559e476",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0a5460aea12d411b80cdc224b0f303a7": {
+"id": "s0a5460aea12d411b80cdc224b0f303a7",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793876203.084713,
+"end": 1793876840.1897004,
+"pipeline": "p8a1e93d6db764006816713ef1b61ce55",
+"nodes": [],
+"question": null,
+"producer": "seae91265f5784a43a8f4a839d9e75f9d",
+"producer_role": "attempt"
+},
+"s0ad79dd4641e4b589e457f9e1bf14675": {
+"id": "s0ad79dd4641e4b589e457f9e1bf14675",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793959600.8465884,
+"end": 1793964999.4374928,
+"pipeline": "p33ae0aa4c1704729a1d2eb2637e84e56",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793959718.2043412
+},
+"s0ada6f135dbd4ee89da00f7b6fdf0b8f": {
+"id": "s0ada6f135dbd4ee89da00f7b6fdf0b8f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794271893.4567044,
+"end": 1794274263.2458014,
+"pipeline": "pa6f9ff95cc894345b92e648cce17393c",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s1c190661c833478abfe6e1ee284ef022",
+"producer_role": "attempt"
+},
+"s0adc05ca37d14e57bdf3f6dc7589cabc": {
+"id": "s0adc05ca37d14e57bdf3f6dc7589cabc",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920616.7186928,
+"end": 1793921116.5564644,
+"pipeline": "p5aedcbefe1654130b2e072b34454be3f",
+"nodes": [],
+"question": "q0",
+"producer": "sa3d0e43b6a0144c08b027dec78fa4909",
+"producer_role": "explore"
+},
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647": {
+"id": "s0ae603c5fd0c4d7c8cf38e2cec9c3647",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794036582.0691416,
+"end": 1794040169.9069057,
+"pipeline": "p3430188d1fc64b6f9cb806fba10b022c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "se62b8e387325453a94b4189b286a7579",
+"producer_role": "attempt"
+},
+"s0b4a6795fcbd4bb0a4087c48f5aedfc9": {
+"id": "s0b4a6795fcbd4bb0a4087c48f5aedfc9",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794271982.1745164,
+"end": 1794274265.5215068,
+"pipeline": "p29ed190356db471e82c1383095559774",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": null,
+"declared_at": 1794272140.6275516
+},
+"s0b57133a518f418f9109dc2df9d53cc4": {
+"id": "s0b57133a518f418f9109dc2df9d53cc4",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793914208.8979878,
+"end": 1793914765.6913216,
+"pipeline": "p87f27c38ead542c09364ec18aeb0d729",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s4aa93ac3cef14a9d98d97dbf330245cb",
+"producer_role": "attempt"
+},
+"s0b59f2e58b204deb9fafd962f579a45d": {
+"id": "s0b59f2e58b204deb9fafd962f579a45d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794257917.8490405,
+"end": 1794265315.9123695,
+"pipeline": "p7a8580f297b44ade8a1eaf92d4cc09f1",
+"nodes": [],
+"question": "q0",
+"producer": "s4f95eedc4746450184719453d637f586",
+"producer_role": "explore"
+},
+"s0b7e98470fbf46c48fb5a02e4553e0ff": {
+"id": "s0b7e98470fbf46c48fb5a02e4553e0ff",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794179606.6600034,
+"end": 1794186414.302751,
+"pipeline": "pae4d0f2c75c54364aa39930902a975ce",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794180656.5581045
+},
+"s0c059ae0fae8415a8bd655456e340ff4": {
+"id": "s0c059ae0fae8415a8bd655456e340ff4",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794219566.547876,
+"end": 1794231969.8343885,
+"pipeline": "pffc854d17e8643a3baad7560e7731aaf",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": null,
+"declared_at": 1794220292.224261
+},
+"s0c7a64c476ab43b790f5b2507833f0a9": {
+"id": "s0c7a64c476ab43b790f5b2507833f0a9",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794231554.1517231,
+"end": 1794235796.487413,
+"pipeline": "pc78c7a4f501846e9ad91101db595431b",
+"nodes": [],
+"question": "op-central-window",
+"producer": "s57f84ef0eed446cbbfef6a2457ff89ee",
+"producer_role": "explore"
+},
+"s0d7946223f2a493992629a45dcbd2269": {
+"id": "s0d7946223f2a493992629a45dcbd2269",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793932487.4807158,
+"end": 1793932918.0836663,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0db4d173b97947a0891254ddf91a4f30": {
+"id": "s0db4d173b97947a0891254ddf91a4f30",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794257789.76664,
+"end": 1794259371.9556468,
+"pipeline": "p1f40d1d558a9450ba690a6c798a357c6",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "scf6cc9fbb2c1400a9b3136f0b1495a8d",
+"producer_role": "attempt"
+},
+"s0dc1405f7063465e950cfbff2eb05824": {
+"id": "s0dc1405f7063465e950cfbff2eb05824",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794250216.162596,
+"end": 1794252115.1873045,
+"pipeline": "p2fa54deb4f6248e79a257f3580547903",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s1e89db2bee194934ab25d1a226e16c3a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s0df90d753a414b63931f6e32a7595d56": {
+"id": "s0df90d753a414b63931f6e32a7595d56",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793960205.6070771,
+"end": 1793960347.6265697,
+"pipeline": "p9ec58c8bd5204044be978f20dd908f65",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0e54df9246434605a73f4fd8a0c47201": {
+"id": "s0e54df9246434605a73f4fd8a0c47201",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794314359.1011927,
+"end": 1794316323.1182644,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0e6afd5d45d940fbb3c173ecc2f55522": {
+"id": "s0e6afd5d45d940fbb3c173ecc2f55522",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793893200.9967167,
+"end": 1793894053.7529867,
+"pipeline": "pf5dd88bcec2b4fe3b08595c07d5d8cfa",
+"nodes": [],
+"question": null,
+"producer": "s3aa79e42b3a34ed497f2d5061c2d07fa",
+"producer_role": "attempt"
+},
+"s0e78f615a15b45778d2cea8f98aad988": {
+"id": "s0e78f615a15b45778d2cea8f98aad988",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794297103.3820248,
+"end": 1794298372.5384665,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0e7a8cae1be34f7193fd3cc8748e9979": {
+"id": "s0e7a8cae1be34f7193fd3cc8748e9979",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793919951.1483893,
+"end": 1793920101.408671,
+"pipeline": "pa4dc846bd280455eafae69b7305769b6",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s0ed03dcb7da548d9b96cd8e1d92dc14b": {
+"id": "s0ed03dcb7da548d9b96cd8e1d92dc14b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794344457.5729053,
+"end": 1794356313.1602297,
+"pipeline": "p233cb50bbfba40e79f7fcf8951310785",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794349897.5213253
+},
+"s0f51cedfa3ba4144bdf268b4e8511601": {
+"id": "s0f51cedfa3ba4144bdf268b4e8511601",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794364411.753154,
+"end": 1794369123.6499228,
+"pipeline": "p30a58db9a776492b97ce7128a2058148",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s1d29d423535f42519befe632d82c7856",
+"producer_role": "attempt"
+},
+"s0fb83093ce054ccbad857fd77e2ff910": {
+"id": "s0fb83093ce054ccbad857fd77e2ff910",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793947191.3384385,
+"end": 1793952010.0432544,
+"pipeline": "pb6195f4146064b98ab83cf9aaa861135",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793947302.6846354
+},
+"s1026dfa0089240b7b2c7c82d82091568": {
+"id": "s1026dfa0089240b7b2c7c82d82091568",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793869671.2269006,
+"end": 1793873103.147077,
+"pipeline": "p08026e7042864098a62753c5c0211a54",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793869733.6343017
+},
+"s105db58cda5e46349968705315e977f3": {
+"id": "s105db58cda5e46349968705315e977f3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794405192.993805,
+"end": 1794416384.921665,
+"pipeline": "peff78847a41242aba87e835f20565e9f",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794406516.751963
+},
+"s10b0735b3a2047ab9ded11f47a0ceb24": {
+"id": "s10b0735b3a2047ab9ded11f47a0ceb24",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794298399.0524318,
+"end": 1794306424.0328166,
+"pipeline": "p85d99647806c43afb5fadc80415bf64b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794299990.8038347
+},
+"s10d4c7c908294494a0077277ec9012f8": {
+"id": "s10d4c7c908294494a0077277ec9012f8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794314442.2254758,
+"end": 1794316972.660911,
+"pipeline": "p85d99647806c43afb5fadc80415bf64b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s10b0735b3a2047ab9ded11f47a0ceb24",
+"producer_role": "attempt"
+},
+"s10ef120804714bbabf52652c49e95ea6": {
+"id": "s10ef120804714bbabf52652c49e95ea6",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793908955.4214406,
+"end": 1793911932.4187548,
+"pipeline": "p5a95cb5dc74942c7844e4fcd739a1ae0",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793909031.4672983
+},
+"s11195b3beb3344299df9a814a1bb3621": {
+"id": "s11195b3beb3344299df9a814a1bb3621",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794396551.4972034,
+"end": 1794397711.0785024,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s115baa875bd2478899cf8fc4bde3f568": {
+"id": "s115baa875bd2478899cf8fc4bde3f568",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793914484.5696886,
+"end": 1793914701.9919198,
+"pipeline": "p9951707251c54a94ab3cf1866f806081",
+"nodes": [],
+"question": null,
+"producer": "sea615687e76d4cf392cb3ec8b6caaf32",
+"producer_role": "attempt"
+},
+"s116844d230844d599a6044004537e3b4": {
+"id": "s116844d230844d599a6044004537e3b4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794348681.7192419,
+"end": 1794350942.0635822,
+"pipeline": "p72dd4a5b3f86470eaa6610bde411b9bd",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s35465b65a1d3483894789f910263051a",
+"producer_role": "attempt"
+},
+"s118b408bb2d242a4a586406e3958dd2c": {
+"id": "s118b408bb2d242a4a586406e3958dd2c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794193113.8292842,
+"end": 1794210697.338377,
+"pipeline": "p642dfde87a2e41da8327363b8b52a0cd",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794195958.3554106
+},
+"s130edca28db64119a4a8b68d3e4f796b": {
+"id": "s130edca28db64119a4a8b68d3e4f796b",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793923257.3079536,
+"end": 1793923865.3139014,
+"pipeline": "p610d117319a64d0596425e4c447563e2",
+"nodes": [],
+"question": "q0",
+"producer": "sb3917b1fc15745f5a24bd8af4e203f1e",
+"producer_role": "explore"
+},
+"s134205e9d6c24dfbb8588b1af3ed4643": {
+"id": "s134205e9d6c24dfbb8588b1af3ed4643",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794327564.176447,
+"end": 1794336156.256383,
+"pipeline": "p214087f0824647d2a08fee206890c7c1",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794329082.1787875
+},
+"s137d24847fd74bfab1ee946f028df4c8": {
+"id": "s137d24847fd74bfab1ee946f028df4c8",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793904942.4090798,
+"end": 1793905591.0176487,
+"pipeline": "p80006cf33d474caba94f9acfd57cfd1d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s65582ec5b3a8430d8e82f8ddad20c888",
+"producer_role": "attempt"
+},
+"s13b9b9ab7dd846f5aad4a4ef96797175": {
+"id": "s13b9b9ab7dd846f5aad4a4ef96797175",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794317807.5035455,
+"end": 1794323873.5031495,
+"pipeline": "p9fa2af15955645179cde878552b8dbcd",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794318059.4702992
+},
+"s13e2680eff764c30951a81cc3e0c7b99": {
+"id": "s13e2680eff764c30951a81cc3e0c7b99",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794279807.2731447,
+"end": 1794285615.479054,
+"pipeline": "pcf824b2236964fdab19a1c84f7dd96d9",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794281273.9584072
+},
+"s13ebee8c05ed4c2eb6f8939d0e8dec9d": {
+"id": "s13ebee8c05ed4c2eb6f8939d0e8dec9d",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793868431.673318,
+"end": 1793869222.9294727,
+"pipeline": "pcb9112feab2246e09e8404adcf6d7f0d",
+"nodes": [],
+"question": "q0",
+"producer": "sd9dac32c31f443ffa649c34e93b44a7f",
+"producer_role": "explore"
+},
+"s14b3779ed1854b7d89a0a2477f875f7d": {
+"id": "s14b3779ed1854b7d89a0a2477f875f7d",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793992968.925061,
+"end": 1793993099.7098727,
+"pipeline": "pdb1571319b7d4751aafffd2b215df220",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s14d6e383539840768b836a68b8b8c04c": {
+"id": "s14d6e383539840768b836a68b8b8c04c",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793997947.4161587,
+"end": 1794001949.157233,
+"pipeline": "pd5b943275527430a9102611f0758522d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793998198.377581
+},
+"s150ac2b274f949049fb978b3fa906665": {
+"id": "s150ac2b274f949049fb978b3fa906665",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793952010.603221,
+"end": 1793954622.7267444,
+"pipeline": "pb6195f4146064b98ab83cf9aaa861135",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s0fb83093ce054ccbad857fd77e2ff910",
+"producer_role": "attempt"
+},
+"s152edc0d383447a3b3e2b26227d90115": {
+"id": "s152edc0d383447a3b3e2b26227d90115",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794238935.3064425,
+"end": 1794245968.7714412,
+"pipeline": "pffd5124e5b50464ea84b66e5a81920b3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794240880.0117497
+},
+"s155b3bc28e3b462493d51f6510c49925": {
+"id": "s155b3bc28e3b462493d51f6510c49925",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794412111.5148447,
+"end": 1794420066.3869162,
+"pipeline": "pe9dd3fba778d49a0984b325a6225ee8c",
+"nodes": [
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-deficit"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794413782.2929752
+},
+"s1562a265c91a40c792e0a37105c052ad": {
+"id": "s1562a265c91a40c792e0a37105c052ad",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794404882.6823952,
+"end": 1794410765.6099763,
+"pipeline": "p36953a756b104155b446794bf83878fa",
+"nodes": [],
+"question": "q0",
+"producer": "s09ce95cf63804e628f363bc02819982a",
+"producer_role": "explore"
+},
+"s15ad119542e1423c9c0d3183e0cdc497": {
+"id": "s15ad119542e1423c9c0d3183e0cdc497",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794203443.1718864,
+"end": 1794213200.1575212,
+"pipeline": "pecb5160cbc9a402aa4046f6b5ef8ead3",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s7b1d4c463be24dc68a59ba3219cecefe",
+"producer_role": "attempt"
+},
+"s15b86cd2c2504fcba6fe12a9904309c2": {
+"id": "s15b86cd2c2504fcba6fe12a9904309c2",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793955657.0806854,
+"end": 1793960058.0391212,
+"pipeline": "pe21339b3a3ae45cf821d668680849cc0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793955750.674215
+},
+"s161394e8c82d4577975fd4f806e185ea": {
+"id": "s161394e8c82d4577975fd4f806e185ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794245970.4205742,
+"end": 1794250678.8671257,
+"pipeline": "pffd5124e5b50464ea84b66e5a81920b3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s152edc0d383447a3b3e2b26227d90115",
+"producer_role": "attempt"
+},
+"s162f80ff85f343c4a4d2de9ee3cb6bef": {
+"id": "s162f80ff85f343c4a4d2de9ee3cb6bef",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793910984.070512,
+"end": 1793911613.6430087,
+"pipeline": "pa9664ae76ef54ac296605255471c43a6",
+"nodes": [],
+"question": "q0",
+"producer": "s763be1c55bdd4640b89710d6b357e7e7",
+"producer_role": "explore"
+},
+"s1638d97f39d847d49aeafbdc96d6d01d": {
+"id": "s1638d97f39d847d49aeafbdc96d6d01d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794406931.0566106,
+"end": 1794411529.2713523,
+"pipeline": "p4ade0073b7614c718b964cf7e931570a",
+"nodes": [
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder"
+],
+"question": null,
+"producer": "sab070135fd7940039c8d3696ffe41e3f",
+"producer_role": "attempt"
+},
+"s166b348f213f463a8acc1413400f4551": {
+"id": "s166b348f213f463a8acc1413400f4551",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794263579.7163198,
+"end": 1794265100.018542,
+"pipeline": "p6922221b634e494792b08373c7a84f23",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s947db7a858ad4099b68528012ca03f81",
+"producer_role": "attempt"
+},
+"s16804cd0756e49638136148972a210db": {
+"id": "s16804cd0756e49638136148972a210db",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794326722.9239893,
+"end": 1794328426.3276618,
+"pipeline": "pd816398237c44b0db79126ff9eab3213",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "se8afabd78d5d46b48ce9b7adf253038e",
+"producer_role": "attempt"
+},
+"s1696712103e344daad1c22ee28ec6a30": {
+"id": "s1696712103e344daad1c22ee28ec6a30",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793861708.9233568,
+"end": 1793863423.6486323,
+"pipeline": "p4eb80e7b0afd461e8224285357a88594",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793861763.4464378
+},
+"s16ed33159b5940faae9238a673cdf997": {
+"id": "s16ed33159b5940faae9238a673cdf997",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794409763.6180634,
+"end": 1794416532.674651,
+"pipeline": "p745f163e12e140ef94efd24689fa0a0d",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794410195.6439161
+},
+"s16ff5110ad394b598fae7c4284067cb2": {
+"id": "s16ff5110ad394b598fae7c4284067cb2",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793964466.4823809,
+"end": 1793970384.1761754,
+"pipeline": "p807eabfabe294f0dbb50e8035f906342",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793964641.1048677
+},
+"s1709ac2907b449dbae39e3b439a86203": {
+"id": "s1709ac2907b449dbae39e3b439a86203",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794284303.3333087,
+"end": 1794288202.6171775,
+"pipeline": "pb199d960a9b5403db9a874037b5aa93f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s2a382a430b4d4d8bbb136b2bc5e828f5",
+"producer_role": "attempt"
+},
+"s172096732797407ea9bbf08b328c886f": {
+"id": "s172096732797407ea9bbf08b328c886f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794116813.5280004,
+"end": 1794138856.0333314,
+"pipeline": "p8e706f0a94474fcf84de945d1db9a523",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s6e8de1ed47f44950b0fe27b9bd9ccc54",
+"producer_role": "attempt"
+},
+"s173ed7ad787e4e25ae8d16ef6120f807": {
+"id": "s173ed7ad787e4e25ae8d16ef6120f807",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793909767.1649923,
+"end": 1793910983.5036342,
+"pipeline": "pa9664ae76ef54ac296605255471c43a6",
+"nodes": [],
+"question": "q0",
+"producer": "s763be1c55bdd4640b89710d6b357e7e7",
+"producer_role": "explore"
+},
+"s17da963aa6c742e99f489342c9bc637e": {
+"id": "s17da963aa6c742e99f489342c9bc637e",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793920432.2764664,
+"end": 1793920600.8691566,
+"pipeline": "p53b29167f80c45259d1587775b667ea8",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s1820faf7f0034cd39b0913511ddc4ff6": {
+"id": "s1820faf7f0034cd39b0913511ddc4ff6",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794331259.2048354,
+"end": 1794338470.4458492,
+"pipeline": "pb8ecf47daba34417874f74ca189d7499",
+"nodes": [],
+"question": "q0",
+"producer": "sd625ad9eb4e1426397559bceafea9a74",
+"producer_role": "explore"
+},
+"s183188958bb542419c29864963fe0558": {
+"id": "s183188958bb542419c29864963fe0558",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793861706.6603694,
+"end": 1793862707.8168354,
+"pipeline": "pba6b2dc955a34e078da617a01093124e",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s1843e065cb474e45acc402336ab1e070": {
+"id": "s1843e065cb474e45acc402336ab1e070",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794326674.0486546,
+"end": 1794331701.9788837,
+"pipeline": "pa32381587ed94a1fb6d621166ca13cd4",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s9b16b7bc3d424a95a774df8a7f241d80",
+"producer_role": "attempt"
+},
+"s186c0207e42f4cd3b0706cd87579fd08": {
+"id": "s186c0207e42f4cd3b0706cd87579fd08",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793943585.8803215,
+"end": 1793944246.015694,
+"pipeline": "p0bfb5d54aa904fd188fdcd3529efb880",
+"nodes": [],
+"question": "q0",
+"producer": "s7c2438743ed649b18263bc4af70bef74",
+"producer_role": "explore"
+},
+"s18c2f49c7de9473d935eda0e5c83f39f": {
+"id": "s18c2f49c7de9473d935eda0e5c83f39f",
+"role": "formalizer",
+"model": "codex/gpt-6.1-sol",
+"start": 1794023421.2644508,
+"end": 1794192367.256195,
+"pipeline": "p8ca0ac5df1bb432dbc5f316df15dcb59",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-central-gap"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794023420.4915073
+},
+"s19caeff431554e2692b8c43cd6674e0e": {
+"id": "s19caeff431554e2692b8c43cd6674e0e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794245845.47246,
+"end": 1794251087.9857104,
+"pipeline": "p560be1ff70d24a07af070821fec20f6c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s5fa3188be536453eb30da17570256a27",
+"producer_role": "explore"
+},
+"s1a605a95abea486298b3e99fc7951a81": {
+"id": "s1a605a95abea486298b3e99fc7951a81",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794126446.9220777,
+"end": 1794134834.8255928,
+"pipeline": "p6995e8f20a954fbdb417cc02f8e3a333",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": "s6f4bdeb6e4ff4fb8823b7a9b89bcd6d9",
+"producer_role": "attempt"
+},
+"s1ac7e31db23f49fe9e0d44f7cf96e789": {
+"id": "s1ac7e31db23f49fe9e0d44f7cf96e789",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794249839.9413507,
+"end": 1794257787.6528265,
+"pipeline": "p1f40d1d558a9450ba690a6c798a357c6",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "scf6cc9fbb2c1400a9b3136f0b1495a8d",
+"producer_role": "attempt"
+},
+"s1bcf8bb538eb445c854e6621a9a6d5fe": {
+"id": "s1bcf8bb538eb445c854e6621a9a6d5fe",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793943329.8096488,
+"end": 1793944883.665225,
+"pipeline": "p680c58f0b9bb4a61b9abdea242839f40",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793943433.5042725
+},
+"s1c190661c833478abfe6e1ee284ef022": {
+"id": "s1c190661c833478abfe6e1ee284ef022",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794259588.7644792,
+"end": 1794266960.5799768,
+"pipeline": "pa6f9ff95cc894345b92e648cce17393c",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794261268.9563694
+},
+"s1c1fad1a256c438c8f1d45f3464675ed": {
+"id": "s1c1fad1a256c438c8f1d45f3464675ed",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793932487.9006977,
+"end": 1793933674.5051484,
+"pipeline": "p7203be3b7e94409d86fc2d7d6aef0e48",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793932580.6009426
+},
+"s1c46f1029c144b08a4c6d0e93b49c1b4": {
+"id": "s1c46f1029c144b08a4c6d0e93b49c1b4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794399723.154053,
+"end": 1794401881.6254284,
+"pipeline": "p93b8e3607bb04b3b99c68fba23588f17",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k"
+],
+"question": null,
+"producer": "s9eebd486719a47f0bd8df99188bab6e7",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s1cb30f1d5fb34d20818a390d34f46b3f": {
+"id": "s1cb30f1d5fb34d20818a390d34f46b3f",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793930326.2638807,
+"end": 1793931334.7793262,
+"pipeline": "p993d949388fe429592e67afb02796d1f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793930419.1271157
+},
+"s1cd790cb293b4e21844b76a840e3b184": {
+"id": "s1cd790cb293b4e21844b76a840e3b184",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794161529.471992,
+"end": 1794169076.5143478,
+"pipeline": "p7b5580d8bbd9489db12ff9e221393312",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794163149.9214473
+},
+"s1cf8a01d8a4d4c449ddfc32da32f58cc": {
+"id": "s1cf8a01d8a4d4c449ddfc32da32f58cc",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793937061.2644773,
+"end": 1793937673.35168,
+"pipeline": "pa97be1e631e54f288b3cf41860405abf",
+"nodes": [],
+"question": "q0",
+"producer": "s2ffbe13e1f714f82ab64a0ba587ddeca",
+"producer_role": "explore"
+},
+"s1d2196b239ff45808245550df924e2d5": {
+"id": "s1d2196b239ff45808245550df924e2d5",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794042218.422142,
+"end": 1794042457.851522,
+"pipeline": "p823aefe9b4b8428e961803ed2f7afcba",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s1d29d423535f42519befe632d82c7856": {
+"id": "s1d29d423535f42519befe632d82c7856",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794354813.0653427,
+"end": 1794364409.0233922,
+"pipeline": "p30a58db9a776492b97ce7128a2058148",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794356459.3707721
+},
+"s1d80bbea85ab4f67966756c46ae881c9": {
+"id": "s1d80bbea85ab4f67966756c46ae881c9",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793993149.4091525,
+"end": 1793996378.6180341,
+"pipeline": "p9a2bd545cde44f22827a09f18eed6198",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793993262.8922415
+},
+"s1d88df84895b43aa8c5aafe8090c8fa1": {
+"id": "s1d88df84895b43aa8c5aafe8090c8fa1",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793922127.0353138,
+"end": 1793923256.5006056,
+"pipeline": "p610d117319a64d0596425e4c447563e2",
+"nodes": [],
+"question": "q0",
+"producer": "sb3917b1fc15745f5a24bd8af4e203f1e",
+"producer_role": "explore"
+},
+"s1dfbe00384fe49babdb94bcc19066f94": {
+"id": "s1dfbe00384fe49babdb94bcc19066f94",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794266505.0410736,
+"end": 1794268324.4915028,
+"pipeline": "p6a92b1bfabd4478195ee14b56cf521b7",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s9ef9a787214547819019ce137730280a",
+"producer_role": "explore"
+},
+"s1e65745e3f634134853757d406971c54": {
+"id": "s1e65745e3f634134853757d406971c54",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794160617.6842322,
+"end": 1794162724.5239854,
+"pipeline": "p445f96d7c01347bcb4768b7bd1c3e2b5",
+"nodes": [
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core"
+],
+"question": null,
+"producer": "sef0087463c904180823143ce6febd6f7",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s1e681f593e3d4ee6a3b96209812669df": {
+"id": "s1e681f593e3d4ee6a3b96209812669df",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794044577.171579,
+"end": 1794050651.6819775,
+"pipeline": "pa16d4be0901d44459ab5d4d0853eeb6d",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "s80f9f868b4164fd7b14bc6913a8a3dfa",
+"producer_role": "attempt"
+},
+"s1e89db2bee194934ab25d1a226e16c3a": {
+"id": "s1e89db2bee194934ab25d1a226e16c3a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794239852.8202095,
+"end": 1794245472.8873663,
+"pipeline": "p2fa54deb4f6248e79a257f3580547903",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794241522.1284077
+},
+"s1ee4cef90d1144efbe9a04e083e67eee": {
+"id": "s1ee4cef90d1144efbe9a04e083e67eee",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794192473.1731603,
+"end": 1794195294.5727682,
+"pipeline": "pf94673e14fb14d0ebecc2393b00b4c0a",
+"nodes": [
+"sa285576b08e84713a85bbec88889e550-one-step-local"
+],
+"question": null,
+"producer": "se0327c0c588d4ab2a4df1b8b624dc4d9",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s1f37a6bae5794e12bf2d177b1b96bbab": {
+"id": "s1f37a6bae5794e12bf2d177b1b96bbab",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793915133.6576009,
+"end": 1793919585.782729,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s1f5cbd831c514659bcc284f5816c45c2": {
+"id": "s1f5cbd831c514659bcc284f5816c45c2",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793908244.0802484,
+"end": 1793908742.6622365,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s1f7e752c14114a39adcb9420eee68db8": {
+"id": "s1f7e752c14114a39adcb9420eee68db8",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793944740.2875488,
+"end": 1793945805.2371247,
+"pipeline": "paf29d348856449fba084ddc3162534eb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s07b2df20a2f5413dacedc74e031e5b08",
+"producer_role": "attempt"
+},
+"s1fbc75e7df454385a37bc1f40811abdf": {
+"id": "s1fbc75e7df454385a37bc1f40811abdf",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794374063.5031989,
+"end": 1794375162.323578,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s1fdba016d0454a5eac323cb18a67655a": {
+"id": "s1fdba016d0454a5eac323cb18a67655a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794353526.5833097,
+"end": 1794360097.2092688,
+"pipeline": "p3c790b2e7cfa41f59e0d97c22ae47a41",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s26b5d221e4dd48be81e7fef1824160af",
+"producer_role": "attempt"
+},
+"s20049bc986b8450194d4a3954625b331": {
+"id": "s20049bc986b8450194d4a3954625b331",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794276545.963671,
+"end": 1794308828.3633933,
+"pipeline": "p791cdc812e7045d9a854a34eb3d81cda",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794279447.994875
+},
+"s2058ea892723468183ad2c084d550798": {
+"id": "s2058ea892723468183ad2c084d550798",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793921015.0535216,
+"end": 1793921213.586031,
+"pipeline": "p0dd8c61a975f41a5bb1d3a250d167bb9",
+"nodes": [],
+"question": null,
+"producer": "s58197419cdae472da36509d631330120",
+"producer_role": "attempt"
+},
+"s2064e6ea0006473db43b7c17939e0054": {
+"id": "s2064e6ea0006473db43b7c17939e0054",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793896709.7550924,
+"end": 1793897732.0590067,
+"pipeline": "pfcbb78cd7523472fa29ccfc99569dec5",
+"nodes": [],
+"question": "q0",
+"producer": "s866d767af66a40ba92b3e552e393a683",
+"producer_role": "explore"
+},
+"s207e743647da479b84a60f9230a3afc4": {
+"id": "s207e743647da479b84a60f9230a3afc4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794369823.338024,
+"end": 1794372137.59026,
+"pipeline": "pe18301ae0d984658b5baeee16b1702cd",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s8ee97faaabdd4c4b9d95dbf82f1cd48c",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s20d3772b315347d9a42dd7cac32f08a3": {
+"id": "s20d3772b315347d9a42dd7cac32f08a3",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794022655.058865,
+"end": 1794026512.9421778,
+"pipeline": "p9a990860f3de4b6289bbda138a212d6a",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794022850.4473236
+},
+"s21204dda83b14385a29189114c05ba0b": {
+"id": "s21204dda83b14385a29189114c05ba0b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794259407.8854473,
+"end": 1794267106.3697612,
+"pipeline": "p70bda00dc9fd4d8fba42f4f37d3d1fe1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794261017.5621295
+},
+"s216e8f5a1a8c43cfaff23241baa87576": {
+"id": "s216e8f5a1a8c43cfaff23241baa87576",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793911615.3717847,
+"end": 1793912112.7136793,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2174ea6bba7b448f8e4dabef297d1fe5": {
+"id": "s2174ea6bba7b448f8e4dabef297d1fe5",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794336289.257436,
+"end": 1794337349.109475,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2185fa0eab444a3d8205b6767c7333f6": {
+"id": "s2185fa0eab444a3d8205b6767c7333f6",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1793962881.0085301,
+"end": 1793967213.8778028,
+"pipeline": "p08fc01e88ecf48fdb094d6b2e99eaf88",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s21bfdfa63bf34cfea6933337f39191db": {
+"id": "s21bfdfa63bf34cfea6933337f39191db",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793933493.1471958,
+"end": 1793934968.8252034,
+"pipeline": "p7e7ce74178ab444d894eaf0279a2783d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s04ec7af70fdf47849a51a966c106a957",
+"producer_role": "attempt"
+},
+"s21d1e130e97f4d6494e318b1bbb6b3e4": {
+"id": "s21d1e130e97f4d6494e318b1bbb6b3e4",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794034383.2707343,
+"end": 1794039627.542706,
+"pipeline": "pb715746473aa4f838e57658f1e166dae",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "sabac4e74d31d4c238989c2aed258f696",
+"producer_role": "attempt"
+},
+"s21da1a52ce844729b05e4d50f1f8d51b": {
+"id": "s21da1a52ce844729b05e4d50f1f8d51b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794352389.5262885,
+"end": 1794354566.024522,
+"pipeline": "p03f08292410c43daa130b71c22d1c8e3",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sdec3b983b0734542babaa72f5dc71712",
+"producer_role": "attempt"
+},
+"s2249cb9999c843d4871d345a8d9aad8f": {
+"id": "s2249cb9999c843d4871d345a8d9aad8f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794392529.6171858,
+"end": 1794396515.3263464,
+"pipeline": "p6da941b34aae45f980e887d2e72522fa",
+"nodes": [
+"sa3f2213741804894b82c2689f4b2a217-central-point-mass",
+"sa3f2213741804894b82c2689f4b2a217-right-window-decrease"
+],
+"question": null,
+"producer": "sada4344284e14b02bf01249a64ef0f89",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s2282cc4bc2f4484d887911edeb070c87": {
+"id": "s2282cc4bc2f4484d887911edeb070c87",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794083589.3876517,
+"end": 1794093691.4011807,
+"pipeline": "p99f75b2335a5411daf4f2f8c4bba9f0e",
+"nodes": [],
+"question": "q0",
+"producer": "sc9c67fc6c4f745a58071dac8611f253d",
+"producer_role": "explore"
+},
+"s22884773129942188de33661c04e7037": {
+"id": "s22884773129942188de33661c04e7037",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794407976.3237681,
+"end": 1794408967.319551,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s228957f4d25d4afa9f965dd9d088d86c": {
+"id": "s228957f4d25d4afa9f965dd9d088d86c",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793930659.9898956,
+"end": 1793931870.1493924,
+"pipeline": "pd2583d8744f04521bb8ce4ae68444aa3",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc5eb159a5fef431a9c5e6ca908591af4",
+"producer_role": "attempt"
+},
+"s22aeef356748462dbe93f664d1746b76": {
+"id": "s22aeef356748462dbe93f664d1746b76",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794229055.2508805,
+"end": 1794233468.2597744,
+"pipeline": "pa23029b1f560475cb552ffcc0cc9b3fc",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s54620c536e75453d8300bc10d8ed672a",
+"producer_role": "attempt"
+},
+"s22b106ac63c8424ea6d311902f583887": {
+"id": "s22b106ac63c8424ea6d311902f583887",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794384097.0274994,
+"end": 1794389729.6956437,
+"pipeline": "p4f931eab023d440ea27f8e4b92fcb6e1",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "se22c2096acfb4caaa03502c20c6fb0f7",
+"producer_role": "attempt"
+},
+"s22c925f80b4845ca945c4675dfd0bef3": {
+"id": "s22c925f80b4845ca945c4675dfd0bef3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794401419.1264975,
+"end": 1794410414.6795266,
+"pipeline": "p0489f09b39f249b4aca625623d685571",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794402837.0536034
+},
+"s233b5747476a41f5989ebb9844c2de7f": {
+"id": "s233b5747476a41f5989ebb9844c2de7f",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794316982.6117642,
+"end": 1794317884.4054325,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s233c7f2a2f0445f0a2e7551f6948d0b9": {
+"id": "s233c7f2a2f0445f0a2e7551f6948d0b9",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794292993.5728173,
+"end": 1794298500.086838,
+"pipeline": "pb3b97ced9634472f80cbf2d7aaed8d40",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s77bce54a05784510828adf250b00eaf3",
+"producer_role": "attempt"
+},
+"s23998533cf034fa6bd921db91708e626": {
+"id": "s23998533cf034fa6bd921db91708e626",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793904653.61208,
+"end": 1793905118.9847693,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s23b5ef55343f4982a24a1dca79d8a114": {
+"id": "s23b5ef55343f4982a24a1dca79d8a114",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794334284.8410199,
+"end": 1794348455.759097,
+"pipeline": "pd74ac41b0284412291a53e3065f35654",
+"nodes": [],
+"question": "s1843e065cb474e45acc402336ab1e070-first-passage-time-profile",
+"producer": null,
+"declared_at": 1794335139.4747615
+},
+"s246ce0bd58144fd69feec9128e939f0c": {
+"id": "s246ce0bd58144fd69feec9128e939f0c",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794422364.1189167,
+"end": null,
+"pipeline": "p745f163e12e140ef94efd24689fa0a0d",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s16ed33159b5940faae9238a673cdf997",
+"producer_role": "explore"
+},
+"s24e44040e28f4004ab05208e1f404565": {
+"id": "s24e44040e28f4004ab05208e1f404565",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793921651.858901,
+"end": 1793921927.4394634,
+"pipeline": "p1e5b9343360b4be88350457562b00218",
+"nodes": [],
+"question": null,
+"producer": "s9682ed8f2c434047a42b45a0f33a3a1e",
+"producer_role": "attempt"
+},
+"s24f59529460445bfa69e42bf54f0203d": {
+"id": "s24f59529460445bfa69e42bf54f0203d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794215974.5842152,
+"end": 1794221246.8691242,
+"pipeline": "pb30d26b0172a44faa27bf0f718507fba",
+"nodes": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131"
+],
+"question": null,
+"producer": "s635d9cd1ffd94c8c8c03ecd2ba37cf36",
+"producer_role": "attempt"
+},
+"s252607e0f9204205b559ce842eee076f": {
+"id": "s252607e0f9204205b559ce842eee076f",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793904341.351991,
+"end": 1793904973.32349,
+"pipeline": "pa1d21af0278f4c93b07f78e51a8bdd69",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s5935164382f74f86b45c61bc7bae89ec",
+"producer_role": "attempt"
+},
+"s253558898f754d28a07c64d0dd47e91f": {
+"id": "s253558898f754d28a07c64d0dd47e91f",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794295786.9101717,
+"end": 1794304564.6528893,
+"pipeline": "p028ebd38e8f5486fa6582a527b69513a",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794295782.6247878
+},
+"s255fbf0bf90940e9b638eae34811fc3d": {
+"id": "s255fbf0bf90940e9b638eae34811fc3d",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793945150.4627295,
+"end": 1793946277.0477698,
+"pipeline": "p23aed0e6674047b4a91a87c0cc0d62ca",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s69351cdd75fe4684b9a28378cbf81155",
+"producer_role": "attempt"
+},
+"s258b6f4217584950884e5ede700ec597": {
+"id": "s258b6f4217584950884e5ede700ec597",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793978649.8700678,
+"end": 1793983354.9220254,
+"pipeline": "p14ce8b932d76463c8d89821898d5a580",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793978915.346575
+},
+"s25e0a0aba55a4929b964563893939545": {
+"id": "s25e0a0aba55a4929b964563893939545",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793928562.5306673,
+"end": 1793930033.0091567,
+"pipeline": "pb7664524f00f4f068bc3371423e9ed2b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793928668.4309034
+},
+"s26263a96b4154bb086466da310cb99e0": {
+"id": "s26263a96b4154bb086466da310cb99e0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274271.974319,
+"end": 1794278802.6726243,
+"pipeline": "p1a59338dbc84498492827f258876140f",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s6ceacc1f7e344ebe96861dbf6041a4fd",
+"producer_role": "attempt"
+},
+"s263f85f424c447b3861de59bef4ea551": {
+"id": "s263f85f424c447b3861de59bef4ea551",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794207469.3631182,
+"end": 1794217550.758208,
+"pipeline": "pe397f7e502064c01a57b681396d89bfb",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sf525b0acf83846069893699c8c6b94f1",
+"producer_role": "attempt"
+},
+"s264ccdaecf504e598a52dc6dbb9c23b0": {
+"id": "s264ccdaecf504e598a52dc6dbb9c23b0",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793876488.52515,
+"end": 1793877232.8668213,
+"pipeline": "p5c43fb31f62548d5a475f37297411e49",
+"nodes": [],
+"question": "q0",
+"producer": "sbd0fab4845d548c798d5155a439a807a",
+"producer_role": "explore"
+},
+"s26824c96c9184c44ae78ccc14ede25cd": {
+"id": "s26824c96c9184c44ae78ccc14ede25cd",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793928275.6778643,
+"end": 1793930523.6099098,
+"pipeline": "pcd2a806df1704d31b7fdf7beb68cee1e",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793928275.3899407
+},
+"s26ac690d60be4574a9f15685c82b0740": {
+"id": "s26ac690d60be4574a9f15685c82b0740",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794023635.6329308,
+"end": 1794029473.259438,
+"pipeline": "p7cbfadee885144b4a214640b99b6fafc",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s7df88a0089b849639d416708a0e20ff2",
+"producer_role": "attempt"
+},
+"s26b5d221e4dd48be81e7fef1824160af": {
+"id": "s26b5d221e4dd48be81e7fef1824160af",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794343858.6109166,
+"end": 1794353510.8617814,
+"pipeline": "p3c790b2e7cfa41f59e0d97c22ae47a41",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794345990.5121267
+},
+"s270fc095678548f9870d63ff9bfe6d68": {
+"id": "s270fc095678548f9870d63ff9bfe6d68",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794214760.5803273,
+"end": 1794217135.9665308,
+"pipeline": "p642dfde87a2e41da8327363b8b52a0cd",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": "s118b408bb2d242a4a586406e3958dd2c",
+"producer_role": "attempt"
+},
+"s275ad05d50784b139ee7695b2eb52c10": {
+"id": "s275ad05d50784b139ee7695b2eb52c10",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794379409.830823,
+"end": 1794381257.2650256,
+"pipeline": "p92a55491145f4ef587d0a208786df1b2",
+"nodes": [
+"sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold"
+],
+"question": null,
+"producer": "s3ad034fea8154b85bf70008c111928bc",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s278a4080d7014ce7a65961b0cb05de60": {
+"id": "s278a4080d7014ce7a65961b0cb05de60",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794035879.7001982,
+"end": 1794041632.1189754,
+"pipeline": "p1faca19204174b399858d27891089ea0",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": "sec7a46a64c83466081593e5b75b86b6e",
+"producer_role": "attempt"
+},
+"s27dce9edcb0a411c86de39d52df0c289": {
+"id": "s27dce9edcb0a411c86de39d52df0c289",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794343835.6728096,
+"end": 1794348677.8130257,
+"pipeline": "p72dd4a5b3f86470eaa6610bde411b9bd",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s35465b65a1d3483894789f910263051a",
+"producer_role": "attempt"
+},
+"s282bfee0433640a7962660fbcbf3b1e8": {
+"id": "s282bfee0433640a7962660fbcbf3b1e8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794291468.8630157,
+"end": 1794296221.2251012,
+"pipeline": "pec1c7231a92d4cebaf368089bdf26d74",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "sccca41682fa3479f933c6180fe09c5f3",
+"producer_role": "attempt"
+},
+"s282ce842b87c433ebb75c58cf8070f59": {
+"id": "s282ce842b87c433ebb75c58cf8070f59",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793965932.8096015,
+"end": 1793969532.5515645,
+"pipeline": "p8ee2336d15f848dcae1f8c095166fc7b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s778e8cef9a2d4be080649d8ead1c41a8",
+"producer_role": "attempt"
+},
+"s2839417ae6de42dca5b242c6db9bc2a0": {
+"id": "s2839417ae6de42dca5b242c6db9bc2a0",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793961644.8033495,
+"end": 1793965928.0780416,
+"pipeline": "p8ee2336d15f848dcae1f8c095166fc7b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s778e8cef9a2d4be080649d8ead1c41a8",
+"producer_role": "attempt"
+},
+"s2895e58526044c67b8c8571a3befed1e": {
+"id": "s2895e58526044c67b8c8571a3befed1e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794274334.3866265,
+"end": 1794275715.0082393,
+"pipeline": "p0d73de55406c4240a474b64f6c8c4aa9",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k"
+],
+"question": null,
+"producer": "s861783c134504e26b33d4e6c7d688169",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s28e478e845ab421b90aabeed47c415d4": {
+"id": "s28e478e845ab421b90aabeed47c415d4",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794267108.4725728,
+"end": 1794272007.633054,
+"pipeline": "p70bda00dc9fd4d8fba42f4f37d3d1fe1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s21204dda83b14385a29189114c05ba0b",
+"producer_role": "attempt"
+},
+"s28f6ad17539f4c9bbe5ed90556cefdd1": {
+"id": "s28f6ad17539f4c9bbe5ed90556cefdd1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794421548.5690937,
+"end": null,
+"pipeline": "p0489f09b39f249b4aca625623d685571",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": "s22c925f80b4845ca945c4675dfd0bef3",
+"producer_role": "attempt"
+},
+"s291f8e7b04a24e3d90bbbcda8d26fdc8": {
+"id": "s291f8e7b04a24e3d90bbbcda8d26fdc8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794338449.4166434,
+"end": 1794340282.4637887,
+"pipeline": "p94a834e74e894e59b3c23d391eb1c6f1",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": "s6b6077f83fa844c79665566bb8547676",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s297efe21c21142f2a30d7b800dea6be8": {
+"id": "s297efe21c21142f2a30d7b800dea6be8",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794044159.90064,
+"end": 1794047289.130101,
+"pipeline": "p21d58a2854b54a23be50070fa2b97328",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s29a399be35894997a0ab7e1d3be46932": {
+"id": "s29a399be35894997a0ab7e1d3be46932",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793921148.9396558,
+"end": 1793922544.8788676,
+"pipeline": "p0fdaa52f5b6347aaa1a2771f5f5c2935",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793921286.319097
+},
+"s29cd198e509046c4aa062ebcea3b0e62": {
+"id": "s29cd198e509046c4aa062ebcea3b0e62",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793981310.0447288,
+"end": 1793989263.6576946,
+"pipeline": "p8bc7361552ff4227b82402267353f5a2",
+"nodes": [],
+"question": "q0",
+"producer": "s92b589f4e695474abcdc044c1bcc8026",
+"producer_role": "explore"
+},
+"s2a081186a0d94c648746698d4141f8ec": {
+"id": "s2a081186a0d94c648746698d4141f8ec",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794420236.5921571,
+"end": 1794422624.6381621,
+"pipeline": "pd761336fd8e94572ad98fa7fd0397c74",
+"nodes": [],
+"question": "s7a50feafd0d74dde9c5ac37f50f5ccbd-concavity-exponent",
+"producer": "s3aaed22bef39493d80a37c605ee7c82a",
+"producer_role": "explore"
+},
+"s2a177d09cd804cfc9f9c88a4b1564480": {
+"id": "s2a177d09cd804cfc9f9c88a4b1564480",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794153303.9320145,
+"end": 1794154515.9420767,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2a244b35c9a941579bcfd21b5a3d2612": {
+"id": "s2a244b35c9a941579bcfd21b5a3d2612",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794384536.9281602,
+"end": 1794390395.3075736,
+"pipeline": "pa0eadff6c68647378bb5aca4d53974fc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s49deb1da830f41d9b469a16c17172feb",
+"producer_role": "explore"
+},
+"s2a382a430b4d4d8bbb136b2bc5e828f5": {
+"id": "s2a382a430b4d4d8bbb136b2bc5e828f5",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794275891.0316877,
+"end": 1794284301.533571,
+"pipeline": "pb199d960a9b5403db9a874037b5aa93f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794277465.9520237
+},
+"s2b301bb7e6814e6aaa9035836498d6b3": {
+"id": "s2b301bb7e6814e6aaa9035836498d6b3",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793928765.6727402,
+"end": 1793928840.5129545,
+"pipeline": "pa77801bb7a0843ccb95ab4723d07339e",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2b8b5d00d0504939b0863939f9c3963f": {
+"id": "s2b8b5d00d0504939b0863939f9c3963f",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793973166.8748572,
+"end": 1793973495.028376,
+"pipeline": "p1c3bc2f0448d49b7be39fd73ebfc20bf",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2ba803d27e844dd0a9066c2c2079b1ae": {
+"id": "s2ba803d27e844dd0a9066c2c2079b1ae",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920182.5574746,
+"end": 1793920431.5906365,
+"pipeline": "pf523a84a60d244eea1744e9486cdf556",
+"nodes": [],
+"question": null,
+"producer": "s78ee4727cc6342d8ab489487bfb0a3c5",
+"producer_role": "attempt"
+},
+"s2bab843f93fb42fd9e8df5469c9fd974": {
+"id": "s2bab843f93fb42fd9e8df5469c9fd974",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793865171.3369174,
+"end": 1793867166.1066563,
+"pipeline": "pc6b7fa24ca81408382f63503425779da",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793865219.8304667
+},
+"s2bb2f0e57f4f473684bce2720707422c": {
+"id": "s2bb2f0e57f4f473684bce2720707422c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793910915.1503737,
+"end": 1793911571.7106059,
+"pipeline": "p677afa6006e5470ea22dd30aca1a87e9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s9cd5b445f94544dd974445b8280704a4",
+"producer_role": "attempt"
+},
+"s2bd3a58f017e450aa36f02747a1b259a": {
+"id": "s2bd3a58f017e450aa36f02747a1b259a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794125568.182953,
+"end": 1794135906.1028163,
+"pipeline": "p180de72ecf3748c3b0cf6e88e4b67683",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s2bdb1de522354137b97b2619713a7aa8": {
+"id": "s2bdb1de522354137b97b2619713a7aa8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794403076.0794365,
+"end": 1794409302.2253742,
+"pipeline": "p7163624040bf4e498487d77355eeb020",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": "s5446aeff40754125901cf64b2c5dbb93",
+"producer_role": "attempt"
+},
+"s2bfa3572923d48d0921080a99c43e3fc": {
+"id": "s2bfa3572923d48d0921080a99c43e3fc",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793933028.6527054,
+"end": 1793933095.4229617,
+"pipeline": "pff94b75a9dbf48089e19307cc6d75e3f",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2c3749e0398d488f9b702f82d2e92732": {
+"id": "s2c3749e0398d488f9b702f82d2e92732",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794239616.6440256,
+"end": 1794240547.8354635,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s2c3c7a15fbaf4fdea66dc86975d353fc": {
+"id": "s2c3c7a15fbaf4fdea66dc86975d353fc",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794335984.1176775,
+"end": 1794344900.5849435,
+"pipeline": "pb8b4d68f4cb64a909c4386c2b2769e6e",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794336198.672668
+},
+"s2c80bdfb72dc4e07afda7b23db9c5d28": {
+"id": "s2c80bdfb72dc4e07afda7b23db9c5d28",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794180105.9233737,
+"end": 1794192374.063167,
+"pipeline": "peeccd5b9aaa641bebebe20cacb9b9232",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "sa74e158d15124b338e0e4d008ee9886d",
+"producer_role": "formalizer"
+},
+"s2cca052b9657457a96ac41abf5706bcb": {
+"id": "s2cca052b9657457a96ac41abf5706bcb",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793949248.5937746,
+"end": 1793954006.3613567,
+"pipeline": "p79f93d649990473b903dd6b389ca6b0e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793949369.0276418
+},
+"s2d09cc94b6fd449b9b6fbf12e1bdca2d": {
+"id": "s2d09cc94b6fd449b9b6fbf12e1bdca2d",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794196874.815236,
+"end": 1794212269.56172,
+"pipeline": "p8b776a5db5444374bf582ff188de116c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794197433.288536
+},
+"s2d63de35f8c14d88a260cb7809899759": {
+"id": "s2d63de35f8c14d88a260cb7809899759",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794328200.6360943,
+"end": 1794331614.747127,
+"pipeline": "p773a06522daf47aca523b886cc997eb2",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sd9e24788d9624f2da63069c71ede5a5c",
+"producer_role": "attempt"
+},
+"s2da0487e03dd42f296bd299c8861dfd1": {
+"id": "s2da0487e03dd42f296bd299c8861dfd1",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794331771.7333703,
+"end": 1794340624.6307251,
+"pipeline": "p3b138f18e0194aeaa55efa088bc73b1a",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s976913991c154f8fabba04c6bf6308f3",
+"producer_role": "attempt"
+},
+"s2e9280cfdfa8456f9567813cc793de3a": {
+"id": "s2e9280cfdfa8456f9567813cc793de3a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793870808.6469235,
+"end": 1793872044.765667,
+"pipeline": "p22eb4bcb2f93478a9bbfed13cf5df483",
+"nodes": [],
+"question": null,
+"producer": "sd23ae83d48c84df8b3de50115a23b535",
+"producer_role": "attempt"
+},
+"s2f4f3a6478ea4f2ab9f456ee4fbb657d": {
+"id": "s2f4f3a6478ea4f2ab9f456ee4fbb657d",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794353542.1104333,
+"end": 1794357115.1337543,
+"pipeline": "pd74ac41b0284412291a53e3065f35654",
+"nodes": [],
+"question": "s1843e065cb474e45acc402336ab1e070-first-passage-time-profile",
+"producer": "s23b5ef55343f4982a24a1dca79d8a114",
+"producer_role": "explore"
+},
+"s2f664b17b54b48f3aa2310532e053a6e": {
+"id": "s2f664b17b54b48f3aa2310532e053a6e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793912687.3955388,
+"end": 1793912994.1317158,
+"pipeline": "p6e3aca8a905b49eea3b7a449e559e476",
+"nodes": [],
+"question": null,
+"producer": "s0a4a301d82fe43daa4078ea2a1d35e03",
+"producer_role": "attempt"
+},
+"s2f8ea587023f4dd19078ab1c26f61d38": {
+"id": "s2f8ea587023f4dd19078ab1c26f61d38",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793944884.1685274,
+"end": 1793946473.8565779,
+"pipeline": "p680c58f0b9bb4a61b9abdea242839f40",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1bcf8bb538eb445c854e6621a9a6d5fe",
+"producer_role": "attempt"
+},
+"s2f97449ddf164624a1d927474cc51a0e": {
+"id": "s2f97449ddf164624a1d927474cc51a0e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794404796.9372835,
+"end": 1794421038.2820604,
+"pipeline": "p6d0b0386854143708f4aa1270d5b447e",
+"nodes": [
+"scd5c5c0b07b94d9abb04fe509829839b-relaxed-tilted-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794408304.8263664
+},
+"s2ff527d5ade84564bb70a53ee8beab49": {
+"id": "s2ff527d5ade84564bb70a53ee8beab49",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793900205.184502,
+"end": 1793901289.254063,
+"pipeline": "p42dfe96624444ac1b4da661885cb5f67",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s9ff92a6196cb4952a9815212236420c0",
+"producer_role": "attempt"
+},
+"s2ffbe13e1f714f82ab64a0ba587ddeca": {
+"id": "s2ffbe13e1f714f82ab64a0ba587ddeca",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793934399.4470682,
+"end": 1793935858.2289686,
+"pipeline": "pa97be1e631e54f288b3cf41860405abf",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s3003455054b54661814f84090c89afd3": {
+"id": "s3003455054b54661814f84090c89afd3",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793901536.6667583,
+"end": 1793902912.7804096,
+"pipeline": "p5feba55812b441e78e5ed8108b88632a",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s3039b7d2962049468f436da006c9c90b": {
+"id": "s3039b7d2962049468f436da006c9c90b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794121635.034935,
+"end": 1794125524.2832353,
+"pipeline": "pc11caa45657449b7a805ae2f7569708b",
+"nodes": [],
+"question": "q0",
+"producer": "s95a73201e29f45308133a3c6422761ba",
+"producer_role": "explore"
+},
+"s3055ca6ef12049bfbe33568e98b2207c": {
+"id": "s3055ca6ef12049bfbe33568e98b2207c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793893201.1299372,
+"end": 1793894276.9095695,
+"pipeline": "pa94e33cbdc1a4c008b1cd855f8859117",
+"nodes": [],
+"question": null,
+"producer": "s77215860f2264d118e2cb0266da174f9",
+"producer_role": "attempt"
+},
+"s308097e875f34416a6707bd1bccb8375": {
+"id": "s308097e875f34416a6707bd1bccb8375",
+"role": "formalizer",
+"model": "claude/claude-fable-5-1",
+"start": 1794162731.3743553,
+"end": 1794175277.8875525,
+"pipeline": "p720afb7577564527aba7c996ba83a9b2",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794162730.9042208
+},
+"s30ccba7348b046cd9cc0e7ec9dac87fc": {
+"id": "s30ccba7348b046cd9cc0e7ec9dac87fc",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794311538.5063012,
+"end": 1794316298.4370596,
+"pipeline": "p5002a1e8970248fe8f083624f91e7bcf",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s7eeb8d9969b94f34a4191edcf2b4d71d",
+"producer_role": "attempt"
+},
+"s30d1833d73d3401382cb736a3129f872": {
+"id": "s30d1833d73d3401382cb736a3129f872",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794051178.6443627,
+"end": 1794053560.1733265,
+"pipeline": "p21d58a2854b54a23be50070fa2b97328",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase",
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s297efe21c21142f2a30d7b800dea6be8",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s310e44fb81da4603a1b2f3337f8d2970": {
+"id": "s310e44fb81da4603a1b2f3337f8d2970",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793944185.344124,
+"end": 1793944288.7848482,
+"pipeline": "p411103e5851e4cc1ae06e562178d9e45",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s312e052f69fc474fb435da2a2005d10b": {
+"id": "s312e052f69fc474fb435da2a2005d10b",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794223045.8417993,
+"end": 1794228569.6658201,
+"pipeline": "p3f169e4545424507bbf3ecdee98e2832",
+"nodes": [],
+"question": "op-left-right-asymmetry",
+"producer": null,
+"declared_at": 1794224536.38648
+},
+"s314e3e13758c4601a39e5a1cf2d608e4": {
+"id": "s314e3e13758c4601a39e5a1cf2d608e4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794216725.3006637,
+"end": 1794218634.1297555,
+"pipeline": "pa8da3ca9469f493e8fe2c9dd36e77b9b",
+"nodes": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131"
+],
+"question": null,
+"producer": "s7aee49715ae94a7ca8e1da0eec21e2f1",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s315652a3f61c4853bbecb05cf486ecaa": {
+"id": "s315652a3f61c4853bbecb05cf486ecaa",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794093697.2541132,
+"end": 1794096800.7005403,
+"pipeline": "p99f75b2335a5411daf4f2f8c4bba9f0e",
+"nodes": [],
+"question": "q0",
+"producer": "sc9c67fc6c4f745a58071dac8611f253d",
+"producer_role": "explore"
+},
+"s315fb25cd7c34136b3dde1488707c1c3": {
+"id": "s315fb25cd7c34136b3dde1488707c1c3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794411409.1107671,
+"end": 1794414286.3860836,
+"pipeline": "p1a3948618c814252877739516d949d47",
+"nodes": [
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source"
+],
+"question": null,
+"producer": "s94e0075bc12448c18548713c1f91e44a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s31a1567b71264a2783b33087efc5a360": {
+"id": "s31a1567b71264a2783b33087efc5a360",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794390410.0468352,
+"end": 1794394265.7578568,
+"pipeline": "pa0eadff6c68647378bb5aca4d53974fc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s49deb1da830f41d9b469a16c17172feb",
+"producer_role": "explore"
+},
+"s31c46ad4362e4bc183a7265b56dc5b37": {
+"id": "s31c46ad4362e4bc183a7265b56dc5b37",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793975634.3508213,
+"end": 1793987125.0648332,
+"pipeline": "p1ce90589fcdc40a8aabbbd7d69026b66",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "see464b471133415a937a83897e2645d4",
+"producer_role": "attempt"
+},
+"s31cd3369a6cd49d7bfe2eed27b4b10d5": {
+"id": "s31cd3369a6cd49d7bfe2eed27b4b10d5",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793980106.7515266,
+"end": 1793989147.3155446,
+"pipeline": "pf44630a8051b4eab852f3a2f501a760f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sb15e42f73f834d6cb377d9fd54ad62e2",
+"producer_role": "attempt"
+},
+"s321fde48bceb4128acd1f26fc079d12c": {
+"id": "s321fde48bceb4128acd1f26fc079d12c",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794323615.5862427,
+"end": 1794329744.892704,
+"pipeline": "p2b45813555f04d01ac50d6f97ce72c1a",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794325018.0506074
+},
+"s327ee8bcdb4e4e97bd9becc164fc6f69": {
+"id": "s327ee8bcdb4e4e97bd9becc164fc6f69",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794345230.6844845,
+"end": 1794347884.5433588,
+"pipeline": "pbcc9e4727df34ce8a4a0b34ea8953168",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sbcc53ca04990443a9d56db155136dbbb",
+"producer_role": "attempt"
+},
+"s32b15e7defe94e4583fe755180623a99": {
+"id": "s32b15e7defe94e4583fe755180623a99",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794231972.2009275,
+"end": 1794237853.9237165,
+"pipeline": "pffc854d17e8643a3baad7560e7731aaf",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s0c059ae0fae8415a8bd655456e340ff4",
+"producer_role": "explore"
+},
+"s3300dad5702b46ea87f362dc7b2c59ee": {
+"id": "s3300dad5702b46ea87f362dc7b2c59ee",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794029474.942299,
+"end": 1794031829.3817923,
+"pipeline": "p7cbfadee885144b4a214640b99b6fafc",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s7df88a0089b849639d416708a0e20ff2",
+"producer_role": "attempt"
+},
+"s33328f993eb34f0984c3e5c6380249d1": {
+"id": "s33328f993eb34f0984c3e5c6380249d1",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793929486.7644272,
+"end": 1793930323.213628,
+"pipeline": "p0fc316b2aae64565b7957be7cd8e59ea",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s6a5821c2365949d2ad5a8bf30dda4791",
+"producer_role": "attempt"
+},
+"s343536334cb84997a5d8d197eda9d11c": {
+"id": "s343536334cb84997a5d8d197eda9d11c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794331622.7186885,
+"end": 1794334652.5294168,
+"pipeline": "p773a06522daf47aca523b886cc997eb2",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sd9e24788d9624f2da63069c71ede5a5c",
+"producer_role": "attempt"
+},
+"s34d7a8385c8844dc948a54e76f9d4654": {
+"id": "s34d7a8385c8844dc948a54e76f9d4654",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794255472.9609833,
+"end": 1794257793.0192623,
+"pipeline": "pd75c89c762f94b6db2498daef1f1fc6b",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s91e315f6de7948a28eed09e2b4dd51d3",
+"producer_role": "attempt"
+},
+"s34decfad0a764bd08d53c12c1eff2ea4": {
+"id": "s34decfad0a764bd08d53c12c1eff2ea4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794338475.7877026,
+"end": 1794343135.0780423,
+"pipeline": "pb8ecf47daba34417874f74ca189d7499",
+"nodes": [],
+"question": "q0",
+"producer": "sd625ad9eb4e1426397559bceafea9a74",
+"producer_role": "explore"
+},
+"s34e0462a2cec4f7c9de4c68867cd2a58": {
+"id": "s34e0462a2cec4f7c9de4c68867cd2a58",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793922195.629611,
+"end": 1793922319.8444638,
+"pipeline": "pdb2c5fa8856d475f89b852c4d5de29ac",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s35465b65a1d3483894789f910263051a": {
+"id": "s35465b65a1d3483894789f910263051a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794332826.3241837,
+"end": 1794343831.5324543,
+"pipeline": "p72dd4a5b3f86470eaa6610bde411b9bd",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794335849.8919425
+},
+"s3559fbda2f564258b659a05d96f35f0b": {
+"id": "s3559fbda2f564258b659a05d96f35f0b",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793934218.6862624,
+"end": 1793935146.6221426,
+"pipeline": "p0b252dde436146638c66337f1c950b72",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "sb9bde92344cb42ac92c526e1f4088e0c",
+"producer_role": "formalizer"
+},
+"s35c440db50f54f13a28fcbd34eba6ce9": {
+"id": "s35c440db50f54f13a28fcbd34eba6ce9",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794196878.6138842,
+"end": 1794206737.3393621,
+"pipeline": "pa7ecd2e6ac47447b8f076ee259dc7008",
+"nodes": [],
+"question": "op-left-right-asymmetry",
+"producer": null,
+"declared_at": 1794197262.1602552
+},
+"s360c589b2429420aa850754b484ffe34": {
+"id": "s360c589b2429420aa850754b484ffe34",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794360104.318195,
+"end": 1794362350.607416,
+"pipeline": "p3c790b2e7cfa41f59e0d97c22ae47a41",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold"
+],
+"question": null,
+"producer": "s26b5d221e4dd48be81e7fef1824160af",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s3625dfda15a443f0941dd9f51b303014": {
+"id": "s3625dfda15a443f0941dd9f51b303014",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794021357.130987,
+"end": 1794026924.7268877,
+"pipeline": "p973a48533cd1453d825c450403df5446",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794021647.171967
+},
+"s364a90e4659f41bb85f4778305baeb21": {
+"id": "s364a90e4659f41bb85f4778305baeb21",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793935840.0259464,
+"end": 1793937494.1333637,
+"pipeline": "pb4845cf8ddcf4c4ea130d2437ed5e453",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793936031.9538794
+},
+"s365181865ebc4ea1aeb26c365bc8be91": {
+"id": "s365181865ebc4ea1aeb26c365bc8be91",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794231062.803577,
+"end": 1794234609.805452,
+"pipeline": "pe5e0b0dc13044cf188eae5376af27273",
+"nodes": [],
+"question": "op-continuum-ties-blocks",
+"producer": "s404df05ab13042f89bbecb2089e4b18b",
+"producer_role": "explore"
+},
+"s3660d7620ead4fdb96ef2e408cae0e1b": {
+"id": "s3660d7620ead4fdb96ef2e408cae0e1b",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794025410.1773388,
+"end": 1794027374.763052,
+"pipeline": "pd1d038e2b2ff47178dee579dc46c9205",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794025605.2479017
+},
+"s36933721f0254ad68616ebe33a5da9b1": {
+"id": "s36933721f0254ad68616ebe33a5da9b1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794388141.2633564,
+"end": 1794392174.7918158,
+"pipeline": "pa470838b8c7149d8bb9f3507035207fa",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sdf12cd0342e54a82a5c992e149c06b51",
+"producer_role": "attempt"
+},
+"s36a005723f034a3aa8ab7c81d3ffe29d": {
+"id": "s36a005723f034a3aa8ab7c81d3ffe29d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794209834.8250608,
+"end": 1794216722.2831075,
+"pipeline": "pa8da3ca9469f493e8fe2c9dd36e77b9b",
+"nodes": [
+"sa285576b08e84713a85bbec88889e550-one-step-local"
+],
+"question": null,
+"producer": "s7aee49715ae94a7ca8e1da0eec21e2f1",
+"producer_role": "attempt"
+},
+"s36b5200e4ba44e2bb8f93a3e4b3e0b74": {
+"id": "s36b5200e4ba44e2bb8f93a3e4b3e0b74",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794216917.7528806,
+"end": 1794219748.8324342,
+"pipeline": "p8670f99616084198908da13db6d3cf6b",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sa6164dafb09e4e4e9538b2e9a97df337",
+"producer_role": "attempt"
+},
+"s36da5071f59a4d4aa66feab8fa718c87": {
+"id": "s36da5071f59a4d4aa66feab8fa718c87",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794352717.6691027,
+"end": 1794354602.1571352,
+"pipeline": "p39cec1203863436990b0d276f45b1a78",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk"
+],
+"question": null,
+"producer": "s9993b13634644462b69c4773cbc2565c",
+"producer_role": "attempt"
+},
+"s3712a418540e4db6b758b40215090b69": {
+"id": "s3712a418540e4db6b758b40215090b69",
+"role": "peer",
+"model": "opus",
+"start": 1793869457.3267004,
+"end": 1793872488.7418687,
+"pipeline": "p4fdb05f7c5804b6f8d72d02641b22e8d",
+"nodes": [],
+"question": "q0",
+"producer": "s08674bc282eb49fc853cd190c7ebbcc6",
+"producer_role": "explore"
+},
+"s37c2030dd1d34b2199295c7aca785141": {
+"id": "s37c2030dd1d34b2199295c7aca785141",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793919588.9411645,
+"end": 1793920545.4518814,
+"pipeline": "p1f2cff4cb4304f9bb0a8c3745f2ca3fb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8d2d2537aab54e718ef34b98760b279c",
+"producer_role": "attempt"
+},
+"s3805a37dc2914e5e8da7dea7c1b29430": {
+"id": "s3805a37dc2914e5e8da7dea7c1b29430",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794218654.1551018,
+"end": 1794219776.8067658,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s380b4290e84048d09dd3dab0a9b03517": {
+"id": "s380b4290e84048d09dd3dab0a9b03517",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794252694.1487482,
+"end": 1794258026.210896,
+"pipeline": "p77074ba4d84e4034998afd52ab05e097",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794253818.805813
+},
+"s38630e1c73d947ac8f3275b97cbb7fec": {
+"id": "s38630e1c73d947ac8f3275b97cbb7fec",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794323281.0792048,
+"end": 1794326549.8206866,
+"pipeline": "p82f0ec2771d54545b5d97af14cae6afc",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "s7c700cb0d0f342a0874f43008d0dc0fd",
+"producer_role": "attempt"
+},
+"s387b8b37e0a3491ab011c197f9cd3eb0": {
+"id": "s387b8b37e0a3491ab011c197f9cd3eb0",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793888508.6585512,
+"end": 1793888728.0337214,
+"pipeline": "pf5dd88bcec2b4fe3b08595c07d5d8cfa",
+"nodes": [],
+"question": null,
+"producer": "s3aa79e42b3a34ed497f2d5061c2d07fa",
+"producer_role": "attempt"
+},
+"s389ade3b1b7d4aceb22b055df362819a": {
+"id": "s389ade3b1b7d4aceb22b055df362819a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794293925.4859514,
+"end": 1794297086.4124222,
+"pipeline": "p591cd6d709a34b7e938596b428c64766",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "sad90cfb66b8a4e0d830f72e9427e429c",
+"producer_role": "explore"
+},
+"s38f30162e3964b63adb3a7e1b09fa278": {
+"id": "s38f30162e3964b63adb3a7e1b09fa278",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794329685.348799,
+"end": 1794331679.6147115,
+"pipeline": "p745ccf69ea4144bc98c3e2fd577dbc7e",
+"nodes": [],
+"question": "sd7cd6139ee4a4ebfb61d476996bde609-conditional-chain-law",
+"producer": "s9326e056b96c43a3bbf022395ef1fb8c",
+"producer_role": "explore"
+},
+"s3916b90c8f944568bec258827e4c9c0e": {
+"id": "s3916b90c8f944568bec258827e4c9c0e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794237135.8403597,
+"end": 1794246893.09166,
+"pipeline": "p8ecf2a1a08ae469dbcbb1048644f0b75",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794239416.2654514
+},
+"s39e6fe197449455b920fb3a4001c1990": {
+"id": "s39e6fe197449455b920fb3a4001c1990",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793947010.7505872,
+"end": 1793952148.8573604,
+"pipeline": "p8bfc41633e0e48febc2f733ed348b994",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793947127.9578168
+},
+"s39f7032da2ab430fa297b7177d80b076": {
+"id": "s39f7032da2ab430fa297b7177d80b076",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794066062.6148798,
+"end": 1794068085.5172684,
+"pipeline": "p5f335a155e5c4809ac09faf5f3c5af28",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s46da0fbb037a45bea02c26834433764c",
+"producer_role": "attempt"
+},
+"s3aa79e42b3a34ed497f2d5061c2d07fa": {
+"id": "s3aa79e42b3a34ed497f2d5061c2d07fa",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793875130.70853,
+"end": 1793877565.617427,
+"pipeline": "pf5dd88bcec2b4fe3b08595c07d5d8cfa",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793875189.0029712
+},
+"s3aaed22bef39493d80a37c605ee7c82a": {
+"id": "s3aaed22bef39493d80a37c605ee7c82a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794401928.8975816,
+"end": 1794409546.464246,
+"pipeline": "pd761336fd8e94572ad98fa7fd0397c74",
+"nodes": [],
+"question": "s7a50feafd0d74dde9c5ac37f50f5ccbd-concavity-exponent",
+"producer": null,
+"declared_at": 1794402119.7017996
+},
+"s3ad034fea8154b85bf70008c111928bc": {
+"id": "s3ad034fea8154b85bf70008c111928bc",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794360402.2404406,
+"end": 1794374346.1593316,
+"pipeline": "p92a55491145f4ef587d0a208786df1b2",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794363852.7914302
+},
+"s3ad471907df345c2a7f2e516c14d4eda": {
+"id": "s3ad471907df345c2a7f2e516c14d4eda",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793919587.7694647,
+"end": 1793920239.048313,
+"pipeline": "p4b131e3d6f7c49a2839e5cf6be543192",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s7a86c8ffa6a74d419fb62046f2de3ba8",
+"producer_role": "formalizer"
+},
+"s3b577db23e7547da86e55b72b88b2380": {
+"id": "s3b577db23e7547da86e55b72b88b2380",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794378185.2051976,
+"end": 1794387321.954071,
+"pipeline": "pf95c1dba5081417ba1b8eda9d717215d",
+"nodes": [
+"s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail"
+],
+"question": null,
+"producer": "s5d11d4209a694f63ab615e90a4ff3f47",
+"producer_role": "attempt"
+},
+"s3be884cd9eec48709913668a95bf186d": {
+"id": "s3be884cd9eec48709913668a95bf186d",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794164702.1001253,
+"end": 1794166846.5681944,
+"pipeline": "pf5a0b74188e146b2b33448f41636cf71",
+"nodes": [
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality"
+],
+"question": null,
+"producer": "sd4b418d5118a4cca979f423b1e0d249f",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s3bebd84e8a5d4853a851552db799c718": {
+"id": "s3bebd84e8a5d4853a851552db799c718",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794323984.3976245,
+"end": 1794333694.9228778,
+"pipeline": "p32a9fceafe5e4918b7e753331e9b03f3",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794325979.2137566
+},
+"s3cd888bd8c4b4329ac85338632c96a23": {
+"id": "s3cd888bd8c4b4329ac85338632c96a23",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794089060.8208482,
+"end": 1794138955.4423952,
+"pipeline": "p9ef29066af294786a3b93a39b9544794",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794090032.803831
+},
+"s3d7e39871fea40ce939f5131e8a5ee8e": {
+"id": "s3d7e39871fea40ce939f5131e8a5ee8e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794264845.375495,
+"end": 1794266756.93557,
+"pipeline": "p77074ba4d84e4034998afd52ab05e097",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s380b4290e84048d09dd3dab0a9b03517",
+"producer_role": "attempt"
+},
+"s3d96604d25774490a368fef260c41594": {
+"id": "s3d96604d25774490a368fef260c41594",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794245233.0536036,
+"end": 1794247105.9846733,
+"pipeline": "p56ead0ce60c149f39aed1c2415e77ed9",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": "s8a3cad79ba624bf39946436e37954b8a",
+"producer_role": "explore"
+},
+"s3db27e57234e43629daebdbf2d2b2852": {
+"id": "s3db27e57234e43629daebdbf2d2b2852",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794191002.5679145,
+"end": 1794194083.1334915,
+"pipeline": "pae4d0f2c75c54364aa39930902a975ce",
+"nodes": [],
+"question": "q0",
+"producer": "s0b7e98470fbf46c48fb5a02e4553e0ff",
+"producer_role": "explore"
+},
+"s3dc6a15121824d97a504fcdb10e127e5": {
+"id": "s3dc6a15121824d97a504fcdb10e127e5",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793947349.8363225,
+"end": 1793948176.1285067,
+"pipeline": "pdfa0c8567da24b079926f51e6c1d2100",
+"nodes": [],
+"question": "q0",
+"producer": "s83f5b558f93a428e91bdd267b4085bc2",
+"producer_role": "explore"
+},
+"s3e0726ec64bb4daf98684a74d83534d2": {
+"id": "s3e0726ec64bb4daf98684a74d83534d2",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794274331.2731168,
+"end": 1794275878.2516346,
+"pipeline": "p70bda00dc9fd4d8fba42f4f37d3d1fe1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s21204dda83b14385a29189114c05ba0b",
+"producer_role": "attempt"
+},
+"s3e0bad642aa94a2483dd95b850bfb2b5": {
+"id": "s3e0bad642aa94a2483dd95b850bfb2b5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794305566.8989608,
+"end": 1794308859.8397884,
+"pipeline": "p2524252abd23456bb106eaf6fffced82",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s986a06753eed43fbb655d14fb127b702",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s3e278d96a2704bb59cddd38c20f0a5ea": {
+"id": "s3e278d96a2704bb59cddd38c20f0a5ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794011517.6313486,
+"end": 1794021366.92543,
+"pipeline": "p6cd5010633b946d883c37bd7b2c27b9a",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": "se6e7a6d1f6064769a9c688b9913d462f",
+"producer_role": "attempt"
+},
+"s3e290f5cf5654504a7f9e65f5b4e92cf": {
+"id": "s3e290f5cf5654504a7f9e65f5b4e92cf",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794010427.85748,
+"end": 1794018439.382146,
+"pipeline": "p8120cbbc74fc41a2bc29cf91ab0544c0",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "s5192bc6c3f8c4065b91fdbe139a015ac",
+"producer_role": "attempt"
+},
+"s3e500018d9144166b0f2d2d66a9751ed": {
+"id": "s3e500018d9144166b0f2d2d66a9751ed",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794392371.5215676,
+"end": 1794401546.8837368,
+"pipeline": "pee831d9fdf82453b9deaf81612d1fa58",
+"nodes": [
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk"
+],
+"question": null,
+"producer": "s4f28ad6bac7546b1b7aa181765070550",
+"producer_role": "attempt"
+},
+"s3e6e3546bdcc448594860c3553f2bc66": {
+"id": "s3e6e3546bdcc448594860c3553f2bc66",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793913090.9581256,
+"end": 1793914208.21931,
+"pipeline": "p87f27c38ead542c09364ec18aeb0d729",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s4aa93ac3cef14a9d98d97dbf330245cb",
+"producer_role": "attempt"
+},
+"s3e8acf026d584579a12dcb8c0b60facf": {
+"id": "s3e8acf026d584579a12dcb8c0b60facf",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794238142.6053083,
+"end": 1794242563.7187414,
+"pipeline": "p0934e7630fb0417da863b8b65fdde511",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794239036.9295123
+},
+"s3ecdd70238dc414eb88520eb4c580813": {
+"id": "s3ecdd70238dc414eb88520eb4c580813",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794350153.4448688,
+"end": 1794358221.2544653,
+"pipeline": "p05d6704dc0d547408e8377f4c52980f6",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": "sd93fe0802bb34ff18d564d7ea8a7cbe6",
+"producer_role": "attempt"
+},
+"s3f1254bae6094cb2a9b9469e1318233b": {
+"id": "s3f1254bae6094cb2a9b9469e1318233b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794262099.5383694,
+"end": 1794264114.6853507,
+"pipeline": "p13040eb1d5e6482a994a8f0239434742",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s764727e56270450ca0570d86a20b62f7",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s3f394cdfb3fe4c07a52477fd551a7247": {
+"id": "s3f394cdfb3fe4c07a52477fd551a7247",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794095853.1044114,
+"end": 1794105881.0678582,
+"pipeline": "p81276a4d59f348e59f4495441e41d2c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794097033.6503234
+},
+"s3f788a73f3c34055a6843fec71c955bb": {
+"id": "s3f788a73f3c34055a6843fec71c955bb",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793931497.4963987,
+"end": 1793932025.7969472,
+"pipeline": "p08ff424e667d489b99582f4c4384238c",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s4cab7617cd254433a31981c5f9c190df",
+"producer_role": "attempt"
+},
+"s3f9b23942041492987280c173ea0fa0d": {
+"id": "s3f9b23942041492987280c173ea0fa0d",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793913807.8606877,
+"end": 1793914651.4919734,
+"pipeline": "pe5c441cbd2c240b6aeac414aae06179d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sebdfe7711dca49c6b264dff3044aa0e0",
+"producer_role": "attempt"
+},
+"s3fcdcb8ca55740fb96bb3bf5207f18a2": {
+"id": "s3fcdcb8ca55740fb96bb3bf5207f18a2",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794339379.9316936,
+"end": 1794344402.4877605,
+"pipeline": "p065aa222338a4e4ea9d6f52fb51ec4f9",
+"nodes": [
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k"
+],
+"question": null,
+"producer": "s86d94d91102e433a9d3229bf139ef3c8",
+"producer_role": "attempt"
+},
+"s3ff96b4ac80b49c8aa014fc1206aa3fe": {
+"id": "s3ff96b4ac80b49c8aa014fc1206aa3fe",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793908128.785383,
+"end": 1793908921.1916406,
+"pipeline": "pb83910459b7949ec9a179d242d2fe553",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793908193.989879
+},
+"s404df05ab13042f89bbecb2089e4b18b": {
+"id": "s404df05ab13042f89bbecb2089e4b18b",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794219944.4988902,
+"end": 1794231060.1017325,
+"pipeline": "pe5e0b0dc13044cf188eae5376af27273",
+"nodes": [],
+"question": "op-continuum-ties-blocks",
+"producer": null,
+"declared_at": 1794220628.2253265
+},
+"s4053c08efda94892a3794850da8bbde4": {
+"id": "s4053c08efda94892a3794850da8bbde4",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793943056.5339158,
+"end": 1793943657.2158453,
+"pipeline": "p48f0b26db95c4ddfbce66443313b3e02",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s9669da25067e43b8bffb3d1b071878b3",
+"producer_role": "formalizer"
+},
+"s405b9c75b73043bfb8fdeb741a27b27a": {
+"id": "s405b9c75b73043bfb8fdeb741a27b27a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794153624.2268534,
+"end": 1794158619.2005825,
+"pipeline": "p148c350004d74c3eab0552e20b8c4ef9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s59b5edc0dde34b4f858d6320e676b13b",
+"producer_role": "attempt"
+},
+"s4088b82b096c4916a5e60b644b737b8a": {
+"id": "s4088b82b096c4916a5e60b644b737b8a",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794033303.9720254,
+"end": 1794033444.0455332,
+"pipeline": "p117c3d191b574949af2f96e4fb9aca64",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s40b9efbaed7947cfb9a78565cffd8b3b": {
+"id": "s40b9efbaed7947cfb9a78565cffd8b3b",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793913024.3680058,
+"end": 1793913637.2590425,
+"pipeline": "p5a95cb5dc74942c7844e4fcd739a1ae0",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s10ef120804714bbabf52652c49e95ea6",
+"producer_role": "attempt"
+},
+"s40f91f7d263443078395470b9a6ee161": {
+"id": "s40f91f7d263443078395470b9a6ee161",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793947736.8130877,
+"end": 1793947882.797109,
+"pipeline": "p28092f1e16bf42bc8b485bf3ac4e14dc",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s415b1866274f479a8462ecb521d7c605": {
+"id": "s415b1866274f479a8462ecb521d7c605",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794005821.0383737,
+"end": 1794006092.0446904,
+"pipeline": "pb0e3a20f3e5d4b578f289d8c2438c972",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s41c2eab74a1f40fc8aa1907432d40507": {
+"id": "s41c2eab74a1f40fc8aa1907432d40507",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920419.0503018,
+"end": 1793920660.3273606,
+"pipeline": "pa4dc846bd280455eafae69b7305769b6",
+"nodes": [],
+"question": null,
+"producer": "s0e7a8cae1be34f7193fd3cc8748e9979",
+"producer_role": "attempt"
+},
+"s42a6a9e973374f65af9c6fb47c140ccb": {
+"id": "s42a6a9e973374f65af9c6fb47c140ccb",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794264885.666118,
+"end": 1794272374.2930627,
+"pipeline": "pd8b4d9aa4c4a43da810a8a61462e06ed",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794266262.2769413
+},
+"s42b21d678383420f9617fa4f74bb66ab": {
+"id": "s42b21d678383420f9617fa4f74bb66ab",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794272887.87123,
+"end": 1794274268.3646238,
+"pipeline": "p0d73de55406c4240a474b64f6c8c4aa9",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s861783c134504e26b33d4e6c7d688169",
+"producer_role": "attempt"
+},
+"s43db608a654b4aff87bee05e3a4b530b": {
+"id": "s43db608a654b4aff87bee05e3a4b530b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794029527.7576132,
+"end": 1794030663.5535514,
+"pipeline": "pfb9f4a99a06b43cc893bcf89601a77fe",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs",
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s049f58fed1674c698ee816d03ef35daf",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s44628a5ee4d443519d898c1f950fae86": {
+"id": "s44628a5ee4d443519d898c1f950fae86",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794214307.714341,
+"end": 1794226170.043102,
+"pipeline": "pd30ca24e19374040af8f302f5b92af0a",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794215335.4823494
+},
+"s446a52fbfbc4440ea99ffbc96cfe4c2f": {
+"id": "s446a52fbfbc4440ea99ffbc96cfe4c2f",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793928274.3248765,
+"end": 1793928923.857397,
+"pipeline": "p86e5bf5bee914b23929977e84e0ead96",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s06f918c425b64041a9c20c34481af66d",
+"producer_role": "attempt"
+},
+"s446e9fdb5ca142c288926751b724fb6a": {
+"id": "s446e9fdb5ca142c288926751b724fb6a",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793937978.9704537,
+"end": 1793938548.5152977,
+"pipeline": "p14f5a29c28d643d59991c0cff54bfb87",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s063915c64a8a476090d389b009cd2f11",
+"producer_role": "attempt"
+},
+"s4475c05a6fe84fedb3ac02e87b341def": {
+"id": "s4475c05a6fe84fedb3ac02e87b341def",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793959872.4036605,
+"end": 1793962161.2242725,
+"pipeline": "pdd691b2e687949c6821b01a624fff469",
+"nodes": [],
+"question": "q0",
+"producer": "s0253ca510f1b4becbc8bfd0146491ba8",
+"producer_role": "explore"
+},
+"s44a0528a5afb47b5a836faf42772c56a": {
+"id": "s44a0528a5afb47b5a836faf42772c56a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794250682.1718824,
+"end": 1794252759.142075,
+"pipeline": "pffd5124e5b50464ea84b66e5a81920b3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s152edc0d383447a3b3e2b26227d90115",
+"producer_role": "attempt"
+},
+"s44c1e315d31049bc8167f4c521137219": {
+"id": "s44c1e315d31049bc8167f4c521137219",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794086022.274675,
+"end": 1794089024.030511,
+"pipeline": "p87cef34f0ee44a479c7ae92d8f74e7c2",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "s8cf4940bb6c94854ab2e3f6c94757e87",
+"producer_role": "attempt"
+},
+"s44e006fb8de84b379aef1bec28c26020": {
+"id": "s44e006fb8de84b379aef1bec28c26020",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793970385.9704475,
+"end": 1793977818.7136478,
+"pipeline": "p807eabfabe294f0dbb50e8035f906342",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s16ff5110ad394b598fae7c4284067cb2",
+"producer_role": "attempt"
+},
+"s44ed6d13f36d4f46bf71d9c9374f9fc2": {
+"id": "s44ed6d13f36d4f46bf71d9c9374f9fc2",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793875128.267437,
+"end": 1793876487.9706242,
+"pipeline": "p5c43fb31f62548d5a475f37297411e49",
+"nodes": [],
+"question": "q0",
+"producer": "sbd0fab4845d548c798d5155a439a807a",
+"producer_role": "explore"
+},
+"s44eec7dcc8d94856b13b4d8ed6f2e82b": {
+"id": "s44eec7dcc8d94856b13b4d8ed6f2e82b",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793899323.550985,
+"end": 1793900287.410538,
+"pipeline": "p0c7d6d55ed83493a8b952e9760f75d44",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sad9ab7c92aa2480d957d4001bdb3cbba",
+"producer_role": "attempt"
+},
+"s4589050c39f143049bc4eea7483a4844": {
+"id": "s4589050c39f143049bc4eea7483a4844",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794024428.3968287,
+"end": 1794026131.7942882,
+"pipeline": "p374c5fd339cf425db37e6ae51eb97e98",
+"nodes": [],
+"question": "q0",
+"producer": "sdc581b2f351d41dfadf3e3bfbf8b914b",
+"producer_role": "explore"
+},
+"s45a08a34fd6a47d69976749da96f9d98": {
+"id": "s45a08a34fd6a47d69976749da96f9d98",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274271.0102825,
+"end": 1794278688.0683322,
+"pipeline": "pa5e8b8b87ce94def8716fdc3319083e5",
+"nodes": [],
+"question": "q0",
+"producer": "sb9ac97ab2a444e9387531dc9bdeec7fe",
+"producer_role": "explore"
+},
+"s45a126e10e534c5f8ba012cc4c1a57ce": {
+"id": "s45a126e10e534c5f8ba012cc4c1a57ce",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278031.6567209,
+"end": 1794279772.40873,
+"pipeline": "pd8d325552e364f99abb7fb79c8dc75db",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sad540161ba94457b813e071fd5b8839f",
+"producer_role": "attempt"
+},
+"s45f76d65557d40f1950f2195c1dad7d5": {
+"id": "s45f76d65557d40f1950f2195c1dad7d5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794389740.8144774,
+"end": 1794392847.19029,
+"pipeline": "p4f931eab023d440ea27f8e4b92fcb6e1",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "se22c2096acfb4caaa03502c20c6fb0f7",
+"producer_role": "attempt"
+},
+"s461b1388751944c58051a2d6c7387b6d": {
+"id": "s461b1388751944c58051a2d6c7387b6d",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793955990.3593478,
+"end": 1793959200.7787125,
+"pipeline": "p69064a4769ad4267a4d28eace3ec2e5f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s79075ea0d14945a9830a0a48be05e768",
+"producer_role": "attempt"
+},
+"s462b80bbe2284e178e5192ba8818929f": {
+"id": "s462b80bbe2284e178e5192ba8818929f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793937725.7383833,
+"end": 1793939070.5297642,
+"pipeline": "pe01f9c0ad6e14fa3a8d7d1eb57f96fb0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sdfe05ca374324d758e7d67eaf0629ae0",
+"producer_role": "attempt"
+},
+"s46b5e4c236604de196cce4f03610217f": {
+"id": "s46b5e4c236604de196cce4f03610217f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793967216.1329155,
+"end": 1793974915.245682,
+"pipeline": "p08fc01e88ecf48fdb094d6b2e99eaf88",
+"nodes": [],
+"question": "q0",
+"producer": "s2185fa0eab444a3d8205b6767c7333f6",
+"producer_role": "explore"
+},
+"s46da0fbb037a45bea02c26834433764c": {
+"id": "s46da0fbb037a45bea02c26834433764c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794047293.2082705,
+"end": 1794057570.725459,
+"pipeline": "p5f335a155e5c4809ac09faf5f3c5af28",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794049091.0078516
+},
+"s4708ef1a1f98491088a9029e48275daf": {
+"id": "s4708ef1a1f98491088a9029e48275daf",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794364422.1451895,
+"end": 1794366274.0166342,
+"pipeline": "p3e7c68323bcd460ca75a1eca24521636",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": "s5e7703fe3e8441c2a8ba5827d3314a6f",
+"producer_role": "attempt"
+},
+"s4746dbcedc9d43ee99f5236933e9f47f": {
+"id": "s4746dbcedc9d43ee99f5236933e9f47f",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793913872.8263614,
+"end": 1793914398.0773559,
+"pipeline": "p569167259b6341a0b503618a661947aa",
+"nodes": [],
+"question": "q0",
+"producer": "s8da461b370e246e5b531b36095d82b5f",
+"producer_role": "explore"
+},
+"s4747f5acff0e440c8f83a0a2e9ffd75a": {
+"id": "s4747f5acff0e440c8f83a0a2e9ffd75a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793995658.3832188,
+"end": 1794009473.1855218,
+"pipeline": "pc5f8f39579d7424dadf12d77e94ae63d",
+"nodes": [],
+"question": "q0",
+"producer": "sbd7ae0031ece41bdbedaac5d0416a63c",
+"producer_role": "explore"
+},
+"s47f0ee090a7841879f4d23e2e94825c7": {
+"id": "s47f0ee090a7841879f4d23e2e94825c7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794345885.2904544,
+"end": 1794349097.4880917,
+"pipeline": "p1fcdb1dd134e4124a589cd066d3903af",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s8a28b193573541d88491c045cbb00a20",
+"producer_role": "explore"
+},
+"s4857c39feea54f8cbf50667be0794cc2": {
+"id": "s4857c39feea54f8cbf50667be0794cc2",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793914332.204602,
+"end": 1793915134.6099582,
+"pipeline": "p4b131e3d6f7c49a2839e5cf6be543192",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s7a86c8ffa6a74d419fb62046f2de3ba8",
+"producer_role": "formalizer"
+},
+"s489f7fc0f1d845e8b002558c11111297": {
+"id": "s489f7fc0f1d845e8b002558c11111297",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793974916.4908297,
+"end": 1793976220.8142872,
+"pipeline": "p08fc01e88ecf48fdb094d6b2e99eaf88",
+"nodes": [],
+"question": "q0",
+"producer": "s2185fa0eab444a3d8205b6767c7333f6",
+"producer_role": "explore"
+},
+"s48e933b7b2c7413b88e9d9167171fe87": {
+"id": "s48e933b7b2c7413b88e9d9167171fe87",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793921928.1941597,
+"end": 1793922194.9401307,
+"pipeline": "p1e5b9343360b4be88350457562b00218",
+"nodes": [],
+"question": null,
+"producer": "s9682ed8f2c434047a42b45a0f33a3a1e",
+"producer_role": "attempt"
+},
+"s48ff546f7d644b9d8d36d54cdfebdf59": {
+"id": "s48ff546f7d644b9d8d36d54cdfebdf59",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793904653.909765,
+"end": 1793906501.7621279,
+"pipeline": "pf5770583eaf647089610bc6a716149ff",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s4913827bf83f474fadc0617165784c5e": {
+"id": "s4913827bf83f474fadc0617165784c5e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793888508.8787026,
+"end": 1793888646.4642045,
+"pipeline": "pa94e33cbdc1a4c008b1cd855f8859117",
+"nodes": [],
+"question": null,
+"producer": "s77215860f2264d118e2cb0266da174f9",
+"producer_role": "attempt"
+},
+"s497e7ab822ea41b3af717cb4b064b9ba": {
+"id": "s497e7ab822ea41b3af717cb4b064b9ba",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793951890.3629208,
+"end": 1793952817.6161406,
+"pipeline": "p40430f5cec6d43f48d698f6e7e9651d7",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s9640eb931fcf44e598c3229334757b59",
+"target_from": "record",
+"producer_role": "formalizer"
+},
+"s49a2d8d7f83e4e0ebd5416a60888fefc": {
+"id": "s49a2d8d7f83e4e0ebd5416a60888fefc",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274276.3575437,
+"end": 1794278149.9679675,
+"pipeline": "pedaa9efacf0b47298c740896113adedf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "sb00ac54629694836851fa8f69149f198",
+"producer_role": "attempt"
+},
+"s49d43ea1c5ce4095a31675c3e1c1c534": {
+"id": "s49d43ea1c5ce4095a31675c3e1c1c534",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793992788.3440452,
+"end": 1793996304.1278248,
+"pipeline": "p859f11d22c324ade81cb836dd04f2d63",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793992878.7106688
+},
+"s49deb1da830f41d9b469a16c17172feb": {
+"id": "s49deb1da830f41d9b469a16c17172feb",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794374568.8952396,
+"end": 1794384529.273453,
+"pipeline": "pa0eadff6c68647378bb5aca4d53974fc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794374792.581046
+},
+"s49fd69351dfb4a9e8da169942f893335": {
+"id": "s49fd69351dfb4a9e8da169942f893335",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793920188.3324847,
+"end": 1793921618.7658472,
+"pipeline": "peaa1a4abfb8c41409c84a75b4774de6e",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793920260.0644765
+},
+"s4a1c8095302a42fe874adb49df67c84b": {
+"id": "s4a1c8095302a42fe874adb49df67c84b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794220983.5593426,
+"end": 1794231580.6191077,
+"pipeline": "p1aabe344c1d6426897edd86db22e2ddf",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794224936.984137
+},
+"s4a482ddbf0684d36bc4f465eb54633fb": {
+"id": "s4a482ddbf0684d36bc4f465eb54633fb",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794422958.8379695,
+"end": null,
+"pipeline": "pe9dd3fba778d49a0984b325a6225ee8c",
+"nodes": [
+"s2bdb1de522354137b97b2619713a7aa8-ul-core-odds-deficit"
+],
+"question": null,
+"producer": "s155b3bc28e3b462493d51f6510c49925",
+"producer_role": "attempt"
+},
+"s4a6a2e66afc44c96930673e58ff3a1f8": {
+"id": "s4a6a2e66afc44c96930673e58ff3a1f8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794001875.7358346,
+"end": 1794004473.7572567,
+"pipeline": "p5ddabc9d0a8e44d188aff9608a84b57f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sf83912b1822847fa8866283cb30ddb48",
+"producer_role": "attempt"
+},
+"s4aa93ac3cef14a9d98d97dbf330245cb": {
+"id": "s4aa93ac3cef14a9d98d97dbf330245cb",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793911573.717035,
+"end": 1793913090.544788,
+"pipeline": "p87f27c38ead542c09364ec18aeb0d729",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793911684.4707546
+},
+"s4aedc27e68ac4105b87c4d051911d637": {
+"id": "s4aedc27e68ac4105b87c4d051911d637",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794406304.158242,
+"end": 1794407961.1753066,
+"pipeline": "p8637da8435874e578de069f57f4da405",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s5092238a484c4643840bf053cfc1d130",
+"producer_role": "explore"
+},
+"s4b0d95686cf94cfc8879b4e38ac60046": {
+"id": "s4b0d95686cf94cfc8879b4e38ac60046",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794280598.2595744,
+"end": 1794286383.018759,
+"pipeline": "p07c6f3b611bc4aedb49ea54ce3c60b58",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794280597.2687373
+},
+"s4c496925e0e64217b899376155884016": {
+"id": "s4c496925e0e64217b899376155884016",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793865171.147303,
+"end": 1793865768.3881917,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s4c730726570f43d58544afdddc66020a": {
+"id": "s4c730726570f43d58544afdddc66020a",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794366285.5495949,
+"end": 1794367068.2383733,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s4c83523e579f40fe9cc2957b20af4468": {
+"id": "s4c83523e579f40fe9cc2957b20af4468",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794353529.7612627,
+"end": 1794363299.7304974,
+"pipeline": "pe0bba8d03cd24498a6a5c8ef068862bc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794353853.4944034
+},
+"s4cab7617cd254433a31981c5f9c190df": {
+"id": "s4cab7617cd254433a31981c5f9c190df",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793928946.05301,
+"end": 1793930589.3024933,
+"pipeline": "p08ff424e667d489b99582f4c4384238c",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793929019.131971
+},
+"s4ccf69d3fe4e414abcfbbf0848b71a00": {
+"id": "s4ccf69d3fe4e414abcfbbf0848b71a00",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794228573.5332956,
+"end": 1794237304.4358253,
+"pipeline": "p3f169e4545424507bbf3ecdee98e2832",
+"nodes": [],
+"question": "op-left-right-asymmetry",
+"producer": "s312e052f69fc474fb435da2a2005d10b",
+"producer_role": "explore"
+},
+"s4cd5698bc7e64e62a4cb7f2823d9c35d": {
+"id": "s4cd5698bc7e64e62a4cb7f2823d9c35d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793914209.2336128,
+"end": 1793914359.5824573,
+"pipeline": "pb140f4ed770d4308bed57e4be23a06d4",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s4cf52cc4b5454fa9b2762f091f8203c6": {
+"id": "s4cf52cc4b5454fa9b2762f091f8203c6",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794175281.3614004,
+"end": 1794192371.263208,
+"pipeline": "p720afb7577564527aba7c996ba83a9b2",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-settled"
+],
+"question": null,
+"producer": "s308097e875f34416a6707bd1bccb8375",
+"producer_role": "formalizer"
+},
+"s4df6b5432c4041a3aef869b9328818c7": {
+"id": "s4df6b5432c4041a3aef869b9328818c7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794026514.109215,
+"end": 1794032078.2494283,
+"pipeline": "p9a990860f3de4b6289bbda138a212d6a",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s20d3772b315347d9a42dd7cac32f08a3",
+"producer_role": "attempt"
+},
+"s4e92314c41b54397b75e87ac61dc895b": {
+"id": "s4e92314c41b54397b75e87ac61dc895b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794079496.1561239,
+"end": 1794086016.690449,
+"pipeline": "p87cef34f0ee44a479c7ae92d8f74e7c2",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "s8cf4940bb6c94854ab2e3f6c94757e87",
+"producer_role": "attempt"
+},
+"s4ed9c0c62b364824af40bf1153cae565": {
+"id": "s4ed9c0c62b364824af40bf1153cae565",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794237894.1885386,
+"end": 1794239835.1548967,
+"pipeline": "p7e67cc22a5824cfbaa59e75eb8b9ec87",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "se325eecf013d406e9235edd5bef695c3",
+"producer_role": "attempt"
+},
+"s4f28ad6bac7546b1b7aa181765070550": {
+"id": "s4f28ad6bac7546b1b7aa181765070550",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794380356.1185143,
+"end": 1794392362.2310674,
+"pipeline": "pee831d9fdf82453b9deaf81612d1fa58",
+"nodes": [
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794382132.6276119
+},
+"s4f66783fd6d04fe49b8f896d0e6a3419": {
+"id": "s4f66783fd6d04fe49b8f896d0e6a3419",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794341154.7104375,
+"end": 1794343838.9127462,
+"pipeline": "p214087f0824647d2a08fee206890c7c1",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s134205e9d6c24dfbb8588b1af3ed4643",
+"producer_role": "attempt"
+},
+"s4f93e3cfeb05443489cb14c4d1cb5fe2": {
+"id": "s4f93e3cfeb05443489cb14c4d1cb5fe2",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793864984.2898521,
+"end": 1793865685.6274166,
+"pipeline": "pcade64d4719c43acb723f26d048147f3",
+"nodes": [],
+"question": null,
+"producer": "sd1a36620b0694ca89372b85bc8ae79a6",
+"producer_role": "attempt"
+},
+"s4f95eedc4746450184719453d637f586": {
+"id": "s4f95eedc4746450184719453d637f586",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794251770.55795,
+"end": 1794257915.5076513,
+"pipeline": "p7a8580f297b44ade8a1eaf92d4cc09f1",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794251768.5876923
+},
+"s4fcc7a68e7ae4409a0d44c8aa236155b": {
+"id": "s4fcc7a68e7ae4409a0d44c8aa236155b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794337732.493776,
+"end": 1794345225.4561286,
+"pipeline": "pbcc9e4727df34ce8a4a0b34ea8953168",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sbcc53ca04990443a9d56db155136dbbb",
+"producer_role": "attempt"
+},
+"s4fd63c54d2174e698bd1ea25359a2511": {
+"id": "s4fd63c54d2174e698bd1ea25359a2511",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794380984.424682,
+"end": 1794383742.7410738,
+"pipeline": "pfb9b0ea028c4444a9798d68599452810",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": "sb3d0355f949e4d79906c59ffefa87ced",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s4ff81702bdb84072a5a03a8c275560c3": {
+"id": "s4ff81702bdb84072a5a03a8c275560c3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794279626.468824,
+"end": 1794288256.4591115,
+"pipeline": "pec57921ade4f4c2397fec1cf24fbf560",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794280977.0254927
+},
+"s4ffc516e2f5e493ab8962d0a50cdc1d0": {
+"id": "s4ffc516e2f5e493ab8962d0a50cdc1d0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274270.1419559,
+"end": 1794278028.2501109,
+"pipeline": "pd8d325552e364f99abb7fb79c8dc75db",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sad540161ba94457b813e071fd5b8839f",
+"producer_role": "attempt"
+},
+"s5006110db6cd46e5be16c90daed6f57f": {
+"id": "s5006110db6cd46e5be16c90daed6f57f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794267153.754884,
+"end": 1794269029.4589329,
+"pipeline": "p91085001c8f84f6d8a3360fbb6278030",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s6e2cfa00611a4fae9c906ee48268d7b0",
+"producer_role": "attempt"
+},
+"s5092238a484c4643840bf053cfc1d130": {
+"id": "s5092238a484c4643840bf053cfc1d130",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794394297.6918018,
+"end": 1794400508.2015831,
+"pipeline": "p8637da8435874e578de069f57f4da405",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794394523.2149143
+},
+"s50b296f7c346410599e024e2954783c9": {
+"id": "s50b296f7c346410599e024e2954783c9",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793945749.721691,
+"end": 1793947349.1262467,
+"pipeline": "pdfa0c8567da24b079926f51e6c1d2100",
+"nodes": [],
+"question": "q0",
+"producer": "s83f5b558f93a428e91bdd267b4085bc2",
+"producer_role": "explore"
+},
+"s50d934efa1444fa096ed56bf9d5279aa": {
+"id": "s50d934efa1444fa096ed56bf9d5279aa",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793898392.6559117,
+"end": 1793898884.9271164,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s515dd7f87ee94fff959421fc22328f45": {
+"id": "s515dd7f87ee94fff959421fc22328f45",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793922921.7013097,
+"end": 1793923057.5489833,
+"pipeline": "p991585b8a30c47028c264b1feae27c4f",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s51681a5c7d7c48a6bb5de96862f1b6d3": {
+"id": "s51681a5c7d7c48a6bb5de96862f1b6d3",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794179249.7413216,
+"end": 1794179934.2182112,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s5192bc6c3f8c4065b91fdbe139a015ac": {
+"id": "s5192bc6c3f8c4065b91fdbe139a015ac",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794006735.3157804,
+"end": 1794010425.531403,
+"pipeline": "p8120cbbc74fc41a2bc29cf91ab0544c0",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794007054.1513774
+},
+"s51ae0efe03a143899c33c83ef73d9353": {
+"id": "s51ae0efe03a143899c33c83ef73d9353",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794262599.9064975,
+"end": 1794271895.7636096,
+"pipeline": "ped5d85036f00400e92a8f1b02ddba352",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794263986.22747
+},
+"s5222ad2eaa894fdd920197449ec02797": {
+"id": "s5222ad2eaa894fdd920197449ec02797",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794414489.8996558,
+"end": 1794422239.0100858,
+"pipeline": "p71fd729e10ef4745a0c7d7d0436a0dd4",
+"nodes": [
+"s1638d97f39d847d49aeafbdc96d6d01d-diag-single-crossing"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794415525.1537678
+},
+"s5226b99eac824343ad594056e603fbb9": {
+"id": "s5226b99eac824343ad594056e603fbb9",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793922505.4244304,
+"end": 1793922723.3300607,
+"pipeline": "pda346732ccd04c6f9213c4440c3466e7",
+"nodes": [],
+"question": null,
+"producer": "sbd662e53a5ed4f55a4c3c233a3bdd564",
+"producer_role": "attempt"
+},
+"s525d29840a464a1fb02e322190214bb0": {
+"id": "s525d29840a464a1fb02e322190214bb0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794378062.5669832,
+"end": 1794384632.2146215,
+"pipeline": "p2b1a87ec2d7c46efb4455585103b6333",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sd182f253b9bc48c9a8ba48f68e519b17",
+"producer_role": "explore"
+},
+"s52b8779825d4422fb1ac32ccb655752f": {
+"id": "s52b8779825d4422fb1ac32ccb655752f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793920601.3846643,
+"end": 1793920902.7896843,
+"pipeline": "p53b29167f80c45259d1587775b667ea8",
+"nodes": [],
+"question": null,
+"producer": "s17da963aa6c742e99f489342c9bc637e",
+"producer_role": "attempt"
+},
+"s52bfa96318904357bfc8c26907febf07": {
+"id": "s52bfa96318904357bfc8c26907febf07",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793902913.156634,
+"end": 1793903892.8735268,
+"pipeline": "p5feba55812b441e78e5ed8108b88632a",
+"nodes": [],
+"question": "q0",
+"producer": "s3003455054b54661814f84090c89afd3",
+"producer_role": "explore"
+},
+"s53a6dbf9220c45e8b78d5c6a50bb6b38": {
+"id": "s53a6dbf9220c45e8b78d5c6a50bb6b38",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794106708.4920917,
+"end": 1794109831.8269236,
+"pipeline": "p8d1e3ca80bf14b29b15a7bd8a9c7b20e",
+"nodes": [],
+"question": null,
+"producer": "s69b767d1ed4a497795d4f206cd3f293a",
+"producer_role": "attempt"
+},
+"s53e83aac85514ed5ade36093ef8189be": {
+"id": "s53e83aac85514ed5ade36093ef8189be",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793955188.3029044,
+"end": 1793956182.7272642,
+"pipeline": "p8bfc41633e0e48febc2f733ed348b994",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s39e6fe197449455b920fb3a4001c1990",
+"producer_role": "attempt"
+},
+"s53eee7fe411c4af988b9e65fdf12e90a": {
+"id": "s53eee7fe411c4af988b9e65fdf12e90a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794040688.2429492,
+"end": 1794045393.0912025,
+"pipeline": "p265e200f44504c7db0dd781a21ad2066",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s5666ccc4c33f48339bc66f75ff9f62d3",
+"producer_role": "attempt"
+},
+"s5411855f2de344bfbed1b35d6218d8b1": {
+"id": "s5411855f2de344bfbed1b35d6218d8b1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794019399.8590465,
+"end": 1794022641.0835776,
+"pipeline": "pa6065307a85344bea9ff61c0bf9d558e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc796110ff275476ebed6070d93d7dd53",
+"producer_role": "attempt"
+},
+"s54263ba4af534c04b05c25c71bd601af": {
+"id": "s54263ba4af534c04b05c25c71bd601af",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794422664.3100975,
+"end": null,
+"pipeline": "pfec282bfbe754b8e9d1622ff887e86da",
+"nodes": [
+"se09cad02864943228b4edcd6a08f26de-h1-tail"
+],
+"question": null,
+"producer": "sfcbb603fd2de4f44a360d497abf7f43a",
+"producer_role": "attempt"
+},
+"s544306c25581408ea0288571e14dbb7d": {
+"id": "s544306c25581408ea0288571e14dbb7d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794295568.1213155,
+"end": 1794304045.3510373,
+"pipeline": "p5a03eabfcb914625bd059e4d47ff5c59",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "se44561f5b12044c392109baa8b6e83e5",
+"producer_role": "explore"
+},
+"s5446aeff40754125901cf64b2c5dbb93": {
+"id": "s5446aeff40754125901cf64b2c5dbb93",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794392912.1169994,
+"end": 1794403072.161686,
+"pipeline": "p7163624040bf4e498487d77355eeb020",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794394597.0897605
+},
+"s54620c536e75453d8300bc10d8ed672a": {
+"id": "s54620c536e75453d8300bc10d8ed672a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794217152.3742435,
+"end": 1794229052.4833343,
+"pipeline": "pa23029b1f560475cb552ffcc0cc9b3fc",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794218998.9252923
+},
+"s54823e8b3f524f1799c25fb39bf77eaf": {
+"id": "s54823e8b3f524f1799c25fb39bf77eaf",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794250022.0005536,
+"end": 1794252774.3046155,
+"pipeline": "p3978cfbf78174842af811667772fdc24",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": "sf3280330ce644406a63a926f069eaf3d",
+"producer_role": "attempt"
+},
+"s5569b38cafe347cd875dc0e6b88a0c17": {
+"id": "s5569b38cafe347cd875dc0e6b88a0c17",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794321191.739305,
+"end": 1794326719.191277,
+"pipeline": "pd816398237c44b0db79126ff9eab3213",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "se8afabd78d5d46b48ce9b7adf253038e",
+"producer_role": "attempt"
+},
+"s5666ccc4c33f48339bc66f75ff9f62d3": {
+"id": "s5666ccc4c33f48339bc66f75ff9f62d3",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794033599.1155925,
+"end": 1794040685.9263926,
+"pipeline": "p265e200f44504c7db0dd781a21ad2066",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794033712.5589843
+},
+"s56b0fcaab6a445b9a702b08b6a1cf26e": {
+"id": "s56b0fcaab6a445b9a702b08b6a1cf26e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794277693.0876944,
+"end": 1794279276.6060247,
+"pipeline": "ped5d85036f00400e92a8f1b02ddba352",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s51ae0efe03a143899c33c83ef73d9353",
+"producer_role": "attempt"
+},
+"s56e642a133a14a4298c4a525d19ee829": {
+"id": "s56e642a133a14a4298c4a525d19ee829",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793998674.3416345,
+"end": 1794001872.0582309,
+"pipeline": "p5ddabc9d0a8e44d188aff9608a84b57f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sf83912b1822847fa8866283cb30ddb48",
+"producer_role": "attempt"
+},
+"s56f81d41b43441b783794aa6041d082a": {
+"id": "s56f81d41b43441b783794aa6041d082a",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794258660.996266,
+"end": 1794259324.2176447,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s570886af70e4454a8a656b2f9e33502e": {
+"id": "s570886af70e4454a8a656b2f9e33502e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793946807.9239204,
+"end": 1793947886.9626815,
+"pipeline": "p5948f196422a4a2494349514ac84555d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sb3f5bc9e3d114acc9731a9e87a767379",
+"producer_role": "attempt"
+},
+"s570b0e977ad645fb831b27f850048913": {
+"id": "s570b0e977ad645fb831b27f850048913",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793994229.837051,
+"end": 1794002252.9704921,
+"pipeline": "pe7aa4bfc41964941aac2a9ea928a81ae",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "se7b5ff2ed31647ff8b826e9cd5d2f5d0",
+"producer_role": "attempt"
+},
+"s57bb02de16c548519a6f3a4a410c38d8": {
+"id": "s57bb02de16c548519a6f3a4a410c38d8",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794306830.5257618,
+"end": 1794307977.2633579,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s57e774f5eeb248a68b196e4d86b0ac47": {
+"id": "s57e774f5eeb248a68b196e4d86b0ac47",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794235801.5532193,
+"end": 1794237948.1833851,
+"pipeline": "pc78c7a4f501846e9ad91101db595431b",
+"nodes": [],
+"question": "op-central-window",
+"producer": "s57f84ef0eed446cbbfef6a2457ff89ee",
+"producer_role": "explore"
+},
+"s57f84ef0eed446cbbfef6a2457ff89ee": {
+"id": "s57f84ef0eed446cbbfef6a2457ff89ee",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794224003.2061853,
+"end": 1794231551.9934912,
+"pipeline": "pc78c7a4f501846e9ad91101db595431b",
+"nodes": [],
+"question": "op-central-window",
+"producer": null,
+"declared_at": 1794224694.446134
+},
+"s58197419cdae472da36509d631330120": {
+"id": "s58197419cdae472da36509d631330120",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793920661.1818109,
+"end": 1793920808.7481759,
+"pipeline": "p0dd8c61a975f41a5bb1d3a250d167bb9",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s5854cebe7b6d4b149e7e6e9d8e2f4318": {
+"id": "s5854cebe7b6d4b149e7e6e9d8e2f4318",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794046464.0314257,
+"end": 1794054881.3787525,
+"pipeline": "p82b755c6b2414b01b1d572cd1a64c72e",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s58609d8eff144781a02bc90bb48924dd": {
+"id": "s58609d8eff144781a02bc90bb48924dd",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794344905.5280497,
+"end": 1794350407.8424659,
+"pipeline": "pb8b4d68f4cb64a909c4386c2b2769e6e",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s2c3c7a15fbaf4fdea66dc86975d353fc",
+"producer_role": "explore"
+},
+"s58d1ade0bfae47cdab5232d8cb2debda": {
+"id": "s58d1ade0bfae47cdab5232d8cb2debda",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793922683.602408,
+"end": 1793923240.0137773,
+"pipeline": "peaa1a4abfb8c41409c84a75b4774de6e",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s49fd69351dfb4a9e8da169942f893335",
+"producer_role": "attempt"
+},
+"s5935164382f74f86b45c61bc7bae89ec": {
+"id": "s5935164382f74f86b45c61bc7bae89ec",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793900832.8716161,
+"end": 1793903180.4147964,
+"pipeline": "pa1d21af0278f4c93b07f78e51a8bdd69",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793900907.6687088
+},
+"s593fd297e5cc40caa73f1e3174ac059a": {
+"id": "s593fd297e5cc40caa73f1e3174ac059a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794413791.807148,
+"end": 1794420805.722823,
+"pipeline": "p2419282a2aa548fd93c027eff376cb59",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794413790.5245812
+},
+"s597d51f267dd462fb4a65a4c280ed8fb": {
+"id": "s597d51f267dd462fb4a65a4c280ed8fb",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794230808.591344,
+"end": 1794232680.568535,
+"pipeline": "pd30ca24e19374040af8f302f5b92af0a",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": "s44628a5ee4d443519d898c1f950fae86",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s597f0f11406b4234a5bdcdb280cb3148": {
+"id": "s597f0f11406b4234a5bdcdb280cb3148",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793933807.324605,
+"end": 1793934396.4547935,
+"pipeline": "p411c0681534146768560f8b2f2a4ae58",
+"nodes": [],
+"question": "q0",
+"producer": "s82b373ec8dc14cc78350dd64952f4037",
+"producer_role": "explore"
+},
+"s59925cec195149079051248293bbf565": {
+"id": "s59925cec195149079051248293bbf565",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794160715.4993079,
+"end": 1794161508.2280576,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s59b5edc0dde34b4f858d6320e676b13b": {
+"id": "s59b5edc0dde34b4f858d6320e676b13b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794146079.2959304,
+"end": 1794153617.633966,
+"pipeline": "p148c350004d74c3eab0552e20b8c4ef9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794147429.9009094
+},
+"s59cd0833ae814480bbca6e71834fcadb": {
+"id": "s59cd0833ae814480bbca6e71834fcadb",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1793948208.6493485,
+"end": 1793951089.6027455,
+"pipeline": "p7354aa75470f43a2be6c219d39fb6ec8",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s59ced08fb21c4180841c687a16bf6c72": {
+"id": "s59ced08fb21c4180841c687a16bf6c72",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794388278.2720182,
+"end": 1794389756.908028,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s5a0c52ce83bc4bd5a8ae99f8ed604101": {
+"id": "s5a0c52ce83bc4bd5a8ae99f8ed604101",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794316527.6856723,
+"end": 1794334397.7723598,
+"pipeline": "p0aca6473d7344c15a26d4a3b226200c0",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794320559.4605255
+},
+"s5a0f41b5a543492daa47122d2dd590e5": {
+"id": "s5a0f41b5a543492daa47122d2dd590e5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794361088.1102302,
+"end": 1794363045.0271075,
+"pipeline": "p233cb50bbfba40e79f7fcf8951310785",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": "s0ed03dcb7da548d9b96cd8e1d92dc14b",
+"producer_role": "attempt"
+},
+"s5a4a7531a2d8409f8720f0e0511e8320": {
+"id": "s5a4a7531a2d8409f8720f0e0511e8320",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794329995.880991,
+"end": 1794333525.1600597,
+"pipeline": "pc7922efb086b473d8997740136a64aba",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core"
+],
+"question": null,
+"producer": "s90cc7013b2184f42a7cc9300744c846e",
+"producer_role": "attempt"
+},
+"s5a6c5a5840eb4fd2aba998b2042d11be": {
+"id": "s5a6c5a5840eb4fd2aba998b2042d11be",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794349113.94792,
+"end": 1794356845.7569509,
+"pipeline": "p1cb1cfc0d2774994ae1f289ba06d12b1",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794349302.2672808
+},
+"s5ab8dca17d0f4472aa96e365e26cd798": {
+"id": "s5ab8dca17d0f4472aa96e365e26cd798",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793983008.284476,
+"end": 1793983390.5784645,
+"pipeline": "p5a38cdd1c07c447495687616e823610d",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s5b1793c5098f4a2e9df802dc0c04ba9f": {
+"id": "s5b1793c5098f4a2e9df802dc0c04ba9f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794297002.2261612,
+"end": 1794305924.0507238,
+"pipeline": "pb5a496218e7b48128acb2a28773f5d2e",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794298382.6946864
+},
+"s5b3c5b51660b401d8e6144fa61df2d8e": {
+"id": "s5b3c5b51660b401d8e6144fa61df2d8e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793996305.1215985,
+"end": 1794018547.3369298,
+"pipeline": "p859f11d22c324ade81cb836dd04f2d63",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s49d43ea1c5ce4095a31675c3e1c1c534",
+"producer_role": "attempt"
+},
+"s5b8974ddcfdc4c1d83b81bb790772e39": {
+"id": "s5b8974ddcfdc4c1d83b81bb790772e39",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794348183.3728888,
+"end": 1794352706.4762473,
+"pipeline": "p39cec1203863436990b0d276f45b1a78",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk"
+],
+"question": null,
+"producer": "s9993b13634644462b69c4773cbc2565c",
+"producer_role": "attempt"
+},
+"s5c2c7a8958434274a337bcdc72efacd8": {
+"id": "s5c2c7a8958434274a337bcdc72efacd8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794257649.3064404,
+"end": 1794261352.8637598,
+"pipeline": "p625bedbb9a9c475f8b238549fbee3487",
+"nodes": [
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window"
+],
+"question": null,
+"producer": "sc6d29538ad364bbdb41632c5fd8394c5",
+"producer_role": "attempt"
+},
+"s5c3e78372c36406db7b0bfbf5492b641": {
+"id": "s5c3e78372c36406db7b0bfbf5492b641",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794071209.4923677,
+"end": 1794073604.9309444,
+"pipeline": "p9a317ae9a89d426b975a020245b1f3ec",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s91ae0846a767454cab92cb628a7f2a53",
+"producer_role": "attempt"
+},
+"s5c852d4a2ad34f3882d7a70949290c84": {
+"id": "s5c852d4a2ad34f3882d7a70949290c84",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794400479.4077864,
+"end": 1794415798.3296454,
+"pipeline": "pc0a7a6821560493a9ab9e1e48dfbff90",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk"
+],
+"question": null,
+"producer": "s89fed8c904f74b7b84081bfd517eb38f",
+"producer_role": "attempt"
+},
+"s5d11d4209a694f63ab615e90a4ff3f47": {
+"id": "s5d11d4209a694f63ab615e90a4ff3f47",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794362608.7976058,
+"end": 1794378181.9911036,
+"pipeline": "pf95c1dba5081417ba1b8eda9d717215d",
+"nodes": [
+"s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794364503.5879529
+},
+"s5d6f16e0a87c4bd6957512607d9a707f": {
+"id": "s5d6f16e0a87c4bd6957512607d9a707f",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793904975.169848,
+"end": 1793906673.8903248,
+"pipeline": "p586ee09fbc4b494eafa99f4dc3e20883",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793905046.7659822
+},
+"s5dd81592e60b45b9b80c9a75bdf04b6c": {
+"id": "s5dd81592e60b45b9b80c9a75bdf04b6c",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793935724.947183,
+"end": 1793936368.761055,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s5e0b4749689c4e3ab0824d59dabeb386": {
+"id": "s5e0b4749689c4e3ab0824d59dabeb386",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794030029.287705,
+"end": 1794034139.2273061,
+"pipeline": "pfa4fa69b922349298f7e95c0e1d3062f",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794030153.6356194
+},
+"s5e7703fe3e8441c2a8ba5827d3314a6f": {
+"id": "s5e7703fe3e8441c2a8ba5827d3314a6f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794347858.263774,
+"end": 1794359047.8662374,
+"pipeline": "p3e7c68323bcd460ca75a1eca24521636",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794352849.999591
+},
+"s5f4427b149bb434a84832b700bdfcf1d": {
+"id": "s5f4427b149bb434a84832b700bdfcf1d",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793861118.7502334,
+"end": 1793861705.4491618,
+"pipeline": "p3d39fc85c86c4d80ba0210af0757839f",
+"nodes": [],
+"question": "q0",
+"producer": "sa3a66df86eb54b34b477bfe0a4ac52ca",
+"producer_role": "explore"
+},
+"s5fa3188be536453eb30da17570256a27": {
+"id": "s5fa3188be536453eb30da17570256a27",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794237960.9503393,
+"end": 1794245843.6736307,
+"pipeline": "p560be1ff70d24a07af070821fec20f6c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794238121.2504697
+},
+"s5fa5bfd2226a46f1bb36494e2b105579": {
+"id": "s5fa5bfd2226a46f1bb36494e2b105579",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793977007.417412,
+"end": 1793989449.4394805,
+"pipeline": "pc6cea18bb952400fa950fcbb3b84ba08",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa84bddbcce7848da8be97df308a6fb80",
+"producer_role": "attempt"
+},
+"s5fbdeedbc4204857b96da63a55be2d1d": {
+"id": "s5fbdeedbc4204857b96da63a55be2d1d",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794359703.582575,
+"end": 1794360510.652261,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s6018bd7618dd4d2bb4e3371a4b493184": {
+"id": "s6018bd7618dd4d2bb4e3371a4b493184",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794356849.8604078,
+"end": 1794360505.4130294,
+"pipeline": "p1cb1cfc0d2774994ae1f289ba06d12b1",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s5a6c5a5840eb4fd2aba998b2042d11be",
+"producer_role": "explore"
+},
+"s60391fc75e40463794e4e5a23d058a1a": {
+"id": "s60391fc75e40463794e4e5a23d058a1a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794253316.1991687,
+"end": 1794256922.194884,
+"pipeline": "pe8180f1b4c554191a6d6fcb1b46b0811",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": "sf1e6eab8ef3e4c8e8da8d5810e2c4e0b",
+"producer_role": "explore"
+},
+"s603b3d8eb4f3441ea227e47f331ceebc": {
+"id": "s603b3d8eb4f3441ea227e47f331ceebc",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793951090.1561234,
+"end": 1793953591.5215054,
+"pipeline": "p7354aa75470f43a2be6c219d39fb6ec8",
+"nodes": [],
+"question": "q0",
+"producer": "s59cd0833ae814480bbca6e71834fcadb",
+"producer_role": "explore"
+},
+"s613fcc94be5447e79439497d5433258e": {
+"id": "s613fcc94be5447e79439497d5433258e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794046185.46913,
+"end": 1794050116.7866006,
+"pipeline": "p63dc86f64aed44f5a9369ea34949031c",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "scad1a4c9f15d4dee88786d5b40dd4ed9",
+"producer_role": "attempt"
+},
+"s6159eba22a294372a3360ae0946b57e3": {
+"id": "s6159eba22a294372a3360ae0946b57e3",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794258028.048517,
+"end": 1794264841.7182817,
+"pipeline": "p77074ba4d84e4034998afd52ab05e097",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s380b4290e84048d09dd3dab0a9b03517",
+"producer_role": "attempt"
+},
+"s617e7f42128241cdbce77d071be5d570": {
+"id": "s617e7f42128241cdbce77d071be5d570",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793861763.6154492,
+"end": 1793863337.762085,
+"pipeline": "pca6950999b5a483ebce5e9170a8f7206",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s6182e4b1f66f4791b966f01d3fa98b30": {
+"id": "s6182e4b1f66f4791b966f01d3fa98b30",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793912231.6055276,
+"end": 1793912686.8256643,
+"pipeline": "p6e3aca8a905b49eea3b7a449e559e476",
+"nodes": [],
+"question": null,
+"producer": "s0a4a301d82fe43daa4078ea2a1d35e03",
+"producer_role": "attempt"
+},
+"s61b074045da947f8b4600d1ee2bf22c2": {
+"id": "s61b074045da947f8b4600d1ee2bf22c2",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794155359.1052213,
+"end": 1794160614.3725076,
+"pipeline": "p445f96d7c01347bcb4768b7bd1c3e2b5",
+"nodes": [
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core"
+],
+"question": null,
+"producer": "sef0087463c904180823143ce6febd6f7",
+"producer_role": "attempt"
+},
+"s61b1a8292b634a59a27fc683fb97e300": {
+"id": "s61b1a8292b634a59a27fc683fb97e300",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794041263.0405736,
+"end": 1794041828.5864367,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s61df0c3f297d49ac87ad54d06dba57b6": {
+"id": "s61df0c3f297d49ac87ad54d06dba57b6",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794381076.4025831,
+"end": 1794382302.1732557,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s61fa49fd05124d80957d2d572ae5a889": {
+"id": "s61fa49fd05124d80957d2d572ae5a889",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793895696.3655736,
+"end": 1793896984.9480028,
+"pipeline": "p42b4a54fd15e4a22809c6100be54b183",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s6a08b5879dc24406ae3d4e860e55085a",
+"producer_role": "attempt"
+},
+"s625fd734b0ba445b943519fa3bb114b1": {
+"id": "s625fd734b0ba445b943519fa3bb114b1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794018345.4784982,
+"end": 1794020315.2214022,
+"pipeline": "p926b63804cdd481b8ec15c13afa21e30",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "sd9c6d528ebb848398ad5a309091a0c5e",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s62b51fcc3f1a42669da5c3b74674f464": {
+"id": "s62b51fcc3f1a42669da5c3b74674f464",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794259227.3616493,
+"end": 1794265346.2474551,
+"pipeline": "p2435ee44bbcd42ef998b4f204fab4020",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": null,
+"declared_at": 1794259424.5150905
+},
+"s62cff71478454e1bbef785b9463eaf3a": {
+"id": "s62cff71478454e1bbef785b9463eaf3a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794252135.0617077,
+"end": 1794261715.3490045,
+"pipeline": "p6df51f408c1f4d54819c6b3a3fefdee0",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794254521.1932812
+},
+"s6328ee4d1e4c42f3b67803ca0ad42021": {
+"id": "s6328ee4d1e4c42f3b67803ca0ad42021",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794196876.7025704,
+"end": 1794210123.3947382,
+"pipeline": "p57776db79ec94133b51c96ed23710228",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794201015.1772156
+},
+"s635d9cd1ffd94c8c8c03ecd2ba37cf36": {
+"id": "s635d9cd1ffd94c8c8c03ecd2ba37cf36",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794197056.9157584,
+"end": 1794215968.6269476,
+"pipeline": "pb30d26b0172a44faa27bf0f718507fba",
+"nodes": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794199322.2501304
+},
+"s637d3ec5e74a440596c4c50d42c7aeb8": {
+"id": "s637d3ec5e74a440596c4c50d42c7aeb8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794137279.6078036,
+"end": 1794149788.6821916,
+"pipeline": "p91ff295536a8483a9c9781680a76fa31",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "saf005007e47f456f972daddeea6b66b1",
+"producer_role": "attempt"
+},
+"s63a0e84d8ee34d9b950c18e4c27fe628": {
+"id": "s63a0e84d8ee34d9b950c18e4c27fe628",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794004771.1777856,
+"end": 1794004985.651548,
+"pipeline": "pd7d46074bd5441868cf8f919ff91df73",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s63cdcfe2b79a448596aa052b098698cf": {
+"id": "s63cdcfe2b79a448596aa052b098698cf",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794040172.3688173,
+"end": 1794041977.5487094,
+"pipeline": "p3430188d1fc64b6f9cb806fba10b022c",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "se62b8e387325453a94b4189b286a7579",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s63e8b1d12135496c9a621b466d3b9ac0": {
+"id": "s63e8b1d12135496c9a621b466d3b9ac0",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794280319.3075576,
+"end": 1794281261.6192253,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s64392220dce24724ae9d4fc96e0e673f": {
+"id": "s64392220dce24724ae9d4fc96e0e673f",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794275726.6233995,
+"end": 1794276564.4200888,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s64ad093e3df74ee9b8cb47f65962db62": {
+"id": "s64ad093e3df74ee9b8cb47f65962db62",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793928559.2650204,
+"end": 1793929657.155136,
+"pipeline": "p6a5a02980ca34d4a832ff42658adbde0",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s64dc127f66ff4b358d9f36a2b7386ec8": {
+"id": "s64dc127f66ff4b358d9f36a2b7386ec8",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793913217.5037718,
+"end": 1793914427.7417963,
+"pipeline": "pffd4c8d97cb745358fc3a5aef99d1323",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8ab4fbbb04644a7da7674bc43e2dd2e2",
+"producer_role": "attempt"
+},
+"s64e1cb3c90b7420e9f37dab85eb561d8": {
+"id": "s64e1cb3c90b7420e9f37dab85eb561d8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794019931.4216435,
+"end": 1794024425.7366948,
+"pipeline": "p374c5fd339cf425db37e6ae51eb97e98",
+"nodes": [],
+"question": "q0",
+"producer": "sdc581b2f351d41dfadf3e3bfbf8b914b",
+"producer_role": "explore"
+},
+"s65582ec5b3a8430d8e82f8ddad20c888": {
+"id": "s65582ec5b3a8430d8e82f8ddad20c888",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793901903.9844606,
+"end": 1793903706.8456297,
+"pipeline": "p80006cf33d474caba94f9acfd57cfd1d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793901976.0324013
+},
+"s662ad7e3380b49299346ae28f3a3469e": {
+"id": "s662ad7e3380b49299346ae28f3a3469e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793912990.6650238,
+"end": 1793913872.1773705,
+"pipeline": "p569167259b6341a0b503618a661947aa",
+"nodes": [],
+"question": "q0",
+"producer": "s8da461b370e246e5b531b36095d82b5f",
+"producer_role": "explore"
+},
+"s662af04a9b2d4a65b11ee596660520db": {
+"id": "s662af04a9b2d4a65b11ee596660520db",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794177077.5251567,
+"end": 1794179599.5434372,
+"pipeline": "p7b5580d8bbd9489db12ff9e221393312",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s1cd790cb293b4e21844b76a840e3b184",
+"producer_role": "attempt"
+},
+"s664cb807ac33404f9415d538c1b09bda": {
+"id": "s664cb807ac33404f9415d538c1b09bda",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794245202.1785305,
+"end": 1794249383.2871006,
+"pipeline": "pae7f0655bcda4b66adb68357a3af8ef2",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "sfe8a7fa7f07f49fbb950aa811a1a1d8b",
+"producer_role": "attempt"
+},
+"s6667338ab2324cda8e47f30476635659": {
+"id": "s6667338ab2324cda8e47f30476635659",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794030660.9280956,
+"end": 1794035766.484093,
+"pipeline": "p4ad36d22a66f45ae94e84d9c2b7d85a5",
+"nodes": [],
+"question": "q0",
+"producer": "s966353b6520b4cb692987d828518209b",
+"producer_role": "explore"
+},
+"s667609e0367040ef88de7369d81dac2f": {
+"id": "s667609e0367040ef88de7369d81dac2f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794324774.4006176,
+"end": 1794329681.6795292,
+"pipeline": "p745ccf69ea4144bc98c3e2fd577dbc7e",
+"nodes": [],
+"question": "sd7cd6139ee4a4ebfb61d476996bde609-conditional-chain-law",
+"producer": "s9326e056b96c43a3bbf022395ef1fb8c",
+"producer_role": "explore"
+},
+"s6768e452a7554d02b3f028d8291ef31b": {
+"id": "s6768e452a7554d02b3f028d8291ef31b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794208211.913785,
+"end": 1794210516.906161,
+"pipeline": "pffbbb02287de4e5a8a0373d2aafb5f2f",
+"nodes": [],
+"question": "q0",
+"producer": "sa5bf962378e345f58617dfeebc460a8c",
+"producer_role": "explore"
+},
+"s67a550b3bc844257909a50ecfc924ce1": {
+"id": "s67a550b3bc844257909a50ecfc924ce1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794318525.979981,
+"end": 1794320410.889631,
+"pipeline": "p263b310048e548a09a66a79fb09e7416",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sd407fa824dbe413da7b1a58e7839da91",
+"producer_role": "attempt"
+},
+"s67e0fa8cb90f4143bce670f562d9b7a0": {
+"id": "s67e0fa8cb90f4143bce670f562d9b7a0",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793921003.6327536,
+"end": 1793921829.8458426,
+"pipeline": "p5ccf39bf308f41d6be3b046c7374275e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc066457cea954115b5b1d46102701a6d",
+"producer_role": "attempt"
+},
+"s67f90b7c4d184417ae53faee78e00bc3": {
+"id": "s67f90b7c4d184417ae53faee78e00bc3",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793932933.955361,
+"end": 1793933806.7563171,
+"pipeline": "p411c0681534146768560f8b2f2a4ae58",
+"nodes": [],
+"question": "q0",
+"producer": "s82b373ec8dc14cc78350dd64952f4037",
+"producer_role": "explore"
+},
+"s6823fdda2e3e4233963926465b51aa92": {
+"id": "s6823fdda2e3e4233963926465b51aa92",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793960058.741002,
+"end": 1793962812.0684881,
+"pipeline": "pe21339b3a3ae45cf821d668680849cc0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s15b86cd2c2504fcba6fe12a9904309c2",
+"producer_role": "attempt"
+},
+"s6874218b7fad420eacc2b0f833e272db": {
+"id": "s6874218b7fad420eacc2b0f833e272db",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793922320.4056253,
+"end": 1793922699.5220978,
+"pipeline": "pdb2c5fa8856d475f89b852c4d5de29ac",
+"nodes": [],
+"question": null,
+"producer": "s34e0462a2cec4f7c9de4c68867cd2a58",
+"producer_role": "attempt"
+},
+"s69351cdd75fe4684b9a28378cbf81155": {
+"id": "s69351cdd75fe4684b9a28378cbf81155",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793942969.154588,
+"end": 1793945149.9442306,
+"pipeline": "p23aed0e6674047b4a91a87c0cc0d62ca",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793943086.2414968
+},
+"s696b23024d7349b5ad9fa3667b5cb5fa": {
+"id": "s696b23024d7349b5ad9fa3667b5cb5fa",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793903707.1585202,
+"end": 1793904941.7047987,
+"pipeline": "p80006cf33d474caba94f9acfd57cfd1d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s65582ec5b3a8430d8e82f8ddad20c888",
+"producer_role": "attempt"
+},
+"s6982768b028c44f48bb23f14b52035a0": {
+"id": "s6982768b028c44f48bb23f14b52035a0",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793909927.8288891,
+"end": 1793910914.564451,
+"pipeline": "p677afa6006e5470ea22dd30aca1a87e9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s9cd5b445f94544dd974445b8280704a4",
+"producer_role": "attempt"
+},
+"s69b767d1ed4a497795d4f206cd3f293a": {
+"id": "s69b767d1ed4a497795d4f206cd3f293a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794103374.721031,
+"end": 1794106701.0512123,
+"pipeline": "p8d1e3ca80bf14b29b15a7bd8a9c7b20e",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s69dc04034aeb40b890f047aee73a805d": {
+"id": "s69dc04034aeb40b890f047aee73a805d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794039390.884496,
+"end": 1794045109.78634,
+"pipeline": "pcfc5a59787394a279cc2826cb500036d",
+"nodes": [],
+"question": "q0",
+"producer": "sdd8512d437444ee2aaaf190e0e90576b",
+"producer_role": "explore"
+},
+"s69e625843fdf49c6a92d39737efed273": {
+"id": "s69e625843fdf49c6a92d39737efed273",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794284246.5824723,
+"end": 1794286948.6879938,
+"pipeline": "p1a59338dbc84498492827f258876140f",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s6ceacc1f7e344ebe96861dbf6041a4fd",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s6a08b5879dc24406ae3d4e860e55085a": {
+"id": "s6a08b5879dc24406ae3d4e860e55085a",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793894056.9930127,
+"end": 1793895696.0009348,
+"pipeline": "p42b4a54fd15e4a22809c6100be54b183",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793894116.7081409
+},
+"s6a5821c2365949d2ad5a8bf30dda4791": {
+"id": "s6a5821c2365949d2ad5a8bf30dda4791",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793922556.677808,
+"end": 1793924229.5293097,
+"pipeline": "p0fc316b2aae64565b7957be7cd8e59ea",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793922638.5991383
+},
+"s6a683c2e58bc4f5f947204d4485c6c82": {
+"id": "s6a683c2e58bc4f5f947204d4485c6c82",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794148776.8315973,
+"end": 1794153251.8527262,
+"pipeline": "p180de72ecf3748c3b0cf6e88e4b67683",
+"nodes": [],
+"question": "q0",
+"producer": "s2bd3a58f017e450aa36f02747a1b259a",
+"producer_role": "explore"
+},
+"s6a694030e06d4279885c26b246cb71da": {
+"id": "s6a694030e06d4279885c26b246cb71da",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794371453.0405393,
+"end": 1794379568.2100637,
+"pipeline": "p81113ce8d53b4524a2df46612624082b",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s6c038976188c46e0b4daf017f0bbae29",
+"producer_role": "attempt"
+},
+"s6b17083e73654c6bab7130f94817cdd2": {
+"id": "s6b17083e73654c6bab7130f94817cdd2",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794109836.9002976,
+"end": 1794111105.9392262,
+"pipeline": "p8d1e3ca80bf14b29b15a7bd8a9c7b20e",
+"nodes": [],
+"question": null,
+"producer": "s69b767d1ed4a497795d4f206cd3f293a",
+"producer_role": "attempt"
+},
+"s6b273438de1242d1a2e8f6cbe2ebdcae": {
+"id": "s6b273438de1242d1a2e8f6cbe2ebdcae",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794287539.0353847,
+"end": 1794293919.7931826,
+"pipeline": "p591cd6d709a34b7e938596b428c64766",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "sad90cfb66b8a4e0d830f72e9427e429c",
+"producer_role": "explore"
+},
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b": {
+"id": "s6b2ddeb5b88d4ca99ffbd269218b9b2b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794206743.7483628,
+"end": 1794211994.0075326,
+"pipeline": "pa7ecd2e6ac47447b8f076ee259dc7008",
+"nodes": [],
+"question": "op-left-right-asymmetry",
+"producer": "s35c440db50f54f13a28fcbd34eba6ce9",
+"producer_role": "explore"
+},
+"s6b36d4d2dfd840c08c37825819033a55": {
+"id": "s6b36d4d2dfd840c08c37825819033a55",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274273.285578,
+"end": 1794278385.7487714,
+"pipeline": "pa4e30015b6ca4cb2b885cae7c995af92",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s037dde7307bf4c52ae909ca91bd21b97",
+"producer_role": "explore"
+},
+"s6b6077f83fa844c79665566bb8547676": {
+"id": "s6b6077f83fa844c79665566bb8547676",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794321181.9749277,
+"end": 1794331648.1986406,
+"pipeline": "p94a834e74e894e59b3c23d391eb1c6f1",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794323579.219924
+},
+"s6ba5d275b2a4415ca9e1f213dc721c68": {
+"id": "s6ba5d275b2a4415ca9e1f213dc721c68",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793930725.2007582,
+"end": 1793931272.1328917,
+"pipeline": "p6a5a02980ca34d4a832ff42658adbde0",
+"nodes": [],
+"question": "q0",
+"producer": "s64ad093e3df74ee9b8cb47f65962db62",
+"producer_role": "explore"
+},
+"s6bc0d516e0af441482766410536903e4": {
+"id": "s6bc0d516e0af441482766410536903e4",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793958139.0070004,
+"end": 1793958730.7289774,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s6bd4141d573e4dbcba71e74baaabacb1": {
+"id": "s6bd4141d573e4dbcba71e74baaabacb1",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793943149.443221,
+"end": 1793946895.6899836,
+"pipeline": "p38efd4a6f21647e589ffc8226a7d7cab",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793943281.7897377
+},
+"s6bea2af065164aedb3f3daf5869a8783": {
+"id": "s6bea2af065164aedb3f3daf5869a8783",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278388.2474885,
+"end": 1794279849.6256351,
+"pipeline": "pa4e30015b6ca4cb2b885cae7c995af92",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s037dde7307bf4c52ae909ca91bd21b97",
+"producer_role": "explore"
+},
+"s6c038976188c46e0b4daf017f0bbae29": {
+"id": "s6c038976188c46e0b4daf017f0bbae29",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794344095.313072,
+"end": 1794371446.0279331,
+"pipeline": "p81113ce8d53b4524a2df46612624082b",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794347638.7344298
+},
+"s6c39989fde5a48d1a4e036c2c08bf9d4": {
+"id": "s6c39989fde5a48d1a4e036c2c08bf9d4",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793912463.0193894,
+"end": 1793912935.3613772,
+"pipeline": "pb3413522439445a883fd411d7c5e0471",
+"nodes": [],
+"question": null,
+"producer": "sb2e93d71c60e4166a966631d564e5c77",
+"producer_role": "attempt"
+},
+"s6c6efbb81fb94819bd59f45b6463fc82": {
+"id": "s6c6efbb81fb94819bd59f45b6463fc82",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794394645.441147,
+"end": 1794396684.3936949,
+"pipeline": "pe8a06eaaba5a43a1bd2033a6b7422065",
+"nodes": [],
+"question": "q0",
+"producer": "s71b13280118b4e7c8381c806033c9fba",
+"producer_role": "explore"
+},
+"s6c7829b88c354b9da98ce5d034874ff7": {
+"id": "s6c7829b88c354b9da98ce5d034874ff7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794087616.994263,
+"end": 1794100047.8466296,
+"pipeline": "pa4ff85aeaf33470d85c154275b0a780a",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "seea78ad61f3b421098a1964320092d33",
+"producer_role": "attempt"
+},
+"s6cc9416c69604f65a73c86c700e92895": {
+"id": "s6cc9416c69604f65a73c86c700e92895",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793928274.9876163,
+"end": 1793928585.0966942,
+"pipeline": "p950adf9a311542caaf3b06a63a7934ed",
+"nodes": [],
+"question": null,
+"producer": "s058aa0ee461f4250b4614649d17bb9b4",
+"producer_role": "attempt"
+},
+"s6cca4b8c3176403aa70a25c9e1ea4d9a": {
+"id": "s6cca4b8c3176403aa70a25c9e1ea4d9a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793963450.593777,
+"end": 1793970722.3309288,
+"pipeline": "p4fd9684fff7c4a84beeb6316a93ed6ed",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sd9ceaf4a5e8c412e86b37bbe47c82fa2",
+"producer_role": "attempt"
+},
+"s6ceacc1f7e344ebe96861dbf6041a4fd": {
+"id": "s6ceacc1f7e344ebe96861dbf6041a4fd",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794266824.456164,
+"end": 1794274258.0429196,
+"pipeline": "p1a59338dbc84498492827f258876140f",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794269177.052798
+},
+"s6cf2e5df50874af497c5c3a9c81b1a92": {
+"id": "s6cf2e5df50874af497c5c3a9c81b1a92",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794291753.220732,
+"end": 1794298917.0103965,
+"pipeline": "p86798285afb3432aab634fbaaf9b66d3",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": "sf8861182d2e843659c10d727569be3d2",
+"producer_role": "attempt"
+},
+"s6d494a2864b34711b3deb363e5d29da6": {
+"id": "s6d494a2864b34711b3deb363e5d29da6",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794074398.8601813,
+"end": 1794079731.049164,
+"pipeline": "p383436c1b94343c5ba64d31c5839fb9c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794076569.5420902
+},
+"s6d4caeacc2404c72b94a25ff28673e57": {
+"id": "s6d4caeacc2404c72b94a25ff28673e57",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794317948.4034796,
+"end": 1794323273.662107,
+"pipeline": "p82f0ec2771d54545b5d97af14cae6afc",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "s7c700cb0d0f342a0874f43008d0dc0fd",
+"producer_role": "attempt"
+},
+"s6d9909ddd7474e20b3bb01ff9f868986": {
+"id": "s6d9909ddd7474e20b3bb01ff9f868986",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794296639.9216099,
+"end": 1794311753.02188,
+"pipeline": "p9f81720b53824ad4b854eaac8d38331b",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794300977.3181632
+},
+"s6d9c4d5968f448daa4460d9c27b61564": {
+"id": "s6d9c4d5968f448daa4460d9c27b61564",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793970724.1820822,
+"end": 1793974964.9922853,
+"pipeline": "p4fd9684fff7c4a84beeb6316a93ed6ed",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sd9ceaf4a5e8c412e86b37bbe47c82fa2",
+"producer_role": "attempt"
+},
+"s6dd48de0a62c4f36b68756c5fab2574f": {
+"id": "s6dd48de0a62c4f36b68756c5fab2574f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794269127.2932124,
+"end": 1794274260.6308448,
+"pipeline": "p76fef508248a4b8b967bd5cb104be292",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794270046.061665
+},
+"s6e2cfa00611a4fae9c906ee48268d7b0": {
+"id": "s6e2cfa00611a4fae9c906ee48268d7b0",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794252875.1374228,
+"end": 1794263488.0765836,
+"pipeline": "p91085001c8f84f6d8a3360fbb6278030",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794253953.9595964
+},
+"s6e8de1ed47f44950b0fe27b9bd9ccc54": {
+"id": "s6e8de1ed47f44950b0fe27b9bd9ccc54",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794083503.4061441,
+"end": 1794116808.6420898,
+"pipeline": "p8e706f0a94474fcf84de945d1db9a523",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794085193.8963733
+},
+"s6f37efffd70c41c690b793c032cb63ce": {
+"id": "s6f37efffd70c41c690b793c032cb63ce",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794156220.55654,
+"end": 1794159192.1883378,
+"pipeline": "pc0220ffdb163496ea1e0c87681d290c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sdd74b3e8659448b48b6c78d75276fd63",
+"producer_role": "attempt"
+},
+"s6f45e29e50fa4afb86175af930969618": {
+"id": "s6f45e29e50fa4afb86175af930969618",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794115485.1863823,
+"end": 1794119400.3782618,
+"pipeline": "p81276a4d59f348e59f4495441e41d2c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s3f394cdfb3fe4c07a52477fd551a7247",
+"producer_role": "attempt"
+},
+"s6f4bdeb6e4ff4fb8823b7a9b89bcd6d9": {
+"id": "s6f4bdeb6e4ff4fb8823b7a9b89bcd6d9",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794049092.9997175,
+"end": 1794126441.74381,
+"pipeline": "p6995e8f20a954fbdb417cc02f8e3a333",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794055331.8312395
+},
+"s6f8d8889d3fd458aa219ff590fcadf5e": {
+"id": "s6f8d8889d3fd458aa219ff590fcadf5e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793913146.175473,
+"end": 1793913368.7989821,
+"pipeline": "pa44f9ef0cb0f437dbfab4232dbbbb45c",
+"nodes": [],
+"question": null,
+"producer": "s9177576a352b4a148c162e7f0fd13476",
+"producer_role": "attempt"
+},
+"s6fcff7f57ca24dd2ba075b75d07d0e12": {
+"id": "s6fcff7f57ca24dd2ba075b75d07d0e12",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794149792.8367097,
+"end": 1794154584.5956235,
+"pipeline": "p91ff295536a8483a9c9781680a76fa31",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "saf005007e47f456f972daddeea6b66b1",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s6fd65c6e63714bdeb8a19d6230b440f7": {
+"id": "s6fd65c6e63714bdeb8a19d6230b440f7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794369476.4855587,
+"end": 1794374815.2927165,
+"pipeline": "p5c0ea1cfbf294aa7b437fa850b1ea08c",
+"nodes": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": "se2fe369e8a254a3894692acb0e11b58c",
+"producer_role": "attempt"
+},
+"s6ff984874fd34af490dab9364621939f": {
+"id": "s6ff984874fd34af490dab9364621939f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793891495.1242864,
+"end": 1793892856.3281221,
+"pipeline": "pa94e33cbdc1a4c008b1cd855f8859117",
+"nodes": [],
+"question": null,
+"producer": "s77215860f2264d118e2cb0266da174f9",
+"producer_role": "attempt"
+},
+"s6ffdf224b58e4f2f8c69f69736fcb8f6": {
+"id": "s6ffdf224b58e4f2f8c69f69736fcb8f6",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794291678.0496054,
+"end": 1794294896.743798,
+"pipeline": "p07c6f3b611bc4aedb49ea54ce3c60b58",
+"nodes": [],
+"question": "q0",
+"producer": "s4b0d95686cf94cfc8879b4e38ac60046",
+"producer_role": "explore"
+},
+"s7008756d579547c7ae95dc20e308f545": {
+"id": "s7008756d579547c7ae95dc20e308f545",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794409419.3740969,
+"end": 1794415934.903462,
+"pipeline": "p44fc08d3d3be4761adcd804f691319a9",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s74dad68e708247f3a4e595fd0c81b67e",
+"producer_role": "attempt"
+},
+"s7009b4c6137449ea8f1e2d6d598cc30a": {
+"id": "s7009b4c6137449ea8f1e2d6d598cc30a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794318254.0981998,
+"end": 1794320787.33936,
+"pipeline": "p44b9e06042694e3fa724acb1ecc9f323",
+"nodes": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": "s047254d111dd45bb93a2e477091e6c21",
+"producer_role": "attempt"
+},
+"s70a0803adbb74ce7b71b8d729ba8335e": {
+"id": "s70a0803adbb74ce7b71b8d729ba8335e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794331012.9120727,
+"end": 1794335931.3999527,
+"pipeline": "p4013bee2cc3042cb9c23ae47090feed5",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "sd00691b1bda24b1d8486b362068b9b47",
+"producer_role": "attempt"
+},
+"s716e72b8eb1d4fac8a4a4c997abf3d91": {
+"id": "s716e72b8eb1d4fac8a4a4c997abf3d91",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794336159.4362025,
+"end": 1794341145.2918828,
+"pipeline": "p214087f0824647d2a08fee206890c7c1",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s134205e9d6c24dfbb8588b1af3ed4643",
+"producer_role": "attempt"
+},
+"s718bc0bbb5244514b7ec159356fea6e9": {
+"id": "s718bc0bbb5244514b7ec159356fea6e9",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794077055.8031301,
+"end": 1794079782.1858597,
+"pipeline": "pcf6155f214a24c3a83237510fdc3fda1",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sa7799f3650154be1a33a471804ac99cc",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s71b13280118b4e7c8381c806033c9fba": {
+"id": "s71b13280118b4e7c8381c806033c9fba",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794381278.6396518,
+"end": 1794387264.5468915,
+"pipeline": "pe8a06eaaba5a43a1bd2033a6b7422065",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794381276.384614
+},
+"s72028a3a53a04481bd4488b0dc5d9d5b": {
+"id": "s72028a3a53a04481bd4488b0dc5d9d5b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794001950.949028,
+"end": 1794012917.1170092,
+"pipeline": "pd5b943275527430a9102611f0758522d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s14d6e383539840768b836a68b8b8c04c",
+"producer_role": "attempt"
+},
+"s7216ebedc7884d188175f4e9865df930": {
+"id": "s7216ebedc7884d188175f4e9865df930",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794199265.3985577,
+"end": 1794208202.7809598,
+"pipeline": "pffbbb02287de4e5a8a0373d2aafb5f2f",
+"nodes": [],
+"question": "q0",
+"producer": "sa5bf962378e345f58617dfeebc460a8c",
+"producer_role": "explore"
+},
+"s727002266acc4fccb91dc28583e919c6": {
+"id": "s727002266acc4fccb91dc28583e919c6",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794296269.806877,
+"end": 1794302374.4233716,
+"pipeline": "pa9ceea3450d348f2a4bd62ca1de34982",
+"nodes": [],
+"question": "sf6d08848fee64e6996d91ea811992a50-diagonal-lower-bound",
+"producer": null,
+"declared_at": 1794297136.3265262
+},
+"s72a79340e4cd411691b0fe6d923db6ea": {
+"id": "s72a79340e4cd411691b0fe6d923db6ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794308832.2047904,
+"end": 1794323943.9767241,
+"pipeline": "p791cdc812e7045d9a854a34eb3d81cda",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold"
+],
+"question": null,
+"producer": "s20049bc986b8450194d4a3954625b331",
+"declared_at": 1794311597.3153262,
+"producer_role": "attempt"
+},
+"s72bb4f10aff54ff780876d5cc4e08437": {
+"id": "s72bb4f10aff54ff780876d5cc4e08437",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794027375.7584636,
+"end": 1794031056.5633345,
+"pipeline": "pd1d038e2b2ff47178dee579dc46c9205",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": "s3660d7620ead4fdb96ef2e408cae0e1b",
+"producer_role": "attempt"
+},
+"s73264b832cf54f87befa04ec1f7a968f": {
+"id": "s73264b832cf54f87befa04ec1f7a968f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794414411.733721,
+"end": 1794417554.1040225,
+"pipeline": "p6060fd0efe854a13b8529512d8f8a835",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sa53157f97b294de6a987518d829a665a",
+"producer_role": "explore"
+},
+"s73b9599e6de0440682d39d1ac0fc25d8": {
+"id": "s73b9599e6de0440682d39d1ac0fc25d8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794294640.879789,
+"end": 1794297306.9423213,
+"pipeline": "pcf824b2236964fdab19a1c84f7dd96d9",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s13e2680eff764c30951a81cc3e0c7b99",
+"producer_role": "attempt"
+},
+"s7400900706fc46979a5a44f149dbea97": {
+"id": "s7400900706fc46979a5a44f149dbea97",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794300276.2274702,
+"end": 1794305557.6325674,
+"pipeline": "p2524252abd23456bb106eaf6fffced82",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s986a06753eed43fbb655d14fb127b702",
+"producer_role": "attempt"
+},
+"s743a6b05cb554d4d89c4fa656dbd3a7e": {
+"id": "s743a6b05cb554d4d89c4fa656dbd3a7e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794065530.610107,
+"end": 1794068998.2548156,
+"pipeline": "p82b755c6b2414b01b1d572cd1a64c72e",
+"nodes": [],
+"question": "q0",
+"producer": "s5854cebe7b6d4b149e7e6e9d8e2f4318",
+"producer_role": "explore"
+},
+"s747c26e46c6442b8948b31c328499564": {
+"id": "s747c26e46c6442b8948b31c328499564",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794344287.0194576,
+"end": 1794357099.3015895,
+"pipeline": "pac9f4437a2e84826abb1ffd892c13b08",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": "sb255d860b40b4ebd99f1bb1d281e223a",
+"producer_role": "attempt"
+},
+"s748531f8799848e9a4b5c5bc32bc7135": {
+"id": "s748531f8799848e9a4b5c5bc32bc7135",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794390240.3209846,
+"end": 1794399691.9091394,
+"pipeline": "p860c9426c7524f68ad100706e9359e77",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794394139.2055225
+},
+"s74dad68e708247f3a4e595fd0c81b67e": {
+"id": "s74dad68e708247f3a4e595fd0c81b67e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794383808.8820946,
+"end": 1794409412.4270723,
+"pipeline": "p44fc08d3d3be4761adcd804f691319a9",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794386321.0711849
+},
+"s74e008cf245645c9b01bbceee3aee880": {
+"id": "s74e008cf245645c9b01bbceee3aee880",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793875119.6540935,
+"end": 1793876202.442823,
+"pipeline": "p8a1e93d6db764006816713ef1b61ce55",
+"nodes": [],
+"question": null,
+"producer": "seae91265f5784a43a8f4a839d9e75f9d",
+"producer_role": "attempt"
+},
+"s75a81be7854a484382a2bb0ab10bc01e": {
+"id": "s75a81be7854a484382a2bb0ab10bc01e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794403597.8139286,
+"end": 1794405160.1840277,
+"pipeline": "pc45a43a9eca84cdfa4607d022b1c545a",
+"nodes": [
+"s263f85f424c447b3861de59bef4ea551-stem-attachment",
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "s8d1531c584994f38b0798aceda3aba8a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s75c71821d46a42a8a3d0eaab8997d252": {
+"id": "s75c71821d46a42a8a3d0eaab8997d252",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794232710.3163147,
+"end": 1794240163.6212096,
+"pipeline": "pbc737b57e82849b4a46150e92c0d24ce",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794232708.0148416
+},
+"s75ea05e51146439e82982f6f5330e881": {
+"id": "s75ea05e51146439e82982f6f5330e881",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793919588.1959457,
+"end": 1793920186.023405,
+"pipeline": "pc425dbc9d5404ee29a9275299e3dd21a",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "sce8552e256d64ee7a0c49b6c62c6da8f",
+"producer_role": "attempt"
+},
+"s760e33785bda4b10b0936aea4473b71c": {
+"id": "s760e33785bda4b10b0936aea4473b71c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794295999.6824033,
+"end": 1794306202.7669287,
+"pipeline": "p277e6fb447f14101a6dbc13f194da363",
+"nodes": [
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794300428.8655403
+},
+"s762957f008884c36adcda8ae1e901e55": {
+"id": "s762957f008884c36adcda8ae1e901e55",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794421615.974939,
+"end": null,
+"pipeline": "p7674b7d761704585948d0a10377f7d24",
+"nodes": [
+"s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20"
+],
+"question": null,
+"producer": "sae9ea7b8546a46448f7dba6405b6bc22",
+"producer_role": "attempt"
+},
+"s762a9bffab934d269dd8ea6728fdf4aa": {
+"id": "s762a9bffab934d269dd8ea6728fdf4aa",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793948765.7200158,
+"end": 1793948893.5402193,
+"pipeline": "p4a93fb022ce0487f971b6843f24b17d1",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s763be1c55bdd4640b89710d6b357e7e7": {
+"id": "s763be1c55bdd4640b89710d6b357e7e7",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793908244.3317454,
+"end": 1793909766.7892036,
+"pipeline": "pa9664ae76ef54ac296605255471c43a6",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s764727e56270450ca0570d86a20b62f7": {
+"id": "s764727e56270450ca0570d86a20b62f7",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794246288.5018897,
+"end": 1794257791.6663296,
+"pipeline": "p13040eb1d5e6482a994a8f0239434742",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794248820.1071532
+},
+"s7682a6ef5bc4439682c5651fae5c5f8a": {
+"id": "s7682a6ef5bc4439682c5651fae5c5f8a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794369129.9874413,
+"end": 1794371214.0499017,
+"pipeline": "p30a58db9a776492b97ce7128a2058148",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s1d29d423535f42519befe632d82c7856",
+"producer_role": "attempt"
+},
+"s76b4a17e6294419fac22fea60a773d80": {
+"id": "s76b4a17e6294419fac22fea60a773d80",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794358596.8881965,
+"end": 1794360350.1480293,
+"pipeline": "p757b084c868f446f8da151736c007b0e",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"sf6d08848fee64e6996d91ea811992a50-flat-first-layer-tail"
+],
+"question": null,
+"producer": "s07661db4fcff4e40a70be03e024b0bc3",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s76f3c0a0e57d42b489ec92293ea8849d": {
+"id": "s76f3c0a0e57d42b489ec92293ea8849d",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794042398.296187,
+"end": 1794042652.145753,
+"pipeline": "p4956f6e199d94f6c90dd6fbc00dcb6d6",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s76fd59c67d93411a8e0ae748983968f4": {
+"id": "s76fd59c67d93411a8e0ae748983968f4",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794322068.7218843,
+"end": 1794323974.003566,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s77215860f2264d118e2cb0266da174f9": {
+"id": "s77215860f2264d118e2cb0266da174f9",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793876841.8394556,
+"end": 1793878323.477287,
+"pipeline": "pa94e33cbdc1a4c008b1cd855f8859117",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793876887.2693894
+},
+"s7732547ac236460eada42ab10257cbcc": {
+"id": "s7732547ac236460eada42ab10257cbcc",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794215597.1895978,
+"end": 1794223426.6234016,
+"pipeline": "pa56cc5a5db0441169e581ed61d062320",
+"nodes": [],
+"question": "op-tie-block-transport",
+"producer": null,
+"declared_at": 1794216176.8239853
+},
+"s774fe94d0f9846079f0e8e462e8e260e": {
+"id": "s774fe94d0f9846079f0e8e462e8e260e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793907567.4000154,
+"end": 1793908127.0329425,
+"pipeline": "p586ee09fbc4b494eafa99f4dc3e20883",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s5d6f16e0a87c4bd6957512607d9a707f",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s777409b28c114f96aa82ba4ccfa89003": {
+"id": "s777409b28c114f96aa82ba4ccfa89003",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793935033.5347576,
+"end": 1793935710.4033132,
+"pipeline": "p6a5c28dee4f04c0da71661e0eb0f4080",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa1c395a17a4b41fea7da0417aabfd9a6",
+"producer_role": "attempt"
+},
+"s778e8cef9a2d4be080649d8ead1c41a8": {
+"id": "s778e8cef9a2d4be080649d8ead1c41a8",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793956186.492783,
+"end": 1793961644.0886714,
+"pipeline": "p8ee2336d15f848dcae1f8c095166fc7b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793956385.4500158
+},
+"s77985a7b185f43d7a1a98c09fe166028": {
+"id": "s77985a7b185f43d7a1a98c09fe166028",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794257343.0897825,
+"end": 1794259218.3417222,
+"pipeline": "p7e400cef152e4f579063326bb2016be8",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s963c561fc780424ea2511acfbec9a63d",
+"producer_role": "explore"
+},
+"s77bce54a05784510828adf250b00eaf3": {
+"id": "s77bce54a05784510828adf250b00eaf3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794276726.7781115,
+"end": 1794292988.715466,
+"pipeline": "pb3b97ced9634472f80cbf2d7aaed8d40",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794277999.5907779
+},
+"s77df2e959a03449395c94c9b4937f946": {
+"id": "s77df2e959a03449395c94c9b4937f946",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794148433.444793,
+"end": 1794152140.4854069,
+"pipeline": "p9ef29066af294786a3b93a39b9544794",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": "s3cd888bd8c4b4329ac85338632c96a23",
+"producer_role": "attempt"
+},
+"s78abc6c46406495a8ec01afec3252d00": {
+"id": "s78abc6c46406495a8ec01afec3252d00",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793913639.641276,
+"end": 1793914026.667145,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s78ad5461287a4643be4dc44e715eda51": {
+"id": "s78ad5461287a4643be4dc44e715eda51",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794278863.7452397,
+"end": 1794284244.2616417,
+"pipeline": "p1a59338dbc84498492827f258876140f",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s6ceacc1f7e344ebe96861dbf6041a4fd",
+"producer_role": "attempt"
+},
+"s78c273875ef342e7857d4695f1a3b1d1": {
+"id": "s78c273875ef342e7857d4695f1a3b1d1",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794020324.3044481,
+"end": 1794021328.1926963,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s78ee4727cc6342d8ab489487bfb0a3c5": {
+"id": "s78ee4727cc6342d8ab489487bfb0a3c5",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793919770.4584496,
+"end": 1793919905.8974938,
+"pipeline": "pf523a84a60d244eea1744e9486cdf556",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s79075ea0d14945a9830a0a48be05e768": {
+"id": "s79075ea0d14945a9830a0a48be05e768",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793946411.1688037,
+"end": 1793955989.1711318,
+"pipeline": "p69064a4769ad4267a4d28eace3ec2e5f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793946510.4938927
+},
+"s796757a3983745c493888801d66db0e8": {
+"id": "s796757a3983745c493888801d66db0e8",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793964464.5578916,
+"end": 1793965092.603369,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s79c60936070941e4b05eaceb34be6b9b": {
+"id": "s79c60936070941e4b05eaceb34be6b9b",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793995146.2632527,
+"end": 1793995267.2760456,
+"pipeline": "p97445d51f11c4d4b8789b55de8dcf123",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s79fa32ab7f344978a81af8d7792674d2": {
+"id": "s79fa32ab7f344978a81af8d7792674d2",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794343163.2055883,
+"end": 1794352779.9579616,
+"pipeline": "p37edbed7bbba4887a1a06bb8e3e258b5",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794343161.4765842
+},
+"s7a0d27b9d09444ff8e863bd1918ffc30": {
+"id": "s7a0d27b9d09444ff8e863bd1918ffc30",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793864384.1592684,
+"end": 1793865169.731274,
+"pipeline": "p4eb80e7b0afd461e8224285357a88594",
+"nodes": [],
+"question": null,
+"producer": "s1696712103e344daad1c22ee28ec6a30",
+"producer_role": "attempt"
+},
+"s7a2a959f478e4009a2dba3c577ae5e6b": {
+"id": "s7a2a959f478e4009a2dba3c577ae5e6b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794288420.023185,
+"end": 1794293420.4967887,
+"pipeline": "p480adf74433d4fbd802ce79a6264215a",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "see97affb825d4965aba01b90f575423a",
+"producer_role": "attempt"
+},
+"s7a50feafd0d74dde9c5ac37f50f5ccbd": {
+"id": "s7a50feafd0d74dde9c5ac37f50f5ccbd",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794387274.3561087,
+"end": 1794394637.6883194,
+"pipeline": "pe8a06eaaba5a43a1bd2033a6b7422065",
+"nodes": [],
+"question": "q0",
+"producer": "s71b13280118b4e7c8381c806033c9fba",
+"producer_role": "explore"
+},
+"s7a7f175e13eb4b64909785ab3f9d8fca": {
+"id": "s7a7f175e13eb4b64909785ab3f9d8fca",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794326560.1064868,
+"end": 1794327525.7893138,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s7a86c8ffa6a74d419fb62046f2de3ba8": {
+"id": "s7a86c8ffa6a74d419fb62046f2de3ba8",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793912942.5323625,
+"end": 1793914331.7752535,
+"pipeline": "p4b131e3d6f7c49a2839e5cf6be543192",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793912942.430904
+},
+"s7a9044496dc34fcfb14cd2ee0321d4d5": {
+"id": "s7a9044496dc34fcfb14cd2ee0321d4d5",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793891418.429886,
+"end": 1793892708.4789162,
+"pipeline": "pf5dd88bcec2b4fe3b08595c07d5d8cfa",
+"nodes": [],
+"question": null,
+"producer": "s3aa79e42b3a34ed497f2d5061c2d07fa",
+"producer_role": "attempt"
+},
+"s7aa5070dc45e4c768f19c4be4971caf2": {
+"id": "s7aa5070dc45e4c768f19c4be4971caf2",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793872489.2952619,
+"end": 1793873489.145232,
+"pipeline": "p4fdb05f7c5804b6f8d72d02641b22e8d",
+"nodes": [],
+"question": "q0",
+"producer": "s08674bc282eb49fc853cd190c7ebbcc6",
+"producer_role": "explore"
+},
+"s7aee49715ae94a7ca8e1da0eec21e2f1": {
+"id": "s7aee49715ae94a7ca8e1da0eec21e2f1",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794192752.3977041,
+"end": 1794209832.8068492,
+"pipeline": "pa8da3ca9469f493e8fe2c9dd36e77b9b",
+"nodes": [
+"sa285576b08e84713a85bbec88889e550-one-step-local"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794194228.7661352
+},
+"s7b1d4c463be24dc68a59ba3219cecefe": {
+"id": "s7b1d4c463be24dc68a59ba3219cecefe",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794192933.0198903,
+"end": 1794203434.689929,
+"pipeline": "pecb5160cbc9a402aa4046f6b5ef8ead3",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794195341.0397453
+},
+"s7b40539926e5405a9dc3275f86efd5f3": {
+"id": "s7b40539926e5405a9dc3275f86efd5f3",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794060864.9307828,
+"end": 1794065524.387846,
+"pipeline": "p82b755c6b2414b01b1d572cd1a64c72e",
+"nodes": [],
+"question": "q0",
+"producer": "s5854cebe7b6d4b149e7e6e9d8e2f4318",
+"producer_role": "explore"
+},
+"s7b56537e9b58481183479ca911f5a757": {
+"id": "s7b56537e9b58481183479ca911f5a757",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794357103.2911875,
+"end": 1794359688.8348875,
+"pipeline": "pac9f4437a2e84826abb1ffd892c13b08",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "sb255d860b40b4ebd99f1bb1d281e223a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s7bca88e02f2044258089b09872ed8bd0": {
+"id": "s7bca88e02f2044258089b09872ed8bd0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794374755.2516854,
+"end": 1794380975.9956079,
+"pipeline": "pfb9b0ea028c4444a9798d68599452810",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": "sb3d0355f949e4d79906c59ffefa87ced",
+"producer_role": "attempt"
+},
+"s7c2438743ed649b18263bc4af70bef74": {
+"id": "s7c2438743ed649b18263bc4af70bef74",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793937676.6621895,
+"end": 1793939033.4513803,
+"pipeline": "p0bfb5d54aa904fd188fdcd3529efb880",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s7c700cb0d0f342a0874f43008d0dc0fd": {
+"id": "s7c700cb0d0f342a0874f43008d0dc0fd",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794308875.405488,
+"end": 1794317945.112553,
+"pipeline": "p82f0ec2771d54545b5d97af14cae6afc",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794311625.285664
+},
+"s7d1ef7f847464238b3a8ce2cadb63dc1": {
+"id": "s7d1ef7f847464238b3a8ce2cadb63dc1",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793942279.3021655,
+"end": 1793943006.4037673,
+"pipeline": "p2eb8ee5dbc4541f18c71d8e186b4bedc",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "se4976c2db7bf401d90e1ea9448beef49",
+"producer_role": "attempt"
+},
+"s7d5ee32e04ca4a4fa1f4c35dbd4f69b3": {
+"id": "s7d5ee32e04ca4a4fa1f4c35dbd4f69b3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794310157.8398976,
+"end": 1794315766.6592152,
+"pipeline": "pa9ceea3450d348f2a4bd62ca1de34982",
+"nodes": [
+"s78ad5461287a4643be4dc44e715eda51-band-criterion-inequality"
+],
+"question": "sf6d08848fee64e6996d91ea811992a50-diagonal-lower-bound",
+"producer": "s727002266acc4fccb91dc28583e919c6",
+"target_from": "record",
+"producer_role": "explore"
+},
+"s7d995d0f9bca41c8bbf61a6a5104f6d5": {
+"id": "s7d995d0f9bca41c8bbf61a6a5104f6d5",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793935859.3778307,
+"end": 1793937060.599713,
+"pipeline": "pa97be1e631e54f288b3cf41860405abf",
+"nodes": [],
+"question": "q0",
+"producer": "s2ffbe13e1f714f82ab64a0ba587ddeca",
+"producer_role": "explore"
+},
+"s7df88a0089b849639d416708a0e20ff2": {
+"id": "s7df88a0089b849639d416708a0e20ff2",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794018401.2031221,
+"end": 1794023633.9917755,
+"pipeline": "p7cbfadee885144b4a214640b99b6fafc",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794018587.1154177
+},
+"s7e4da7a55d0a4b4c95245b1f49a644cc": {
+"id": "s7e4da7a55d0a4b4c95245b1f49a644cc",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794405612.110949,
+"end": 1794407296.5736952,
+"pipeline": "pddf2e2101dc54047b7d1415551002aa4",
+"nodes": [
+"sbc78ebbbd815476194858a30df8bc356-left-leak"
+],
+"question": null,
+"producer": "sfd40e8f692f74d2085d6b6a7497edcda",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s7e94a50ae06645e38b7b5be1a92e260a": {
+"id": "s7e94a50ae06645e38b7b5be1a92e260a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794061999.9883492,
+"end": 1794068731.648958,
+"pipeline": "p9afa856510a54a92b50d9f926a2ab698",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "sc5311c53c4234227becc1d8e8d7ab498",
+"producer_role": "attempt"
+},
+"s7eeb8d9969b94f34a4191edcf2b4d71d": {
+"id": "s7eeb8d9969b94f34a4191edcf2b4d71d",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794297365.1812599,
+"end": 1794305011.590507,
+"pipeline": "p5002a1e8970248fe8f083624f91e7bcf",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794298412.4394705
+},
+"s7f194492eea44fe38a5ba77c073936ed": {
+"id": "s7f194492eea44fe38a5ba77c073936ed",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794233470.087326,
+"end": 1794235979.4517238,
+"pipeline": "pa23029b1f560475cb552ffcc0cc9b3fc",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s54620c536e75453d8300bc10d8ed672a",
+"producer_role": "attempt"
+},
+"s7fc0bf8a25534c0f925aeae626939ab3": {
+"id": "s7fc0bf8a25534c0f925aeae626939ab3",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794164691.879434,
+"end": 1794180103.6980438,
+"pipeline": "peeccd5b9aaa641bebebe20cacb9b9232",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "sa74e158d15124b338e0e4d008ee9886d",
+"producer_role": "formalizer"
+},
+"s7fe4240f2dff49408c390a12fe6597cb": {
+"id": "s7fe4240f2dff49408c390a12fe6597cb",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794245928.0044484,
+"end": 1794248334.3434644,
+"pipeline": "pbc737b57e82849b4a46150e92c0d24ce",
+"nodes": [],
+"question": "q0",
+"producer": "s75c71821d46a42a8a3d0eaab8997d252",
+"producer_role": "explore"
+},
+"s802049ae279847b3bd850dc45308b9bf": {
+"id": "s802049ae279847b3bd850dc45308b9bf",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794361558.1445963,
+"end": 1794371391.9042957,
+"pipeline": "p0c4da274d099442798c55d800322f5b1",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794361555.491377
+},
+"s80a1555984bf47a6804d0f5ce3393e8e": {
+"id": "s80a1555984bf47a6804d0f5ce3393e8e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793914428.5629778,
+"end": 1793915067.5348225,
+"pipeline": "pffd4c8d97cb745358fc3a5aef99d1323",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8ab4fbbb04644a7da7674bc43e2dd2e2",
+"producer_role": "attempt"
+},
+"s80e40306a91c468fb9c20eb34be1f96e": {
+"id": "s80e40306a91c468fb9c20eb34be1f96e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794220496.8235419,
+"end": 1794222576.361551,
+"pipeline": "p57776db79ec94133b51c96ed23710228",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s6328ee4d1e4c42f3b67803ca0ad42021",
+"producer_role": "attempt"
+},
+"s80f9f868b4164fd7b14bc6913a8a3dfa": {
+"id": "s80f9f868b4164fd7b14bc6913a8a3dfa",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794041264.7894397,
+"end": 1794044576.1788812,
+"pipeline": "pa16d4be0901d44459ab5d4d0853eeb6d",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794041469.460753
+},
+"s813076728d8c49d7ad0818a771193b7f": {
+"id": "s813076728d8c49d7ad0818a771193b7f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794223429.6766236,
+"end": 1794229001.1612644,
+"pipeline": "pa56cc5a5db0441169e581ed61d062320",
+"nodes": [],
+"question": "op-tie-block-transport",
+"producer": "s7732547ac236460eada42ab10257cbcc",
+"producer_role": "explore"
+},
+"s815263db8e8e49d4892c627e35f2c506": {
+"id": "s815263db8e8e49d4892c627e35f2c506",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794245109.8459845,
+"end": 1794246280.2287116,
+"pipeline": "p0934e7630fb0417da863b8b65fdde511",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment",
+"sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay"
+],
+"question": null,
+"producer": "s3e8acf026d584579a12dcb8c0b60facf",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s81ec9bb2b40f41fa9a3b39c606a622ee": {
+"id": "s81ec9bb2b40f41fa9a3b39c606a622ee",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794346411.1761477,
+"end": 1794347796.9393852,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s8271ca3a7d13464682ee868e71fede36": {
+"id": "s8271ca3a7d13464682ee868e71fede36",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793911932.837054,
+"end": 1793913023.6737328,
+"pipeline": "p5a95cb5dc74942c7844e4fcd739a1ae0",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s10ef120804714bbabf52652c49e95ea6",
+"producer_role": "attempt"
+},
+"s82b373ec8dc14cc78350dd64952f4037": {
+"id": "s82b373ec8dc14cc78350dd64952f4037",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793931274.697082,
+"end": 1793932933.5142965,
+"pipeline": "p411c0681534146768560f8b2f2a4ae58",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s82ef83ae8dd9497fb4da4c13c077057b": {
+"id": "s82ef83ae8dd9497fb4da4c13c077057b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794409308.9368277,
+"end": 1794412053.7155368,
+"pipeline": "p7163624040bf4e498487d77355eeb020",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": "s5446aeff40754125901cf64b2c5dbb93",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s83273dea8d8c4c64bc476247296543c6": {
+"id": "s83273dea8d8c4c64bc476247296543c6",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794352556.4781313,
+"end": 1794353512.798509,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s832aaaa6daf840e397ee52e60f3a2ee2": {
+"id": "s832aaaa6daf840e397ee52e60f3a2ee2",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793900287.9582076,
+"end": 1793900831.228255,
+"pipeline": "p0c7d6d55ed83493a8b952e9760f75d44",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sad9ab7c92aa2480d957d4001bdb3cbba",
+"producer_role": "attempt"
+},
+"s83e82623a1c74d55b415cf3965102aa3": {
+"id": "s83e82623a1c74d55b415cf3965102aa3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794221250.400462,
+"end": 1794223381.948345,
+"pipeline": "pb30d26b0172a44faa27bf0f718507fba",
+"nodes": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131"
+],
+"question": null,
+"producer": "s635d9cd1ffd94c8c8c03ecd2ba37cf36",
+"producer_role": "attempt"
+},
+"s83f5b558f93a428e91bdd267b4085bc2": {
+"id": "s83f5b558f93a428e91bdd267b4085bc2",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793944249.1681304,
+"end": 1793945749.1331537,
+"pipeline": "pdfa0c8567da24b079926f51e6c1d2100",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s8400f373e3a74bfa8f852edb939f28a7": {
+"id": "s8400f373e3a74bfa8f852edb939f28a7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794027887.4711778,
+"end": 1794030023.9164078,
+"pipeline": "pc177e90b28444fa5881e2c97f7b982cf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": "sf57b7125c775474e92ba50b92c5dd2e8",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s840860fe1cb94b9983e6bbea1ec717a9": {
+"id": "s840860fe1cb94b9983e6bbea1ec717a9",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794359054.801741,
+"end": 1794364418.164259,
+"pipeline": "p3e7c68323bcd460ca75a1eca24521636",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": "s5e7703fe3e8441c2a8ba5827d3314a6f",
+"producer_role": "attempt"
+},
+"s843cc6c5242c4760804fd4810e0293bc": {
+"id": "s843cc6c5242c4760804fd4810e0293bc",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794311757.9430747,
+"end": 1794319317.9856472,
+"pipeline": "p9f81720b53824ad4b854eaac8d38331b",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s6d9909ddd7474e20b3bb01ff9f868986",
+"producer_role": "attempt"
+},
+"s8460a0c00c494a23aaae01843750057d": {
+"id": "s8460a0c00c494a23aaae01843750057d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793932273.8334503,
+"end": 1793932364.2777536,
+"pipeline": "p0b54549ea0b7424bb87ab02587e1f422",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s84ba5274540445b3bc6d33ee321240b6": {
+"id": "s84ba5274540445b3bc6d33ee321240b6",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794068108.9264715,
+"end": 1794081131.598592,
+"pipeline": "p3bef8071416749729aff8780a11c851a",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794070758.8332849
+},
+"s8537ef330bac4a699b0751159e3184ad": {
+"id": "s8537ef330bac4a699b0751159e3184ad",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794360547.101107,
+"end": 1794362894.714118,
+"pipeline": "p7a37a5d517b84bd39bfa870fc8c42beb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s86e4ff61a24e4faa8116c2a1aa3ade77",
+"producer_role": "attempt"
+},
+"s85da6d7798eb42ea83ad1a22528710f8": {
+"id": "s85da6d7798eb42ea83ad1a22528710f8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794259841.2612085,
+"end": 1794263575.9214976,
+"pipeline": "p6922221b634e494792b08373c7a84f23",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s947db7a858ad4099b68528012ca03f81",
+"producer_role": "attempt"
+},
+"s85e6c79a848a4c189adca567776b3143": {
+"id": "s85e6c79a848a4c189adca567776b3143",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794379736.7137465,
+"end": 1794388130.335887,
+"pipeline": "pa470838b8c7149d8bb9f3507035207fa",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sdf12cd0342e54a82a5c992e149c06b51",
+"producer_role": "attempt"
+},
+"s85f21fdeccd0414388bc3ed7551ecfaf": {
+"id": "s85f21fdeccd0414388bc3ed7551ecfaf",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793908360.131853,
+"end": 1793908953.3507714,
+"pipeline": "p45fea92fb81448db9eb7cfdaff3ba212",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s8c2638dc5cad4eb8bfec08f3e54acfac",
+"producer_role": "attempt"
+},
+"s85fcc691492d416cbc9d603917625f48": {
+"id": "s85fcc691492d416cbc9d603917625f48",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793955837.327612,
+"end": 1793955989.8321738,
+"pipeline": "peed49742dd8d464285668cdd4ea4d48c",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s861783c134504e26b33d4e6c7d688169": {
+"id": "s861783c134504e26b33d4e6c7d688169",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794257803.7176363,
+"end": 1794267056.7009733,
+"pipeline": "p0d73de55406c4240a474b64f6c8c4aa9",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794258840.7650797
+},
+"s865ceb3b118c4ae1a2c6bbf23661a9f2": {
+"id": "s865ceb3b118c4ae1a2c6bbf23661a9f2",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794248341.639194,
+"end": 1794249040.567925,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s865d1e238fa54f8f895139f2009323b5": {
+"id": "s865d1e238fa54f8f895139f2009323b5",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794411896.97321,
+"end": 1794421608.2462933,
+"pipeline": "p6fdce52a9ee847419adfbebb3090cc81",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794413848.5018342
+},
+"s866d767af66a40ba92b3e552e393a683": {
+"id": "s866d767af66a40ba92b3e552e393a683",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793894486.9994557,
+"end": 1793896709.4890623,
+"pipeline": "pfcbb78cd7523472fa29ccfc99569dec5",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s86926ff73c054a6c8987b450f53eae24": {
+"id": "s86926ff73c054a6c8987b450f53eae24",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794236046.5547614,
+"end": 1794237936.1530368,
+"pipeline": "p1aabe344c1d6426897edd86db22e2ddf",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": "s4a1c8095302a42fe874adb49df67c84b",
+"producer_role": "attempt"
+},
+"s86c2176292f1483baa123415353b7cef": {
+"id": "s86c2176292f1483baa123415353b7cef",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794304571.5228524,
+"end": 1794312383.1061373,
+"pipeline": "p028ebd38e8f5486fa6582a527b69513a",
+"nodes": [],
+"question": "q0",
+"producer": "s253558898f754d28a07c64d0dd47e91f",
+"producer_role": "explore"
+},
+"s86d94d91102e433a9d3229bf139ef3c8": {
+"id": "s86d94d91102e433a9d3229bf139ef3c8",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794327971.1612186,
+"end": 1794339371.6345525,
+"pipeline": "p065aa222338a4e4ea9d6f52fb51ec4f9",
+"nodes": [
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794331913.5422513
+},
+"s86e4ff61a24e4faa8116c2a1aa3ade77": {
+"id": "s86e4ff61a24e4faa8116c2a1aa3ade77",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794348041.5832963,
+"end": 1794356270.0649745,
+"pipeline": "p7a37a5d517b84bd39bfa870fc8c42beb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794349974.0503106
+},
+"s875438b082e24bde91c51b80691b96ef": {
+"id": "s875438b082e24bde91c51b80691b96ef",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793987126.692947,
+"end": 1793991078.1775908,
+"pipeline": "p1ce90589fcdc40a8aabbbd7d69026b66",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "see464b471133415a937a83897e2645d4",
+"producer_role": "attempt"
+},
+"s876867bff2834220868f94df709c53e7": {
+"id": "s876867bff2834220868f94df709c53e7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794350412.3681653,
+"end": 1794352510.0534425,
+"pipeline": "pb8b4d68f4cb64a909c4386c2b2769e6e",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s2c3c7a15fbaf4fdea66dc86975d353fc",
+"producer_role": "explore"
+},
+"s87933fbeb129469aad0ffb189eddc251": {
+"id": "s87933fbeb129469aad0ffb189eddc251",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794320059.5866444,
+"end": 1794323575.8428364,
+"pipeline": "p1ff593f7f300469fbd81a4922c8ccf38",
+"nodes": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail"
+],
+"question": null,
+"producer": "sc921c6b07dc347cc9d7546e395f70c0b",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s87a38ae6444b4437aa8c1208bc793d21": {
+"id": "s87a38ae6444b4437aa8c1208bc793d21",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794371399.3394313,
+"end": 1794379348.822393,
+"pipeline": "p0c4da274d099442798c55d800322f5b1",
+"nodes": [],
+"question": "q0",
+"producer": "s802049ae279847b3bd850dc45308b9bf",
+"producer_role": "explore"
+},
+"s87bea7c8eff34b489e16801924d75602": {
+"id": "s87bea7c8eff34b489e16801924d75602",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794053642.8747158,
+"end": 1794054594.5741189,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s87bf3a0780dc4eccae41e58f07bad1ce": {
+"id": "s87bf3a0780dc4eccae41e58f07bad1ce",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794039629.0561168,
+"end": 1794041374.525141,
+"pipeline": "pb715746473aa4f838e57658f1e166dae",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "sabac4e74d31d4c238989c2aed258f696",
+"producer_role": "attempt"
+},
+"s87f2924b60d34a6eab2fdd07a507c4e5": {
+"id": "s87f2924b60d34a6eab2fdd07a507c4e5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794100055.0630503,
+"end": 1794103272.1124399,
+"pipeline": "pa4ff85aeaf33470d85c154275b0a780a",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "seea78ad61f3b421098a1964320092d33",
+"producer_role": "attempt"
+},
+"s8841433e4d9e447cb835038c44e305f3": {
+"id": "s8841433e4d9e447cb835038c44e305f3",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793922087.0911853,
+"end": 1793922348.1266139,
+"pipeline": "p0a11075c342444918967ca5e85724889",
+"nodes": [],
+"question": null,
+"producer": "sf96170be2a384043a8ed7d613324ce75",
+"producer_role": "attempt"
+},
+"s884cdb52164941baa2594de5f179d794": {
+"id": "s884cdb52164941baa2594de5f179d794",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793868475.081975,
+"end": 1793869030.8915472,
+"pipeline": "pc6b7fa24ca81408382f63503425779da",
+"nodes": [],
+"question": null,
+"producer": "s2bab843f93fb42fd9e8df5469c9fd974",
+"producer_role": "attempt"
+},
+"s88687562b80d4a37befdb98d4e38ea69": {
+"id": "s88687562b80d4a37befdb98d4e38ea69",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793921819.9545584,
+"end": 1793922086.32837,
+"pipeline": "p0a11075c342444918967ca5e85724889",
+"nodes": [],
+"question": null,
+"producer": "sf96170be2a384043a8ed7d613324ce75",
+"producer_role": "attempt"
+},
+"s88bd1754a76e4a3f86edc59a1170ac7e": {
+"id": "s88bd1754a76e4a3f86edc59a1170ac7e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793928274.1530044,
+"end": 1793928561.6131685,
+"pipeline": "pb123f31ff0ed4970b8a2e806ad548b08",
+"nodes": [],
+"question": null,
+"producer": "sca70a5e61e5f42cea426221659d59335",
+"producer_role": "attempt"
+},
+"s890da393b8f543db9ec9a0d2124a577f": {
+"id": "s890da393b8f543db9ec9a0d2124a577f",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793875128.979565,
+"end": 1793875575.4752123,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s891d1452d0e942cea8d13828e31a3a3c": {
+"id": "s891d1452d0e942cea8d13828e31a3a3c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793861028.4006681,
+"end": 1793861707.2774372,
+"pipeline": "p58d8505f2e8c4a55afb79066b1821473",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc337e699c1c5456abaa3e4df5817399b",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s8940e8b150074c9683aa4b811c5607ed": {
+"id": "s8940e8b150074c9683aa4b811c5607ed",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794057572.747626,
+"end": 1794066058.7164063,
+"pipeline": "p5f335a155e5c4809ac09faf5f3c5af28",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s46da0fbb037a45bea02c26834433764c",
+"producer_role": "attempt"
+},
+"s896fb340763344c38d2029d5d4448dc6": {
+"id": "s896fb340763344c38d2029d5d4448dc6",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794210124.9332333,
+"end": 1794220493.3270082,
+"pipeline": "p57776db79ec94133b51c96ed23710228",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s6328ee4d1e4c42f3b67803ca0ad42021",
+"producer_role": "attempt"
+},
+"s89fed8c904f74b7b84081bfd517eb38f": {
+"id": "s89fed8c904f74b7b84081bfd517eb38f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794375181.564067,
+"end": 1794400476.4565268,
+"pipeline": "pc0a7a6821560493a9ab9e1e48dfbff90",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794379893.7320344
+},
+"s8a28b193573541d88491c045cbb00a20": {
+"id": "s8a28b193573541d88491c045cbb00a20",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794331612.5594096,
+"end": 1794339971.3834763,
+"pipeline": "p1fcdb1dd134e4124a589cd066d3903af",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794331786.4870586
+},
+"s8a3cad79ba624bf39946436e37954b8a": {
+"id": "s8a3cad79ba624bf39946436e37954b8a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794236002.515943,
+"end": 1794241381.3682976,
+"pipeline": "p56ead0ce60c149f39aed1c2415e77ed9",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": null,
+"declared_at": 1794237091.884365
+},
+"s8a4b46a5cb9148169fdf3752e3bbc1da": {
+"id": "s8a4b46a5cb9148169fdf3752e3bbc1da",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793929657.5570023,
+"end": 1793930724.6571445,
+"pipeline": "p6a5a02980ca34d4a832ff42658adbde0",
+"nodes": [],
+"question": "q0",
+"producer": "s64ad093e3df74ee9b8cb47f65962db62",
+"producer_role": "explore"
+},
+"s8a81ad5882494d6995357a126835a281": {
+"id": "s8a81ad5882494d6995357a126835a281",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278588.42618,
+"end": 1794280035.8405972,
+"pipeline": "p29ed190356db471e82c1383095559774",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s0b4a6795fcbd4bb0a4087c48f5aedfc9",
+"producer_role": "explore"
+},
+"s8aa7a14f1fe94e14965dd6636440cafb": {
+"id": "s8aa7a14f1fe94e14965dd6636440cafb",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794046462.480936,
+"end": 1794047388.4742682,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s8ab4fbbb04644a7da7674bc43e2dd2e2": {
+"id": "s8ab4fbbb04644a7da7674bc43e2dd2e2",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793911934.2571924,
+"end": 1793913217.097237,
+"pipeline": "pffd4c8d97cb745358fc3a5aef99d1323",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793912065.3820562
+},
+"s8aeaa70cbee34c998f8270b0d4faf02d": {
+"id": "s8aeaa70cbee34c998f8270b0d4faf02d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793894278.6319332,
+"end": 1793895980.1974318,
+"pipeline": "p87f344cdc632411da52632aa33802e73",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793894362.6442142
+},
+"s8b55d1149d7b453d92468f41dbd6e06b": {
+"id": "s8b55d1149d7b453d92468f41dbd6e06b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794246895.6083431,
+"end": 1794250990.4455924,
+"pipeline": "p8ecf2a1a08ae469dbcbb1048644f0b75",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s3916b90c8f944568bec258827e4c9c0e",
+"producer_role": "attempt"
+},
+"s8b670cffaeb34cd8ba32484edc6cb343": {
+"id": "s8b670cffaeb34cd8ba32484edc6cb343",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794080226.1496346,
+"end": 1794083467.581891,
+"pipeline": "p2ce13b73af7b47d3b635aed8288849fe",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower"
+],
+"question": null,
+"producer": "s97171f09447a4b03ab6b0ad5c80adc06",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s8b74ad85303647c0a3bcadd2ca9cf348": {
+"id": "s8b74ad85303647c0a3bcadd2ca9cf348",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793992935.2781694,
+"end": 1793994959.3496058,
+"pipeline": "p14ce8b932d76463c8d89821898d5a580",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s258b6f4217584950884e5ede700ec597",
+"producer_role": "attempt"
+},
+"s8b854b98b9f0430cb01cf39248b5ffa7": {
+"id": "s8b854b98b9f0430cb01cf39248b5ffa7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794422247.3004193,
+"end": null,
+"pipeline": "peff78847a41242aba87e835f20565e9f",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": "s105db58cda5e46349968705315e977f3",
+"producer_role": "attempt"
+},
+"s8b94c52e22414a8084925a70836dfd8c": {
+"id": "s8b94c52e22414a8084925a70836dfd8c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793913743.4932525,
+"end": 1793914033.6253245,
+"pipeline": "p8f10bfa92d57492c8e5e5010fdd865da",
+"nodes": [],
+"question": null,
+"producer": "sbd5c449c93ed4f5484653568ea34bf95",
+"producer_role": "attempt"
+},
+"s8baac2609c9046a8ac89dfa7ac4a6d26": {
+"id": "s8baac2609c9046a8ac89dfa7ac4a6d26",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794249385.210916,
+"end": 1794251713.0012698,
+"pipeline": "pae7f0655bcda4b66adb68357a3af8ef2",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "sfe8a7fa7f07f49fbb950aa811a1a1d8b",
+"producer_role": "attempt"
+},
+"s8bd25971962d4972a85a0a3ea9a679b3": {
+"id": "s8bd25971962d4972a85a0a3ea9a679b3",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793952826.402501,
+"end": 1793953533.1341166,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s8c2638dc5cad4eb8bfec08f3e54acfac": {
+"id": "s8c2638dc5cad4eb8bfec08f3e54acfac",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793905593.6934216,
+"end": 1793907214.0416358,
+"pipeline": "p45fea92fb81448db9eb7cfdaff3ba212",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793905673.956321
+},
+"s8c6ee331261d4700a0ecfd3d4a125c9f": {
+"id": "s8c6ee331261d4700a0ecfd3d4a125c9f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794219855.816708,
+"end": 1794224365.1319664,
+"pipeline": "p773c51b8ba5b4c0c811837ab23c49a16",
+"nodes": [],
+"question": "q0",
+"producer": "se76f29fcbd904a90b8a273e4cf33d571",
+"producer_role": "explore"
+},
+"s8cbb17d0699749558a5eb3d2b11d5558": {
+"id": "s8cbb17d0699749558a5eb3d2b11d5558",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793997945.664335,
+"end": 1793998766.7558885,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s8cf4940bb6c94854ab2e3f6c94757e87": {
+"id": "s8cf4940bb6c94854ab2e3f6c94757e87",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794071012.1045465,
+"end": 1794079493.8480408,
+"pipeline": "p87cef34f0ee44a479c7ae92d8f74e7c2",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794071921.5478485
+},
+"s8d051482a6b7481bb6ef4ec5c8cbef02": {
+"id": "s8d051482a6b7481bb6ef4ec5c8cbef02",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793862707.947412,
+"end": 1793863711.9761643,
+"pipeline": "pba6b2dc955a34e078da617a01093124e",
+"nodes": [],
+"question": "q0",
+"producer": "s183188958bb542419c29864963fe0558",
+"producer_role": "explore"
+},
+"s8d1531c584994f38b0798aceda3aba8a": {
+"id": "s8d1531c584994f38b0798aceda3aba8a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794389811.4674938,
+"end": 1794398531.7038538,
+"pipeline": "pc45a43a9eca84cdfa4607d022b1c545a",
+"nodes": [
+"s263f85f424c447b3861de59bef4ea551-stem-attachment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794393411.5725434
+},
+"s8d2d2537aab54e718ef34b98760b279c": {
+"id": "s8d2d2537aab54e718ef34b98760b279c",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793914702.8050017,
+"end": 1793919583.369939,
+"pipeline": "p1f2cff4cb4304f9bb0a8c3745f2ca3fb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793914884.0465279
+},
+"s8d7f07a934754cba96614a66183dc737": {
+"id": "s8d7f07a934754cba96614a66183dc737",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793960025.4712594,
+"end": 1793964833.1261854,
+"pipeline": "pa16c482d175a449e98c74fd1f827fd95",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793960178.4955053
+},
+"s8da461b370e246e5b531b36095d82b5f": {
+"id": "s8da461b370e246e5b531b36095d82b5f",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793911615.599963,
+"end": 1793912990.2423472,
+"pipeline": "p569167259b6341a0b503618a661947aa",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s8db3431f4a4943c495fa0b885855b46c": {
+"id": "s8db3431f4a4943c495fa0b885855b46c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794420235.179938,
+"end": null,
+"pipeline": "pc0a7a6821560493a9ab9e1e48dfbff90",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk",
+"sbc38cd5566204ef29cb705f612bd6e97-stem-plus-pair-bulk"
+],
+"question": null,
+"producer": "s89fed8c904f74b7b84081bfd517eb38f",
+"producer_role": "attempt"
+},
+"s8e3ac6a6c5184f19a6e2f2b03dd6962e": {
+"id": "s8e3ac6a6c5184f19a6e2f2b03dd6962e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793914991.9976847,
+"end": 1793919583.8439763,
+"pipeline": "p27c43b6959e54cd685637048a4fb3052",
+"nodes": [],
+"question": null,
+"producer": "s9cbdf3dcd91f4dd6ad5168dae8859162",
+"producer_role": "attempt"
+},
+"s8e53ab3fcb79405090635b98fb74e443": {
+"id": "s8e53ab3fcb79405090635b98fb74e443",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794039666.9270222,
+"end": 1794041251.3264656,
+"pipeline": "pfa4fa69b922349298f7e95c0e1d3062f",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "s5e0b4749689c4e3ab0824d59dabeb386",
+"producer_role": "attempt"
+},
+"s8edb63d7ea4548ee84fa23410daba6e4": {
+"id": "s8edb63d7ea4548ee84fa23410daba6e4",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793957182.5480435,
+"end": 1793958135.5047374,
+"pipeline": "p79f93d649990473b903dd6b389ca6b0e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s2cca052b9657457a96ac41abf5706bcb",
+"producer_role": "attempt"
+},
+"s8ee97faaabdd4c4b9d95dbf82f1cd48c": {
+"id": "s8ee97faaabdd4c4b9d95dbf82f1cd48c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794350961.938055,
+"end": 1794365145.6165183,
+"pipeline": "pe18301ae0d984658b5baeee16b1702cd",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794358498.3289824
+},
+"s8eeff86bb60a4961b9fa2b2cc42c5135": {
+"id": "s8eeff86bb60a4961b9fa2b2cc42c5135",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794379354.0910873,
+"end": 1794381043.9174862,
+"pipeline": "p0c4da274d099442798c55d800322f5b1",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": "q0",
+"producer": "s802049ae279847b3bd850dc45308b9bf",
+"target_from": "record",
+"producer_role": "explore"
+},
+"s903219508abc4db9b98bc1896edb2ae3": {
+"id": "s903219508abc4db9b98bc1896edb2ae3",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794271899.6588044,
+"end": 1794274264.359501,
+"pipeline": "ped5d85036f00400e92a8f1b02ddba352",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s51ae0efe03a143899c33c83ef73d9353",
+"producer_role": "attempt"
+},
+"s90bbdfa587234656b52195f0b901569a": {
+"id": "s90bbdfa587234656b52195f0b901569a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794232876.265544,
+"end": 1794237891.9138048,
+"pipeline": "p7e67cc22a5824cfbaa59e75eb8b9ec87",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "se325eecf013d406e9235edd5bef695c3",
+"producer_role": "attempt"
+},
+"s90cc7013b2184f42a7cc9300744c846e": {
+"id": "s90cc7013b2184f42a7cc9300744c846e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794321894.0722153,
+"end": 1794329992.9100175,
+"pipeline": "pc7922efb086b473d8997740136a64aba",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer",
+"sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794324463.9530356
+},
+"s90db50ae6e6d4f2da81f59f1077bad93": {
+"id": "s90db50ae6e6d4f2da81f59f1077bad93",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794265318.250193,
+"end": 1794266631.0564961,
+"pipeline": "p7a8580f297b44ade8a1eaf92d4cc09f1",
+"nodes": [],
+"question": "q0",
+"producer": "s4f95eedc4746450184719453d637f586",
+"producer_role": "explore"
+},
+"s90e8009d1ea6442d9223013218bee26c": {
+"id": "s90e8009d1ea6442d9223013218bee26c",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793978917.6345866,
+"end": 1793979188.794398,
+"pipeline": "p8dc865c1ae854caea72927ba5839c0d1",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9177576a352b4a148c162e7f0fd13476": {
+"id": "s9177576a352b4a148c162e7f0fd13476",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793912995.8409443,
+"end": 1793913145.7476625,
+"pipeline": "pa44f9ef0cb0f437dbfab4232dbbbb45c",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s91ae0846a767454cab92cb628a7f2a53": {
+"id": "s91ae0846a767454cab92cb628a7f2a53",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794054615.0223973,
+"end": 1794066010.2562184,
+"pipeline": "p9a317ae9a89d426b975a020245b1f3ec",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794057347.6387336
+},
+"s91e315f6de7948a28eed09e2b4dd51d3": {
+"id": "s91e315f6de7948a28eed09e2b4dd51d3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794192571.8535354,
+"end": 1794247465.4950264,
+"pipeline": "pd75c89c762f94b6db2498daef1f1fc6b",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794194478.2462413
+},
+"s91e9d1abf5964615bd4e71efd79efbfc": {
+"id": "s91e9d1abf5964615bd4e71efd79efbfc",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793888509.1595452,
+"end": 1793888544.58382,
+"pipeline": "pcbd0aa3777394501b4e6e20d85aa9115",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s92131e8e25054ee2b82c5e1b744423d5": {
+"id": "s92131e8e25054ee2b82c5e1b744423d5",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794073651.175508,
+"end": 1794074360.6432302,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9234e27a0b07432697f4841fa2e9c2be": {
+"id": "s9234e27a0b07432697f4841fa2e9c2be",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794209422.4242628,
+"end": 1794216913.9355414,
+"pipeline": "p8670f99616084198908da13db6d3cf6b",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sa6164dafb09e4e4e9538b2e9a97df337",
+"producer_role": "attempt"
+},
+"s9239aa402b944d3f8c702df4d755f00c": {
+"id": "s9239aa402b944d3f8c702df4d755f00c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793914689.4181206,
+"end": 1793914987.5309532,
+"pipeline": "pb140f4ed770d4308bed57e4be23a06d4",
+"nodes": [],
+"question": null,
+"producer": "s4cd5698bc7e64e62a4cb7f2823d9c35d",
+"producer_role": "attempt"
+},
+"s9252f8e7f33340e7942a8b600c732df3": {
+"id": "s9252f8e7f33340e7942a8b600c732df3",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794306207.3520515,
+"end": 1794311115.5638695,
+"pipeline": "p277e6fb447f14101a6dbc13f194da363",
+"nodes": [
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition"
+],
+"question": null,
+"producer": "s760e33785bda4b10b0936aea4473b71c",
+"producer_role": "attempt"
+},
+"s92b589f4e695474abcdc044c1bcc8026": {
+"id": "s92b589f4e695474abcdc044c1bcc8026",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1793976245.5141318,
+"end": 1793981308.0044525,
+"pipeline": "p8bc7361552ff4227b82402267353f5a2",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s9326e056b96c43a3bbf022395ef1fb8c": {
+"id": "s9326e056b96c43a3bbf022395ef1fb8c",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794315800.3659122,
+"end": 1794324771.4782789,
+"pipeline": "p745ccf69ea4144bc98c3e2fd577dbc7e",
+"nodes": [],
+"question": "sd7cd6139ee4a4ebfb61d476996bde609-conditional-chain-law",
+"producer": null,
+"declared_at": 1794316120.3333497
+},
+"s93e238f4574a460da5e7eba4f62ad1e5": {
+"id": "s93e238f4574a460da5e7eba4f62ad1e5",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794403908.0639873,
+"end": 1794404756.4849133,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s947db7a858ad4099b68528012ca03f81": {
+"id": "s947db7a858ad4099b68528012ca03f81",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794253636.1707623,
+"end": 1794259838.7462134,
+"pipeline": "p6922221b634e494792b08373c7a84f23",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794255242.6901107
+},
+"s94e0075bc12448c18548713c1f91e44a": {
+"id": "s94e0075bc12448c18548713c1f91e44a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794390898.5724635,
+"end": 1794402230.8016453,
+"pipeline": "p1a3948618c814252877739516d949d47",
+"nodes": [
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794393627.3963387
+},
+"s95a43b96e6af4222b9a29a8fd438aad3": {
+"id": "s95a43b96e6af4222b9a29a8fd438aad3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794016725.248685,
+"end": 1794020088.461664,
+"pipeline": "p5ea9db96e4c94b1fb0e250ed4395e9e5",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "see246da428bc4779846dde05ff4adfa9",
+"producer_role": "attempt"
+},
+"s95a73201e29f45308133a3c6422761ba": {
+"id": "s95a73201e29f45308133a3c6422761ba",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794096883.987584,
+"end": 1794111679.4279592,
+"pipeline": "pc11caa45657449b7a805ae2f7569708b",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s95e3cdfba07846f3affd74174102bd19": {
+"id": "s95e3cdfba07846f3affd74174102bd19",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794387339.0538795,
+"end": 1794390843.4680524,
+"pipeline": "pf95c1dba5081417ba1b8eda9d717215d",
+"nodes": [
+"s3ecdd70238dc414eb88520eb4c580813-qstar2-first-layer-tail"
+],
+"question": null,
+"producer": "s5d11d4209a694f63ab615e90a4ff3f47",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s95fbd9f774204b38bcdc8b5451326bb1": {
+"id": "s95fbd9f774204b38bcdc8b5451326bb1",
+"role": "formalizer",
+"model": "claude/claude-fable-5-1",
+"start": 1794158078.769592,
+"end": 1794178532.7392244,
+"pipeline": "p5ea2dd1b13194c99a9443eac9d6199e7",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794158078.004661
+},
+"s963c561fc780424ea2511acfbec9a63d": {
+"id": "s963c561fc780424ea2511acfbec9a63d",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794239620.1922424,
+"end": 1794247903.974449,
+"pipeline": "p7e400cef152e4f579063326bb2016be8",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": null,
+"declared_at": 1794239859.7975774
+},
+"s9640eb931fcf44e598c3229334757b59": {
+"id": "s9640eb931fcf44e598c3229334757b59",
+"role": "formalizer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793943662.422791,
+"end": 1793949599.816275,
+"pipeline": "p40430f5cec6d43f48d698f6e7e9651d7",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793943662.2357352
+},
+"s966353b6520b4cb692987d828518209b": {
+"id": "s966353b6520b4cb692987d828518209b",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1794026749.8316152,
+"end": 1794030659.9182508,
+"pipeline": "p4ad36d22a66f45ae94e84d9c2b7d85a5",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s9669da25067e43b8bffb3d1b071878b3": {
+"id": "s9669da25067e43b8bffb3d1b071878b3",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793936572.1422656,
+"end": 1793938624.8117018,
+"pipeline": "p48f0b26db95c4ddfbce66443313b3e02",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793936571.9636185
+},
+"s9682ed8f2c434047a42b45a0f33a3a1e": {
+"id": "s9682ed8f2c434047a42b45a0f33a3a1e",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793921509.2073557,
+"end": 1793921651.3213575,
+"pipeline": "p1e5b9343360b4be88350457562b00218",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s96d1c94435834de4abfc7b77de5c28bd": {
+"id": "s96d1c94435834de4abfc7b77de5c28bd",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794293842.6460223,
+"end": 1794295956.952745,
+"pipeline": "pec57921ade4f4c2397fec1cf24fbf560",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-from-3k",
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s4ff81702bdb84072a5a03a8c275560c3",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s96fd69259b3944c0a6d482ada6e74e07": {
+"id": "s96fd69259b3944c0a6d482ada6e74e07",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794320303.8892934,
+"end": 1794322034.7194147,
+"pipeline": "pd233177f1a2e468696dedde4d1e6bba6",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "sb3e073246f5c4dc6b47283bb019eceac",
+"producer_role": "explore"
+},
+"s97171f09447a4b03ab6b0ad5c80adc06": {
+"id": "s97171f09447a4b03ab6b0ad5c80adc06",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794052714.903916,
+"end": 1794074708.3380435,
+"pipeline": "p2ce13b73af7b47d3b635aed8288849fe",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794056173.6113226
+},
+"s97295f9dc53b4bf6a8439a7eacf5349f": {
+"id": "s97295f9dc53b4bf6a8439a7eacf5349f",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794009215.2263334,
+"end": 1794019398.4413297,
+"pipeline": "pa6065307a85344bea9ff61c0bf9d558e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc796110ff275476ebed6070d93d7dd53",
+"producer_role": "attempt"
+},
+"s97506026efc34406bc601f29a3757439": {
+"id": "s97506026efc34406bc601f29a3757439",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794229004.7087493,
+"end": 1794231816.684756,
+"pipeline": "pa56cc5a5db0441169e581ed61d062320",
+"nodes": [],
+"question": "op-tie-block-transport",
+"producer": "s7732547ac236460eada42ab10257cbcc",
+"producer_role": "explore"
+},
+"s976913991c154f8fabba04c6bf6308f3": {
+"id": "s976913991c154f8fabba04c6bf6308f3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794317989.3103118,
+"end": 1794331768.3552191,
+"pipeline": "p3b138f18e0194aeaa55efa088bc73b1a",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794323116.6637015
+},
+"s977a2dc9286c43bd8d517d7ada611da0": {
+"id": "s977a2dc9286c43bd8d517d7ada611da0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794344231.860968,
+"end": 1794352382.071232,
+"pipeline": "p03f08292410c43daa130b71c22d1c8e3",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sdec3b983b0734542babaa72f5dc71712",
+"producer_role": "attempt"
+},
+"s983bb5453bd143679b5629459e2d56c8": {
+"id": "s983bb5453bd143679b5629459e2d56c8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794138961.2790213,
+"end": 1794148424.2826614,
+"pipeline": "p9ef29066af294786a3b93a39b9544794",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": "s3cd888bd8c4b4329ac85338632c96a23",
+"producer_role": "attempt"
+},
+"s986857c908dd43ef81627c166fed82eb": {
+"id": "s986857c908dd43ef81627c166fed82eb",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794257801.8178306,
+"end": 1794262096.7671185,
+"pipeline": "p13040eb1d5e6482a994a8f0239434742",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s764727e56270450ca0570d86a20b62f7",
+"producer_role": "attempt"
+},
+"s986a06753eed43fbb655d14fb127b702": {
+"id": "s986a06753eed43fbb655d14fb127b702",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794279288.3147666,
+"end": 1794300271.78362,
+"pipeline": "p2524252abd23456bb106eaf6fffced82",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794281613.1916916
+},
+"s98ab61a338b24316aa79f4dc785537c4": {
+"id": "s98ab61a338b24316aa79f4dc785537c4",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794384117.8299098,
+"end": 1794392516.1329503,
+"pipeline": "p6da941b34aae45f980e887d2e72522fa",
+"nodes": [
+"sa3f2213741804894b82c2689f4b2a217-right-window-decrease"
+],
+"question": null,
+"producer": "sada4344284e14b02bf01249a64ef0f89",
+"producer_role": "attempt"
+},
+"s98b65f38bbd1488c8644d3d698f97785": {
+"id": "s98b65f38bbd1488c8644d3d698f97785",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793898392.8285553,
+"end": 1793899669.8565817,
+"pipeline": "pdc0f56e5dab84c0e9b4443229888a2d0",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"s98ca6fd4e33147129f15a53404392f29": {
+"id": "s98ca6fd4e33147129f15a53404392f29",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793977819.9979773,
+"end": 1793982567.6158295,
+"pipeline": "p807eabfabe294f0dbb50e8035f906342",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s16ff5110ad394b598fae7c4284067cb2",
+"producer_role": "attempt"
+},
+"s993af0fb7d254f59b6541f1a5025aa80": {
+"id": "s993af0fb7d254f59b6541f1a5025aa80",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794331706.7407675,
+"end": 1794334170.1238086,
+"pipeline": "pa32381587ed94a1fb6d621166ca13cd4",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s9b16b7bc3d424a95a774df8a7f241d80",
+"producer_role": "attempt"
+},
+"s993b44922da84efaaa8d416878a10db2": {
+"id": "s993b44922da84efaaa8d416878a10db2",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794013226.7416425,
+"end": 1794014130.5805068,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9975cd307daf451ea61fa1518dd495e1": {
+"id": "s9975cd307daf451ea61fa1518dd495e1",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793932668.099576,
+"end": 1793932778.9902837,
+"pipeline": "pbc392328e3344ce88e0dc2820afd8296",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s998c893f89374dcf89edab5cd7185327": {
+"id": "s998c893f89374dcf89edab5cd7185327",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794311124.9163575,
+"end": 1794314302.837807,
+"pipeline": "p277e6fb447f14101a6dbc13f194da363",
+"nodes": [
+"s78ad5461287a4643be4dc44e715eda51-head-sum-condition"
+],
+"question": null,
+"producer": "s760e33785bda4b10b0936aea4473b71c",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"s9993b13634644462b69c4773cbc2565c": {
+"id": "s9993b13634644462b69c4773cbc2565c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794337379.4108303,
+"end": 1794348179.3509789,
+"pipeline": "p39cec1203863436990b0d276f45b1a78",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794340148.2994235
+},
+"s9a27cbea65fe43f394d2d0d468607326": {
+"id": "s9a27cbea65fe43f394d2d0d468607326",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793863712.3284166,
+"end": 1793864411.5695467,
+"pipeline": "pba6b2dc955a34e078da617a01093124e",
+"nodes": [],
+"question": "q0",
+"producer": "s183188958bb542419c29864963fe0558",
+"producer_role": "explore"
+},
+"s9a853a752935417fa7d4ea03f5d24f4b": {
+"id": "s9a853a752935417fa7d4ea03f5d24f4b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794285619.122259,
+"end": 1794294637.1126518,
+"pipeline": "pcf824b2236964fdab19a1c84f7dd96d9",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s13e2680eff764c30951a81cc3e0c7b99",
+"producer_role": "attempt"
+},
+"s9b16b7bc3d424a95a774df8a7f241d80": {
+"id": "s9b16b7bc3d424a95a774df8a7f241d80",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794320421.9208784,
+"end": 1794326671.759802,
+"pipeline": "pa32381587ed94a1fb6d621166ca13cd4",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794321719.3644884
+},
+"s9b250136aca64a64b96a353b9a518840": {
+"id": "s9b250136aca64a64b96a353b9a518840",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794094766.8227077,
+"end": 1794095819.4412577,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9b831b9acfa9407c91466f72915d8b97": {
+"id": "s9b831b9acfa9407c91466f72915d8b97",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794047290.9277477,
+"end": 1794051174.216861,
+"pipeline": "p21d58a2854b54a23be50070fa2b97328",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s297efe21c21142f2a30d7b800dea6be8",
+"declared_at": 1794049780.9989042,
+"producer_role": "attempt"
+},
+"s9c2801d5f9cf4f82985c62dde9f101af": {
+"id": "s9c2801d5f9cf4f82985c62dde9f101af",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794179940.5652528,
+"end": 1794211064.2561052,
+"pipeline": "p19bdff2172cf415883cc6750778adada",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794180344.3291218
+},
+"s9c552205ae9443ff9b762c08e5db54e6": {
+"id": "s9c552205ae9443ff9b762c08e5db54e6",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793930033.50964,
+"end": 1793931270.0990336,
+"pipeline": "pb7664524f00f4f068bc3371423e9ed2b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s25e0a0aba55a4929b964563893939545",
+"producer_role": "attempt"
+},
+"s9caf46596a704797a037d3e8db9afda6": {
+"id": "s9caf46596a704797a037d3e8db9afda6",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794266962.6477153,
+"end": 1794271890.049408,
+"pipeline": "pa6f9ff95cc894345b92e648cce17393c",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s1c190661c833478abfe6e1ee284ef022",
+"producer_role": "attempt"
+},
+"s9cbdf3dcd91f4dd6ad5168dae8859162": {
+"id": "s9cbdf3dcd91f4dd6ad5168dae8859162",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793914883.096233,
+"end": 1793914991.5305917,
+"pipeline": "p27c43b6959e54cd685637048a4fb3052",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9cc594934b36478c87eb6632260762bf": {
+"id": "s9cc594934b36478c87eb6632260762bf",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793942280.9427495,
+"end": 1793942824.611665,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"s9ccffc614a1b4bef821cb48aa2591ed5": {
+"id": "s9ccffc614a1b4bef821cb48aa2591ed5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793974797.428677,
+"end": 1793978641.304334,
+"pipeline": "p33ae0aa4c1704729a1d2eb2637e84e56",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s0ad79dd4641e4b589e457f9e1bf14675",
+"producer_role": "attempt"
+},
+"s9cd36fa69194413fbc2cb2eff36aaed0": {
+"id": "s9cd36fa69194413fbc2cb2eff36aaed0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794378169.842467,
+"end": 1794385483.239785,
+"pipeline": "p0dd24073060f4717ba979c0405a42069",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sbd5a09e0ec1d439287f89550b2582c4e",
+"producer_role": "attempt"
+},
+"s9cd5b445f94544dd974445b8280704a4": {
+"id": "s9cd5b445f94544dd974445b8280704a4",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793908308.9270873,
+"end": 1793909927.4379032,
+"pipeline": "p677afa6006e5470ea22dd30aca1a87e9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793908378.827146
+},
+"s9de8ddfa930d47b5b5cb4d34166a5a63": {
+"id": "s9de8ddfa930d47b5b5cb4d34166a5a63",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793923058.1142793,
+"end": 1793923366.201585,
+"pipeline": "p991585b8a30c47028c264b1feae27c4f",
+"nodes": [],
+"question": null,
+"producer": "s515dd7f87ee94fff959421fc22328f45",
+"producer_role": "attempt"
+},
+"s9e155b623bbc4e4fb74fd105144b47f5": {
+"id": "s9e155b623bbc4e4fb74fd105144b47f5",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794301385.131675,
+"end": 1794307606.4575975,
+"pipeline": "pca5ace5bbd72478e83c8abf756932e1c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794302960.49857
+},
+"s9ec857d44ad84fb98287e70afcb8b1e5": {
+"id": "s9ec857d44ad84fb98287e70afcb8b1e5",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794218872.6350722,
+"end": 1794220968.1003146,
+"pipeline": "p19bdff2172cf415883cc6750778adada",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s9c2801d5f9cf4f82985c62dde9f101af",
+"producer_role": "attempt"
+},
+"s9eebd486719a47f0bd8df99188bab6e7": {
+"id": "s9eebd486719a47f0bd8df99188bab6e7",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794382327.9341521,
+"end": 1794394652.442439,
+"pipeline": "p93b8e3607bb04b3b99c68fba23588f17",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794383572.8515048
+},
+"s9ef9a787214547819019ce137730280a": {
+"id": "s9ef9a787214547819019ce137730280a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794253222.3610036,
+"end": 1794261700.5960116,
+"pipeline": "p6a92b1bfabd4478195ee14b56cf521b7",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794253379.054367
+},
+"s9f6e4958a4cb48bea640f66c539f643a": {
+"id": "s9f6e4958a4cb48bea640f66c539f643a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794354630.9441414,
+"end": 1794363824.5045319,
+"pipeline": "p07b51f033e5c49a6ae54a0896e37d0b0",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794356335.6650395
+},
+"s9fe56f34dd6549dcadaaa7fce5dfd383": {
+"id": "s9fe56f34dd6549dcadaaa7fce5dfd383",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793923049.5683126,
+"end": 1793923688.330105,
+"pipeline": "pc22538ffcb26473b83b69f83117b57f5",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "sf2fdfa5cd9fe4b40861a0f752df35d46",
+"producer_role": "formalizer"
+},
+"s9ff92a6196cb4952a9815212236420c0": {
+"id": "s9ff92a6196cb4952a9815212236420c0",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793897492.0112717,
+"end": 1793900204.902813,
+"pipeline": "p42dfe96624444ac1b4da661885cb5f67",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793897564.6254954
+},
+"sa016f78356d14a6c87c704c08ed3e61c": {
+"id": "sa016f78356d14a6c87c704c08ed3e61c",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794034140.381971,
+"end": 1794039665.3926501,
+"pipeline": "pfa4fa69b922349298f7e95c0e1d3062f",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "s5e0b4749689c4e3ab0824d59dabeb386",
+"producer_role": "attempt"
+},
+"sa026e036b0d0467dbc557449edf022e3": {
+"id": "sa026e036b0d0467dbc557449edf022e3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793995417.5272276,
+"end": 1793997921.998409,
+"pipeline": "pe6787608815b493eae95dd8c425dc2a1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "saa22771a44d44f508150f95a8f1dc0ab",
+"producer_role": "attempt"
+},
+"sa02aeafadcd943fa9c75de23124e6fd1": {
+"id": "sa02aeafadcd943fa9c75de23124e6fd1",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793954006.9601953,
+"end": 1793957181.7309399,
+"pipeline": "p79f93d649990473b903dd6b389ca6b0e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s2cca052b9657457a96ac41abf5706bcb",
+"producer_role": "attempt"
+},
+"sa03ea57b494c4ffc96195e8e00aead01": {
+"id": "sa03ea57b494c4ffc96195e8e00aead01",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794356277.6066885,
+"end": 1794360539.0641396,
+"pipeline": "p7a37a5d517b84bd39bfa870fc8c42beb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s86e4ff61a24e4faa8116c2a1aa3ade77",
+"producer_role": "attempt"
+},
+"sa0d3bcdf27bd41b99ebc37d51281f563": {
+"id": "sa0d3bcdf27bd41b99ebc37d51281f563",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794290103.2191322,
+"end": 1794297509.9330075,
+"pipeline": "p9a7747981ac6410e9bb6e5791d0d9857",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794291243.7392828
+},
+"sa0e233a920e94b72b197aa65e58dec89": {
+"id": "sa0e233a920e94b72b197aa65e58dec89",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794119461.6710863,
+"end": 1794120621.4848118,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sa105232df90b48a3a284a9c9c5b8bdda": {
+"id": "sa105232df90b48a3a284a9c9c5b8bdda",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793912935.900072,
+"end": 1793913298.5427186,
+"pipeline": "pb3413522439445a883fd411d7c5e0471",
+"nodes": [],
+"question": null,
+"producer": "sb2e93d71c60e4166a966631d564e5c77",
+"producer_role": "attempt"
+},
+"sa11cb9a71fec4e06ae3fff07b56ac92b": {
+"id": "sa11cb9a71fec4e06ae3fff07b56ac92b",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793928276.2858212,
+"end": 1793928763.2623703,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sa16630c9a4c54aebb9dac8a73573e76b": {
+"id": "sa16630c9a4c54aebb9dac8a73573e76b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794331652.6027248,
+"end": 1794338444.1014712,
+"pipeline": "p94a834e74e894e59b3c23d391eb1c6f1",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": "s6b6077f83fa844c79665566bb8547676",
+"producer_role": "attempt"
+},
+"sa1c395a17a4b41fea7da0417aabfd9a6": {
+"id": "sa1c395a17a4b41fea7da0417aabfd9a6",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793932093.439366,
+"end": 1793934029.1421857,
+"pipeline": "p6a5c28dee4f04c0da71661e0eb0f4080",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793932198.3987155
+},
+"sa21813a582df459bad90ffdf0554bb1d": {
+"id": "sa21813a582df459bad90ffdf0554bb1d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793965001.1296082,
+"end": 1793974796.0960221,
+"pipeline": "p33ae0aa4c1704729a1d2eb2637e84e56",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s0ad79dd4641e4b589e457f9e1bf14675",
+"producer_role": "attempt"
+},
+"sa2744167da3c48cc917c29056993a055": {
+"id": "sa2744167da3c48cc917c29056993a055",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793914360.0418115,
+"end": 1793914688.8292134,
+"pipeline": "pb140f4ed770d4308bed57e4be23a06d4",
+"nodes": [],
+"question": null,
+"producer": "s4cd5698bc7e64e62a4cb7f2823d9c35d",
+"producer_role": "attempt"
+},
+"sa285576b08e84713a85bbec88889e550": {
+"id": "sa285576b08e84713a85bbec88889e550",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794170089.5506766,
+"end": 1794177781.2101774,
+"pipeline": "p997abfee6ebe4765a2df3a03ce1690b7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s052518a5b9324705af8559d451ac833a",
+"producer_role": "attempt"
+},
+"sa2c9917ef5fd420f9783b537e0a4576a": {
+"id": "sa2c9917ef5fd420f9783b537e0a4576a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794323947.2160084,
+"end": 1794327954.7782702,
+"pipeline": "p791cdc812e7045d9a854a34eb3d81cda",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-stem-gain-vs-threshold"
+],
+"question": null,
+"producer": "s20049bc986b8450194d4a3954625b331",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sa353a7e6623246dfa71bc8459bf36c81": {
+"id": "sa353a7e6623246dfa71bc8459bf36c81",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793909750.2460978,
+"end": 1793910239.7944982,
+"pipeline": "pb83910459b7949ec9a179d242d2fe553",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s3ff96b4ac80b49c8aa014fc1206aa3fe",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sa3a66df86eb54b34b477bfe0a4ac52ca": {
+"id": "sa3a66df86eb54b34b477bfe0a4ac52ca",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793858960.1278346,
+"end": 1793860166.6887608,
+"pipeline": "p3d39fc85c86c4d80ba0210af0757839f",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sa3d0e43b6a0144c08b027dec78fa4909": {
+"id": "sa3d0e43b6a0144c08b027dec78fa4909",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793914400.00391,
+"end": 1793919582.8915727,
+"pipeline": "p5aedcbefe1654130b2e072b34454be3f",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sa3f2213741804894b82c2689f4b2a217": {
+"id": "sa3f2213741804894b82c2689f4b2a217",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794359871.3376343,
+"end": 1794368755.724451,
+"pipeline": "pdb6b5c603dcd4e2ab0c4d9a3ab138980",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment"
+],
+"question": null,
+"producer": "sf4c70807aaa34a4e83cc669f014ba589",
+"producer_role": "attempt"
+},
+"sa3f3e740e9d64261a8d170f47e13b329": {
+"id": "sa3f3e740e9d64261a8d170f47e13b329",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794031040.6308408,
+"end": 1794032472.002614,
+"pipeline": "p973a48533cd1453d825c450403df5446",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half",
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s3625dfda15a443f0941dd9f51b303014",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sa42f07e400c841d49fce216fc0d51120": {
+"id": "sa42f07e400c841d49fce216fc0d51120",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793899670.1381938,
+"end": 1793900960.7312515,
+"pipeline": "pdc0f56e5dab84c0e9b4443229888a2d0",
+"nodes": [],
+"question": "q0",
+"producer": "s98b65f38bbd1488c8644d3d698f97785",
+"producer_role": "explore"
+},
+"sa43e35b606614cf68ee7e8d4e305bb2e": {
+"id": "sa43e35b606614cf68ee7e8d4e305bb2e",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793936202.0806293,
+"end": 1793936319.2131717,
+"pipeline": "p1a431492a33e4cfebc516f73b61c4887",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sa4773ab95a8a4704b89cf114eeb68c59": {
+"id": "sa4773ab95a8a4704b89cf114eeb68c59",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794316651.6529367,
+"end": 1794320300.861287,
+"pipeline": "pd233177f1a2e468696dedde4d1e6bba6",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "sb3e073246f5c4dc6b47283bb019eceac",
+"producer_role": "explore"
+},
+"sa4a53833631841b28c059991ead440da": {
+"id": "sa4a53833631841b28c059991ead440da",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793942280.045062,
+"end": 1793943055.2465236,
+"pipeline": "p48f0b26db95c4ddfbce66443313b3e02",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s9669da25067e43b8bffb3d1b071878b3",
+"producer_role": "formalizer"
+},
+"sa4dca5e8e0f54b9083d919f473767f43": {
+"id": "sa4dca5e8e0f54b9083d919f473767f43",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794186415.669804,
+"end": 1794190999.9149978,
+"pipeline": "pae4d0f2c75c54364aa39930902a975ce",
+"nodes": [],
+"question": "q0",
+"producer": "s0b7e98470fbf46c48fb5a02e4553e0ff",
+"producer_role": "explore"
+},
+"sa4f3767257a24e01992fe75be8c9c16f": {
+"id": "sa4f3767257a24e01992fe75be8c9c16f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794333534.9984195,
+"end": 1794336263.3006475,
+"pipeline": "pc7922efb086b473d8997740136a64aba",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer",
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"sb3bdcc77aa3a4451809bf65574fe07d8-prob-first-layer-core"
+],
+"question": null,
+"producer": "s90cc7013b2184f42a7cc9300744c846e",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sa5135b944c1c4b798053a8348c893bde": {
+"id": "sa5135b944c1c4b798053a8348c893bde",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793923235.0756676,
+"end": 1793923594.1937685,
+"pipeline": "pb123f31ff0ed4970b8a2e806ad548b08",
+"nodes": [],
+"question": null,
+"producer": "sca70a5e61e5f42cea426221659d59335",
+"producer_role": "attempt"
+},
+"sa53157f97b294de6a987518d829a665a": {
+"id": "sa53157f97b294de6a987518d829a665a",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794407833.496119,
+"end": 1794414408.7097683,
+"pipeline": "p6060fd0efe854a13b8529512d8f8a835",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794408032.9323747
+},
+"sa543f914d09b40dbad4e402da54f580e": {
+"id": "sa543f914d09b40dbad4e402da54f580e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794178535.3555446,
+"end": 1794192372.9853225,
+"pipeline": "p5ea2dd1b13194c99a9443eac9d6199e7",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": "s95fbd9f774204b38bcdc8b5451326bb1",
+"producer_role": "formalizer"
+},
+"sa563935f77e744288d7a8333d9faaffd": {
+"id": "sa563935f77e744288d7a8333d9faaffd",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793921830.7788246,
+"end": 1793922518.825954,
+"pipeline": "p5ccf39bf308f41d6be3b046c7374275e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc066457cea954115b5b1d46102701a6d",
+"producer_role": "attempt"
+},
+"sa5bf962378e345f58617dfeebc460a8c": {
+"id": "sa5bf962378e345f58617dfeebc460a8c",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794194090.115222,
+"end": 1794199259.3421981,
+"pipeline": "pffbbb02287de4e5a8a0373d2aafb5f2f",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794194089.278787
+},
+"sa5da526d8c98421eb1ce821b04aa0eae": {
+"id": "sa5da526d8c98421eb1ce821b04aa0eae",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794354210.554646,
+"end": 1794358593.151911,
+"pipeline": "p757b084c868f446f8da151736c007b0e",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s07661db4fcff4e40a70be03e024b0bc3",
+"producer_role": "attempt"
+},
+"sa6164dafb09e4e4e9538b2e9a97df337": {
+"id": "sa6164dafb09e4e4e9538b2e9a97df337",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794192391.3377235,
+"end": 1794209420.3326385,
+"pipeline": "p8670f99616084198908da13db6d3cf6b",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794193278.0992136
+},
+"sa70ccd6ab8d64f72965de6d00ff869c9": {
+"id": "sa70ccd6ab8d64f72965de6d00ff869c9",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794374353.692725,
+"end": 1794379406.4598608,
+"pipeline": "p92a55491145f4ef587d0a208786df1b2",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"sbc38cd5566204ef29cb705f612bd6e97-pair-beats-capped-threshold"
+],
+"question": null,
+"producer": "s3ad034fea8154b85bf70008c111928bc",
+"producer_role": "attempt"
+},
+"sa728c2d8cb974245a139fd21af22c165": {
+"id": "sa728c2d8cb974245a139fd21af22c165",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793903180.727691,
+"end": 1793904340.7882977,
+"pipeline": "pa1d21af0278f4c93b07f78e51a8bdd69",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s5935164382f74f86b45c61bc7bae89ec",
+"producer_role": "attempt"
+},
+"sa74e158d15124b338e0e4d008ee9886d": {
+"id": "sa74e158d15124b338e0e4d008ee9886d",
+"role": "formalizer",
+"model": "claude/claude-fable-5-1",
+"start": 1794154622.8493562,
+"end": 1794164689.7044091,
+"pipeline": "peeccd5b9aaa641bebebe20cacb9b9232",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794154621.5028532
+},
+"sa7799f3650154be1a33a471804ac99cc": {
+"id": "sa7799f3650154be1a33a471804ac99cc",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794053568.8757858,
+"end": 1794064317.2519987,
+"pipeline": "pcf6155f214a24c3a83237510fdc3fda1",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794055134.8073661
+},
+"sa79ed783fdac444c9e22285fc82a5d96": {
+"id": "sa79ed783fdac444c9e22285fc82a5d96",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794352784.4315047,
+"end": 1794358322.614964,
+"pipeline": "p37edbed7bbba4887a1a06bb8e3e258b5",
+"nodes": [],
+"question": "q0",
+"producer": "s79fa32ab7f344978a81af8d7792674d2",
+"producer_role": "explore"
+},
+"sa7a122ca1089414b8ac7ba26ccc4c953": {
+"id": "sa7a122ca1089414b8ac7ba26ccc4c953",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794374821.7678833,
+"end": 1794377089.2850747,
+"pipeline": "p5c0ea1cfbf294aa7b437fa850b1ea08c",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "se2fe369e8a254a3894692acb0e11b58c",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sa7ac4f4e09aa4872aa8f5b0af6337318": {
+"id": "sa7ac4f4e09aa4872aa8f5b0af6337318",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794311912.9557705,
+"end": 1794318248.9191043,
+"pipeline": "p44b9e06042694e3fa724acb1ecc9f323",
+"nodes": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": "s047254d111dd45bb93a2e477091e6c21",
+"producer_role": "attempt"
+},
+"sa84966cfd6ec439fa1b070e4abc357f4": {
+"id": "sa84966cfd6ec439fa1b070e4abc357f4",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793945805.9765563,
+"end": 1793946407.568814,
+"pipeline": "paf29d348856449fba084ddc3162534eb",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s07b2df20a2f5413dacedc74e031e5b08",
+"producer_role": "attempt"
+},
+"sa84bddbcce7848da8be97df308a6fb80": {
+"id": "sa84bddbcce7848da8be97df308a6fb80",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793972691.626874,
+"end": 1793977004.9088445,
+"pipeline": "pc6cea18bb952400fa950fcbb3b84ba08",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793972979.350283
+},
+"sa961c931970c434fa34d2c7ed99f34e7": {
+"id": "sa961c931970c434fa34d2c7ed99f34e7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794360536.0946906,
+"end": 1794362574.263211,
+"pipeline": "p1cb1cfc0d2774994ae1f289ba06d12b1",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s5a6c5a5840eb4fd2aba998b2042d11be",
+"producer_role": "explore"
+},
+"sa989de29e253472fb755ac03cd2117b8": {
+"id": "sa989de29e253472fb755ac03cd2117b8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794079732.345678,
+"end": 1794098763.042685,
+"pipeline": "p383436c1b94343c5ba64d31c5839fb9c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": "s6d494a2864b34711b3deb363e5d29da6",
+"producer_role": "attempt"
+},
+"sa9de2ac86b9043519e25ee8ab05ede78": {
+"id": "sa9de2ac86b9043519e25ee8ab05ede78",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794410778.0160353,
+"end": 1794413495.5435505,
+"pipeline": "p36953a756b104155b446794bf83878fa",
+"nodes": [],
+"question": "q0",
+"producer": "s09ce95cf63804e628f363bc02819982a",
+"producer_role": "explore"
+},
+"sa9fb663c6e4f46279f2256d8911b4d4c": {
+"id": "sa9fb663c6e4f46279f2256d8911b4d4c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793931270.6467392,
+"end": 1793931910.5547464,
+"pipeline": "pb7664524f00f4f068bc3371423e9ed2b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s25e0a0aba55a4929b964563893939545",
+"producer_role": "attempt"
+},
+"saa22771a44d44f508150f95a8f1dc0ab": {
+"id": "saa22771a44d44f508150f95a8f1dc0ab",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793982586.8441494,
+"end": 1793986249.9552956,
+"pipeline": "pe6787608815b493eae95dd8c425dc2a1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793982824.479807
+},
+"saa2fc6547769469aa1b5a92f0ccef075": {
+"id": "saa2fc6547769469aa1b5a92f0ccef075",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794012921.8955219,
+"end": 1794018394.0975468,
+"pipeline": "pd5b943275527430a9102611f0758522d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s14d6e383539840768b836a68b8b8c04c",
+"producer_role": "attempt"
+},
+"sab070135fd7940039c8d3696ffe41e3f": {
+"id": "sab070135fd7940039c8d3696ffe41e3f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794396717.7293835,
+"end": 1794406927.5637062,
+"pipeline": "p4ade0073b7614c718b964cf7e931570a",
+"nodes": [
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794399762.3807166
+},
+"sab1628fcd8e440c59611be5e742f23b4": {
+"id": "sab1628fcd8e440c59611be5e742f23b4",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793969949.9656627,
+"end": 1793970232.1199434,
+"pipeline": "p14051ffc424b427c93d284a4258870d7",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sabac4e74d31d4c238989c2aed258f696": {
+"id": "sabac4e74d31d4c238989c2aed258f696",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794030669.55639,
+"end": 1794034381.9440017,
+"pipeline": "pb715746473aa4f838e57658f1e166dae",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794030795.5550044
+},
+"sabc02fd5118a40309c5404dbd41d3a60": {
+"id": "sabc02fd5118a40309c5404dbd41d3a60",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794081133.8631516,
+"end": 1794089099.5272033,
+"pipeline": "p3bef8071416749729aff8780a11c851a",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s84ba5274540445b3bc6d33ee321240b6",
+"producer_role": "attempt"
+},
+"sac53e4ecdbd54544bf02ded928d6919b": {
+"id": "sac53e4ecdbd54544bf02ded928d6919b",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793873103.5624008,
+"end": 1793874461.3297448,
+"pipeline": "p08026e7042864098a62753c5c0211a54",
+"nodes": [],
+"question": null,
+"producer": "s1026dfa0089240b7b2c7c82d82091568",
+"producer_role": "attempt"
+},
+"sace98f1797b94be9a540823d3b74e4ff": {
+"id": "sace98f1797b94be9a540823d3b74e4ff",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793919588.406664,
+"end": 1793920615.5151737,
+"pipeline": "p5aedcbefe1654130b2e072b34454be3f",
+"nodes": [],
+"question": "q0",
+"producer": "sa3d0e43b6a0144c08b027dec78fa4909",
+"producer_role": "explore"
+},
+"sad2e4c179ed642ff9a578836310061ba": {
+"id": "sad2e4c179ed642ff9a578836310061ba",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794224370.6264944,
+"end": 1794226426.3167024,
+"pipeline": "p773c51b8ba5b4c0c811837ab23c49a16",
+"nodes": [],
+"question": "q0",
+"producer": "se76f29fcbd904a90b8a273e4cf33d571",
+"producer_role": "explore"
+},
+"sad540161ba94457b813e071fd5b8839f": {
+"id": "sad540161ba94457b813e071fd5b8839f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794265107.372483,
+"end": 1794274255.4836671,
+"pipeline": "pd8d325552e364f99abb7fb79c8dc75db",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794267912.3274024
+},
+"sad90cfb66b8a4e0d830f72e9427e429c": {
+"id": "sad90cfb66b8a4e0d830f72e9427e429c",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794279988.534091,
+"end": 1794287535.586778,
+"pipeline": "p591cd6d709a34b7e938596b428c64766",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": null,
+"declared_at": 1794280365.5199895
+},
+"sad9ab7c92aa2480d957d4001bdb3cbba": {
+"id": "sad9ab7c92aa2480d957d4001bdb3cbba",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793897766.215084,
+"end": 1793899323.253313,
+"pipeline": "p0c7d6d55ed83493a8b952e9760f75d44",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793897826.1627529
+},
+"sada4344284e14b02bf01249a64ef0f89": {
+"id": "sada4344284e14b02bf01249a64ef0f89",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794371253.2915435,
+"end": 1794378195.0600452,
+"pipeline": "p6da941b34aae45f980e887d2e72522fa",
+"nodes": [
+"sa3f2213741804894b82c2689f4b2a217-right-window-decrease"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794373874.0015306
+},
+"sadcc00fa723b446ab2d06d50142c488a": {
+"id": "sadcc00fa723b446ab2d06d50142c488a",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793946277.8605883,
+"end": 1793947006.9984462,
+"pipeline": "p23aed0e6674047b4a91a87c0cc0d62ca",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s69351cdd75fe4684b9a28378cbf81155",
+"producer_role": "attempt"
+},
+"sadf69be0552446ff8ccd33654dfeb74e": {
+"id": "sadf69be0552446ff8ccd33654dfeb74e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793989451.7339866,
+"end": 1793993104.2997742,
+"pipeline": "pc6cea18bb952400fa950fcbb3b84ba08",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa84bddbcce7848da8be97df308a6fb80",
+"producer_role": "attempt"
+},
+"sae1f33b8f82f4c638a916f99f851443e": {
+"id": "sae1f33b8f82f4c638a916f99f851443e",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793979097.9162195,
+"end": 1793979372.3781655,
+"pipeline": "pfb88617e3c634e0e9d0aa000e9b39fad",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sae9ea7b8546a46448f7dba6405b6bc22": {
+"id": "sae9ea7b8546a46448f7dba6405b6bc22",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794394054.1367722,
+"end": 1794411445.3891487,
+"pipeline": "p7674b7d761704585948d0a10377f7d24",
+"nodes": [
+"s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794403498.049969
+},
+"saeafaeadda0845db8c7fbd42aab59e07": {
+"id": "saeafaeadda0845db8c7fbd42aab59e07",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794032491.4253204,
+"end": 1794033298.5801725,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"saf005007e47f456f972daddeea6b66b1": {
+"id": "saf005007e47f456f972daddeea6b66b1",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794103192.8953295,
+"end": 1794137272.787599,
+"pipeline": "p91ff295536a8483a9c9781680a76fa31",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794105550.965767
+},
+"sb00ac54629694836851fa8f69149f198": {
+"id": "sb00ac54629694836851fa8f69149f198",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794269333.9671125,
+"end": 1794274262.1391685,
+"pipeline": "pedaa9efacf0b47298c740896113adedf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794270113.1539738
+},
+"sb0ed6cccdee947e98c545d6b2c7b0f17": {
+"id": "sb0ed6cccdee947e98c545d6b2c7b0f17",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794184984.6315672,
+"end": 1794192471.019137,
+"pipeline": "pf94673e14fb14d0ebecc2393b00b4c0a",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "se0327c0c588d4ab2a4df1b8b624dc4d9",
+"producer_role": "attempt"
+},
+"sb0f849b99b984e6d8e4357dee543a15a": {
+"id": "sb0f849b99b984e6d8e4357dee543a15a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794011029.1757755,
+"end": 1794018343.3175921,
+"pipeline": "p926b63804cdd481b8ec15c13afa21e30",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "sd9c6d528ebb848398ad5a309091a0c5e",
+"producer_role": "attempt"
+},
+"sb0fbf93f8ea9488195fca51f9e41b9ef": {
+"id": "sb0fbf93f8ea9488195fca51f9e41b9ef",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794302292.1052637,
+"end": 1794318523.3809729,
+"pipeline": "p263b310048e548a09a66a79fb09e7416",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sd407fa824dbe413da7b1a58e7839da91",
+"producer_role": "attempt"
+},
+"sb105d242b6bb46fbaf7119227517217a": {
+"id": "sb105d242b6bb46fbaf7119227517217a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794287315.8384986,
+"end": 1794291464.0136576,
+"pipeline": "pec1c7231a92d4cebaf368089bdf26d74",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "sccca41682fa3479f933c6180fe09c5f3",
+"producer_role": "attempt"
+},
+"sb125274956e744e19e978b1c21070b18": {
+"id": "sb125274956e744e19e978b1c21070b18",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794343226.5332694,
+"end": 1794344079.5141687,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb1338ce36e604b1e89ee0126f7bc37e6": {
+"id": "sb1338ce36e604b1e89ee0126f7bc37e6",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794308901.0186963,
+"end": 1794311590.0475786,
+"pipeline": "p9a7747981ac6410e9bb6e5791d0d9857",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa0d3bcdf27bd41b99ebc37d51281f563",
+"producer_role": "attempt"
+},
+"sb134c28fa42f4c56999665ee9179b4f7": {
+"id": "sb134c28fa42f4c56999665ee9179b4f7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794421041.7675989,
+"end": 1794422938.4405622,
+"pipeline": "p6060fd0efe854a13b8529512d8f8a835",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sa53157f97b294de6a987518d829a665a",
+"producer_role": "explore"
+},
+"sb15e42f73f834d6cb377d9fd54ad62e2": {
+"id": "sb15e42f73f834d6cb377d9fd54ad62e2",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793974972.5258968,
+"end": 1793980105.9251287,
+"pipeline": "pf44630a8051b4eab852f3a2f501a760f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793975129.4559917
+},
+"sb1973bad8d6e4d72abaaec12232b910a": {
+"id": "sb1973bad8d6e4d72abaaec12232b910a",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794210523.6819627,
+"end": 1794211637.1672924,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb1afca696d7f4aa6a9b80f9b8236bb7a": {
+"id": "sb1afca696d7f4aa6a9b80f9b8236bb7a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794231583.0356486,
+"end": 1794236042.4583285,
+"pipeline": "p1aabe344c1d6426897edd86db22e2ddf",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": "s4a1c8095302a42fe874adb49df67c84b",
+"producer_role": "attempt"
+},
+"sb255d860b40b4ebd99f1bb1d281e223a": {
+"id": "sb255d860b40b4ebd99f1bb1d281e223a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794313503.66622,
+"end": 1794344283.2685895,
+"pipeline": "pac9f4437a2e84826abb1ffd892c13b08",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794323820.9753027
+},
+"sb28540e71cbb4266b47cc6c7c5fa9829": {
+"id": "sb28540e71cbb4266b47cc6c7c5fa9829",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794066012.8238487,
+"end": 1794071207.2757952,
+"pipeline": "p9a317ae9a89d426b975a020245b1f3ec",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s91ae0846a767454cab92cb628a7f2a53",
+"producer_role": "attempt"
+},
+"sb2b38b4b636147e7949815be3257f8c7": {
+"id": "sb2b38b4b636147e7949815be3257f8c7",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793911492.900137,
+"end": 1793912461.6712604,
+"pipeline": "p2d6b3359908b449ab635ea697b6e6891",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "see74449d7b1e4d61abb910ed72d2500b",
+"producer_role": "formalizer"
+},
+"sb2e93d71c60e4166a966631d564e5c77": {
+"id": "sb2e93d71c60e4166a966631d564e5c77",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793912294.776864,
+"end": 1793912462.3734493,
+"pipeline": "pb3413522439445a883fd411d7c5e0471",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb3917b1fc15745f5a24bd8af4e203f1e": {
+"id": "sb3917b1fc15745f5a24bd8af4e203f1e",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793921119.2851732,
+"end": 1793922126.486744,
+"pipeline": "p610d117319a64d0596425e4c447563e2",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sb3969b396e974fe6afeb38f5f9d07614": {
+"id": "sb3969b396e974fe6afeb38f5f9d07614",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793895980.4478853,
+"end": 1793897126.732798,
+"pipeline": "p87f344cdc632411da52632aa33802e73",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8aeaa70cbee34c998f8270b0d4faf02d",
+"producer_role": "attempt"
+},
+"sb3bdcc77aa3a4451809bf65574fe07d8": {
+"id": "sb3bdcc77aa3a4451809bf65574fe07d8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794309885.0783129,
+"end": 1794320056.9966054,
+"pipeline": "p1ff593f7f300469fbd81a4922c8ccf38",
+"nodes": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail"
+],
+"question": null,
+"producer": "sc921c6b07dc347cc9d7546e395f70c0b",
+"producer_role": "attempt"
+},
+"sb3d0355f949e4d79906c59ffefa87ced": {
+"id": "sb3d0355f949e4d79906c59ffefa87ced",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794357129.1732664,
+"end": 1794374750.4786804,
+"pipeline": "pfb9b0ea028c4444a9798d68599452810",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-borel-convexity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794358630.0471063
+},
+"sb3e073246f5c4dc6b47283bb019eceac": {
+"id": "sb3e073246f5c4dc6b47283bb019eceac",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794308016.237719,
+"end": 1794316649.3758664,
+"pipeline": "pd233177f1a2e468696dedde4d1e6bba6",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794308348.590476
+},
+"sb3e410d783234faa8b0196fc80df5068": {
+"id": "sb3e410d783234faa8b0196fc80df5068",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794050656.2906861,
+"end": 1794053633.4197726,
+"pipeline": "pa16d4be0901d44459ab5d4d0853eeb6d",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "s80f9f868b4164fd7b14bc6913a8a3dfa",
+"producer_role": "attempt"
+},
+"sb3e6dce828634f56a6b17743515f91c4": {
+"id": "sb3e6dce828634f56a6b17743515f91c4",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793956386.2854226,
+"end": 1793956527.5897377,
+"pipeline": "pbfe53a021a074119a6931505ad81d988",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb3f5bc9e3d114acc9731a9e87a767379": {
+"id": "sb3f5bc9e3d114acc9731a9e87a767379",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793943510.0835645,
+"end": 1793946807.3067374,
+"pipeline": "p5948f196422a4a2494349514ac84555d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793943624.9132202
+},
+"sb425f996f4984dce96f9f496e9777eb4": {
+"id": "sb425f996f4984dce96f9f496e9777eb4",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793942280.404653,
+"end": 1793943585.1891832,
+"pipeline": "p0bfb5d54aa904fd188fdcd3529efb880",
+"nodes": [],
+"question": "q0",
+"producer": "s7c2438743ed649b18263bc4af70bef74",
+"producer_role": "explore"
+},
+"sb44577a3a7c24670a91801c5285b4e27": {
+"id": "sb44577a3a7c24670a91801c5285b4e27",
+"role": "peer",
+"model": "opus",
+"start": 1793888729.2103734,
+"end": 1793891417.219675,
+"pipeline": "pf5dd88bcec2b4fe3b08595c07d5d8cfa",
+"nodes": [],
+"question": null,
+"producer": "s3aa79e42b3a34ed497f2d5061c2d07fa",
+"producer_role": "attempt"
+},
+"sb47d3273fdba4153bd5c41b6738b2f49": {
+"id": "sb47d3273fdba4153bd5c41b6738b2f49",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794031058.1654725,
+"end": 1794032969.7889273,
+"pipeline": "pd1d038e2b2ff47178dee579dc46c9205",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase",
+"s570b0e977ad645fb831b27f850048913-q-right-half",
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior",
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s3660d7620ead4fdb96ef2e408cae0e1b",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sb50b95e16b7340eaa80d399045f94cd1": {
+"id": "sb50b95e16b7340eaa80d399045f94cd1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794237856.2675698,
+"end": 1794239606.606162,
+"pipeline": "pffc854d17e8643a3baad7560e7731aaf",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s0c059ae0fae8415a8bd655456e340ff4",
+"producer_role": "explore"
+},
+"sb52ac8c2dd7d468bbe0a8b7818e30ee0": {
+"id": "sb52ac8c2dd7d468bbe0a8b7818e30ee0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794411452.9691126,
+"end": 1794419939.343055,
+"pipeline": "p7674b7d761704585948d0a10377f7d24",
+"nodes": [
+"s233c7f2a2f0445f0a2e7551f6948d0b9-decay-33-20"
+],
+"question": null,
+"producer": "sae9ea7b8546a46448f7dba6405b6bc22",
+"producer_role": "attempt"
+},
+"sb578001792534b54a540aee805bb62bb": {
+"id": "sb578001792534b54a540aee805bb62bb",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793959201.6587994,
+"end": 1793960021.2960339,
+"pipeline": "p69064a4769ad4267a4d28eace3ec2e5f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s79075ea0d14945a9830a0a48be05e768",
+"producer_role": "attempt"
+},
+"sb58cd4e1b7e644ac9f24f7b8efdb49fe": {
+"id": "sb58cd4e1b7e644ac9f24f7b8efdb49fe",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793914160.5562196,
+"end": 1793914483.9674115,
+"pipeline": "p9951707251c54a94ab3cf1866f806081",
+"nodes": [],
+"question": null,
+"producer": "sea615687e76d4cf392cb3ec8b6caaf32",
+"producer_role": "attempt"
+},
+"sb595e035869d43648395d76b929d87d8": {
+"id": "sb595e035869d43648395d76b929d87d8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794241383.2993643,
+"end": 1794245230.6451046,
+"pipeline": "p56ead0ce60c149f39aed1c2415e77ed9",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": "s8a3cad79ba624bf39946436e37954b8a",
+"producer_role": "explore"
+},
+"sb5d9eabfb1244defb91c0650f45a60ca": {
+"id": "sb5d9eabfb1244defb91c0650f45a60ca",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794026138.7922525,
+"end": 1794026743.434364,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb6f6257ae4514accb9688037019e0205": {
+"id": "sb6f6257ae4514accb9688037019e0205",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793955351.2453995,
+"end": 1793958550.490097,
+"pipeline": "pc2e2c97895554c0cb285de391e4dfbb2",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc644223e447240c090a407b77ed2eb09",
+"producer_role": "attempt"
+},
+"sb6fcb9baed5a45ef925c49005eb4467b": {
+"id": "sb6fcb9baed5a45ef925c49005eb4467b",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793865689.373535,
+"end": 1793867612.6001868,
+"pipeline": "pdab023d92c3f4fd395b14b051f26638c",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793865766.1170053
+},
+"sb7863829367841b3baea5a6428315195": {
+"id": "sb7863829367841b3baea5a6428315195",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794264129.838645,
+"end": 1794264867.5756242,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sb7ab96da419a4ece917a2953c03dd8fe": {
+"id": "sb7ab96da419a4ece917a2953c03dd8fe",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793906502.0755544,
+"end": 1793907687.2991533,
+"pipeline": "pf5770583eaf647089610bc6a716149ff",
+"nodes": [],
+"question": "q0",
+"producer": "s48ff546f7d644b9d8d36d54cdfebdf59",
+"producer_role": "explore"
+},
+"sb7df2e371fc64b13a74a6dfa0733d8e8": {
+"id": "sb7df2e371fc64b13a74a6dfa0733d8e8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794410422.6503377,
+"end": 1794418132.9609416,
+"pipeline": "p0489f09b39f249b4aca625623d685571",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": "s22c925f80b4845ca945c4675dfd0bef3",
+"producer_role": "attempt"
+},
+"sb80c555b325f44558e3e2a81561411fd": {
+"id": "sb80c555b325f44558e3e2a81561411fd",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794041635.845868,
+"end": 1794044153.5927963,
+"pipeline": "p1faca19204174b399858d27891089ea0",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": "sec7a46a64c83466081593e5b75b86b6e",
+"producer_role": "attempt"
+},
+"sb8edcabc9caf48258f3939ccfc12026f": {
+"id": "sb8edcabc9caf48258f3939ccfc12026f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794319327.3516672,
+"end": 1794321140.6558957,
+"pipeline": "p9f81720b53824ad4b854eaac8d38331b",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s6d9909ddd7474e20b3bb01ff9f868986",
+"producer_role": "attempt"
+},
+"sb92033db4cb04646aa1905529e36a768": {
+"id": "sb92033db4cb04646aa1905529e36a768",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794250993.841921,
+"end": 1794252682.65377,
+"pipeline": "p8ecf2a1a08ae469dbcbb1048644f0b75",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s3916b90c8f944568bec258827e4c9c0e",
+"producer_role": "attempt"
+},
+"sb9ac97ab2a444e9387531dc9bdeec7fe": {
+"id": "sb9ac97ab2a444e9387531dc9bdeec7fe",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794266643.6682625,
+"end": 1794274256.7552464,
+"pipeline": "pa5e8b8b87ce94def8716fdc3319083e5",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794266642.398852
+},
+"sb9bde92344cb42ac92c526e1f4088e0c": {
+"id": "sb9bde92344cb42ac92c526e1f4088e0c",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793932130.7558634,
+"end": 1793934218.2284324,
+"pipeline": "p0b252dde436146638c66337f1c950b72",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793932130.593062
+},
+"sb9d0818efb7e4d0a8ed26a8fc9553414": {
+"id": "sb9d0818efb7e4d0a8ed26a8fc9553414",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794026925.8895926,
+"end": 1794031038.9624722,
+"pipeline": "p973a48533cd1453d825c450403df5446",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s3625dfda15a443f0941dd9f51b303014",
+"producer_role": "attempt"
+},
+"sb9daea70b2bb4902acb618cadd171479": {
+"id": "sb9daea70b2bb4902acb618cadd171479",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793907687.9249613,
+"end": 1793908242.0676434,
+"pipeline": "pf5770583eaf647089610bc6a716149ff",
+"nodes": [],
+"question": "q0",
+"producer": "s48ff546f7d644b9d8d36d54cdfebdf59",
+"producer_role": "explore"
+},
+"sba2feb7c08cb4735bec49f5d3b86a2c7": {
+"id": "sba2feb7c08cb4735bec49f5d3b86a2c7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794329748.146114,
+"end": 1794333188.2900283,
+"pipeline": "p2b45813555f04d01ac50d6f97ce72c1a",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s321fde48bceb4128acd1f26fc079d12c",
+"producer_role": "explore"
+},
+"sbadcfc9f0f1041988cd78692a00a674f": {
+"id": "sbadcfc9f0f1041988cd78692a00a674f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793930589.721796,
+"end": 1793931496.902214,
+"pipeline": "p08ff424e667d489b99582f4c4384238c",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s4cab7617cd254433a31981c5f9c190df",
+"producer_role": "attempt"
+},
+"sbb65bec9a13f4cdda7e6e0904c3060cc": {
+"id": "sbb65bec9a13f4cdda7e6e0904c3060cc",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793913412.3021843,
+"end": 1793913742.8807862,
+"pipeline": "p8f10bfa92d57492c8e5e5010fdd865da",
+"nodes": [],
+"question": null,
+"producer": "sbd5c449c93ed4f5484653568ea34bf95",
+"producer_role": "attempt"
+},
+"sbb83db0e3f8a478bace8b410d520016c": {
+"id": "sbb83db0e3f8a478bace8b410d520016c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794177783.923869,
+"end": 1794179241.1984277,
+"pipeline": "p997abfee6ebe4765a2df3a03ce1690b7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s052518a5b9324705af8559d451ac833a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sbc38cd5566204ef29cb705f612bd6e97": {
+"id": "sbc38cd5566204ef29cb705f612bd6e97",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794365153.2971425,
+"end": 1794369817.4638805,
+"pipeline": "pe18301ae0d984658b5baeee16b1702cd",
+"nodes": [
+"s72a79340e4cd411691b0fe6d923db6ea-bvtheta-bulk"
+],
+"question": null,
+"producer": "s8ee97faaabdd4c4b9d95dbf82f1cd48c",
+"producer_role": "attempt"
+},
+"sbc78ebbbd815476194858a30df8bc356": {
+"id": "sbc78ebbbd815476194858a30df8bc356",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794334405.2506857,
+"end": 1794342025.4617462,
+"pipeline": "p0aca6473d7344c15a26d4a3b226200c0",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": "s5a0c52ce83bc4bd5a8ae99f8ed604101",
+"producer_role": "attempt"
+},
+"sbcc53ca04990443a9d56db155136dbbb": {
+"id": "sbcc53ca04990443a9d56db155136dbbb",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794328439.8758984,
+"end": 1794337728.058337,
+"pipeline": "pbcc9e4727df34ce8a4a0b34ea8953168",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794331438.4283178
+},
+"sbcc866b723fb4568be5c1432b0cb6529": {
+"id": "sbcc866b723fb4568be5c1432b0cb6529",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793930506.6065876,
+"end": 1793930602.0888727,
+"pipeline": "p8cb1e3f377834b19bf992e38f3400f77",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sbd0661da2c53453f8873a9d86cb93a48": {
+"id": "sbd0661da2c53453f8873a9d86cb93a48",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794384643.9808254,
+"end": 1794388329.1341474,
+"pipeline": "p2b1a87ec2d7c46efb4455585103b6333",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sd182f253b9bc48c9a8ba48f68e519b17",
+"producer_role": "explore"
+},
+"sbd0fab4845d548c798d5155a439a807a": {
+"id": "sbd0fab4845d548c798d5155a439a807a",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793873490.6632943,
+"end": 1793875121.3170645,
+"pipeline": "p5c43fb31f62548d5a475f37297411e49",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sbd5a09e0ec1d439287f89550b2582c4e": {
+"id": "sbd5a09e0ec1d439287f89550b2582c4e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794372197.4441035,
+"end": 1794378166.6898892,
+"pipeline": "p0dd24073060f4717ba979c0405a42069",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794373447.516144
+},
+"sbd5c449c93ed4f5484653568ea34bf95": {
+"id": "sbd5c449c93ed4f5484653568ea34bf95",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793913300.3225985,
+"end": 1793913411.8563185,
+"pipeline": "p8f10bfa92d57492c8e5e5010fdd865da",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sbd662e53a5ed4f55a4c3c233a3bdd564": {
+"id": "sbd662e53a5ed4f55a4c3c233a3bdd564",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793922376.0133088,
+"end": 1793922504.8924305,
+"pipeline": "pda346732ccd04c6f9213c4440c3466e7",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sbd7ae0031ece41bdbedaac5d0416a63c": {
+"id": "sbd7ae0031ece41bdbedaac5d0416a63c",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1793992374.941573,
+"end": 1793995657.378634,
+"pipeline": "pc5f8f39579d7424dadf12d77e94ae63d",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sbe178651378d49529996d4497bff88e0": {
+"id": "sbe178651378d49529996d4497bff88e0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794356318.107302,
+"end": 1794361078.5494485,
+"pipeline": "p233cb50bbfba40e79f7fcf8951310785",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": "s0ed03dcb7da548d9b96cd8e1d92dc14b",
+"producer_role": "attempt"
+},
+"sbe674494121a4ebc9961c9675caf0072": {
+"id": "sbe674494121a4ebc9961c9675caf0072",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793986252.0522194,
+"end": 1793995416.3556361,
+"pipeline": "pe6787608815b493eae95dd8c425dc2a1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "saa22771a44d44f508150f95a8f1dc0ab",
+"producer_role": "attempt"
+},
+"sbe72674967d44f5ea13ab1745ca7e1b5": {
+"id": "sbe72674967d44f5ea13ab1745ca7e1b5",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793914652.1870506,
+"end": 1793915131.3027527,
+"pipeline": "pe5c441cbd2c240b6aeac414aae06179d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sebdfe7711dca49c6b264dff3044aa0e0",
+"producer_role": "attempt"
+},
+"sbe91ee0e5b45472a9335096e1dcf16bd": {
+"id": "sbe91ee0e5b45472a9335096e1dcf16bd",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794277995.8669162,
+"end": 1794279488.1973612,
+"pipeline": "pd8b4d9aa4c4a43da810a8a61462e06ed",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail",
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": "s42a6a9e973374f65af9c6fb47c140ccb",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sbe95d6e740e3422e9b49076af6e768ae": {
+"id": "sbe95d6e740e3422e9b49076af6e768ae",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794098768.9954243,
+"end": 1794103152.522852,
+"pipeline": "p383436c1b94343c5ba64d31c5839fb9c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": "s6d494a2864b34711b3deb363e5d29da6",
+"producer_role": "attempt"
+},
+"sbeeb270eed7649c49e69730a9ff9f68d": {
+"id": "sbeeb270eed7649c49e69730a9ff9f68d",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793869224.2007754,
+"end": 1793870028.1033275,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sbef451ba8f2f48e48b7fd82f5d763882": {
+"id": "sbef451ba8f2f48e48b7fd82f5d763882",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794286386.027015,
+"end": 1794291672.3025532,
+"pipeline": "p07c6f3b611bc4aedb49ea54ce3c60b58",
+"nodes": [],
+"question": "q0",
+"producer": "s4b0d95686cf94cfc8879b4e38ac60046",
+"producer_role": "explore"
+},
+"sbeffb173e8ea4a03be0232c95070fd5f": {
+"id": "sbeffb173e8ea4a03be0232c95070fd5f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794234613.9953394,
+"end": 1794237126.3878918,
+"pipeline": "pe5e0b0dc13044cf188eae5376af27273",
+"nodes": [],
+"question": "op-continuum-ties-blocks",
+"producer": "s404df05ab13042f89bbecb2089e4b18b",
+"producer_role": "explore"
+},
+"sbf2966ae50ed4b6cb6cece114028d96c": {
+"id": "sbf2966ae50ed4b6cb6cece114028d96c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794045394.6561747,
+"end": 1794047138.1428075,
+"pipeline": "p265e200f44504c7db0dd781a21ad2066",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s5666ccc4c33f48339bc66f75ff9f62d3",
+"producer_role": "attempt"
+},
+"sbf927e82d73e4d698bb6a6a5db7ecb27": {
+"id": "sbf927e82d73e4d698bb6a6a5db7ecb27",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794398979.5458677,
+"end": 1794405603.2377796,
+"pipeline": "pddf2e2101dc54047b7d1415551002aa4",
+"nodes": [
+"sbc78ebbbd815476194858a30df8bc356-left-leak"
+],
+"question": null,
+"producer": "sfd40e8f692f74d2085d6b6a7497edcda",
+"producer_role": "attempt"
+},
+"sbfc5dbff0dc942d2aa0ba2c225728cbf": {
+"id": "sbfc5dbff0dc942d2aa0ba2c225728cbf",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793872045.4146993,
+"end": 1793872772.0515924,
+"pipeline": "p22eb4bcb2f93478a9bbfed13cf5df483",
+"nodes": [],
+"question": null,
+"producer": "sd23ae83d48c84df8b3de50115a23b535",
+"producer_role": "attempt"
+},
+"sc045a41205c0487ab1db0a63e8be35d5": {
+"id": "sc045a41205c0487ab1db0a63e8be35d5",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793983357.0126438,
+"end": 1793992934.0195553,
+"pipeline": "p14ce8b932d76463c8d89821898d5a580",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s258b6f4217584950884e5ede700ec597",
+"producer_role": "attempt"
+},
+"sc066457cea954115b5b1d46102701a6d": {
+"id": "sc066457cea954115b5b1d46102701a6d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793919590.4296672,
+"end": 1793921003.0484333,
+"pipeline": "p5ccf39bf308f41d6be3b046c7374275e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793919699.2774343
+},
+"sc075797f340042759d1004962f38b96c": {
+"id": "sc075797f340042759d1004962f38b96c",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793930524.0493193,
+"end": 1793931549.8668888,
+"pipeline": "pcd2a806df1704d31b7fdf7beb68cee1e",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s26824c96c9184c44ae78ccc14ede25cd",
+"producer_role": "formalizer"
+},
+"sc08dcfc6e4384dc9815bf48d6438303d": {
+"id": "sc08dcfc6e4384dc9815bf48d6438303d",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794050124.8550406,
+"end": 1794052692.910342,
+"pipeline": "p63dc86f64aed44f5a9369ea34949031c",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "scad1a4c9f15d4dee88786d5b40dd4ed9",
+"producer_role": "attempt"
+},
+"sc1688c6ed91d4871a37bd54646cd56ed": {
+"id": "sc1688c6ed91d4871a37bd54646cd56ed",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793863337.8954449,
+"end": 1793864304.8102236,
+"pipeline": "pca6950999b5a483ebce5e9170a8f7206",
+"nodes": [],
+"question": null,
+"producer": "s617e7f42128241cdbce77d071be5d570",
+"producer_role": "attempt"
+},
+"sc1a56d2c2bcd4bf9a242721831b50079": {
+"id": "sc1a56d2c2bcd4bf9a242721831b50079",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794333700.0918949,
+"end": 1794339925.1871028,
+"pipeline": "p32a9fceafe5e4918b7e753331e9b03f3",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s3bebd84e8a5d4853a851552db799c718",
+"producer_role": "attempt"
+},
+"sc1e3678b00744ea38c77d7bf99109590": {
+"id": "sc1e3678b00744ea38c77d7bf99109590",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794005640.538183,
+"end": 1794005944.1360035,
+"pipeline": "pc8274a8463e342d3b69106496219b5a3",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sc228bb8347a0459ca5addc87d8e6772a": {
+"id": "sc228bb8347a0459ca5addc87d8e6772a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794054883.3048284,
+"end": 1794060802.6279726,
+"pipeline": "p82b755c6b2414b01b1d572cd1a64c72e",
+"nodes": [],
+"question": "q0",
+"producer": "s5854cebe7b6d4b149e7e6e9d8e2f4318",
+"producer_role": "explore"
+},
+"sc232c82ba26d409f9d14a2b023f74a40": {
+"id": "sc232c82ba26d409f9d14a2b023f74a40",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793928274.5550451,
+"end": 1793929066.9034872,
+"pipeline": "p0fdaa52f5b6347aaa1a2771f5f5c2935",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s29a399be35894997a0ab7e1d3be46932",
+"producer_role": "attempt"
+},
+"sc290802d9258477cb8b82dd4e9bfb90e": {
+"id": "sc290802d9258477cb8b82dd4e9bfb90e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794162134.365804,
+"end": 1794168453.7480083,
+"pipeline": "p8ba963824ed14c678a89f53921e2215f",
+"nodes": [],
+"question": "q0",
+"producer": "se8fb297be8284eb3845293b46fd5b061",
+"producer_role": "explore"
+},
+"sc2a53c57060649258303aa56e84c0e74": {
+"id": "sc2a53c57060649258303aa56e84c0e74",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794146466.177748,
+"end": 1794156217.2997496,
+"pipeline": "pc0220ffdb163496ea1e0c87681d290c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sdd74b3e8659448b48b6c78d75276fd63",
+"producer_role": "attempt"
+},
+"sc2aab4be17334004a2975de7e29ea40f": {
+"id": "sc2aab4be17334004a2975de7e29ea40f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794270506.8405564,
+"end": 1794271968.8762236,
+"pipeline": "p2435ee44bbcd42ef998b4f204fab4020",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": "op-threshold-block",
+"producer": "s62b51fcc3f1a42669da5c3b74674f464",
+"target_from": "record",
+"producer_role": "explore"
+},
+"sc30064763308447493080e791119e5df": {
+"id": "sc30064763308447493080e791119e5df",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794387981.5677404,
+"end": 1794393996.1124947,
+"pipeline": "pabd0cc1da71746438724bbb1eb06bef6",
+"nodes": [
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux"
+],
+"question": null,
+"producer": "s01cc7006e79a44af912f23c83affab56",
+"producer_role": "attempt"
+},
+"sc337e699c1c5456abaa3e4df5817399b": {
+"id": "sc337e699c1c5456abaa3e4df5817399b",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793858921.0183864,
+"end": 1793860220.3282611,
+"pipeline": "p58d8505f2e8c4a55afb79066b1821473",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793858959.8219893
+},
+"sc3450c35b60e45fabde422510964b4fb": {
+"id": "sc3450c35b60e45fabde422510964b4fb",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794404273.7742052,
+"end": 1794409451.2728145,
+"pipeline": "paa301943904542e1a732f741b9cf7ca3",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": "sc424fbb14a564f4cb895752156b08294",
+"producer_role": "attempt"
+},
+"sc3847498b913405e829ef795d9b7bf1d": {
+"id": "sc3847498b913405e829ef795d9b7bf1d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794226173.3407483,
+"end": 1794230801.8155625,
+"pipeline": "pd30ca24e19374040af8f302f5b92af0a",
+"nodes": [
+"s6b2ddeb5b88d4ca99ffbd269218b9b2b-onelevel-attachment"
+],
+"question": null,
+"producer": "s44628a5ee4d443519d898c1f950fae86",
+"producer_role": "attempt"
+},
+"sc3f53ce0462a4a1f9b00ec8e0f090130": {
+"id": "sc3f53ce0462a4a1f9b00ec8e0f090130",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793993329.7818556,
+"end": 1793993443.7405555,
+"pipeline": "pded657bdcf4e40ef8bd741c04c0214a3",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sc424fbb14a564f4cb895752156b08294": {
+"id": "sc424fbb14a564f4cb895752156b08294",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794393791.3635902,
+"end": 1794404267.5402987,
+"pipeline": "paa301943904542e1a732f741b9cf7ca3",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794395065.645927
+},
+"sc435e088665748bc846926cebe0685f6": {
+"id": "sc435e088665748bc846926cebe0685f6",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794363302.4905686,
+"end": 1794370885.9147916,
+"pipeline": "pe0bba8d03cd24498a6a5c8ef068862bc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s4c83523e579f40fe9cc2957b20af4468",
+"producer_role": "explore"
+},
+"sc44e5b82b0f8446abacb5b06aa826411": {
+"id": "sc44e5b82b0f8446abacb5b06aa826411",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794306430.3517964,
+"end": 1794314429.316886,
+"pipeline": "p85d99647806c43afb5fadc80415bf64b",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s10b0735b3a2047ab9ded11f47a0ceb24",
+"producer_role": "attempt"
+},
+"sc4a7168c1ebe41b0a4998867841cc235": {
+"id": "sc4a7168c1ebe41b0a4998867841cc235",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794363827.8595064,
+"end": 1794371144.6885839,
+"pipeline": "p07b51f033e5c49a6ae54a0896e37d0b0",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s9f6e4958a4cb48bea640f66c539f643a",
+"producer_role": "attempt"
+},
+"sc52d423ea746466a9266e313eae9678a": {
+"id": "sc52d423ea746466a9266e313eae9678a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793867612.7889106,
+"end": 1793868911.299273,
+"pipeline": "pdab023d92c3f4fd395b14b051f26638c",
+"nodes": [],
+"question": null,
+"producer": "sb6fcb9baed5a45ef925c49005eb4467b",
+"producer_role": "attempt"
+},
+"sc5311c53c4234227becc1d8e8d7ab498": {
+"id": "sc5311c53c4234227becc1d8e8d7ab498",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794049273.7105465,
+"end": 1794061997.8623881,
+"pipeline": "p9afa856510a54a92b50d9f926a2ab698",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794054554.1328886
+},
+"sc53cfe75561e4a4fab4545679d1b9611": {
+"id": "sc53cfe75561e4a4fab4545679d1b9611",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794348459.185995,
+"end": 1794353536.5227468,
+"pipeline": "pd74ac41b0284412291a53e3065f35654",
+"nodes": [],
+"question": "s1843e065cb474e45acc402336ab1e070-first-passage-time-profile",
+"producer": "s23b5ef55343f4982a24a1dca79d8a114",
+"producer_role": "explore"
+},
+"sc574af85c53248bdb94c3fccf0726e63": {
+"id": "sc574af85c53248bdb94c3fccf0726e63",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793928585.6131248,
+"end": 1793928831.8124044,
+"pipeline": "p950adf9a311542caaf3b06a63a7934ed",
+"nodes": [],
+"question": null,
+"producer": "s058aa0ee461f4250b4614649d17bb9b4",
+"producer_role": "attempt"
+},
+"sc5af269a2f6f4ed3b90273a8570cb204": {
+"id": "sc5af269a2f6f4ed3b90273a8570cb204",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274274.7140229,
+"end": 1794278445.7946205,
+"pipeline": "p76fef508248a4b8b967bd5cb104be292",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s6dd48de0a62c4f36b68756c5fab2574f",
+"producer_role": "attempt"
+},
+"sc5eb159a5fef431a9c5e6ca908591af4": {
+"id": "sc5eb159a5fef431a9c5e6ca908591af4",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793929126.259429,
+"end": 1793930659.5763748,
+"pipeline": "pd2583d8744f04521bb8ce4ae68444aa3",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793929194.0464327
+},
+"sc600be8bb0eb4092b4ab10376d3412d0": {
+"id": "sc600be8bb0eb4092b4ab10376d3412d0",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793928273.9811268,
+"end": 1793928558.657034,
+"pipeline": "p991585b8a30c47028c264b1feae27c4f",
+"nodes": [],
+"question": null,
+"producer": "s515dd7f87ee94fff959421fc22328f45",
+"producer_role": "attempt"
+},
+"sc611f59302ca47d08bc8f348314d4e3c": {
+"id": "sc611f59302ca47d08bc8f348314d4e3c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793913369.3863482,
+"end": 1793913623.2038875,
+"pipeline": "pa44f9ef0cb0f437dbfab4232dbbbb45c",
+"nodes": [],
+"question": null,
+"producer": "s9177576a352b4a148c162e7f0fd13476",
+"producer_role": "attempt"
+},
+"sc63721c280ed42b497f4d84f8286772b": {
+"id": "sc63721c280ed42b497f4d84f8286772b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794304053.0448394,
+"end": 1794306791.866042,
+"pipeline": "p5a03eabfcb914625bd059e4d47ff5c59",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "se44561f5b12044c392109baa8b6e83e5",
+"producer_role": "explore"
+},
+"sc644223e447240c090a407b77ed2eb09": {
+"id": "sc644223e447240c090a407b77ed2eb09",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793948585.1898837,
+"end": 1793955350.6131449,
+"pipeline": "pc2e2c97895554c0cb285de391e4dfbb2",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793948711.424997
+},
+"sc648108110384e68bd3afb1553458a1b": {
+"id": "sc648108110384e68bd3afb1553458a1b",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793928275.3098807,
+"end": 1793929486.1298673,
+"pipeline": "p0fc316b2aae64565b7957be7cd8e59ea",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s6a5821c2365949d2ad5a8bf30dda4791",
+"producer_role": "attempt"
+},
+"sc670a449f3084cd7a84c92d566c1f26d": {
+"id": "sc670a449f3084cd7a84c92d566c1f26d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274278.1044216,
+"end": 1794278585.5101142,
+"pipeline": "p29ed190356db471e82c1383095559774",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s0b4a6795fcbd4bb0a4087c48f5aedfc9",
+"producer_role": "explore"
+},
+"sc6d29538ad364bbdb41632c5fd8394c5": {
+"id": "sc6d29538ad364bbdb41632c5fd8394c5",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794249051.469638,
+"end": 1794257647.3106096,
+"pipeline": "p625bedbb9a9c475f8b238549fbee3487",
+"nodes": [
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794250642.3161583
+},
+"sc6d520c4ee9e4826bf9bfa02b11665a9": {
+"id": "sc6d520c4ee9e4826bf9bfa02b11665a9",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794211995.7951968,
+"end": 1794214278.952024,
+"pipeline": "pa7ecd2e6ac47447b8f076ee259dc7008",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": "op-left-right-asymmetry",
+"producer": "s35c440db50f54f13a28fcbd34eba6ce9",
+"target_from": "record",
+"producer_role": "explore"
+},
+"sc796110ff275476ebed6070d93d7dd53": {
+"id": "sc796110ff275476ebed6070d93d7dd53",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794005399.2509863,
+"end": 1794009212.7628317,
+"pipeline": "pa6065307a85344bea9ff61c0bf9d558e",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794005638.1122165
+},
+"sc79969a7f56440cf8999cd2655fe012e": {
+"id": "sc79969a7f56440cf8999cd2655fe012e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794274324.388515,
+"end": 1794276537.8328161,
+"pipeline": "pa6f9ff95cc894345b92e648cce17393c",
+"nodes": [
+"s4df6b5432c4041a3aef869b9328818c7-left-moment"
+],
+"question": null,
+"producer": "s1c190661c833478abfe6e1ee284ef022",
+"producer_role": "attempt"
+},
+"sc87e9a5a9328440cbbd36fe0c8c97a6f": {
+"id": "sc87e9a5a9328440cbbd36fe0c8c97a6f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794409460.693641,
+"end": 1794411860.4325686,
+"pipeline": "paa301943904542e1a732f741b9cf7ca3",
+"nodes": [
+"sd40f5ffeab9649bf9f79ca6666a6b688-tilted-full-tail"
+],
+"question": null,
+"producer": "sc424fbb14a564f4cb895752156b08294",
+"producer_role": "attempt"
+},
+"sc917874fb9f740c28add5985b0f5e905": {
+"id": "sc917874fb9f740c28add5985b0f5e905",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794134838.3638906,
+"end": 1794144744.9743953,
+"pipeline": "p6995e8f20a954fbdb417cc02f8e3a333",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "s6f4bdeb6e4ff4fb8823b7a9b89bcd6d9",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sc921c6b07dc347cc9d7546e395f70c0b": {
+"id": "sc921c6b07dc347cc9d7546e395f70c0b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794297183.4011247,
+"end": 1794309880.4097297,
+"pipeline": "p1ff593f7f300469fbd81a4922c8ccf38",
+"nodes": [
+"s7a2a959f478e4009a2dba3c577ae5e6b-prob-first-layer-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794299866.6489697
+},
+"sc926200592d84f71b670bfdfd637c90f": {
+"id": "sc926200592d84f71b670bfdfd637c90f",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793935148.1086402,
+"end": 1793936566.3313951,
+"pipeline": "p0b252dde436146638c66337f1c950b72",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "sb9bde92344cb42ac92c526e1f4088e0c",
+"producer_role": "formalizer"
+},
+"sc9a57bfb761446bf96cfb2c6dc1fbfe2": {
+"id": "sc9a57bfb761446bf96cfb2c6dc1fbfe2",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794378198.1535823,
+"end": 1794384053.8398347,
+"pipeline": "p6da941b34aae45f980e887d2e72522fa",
+"nodes": [
+"sa3f2213741804894b82c2689f4b2a217-central-point-mass"
+],
+"question": null,
+"producer": "sada4344284e14b02bf01249a64ef0f89",
+"declared_at": 1794382283.6792939,
+"producer_role": "attempt"
+},
+"sc9a5cb3ffd9b4b808eb54d3a4de1662c": {
+"id": "sc9a5cb3ffd9b4b808eb54d3a4de1662c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794358224.5891888,
+"end": 1794359737.9331722,
+"pipeline": "p05d6704dc0d547408e8377f4c52980f6",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": "sd93fe0802bb34ff18d564d7ea8a7cbe6",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sc9c67fc6c4f745a58071dac8611f253d": {
+"id": "sc9c67fc6c4f745a58071dac8611f253d",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794069017.0135827,
+"end": 1794083585.0857193,
+"pipeline": "p99f75b2335a5411daf4f2f8c4bba9f0e",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sc9ca30b786124d96aadc16dbc3bf6a87": {
+"id": "sc9ca30b786124d96aadc16dbc3bf6a87",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793962813.2930863,
+"end": 1793964444.9456935,
+"pipeline": "pe21339b3a3ae45cf821d668680849cc0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s15b86cd2c2504fcba6fe12a9904309c2",
+"producer_role": "attempt"
+},
+"sc9ca44ee68304cde84684fde366d21da": {
+"id": "sc9ca44ee68304cde84684fde366d21da",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794362378.9932642,
+"end": 1794363380.015298,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sc9ea7d329cc34d969200ea836e74c28b": {
+"id": "sc9ea7d329cc34d969200ea836e74c28b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278690.8453126,
+"end": 1794280590.1585994,
+"pipeline": "pa5e8b8b87ce94def8716fdc3319083e5",
+"nodes": [],
+"question": "q0",
+"producer": "sb9ac97ab2a444e9387531dc9bdeec7fe",
+"producer_role": "explore"
+},
+"sca157e1a410246d985ab16c8f7e7e349": {
+"id": "sca157e1a410246d985ab16c8f7e7e349",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794169077.994918,
+"end": 1794177075.7783008,
+"pipeline": "p7b5580d8bbd9489db12ff9e221393312",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s1cd790cb293b4e21844b76a840e3b184",
+"producer_role": "attempt"
+},
+"sca50b80b28134834b14ac831cfc7806b": {
+"id": "sca50b80b28134834b14ac831cfc7806b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794298504.4469573,
+"end": 1794301923.0334883,
+"pipeline": "pb3b97ced9634472f80cbf2d7aaed8d40",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s77bce54a05784510828adf250b00eaf3",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sca70a5e61e5f42cea426221659d59335": {
+"id": "sca70a5e61e5f42cea426221659d59335",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793923102.1178956,
+"end": 1793923234.4490092,
+"pipeline": "pb123f31ff0ed4970b8a2e806ad548b08",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"scad1a4c9f15d4dee88786d5b40dd4ed9": {
+"id": "scad1a4c9f15d4dee88786d5b40dd4ed9",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794041995.0364995,
+"end": 1794046183.6573892,
+"pipeline": "p63dc86f64aed44f5a9369ea34949031c",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794042212.9476254
+},
+"scae5188c08ea43568e3108c30a46cdd5": {
+"id": "scae5188c08ea43568e3108c30a46cdd5",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794261717.0857532,
+"end": 1794267859.0551827,
+"pipeline": "p6df51f408c1f4d54819c6b3a3fefdee0",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": "s62cff71478454e1bbef785b9463eaf3a",
+"producer_role": "attempt"
+},
+"scaf2f882bbcf4190949b136b4840dbc5": {
+"id": "scaf2f882bbcf4190949b136b4840dbc5",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794231828.245427,
+"end": 1794232778.19677,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"scb6b186df5d447a3adb943242f321757": {
+"id": "scb6b186df5d447a3adb943242f321757",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793934029.5911357,
+"end": 1793935032.9116554,
+"pipeline": "p6a5c28dee4f04c0da71661e0eb0f4080",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sa1c395a17a4b41fea7da0417aabfd9a6",
+"producer_role": "attempt"
+},
+"scbbcf3612f874117b72f5dc77c45ab87": {
+"id": "scbbcf3612f874117b72f5dc77c45ab87",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793942462.3666036,
+"end": 1793942568.8332496,
+"pipeline": "p3c63e2498cc2422eb84f7e53f0124472",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"scbdd4b8655414629941c4007450e48dc": {
+"id": "scbdd4b8655414629941c4007450e48dc",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793863423.7864437,
+"end": 1793864383.5961354,
+"pipeline": "p4eb80e7b0afd461e8224285357a88594",
+"nodes": [],
+"question": null,
+"producer": "s1696712103e344daad1c22ee28ec6a30",
+"producer_role": "attempt"
+},
+"scbf83f57989644fdac75f7f8a2067fb8": {
+"id": "scbf83f57989644fdac75f7f8a2067fb8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794236293.334622,
+"end": 1794237973.770733,
+"pipeline": "pb927feed36a34a28949092923bdf8858",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sdead88f9b77848e7ba62bec562f0f72c",
+"producer_role": "attempt"
+},
+"scc3fdedaddfd4c3a878ea10943b57a1a": {
+"id": "scc3fdedaddfd4c3a878ea10943b57a1a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794312393.206501,
+"end": 1794316663.9115298,
+"pipeline": "p028ebd38e8f5486fa6582a527b69513a",
+"nodes": [],
+"question": "q0",
+"producer": "s253558898f754d28a07c64d0dd47e91f",
+"producer_role": "explore"
+},
+"scc8ac90a98be44d8972fd872144f1830": {
+"id": "scc8ac90a98be44d8972fd872144f1830",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793976243.4196954,
+"end": 1793977078.8743389,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sccca41682fa3479f933c6180fe09c5f3": {
+"id": "sccca41682fa3479f933c6180fe09c5f3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794280169.2728531,
+"end": 1794287311.8674734,
+"pipeline": "pec1c7231a92d4cebaf368089bdf26d74",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794282823.3270128
+},
+"scd54fcae0d2f43698d874b3f3c3c7ca0": {
+"id": "scd54fcae0d2f43698d874b3f3c3c7ca0",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793937858.157559,
+"end": 1793938980.0316153,
+"pipeline": "p2eb8ee5dbc4541f18c71d8e186b4bedc",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "se4976c2db7bf401d90e1ea9448beef49",
+"producer_role": "attempt"
+},
+"scd5c5c0b07b94d9abb04fe509829839b": {
+"id": "scd5c5c0b07b94d9abb04fe509829839b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794398537.8935857,
+"end": 1794403589.2537212,
+"pipeline": "pc45a43a9eca84cdfa4607d022b1c545a",
+"nodes": [
+"s263f85f424c447b3861de59bef4ea551-stem-attachment"
+],
+"question": null,
+"producer": "s8d1531c584994f38b0798aceda3aba8a",
+"producer_role": "attempt"
+},
+"scded72da12ff456fb0d54090b86cf415": {
+"id": "scded72da12ff456fb0d54090b86cf415",
+"role": "peer",
+"model": "opus",
+"start": 1793888545.030375,
+"end": 1793891867.1912885,
+"pipeline": "pcbd0aa3777394501b4e6e20d85aa9115",
+"nodes": [],
+"question": "q0",
+"producer": "s91e9d1abf5964615bd4e71efd79efbfc",
+"producer_role": "explore"
+},
+"sce680d0f2cfb4e7399f511f621c52d01": {
+"id": "sce680d0f2cfb4e7399f511f621c52d01",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794339978.8419008,
+"end": 1794345876.6182065,
+"pipeline": "p1fcdb1dd134e4124a589cd066d3903af",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s8a28b193573541d88491c045cbb00a20",
+"producer_role": "explore"
+},
+"sce8552e256d64ee7a0c49b6c62c6da8f": {
+"id": "sce8552e256d64ee7a0c49b6c62c6da8f",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793913623.830234,
+"end": 1793915130.8408062,
+"pipeline": "pc425dbc9d5404ee29a9275299e3dd21a",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793913740.9573948
+},
+"scea8804a9fb740e691d54dcff546ec4a": {
+"id": "scea8804a9fb740e691d54dcff546ec4a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793922545.4377515,
+"end": 1793923798.8471766,
+"pipeline": "p0fdaa52f5b6347aaa1a2771f5f5c2935",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s29a399be35894997a0ab7e1d3be46932",
+"producer_role": "attempt"
+},
+"scf1527367eaa44d895e32b10cf0b9dbd": {
+"id": "scf1527367eaa44d895e32b10cf0b9dbd",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794247905.8177748,
+"end": 1794257340.3884234,
+"pipeline": "p7e400cef152e4f579063326bb2016be8",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s963c561fc780424ea2511acfbec9a63d",
+"producer_role": "explore"
+},
+"scf6cc9fbb2c1400a9b3136f0b1495a8d": {
+"id": "scf6cc9fbb2c1400a9b3136f0b1495a8d",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794240558.2922106,
+"end": 1794249837.6310172,
+"pipeline": "p1f40d1d558a9450ba690a6c798a357c6",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794242530.530197
+},
+"scf7cf67878f64ec4ab16d8bfadd60e95": {
+"id": "scf7cf67878f64ec4ab16d8bfadd60e95",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793943662.6436505,
+"end": 1793944182.5015593,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"scf9d44f1be6c4537927744c9a155c1d0": {
+"id": "scf9d44f1be6c4537927744c9a155c1d0",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793975153.0365112,
+"end": 1793975375.6727343,
+"pipeline": "p80f31e28fd174dacb1ba7e971272c529",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"scf9ee1ba989d47fe85b5c729259d71b7": {
+"id": "scf9ee1ba989d47fe85b5c729259d71b7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274337.3901048,
+"end": 1794277992.8510118,
+"pipeline": "pd8b4d9aa4c4a43da810a8a61462e06ed",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s42a6a9e973374f65af9c6fb47c140ccb",
+"producer_role": "attempt"
+},
+"scfaf0408251147a78a467ee571e0d611": {
+"id": "scfaf0408251147a78a467ee571e0d611",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794035767.7389536,
+"end": 1794037486.027812,
+"pipeline": "p4ad36d22a66f45ae94e84d9c2b7d85a5",
+"nodes": [],
+"question": "q0",
+"producer": "s966353b6520b4cb692987d828518209b",
+"producer_role": "explore"
+},
+"sd00691b1bda24b1d8486b362068b9b47": {
+"id": "sd00691b1bda24b1d8486b362068b9b47",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794316346.518256,
+"end": 1794331009.8199525,
+"pipeline": "p4013bee2cc3042cb9c23ae47090feed5",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794317495.4205036
+},
+"sd0190744882246c69d22c98ec7bbcc31": {
+"id": "sd0190744882246c69d22c98ec7bbcc31",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793946474.5899792,
+"end": 1793947179.6615188,
+"pipeline": "p680c58f0b9bb4a61b9abdea242839f40",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1bcf8bb538eb445c854e6621a9a6d5fe",
+"producer_role": "attempt"
+},
+"sd04e94aa0a30432a82eabfb6f074381f": {
+"id": "sd04e94aa0a30432a82eabfb6f074381f",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793991441.8584304,
+"end": 1793991728.53655,
+"pipeline": "pd1a44825d5ab43b582d9fa8c91677c54",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sd07a28ffb02b4daf99627339641684d6": {
+"id": "sd07a28ffb02b4daf99627339641684d6",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793920681.954617,
+"end": 1793921279.1675394,
+"pipeline": "pa86cde3b83cf4409b303b4c9e11ba423",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sd634f630f15e4741ae1688ccff535933",
+"producer_role": "attempt"
+},
+"sd0984a1bc36148b5b3a6dc427b657f4e": {
+"id": "sd0984a1bc36148b5b3a6dc427b657f4e",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793964834.3194573,
+"end": 1793970027.459586,
+"pipeline": "pa16c482d175a449e98c74fd1f827fd95",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8d7f07a934754cba96614a66183dc737",
+"producer_role": "attempt"
+},
+"sd1190445748642ac9949939bc97338ea": {
+"id": "sd1190445748642ac9949939bc97338ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794306342.065843,
+"end": 1794310677.7180934,
+"pipeline": "p92a24c82310449bbaa7466abb46c459b",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk"
+],
+"question": null,
+"producer": "sf0191e6b70e44e128e90eb8bb132adbe",
+"producer_role": "attempt"
+},
+"sd182f253b9bc48c9a8ba48f68e519b17": {
+"id": "sd182f253b9bc48c9a8ba48f68e519b17",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794362917.909497,
+"end": 1794378059.8312669,
+"pipeline": "p2b1a87ec2d7c46efb4455585103b6333",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794363154.419237
+},
+"sd1a36620b0694ca89372b85bc8ae79a6": {
+"id": "sd1a36620b0694ca89372b85bc8ae79a6",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793861708.837158,
+"end": 1793863484.6130717,
+"pipeline": "pcade64d4719c43acb723f26d048147f3",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793861759.1915672
+},
+"sd1f96d9e4aea45b6a05b010958a3c564": {
+"id": "sd1f96d9e4aea45b6a05b010958a3c564",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794371157.7148254,
+"end": 1794374020.6190617,
+"pipeline": "p07b51f033e5c49a6ae54a0896e37d0b0",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": "s9f6e4958a4cb48bea640f66c539f643a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sd23ae83d48c84df8b3de50115a23b535": {
+"id": "sd23ae83d48c84df8b3de50115a23b535",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793869032.2145379,
+"end": 1793870808.4450064,
+"pipeline": "p22eb4bcb2f93478a9bbfed13cf5df483",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793869085.9546087
+},
+"sd261cd281204432ea4d1114d32cd0c0f": {
+"id": "sd261cd281204432ea4d1114d32cd0c0f",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793932215.212377,
+"end": 1793932816.591175,
+"pipeline": "p993d949388fe429592e67afb02796d1f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1cb30f1d5fb34d20818a390d34f46b3f",
+"producer_role": "attempt"
+},
+"sd2632cb59dfe435a9166bdfce8332711": {
+"id": "sd2632cb59dfe435a9166bdfce8332711",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794307611.4394166,
+"end": 1794315114.217652,
+"pipeline": "pca5ace5bbd72478e83c8abf756932e1c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s9e155b623bbc4e4fb74fd105144b47f5",
+"producer_role": "attempt"
+},
+"sd27729a642df45179a77930c89252b87": {
+"id": "sd27729a642df45179a77930c89252b87",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793919906.53044,
+"end": 1793920181.7224848,
+"pipeline": "pf523a84a60d244eea1744e9486cdf556",
+"nodes": [],
+"question": null,
+"producer": "s78ee4727cc6342d8ab489487bfb0a3c5",
+"producer_role": "attempt"
+},
+"sd28fa7db27b3463c8cdd090e60ee87fc": {
+"id": "sd28fa7db27b3463c8cdd090e60ee87fc",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794024731.7374322,
+"end": 1794029526.4242096,
+"pipeline": "pfb9f4a99a06b43cc893bcf89601a77fe",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s049f58fed1674c698ee816d03ef35daf",
+"producer_role": "attempt"
+},
+"sd366f96ebf334eeba594f03c3f0774a3": {
+"id": "sd366f96ebf334eeba594f03c3f0774a3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793989267.7360437,
+"end": 1793992353.4403853,
+"pipeline": "p8bc7361552ff4227b82402267353f5a2",
+"nodes": [],
+"question": "q0",
+"producer": "s92b589f4e695474abcdc044c1bcc8026",
+"producer_role": "explore"
+},
+"sd3e4ceef10b64e0c9e800ec477b47d74": {
+"id": "sd3e4ceef10b64e0c9e800ec477b47d74",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794294988.1514683,
+"end": 1794296419.961418,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sd3f2fd1c6e73496b8fe59210ad1e5ff7": {
+"id": "sd3f2fd1c6e73496b8fe59210ad1e5ff7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794329393.4334762,
+"end": 1794331592.8568308,
+"pipeline": "p9fa2af15955645179cde878552b8dbcd",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s13b9b9ab7dd846f5aad4a4ef96797175",
+"producer_role": "explore"
+},
+"sd407fa824dbe413da7b1a58e7839da91": {
+"id": "sd407fa824dbe413da7b1a58e7839da91",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794296458.1280944,
+"end": 1794302284.518167,
+"pipeline": "p263b310048e548a09a66a79fb09e7416",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794297868.6659527
+},
+"sd40f5ffeab9649bf9f79ca6666a6b688": {
+"id": "sd40f5ffeab9649bf9f79ca6666a6b688",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794265348.4081075,
+"end": 1794270504.525421,
+"pipeline": "p2435ee44bbcd42ef998b4f204fab4020",
+"nodes": [],
+"question": "op-threshold-block",
+"producer": "s62b51fcc3f1a42669da5c3b74674f464",
+"producer_role": "explore"
+},
+"sd451acf3de354d2bb2ec6f3f8d8ed220": {
+"id": "sd451acf3de354d2bb2ec6f3f8d8ed220",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793893201.2641022,
+"end": 1793894485.1369083,
+"pipeline": "pcbd0aa3777394501b4e6e20d85aa9115",
+"nodes": [],
+"question": "q0",
+"producer": "s91e9d1abf5964615bd4e71efd79efbfc",
+"producer_role": "explore"
+},
+"sd456299ff3154ae7a489c9fcf94f21bb": {
+"id": "sd456299ff3154ae7a489c9fcf94f21bb",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794401584.250026,
+"end": 1794405887.1938534,
+"pipeline": "p5e9c18f73be049f29267fae7966b082b",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sef727b77ec2e4f6984f20c34e21c0de3",
+"producer_role": "explore"
+},
+"sd458f29a7fa6492891ad935a8c0881ef": {
+"id": "sd458f29a7fa6492891ad935a8c0881ef",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794370901.2939913,
+"end": 1794374545.5795407,
+"pipeline": "pe0bba8d03cd24498a6a5c8ef068862bc",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s4c83523e579f40fe9cc2957b20af4468",
+"producer_role": "explore"
+},
+"sd46ecca0642947829050dede0b8aa95e": {
+"id": "sd46ecca0642947829050dede0b8aa95e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794256926.1081507,
+"end": 1794258649.0519822,
+"pipeline": "pe8180f1b4c554191a6d6fcb1b46b0811",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": "sf1e6eab8ef3e4c8e8da8d5810e2c4e0b",
+"producer_role": "explore"
+},
+"sd47a5097e8eb4cf6a2c32ad3b5b609b6": {
+"id": "sd47a5097e8eb4cf6a2c32ad3b5b609b6",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793931870.679504,
+"end": 1793932484.965685,
+"pipeline": "pd2583d8744f04521bb8ce4ae68444aa3",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sc5eb159a5fef431a9c5e6ca908591af4",
+"producer_role": "attempt"
+},
+"sd4b418d5118a4cca979f423b1e0d249f": {
+"id": "sd4b418d5118a4cca979f423b1e0d249f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794144789.6951478,
+"end": 1794158995.2159762,
+"pipeline": "pf5a0b74188e146b2b33448f41636cf71",
+"nodes": [
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality",
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794145637.242581
+},
+"sd5e02c16922143dcab0452930d421eae": {
+"id": "sd5e02c16922143dcab0452930d421eae",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793919589.2977355,
+"end": 1793920679.168053,
+"pipeline": "pa86cde3b83cf4409b303b4c9e11ba423",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sd634f630f15e4741ae1688ccff535933",
+"producer_role": "attempt"
+},
+"sd625ad9eb4e1426397559bceafea9a74": {
+"id": "sd625ad9eb4e1426397559bceafea9a74",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794316708.9884076,
+"end": 1794331255.5370636,
+"pipeline": "pb8ecf47daba34417874f74ca189d7499",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794316707.4552305
+},
+"sd634f630f15e4741ae1688ccff535933": {
+"id": "sd634f630f15e4741ae1688ccff535933",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793915063.3369055,
+"end": 1793919584.4353144,
+"pipeline": "pa86cde3b83cf4409b303b4c9e11ba423",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793915178.9000115
+},
+"sd671f3807b6a4aa6800d8fa7e21e1d9e": {
+"id": "sd671f3807b6a4aa6800d8fa7e21e1d9e",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794032079.7878711,
+"end": 1794033592.8967953,
+"pipeline": "p9a990860f3de4b6289bbda138a212d6a",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s20d3772b315347d9a42dd7cac32f08a3",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sd67a22e9547c47c78d88bdf0aad9fd6f": {
+"id": "sd67a22e9547c47c78d88bdf0aad9fd6f",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794408995.8371427,
+"end": 1794422350.4723701,
+"pipeline": "pb62ec996f41948f9bdfe02a7069a026a",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-stem10"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794412242.593529
+},
+"sd6c2fa68e16149adae346398f6c9bbab": {
+"id": "sd6c2fa68e16149adae346398f6c9bbab",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793933674.9352634,
+"end": 1793935046.8489947,
+"pipeline": "p7203be3b7e94409d86fc2d7d6aef0e48",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1c1fad1a256c438c8f1d45f3464675ed",
+"producer_role": "attempt"
+},
+"sd73e72a413b9422197419a908274dde7": {
+"id": "sd73e72a413b9422197419a908274dde7",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793891868.460004,
+"end": 1793893141.2174325,
+"pipeline": "pcbd0aa3777394501b4e6e20d85aa9115",
+"nodes": [],
+"question": "q0",
+"producer": "s91e9d1abf5964615bd4e71efd79efbfc",
+"producer_role": "explore"
+},
+"sd790b8342aa3433e9d9195efd5547a3a": {
+"id": "sd790b8342aa3433e9d9195efd5547a3a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794358328.704039,
+"end": 1794361516.0273263,
+"pipeline": "p37edbed7bbba4887a1a06bb8e3e258b5",
+"nodes": [],
+"question": "q0",
+"producer": "s79fa32ab7f344978a81af8d7792674d2",
+"producer_role": "explore"
+},
+"sd7cd6139ee4a4ebfb61d476996bde609": {
+"id": "sd7cd6139ee4a4ebfb61d476996bde609",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794302378.5012507,
+"end": 1794310150.5985394,
+"pipeline": "pa9ceea3450d348f2a4bd62ca1de34982",
+"nodes": [],
+"question": "sf6d08848fee64e6996d91ea811992a50-diagonal-lower-bound",
+"producer": "s727002266acc4fccb91dc28583e919c6",
+"producer_role": "explore"
+},
+"sd7f5f2665b4c484f9ef67b36e7efa31a": {
+"id": "sd7f5f2665b4c484f9ef67b36e7efa31a",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793860220.4376147,
+"end": 1793861028.0972278,
+"pipeline": "p58d8505f2e8c4a55afb79066b1821473",
+"nodes": [],
+"question": null,
+"producer": "sc337e699c1c5456abaa3e4df5817399b",
+"producer_role": "attempt"
+},
+"sd840d4d48b654049849e26b64b32ce5a": {
+"id": "sd840d4d48b654049849e26b64b32ce5a",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793864305.1893952,
+"end": 1793865547.074991,
+"pipeline": "pca6950999b5a483ebce5e9170a8f7206",
+"nodes": [],
+"question": null,
+"producer": "s617e7f42128241cdbce77d071be5d570",
+"producer_role": "attempt"
+},
+"sd85d8252130c48c891068d3552451b9c": {
+"id": "sd85d8252130c48c891068d3552451b9c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794407859.2879603,
+"end": 1794409682.2911704,
+"pipeline": "p860c9426c7524f68ad100706e9359e77",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": "s748531f8799848e9a4b5c5bc32bc7135",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sd863910438fb4bcb9090988de2e29a6a": {
+"id": "sd863910438fb4bcb9090988de2e29a6a",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794242992.1463766,
+"end": 1794250019.9947634,
+"pipeline": "p3978cfbf78174842af811667772fdc24",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": "sf3280330ce644406a63a926f069eaf3d",
+"producer_role": "attempt"
+},
+"sd8a9202053114e6eb9c2c7a4eece9859": {
+"id": "sd8a9202053114e6eb9c2c7a4eece9859",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794212271.745663,
+"end": 1794220503.356806,
+"pipeline": "p8b776a5db5444374bf582ff188de116c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s2d09cc94b6fd449b9b6fbf12e1bdca2d",
+"producer_role": "explore"
+},
+"sd8d5e56b6ae44e31ba7268368f0daf66": {
+"id": "sd8d5e56b6ae44e31ba7268368f0daf66",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794373920.4745095,
+"end": 1794378765.8266149,
+"pipeline": "paf347f50555249a8a9f38ba4b23fa9ac",
+"nodes": [
+"sf6d08848fee64e6996d91ea811992a50-flat-core"
+],
+"question": null,
+"producer": "sef011062f89a464981059d4beba0a8cf",
+"producer_role": "attempt"
+},
+"sd93fe0802bb34ff18d564d7ea8a7cbe6": {
+"id": "sd93fe0802bb34ff18d564d7ea8a7cbe6",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794338582.103042,
+"end": 1794350150.7311947,
+"pipeline": "p05d6704dc0d547408e8377f4c52980f6",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-qstar-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794342224.9528828
+},
+"sd9486486177b4de1973853b81f730da0": {
+"id": "sd9486486177b4de1973853b81f730da0",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278448.437804,
+"end": 1794280124.0606523,
+"pipeline": "p76fef508248a4b8b967bd5cb104be292",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s6dd48de0a62c4f36b68756c5fab2574f",
+"producer_role": "attempt"
+},
+"sd9ad5b75a4d144ebbaf69e737e642b65": {
+"id": "sd9ad5b75a4d144ebbaf69e737e642b65",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794220507.569983,
+"end": 1794223009.3143241,
+"pipeline": "p8b776a5db5444374bf582ff188de116c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s2d09cc94b6fd449b9b6fbf12e1bdca2d",
+"producer_role": "explore"
+},
+"sd9beb1fc7d8b412c99d9f3b59d474435": {
+"id": "sd9beb1fc7d8b412c99d9f3b59d474435",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794342039.9211097,
+"end": 1794344245.3974965,
+"pipeline": "p0aca6473d7344c15a26d4a3b226200c0",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": "s5a0c52ce83bc4bd5a8ae99f8ed604101",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sd9c6d528ebb848398ad5a309091a0c5e": {
+"id": "sd9c6d528ebb848398ad5a309091a0c5e",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794007057.3548915,
+"end": 1794011025.7058733,
+"pipeline": "p926b63804cdd481b8ec15c13afa21e30",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794007346.323478
+},
+"sd9ceaf4a5e8c412e86b37bbe47c82fa2": {
+"id": "sd9ceaf4a5e8c412e86b37bbe47c82fa2",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793958139.6361728,
+"end": 1793963449.8374045,
+"pipeline": "p4fd9684fff7c4a84beeb6316a93ed6ed",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793958247.2439394
+},
+"sd9dac32c31f443ffa649c34e93b44a7f": {
+"id": "sd9dac32c31f443ffa649c34e93b44a7f",
+"role": "explore",
+"model": "gpt-6.1-sol",
+"start": 1793864412.7914503,
+"end": 1793866901.6903372,
+"pipeline": "pcb9112feab2246e09e8404adcf6d7f0d",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sd9e24788d9624f2da63069c71ede5a5c": {
+"id": "sd9e24788d9624f2da63069c71ede5a5c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794317002.92732,
+"end": 1794328198.3419876,
+"pipeline": "p773a06522daf47aca523b886cc997eb2",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794318097.128746
+},
+"sda3fb9efc5e14176a6b164c0ecc31ca8": {
+"id": "sda3fb9efc5e14176a6b164c0ecc31ca8",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793948505.7913208,
+"end": 1793949244.972235,
+"pipeline": "p38efd4a6f21647e589ffc8226a7d7cab",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s6bd4141d573e4dbcba71e74baaabacb1",
+"producer_role": "attempt"
+},
+"sdac8c441830147019bdf102156432ee8": {
+"id": "sdac8c441830147019bdf102156432ee8",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793964646.5854568,
+"end": 1793964792.7220407,
+"pipeline": "p04292393adfb4a7ca2c869661cb5fd8b",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sdaf4654d2e48408a950b4d0a283dc247": {
+"id": "sdaf4654d2e48408a950b4d0a283dc247",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794399568.7007568,
+"end": 1794401360.3087978,
+"pipeline": "p54b18cc0bd734e299c4e5911954087d3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "sec80c854b0f14e74b52cb13401cdc8c7",
+"producer_role": "attempt"
+},
+"sdb180a3db8e745778edb0f763bfcc526": {
+"id": "sdb180a3db8e745778edb0f763bfcc526",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794293427.6522424,
+"end": 1794295744.2090762,
+"pipeline": "p480adf74433d4fbd802ce79a6264215a",
+"nodes": [
+"sb0ed6cccdee947e98c545d6b2c7b0f17-qstar-columns-from-3131"
+],
+"question": null,
+"producer": "see97affb825d4965aba01b90f575423a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sdbcbfefbc4f040398db799c5d8d214dd": {
+"id": "sdbcbfefbc4f040398db799c5d8d214dd",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794377858.235787,
+"end": 1794387098.767314,
+"pipeline": "p3d6500f3553544dbb631ab8f556ff8e5",
+"nodes": [
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus"
+],
+"question": null,
+"producer": "s059e9716dd69473d840e642cf11a7ddc",
+"producer_role": "attempt"
+},
+"sdc2e8279c36b49ef83e7b03c22c1fa16": {
+"id": "sdc2e8279c36b49ef83e7b03c22c1fa16",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793962162.2080505,
+"end": 1793962876.633077,
+"pipeline": "pdd691b2e687949c6821b01a624fff469",
+"nodes": [],
+"question": "q0",
+"producer": "s0253ca510f1b4becbc8bfd0146491ba8",
+"producer_role": "explore"
+},
+"sdc581b2f351d41dfadf3e3bfbf8b914b": {
+"id": "sdc581b2f351d41dfadf3e3bfbf8b914b",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1794014170.113644,
+"end": 1794019930.2843857,
+"pipeline": "p374c5fd339cf425db37e6ae51eb97e98",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sdccf18aa7bb8477088aa2af8d5ec3b67": {
+"id": "sdccf18aa7bb8477088aa2af8d5ec3b67",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793958319.9201515,
+"end": 1793958444.0022438,
+"pipeline": "p5d7683aa9eca41df992e4e79eb1c32bb",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sdce83d006e364da28cebaa85870391ba": {
+"id": "sdce83d006e364da28cebaa85870391ba",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794378968.3274143,
+"end": 1794387971.112681,
+"pipeline": "pabd0cc1da71746438724bbb1eb06bef6",
+"nodes": [
+"sa5da526d8c98421eb1ce821b04aa0eae-bulk-stem-plus-flux"
+],
+"question": null,
+"producer": "s01cc7006e79a44af912f23c83affab56",
+"producer_role": "attempt"
+},
+"sdcf07882555748b58d79274f370096d0": {
+"id": "sdcf07882555748b58d79274f370096d0",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794168455.317361,
+"end": 1794171079.258265,
+"pipeline": "p8ba963824ed14c678a89f53921e2215f",
+"nodes": [],
+"question": "q0",
+"producer": "se8fb297be8284eb3845293b46fd5b061",
+"producer_role": "explore"
+},
+"sdd3be6bdab3140e1ac8ac65dcc90a86a": {
+"id": "sdd3be6bdab3140e1ac8ac65dcc90a86a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794237306.3101354,
+"end": 1794239599.2400434,
+"pipeline": "p3f169e4545424507bbf3ecdee98e2832",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": "op-left-right-asymmetry",
+"producer": "s312e052f69fc474fb435da2a2005d10b",
+"target_from": "record",
+"producer_role": "explore"
+},
+"sdd74b3e8659448b48b6c78d75276fd63": {
+"id": "sdd74b3e8659448b48b6c78d75276fd63",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794120699.6132355,
+"end": 1794146464.908966,
+"pipeline": "pc0220ffdb163496ea1e0c87681d290c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794121642.365542
+},
+"sdd7b84f5539f4b67a4ddb080086a93f1": {
+"id": "sdd7b84f5539f4b67a4ddb080086a93f1",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793952149.4235547,
+"end": 1793955187.5159268,
+"pipeline": "p8bfc41633e0e48febc2f733ed348b994",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s39e6fe197449455b920fb3a4001c1990",
+"producer_role": "attempt"
+},
+"sdd8512d437444ee2aaaf190e0e90576b": {
+"id": "sdd8512d437444ee2aaaf190e0e90576b",
+"role": "explore",
+"model": "codex/gpt-6.1-sol",
+"start": 1794037497.3550763,
+"end": 1794039389.8931608,
+"pipeline": "pcfc5a59787394a279cc2826cb500036d",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"sddc5055ceacc4dc988ea422028230683": {
+"id": "sddc5055ceacc4dc988ea422028230683",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1793996380.204174,
+"end": 1794002248.9623227,
+"pipeline": "p9a2bd545cde44f22827a09f18eed6198",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1d80bbea85ab4f67966756c46ae881c9",
+"producer_role": "attempt"
+},
+"sddd6618c934e4695839c3cada6faaa69": {
+"id": "sddd6618c934e4695839c3cada6faaa69",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794222593.0605898,
+"end": 1794223954.4902697,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sddfc2806f69e4ebfbc1ccd307cb6d374": {
+"id": "sddfc2806f69e4ebfbc1ccd307cb6d374",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794041470.8540404,
+"end": 1794041652.6551242,
+"pipeline": "p1b6c9caf608d49edb4772d8a14a4335a",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sdead88f9b77848e7ba62bec562f0f72c": {
+"id": "sdead88f9b77848e7ba62bec562f0f72c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794226460.1961596,
+"end": 1794231646.0757456,
+"pipeline": "pb927feed36a34a28949092923bdf8858",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794227540.8083644
+},
+"sdec3b983b0734542babaa72f5dc71712": {
+"id": "sdec3b983b0734542babaa72f5dc71712",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794334717.320979,
+"end": 1794344228.3275578,
+"pipeline": "p03f08292410c43daa130b71c22d1c8e3",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794336493.8406909
+},
+"sdee623984bfe4cac9f0282946ec8640b": {
+"id": "sdee623984bfe4cac9f0282946ec8640b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794399697.1259146,
+"end": 1794407853.4514112,
+"pipeline": "p860c9426c7524f68ad100706e9359e77",
+"nodes": [
+"s1709ac2907b449dbae39e3b439a86203-tsp10"
+],
+"question": null,
+"producer": "s748531f8799848e9a4b5c5bc32bc7135",
+"producer_role": "attempt"
+},
+"sdf12cd0342e54a82a5c992e149c06b51": {
+"id": "sdf12cd0342e54a82a5c992e149c06b51",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794371696.3279455,
+"end": 1794379730.6067986,
+"pipeline": "pa470838b8c7149d8bb9f3507035207fa",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794373415.3364995
+},
+"sdf94179fbb004afbbe61375558c3ff14": {
+"id": "sdf94179fbb004afbbe61375558c3ff14",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794405894.323357,
+"end": 1794407813.2794023,
+"pipeline": "p5e9c18f73be049f29267fae7966b082b",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "sef727b77ec2e4f6984f20c34e21c0de3",
+"producer_role": "explore"
+},
+"sdfe05ca374324d758e7d67eaf0629ae0": {
+"id": "sdfe05ca374324d758e7d67eaf0629ae0",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793936020.6579175,
+"end": 1793937725.2222455,
+"pipeline": "pe01f9c0ad6e14fa3a8d7d1eb57f96fb0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793936240.590359
+},
+"se0067497b6f64029931deb3c14a37ac8": {
+"id": "se0067497b6f64029931deb3c14a37ac8",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794305018.8741846,
+"end": 1794311530.7150068,
+"pipeline": "p5002a1e8970248fe8f083624f91e7bcf",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s7eeb8d9969b94f34a4191edcf2b4d71d",
+"producer_role": "attempt"
+},
+"se0327c0c588d4ab2a4df1b8b624dc4d9": {
+"id": "se0327c0c588d4ab2a4df1b8b624dc4d9",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794171102.3543613,
+"end": 1794184982.8309326,
+"pipeline": "pf94673e14fb14d0ebecc2393b00b4c0a",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794173666.9112494
+},
+"se055c950512048aca81db3dd5a034925": {
+"id": "se055c950512048aca81db3dd5a034925",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793949428.9902606,
+"end": 1793949562.0004935,
+"pipeline": "p796c985327574a7f9c5c55fb095ada6a",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se0947baedb0e4fb8b213405ee6b740ea": {
+"id": "se0947baedb0e4fb8b213405ee6b740ea",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794268332.0889401,
+"end": 1794268939.0253341,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se09cad02864943228b4edcd6a08f26de": {
+"id": "se09cad02864943228b4edcd6a08f26de",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794402239.078287,
+"end": 1794411392.9977076,
+"pipeline": "p1a3948618c814252877739516d949d47",
+"nodes": [
+"s7bca88e02f2044258089b09872ed8bd0-ul-core-local-source"
+],
+"question": null,
+"producer": "s94e0075bc12448c18548713c1f91e44a",
+"producer_role": "attempt"
+},
+"se0f20dc63d0741e09b4cc2305252734b": {
+"id": "se0f20dc63d0741e09b4cc2305252734b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794245474.5053616,
+"end": 1794250213.7536905,
+"pipeline": "p2fa54deb4f6248e79a257f3580547903",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s1e89db2bee194934ab25d1a226e16c3a",
+"producer_role": "attempt"
+},
+"se10981aa881d40589f44bc4b9f3b02f5": {
+"id": "se10981aa881d40589f44bc4b9f3b02f5",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793915133.3813224,
+"end": 1793919584.97442,
+"pipeline": "pc425dbc9d5404ee29a9275299e3dd21a",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "sce8552e256d64ee7a0c49b6c62c6da8f",
+"producer_role": "attempt"
+},
+"se120c2a5173f4a819626c4fdc52f9e09": {
+"id": "se120c2a5173f4a819626c4fdc52f9e09",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793954623.6159415,
+"end": 1793955653.2278535,
+"pipeline": "pb6195f4146064b98ab83cf9aaa861135",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s0fb83093ce054ccbad857fd77e2ff910",
+"producer_role": "attempt"
+},
+"se12ab15418e348d389d688131f5239ea": {
+"id": "se12ab15418e348d389d688131f5239ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794158997.2611241,
+"end": 1794164699.5318284,
+"pipeline": "pf5a0b74188e146b2b33448f41636cf71",
+"nodes": [
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality",
+"s1a605a95abea486298b3e99fc7951a81-right-window-remainder"
+],
+"question": null,
+"producer": "sd4b418d5118a4cca979f423b1e0d249f",
+"producer_role": "attempt"
+},
+"se15e077293474cadadb20108b420b3dc": {
+"id": "se15e077293474cadadb20108b420b3dc",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794274327.8734443,
+"end": 1794277689.2653232,
+"pipeline": "ped5d85036f00400e92a8f1b02ddba352",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s51ae0efe03a143899c33c83ef73d9353",
+"producer_role": "attempt"
+},
+"se22aa989a0274420864745378f0d98ad": {
+"id": "se22aa989a0274420864745378f0d98ad",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793901289.8173368,
+"end": 1793901902.3727906,
+"pipeline": "p42dfe96624444ac1b4da661885cb5f67",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s9ff92a6196cb4952a9815212236420c0",
+"producer_role": "attempt"
+},
+"se22c2096acfb4caaa03502c20c6fb0f7": {
+"id": "se22c2096acfb4caaa03502c20c6fb0f7",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794377119.0057404,
+"end": 1794384087.061,
+"pipeline": "p4f931eab023d440ea27f8e4b92fcb6e1",
+"nodes": [
+"s986857c908dd43ef81627c166fed82eb-lrp-second-layer"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794378764.5114765
+},
+"se230a2619cf343e2a8d84f648b25c2ee": {
+"id": "se230a2619cf343e2a8d84f648b25c2ee",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794378769.1878724,
+"end": 1794380342.013603,
+"pipeline": "paf347f50555249a8a9f38ba4b23fa9ac",
+"nodes": [
+"sf6d08848fee64e6996d91ea811992a50-flat-core"
+],
+"question": null,
+"producer": "sef011062f89a464981059d4beba0a8cf",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"se2683821f9464cf38896b6eb9d87092f": {
+"id": "se2683821f9464cf38896b6eb9d87092f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794278152.386229,
+"end": 1794279618.3811927,
+"pipeline": "pedaa9efacf0b47298c740896113adedf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "sb00ac54629694836851fa8f69149f198",
+"producer_role": "attempt"
+},
+"se2810321ac3847198d9dc8a5bdfb979d": {
+"id": "se2810321ac3847198d9dc8a5bdfb979d",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794394898.206325,
+"end": 1794399558.0988307,
+"pipeline": "p54b18cc0bd734e299c4e5911954087d3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "sec80c854b0f14e74b52cb13401cdc8c7",
+"producer_role": "attempt"
+},
+"se2a1e4093f2048ac9a62a22bcc38fd40": {
+"id": "se2a1e4093f2048ac9a62a22bcc38fd40",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794315125.7068763,
+"end": 1794317784.4458194,
+"pipeline": "pca5ace5bbd72478e83c8abf756932e1c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": "s9e155b623bbc4e4fb74fd105144b47f5",
+"producer_role": "attempt"
+},
+"se2b416f57f2245aebad6a4070e653097": {
+"id": "se2b416f57f2245aebad6a4070e653097",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794263490.6925018,
+"end": 1794267150.9301789,
+"pipeline": "p91085001c8f84f6d8a3360fbb6278030",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s6e2cfa00611a4fae9c906ee48268d7b0",
+"producer_role": "attempt"
+},
+"se2b8b08e7a2d437d8069b3ec11a68d38": {
+"id": "se2b8b08e7a2d437d8069b3ec11a68d38",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793900961.2011716,
+"end": 1793901535.1176088,
+"pipeline": "pdc0f56e5dab84c0e9b4443229888a2d0",
+"nodes": [],
+"question": "q0",
+"producer": "s98b65f38bbd1488c8644d3d698f97785",
+"producer_role": "explore"
+},
+"se2fe369e8a254a3894692acb0e11b58c": {
+"id": "se2fe369e8a254a3894692acb0e11b58c",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794359750.7235181,
+"end": 1794369471.2545252,
+"pipeline": "p5c0ea1cfbf294aa7b437fa850b1ea08c",
+"nodes": [
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794362524.2185903
+},
+"se31b1d88e4104d86a7149c075ee898cd": {
+"id": "se31b1d88e4104d86a7149c075ee898cd",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793897127.2330303,
+"end": 1793897764.6659772,
+"pipeline": "p87f344cdc632411da52632aa33802e73",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8aeaa70cbee34c998f8270b0d4faf02d",
+"producer_role": "attempt"
+},
+"se325eecf013d406e9235edd5bef695c3": {
+"id": "se325eecf013d406e9235edd5bef695c3",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794223407.0276437,
+"end": 1794232873.3194356,
+"pipeline": "p7e67cc22a5824cfbaa59e75eb8b9ec87",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794224865.3402865
+},
+"se32bd3d468c34c05ba7d6e338911b311": {
+"id": "se32bd3d468c34c05ba7d6e338911b311",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793920809.3133595,
+"end": 1793921014.114161,
+"pipeline": "p0dd8c61a975f41a5bb1d3a250d167bb9",
+"nodes": [],
+"question": null,
+"producer": "s58197419cdae472da36509d631330120",
+"producer_role": "attempt"
+},
+"se36fd5983c084ecc86353b8254d091ad": {
+"id": "se36fd5983c084ecc86353b8254d091ad",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794018442.2987618,
+"end": 1794020179.7191048,
+"pipeline": "p8120cbbc74fc41a2bc29cf91ab0544c0",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": "s5192bc6c3f8c4065b91fdbe139a015ac",
+"producer_role": "attempt"
+},
+"se39e76baed884417afafbf4c14702ea2": {
+"id": "se39e76baed884417afafbf4c14702ea2",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794111685.036637,
+"end": 1794121626.7228105,
+"pipeline": "pc11caa45657449b7a805ae2f7569708b",
+"nodes": [],
+"question": "q0",
+"producer": "s95a73201e29f45308133a3c6422761ba",
+"producer_role": "explore"
+},
+"se3d78e511b4d417c827f0f60bc731a64": {
+"id": "se3d78e511b4d417c827f0f60bc731a64",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794387113.726934,
+"end": 1794390186.8402846,
+"pipeline": "p3d6500f3553544dbb631ab8f556ff8e5",
+"nodes": [
+"s1fdba016d0454a5eac323cb18a67655a-stem-gain-vs-threshold-plus"
+],
+"question": null,
+"producer": "s059e9716dd69473d840e642cf11a7ddc",
+"producer_role": "attempt"
+},
+"se44561f5b12044c392109baa8b6e83e5": {
+"id": "se44561f5b12044c392109baa8b6e83e5",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794286979.9008994,
+"end": 1794295561.2712243,
+"pipeline": "p5a03eabfcb914625bd059e4d47ff5c59",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": null,
+"declared_at": 1794287475.873651
+},
+"se448ea678687491c9327d17f150fecd1": {
+"id": "se448ea678687491c9327d17f150fecd1",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794314722.8330069,
+"end": 1794316988.7920103,
+"pipeline": "pb5a496218e7b48128acb2a28773f5d2e",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s5b1793c5098f4a2e9df802dc0c04ba9f",
+"producer_role": "attempt"
+},
+"se448ebabdc9944838b33ab67e7332dd0": {
+"id": "se448ebabdc9944838b33ab67e7332dd0",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793919587.9694958,
+"end": 1793919916.5821695,
+"pipeline": "p27c43b6959e54cd685637048a4fb3052",
+"nodes": [],
+"question": null,
+"producer": "s9cbdf3dcd91f4dd6ad5168dae8859162",
+"producer_role": "attempt"
+},
+"se457f2d15a824b8a88f98576d1f2742e": {
+"id": "se457f2d15a824b8a88f98576d1f2742e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793868911.7018955,
+"end": 1793869669.8124723,
+"pipeline": "pdab023d92c3f4fd395b14b051f26638c",
+"nodes": [],
+"question": null,
+"producer": "sb6fcb9baed5a45ef925c49005eb4467b",
+"producer_role": "attempt"
+},
+"se46ab51904554393ad956ee208f77303": {
+"id": "se46ab51904554393ad956ee208f77303",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793998201.762465,
+"end": 1793998442.9487348,
+"pipeline": "pc6933eff262147eb9a665a93e8c35a1c",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se4976c2db7bf401d90e1ea9448beef49": {
+"id": "se4976c2db7bf401d90e1ea9448beef49",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793935601.510618,
+"end": 1793937857.625128,
+"pipeline": "p2eb8ee5dbc4541f18c71d8e186b4bedc",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793935838.9449344
+},
+"se4ea2a021d534ac6a82d85fa1d5831ab": {
+"id": "se4ea2a021d534ac6a82d85fa1d5831ab",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793874462.057462,
+"end": 1793875121.8307903,
+"pipeline": "p08026e7042864098a62753c5c0211a54",
+"nodes": [],
+"question": null,
+"producer": "s1026dfa0089240b7b2c7c82d82091568",
+"producer_role": "attempt"
+},
+"se50277dbb32448eb9029df371d8f4e8f": {
+"id": "se50277dbb32448eb9029df371d8f4e8f",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794288205.519402,
+"end": 1794290060.2992663,
+"pipeline": "pb199d960a9b5403db9a874037b5aa93f",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk",
+"se0f20dc63d0741e09b4cc2305252734b-fs-window"
+],
+"question": null,
+"producer": "s2a382a430b4d4d8bbb136b2bc5e828f5",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"se56e200912c14e579f94842b09976770": {
+"id": "se56e200912c14e579f94842b09976770",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794413516.7764893,
+"end": 1794414475.4611068,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se5f2bcca9e0e460fa10b5c3d7af5f2a9": {
+"id": "se5f2bcca9e0e460fa10b5c3d7af5f2a9",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794411539.873657,
+"end": 1794413776.9591281,
+"pipeline": "p4ade0073b7614c718b964cf7e931570a",
+"nodes": [
+"sa16630c9a4c54aebb9dac8a73573e76b-flow-remainder"
+],
+"question": null,
+"producer": "sab070135fd7940039c8d3696ffe41e3f",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"se62b8e387325453a94b4189b286a7579": {
+"id": "se62b8e387325453a94b4189b286a7579",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794032976.204472,
+"end": 1794036580.7832534,
+"pipeline": "p3430188d1fc64b6f9cb806fba10b022c",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794033175.0224633
+},
+"se62f5bc9ac8a4453b5450a59b0105c4a": {
+"id": "se62f5bc9ac8a4453b5450a59b0105c4a",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793947887.7068813,
+"end": 1793948581.7499526,
+"pipeline": "p5948f196422a4a2494349514ac84555d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sb3f5bc9e3d114acc9731a9e87a767379",
+"producer_role": "attempt"
+},
+"se65f44d6c36a4933857bd7e3b3ddb349": {
+"id": "se65f44d6c36a4933857bd7e3b3ddb349",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793989150.8960454,
+"end": 1793992781.97824,
+"pipeline": "pf44630a8051b4eab852f3a2f501a760f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sb15e42f73f834d6cb377d9fd54ad62e2",
+"producer_role": "attempt"
+},
+"se6e167684c5044f78bf2122c2e25cf2a": {
+"id": "se6e167684c5044f78bf2122c2e25cf2a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794045111.7648897,
+"end": 1794046454.6099365,
+"pipeline": "pcfc5a59787394a279cc2826cb500036d",
+"nodes": [],
+"question": "q0",
+"producer": "sdd8512d437444ee2aaaf190e0e90576b",
+"producer_role": "explore"
+},
+"se6e7a6d1f6064769a9c688b9913d462f": {
+"id": "se6e7a6d1f6064769a9c688b9913d462f",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794007238.3757951,
+"end": 1794011514.1235106,
+"pipeline": "p6cd5010633b946d883c37bd7b2c27b9a",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-right-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794007468.1453083
+},
+"se70b1da0d66545fca5a6f8d272d813f5": {
+"id": "se70b1da0d66545fca5a6f8d272d813f5",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793991623.0274663,
+"end": 1793992027.7641807,
+"pipeline": "pcfca7a5177574b0eb60a0280ec950283",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se76f29fcbd904a90b8a273e4cf33d571": {
+"id": "se76f29fcbd904a90b8a273e4cf33d571",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794211657.0498955,
+"end": 1794219852.376791,
+"pipeline": "p773c51b8ba5b4c0c811837ab23c49a16",
+"nodes": [],
+"question": "q0",
+"producer": null,
+"declared_at": 1794211655.0239482
+},
+"se7b5ff2ed31647ff8b826e9cd5d2f5d0": {
+"id": "se7b5ff2ed31647ff8b826e9cd5d2f5d0",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793991112.2562804,
+"end": 1793994228.9310813,
+"pipeline": "pe7aa4bfc41964941aac2a9ea928a81ae",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793991439.3997123
+},
+"se7d6c6464f74400f9c99bd0ff6c23c8b": {
+"id": "se7d6c6464f74400f9c99bd0ff6c23c8b",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793934969.504891,
+"end": 1793935591.0259554,
+"pipeline": "p7e7ce74178ab444d894eaf0279a2783d",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s04ec7af70fdf47849a51a966c106a957",
+"producer_role": "attempt"
+},
+"se8ae8dbb1eed42f89c770a1c4c6dc879": {
+"id": "se8ae8dbb1eed42f89c770a1c4c6dc879",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794217554.3905342,
+"end": 1794219539.853361,
+"pipeline": "pe397f7e502064c01a57b681396d89bfb",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sf525b0acf83846069893699c8c6b94f1",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"se8afabd78d5d46b48ce9b7adf253038e": {
+"id": "se8afabd78d5d46b48ce9b7adf253038e",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794311633.5532684,
+"end": 1794321185.1504846,
+"pipeline": "pd816398237c44b0db79126ff9eab3213",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794313573.47675
+},
+"se8fb297be8284eb3845293b46fd5b061": {
+"id": "se8fb297be8284eb3845293b46fd5b061",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794154561.524726,
+"end": 1794162132.2330015,
+"pipeline": "p8ba963824ed14c678a89f53921e2215f",
+"nodes": [],
+"question": "q0",
+"producer": null
+},
+"se920a154dbae4adbafb4446a219d71de": {
+"id": "se920a154dbae4adbafb4446a219d71de",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793931274.3066623,
+"end": 1793931806.4275527,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se931af5b8e8a44dfaf672252fcf815a2": {
+"id": "se931af5b8e8a44dfaf672252fcf815a2",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794331694.4065893,
+"end": 1794332786.6779218,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"se966a78e92d24585ae413685c9bf3577": {
+"id": "se966a78e92d24585ae413685c9bf3577",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793922724.0921342,
+"end": 1793922920.9172475,
+"pipeline": "pda346732ccd04c6f9213c4440c3466e7",
+"nodes": [],
+"question": null,
+"producer": "sbd662e53a5ed4f55a4c3c233a3bdd564",
+"producer_role": "attempt"
+},
+"se9a94470d6a84fac9428e627d92463e2": {
+"id": "se9a94470d6a84fac9428e627d92463e2",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794340636.2880447,
+"end": 1794343211.6270633,
+"pipeline": "p3b138f18e0194aeaa55efa088bc73b1a",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s976913991c154f8fabba04c6bf6308f3",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"se9f2917b7cce4ddaad3daeda8932a499": {
+"id": "se9f2917b7cce4ddaad3daeda8932a499",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794298921.9418428,
+"end": 1794301332.7961352,
+"pipeline": "p86798285afb3432aab634fbaaf9b66d3",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": "sf8861182d2e843659c10d727569be3d2",
+"producer_role": "attempt"
+},
+"sea2b206e072b444abb9524f885502815": {
+"id": "sea2b206e072b444abb9524f885502815",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794002255.7602465,
+"end": 1794006702.1768348,
+"pipeline": "pe7aa4bfc41964941aac2a9ea928a81ae",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "se7b5ff2ed31647ff8b826e9cd5d2f5d0",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sea615687e76d4cf392cb3ec8b6caaf32": {
+"id": "sea615687e76d4cf392cb3ec8b6caaf32",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793914028.4471283,
+"end": 1793914160.1276817,
+"pipeline": "p9951707251c54a94ab3cf1866f806081",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sea7d96a3f9c940fe94d0a03d46e48af7": {
+"id": "sea7d96a3f9c940fe94d0a03d46e48af7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794247467.276413,
+"end": 1794255468.831992,
+"pipeline": "pd75c89c762f94b6db2498daef1f1fc6b",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s91e315f6de7948a28eed09e2b4dd51d3",
+"producer_role": "attempt"
+},
+"sea8a51a77c594542bd8889d99c441df2": {
+"id": "sea8a51a77c594542bd8889d99c441df2",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794261355.860687,
+"end": 1794262586.8058217,
+"pipeline": "p625bedbb9a9c475f8b238549fbee3487",
+"nodes": [
+"s4ccf69d3fe4e414abcfbbf0848b71a00-chain-part-window"
+],
+"question": null,
+"producer": "sc6d29538ad364bbdb41632c5fd8394c5",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"seab3cea82cd248da8a72bdb7e6436de6": {
+"id": "seab3cea82cd248da8a72bdb7e6436de6",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794251090.9639533,
+"end": 1794253213.343794,
+"pipeline": "p560be1ff70d24a07af070821fec20f6c",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s5fa3188be536453eb30da17570256a27",
+"producer_role": "explore"
+},
+"seae874f1d74a4a3585eb2b003bd33e49": {
+"id": "seae874f1d74a4a3585eb2b003bd33e49",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794009476.7409227,
+"end": 1794013190.2673602,
+"pipeline": "pc5f8f39579d7424dadf12d77e94ae63d",
+"nodes": [],
+"question": "q0",
+"producer": "sbd7ae0031ece41bdbedaac5d0416a63c",
+"producer_role": "explore"
+},
+"seae91265f5784a43a8f4a839d9e75f9d": {
+"id": "seae91265f5784a43a8f4a839d9e75f9d",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793872773.4716554,
+"end": 1793875118.4257672,
+"pipeline": "p8a1e93d6db764006816713ef1b61ce55",
+"nodes": [],
+"question": null,
+"producer": null,
+"declared_at": 1793872812.373184
+},
+"seb2912b22156468b87e50131a3173dcd": {
+"id": "seb2912b22156468b87e50131a3173dcd",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794237945.216911,
+"end": 1794238925.7055135,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"seb439206bec2489c835c205268928428": {
+"id": "seb439206bec2489c835c205268928428",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794339934.2601013,
+"end": 1794344127.8152437,
+"pipeline": "p32a9fceafe5e4918b7e753331e9b03f3",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s3bebd84e8a5d4853a851552db799c718",
+"producer_role": "attempt"
+},
+"seb60591aa5984a40bd84ce8e349c0246": {
+"id": "seb60591aa5984a40bd84ce8e349c0246",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793897732.528533,
+"end": 1793898391.1691616,
+"pipeline": "pfcbb78cd7523472fa29ccfc99569dec5",
+"nodes": [],
+"question": "q0",
+"producer": "s866d767af66a40ba92b3e552e393a683",
+"producer_role": "explore"
+},
+"seb91f3cc4a87410f82ea816d3efff722": {
+"id": "seb91f3cc4a87410f82ea816d3efff722",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794420809.6525297,
+"end": null,
+"pipeline": "p44fc08d3d3be4761adcd804f691319a9",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s74dad68e708247f3a4e595fd0c81b67e",
+"producer_role": "attempt"
+},
+"sebdfe7711dca49c6b264dff3044aa0e0": {
+"id": "sebdfe7711dca49c6b264dff3044aa0e0",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793911754.0164678,
+"end": 1793913807.3991082,
+"pipeline": "pe5c441cbd2c240b6aeac414aae06179d",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793911895.1910896
+},
+"sec13eefbbf424115bc53f39faed1339b": {
+"id": "sec13eefbbf424115bc53f39faed1339b",
+"role": "peer",
+"model": "codex/gpt-6.1-sol",
+"start": 1793949600.392947,
+"end": 1793951888.6515856,
+"pipeline": "p40430f5cec6d43f48d698f6e7e9651d7",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s9640eb931fcf44e598c3229334757b59",
+"producer_role": "formalizer"
+},
+"sec2e2120f6e94529a29e987ac81ddb89": {
+"id": "sec2e2120f6e94529a29e987ac81ddb89",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793867166.2933526,
+"end": 1793868474.6515374,
+"pipeline": "pc6b7fa24ca81408382f63503425779da",
+"nodes": [],
+"question": null,
+"producer": "s2bab843f93fb42fd9e8df5469c9fd974",
+"producer_role": "attempt"
+},
+"sec3f5065a11441688d3386fa33c2f59b": {
+"id": "sec3f5065a11441688d3386fa33c2f59b",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794323875.943385,
+"end": 1794329389.2776783,
+"pipeline": "p9fa2af15955645179cde878552b8dbcd",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": "s13b9b9ab7dd846f5aad4a4ef96797175",
+"producer_role": "explore"
+},
+"sec7a46a64c83466081593e5b75b86b6e": {
+"id": "sec7a46a64c83466081593e5b75b86b6e",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794031838.3331552,
+"end": 1794035878.7470615,
+"pipeline": "p1faca19204174b399858d27891089ea0",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-right-interior"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794032058.6332092
+},
+"sec808efe787c47d299ee9dab60067bc0": {
+"id": "sec808efe787c47d299ee9dab60067bc0",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794368759.4648283,
+"end": 1794371673.8772106,
+"pipeline": "pdb6b5c603dcd4e2ab0c4d9a3ab138980",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment"
+],
+"question": null,
+"producer": "sf4c70807aaa34a4e83cc669f014ba589",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sec80c854b0f14e74b52cb13401cdc8c7": {
+"id": "sec80c854b0f14e74b52cb13401cdc8c7",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794383439.1157434,
+"end": 1794394893.8854547,
+"pipeline": "p54b18cc0bd734e299c4e5911954087d3",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794386237.7884796
+},
+"secca155a3bbd4a57b88e389f8d925fc6": {
+"id": "secca155a3bbd4a57b88e389f8d925fc6",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793863484.7545106,
+"end": 1793864983.6160657,
+"pipeline": "pcade64d4719c43acb723f26d048147f3",
+"nodes": [],
+"question": null,
+"producer": "sd1a36620b0694ca89372b85bc8ae79a6",
+"producer_role": "attempt"
+},
+"sed538f741c084d11ab6a7748c20827d9": {
+"id": "sed538f741c084d11ab6a7748c20827d9",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793942279.0308442,
+"end": 1793942965.714586,
+"pipeline": "pb4845cf8ddcf4c4ea130d2437ed5e453",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s364a90e4659f41bb85f4778305baeb21",
+"producer_role": "attempt"
+},
+"sedbbbf01fbca4761bb1884277bea560e": {
+"id": "sedbbbf01fbca4761bb1884277bea560e",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793907214.3705428,
+"end": 1793908359.3231373,
+"pipeline": "p45fea92fb81448db9eb7cfdaff3ba212",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s8c2638dc5cad4eb8bfec08f3e54acfac",
+"producer_role": "attempt"
+},
+"see246da428bc4779846dde05ff4adfa9": {
+"id": "see246da428bc4779846dde05ff4adfa9",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794004508.4969497,
+"end": 1794008177.5016356,
+"pipeline": "p5ea9db96e4c94b1fb0e250ed4395e9e5",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794004768.5346112
+},
+"see464b471133415a937a83897e2645d4": {
+"id": "see464b471133415a937a83897e2645d4",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793969540.8553143,
+"end": 1793975633.1481452,
+"pipeline": "p1ce90589fcdc40a8aabbbd7d69026b66",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793969766.945129
+},
+"see50061f2c87477aac88b76f5fc0de31": {
+"id": "see50061f2c87477aac88b76f5fc0de31",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793935047.6912143,
+"end": 1793935890.7862747,
+"pipeline": "p7203be3b7e94409d86fc2d7d6aef0e48",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1c1fad1a256c438c8f1d45f3464675ed",
+"producer_role": "attempt"
+},
+"see74449d7b1e4d61abb910ed72d2500b": {
+"id": "see74449d7b1e4d61abb910ed72d2500b",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793910241.796496,
+"end": 1793911492.5087643,
+"pipeline": "p2d6b3359908b449ab635ea697b6e6891",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793910241.6287549
+},
+"see8ee2125ee341bcb45a6b5bb3bb5721": {
+"id": "see8ee2125ee341bcb45a6b5bb3bb5721",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794333196.714438,
+"end": 1794335952.3288288,
+"pipeline": "p2b45813555f04d01ac50d6f97ce72c1a",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s321fde48bceb4128acd1f26fc079d12c",
+"producer_role": "explore"
+},
+"see97affb825d4965aba01b90f575423a": {
+"id": "see97affb825d4965aba01b90f575423a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794280350.0401714,
+"end": 1794288417.1574924,
+"pipeline": "p480adf74433d4fbd802ce79a6264215a",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-q-left-half"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794281881.2827368
+},
+"seea72c79ac994b0f9917e14fafa41cf7": {
+"id": "seea72c79ac994b0f9917e14fafa41cf7",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794064323.0515888,
+"end": 1794077052.6461432,
+"pipeline": "pcf6155f214a24c3a83237510fdc3fda1",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "sa7799f3650154be1a33a471804ac99cc",
+"producer_role": "attempt"
+},
+"seea78ad61f3b421098a1964320092d33": {
+"id": "seea78ad61f3b421098a1964320092d33",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794079791.0507612,
+"end": 1794087613.1278584,
+"pipeline": "pa4ff85aeaf33470d85c154275b0a780a",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794082419.7160716
+},
+"sef0087463c904180823143ce6febd6f7": {
+"id": "sef0087463c904180823143ce6febd6f7",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794111114.7324972,
+"end": 1794155356.6869328,
+"pipeline": "p445f96d7c01347bcb4768b7bd1c3e2b5",
+"nodes": [
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794113929.4497156
+},
+"sef011062f89a464981059d4beba0a8cf": {
+"id": "sef011062f89a464981059d4beba0a8cf",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794360582.1218078,
+"end": 1794373910.2963002,
+"pipeline": "paf347f50555249a8a9f38ba4b23fa9ac",
+"nodes": [
+"sf6d08848fee64e6996d91ea811992a50-flat-core"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794363845.8593385
+},
+"sef212e8a93ab4c68b4861370d36edd4b": {
+"id": "sef212e8a93ab4c68b4861370d36edd4b",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794213204.0221496,
+"end": 1794215562.5456579,
+"pipeline": "pecb5160cbc9a402aa4046f6b5ef8ead3",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-left-residual-pole"
+],
+"question": null,
+"producer": "s7b1d4c463be24dc68a59ba3219cecefe",
+"producer_role": "attempt"
+},
+"sef65cc3d9a9741058917e86170175249": {
+"id": "sef65cc3d9a9741058917e86170175249",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794152207.8685012,
+"end": 1794158058.2041123,
+"pipeline": "p9ef29066af294786a3b93a39b9544794",
+"nodes": [
+"seea72c79ac994b0f9917e14fafa41cf7-finite-size-transfer"
+],
+"question": null,
+"producer": "s3cd888bd8c4b4329ac85338632c96a23",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sef727b77ec2e4f6984f20c34e21c0de3": {
+"id": "sef727b77ec2e4f6984f20c34e21c0de3",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794388370.6718695,
+"end": 1794401574.9424567,
+"pipeline": "p5e9c18f73be049f29267fae7966b082b",
+"nodes": [],
+"question": "s86c2176292f1483baa123415353b7cef-clock-counting-path",
+"producer": null,
+"declared_at": 1794389524.9431853
+},
+"sefc92bb7260544e4be04d7a82215a9d3": {
+"id": "sefc92bb7260544e4be04d7a82215a9d3",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794344406.563261,
+"end": 1794346381.69791,
+"pipeline": "p065aa222338a4e4ea9d6f52fb51ec4f9",
+"nodes": [
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k"
+],
+"question": null,
+"producer": "s86d94d91102e433a9d3229bf139ef3c8",
+"producer_role": "attempt"
+},
+"sefd6b7665040423baf0440c5df65723d": {
+"id": "sefd6b7665040423baf0440c5df65723d",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793946591.5889752,
+"end": 1793946800.7381058,
+"pipeline": "pc8e50d91af124685a77914c0752c0408",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf014f830816e40369422afe2131cf1bc": {
+"id": "sf014f830816e40369422afe2131cf1bc",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1794320798.447801,
+"end": 1794321866.0259085,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf0191e6b70e44e128e90eb8bb132adbe": {
+"id": "sf0191e6b70e44e128e90eb8bb132adbe",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794296821.083699,
+"end": 1794306336.542572,
+"pipeline": "p92a24c82310449bbaa7466abb46c459b",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794301605.4372857
+},
+"sf08503670bbf48a4b4203c6ec4e109c9": {
+"id": "sf08503670bbf48a4b4203c6ec4e109c9",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794267058.4141922,
+"end": 1794272885.1354618,
+"pipeline": "p0d73de55406c4240a474b64f6c8c4aa9",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s861783c134504e26b33d4e6c7d688169",
+"producer_role": "attempt"
+},
+"sf08b056520d24d2bb8ca8b4d81d9ceba": {
+"id": "sf08b056520d24d2bb8ca8b4d81d9ceba",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794267862.5538406,
+"end": 1794269324.2461092,
+"pipeline": "p6df51f408c1f4d54819c6b3a3fefdee0",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": "s62cff71478454e1bbef785b9463eaf3a",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sf09ee3b96dc1494283d43bab0b1e84ec": {
+"id": "sf09ee3b96dc1494283d43bab0b1e84ec",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793912462.8229077,
+"end": 1793912940.3944602,
+"pipeline": "p2d6b3359908b449ab635ea697b6e6891",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "see74449d7b1e4d61abb910ed72d2500b",
+"producer_role": "formalizer"
+},
+"sf0ab3e41e23f49ecacf4907b5c0e441f": {
+"id": "sf0ab3e41e23f49ecacf4907b5c0e441f",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793929306.5306368,
+"end": 1793929379.9574535,
+"pipeline": "p5cd8357ab6ed4002a8a1165fc3f685ed",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf0af59cb00af499682d4bee85fe9dc4c": {
+"id": "sf0af59cb00af499682d4bee85fe9dc4c",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794068737.568655,
+"end": 1794070998.4496837,
+"pipeline": "p9afa856510a54a92b50d9f926a2ab698",
+"nodes": [
+"s02738f0396be497f9a02a1415fb0df47-right-bulk-increase"
+],
+"question": null,
+"producer": "sc5311c53c4234227becc1d8e8d7ab498",
+"producer_role": "attempt"
+},
+"sf110d6f5f3fa455da5516650c4cc03b0": {
+"id": "sf110d6f5f3fa455da5516650c4cc03b0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794261702.3824272,
+"end": 1794266496.8145518,
+"pipeline": "p6a92b1bfabd4478195ee14b56cf521b7",
+"nodes": [],
+"question": "sa4dca5e8e0f54b9083d919f473767f43-layer-pole-handover",
+"producer": "s9ef9a787214547819019ce137730280a",
+"producer_role": "explore"
+},
+"sf1e6eab8ef3e4c8e8da8d5810e2c4e0b": {
+"id": "sf1e6eab8ef3e4c8e8da8d5810e2c4e0b",
+"role": "explore",
+"model": "claude/claude-fable-5-1",
+"start": 1794247117.2550125,
+"end": 1794253314.649832,
+"pipeline": "pe8180f1b4c554191a6d6fcb1b46b0811",
+"nodes": [],
+"question": "s7216ebedc7884d188175f4e9865df930-branching-universality",
+"producer": null,
+"declared_at": 1794247304.0453916
+},
+"sf27a7f067d994ab9b057fe9ea11dbfbf": {
+"id": "sf27a7f067d994ab9b057fe9ea11dbfbf",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1793970030.506564,
+"end": 1793972663.0123265,
+"pipeline": "pa16c482d175a449e98c74fd1f827fd95",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s8d7f07a934754cba96614a66183dc737",
+"producer_role": "attempt"
+},
+"sf2fdfa5cd9fe4b40861a0f752df35d46": {
+"id": "sf2fdfa5cd9fe4b40861a0f752df35d46",
+"role": "formalizer",
+"model": "gpt-6.1-sol",
+"start": 1793920242.4595442,
+"end": 1793921933.2197008,
+"pipeline": "pc22538ffcb26473b83b69f83117b57f5",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793920242.3443842
+},
+"sf3063e0be63e4740834e489d78a0367f": {
+"id": "sf3063e0be63e4740834e489d78a0367f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793921933.7595453,
+"end": 1793923047.7266006,
+"pipeline": "pc22538ffcb26473b83b69f83117b57f5",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "sf2fdfa5cd9fe4b40861a0f752df35d46",
+"producer_role": "formalizer"
+},
+"sf3280330ce644406a63a926f069eaf3d": {
+"id": "sf3280330ce644406a63a926f069eaf3d",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794219763.443501,
+"end": 1794242990.0576801,
+"pipeline": "p3978cfbf78174842af811667772fdc24",
+"nodes": [
+"s36a005723f034a3aa8ab7c81d3ffe29d-first-layer-weighted-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794222350.116918
+},
+"sf3f36cf74264430e87cdc67f7f946c01": {
+"id": "sf3f36cf74264430e87cdc67f7f946c01",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794272376.2583897,
+"end": 1794274267.7836125,
+"pipeline": "pd8b4d9aa4c4a43da810a8a61462e06ed",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "s42a6a9e973374f65af9c6fb47c140ccb",
+"producer_role": "attempt"
+},
+"sf485cc3f782b4ee2befa7c3898628b97": {
+"id": "sf485cc3f782b4ee2befa7c3898628b97",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793946896.338889,
+"end": 1793948505.0607247,
+"pipeline": "p38efd4a6f21647e589ffc8226a7d7cab",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s6bd4141d573e4dbcba71e74baaabacb1",
+"producer_role": "attempt"
+},
+"sf497d559268c487c828d50e496b77589": {
+"id": "sf497d559268c487c828d50e496b77589",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794231648.1545599,
+"end": 1794236289.8062756,
+"pipeline": "pb927feed36a34a28949092923bdf8858",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "sdead88f9b77848e7ba62bec562f0f72c",
+"producer_role": "attempt"
+},
+"sf4c70807aaa34a4e83cc669f014ba589": {
+"id": "sf4c70807aaa34a4e83cc669f014ba589",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794344277.2351115,
+"end": 1794359868.132811,
+"pipeline": "pdb6b5c603dcd4e2ab0c4d9a3ab138980",
+"nodes": [
+"s2da0487e03dd42f296bd299c8861dfd1-ul-core-visit-moment"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794348755.0411687
+},
+"sf4d35e3050354c24a88b50f76093b17e": {
+"id": "sf4d35e3050354c24a88b50f76093b17e",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793896985.4018714,
+"end": 1793897490.6495323,
+"pipeline": "p42b4a54fd15e4a22809c6100be54b183",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s6a08b5879dc24406ae3d4e860e55085a",
+"producer_role": "attempt"
+},
+"sf525b0acf83846069893699c8c6b94f1": {
+"id": "sf525b0acf83846069893699c8c6b94f1",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794195302.312531,
+"end": 1794207461.5956342,
+"pipeline": "pe397f7e502064c01a57b681396d89bfb",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794197233.4265785
+},
+"sf56e2ecff89c44fa82d37a71aaf14dce": {
+"id": "sf56e2ecff89c44fa82d37a71aaf14dce",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794002251.3682013,
+"end": 1794005362.9415827,
+"pipeline": "p9a2bd545cde44f22827a09f18eed6198",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s1d80bbea85ab4f67966756c46ae881c9",
+"producer_role": "attempt"
+},
+"sf57b7125c775474e92ba50b92c5dd2e8": {
+"id": "sf57b7125c775474e92ba50b92c5dd2e8",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1794020100.2270367,
+"end": 1794023132.8491333,
+"pipeline": "pc177e90b28444fa5881e2c97f7b982cf",
+"nodes": [
+"s570b0e977ad645fb831b27f850048913-boundary-response-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794020263.3843658
+},
+"sf64e5b3de23b45bcae8ed4beea3d542a": {
+"id": "sf64e5b3de23b45bcae8ed4beea3d542a",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794401558.8555107,
+"end": 1794403894.2687485,
+"pipeline": "pee831d9fdf82453b9deaf81612d1fa58",
+"nodes": [
+"s87a38ae6444b4437aa8c1208bc793d21-onelevel-bulk"
+],
+"question": null,
+"producer": "s4f28ad6bac7546b1b7aa181765070550",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sf66bcf3e3dc0418a8606d53a77426830": {
+"id": "sf66bcf3e3dc0418a8606d53a77426830",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793903893.4227176,
+"end": 1793904652.1581368,
+"pipeline": "p5feba55812b441e78e5ed8108b88632a",
+"nodes": [],
+"question": "q0",
+"producer": "s3003455054b54661814f84090c89afd3",
+"producer_role": "explore"
+},
+"sf6cafc32e1734ce0b26bcfcd876c8f80": {
+"id": "sf6cafc32e1734ce0b26bcfcd876c8f80",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793969768.57687,
+"end": 1793970015.664093,
+"pipeline": "p5b98305b13b6462a9ad7a0f2681b7e12",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf6d08848fee64e6996d91ea811992a50": {
+"id": "sf6d08848fee64e6996d91ea811992a50",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794288258.734701,
+"end": 1794293838.061304,
+"pipeline": "pec57921ade4f4c2397fec1cf24fbf560",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s4ff81702bdb84072a5a03a8c275560c3",
+"producer_role": "attempt"
+},
+"sf78c6e73c27b4e55bddf3a213d4a6f62": {
+"id": "sf78c6e73c27b4e55bddf3a213d4a6f62",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793953592.3845189,
+"end": 1793954445.6221082,
+"pipeline": "p7354aa75470f43a2be6c219d39fb6ec8",
+"nodes": [],
+"question": "q0",
+"producer": "s59cd0833ae814480bbca6e71834fcadb",
+"producer_role": "explore"
+},
+"sf79d549a2e12475fb06f0fd52eae264f": {
+"id": "sf79d549a2e12475fb06f0fd52eae264f",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793920101.9120605,
+"end": 1793920418.3720274,
+"pipeline": "pa4dc846bd280455eafae69b7305769b6",
+"nodes": [],
+"question": null,
+"producer": "s0e7a8cae1be34f7193fd3cc8748e9979",
+"producer_role": "attempt"
+},
+"sf7a69a98f9a54eb8be49cea85e873b74": {
+"id": "sf7a69a98f9a54eb8be49cea85e873b74",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793860166.8142283,
+"end": 1793861118.3655138,
+"pipeline": "p3d39fc85c86c4d80ba0210af0757839f",
+"nodes": [],
+"question": "q0",
+"producer": "sa3a66df86eb54b34b477bfe0a4ac52ca",
+"producer_role": "explore"
+},
+"sf7aae073504d4974a0a8aea4650777ff": {
+"id": "sf7aae073504d4974a0a8aea4650777ff",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794158621.3041456,
+"end": 1794160705.88187,
+"pipeline": "p148c350004d74c3eab0552e20b8c4ef9",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s59b5edc0dde34b4f858d6320e676b13b",
+"producer_role": "attempt"
+},
+"sf8293b29abcc4eefb12bee8f62b38c10": {
+"id": "sf8293b29abcc4eefb12bee8f62b38c10",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794409554.709366,
+"end": 1794415878.813763,
+"pipeline": "pd761336fd8e94572ad98fa7fd0397c74",
+"nodes": [],
+"question": "s7a50feafd0d74dde9c5ac37f50f5ccbd-concavity-exponent",
+"producer": "s3aaed22bef39493d80a37c605ee7c82a",
+"producer_role": "explore"
+},
+"sf83912b1822847fa8866283cb30ddb48": {
+"id": "sf83912b1822847fa8866283cb30ddb48",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793994965.9786596,
+"end": 1793998672.1420226,
+"pipeline": "p5ddabc9d0a8e44d188aff9608a84b57f",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": null,
+"declared_at": 1793995102.6740105
+},
+"sf83de96cf66e465b962e59dbbf518c08": {
+"id": "sf83de96cf66e465b962e59dbbf518c08",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793992373.2171433,
+"end": 1793993233.4209936,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf8861182d2e843659c10d727569be3d2": {
+"id": "sf8861182d2e843659c10d727569be3d2",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794281269.1885364,
+"end": 1794291748.7014725,
+"pipeline": "p86798285afb3432aab634fbaaf9b66d3",
+"nodes": [
+"scf9ee1ba989d47fe85b5c729259d71b7-first-layer-single-sign-change"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794283944.24167
+},
+"sf88d9ff07a1c4483ac4a0e01bf016c18": {
+"id": "sf88d9ff07a1c4483ac4a0e01bf016c18",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793937494.611581,
+"end": 1793938568.5750108,
+"pipeline": "pb4845cf8ddcf4c4ea130d2437ed5e453",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s364a90e4659f41bb85f4778305baeb21",
+"producer_role": "attempt"
+},
+"sf89cd690127b4a19b1d8e1293db5ba48": {
+"id": "sf89cd690127b4a19b1d8e1293db5ba48",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794310684.4751303,
+"end": 1794313440.83728,
+"pipeline": "p92a24c82310449bbaa7466abb46c459b",
+"nodes": [
+"scae5188c08ea43568e3108c30a46cdd5-ul-far-window",
+"scae5188c08ea43568e3108c30a46cdd5-ul-small-k-bulk"
+],
+"question": null,
+"producer": "sf0191e6b70e44e128e90eb8bb132adbe",
+"target_from": "record",
+"producer_role": "attempt"
+},
+"sf8b9267bc7c142fa9ca519a3f566b2a7": {
+"id": "sf8b9267bc7c142fa9ca519a3f566b2a7",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794089103.8514538,
+"end": 1794094726.7461426,
+"pipeline": "p3bef8071416749729aff8780a11c851a",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s84ba5274540445b3bc6d33ee321240b6",
+"producer_role": "attempt"
+},
+"sf8e03d4c2e5e40e694cea3ecd2b0d6ea": {
+"id": "sf8e03d4c2e5e40e694cea3ecd2b0d6ea",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794105887.2254887,
+"end": 1794115476.9258058,
+"pipeline": "p81276a4d59f348e59f4495441e41d2c7",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced",
+"sfd3fc7c16be0404599ce6d59cd660a87-left-moment-core"
+],
+"question": null,
+"producer": "s3f394cdfb3fe4c07a52477fd551a7247",
+"declared_at": 1794108539.842307,
+"producer_role": "attempt"
+},
+"sf91d6b829ca94970af6f045569dd8bf0": {
+"id": "sf91d6b829ca94970af6f045569dd8bf0",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794211066.0660093,
+"end": 1794218867.7283182,
+"pipeline": "p19bdff2172cf415883cc6750778adada",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "s9c2801d5f9cf4f82985c62dde9f101af",
+"producer_role": "attempt"
+},
+"sf96170be2a384043a8ed7d613324ce75": {
+"id": "sf96170be2a384043a8ed7d613324ce75",
+"role": "attempt",
+"model": "gpt-6.1-sol",
+"start": 1793921689.5202742,
+"end": 1793921819.422534,
+"pipeline": "p0a11075c342444918967ca5e85724889",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sf9af36b592d948d98f05893130653c36": {
+"id": "sf9af36b592d948d98f05893130653c36",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793866901.9941337,
+"end": 1793868431.2806199,
+"pipeline": "pcb9112feab2246e09e8404adcf6d7f0d",
+"nodes": [],
+"question": "q0",
+"producer": "sd9dac32c31f443ffa649c34e93b44a7f",
+"producer_role": "explore"
+},
+"sf9c9ab4564fb47c19ba1db6ce162f1e0": {
+"id": "sf9c9ab4564fb47c19ba1db6ce162f1e0",
+"role": "formalizer",
+"model": "claude/claude-fable-5-1",
+"start": 1794166862.6111443,
+"end": 1794192369.285776,
+"pipeline": "p94eb770a7a064c1f96b7518ffdfc8569",
+"nodes": [
+"s1a605a95abea486298b3e99fc7951a81-right-two-term-inequality"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794166861.6081207
+},
+"sf9f361a88b494d1db9cd79285aff15a8": {
+"id": "sf9f361a88b494d1db9cd79285aff15a8",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794385497.9702394,
+"end": 1794388227.285409,
+"pipeline": "p0dd24073060f4717ba979c0405a42069",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-left-interior"
+],
+"question": null,
+"producer": "sbd5a09e0ec1d439287f89550b2582c4e",
+"producer_role": "attempt"
+},
+"sfac4a29800bb4efdadda82407391faaf": {
+"id": "sfac4a29800bb4efdadda82407391faaf",
+"role": "organizer",
+"model": "gpt-6.1-sol",
+"start": 1793894278.4600692,
+"end": 1793894935.800542,
+"pipeline": null,
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sfac9cec5aa6b41ea89c49554420c2fa6": {
+"id": "sfac9cec5aa6b41ea89c49554420c2fa6",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794379572.6413884,
+"end": 1794383352.428789,
+"pipeline": "p81113ce8d53b4524a2df46612624082b",
+"nodes": [
+"s747c26e46c6442b8948b31c328499564-ul-core-abel-tail",
+"scae5188c08ea43568e3108c30a46cdd5-ul-core"
+],
+"question": null,
+"producer": "s6c038976188c46e0b4daf017f0bbae29",
+"producer_role": "attempt"
+},
+"sfb7d6ada8c1a4a6c8502721bd7b77e71": {
+"id": "sfb7d6ada8c1a4a6c8502721bd7b77e71",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793982827.131876,
+"end": 1793983066.920165,
+"pipeline": "pb986ad42137946968ec3acde83ab450d",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sfc1df98e67da4440a6ed5ddcdd617673": {
+"id": "sfc1df98e67da4440a6ed5ddcdd617673",
+"role": "attempt",
+"model": "codex/gpt-6.1-sol",
+"start": 1793972984.497684,
+"end": 1793973299.9844565,
+"pipeline": "p5e476d0f1a0b4abc95bc07a4c0cd02f4",
+"nodes": [],
+"question": null,
+"producer": null
+},
+"sfcbb603fd2de4f44a360d497abf7f43a": {
+"id": "sfcbb603fd2de4f44a360d497abf7f43a",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794414300.5002954,
+"end": 1794420060.9145508,
+"pipeline": "pfec282bfbe754b8e9d1622ff887e86da",
+"nodes": [
+"se09cad02864943228b4edcd6a08f26de-h1-tail"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794415114.0594819
+},
+"sfcfe942cff604764a75d4742d6629ea2": {
+"id": "sfcfe942cff604764a75d4742d6629ea2",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793942279.575091,
+"end": 1793943168.2776663,
+"pipeline": "pe01f9c0ad6e14fa3a8d7d1eb57f96fb0",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "sdfe05ca374324d758e7d67eaf0629ae0",
+"producer_role": "attempt"
+},
+"sfd175a756a364079940a72ea8f365368": {
+"id": "sfd175a756a364079940a72ea8f365368",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794407316.0210907,
+"end": 1794421542.3573453,
+"pipeline": "p03754a4d00564d5f844fe9fdc0266770",
+"nodes": [
+"sf08503670bbf48a4b4203c6ec4e109c9-stem-gain-from-3k"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794410577.2796526
+},
+"sfd18d86f373941239b2eb8b8827d8a24": {
+"id": "sfd18d86f373941239b2eb8b8827d8a24",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794210698.7125602,
+"end": 1794214756.5139973,
+"pipeline": "p642dfde87a2e41da8327363b8b52a0cd",
+"nodes": [
+"s61b074045da947f8b4600d1ee2bf22c2-lmcore-window"
+],
+"question": null,
+"producer": "s118b408bb2d242a4a586406e3958dd2c",
+"producer_role": "attempt"
+},
+"sfd3fc7c16be0404599ce6d59cd660a87": {
+"id": "sfd3fc7c16be0404599ce6d59cd660a87",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794074712.3217764,
+"end": 1794080223.906084,
+"pipeline": "p2ce13b73af7b47d3b635aed8288849fe",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-moment-lower"
+],
+"question": null,
+"producer": "s97171f09447a4b03ab6b0ad5c80adc06",
+"producer_role": "attempt"
+},
+"sfd40e8f692f74d2085d6b6a7497edcda": {
+"id": "sfd40e8f692f74d2085d6b6a7497edcda",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794367119.5171182,
+"end": 1794398972.1919758,
+"pipeline": "pddf2e2101dc54047b7d1415551002aa4",
+"nodes": [
+"sbc78ebbbd815476194858a30df8bc356-left-leak"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794373572.2958496
+},
+"sfd7d63e20608497888378aaf5f45761c": {
+"id": "sfd7d63e20608497888378aaf5f45761c",
+"role": "review",
+"model": "gpt-6.1-sol",
+"start": 1793931550.664439,
+"end": 1793932126.454566,
+"pipeline": "pcd2a806df1704d31b7fdf7beb68cee1e",
+"nodes": [
+"sfeee897c69244a0bba059fb685290d63-critical-egf-increment"
+],
+"question": null,
+"producer": "s26824c96c9184c44ae78ccc14ede25cd",
+"producer_role": "formalizer"
+},
+"sfddaee8805d74dc1a217b635dc066884": {
+"id": "sfddaee8805d74dc1a217b635dc066884",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794335939.3557706,
+"end": 1794338561.1770804,
+"pipeline": "p4013bee2cc3042cb9c23ae47090feed5",
+"nodes": [
+"s5b3c5b51660b401d8e6144fa61df2d8e-cross-pairs"
+],
+"question": null,
+"producer": "sd00691b1bda24b1d8486b362068b9b47",
+"producer_role": "attempt"
+},
+"sfdf7a465bf4b4355a3d84f1e3592e159": {
+"id": "sfdf7a465bf4b4355a3d84f1e3592e159",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794138861.8503475,
+"end": 1794146061.8239226,
+"pipeline": "p8e706f0a94474fcf84de945d1db9a523",
+"nodes": [
+"s9b831b9acfa9407c91466f72915d8b97-left-residual-reduced"
+],
+"question": null,
+"producer": "s6e8de1ed47f44950b0fe27b9bd9ccc54",
+"producer_role": "attempt"
+},
+"sfe209520031e438ab84b6190843cf3fd": {
+"id": "sfe209520031e438ab84b6190843cf3fd",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794242565.5933588,
+"end": 1794245105.7000952,
+"pipeline": "p0934e7630fb0417da863b8b65fdde511",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-survival-decay"
+],
+"question": null,
+"producer": "s3e8acf026d584579a12dcb8c0b60facf",
+"producer_role": "attempt"
+},
+"sfe2865ee7cba4996b540b49555af9088": {
+"id": "sfe2865ee7cba4996b540b49555af9088",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794008181.288399,
+"end": 1794016715.9999545,
+"pipeline": "p5ea9db96e4c94b1fb0e250ed4395e9e5",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "see246da428bc4779846dde05ff4adfa9",
+"producer_role": "attempt"
+},
+"sfe5e49ba6a8a4e3c853dcc883411d1fa": {
+"id": "sfe5e49ba6a8a4e3c853dcc883411d1fa",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793922910.7637177,
+"end": 1793923743.1587524,
+"pipeline": "p86e5bf5bee914b23929977e84e0ead96",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s06f918c425b64041a9c20c34481af66d",
+"producer_role": "attempt"
+},
+"sfe8a7fa7f07f49fbb950aa811a1a1d8b": {
+"id": "sfe8a7fa7f07f49fbb950aa811a1a1d8b",
+"role": "attempt",
+"model": "claude/claude-fable-5-1",
+"start": 1794232891.0407207,
+"end": 1794245200.5138383,
+"pipeline": "pae7f0655bcda4b66adb68357a3af8ef2",
+"nodes": [
+"sc3847498b913405e829ef795d9b7bf1d-tilted-source-tails"
+],
+"question": null,
+"producer": null,
+"declared_at": 1794236796.3003914
+},
+"sfe91e0398146406185171ae1f75c9c6c": {
+"id": "sfe91e0398146406185171ae1f75c9c6c",
+"role": "peer",
+"model": "claude/claude-opus-5-5",
+"start": 1794305929.3897057,
+"end": 1794314709.8148923,
+"pipeline": "pb5a496218e7b48128acb2a28773f5d2e",
+"nodes": [
+"s0ae603c5fd0c4d7c8cf38e2cec9c3647-left-residual-increase"
+],
+"question": null,
+"producer": "s5b1793c5098f4a2e9df802dc0c04ba9f",
+"producer_role": "attempt"
+},
+"sfeee897c69244a0bba059fb685290d63": {
+"id": "sfeee897c69244a0bba059fb685290d63",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793906674.2192333,
+"end": 1793907566.8992229,
+"pipeline": "p586ee09fbc4b494eafa99f4dc3e20883",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s5d6f16e0a87c4bd6957512607d9a707f",
+"producer_role": "attempt"
+},
+"sffbddc0e386648359826e92e6832a1c6": {
+"id": "sffbddc0e386648359826e92e6832a1c6",
+"role": "review",
+"model": "claude-opus-5-5[1m]",
+"start": 1794272012.3829792,
+"end": 1794274266.721434,
+"pipeline": "p70bda00dc9fd4d8fba42f4f37d3d1fe1",
+"nodes": [
+"root"
+],
+"question": null,
+"producer": "s21204dda83b14385a29189114c05ba0b",
+"producer_role": "attempt"
+},
+"sffe97c07ce3a4a059ac82a84c9997c51": {
+"id": "sffe97c07ce3a4a059ac82a84c9997c51",
+"role": "peer",
+"model": "gpt-6.1-sol",
+"start": 1793921619.3450718,
+"end": 1793922682.6950665,
+"pipeline": "peaa1a4abfb8c41409c84a75b4774de6e",
+"nodes": [
+"sd7f5f2665b4c484f9ef67b36e7efa31a-decreasing-side-logconcavity"
+],
+"question": null,
+"producer": "s49fd69351dfb4a9e8da169942f893335",
+"producer_role": "attempt"
+}
+},
+"rules": [
+{
+"t": 1793858913.461626,
+"kind": "input",
+"label": "독립적인 새 연구의 조건",
+"shown": false,
+"retired": false,
+"file": "1793858913461626000-f3efefaa5c9949d98e65e65871637923.txt"
+},
+{
+"t": 1794044547.5486171,
+"kind": "input",
+"label": "동치 관계와 attempt의 노드 선택",
+"shown": true,
+"retired": false,
+"file": "1794044547548617100-67e0eff4e5ba47d6b87111cebc776d87.txt"
+},
+{
+"t": 1794056547.4595573,
+"kind": "input",
+"label": "섹션 등록 시점 (운영자 입력, 2026-11-07)",
+"shown": true,
+"retired": true,
+"file": "1794056547459557300-f256a90481e544ac926d43a63825f043.txt"
+},
+{
+"t": 1794131944.4574838,
+"kind": "input",
+"label": "수학 연구는 무엇을 위해 이루어지는가",
+"shown": true,
+"retired": false,
+"file": "1794131944457483900-0de09a8b37af409088175755dc01745d.txt"
+},
+{
+"t": 1794131945.5457428,
+"kind": "input",
+"label": "이 사용자가 선호하는 글쓰기: 한 편의 글을 고쳐 쓰며 드러난 것",
+"shown": false,
+"retired": false,
+"file": "1794131945545742800-f916ed527e9244ba89516be2c45515d2.txt"
+},
+{
+"t": 1794180656.563124,
+"kind": "questions",
+"label": "question system introduced; operator questions published",
+"shown": true
+},
+{
+"t": 1794184984.0802011,
+"kind": "settings",
+"label": "explore_every 3 to 1",
+"shown": true
+},
+{
+"t": 1794192335.6091151,
+"kind": "pause-formalization",
+"label": "formalization paused",
+"shown": true
+},
+{
+"t": 1794192373.0345454,
+"kind": "input",
+"label": "형식화의 임시 보류 (사용자 결정, 2026-11-09)",
+"shown": false,
+"retired": false,
+"file": "1794192373034545300-13e0f99fcadc470fb883e9bc989bb0a7.txt"
+},
+{
+"t": 1794196874.0526342,
+"kind": "settings",
+"label": "max_sessions 8 to 12",
+"shown": true
+},
+{
+"t": 1794207919.3414848,
+"kind": "input",
+"label": "계산의 비중에 대한 사용자 결정 (2026-11-09)",
+"shown": true,
+"retired": false,
+"file": "1794207919341484900-abfb5458bacb476ebbb0feb0b4948228.txt"
+},
+{
+"t": 1794234897.3256335,
+"kind": "input",
+"label": "사용자가 이 연구에서 가장 알고 싶은 것: 최대 변위 분포는 왜 단봉일 수밖에 없는가 (사용자 결정, 2026-11-09)",
+"shown": true,
+"retired": false,
+"file": "1794234897325633500-fdd9bf6b96424a00b151da9c244bd839.txt"
+},
+{
+"t": 1794296267.4499764,
+"kind": "settings",
+"label": "max_sessions 12 to 16",
+"shown": true
+},
+{
+"t": 1794415680.0,
+"kind": "settings",
+"label": "max_sessions 16 to 4",
+"shown": true
+},
+{
+"t": 1794420234.0219922,
+"kind": "settings",
+"label": "max_sessions 4 to 8",
+"shown": true
+}
+]
+};
