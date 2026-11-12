@@ -1,0 +1,1938 @@
+{
+ "chapter": 5,
+ "title": "오른쪽 절반",
+ "scope": "유한 인증(정리 5.1·5.2), 오른쪽 끝의 감소와 임계 창의 증가(5.3–5.7과 그 전제 보조정리 서른), 세 명제의 동치, 명시적 띠·임계 창·잔여 $W^\\sharp$(5.12–5.17과 전제 여덟), $W$의 증명(5.18–5.38), $X$의 증명(5.39–5.41과 `{{5:arc-leading}}`), 조립. 첫 판에서 결과식만 두었던 5.2의 정리들 뒤에 약 700행의 손 보조정리가 들어온다.",
+ "weights": "가장 무거운 장. 5.2의 전제 보조정리(타일 모형 사슬, FKG, 핵 계수 경계, 셋째 묶음 비교), 5.4의 포락선·재귀·핵 끼움, 5.5의 재조직(5.5.6·5.5.8 전사 문단 → 보조정리와 단계), 5.6의 전개가 고비다. 5.1·5.3·5.7은 가볍다. 13조각 포락선의 단항식 15개·조각 상수·영역 II·III 식(약 35식)은 부록 D에 수식으로 옮기고, 단항식 계수의 유도는 작성자 증명으로 쓴다.",
+ "sections": [
+  {
+   "sec": "5.1",
+   "title": "유한 인증",
+   "items": [
+    {
+     "label": "{{5:old-5-1}}",
+     "kind": "정리",
+     "name": "모든 $n\\le20000$의 단봉성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1233,
+       1235
+      ],
+      "note": "첫 판 5.1"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-2}}",
+     "kind": "정리",
+     "name": "C50: $n\\le50000$ 인증",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1237,
+       1244
+      ],
+      "note": "첫 판 5.2"
+     },
+     "inputs": [
+      "{{5:old-5-1}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "정리 5.1·5.2의 명세(범위, 알고리즘, 산술 등급, 독립 재계산)는 부록 D. 정리 5.1의 부록 D 항목은 뒤의 장들이 「정리 5.1의 범위 안」으로 가리키는 $n\\le15$ 정확 행도 덮는다."
+  },
+  {
+   "sec": "5.2",
+   "title": "오른쪽 끝의 감소와 임계 창의 증가",
+   "items": [
+    {
+     "label": "{{5:tail-poly}}",
+     "kind": "보조정리",
+     "name": "계수 다항식의 전개",
+     "record_name": "기록 [ra88ba51] §3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "정확한 계수 다항식",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-6}}"
+     ],
+     "special": "정리 5.3의 전제."
+    },
+    {
+     "label": "{{5:rational-cert}}",
+     "kind": "보조정리",
+     "name": "유리 상·하한 (8)(9)",
+     "record_name": "기록 [ra88ba51] §4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "무한 범위를 유한 유리 인증으로 바꾸기",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:tail-poly}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:sharp-546}}",
+     "kind": "보조정리",
+     "name": "정밀 경계 (10)의 손 부분",
+     "record_name": "기록 [ra88ba51] §6",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "문턱 546과 두 볼록 구간; 네 줄 증명",
+       "sec": "6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:rational-cert}}"
+     ],
+     "special": "546은 100개 인증서 재실행(정확 정수·유리수)의 결과로 부록 D. 「최적 시작점」 주장과 §7 종료 논증은 쓰지 않는다."
+    },
+    {
+     "label": "{{5:old-5-3}}",
+     "kind": "정리",
+     "name": "마지막 102항",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3"
+      },
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      },
+      {
+       "record": "ra88ba51",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1250,
+       1252
+      ],
+      "note": "첫 판 5.3"
+     },
+     "inputs": [
+      "{{5:tail-poly}}",
+      "{{5:rational-cert}}",
+      "{{5:sharp-546}}"
+     ],
+     "special": "첫 판에는 결과식만 있다."
+    },
+    {
+     "label": "{{5:green-connection}}",
+     "kind": "보조정리",
+     "name": "$\\mathcal G_{c,h}$의 계수식과 (18)(19)",
+     "record_name": "기록 [rda45d0e] §7",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rda45d0e",
+       "file": "exposition.md",
+       "note": "경계 다항식의 Green 응답과 원 b의 양의 합",
+       "sec": "7"
+      },
+      {
+       "record": "rda45d0e",
+       "file": "evidence/producer/output/green-connection.md",
+       "note": "증거 문서 green-connection.md 전문(머리부터)",
+       "sec": "1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:J-egf}}",
+      "{{2:old-2-6}}"
+     ],
+     "special": "입력 재귀 (17)은 출처 [r4daca3d]를 적고 계수 비교 한 줄로 재유도해 「작성자 판단」으로 둔다(조사 4)."
+    },
+    {
+     "label": "{{5:source-rep}}",
+     "kind": "정리",
+     "name": "양의 원천 표현 (P)와 원천별 비교 (G)",
+     "record_name": "기록 [r708d99c]의 정리 C",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r708d99c",
+       "file": "exposition.md",
+       "note": "표현 (P)와 원천별 비교 (G)",
+       "sec": "4.1–4.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:green-connection}}"
+     ],
+     "special": "(G)의 진술을 $p_k/p_{k-1}$이 든 꼴로 적는다(첫 판의 다항식 부등식 꼴은 부정확; 조사 2). D1과 $e_-$ 유리 끼움을 적는다."
+    },
+    {
+     "label": "{{5:cayley-ratio}}",
+     "kind": "보조정리",
+     "name": "Cayley 비율 하계",
+     "record_name": "기록 [r708d99c]의 보조정리 D1",
+     "process": "전개",
+     "class": "표준",
+     "sources": [
+      {
+       "record": "r708d99c",
+       "file": "exposition.md",
+       "note": "Cayley 비율 하계",
+       "sec": "5.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-4}}",
+     "kind": "정리",
+     "name": "Newton 인증, $m\\le170$",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r708d99c",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4.1–4.2"
+      },
+      {
+       "record": "r708d99c",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.1"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1254,
+       1256
+      ],
+      "note": "첫 판 5.4"
+     },
+     "inputs": [
+      "{{5:source-rep}}",
+      "{{5:cayley-ratio}}",
+      "{{5:green-connection}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:marked-riccati}}",
+     "kind": "보조정리",
+     "name": "세 표시 Riccati 식과 네 용량의 회복",
+     "record_name": "기록 [rbeae3a3] §3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rbeae3a3",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-6}}"
+     ],
+     "special": "타일 모형 사슬의 첫 고리(정리 5.5의 전제)."
+    },
+    {
+     "label": "{{5:response-kernel}}",
+     "kind": "보조정리",
+     "name": "단일 표시 응답의 양의 Hausdorff 핵",
+     "record_name": "기록 [rbeae3a3] §4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rbeae3a3",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:marked-riccati}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:fixed-size-response}}",
+     "kind": "보조정리",
+     "name": "고정 크기 갱신 응답의 재귀",
+     "record_name": "기록 [rbeae3a3] §5.1",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rbeae3a3",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:response-kernel}}"
+     ],
+     "special": "모든 $n$의 유효성은 peer가 세움(기록 §5.1 머리)."
+    },
+    {
+     "label": "{{5:inverse-renewal}}",
+     "kind": "보조정리",
+     "name": "역수 형태",
+     "record_name": "기록 [rbeae3a3] §5.3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rbeae3a3",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:fixed-size-response}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:renewal-fkg}}",
+     "kind": "보조정리",
+     "name": "갱신 분할점 측도의 양의 연관",
+     "record_name": "기록 [rbeae3a3] §6.1",
+     "process": "전개",
+     "class": "표준",
+     "sources": [
+      {
+       "record": "rbeae3a3",
+       "file": "exposition.md",
+       "note": "로그볼록 간격의 격자 조건; 8행",
+       "sec": "6.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:inverse-renewal}}"
+     ],
+     "special": "FKG 부등식은 문헌 인용(Fortuin–Kasteleyn–Ginibre 1971)으로 진술만 적는다."
+    },
+    {
+     "label": "{{5:suff-cond}}",
+     "kind": "정리",
+     "name": "정리 5.5의 충분조건 (3.2)/(10.1)",
+     "record_name": "기록 [r5ddf8a8]의 정리 2와 기록 [r0dc57fa]의 (10.1)",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r5ddf8a8",
+       "file": "exposition.md",
+       "note": "생산자 정리 1과 peer 정리 2(경계 이득, 기울인 생일 평균의 초등 하계, 정리 2); FKG·Jensen 손 증명",
+       "sec": "2–3.3"
+      },
+      {
+       "record": "r0dc57fa",
+       "file": "exposition.md",
+       "note": "정리 꼴 (10.1)",
+       "sec": "10.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:renewal-fkg}}",
+      "{{5:inverse-renewal}}"
+     ],
+     "special": "Part A($171\\le m\\le9999$ 9829점 구간 산술)와 Part B 상수는 부록 D."
+    },
+    {
+     "label": "{{5:lemma-L}}",
+     "kind": "보조정리",
+     "name": "보조정리 L과 환원 단계",
+     "record_name": "기록 [r0dc57fa] §10.2",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r0dc57fa",
+       "file": "exposition.md",
+       "note": "정리 T1",
+       "sec": "10.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:suff-cond}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-5}}",
+     "kind": "정리",
+     "name": "명시적 꼬리 T1",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r5ddf8a8",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "2–3.3"
+      },
+      {
+       "record": "r0dc57fa",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "10.1–10.2"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1258,
+       1268
+      ],
+      "note": "첫 판 5.5"
+     },
+     "inputs": [
+      "{{5:suff-cond}}",
+      "{{5:lemma-L}}",
+      "{{5:marked-riccati}}",
+      "{{5:renewal-fkg}}"
+     ],
+     "special": "Part A·B 계산은 부록 D."
+    },
+    {
+     "label": "{{5:kernel-C-bound}}",
+     "kind": "보조정리",
+     "name": "$C$·$E$의 양측 경계",
+     "record_name": "기록 [r7798355]의 증거 문서 §3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r7798355",
+       "file": "evidence/producer/effective-concavity-proof.md",
+       "note": "effective-concavity-proof.md §3 (52행)",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-normalization}}"
+     ],
+     "special": "증거 파일에서 옮기며 출처를 적는다(지침 4.5(ㄷ)의 출처 표시 규칙)."
+    },
+    {
+     "label": "{{5:kernel-bounds}}",
+     "kind": "보조정리",
+     "name": "핵 계수 경계 (K1)(K2)",
+     "record_name": "기록 [r690be93] §4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "갱신 핵 도함수의 새 계수 경계",
+       "sec": "4"
+      },
+      {
+       "record": "r690be93",
+       "file": "evidence/producer/kernel-proof.md",
+       "note": "kernel-proof.md 전문(128행 가운데 증명 부분)",
+       "range": [
+        1,
+        80
+       ]
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-37}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:third-group}}",
+     "kind": "보조정리",
+     "name": "셋째 묶음 비교 $\\nabla^3h_w$",
+     "record_name": "기록 [r1aa0be6]의 third-group-comparison",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r1aa0be6",
+       "file": "exposition.md",
+       "note": "3차 차분은 마지막 간격부터 합한다",
+       "sec": "4"
+      },
+      {
+       "record": "r1aa0be6",
+       "file": "evidence/producer/output/critical-concavity.md",
+       "note": "critical-concavity.md §2 (104행)",
+       "sec": "2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-normalization}}",
+      "{{2:chain-expansion}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:last-gap}}",
+     "kind": "보조정리",
+     "name": "마지막 간격 비교의 인자 6/5",
+     "record_name": "기록 [r690be93] §5",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:kernel-bounds}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:sign-sandwich}}",
+     "kind": "보조정리",
+     "name": "부호 보존 감싸기와 꼬리",
+     "record_name": "기록 [r690be93] §6",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "정리 TC",
+       "sec": "6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:last-gap}}"
+     ],
+     "special": "Bernstein 계수 부호 검사(76구간 192차; 정확 산술)는 부록 D."
+    },
+    {
+     "label": "{{5:old-5-6}}",
+     "kind": "정리",
+     "name": "꼬리 오목성 TC",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1270,
+       1270
+      ],
+      "note": "첫 판 5.6"
+     },
+     "inputs": [
+      "{{5:kernel-C-bound}}",
+      "{{5:kernel-bounds}}",
+      "{{5:third-group}}",
+      "{{5:last-gap}}",
+      "{{5:sign-sandwich}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:first-moment-weight}}",
+     "kind": "보조정리",
+     "name": "일차 가중치의 균일 부등식 (7.1)",
+     "record_name": "기록 [r690be93] §7.2",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-normalization}}"
+     ],
+     "special": "$O(\\eta^2)$ 표기를 폐지하고 명시 나머지 $\\varepsilon_k(\\eta)$를 적는다(조사 2)."
+    },
+    {
+     "label": "{{5:marked-recursion}}",
+     "kind": "보조정리",
+     "name": "표시 사슬 재귀 (7.2)의 일반 $j$판",
+     "record_name": "기록 [r1aa0be6]의 renewal-bounds(증거 문서 §3 식 (15))",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r1aa0be6",
+       "file": "evidence/producer/output/critical-local-limit.md",
+       "note": "critical-local-limit.md §3 (15); 69행",
+       "sec": "3"
+      },
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "(7.2)의 진술 자리",
+       "sec": "7.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-normalization}}"
+     ],
+     "special": "출처는 [r7798355]가 아니라 [r1aa0be6]이고 주장 ID는 renewal-bounds다(조사 4 상신 3, 의존지도 v2 상신 2)."
+    },
+    {
+     "label": "{{5:parity-tail}}",
+     "kind": "보조정리",
+     "name": "홀짝 정규화와 꼬리",
+     "record_name": "기록 [r690be93] §7.4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:marked-recursion}}"
+     ],
+     "special": "96차 Bernstein은 부록 D."
+    },
+    {
+     "label": "{{5:old-5-7}}",
+     "kind": "정리",
+     "name": "진입 증가 EI",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.2"
+      },
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.3"
+      },
+      {
+       "record": "r690be93",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.4"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1272,
+       1278
+      ],
+      "note": "첫 판 5.7"
+     },
+     "inputs": [
+      "{{5:first-moment-weight}}",
+      "{{5:marked-recursion}}",
+      "{{5:parity-tail}}"
+     ],
+     "special": "96차 Bernstein은 부록 D."
+    }
+   ],
+   "intro": "진술 순서는 전제가 앞선다. 5.3의 전제(`{{5:tail-poly}}`→`{{5:rational-cert}}`→`{{5:sharp-546}}`), 5.4의 전제(`{{5:green-connection}}`→`{{5:source-rep}}`→`{{5:cayley-ratio}}`), 5.5의 전제(타일 모형 `{{5:marked-riccati}}`→`{{5:response-kernel}}`→`{{5:fixed-size-response}}`→`{{5:inverse-renewal}}`→`{{5:renewal-fkg}}`→`{{5:suff-cond}}`→`{{5:lemma-L}}`), 5.6의 전제(`{{5:kernel-C-bound}}`, `{{5:kernel-bounds}}`, `{{5:third-group}}`, `{{5:last-gap}}`, `{{5:sign-sandwich}}`), 5.7의 전제(`{{5:first-moment-weight}}`, `{{5:marked-recursion}}`, `{{5:parity-tail}}`). 정리 5.4의 (G)는 $p_k/p_{k-1}$이 든 꼴로 적는다. 정리 5.7의 $O(\\eta^2)$는 명시 나머지 $\\varepsilon_k(\\eta)$로."
+  },
+  {
+   "sec": "5.3",
+   "title": "세 명제의 동치",
+   "items": [
+    {
+     "label": "{{5:old-5-8}}",
+     "kind": "정의",
+     "name": "오른쪽 벌크 증가 W",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1284,
+       1286
+      ],
+      "note": "첫 판 5.8"
+     },
+     "inputs": [
+      "{{5:old-5-4}}",
+      "{{5:old-5-5}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-9}}",
+     "kind": "명제",
+     "name": "$Q_R\\Rightarrow R$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1288,
+       1290
+      ],
+      "note": "첫 판 5.9"
+     },
+     "inputs": [
+      "{{5:old-5-8}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-10}}",
+     "kind": "명제",
+     "name": "$W\\Rightarrow Q_R$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1292,
+       1294
+      ],
+      "note": "첫 판 5.10"
+     },
+     "inputs": [
+      "{{5:old-5-1}}",
+      "{{5:old-5-4}}",
+      "{{5:old-5-5}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-11}}",
+     "kind": "정리",
+     "name": "$R\\Rightarrow W$, 그리고 세 동치",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1296,
+       1300
+      ],
+      "note": "첫 판 5.11"
+     },
+     "inputs": [
+      "{{4:old-4-4}}",
+      "{{4:old-4-5}}",
+      "{{4:old-4-9}}",
+      "{{5:old-5-1}}",
+      "{{5:old-5-4}}",
+      "{{5:old-5-5}}",
+      "{{5:old-5-7}}",
+      "{{5:old-5-9}}",
+      "{{5:old-5-10}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "5.4",
+   "title": "명시적 띠, 임계 창, 잔여 $W^\\sharp$",
+   "items": [
+    {
+     "label": "{{5:weight-envelope}}",
+     "kind": "보조정리",
+     "name": "가중치의 계수별 포락선 (3.1)–(3.5)",
+     "record_name": "기록 [r13b0b8f] §3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-expansion}}"
+     ],
+     "special": "둘째 보정 (3.5)와 평균값 정리 형식을 포함한다(첫 판에 (3.5) 진술 없음)."
+    },
+    {
+     "label": "{{5:marked-chain-rec}}",
+     "kind": "보조정리",
+     "name": "표시 사슬 합의 생성함수 재귀 (4.1)(4.2)",
+     "record_name": "기록 [r13b0b8f] §4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:weight-envelope}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:kernel-sandwich}}",
+     "kind": "보조정리",
+     "name": "방문 핵의 대수적 포락선 (5.1)",
+     "record_name": "기록 [r13b0b8f] §5",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-37}}"
+     ],
+     "special": "Wallis 부등식은 문헌 인용."
+    },
+    {
+     "label": "{{5:omitted-tail}}",
+     "kind": "보조정리",
+     "name": "생략한 사슬 길이의 꼬리 $T_j$",
+     "record_name": "기록 [r13b0b8f] §6",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:marked-chain-rec}}"
+     ],
+     "special": "전제 $D_k$ 재귀를 함께 적는다."
+    },
+    {
+     "label": "{{5:old-5-12}}",
+     "kind": "정리",
+     "name": "명시적 증가 띠 A·A⁺",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3"
+      },
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      },
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5"
+      },
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      },
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7"
+      },
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "8"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1306,
+       1310
+      ],
+      "note": "첫 판 5.12"
+     },
+     "inputs": [
+      "{{5:weight-envelope}}",
+      "{{5:marked-chain-rec}}",
+      "{{5:kernel-sandwich}}",
+      "{{5:omitted-tail}}"
+     ],
+     "special": "정리 A·A⁺의 인증은 부록 D."
+    },
+    {
+     "label": "{{5:cover-edge}}",
+     "kind": "보조정리",
+     "name": "덮개 끝 $r_*$의 엄격 증가",
+     "record_name": "기록 [r13b0b8f] §9.1",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r13b0b8f",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "9.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:old-5-12}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:unit-circle}}",
+     "kind": "보조정리",
+     "name": "단위원 위의 표현과 지배 A·B",
+     "record_name": "기록 [ra4c01fc] §4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-8}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:cut-rep}}",
+     "kind": "보조정리",
+     "name": "호 위 Borel 유한합의 절단 표현과 반직선 꼴",
+     "record_name": "기록 [ra4c01fc] §5",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:unit-circle}}"
+     ],
+     "special": "구간 검증 상수(§8.4)는 부록 D."
+    },
+    {
+     "label": "{{5:hat-normalization}}",
+     "kind": "보조정리",
+     "name": "정규화 범함수 $\\hat{\\mathcal E}$, $\\hat{\\mathcal B}$",
+     "record_name": "기록 [ra4c01fc] §6",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:cut-rep}}"
+     ],
+     "special": "§7.1의 둘러싸기 설계 상수는 부록 D 항목의 명세로."
+    },
+    {
+     "label": "{{5:old-5-13}}",
+     "kind": "정리",
+     "name": "임계 창의 증가",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4"
+      },
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5"
+      },
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "6"
+      },
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1312,
+       1316
+      ],
+      "note": "첫 판 5.13"
+     },
+     "inputs": [
+      "{{5:unit-circle}}",
+      "{{5:cut-rep}}",
+      "{{5:hat-normalization}}"
+     ],
+     "special": "§7.1 설계 상수와 덮개 결과는 부록 D."
+    },
+    {
+     "label": "{{5:old-5-14}}",
+     "kind": "정의",
+     "name": "임계 창 잔여 W♯",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1318,
+       1318
+      ],
+      "note": "첫 판 5.14"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-15}}",
+     "kind": "보조정리",
+     "name": "$W^\\sharp\\Leftrightarrow W$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1320,
+       1326
+      ],
+      "note": "첫 판 5.15"
+     },
+     "inputs": [
+      "{{5:old-5-2}}",
+      "{{5:old-5-12}}",
+      "{{5:old-5-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-16}}",
+     "kind": "정의",
+     "name": "오른쪽 두 항 부등식 X",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1328,
+       1328
+      ],
+      "note": "첫 판 5.16"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-17}}",
+     "kind": "보조정리",
+     "name": "$X\\Rightarrow W^\\sharp$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1330,
+       1334
+      ],
+      "note": "첫 판 5.17"
+     },
+     "inputs": [
+      "{{2:old-2-29}}",
+      "{{5:old-5-16}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "정리 5.12의 둘째 보정 (3.5)를 포함한다(첫 판에 진술 없음). 정리 5.13의 §7.1 설계 상수와 §8.4 구간 검증 상수는 부록 D."
+  },
+  {
+   "sec": "5.5",
+   "title": "$W$의 증명",
+   "items": [
+    {
+     "label": "{{5:old-5-18}}",
+     "kind": "정리",
+     "name": "$W^\\sharp$와 $W$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1341,
+       1343
+      ],
+      "note": "첫 판 5.18"
+     },
+     "inputs": [
+      "{{5:old-5-11}}",
+      "{{5:old-5-15}}",
+      "{{5:old-5-2}}",
+      "{{5:old-5-26}}",
+      "{{5:old-5-30}}",
+      "{{5:old-5-32}}",
+      "{{5:old-5-34}}",
+      "{{5:old-5-37}}",
+      "{{5:old-5-38}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-19}}",
+     "kind": "보조정리",
+     "name": "열 재귀",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1375,
+       1382
+      ],
+      "note": "첫 판 5.19"
+     },
+     "inputs": [
+      "{{2:old-2-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-20}}",
+     "kind": "보조정리",
+     "name": "핵의 단조·볼록성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1384,
+       1388
+      ],
+      "note": "첫 판 5.20"
+     },
+     "inputs": [
+      "{{2:old-2-26}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-21}}",
+     "kind": "정의",
+     "name": "이음 행",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1404,
+       1406
+      ],
+      "note": "첫 판 5.21"
+     },
+     "inputs": [
+      "{{5:old-5-4}}",
+      "{{5:old-5-5}}",
+      "{{5:old-5-7}}",
+      "{{5:old-5-11}}",
+      "{{5:old-5-14}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-22}}",
+     "kind": "명제",
+     "name": "Abel 환원",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1408,
+       1430
+      ],
+      "note": "첫 판 5.22"
+     },
+     "inputs": [
+      "{{5:old-5-19}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-23}}",
+     "kind": "보조정리",
+     "name": "사슬별 둘째 차분",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1436,
+       1442
+      ],
+      "note": "첫 판 5.23"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-24}}",
+     "kind": "보조정리",
+     "name": "방문 확률",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1444,
+       1450
+      ],
+      "note": "첫 판 5.24"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-25}}",
+     "kind": "보조정리",
+     "name": "창 경계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1452,
+       1457
+      ],
+      "note": "첫 판 5.25"
+     },
+     "inputs": [
+      "{{2:old-2-11}}",
+      "{{5:old-5-23}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-26}}",
+     "kind": "보조정리",
+     "name": "창 항의 닫힌 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1459,
+       1466
+      ],
+      "note": "첫 판 5.26"
+     },
+     "inputs": [
+      "{{5:old-5-20}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-27}}",
+     "kind": "보조정리",
+     "name": "기저 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1472,
+       1479
+      ],
+      "note": "첫 판 5.27"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-28}}",
+     "kind": "정리",
+     "name": "크기 방향 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1481,
+       1494
+      ],
+      "note": "첫 판 5.28"
+     },
+     "inputs": [
+      "{{2:old-2-13}}",
+      "{{5:old-5-20}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-29}}",
+     "kind": "보조정리",
+     "name": "기저량의 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1496,
+       1512
+      ],
+      "note": "첫 판 5.29"
+     },
+     "inputs": [
+      "{{5:old-5-22}}",
+      "{{5:old-5-27}}",
+      "{{5:old-5-28}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-30}}",
+     "kind": "보조정리",
+     "name": "흡수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1518,
+       1530
+      ],
+      "note": "첫 판 5.30"
+     },
+     "inputs": [
+      "{{5:old-5-26}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-31}}",
+     "kind": "정리",
+     "name": "넓은 창의 열 값의 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1536,
+       1555
+      ],
+      "note": "첫 판 5.31"
+     },
+     "inputs": [
+      "{{5:old-5-28}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-32}}",
+     "kind": "정리",
+     "name": "가중 창 질량의 균일 상수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1557,
+       1589
+      ],
+      "note": "첫 판 5.32"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-33}}",
+     "kind": "정리",
+     "name": "꼭대기 행 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1595,
+       1605
+      ],
+      "note": "첫 판 5.33"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-34}}",
+     "kind": "따름정리",
+     "name": "T-POS",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1607,
+       1619
+      ],
+      "note": "첫 판 5.34"
+     },
+     "inputs": [
+      "{{5:old-5-30}}",
+      "{{5:old-5-33}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-35}}",
+     "kind": "정리",
+     "name": "역방향 Borel 보행 표현",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1627,
+       1634
+      ],
+      "note": "첫 판 5.35"
+     },
+     "inputs": [
+      "{{5:old-5-24}}",
+      "{{5:old-5-28}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-36}}",
+     "kind": "보조정리",
+     "name": "닫힌 꼴 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1636,
+       1644
+      ],
+      "note": "첫 판 5.36"
+     },
+     "inputs": [
+      "{{5:old-5-35}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-37}}",
+     "kind": "정리",
+     "name": "균일 상수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1646,
+       1648
+      ],
+      "note": "첫 판 5.37"
+     },
+     "inputs": [
+      "{{5:old-5-32}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:old-5-38}}",
+     "kind": "보조정리",
+     "name": "귀납 틀",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1670,
+       1672
+      ],
+      "note": "첫 판 5.38"
+     },
+     "inputs": [
+      "{{5:old-5-1}}",
+      "{{5:old-5-4}}",
+      "{{5:old-5-5}}",
+      "{{5:old-5-7}}",
+      "{{5:old-5-11}}",
+      "{{5:old-5-21}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "5.5.6·5.5.8의 전사 문단을 보조정리와 번호 단계로 재조직한다(내용을 빼지 않음). 정리 5.32·5.37의 상수는 검토의 정정값(0.71216, 7.7148)만 쓰고 코드의 미정정 1.3352092는 쓰지 않는다. 13조각 포락선 식 전부는 부록 D(`{{D:thirteen-piece-envelope}}`)로, 단항식 계수의 유도(U1 다섯 사실→전개)는 작성자 증명으로 본문에 쓰고 `(작성자 판단)`을 붙인다."
+  },
+  {
+   "sec": "5.6",
+   "title": "$X$의 증명",
+   "items": [
+    {
+     "label": "{{5:old-5-39}}",
+     "kind": "정리",
+     "name": "두 항 부등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1684,
+       1706
+      ],
+      "note": "첫 판 5.39"
+     },
+     "inputs": [
+      "{{2:old-2-30}}",
+      "{{4:old-4-6}}",
+      "{{4:old-4-7}}",
+      "{{5:old-5-13}}",
+      "{{5:old-5-40}}",
+      "{{5:old-5-41}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{5:arc-leading}}",
+     "kind": "보조정리",
+     "name": "호 위 선도 항등식 $D(\\eta)$",
+     "record_name": "기록 [ra4c01fc] §8의 bulk-arc-leading-identities",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "ra4c01fc",
+       "file": "exposition.md",
+       "note": "§8 396–400행 진술과 「$D(\\eta)$의 증명」 약 10행",
+       "range": [
+        394,
+        414
+       ]
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:unit-circle}}"
+     ],
+     "special": "5.40 전개의 전제(의존지도 v2 열린 입력 2)."
+    },
+    {
+     "label": "{{5:old-5-40}}",
+     "kind": "보조정리",
+     "name": "Gauss 계수의 균일 경계",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r5f5cf73",
+       "file": "exposition.md",
+       "note": "보조정리 H(η)",
+       "sec": "5"
+      },
+      {
+       "record": "r5f5cf73",
+       "file": "exposition.md",
+       "note": "공표 분해",
+       "sec": "3.1"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1708,
+       1714
+      ],
+      "note": "첫 판 5.40"
+     },
+     "inputs": [
+      "{{5:old-5-39}}",
+      "{{4:e-integral}}",
+      "{{5:arc-leading}}"
+     ],
+     "special": "전 영역 구간 산술은 부록 D."
+    },
+    {
+     "label": "{{5:old-5-41}}",
+     "kind": "보조정리",
+     "name": "두 보정의 균일 경계",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r5f5cf73",
+       "file": "exposition.md",
+       "note": "수직선 표현, Borel 꼬리의 균일 전개, Dawson 세 사실, D 부분, J 부분",
+       "sec": "6.1–6.5"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1716,
+       1753
+      ],
+      "note": "첫 판 5.41"
+     },
+     "inputs": [
+      "{{5:old-5-40}}"
+     ],
+     "special": "단항식 계수표는 존재하지 않는다. 알고리즘(전개·세 기법·닫힌 꼴 모멘트)과 산술 층·덮개 결과(잎 193, 최소 0.0466)를 부록 D에 명세. notes-lemmaV.md의 중간값은 쓰지 않고 최종판($c_I=2.04$, 앞인자 3)만."
+    }
+   ],
+   "intro": "`{{5:arc-leading}}`은 5.40 전개의 전제이므로 5.40 앞에 둔다. 보조정리 5.41의 「계수표」는 존재하지 않는다. 계수 생성 알고리즘(전개·세 기법·닫힌 꼴 모멘트 $F(a)=\\sqrt{\\pi/2}\\sqrt a/(a+1)$, $J^{\\mathcal D}_m=(-2)^mF^{(m)}$)과 산술 등급·덮개 결과(잎 193, 최소 0.0466)를 부록 D에 명세한다. notes-lemmaV.md의 중간값은 쓰지 않고 최종판($c_I=2.04$, 앞인자 3)만."
+  },
+  {
+   "sec": "5.7",
+   "title": "조립",
+   "items": [],
+   "intro": "오른쪽 절반의 덮개 표만. 보증 서술은 11장으로."
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [
+  "{{2:J-egf}}",
+  "{{2:chain-normalization}}",
+  "{{2:old-2-10}}",
+  "{{2:old-2-11}}",
+  "{{2:old-2-13}}",
+  "{{2:old-2-1}}",
+  "{{2:old-2-26}}",
+  "{{2:old-2-29}}",
+  "{{2:old-2-30}}",
+  "{{2:old-2-37}}",
+  "{{2:old-2-40}}",
+  "{{2:old-2-6}}",
+  "{{2:old-2-8}}",
+  "{{4:e-integral}}",
+  "{{4:old-4-3}}",
+  "{{4:old-4-4}}",
+  "{{4:old-4-5}}",
+  "{{4:old-4-6}}",
+  "{{4:old-4-7}}",
+  "{{4:old-4-8}}",
+  "{{4:old-4-9}}",
+  "{{4:two-corrections}}"
+ ],
+ "todo": [],
+ "D_items": [
+  {
+   "label": "{{D:exact-n20000}}",
+   "for": "{{5:old-5-1}}",
+   "sources": [
+    {
+     "record": "r19de912",
+     "note": "n≤20000 정확 정수 인증(생산자·peer 독립 구현)"
+    },
+    {
+     "record": "rc9aee43",
+     "note": "n≤10000 모형 없는 행 인증"
+    }
+   ]
+  },
+  {
+   "label": "{{D:c50}}",
+   "for": "{{5:old-5-2}}",
+   "sources": [
+    {
+     "record": "r19de912",
+     "note": "C50: n≤50000 인증의 명세"
+    }
+   ]
+  },
+  {
+   "label": "{{D:sharp-546-certificates}}",
+   "for": "{{5:old-5-3}}",
+   "sources": [
+    {
+     "record": "ra88ba51",
+     "note": "100개 인증서 재실행(정확 정수·유리수)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:newton-m170}}",
+   "for": "{{5:old-5-4}}",
+   "sources": [
+    {
+     "record": "r708d99c",
+     "note": "§5.2–5.3 단항·Newton 기저 인증"
+    }
+   ]
+  },
+  {
+   "label": "{{D:tail-T1-partAB}}",
+   "for": "{{5:old-5-5}}",
+   "sources": [
+    {
+     "record": "r5ddf8a8",
+     "note": "Part A 171≤m≤9999 9829점 구간 산술"
+    },
+    {
+     "record": "r0dc57fa",
+     "note": "Part B 상수"
+    }
+   ]
+  },
+  {
+   "label": "{{D:bernstein-signs}}",
+   "for": "{{5:old-5-6}}",
+   "sources": [
+    {
+     "record": "r690be93",
+     "note": "76구간 192차·35구간 96차 Bernstein 계수 부호(정확 산술)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:band-A-certification}}",
+   "for": "{{5:old-5-12}}",
+   "sources": [
+    {
+     "record": "r13b0b8f",
+     "note": "정리 A·A⁺의 인증(생산자·peer 독립)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:critical-window-rig}}",
+   "for": "{{5:old-5-13}}",
+   "sources": [
+    {
+     "record": "ra4c01fc",
+     "note": "§7.1 둘러싸기 설계 상수, §7.2 덮개, §8.4 구간 검증 상수"
+    }
+   ]
+  },
+  {
+   "label": "{{D:thirteen-piece-envelope}}",
+   "for": "{{5:old-5-32}}",
+   "sources": [
+    {
+     "record": "r8a9b11e",
+     "note": "13조각 포락선(단항식 15·조각 상수·영역 II·III 식)과 ζ·κ 셀 적분, 꼬리 처리; 정정값 0.71216·7.7148"
+    }
+   ]
+  },
+  {
+   "label": "{{D:lemma-H-interval}}",
+   "for": "{{5:old-5-40}}",
+   "sources": [
+    {
+     "record": "r5f5cf73",
+     "note": "전 영역 구간 산술 덮개"
+    }
+   ]
+  },
+  {
+   "label": "{{D:lemma-V-coefficients}}",
+   "for": "{{5:old-5-41}}",
+   "sources": [
+    {
+     "record": "r5f5cf73",
+     "note": "certify2.py의 계수 생성 알고리즘과 덮개(잎 193, 최소 0.0466)"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "FKG 부등식(Fortuin–Kasteleyn–Ginibre 1971), Wallis 부등식, Robbins 부등식, Jensen 부등식은 문헌 인용(진술과 출처만).",
+  "장이 크므로 절 단위로 파일을 쌓아 가며 써도 된다. 다만 산출은 한 파일 `장v2/장5.md`다.",
+  "첫 판 5.5.6의 「넓은 창」과 6.9·7장의 「창」은 장부 v2가 「착지 창」 하나로 정했다."
+ ]
+}

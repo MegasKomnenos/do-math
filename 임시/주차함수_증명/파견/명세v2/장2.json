@@ -1,0 +1,1209 @@
+{
+ "chapter": 2,
+ "title": "기본 표현",
+ "scope": "결과 순열과 섬유, 마지막 차 재귀, 라벨 숲, 최대 나무 사슬, Borel 분포와 생존 확률, 얼린 용량 다항식, 크기 단조성, 나무를 고정한 행 차분, 지수 공식과 다섯 조각, Borel 갱신 집합, 그리고 새 절 2.12의 사슬 전개·이동 꼬리·사슬 정규화. 뒤의 모든 장이 이 장의 진술을 라벨로 부른다.",
+ "weights": "표준과 새로운 것이 섞인 장. 2.1–2.4는 표준에 가깝고 짧게, 2.5·2.7·2.8·2.9·2.10·2.12는 이 연구가 세운 것이므로 증명을 완전히 전개한다. 2.12의 이동 꼬리(`{{2:moving-tail}}`)는 고비다(Bonferroni·볼록성 논증).",
+ "sections": [
+  {
+   "sec": "2.1",
+   "title": "결과 순열과 용량",
+   "items": [
+    {
+     "label": "{{2:old-2-1}}",
+     "kind": "정의",
+     "name": "결과 순열과 섬유",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       113,
+       117
+      ],
+      "note": "첫 판 2.1"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-2}}",
+     "kind": "정의",
+     "name": "선호 용량",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       119,
+       123
+      ],
+      "note": "첫 판 2.2"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-3}}",
+     "kind": "정리",
+     "name": "섬유의 곱 구조",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       125,
+       137
+      ],
+      "note": "첫 판 2.3"
+     },
+     "inputs": [
+      "{{2:old-2-2}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-4}}",
+     "kind": "따름정리",
+     "name": "",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       139,
+       144
+      ],
+      "note": "첫 판 2.4"
+     },
+     "inputs": [],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.2",
+   "title": "섬유는 단봉이 아니다",
+   "items": [
+    {
+     "label": "{{2:old-2-5}}",
+     "kind": "정리",
+     "name": "비단봉 섬유",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       150,
+       162
+      ],
+      "note": "첫 판 2.5"
+     },
+     "inputs": [
+      "{{2:old-2-3}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "정리 2.5의 마지막 문장($n\\le6$의 모든 섬유 전수)은 부록 D 항목으로 보내고 본문에는 「부록 D.{{D:fiber-enumeration}}의 계산으로 확인된다」 한 문장만 둔다."
+  },
+  {
+   "sec": "2.3",
+   "title": "마지막 차 재귀",
+   "items": [
+    {
+     "label": "{{2:old-2-6}}",
+     "kind": "정리",
+     "name": "마지막 차 재귀",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       168,
+       178
+      ],
+      "note": "첫 판 2.6"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-7}}",
+     "kind": "명제",
+     "name": "균등 분해",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       180,
+       201
+      ],
+      "note": "첫 판 2.7"
+     },
+     "inputs": [
+      "{{2:old-2-6}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-8}}",
+     "kind": "명제",
+     "name": "역수 생성함수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       203,
+       211
+      ],
+      "note": "첫 판 2.8"
+     },
+     "inputs": [
+      "{{2:old-2-6}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.4",
+   "title": "라벨 숲",
+   "items": [
+    {
+     "label": "{{2:old-2-9}}",
+     "kind": "정의",
+     "name": "뿌리 숲과 국소 역전 수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       217,
+       219
+      ],
+      "note": "첫 판 2.9"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-10}}",
+     "kind": "정리",
+     "name": "숲 개수의 일치",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       221,
+       241
+      ],
+      "note": "첫 판 2.10"
+     },
+     "inputs": [
+      "{{2:old-2-6}}",
+      "{{2:old-2-9}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-11}}",
+     "kind": "정리",
+     "name": "모양 조건부 독립성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       243,
+       252
+      ],
+      "note": "첫 판 2.11"
+     },
+     "inputs": [
+      "{{2:old-2-5}}",
+      "{{2:old-2-10}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.5",
+   "title": "가장 큰 나무와 최대 나무 사슬",
+   "items": [
+    {
+     "label": "{{2:old-2-12}}",
+     "kind": "정의",
+     "name": "최대 나무 사슬",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       264,
+       266
+      ],
+      "note": "첫 판 2.12"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-13}}",
+     "kind": "정리",
+     "name": "최대 나무 사슬 공식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       268,
+       291
+      ],
+      "note": "첫 판 2.13"
+     },
+     "inputs": [
+      "{{2:old-2-5}}",
+      "{{2:old-2-10}}",
+      "{{2:old-2-11}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-14}}",
+     "kind": "보조정리",
+     "name": "섬유의 부호식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       293,
+       301
+      ],
+      "note": "첫 판 2.14"
+     },
+     "inputs": [
+      "{{2:old-2-3}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-15}}",
+     "kind": "보조정리",
+     "name": "용량 구간의 층층 구조",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       303,
+       307
+      ],
+      "note": "첫 판 2.15"
+     },
+     "inputs": [
+      "{{2:old-2-12}}",
+      "{{2:old-2-17}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-16}}",
+     "kind": "보조정리",
+     "name": "톱니",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       309,
+       315
+      ],
+      "note": "첫 판 2.16"
+     },
+     "inputs": [
+      "{{2:old-2-14}}",
+      "{{2:old-2-15}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-17}}",
+     "kind": "보조정리",
+     "name": "용량 다중집합의 법칙",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       317,
+       325
+      ],
+      "note": "첫 판 2.17"
+     },
+     "inputs": [
+      "{{2:old-2-3}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-18}}",
+     "kind": "보조정리",
+     "name": "사슬 배치의 셈",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       327,
+       333
+      ],
+      "note": "첫 판 2.18"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-19}}",
+     "kind": "따름정리",
+     "name": "사슬의 국소 극한",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       335,
+       337
+      ],
+      "note": "첫 판 2.19"
+     },
+     "inputs": [
+      "{{2:old-2-18}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-20}}",
+     "kind": "명제",
+     "name": "섬유는 거의 모두 단봉이 아니다",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       339,
+       356
+      ],
+      "note": "첫 판 2.20"
+     },
+     "inputs": [
+      "{{2:old-2-16}}",
+      "{{2:old-2-17}}",
+      "{{2:old-2-18}}",
+      "{{2:old-2-19}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "명제 2.20의 상계값 계산은 부록 D(`{{D:fiber-nonunimodal-bound}}`)."
+  },
+  {
+   "sec": "2.6",
+   "title": "Borel 분포, 임계 볼츠만 법칙, 생존 확률",
+   "items": [
+    {
+     "label": "{{2:old-2-21}}",
+     "kind": "정의",
+     "name": "Borel 질량",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       362,
+       366
+      ],
+      "note": "첫 판 2.21"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-22}}",
+     "kind": "정의",
+     "name": "임계 볼츠만 법칙(critical Boltzmann law)",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       368,
+       374
+      ],
+      "note": "첫 판 2.22"
+     },
+     "inputs": [
+      "{{2:old-2-10}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-23}}",
+     "kind": "명제",
+     "name": "",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       376,
+       386
+      ],
+      "note": "첫 판 2.23"
+     },
+     "inputs": [
+      "{{2:old-2-21}}",
+      "{{2:old-2-22}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-24}}",
+     "kind": "정의",
+     "name": "생존 확률",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       388,
+       396
+      ],
+      "note": "첫 판 2.24"
+     },
+     "inputs": [
+      "{{2:old-2-4}}",
+      "{{2:old-2-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-25}}",
+     "kind": "정의",
+     "name": "수준 질량",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       398,
+       406
+      ],
+      "note": "첫 판 2.25"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-26}}",
+     "kind": "보조정리",
+     "name": "함수 $g$의 성질",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       408,
+       428
+      ],
+      "note": "첫 판 2.26"
+     },
+     "inputs": [
+      "{{2:old-2-21}}",
+      "{{2:old-2-24}}",
+      "{{2:old-2-25}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.7",
+   "title": "얼린 용량 다항식과 동률–막힘 항등식",
+   "items": [
+    {
+     "label": "{{2:old-2-27}}",
+     "kind": "정의",
+     "name": "동률과 막힘",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       440,
+       442
+      ],
+      "note": "첫 판 2.27"
+     },
+     "inputs": [
+      "{{2:old-2-3}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-28}}",
+     "kind": "정리",
+     "name": "동률–막힘 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       444,
+       463
+      ],
+      "note": "첫 판 2.28"
+     },
+     "inputs": [
+      "{{2:old-2-3}}",
+      "{{2:old-2-27}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-29}}",
+     "kind": "따름정리",
+     "name": "",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       465,
+       473
+      ],
+      "note": "첫 판 2.29"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-30}}",
+     "kind": "보조정리",
+     "name": "",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       475,
+       487
+      ],
+      "note": "첫 판 2.30"
+     },
+     "inputs": [
+      "{{2:old-2-8}}",
+      "{{2:old-2-29}}",
+      "{{2:J-egf}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:J-egf}}",
+     "kind": "보조정리",
+     "name": "$J_n(c)$의 지수 생성함수 표현",
+     "record_name": "기록 [rba2ecf]의 Green 표현 재구성, 기록 [r37c204b]의 보조정리 3.3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rba2ecf",
+       "file": "exposition.md",
+       "note": "상속한 Green 표현과 그 짧은 유도(마지막 차 분해→선형화→EGF의 선형 ODE→적분인자)",
+       "sec": "2"
+      },
+      {
+       "record": "r37c204b",
+       "file": "exposition.md",
+       "note": "보조정리 3.3의 재귀 (3.4)와 그 뒤 두 문장",
+       "sec": "3.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-6}}",
+      "{{2:old-2-27}}",
+      "{{2:old-2-28}}"
+     ],
+     "special": "hermite-integral이 아니라 §2의 green-reconstruction이 출처다(조사 4). 적분인자 $Pe^{cU}$의 유도를 모든 단계로 적는다."
+    }
+   ]
+  },
+  {
+   "sec": "2.8",
+   "title": "크기 단조성과 수준 방문 보존",
+   "items": [
+    {
+     "label": "{{2:old-2-31}}",
+     "kind": "정리",
+     "name": "크기 결합",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       493,
+       519
+      ],
+      "note": "첫 판 2.31"
+     },
+     "inputs": [
+      "{{2:old-2-7}}",
+      "{{2:old-2-11}}",
+      "{{2:old-2-6}}",
+      "{{2:old-2-26}}",
+      "{{2:old-2-32}}",
+      "{{2:old-2-33}}"
+     ],
+     "special": "세 부등식 (SM)·(DM0)·(SC)만의 정리로 다시 진술(결합의 존재와 문헌 인용은 뺌)"
+    },
+    {
+     "label": "{{2:ratio-e}}",
+     "kind": "따름정리",
+     "name": "생존 확률 비의 상계 $a_{m+1}\\le e\\,a_m$",
+     "record_name": "기록 [r60a6f55]의 식 (8)",
+     "process": "전개",
+     "class": "표준",
+     "sources": [
+      {
+       "record": "r60a6f55",
+       "file": "exposition.md",
+       "note": "§4 방문 하계와 증폭식; 식 (8)",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-31}}"
+     ],
+     "special": "2.31(나)의 두 줄 따름. 7.2의 `{{7:self-consistent-S}}`가 쓴다."
+    },
+    {
+     "label": "{{2:old-2-32}}",
+     "kind": "보조정리",
+     "name": "마지막 차 자리 법칙의 두 단조성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       521,
+       539
+      ],
+      "note": "첫 판 2.32"
+     },
+     "inputs": [
+      "{{2:old-2-7}}",
+      "{{2:old-2-26}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-33}}",
+     "kind": "보조정리",
+     "name": "마지막 차 자리의 한 걸음 결합",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       541,
+       567
+      ],
+      "note": "첫 판 2.33"
+     },
+     "inputs": [
+      "{{2:old-2-6}}",
+      "{{2:old-2-7}}",
+      "{{2:old-2-26}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-34}}",
+     "kind": "보조정리",
+     "name": "수준 방문 보존",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       569,
+       589
+      ],
+      "note": "첫 판 2.34"
+     },
+     "inputs": [],
+     "special": ""
+    }
+   ],
+   "intro": "첫 판 2.31은 세 부등식 (SM)·(DM0)·(SC)만의 정리로 다시 진술한다. 결합의 존재와 Fleurat 인용, 그 해석에 기댄 문장은 쓰지 않는다. (나)의 귀납 증명이 셋을 모두 덮는다(의존지도 v2 3절 (ㅁ)). 새 따름정리 `{{2:ratio-e}}`는 (나)에서 두 줄로 따른다."
+  },
+  {
+   "sec": "2.9",
+   "title": "나무를 고정한 행 차분과 문턱 부분나무",
+   "items": [
+    {
+     "label": "{{2:old-2-35}}",
+     "kind": "보조정리",
+     "name": "나무를 고정한 행 차분",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       601,
+       621
+      ],
+      "note": "첫 판 2.35"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-36}}",
+     "kind": "보조정리",
+     "name": "문턱 부분나무의 기대 수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       623,
+       635
+      ],
+      "note": "첫 판 2.36"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-37}}",
+     "kind": "보조정리",
+     "name": "갱신 방문 핵과 갱신 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       637,
+       657
+      ],
+      "note": "첫 판 2.37"
+     },
+     "inputs": [
+      "{{2:old-2-38}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-38}}",
+     "kind": "정리",
+     "name": "정리 T",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       659,
+       697
+      ],
+      "note": "첫 판 2.38"
+     },
+     "inputs": [
+      "{{2:old-2-35}}",
+      "{{2:old-2-36}}",
+      "{{2:old-2-37}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-39}}",
+     "kind": "따름정리",
+     "name": "머리 합의 안쪽 층; 안쪽 층은 첫 층에서 $k$에 가까운 쪽 $N=k+D$, $D$ 고정의 범위이고 이름은 3.4절에서 정한다",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       699,
+       715
+      ],
+      "note": "첫 판 2.39"
+     },
+     "inputs": [
+      "{{2:old-2-26}}",
+      "{{2:old-2-37}}"
+     ],
+     "special": "괄호의 「이름은 3.4절에서 정한다」는 뺌"
+    }
+   ],
+   "intro": "첫 판 2.39의 괄호 「이름은 3.4절에서 정한다」는 쓰지 않는다(이름은 1.5에 있다)."
+  },
+  {
+   "sec": "2.10",
+   "title": "지수 공식과 다섯 조각 분해",
+   "items": [
+    {
+     "label": "{{2:old-2-40}}",
+     "kind": "정리",
+     "name": "다섯 조각 분해",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       739,
+       760
+      ],
+      "note": "첫 판 2.40"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-41}}",
+     "kind": "명제",
+     "name": "쌍 항의 정수 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       762,
+       770
+      ],
+      "note": "첫 판 2.41"
+     },
+     "inputs": [
+      "{{2:old-2-40}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-42}}",
+     "kind": "명제",
+     "name": "한 블록 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       772,
+       784
+      ],
+      "note": "첫 판 2.42"
+     },
+     "inputs": [
+      "{{2:old-2-41}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.11",
+   "title": "Borel 갱신 집합과 갱신 다리",
+   "items": [
+    {
+     "label": "{{2:old-2-43}}",
+     "kind": "정의",
+     "name": "Borel 갱신 집합",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       790,
+       794
+      ],
+      "note": "첫 판 2.43"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-44}}",
+     "kind": "명제",
+     "name": "갱신 집합의 기대 크기",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       796,
+       800
+      ],
+      "note": "첫 판 2.44"
+     },
+     "inputs": [
+      "{{2:old-2-12}}",
+      "{{2:old-2-37}}",
+      "{{2:old-2-39}}",
+      "{{2:old-2-43}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-45}}",
+     "kind": "보조정리",
+     "name": "무거운 사슬의 수준 방문 확률",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       802,
+       820
+      ],
+      "note": "첫 판 2.45"
+     },
+     "inputs": [
+      "{{2:old-2-12}}",
+      "{{2:old-2-37}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{2:old-2-46}}",
+     "kind": "보조정리",
+     "name": "갱신 다리",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       822,
+       834
+      ],
+      "note": "첫 판 2.46"
+     },
+     "inputs": [
+      "{{2:old-2-13}}",
+      "{{2:old-2-45}}",
+      "{{2:old-2-43}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "2.12",
+   "title": "지정 사슬의 전개와 이동 꼬리의 균일 추정",
+   "items": [
+    {
+     "label": "{{2:chain-expansion}}",
+     "kind": "정리",
+     "name": "지정 사슬의 쌍 공식과 사슬 전개",
+     "record_name": "기록 [r42d9a17]의 식 (8)–(11)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r42d9a17",
+       "file": "exposition.md",
+       "note": "지정된 중첩 부분나무 사슬의 정확한 개수; (8) 쌍 공식, (9)–(11) 사슬 전개",
+       "sec": "2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-9}}",
+      "{{2:old-2-10}}",
+      "{{2:old-2-13}}"
+     ],
+     "special": "5.2(셋째 묶음)와 6.6(다섯 조각)이 함께 쓴다."
+    },
+    {
+     "label": "{{2:moving-tail}}",
+     "kind": "정리",
+     "name": "이동 꼬리의 균일 추정",
+     "record_name": "기록 [r42d9a17]의 uniform-moving-tail (2)·(19)",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r42d9a17",
+       "file": "exposition.md",
+       "note": "Peer의 포함배제 상·하한(§3)과 균등 추정·세 부분나무 오차(§4); Bonferroni·볼록성",
+       "sec": "3–4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-expansion}}",
+      "{{2:old-2-21}}"
+     ],
+     "special": "6.6의 $v_m<0$ 논증([r29c10cd] 명제 W(가))의 전제."
+    },
+    {
+     "label": "{{2:chain-normalization}}",
+     "kind": "보조정리",
+     "name": "사슬 가중치의 정규화와 그 경계",
+     "record_name": "기록 [r1aa0be6]의 chain-normalization",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r1aa0be6",
+       "file": "exposition.md",
+       "note": "원 개수를 정확한 사슬 합으로 옮긴다: $W_n$, $\\mathcal R(n,d)$, 경계 $1\\le W_n\\le(1-r/n)^{-k-2}$",
+       "sec": "2"
+      },
+      {
+       "record": "r1aa0be6",
+       "file": "evidence/producer/output/critical-local-limit.md",
+       "note": "증거 문서 §2의 경계 사례",
+       "sec": "2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:chain-expansion}}"
+     ],
+     "special": "5.2의 `{{5:third-group}}`과 `{{5:marked-recursion}}`의 전제."
+    }
+   ],
+   "intro": "새 절. 5장(`{{5:third-group}}`·`{{5:marked-recursion}}`)과 6장(다섯 조각·$v_m<0$)이 함께 쓰는 세 결과를 기록에서 모든 단계로 전개한다. 2.5·2.9·2.11의 대상만으로 진술한다."
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [],
+ "todo": [],
+ "D_items": [
+  {
+   "label": "{{D:fiber-enumeration}}",
+   "for": "{{2:old-2-5}}",
+   "sources": [
+    {
+     "record": "r81e7051",
+     "note": "n≤6 섬유 전수(정확 정수); 증거 파일 경로는 기록 §재현 절"
+    }
+   ]
+  },
+  {
+   "label": "{{D:fiber-nonunimodal-bound}}",
+   "for": "{{2:old-2-20}}",
+   "sources": [
+    {
+     "record": "r88bed8a",
+     "note": "명제 F의 상계값 계산"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "2.6·2.11의 영어 병기(임계 볼츠만 법칙(critical Boltzmann law), 확률보행(random walk), 갱신함수(renewal function), 크기 편향(size-biased), 사다리 시각(ladder epoch))는 첫 정의 자리에 한 번만."
+ ]
+}

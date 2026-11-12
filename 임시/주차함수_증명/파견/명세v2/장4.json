@@ -1,0 +1,355 @@
+{
+ "chapter": 4,
+ "title": "분할과 중앙",
+ "scope": "네 위치쌍 분할, 감소 뒤의 로그오목성 Q와 P의 함의, 중앙 틈의 증명(정리 4.5–4.7과 새 보조정리 셋), 왼쪽·횡단·조건부 로그오목성의 동치. 중앙 틈은 오른쪽 절반과 왼쪽 절반을 잇는 고리다.",
+ "weights": "4.3 중앙 틈이 고비다. 첫 판의 한 문단 전사를 보조정리와 번호 단계로 다시 조직한다: 적분 표현(`{{4:e-integral}}`, 작성자 증명), 상쇄 분해, 실수 비교(정리 4.7), Gauss 계수의 경계(`{{4:gauss-coeff}}`), 두 보정의 수직선 적분(`{{4:two-corrections}}`), 조립, 정수 인증(부록 D). 4.1·4.2·4.4는 표준에 가깝고 짧게.",
+ "sections": [
+  {
+   "sec": "4.1",
+   "title": "위치쌍 분할",
+   "items": [
+    {
+     "label": "{{4:old-4-1}}",
+     "kind": "정의",
+     "name": "네 위치쌍 명제",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1029,
+       1035
+      ],
+      "note": "첫 판 4.1"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{4:old-4-2}}",
+     "kind": "보조정리",
+     "name": "분할의 정확성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1037,
+       1041
+      ],
+      "note": "첫 판 4.2"
+     },
+     "inputs": [
+      "{{4:old-4-1}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "4.2",
+   "title": "감소 뒤의 로그오목성",
+   "items": [
+    {
+     "label": "{{4:old-4-3}}",
+     "kind": "정의",
+     "name": "조건부 로그오목성 Q",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1047,
+       1049
+      ],
+      "note": "첫 판 4.3"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{4:old-4-4}}",
+     "kind": "정리",
+     "name": "Q는 P를 함의한다",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1051,
+       1067
+      ],
+      "note": "첫 판 4.4"
+     },
+     "inputs": [
+      "{{2:old-2-28}}",
+      "{{2:old-2-30}}",
+      "{{3:old-3-4}}",
+      "{{4:old-4-3}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "4.3",
+   "title": "중앙 틈",
+   "items": [
+    {
+     "label": "{{4:old-4-5}}",
+     "kind": "정리",
+     "name": "중앙 틈",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1073,
+       1093
+      ],
+      "note": "첫 판 4.5"
+     },
+     "inputs": [
+      "{{2:old-2-28}}",
+      "{{2:old-2-30}}",
+      "{{4:old-4-7}}",
+      "{{4:e-integral}}",
+      "{{4:gauss-coeff}}",
+      "{{4:two-corrections}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{4:old-4-6}}",
+     "kind": "명제",
+     "name": "$J$의 보조 분해",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1095,
+       1113
+      ],
+      "note": "첫 판 4.6"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{4:e-integral}}",
+     "kind": "보조정리",
+     "name": "$e_n$의 적분 표현",
+     "record_name": "",
+     "process": "작성자 증명",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r37c204b",
+       "file": "exposition.md",
+       "note": "재귀 (3.4)와 $J_n(c)$ 표현의 출발점",
+       "sec": "3.3"
+      },
+      {
+       "record": "rce3dc75",
+       "file": "exposition.md",
+       "note": "명제 3.1 $J$의 보조 분해(첫 판 4.6)",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:J-egf}}",
+      "{{4:old-4-6}}"
+     ],
+     "special": "기록은 「적분 인자 해」라고만 적는다(조사 3 상신 1). $F_*$·$K$·$Q_k$의 정의에서 ODE를 적분인자로 풀어 (R7)(R8)을 유도하고 「작성자 판단」을 붙인다. 5.6의 `{{5:old-5-40}}`(전제 (I5))이 쓴다."
+    },
+    {
+     "label": "{{4:old-4-7}}",
+     "kind": "정리",
+     "name": "실수 비교",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1115,
+       1199
+      ],
+      "note": "첫 판 4.7"
+     },
+     "inputs": [
+      "{{4:old-4-5}}",
+      "{{4:gauss-coeff}}",
+      "{{4:two-corrections}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{4:gauss-coeff}}",
+     "kind": "보조정리",
+     "name": "Gauss 계수의 경계(Hermite 점화식)",
+     "record_name": "",
+     "process": "옮김+재조직",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r37c204b",
+       "file": "evidence/producer/output/resume-central-analysis.md",
+       "note": "증거 문서 §4(조사 3이 본문을 읽음)",
+       "sec": "4"
+      },
+      {
+       "record": "rce3dc75",
+       "file": "exposition.md",
+       "note": "Gauss 계수 단계",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{4:old-4-6}}",
+      "{{4:old-4-7}}"
+     ],
+     "special": "첫 판 4.3절의 전사 문단을 보조정리와 번호 단계로 다시 조직한다(지침 6절 규칙 13)."
+    },
+    {
+     "label": "{{4:two-corrections}}",
+     "kind": "보조정리",
+     "name": "두 보정의 수직선 적분",
+     "record_name": "",
+     "process": "옮김+재조직",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r37c204b",
+       "file": "evidence/producer/output/resume-central-analysis.md",
+       "note": "증거 문서 §4",
+       "sec": "4"
+      },
+      {
+       "record": "rce3dc75",
+       "file": "exposition.md",
+       "note": "두 보정",
+       "sec": "5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{4:gauss-coeff}}"
+     ],
+     "special": "첫 판 4.3절의 전사 문단에서 재조직."
+    }
+   ],
+   "intro": "`{{4:e-integral}}`은 기록이 「적분 인자 해」라고만 적은 단계를 이 글이 증명하는 자리다. $F_*$·$K$·$Q_k$의 정의에서 ODE를 적분인자로 풀어 (R7)(R8)을 유도하고 그 문장 앞에 `(작성자 판단)`을 붙인다. 16≤n≤20000의 정수 구간 인증은 부록 D(`{{D:central-gap-integer}}`)."
+  },
+  {
+   "sec": "4.4",
+   "title": "왼쪽, 횡단, 조건부 로그오목성의 동치",
+   "items": [
+    {
+     "label": "{{4:old-4-8}}",
+     "kind": "정리",
+     "name": "횡단과 왼쪽의 동치",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1205,
+       1209
+      ],
+      "note": "첫 판 4.8"
+     },
+     "inputs": [
+      "{{3:old-3-6}}",
+      "{{4:old-4-2}}",
+      "{{5:old-5-1}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{4:old-4-9}}",
+     "kind": "정리",
+     "name": "조건부 로그오목성과 왼쪽의 동치",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1211,
+       1223
+      ],
+      "note": "첫 판 4.9"
+     },
+     "inputs": [
+      "{{4:old-4-4}}",
+      "{{4:old-4-5}}",
+      "{{4:old-4-8}}"
+     ],
+     "special": ""
+    }
+   ]
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [
+  "{{2:old-2-26}}",
+  "{{2:old-2-28}}",
+  "{{2:old-2-30}}",
+  "{{2:old-2-6}}",
+  "{{2:old-2-8}}",
+  "{{3:old-3-4}}",
+  "{{3:old-3-6}}",
+  "{{5:old-5-1}}"
+ ],
+ "todo": [],
+ "D_items": [
+  {
+   "label": "{{D:central-gap-integer}}",
+   "for": "{{4:old-4-5}}",
+   "sources": [
+    {
+     "record": "rce3dc75",
+     "note": "§8.2 16≤n≤20000의 정수 구간 인증"
+    }
+   ]
+  },
+  {
+   "label": "{{D:crossing-small-n}}",
+   "for": "{{4:old-4-8}}",
+   "sources": [
+    {
+     "record": "rce3dc75",
+     "note": "20≤n≤1000 정확 계산"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "정리 4.8의 20≤n≤1000 정확 계산은 부록 D 항목(`{{D:crossing-small-n}}`)으로."
+ ]
+}

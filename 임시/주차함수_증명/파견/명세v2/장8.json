@@ -1,0 +1,501 @@
+{
+ "chapter": 8,
+ "title": "둘째 층 띠",
+ "scope": "둘째 층 띠 $103\\le\\nu\\le0.48k$에서 줄기 이득이 문턱 나무 손실을 이긴다는 비교. 비교의 꼴(한 블록 재귀와 비교 원리), 창의 수준 질량 하계(Jensen·탈출 하계, 봉투 보조정리 H·H-G, 정리 W), 생존 인자의 상쇄와 용량 이동, 띠 정리(B′·B‴). 9장과 10장이 함께 기대는 입력이다.",
+ "weights": "고비는 8.2의 정리 W와 봉투 보조정리, 8.4의 띠 정리다. 봉투 식 전부(식 4+정의 3, 여섯 조각 6)를 본문에 적고, 셀 검사와 12001점 표는 부록 D. 탈출 봉투의 $y$-감소성과 여섯 조각의 $k$-단조성은 자리 표시자(아래).",
+ "sections": [
+  {
+   "sec": "8.1",
+   "title": "비교의 꼴",
+   "items": [
+    {
+     "label": "{{8:old-6-23}}",
+     "kind": "보조정리",
+     "name": "한 블록 재귀",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2093,
+       2109
+      ],
+      "note": "첫 판 6.23"
+     },
+     "inputs": [
+      "{{2:old-2-37}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-24}}",
+     "kind": "보조정리",
+     "name": "기록 [r030ffae]의 보조정리 D1",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2111,
+       2118
+      ],
+      "note": "첫 판 6.24"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-25}}",
+     "kind": "보조정리",
+     "name": "결손 부등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2120,
+       2127
+      ],
+      "note": "첫 판 6.25"
+     },
+     "inputs": [
+      "{{8:old-6-24}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-26}}",
+     "kind": "보조정리",
+     "name": "비교 원리",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2129,
+       2133
+      ],
+      "note": "첫 판 6.26"
+     },
+     "inputs": [
+      "{{8:old-6-25}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-27}}",
+     "kind": "보조정리",
+     "name": "대수적 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2135,
+       2157
+      ],
+      "note": "첫 판 6.27"
+     },
+     "inputs": [
+      "{{8:old-6-24}}",
+      "{{8:old-6-26}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "8.2",
+   "title": "창의 수준 질량 하계",
+   "items": [
+    {
+     "label": "{{8:jensen-lower}}",
+     "kind": "보조정리",
+     "name": "Jensen 하계(보조정리 W)",
+     "record_name": "기록 [r8456f59]의 보조정리 W",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "note": "heavy path 초과 면적의 평균(9행)",
+       "sec": "4.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:escape-lower}}",
+     "kind": "정리",
+     "name": "기하 탈출 하계(정리 G)",
+     "record_name": "기록 [r8456f59]의 정리 G",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "note": "기하 탈출 하계(7행)",
+       "sec": "4.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:jensen-lower}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:lowest-violation}}",
+     "kind": "명제",
+     "name": "가장 낮은 위반 (V)",
+     "record_name": "기록 [r8456f59] §4.7",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "note": "창 극한 방정식의 정확한 유한판(22행)",
+       "sec": "4.7"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:old-6-23}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:prop-U-apriori}}",
+     "kind": "명제",
+     "name": "명제 U(사전 상계)",
+     "record_name": "기록 [r8456f59]의 명제 U",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4.7"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:lowest-violation}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:envelope-H}}",
+     "kind": "보조정리",
+     "name": "원천 봉투의 보조정리 H",
+     "record_name": "기록 [r030ffae]의 보조정리 H",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r030ffae",
+       "file": "exposition.md",
+       "note": "원천 봉투 Q^env",
+       "sec": "3.5"
+      },
+      {
+       "record": "r030ffae",
+       "file": "evidence/producer/report.md",
+       "note": "보고서 §3.9.2 k에 무관한 원천 봉투",
+       "sec": "3.9.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:old-6-23}}",
+      "{{8:escape-lower}}"
+     ],
+     "special": "식 4·정의 3·증명 1문단. 보고서 §3.9.2에서 옮기고 출처를 적는다."
+    },
+    {
+     "label": "{{8:envelope-HG}}",
+     "kind": "보조정리",
+     "name": "원천 봉투의 보조정리 H-G(여섯 조각)",
+     "record_name": "기록 [r030ffae]의 보조정리 H-G",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r030ffae",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3.5"
+      },
+      {
+       "record": "r030ffae",
+       "file": "evidence/producer/report.md",
+       "note": "",
+       "sec": "3.9.2"
+      },
+      {
+       "record": "r030ffae",
+       "file": "evidence/peer/rerun/work/window_lib.py",
+       "note": "`G_pieces`·`E_envG_rigorous`의 docstring(여섯 조각의 식); 기록 폴더 바로 아래의 파일",
+       "range": [
+        140,
+        205
+       ]
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:envelope-H}}"
+     ],
+     "special": "여섯 조각 $P,R_1,R_2,D_1,D_2,D_3$의 식 전부를 적는다. 그 뒤의 $y$-감소성·$k$-단조성은 자리 표시자(지침 4.7)."
+    },
+    {
+     "label": "{{8:old-6-28}}",
+     "kind": "정리",
+     "name": "창의 수준 질량 하계",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r030ffae",
+       "file": "exposition.md",
+       "note": "큰 b의 단조 경계와 셀 경계, 시험 함수와 인증 결과, 정리 W",
+       "sec": "3.6–3.7"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2159,
+       2171
+      ],
+      "note": "첫 판 6.28"
+     },
+     "inputs": [
+      "{{8:envelope-H}}",
+      "{{8:envelope-HG}}",
+      "{{8:lowest-violation}}"
+     ],
+     "special": "(가)·(나) 셀 검사와 12001점 표는 부록 D(binary64 평가, 인증 아님). 증명의 둘째 단계에 `[todo]` 자리 표시자."
+    }
+   ],
+   "intro": "순서: `{{8:jensen-lower}}` → `{{8:escape-lower}}` → `{{8:lowest-violation}}` → `{{8:prop-U-apriori}}` → `{{8:envelope-H}}` → `{{8:envelope-HG}}` → 정리 W(`{{8:old-6-28}}`). 정리 W 증명의 둘째 단계(봉투 표가 하계임을 쓰는 자리)에 지침 4.7의 자리 표시자를 둔다. 보조정리 H·H-G의 식은 기록 §3.5와 보고서 §3.9.2·`window_lib.py`의 docstring에서 옮기고 출처를 적는다."
+  },
+  {
+   "sec": "8.3",
+   "title": "생존 인자의 상쇄와 용량 이동",
+   "items": [
+    {
+     "label": "{{8:old-6-30}}",
+     "kind": "보조정리",
+     "name": "용량 이동 비",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2193,
+       2210
+      ],
+      "note": "첫 판 6.30"
+     },
+     "inputs": [
+      "{{2:old-2-4}}",
+      "{{8:old-6-23}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-31}}",
+     "kind": "보조정리",
+     "name": "최대 나무 법칙과 Borel 질량의 로그 볼록성",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2212,
+       2225
+      ],
+      "note": "첫 판 6.31"
+     },
+     "inputs": [
+      "{{2:old-2-26}}",
+      "{{8:old-6-23}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:old-6-32}}",
+     "kind": "보조정리",
+     "name": "용량–크기 보조정리",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2227,
+       2243
+      ],
+      "note": "첫 판 6.32"
+     },
+     "inputs": [
+      "{{8:old-6-31}}"
+     ],
+     "special": ""
+    }
+   ]
+  },
+  {
+   "sec": "8.4",
+   "title": "띠 정리",
+   "items": [
+    {
+     "label": "{{8:old-6-29}}",
+     "kind": "정리",
+     "name": "기록 [r030ffae]의 정리 B′",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2173,
+       2191
+      ],
+      "note": "첫 판 6.29"
+     },
+     "inputs": [
+      "{{8:old-6-23}}",
+      "{{8:old-6-28}}",
+      "{{8:prop-U-apriori}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{8:hazard-H1}}",
+     "kind": "보조정리",
+     "name": "첫 층 위험률의 명시 하계(정리 H1(a))",
+     "record_name": "기록 [r5bbc534]의 정리 H1",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r5bbc534",
+       "file": "exposition.md",
+       "note": "정리 H1과 보조정리 𝔇(약 20행)",
+       "sec": "5.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:old-7-24}}"
+     ],
+     "special": "6.33 증명의 위험률 다듬기($0.44k<\\nu\\le0.48k$)가 쓴다(의존지도 v2 열린 입력 1)."
+    },
+    {
+     "label": "{{8:old-6-33}}",
+     "kind": "정리",
+     "name": "둘째 층 띠",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2245,
+       2287
+      ],
+      "note": "첫 판 6.33"
+     },
+     "inputs": [
+      "{{8:old-6-28}}",
+      "{{8:old-6-29}}",
+      "{{8:old-6-30}}",
+      "{{8:old-6-31}}",
+      "{{8:old-6-32}}",
+      "{{8:prop-U-apriori}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "`{{8:hazard-H1}}`을 정리 B‴ 앞에 둔다(위험률 다듬기 $0.44k<\\nu\\le0.48k$가 쓴다). 상자 검사 206,727개(배정밀도)는 부록 D."
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [
+  "{{2:old-2-13}}",
+  "{{2:old-2-26}}",
+  "{{2:old-2-31}}",
+  "{{2:old-2-37}}",
+  "{{2:old-2-38}}",
+  "{{2:old-2-44}}",
+  "{{2:old-2-4}}"
+ ],
+ "todo": [
+  {
+   "where": "8.2, 정리 W(`{{8:old-6-28}}`) 증명의 둘째 단계(12001점 표의 마디값이 하계임을 쓰는 자리)와 보조정리 H-G(`{{8:envelope-HG}}`) 뒤",
+   "statement": "탈출 봉투 $Q^{\\mathrm{env}}_G(y)$가 $y\\in[0.2,6.001]$에서 비증가이고, 여섯 조각 $P,R_1,R_2,D_1,D_2,D_3$가 고정 $y$에서 $k\\ge6600$에 대해 단조라는 것(따라서 표의 마디값 $Q^{\\mathrm{env}}(y_{i+1})$이 셀 $[y_i,y_{i+1}]$ 위의 하계라는 것)",
+   "fill": "연구 인스턴스가 공표하는 기록(2026-11-12 요청에 대한 답)의 증명을 옮기고 2차 대조를 거친다. 그때까지 자리 표시자만 두고 그 성질을 쓰는 문장은 「[todo]의 진술 아래」라고 적는다"
+  }
+ ],
+ "D_items": [
+  {
+   "label": "{{D:window-mass-env}}",
+   "for": "{{8:old-6-28}}",
+   "sources": [
+    {
+     "record": "r030ffae",
+     "note": "(가)·(나) 셀 검사와 12001점 봉투 표(binary64 평가, 인증 아님); 생성 규칙"
+    }
+   ]
+  },
+  {
+   "label": "{{D:band-boxes}}",
+   "for": "{{8:old-6-33}}",
+   "sources": [
+    {
+     "record": "r030ffae",
+     "note": "상자 206,727개 배정밀도 검사, 최솟값 1.0094"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "첫 판 6.9절 머리의 「창」 정의와 「5.5절의 창과 다른 뜻」 구별 문장은 쓰지 않는다. 장부 v2의 「착지 창」을 쓴다.",
+  "첫 판 6.9절의 참값 비 관찰(2.17, 1.842, 4–6)과 어려움의 서술 가운데 증명에 쓰이지 않는 수치 관찰은 쓰지 않는다.",
+  "8장의 용량 변수 $c$는 장부 v2의 $y$다.",
+  "Lagrange 반전, Euler–Maclaurin 경계, Robbins 부등식은 문헌 인용."
+ ]
+}

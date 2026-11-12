@@ -1,0 +1,819 @@
+{
+ "chapter": 6,
+ "title": "첫 층의 추정",
+ "scope": "두 증명이 함께 쓰는 첫 층($k<N\\le2k+1$)의 결과를 한 장에 모은다: 첫 층 생존의 상계(정리 F′), 제한 성장비·표시 나무 무게·위험률, 머묾 법칙, 점질량과 대각선 하계((Diag)·(D)), 첫 층 꼬리합과 V-core(정리 U), UL 꼬리합의 다섯 조각과 (V). 첫 판에서는 7·8장과 6.7절에 흩어져 진술만 있던 것들이다.",
+ "weights": "새 장이며 거의 전부가 전개다. 정리 F′(85행), 머묾 법칙(153행), (Diag) 첫 층 정리(169행), 정리 U(94행), 다섯 조각(약 260행)이 고비다. 두 증명의 공통 입력이므로 경중 배분상 「가벼운 것」이지만 증명은 완전히 전개한다(위치와 표지만 가볍게).",
+ "sections": [
+  {
+   "sec": "6.1",
+   "title": "첫 층 생존의 상계",
+   "items": [
+    {
+     "label": "{{6:old-7-13}}",
+     "kind": "정리",
+     "name": "첫 층 생존의 상계",
+     "record_name": "",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r7e03176",
+       "file": "exposition.md",
+       "note": "정리 F′: 첫 층 생존의 손 증명(85행)",
+       "sec": "8.3"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2483,
+       2487
+      ],
+      "note": "첫 판 7.13"
+     },
+     "inputs": [
+      "{{2:old-2-32}}",
+      "{{2:old-2-6}}"
+     ],
+     "special": "첫 판에는 진술만 있다. 증명 전부를 전개한다."
+    }
+   ]
+  },
+  {
+   "sec": "6.2",
+   "title": "제한 성장비, 표시 나무 무게, 위험률",
+   "items": [
+    {
+     "label": "{{6:old-7-19}}",
+     "kind": "보조정리",
+     "name": "두 나무 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2597,
+       2606
+      ],
+      "note": "첫 판 7.19"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{6:old-7-20}}",
+     "kind": "보조정리",
+     "name": "제한 성장비의 상계",
+     "record_name": "",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r051bfe1",
+       "file": "exposition.md",
+       "note": "c-sharp의 증명(109행); 정리 A, 보조정리 C·S, 결론",
+       "sec": "3"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2608,
+       2608
+      ],
+      "note": "첫 판 7.20"
+     },
+     "inputs": [
+      "{{2:old-2-6}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:old-7-21}}",
+     "kind": "정리",
+     "name": "표시 나무 무게의 증가",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2610,
+       2618
+      ],
+      "note": "첫 판 7.21"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{6:old-7-24}}",
+     "kind": "보조정리",
+     "name": "위험률의 하계",
+     "record_name": "",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r051bfe1",
+       "file": "exposition.md",
+       "note": "(Hz) 위험률로 읽기(45행); 전제는 §3의 정량판",
+       "sec": "5.1"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2649,
+       2669
+      ],
+      "note": "첫 판 7.24"
+     },
+     "inputs": [
+      "{{6:old-7-20}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "표시 나무 무게 $\\mathcal T_n(s)=\\binom ns s^{s-1}A_{n-s,k-1}$와 그 정규화의 정의를 이 절 머리에 둔다(첫 판 6.8절 2077행 문단에서 옮기되 「환경 무게」 병기와 5.5.2절 꼬리합에 대한 구별 문장은 뺀다; 글자는 장부 v2). 그 뒤 두 나무 꼴(`{{6:old-7-19}}`), c-sharp(`{{6:old-7-20}}`, 전개), 표시 나무 무게의 증가(`{{6:old-7-21}}`), (Hz)(`{{6:old-7-24}}`, 전개)."
+  },
+  {
+   "sec": "6.3",
+   "title": "머묾 법칙",
+   "items": [
+    {
+     "label": "{{6:old-8-13}}",
+     "kind": "정리",
+     "name": "체류 법칙",
+     "record_name": "",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r98fb348",
+       "file": "exposition.md",
+       "note": "체류 법칙의 증명(153행): 보조정리 C, 명제 D·E, 정리 S⁰, 정리 S",
+       "sec": "4.2–4.6"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       3396,
+       3404
+      ],
+      "note": "첫 판 8.13"
+     },
+     "inputs": [
+      "{{2:old-2-13}}",
+      "{{2:old-2-43}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "첫 판의 「체류 법칙」은 장부 v2에서 「머묾 법칙」이다."
+  },
+  {
+   "sec": "6.4",
+   "title": "점질량과 대각선 하계",
+   "items": [
+    {
+     "label": "{{6:old-8-11}}",
+     "kind": "따름정리",
+     "name": "중앙 행 점질량의 상계",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r7e03176",
+       "file": "exposition.md",
+       "note": "평균 보조정리 A와 행 2k의 증가(한 줄)",
+       "sec": "8.2"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       3380,
+       3384
+      ],
+      "note": "첫 판 8.11"
+     },
+     "inputs": [
+      "{{6:old-7-13}}"
+     ],
+     "special": "첫 판의 논증(첫 판 6.7절 2003행 부근)에 §8.2 보조정리 A 한 줄을 더해 증명을 완성한다."
+    },
+    {
+     "label": "{{6:old-8-12}}",
+     "kind": "정리",
+     "name": "벌크 점질량의 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r7e03176",
+       "file": "exposition.md",
+       "note": "같은 논증의 일반판(p-bulk-point-mass) 한 문단",
+       "sec": "8.5"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       3386,
+       3394
+      ],
+      "note": "첫 판 8.12"
+     },
+     "inputs": [
+      "{{6:old-8-11}}",
+      "{{6:old-7-13}}"
+     ],
+     "special": "첫 판 3390행에 증명이 있다(의존지도 v2 3절 (ㄴ)). 옮기면 된다."
+    },
+    {
+     "label": "{{6:pair-rearrange}}",
+     "kind": "보조정리",
+     "name": "짝 재배열 $\\varphi^\\flat_k=\\Pi_k-\\Upsilon_k$",
+     "record_name": "기록 [r29b01e8]의 식 (4.1)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29b01e8",
+       "file": "exposition.md",
+       "note": "정확한 항등식(24행)",
+       "sec": "4.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-40}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:diag-first-layer}}",
+     "kind": "정리",
+     "name": "(Diag) 첫 층 정리",
+     "record_name": "기록 [r696d62c]의 정리 P6",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r696d62c",
+       "file": "exposition.md",
+       "note": "결손의 사슬 공식, 깊이 분해",
+       "sec": "2.1–2.2"
+      },
+      {
+       "record": "r696d62c",
+       "file": "exposition.md",
+       "note": "깊이 부류를 여는 두 항등식",
+       "sec": "3"
+      },
+      {
+       "record": "r696d62c",
+       "file": "exposition.md",
+       "note": "한 점 삽입과 점별 지배, 모든 부류의 증가와 (Diag)",
+       "sec": "4.1–4.6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:pair-rearrange}}",
+      "{{2:old-2-13}}",
+      "{{2:chain-expansion}}"
+     ],
+     "special": "보조정리 N의 범위를 그대로 적는다."
+    },
+    {
+     "label": "{{6:cor-L}}",
+     "kind": "따름정리",
+     "name": "보조정리 D의 날카로운 판",
+     "record_name": "기록 [r696d62c]의 따름정리 L",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r696d62c",
+       "file": "exposition.md",
+       "note": "보조정리 D의 날카로운 판과 띠 판정 경로(26행)",
+       "sec": "5.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:diag-first-layer}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:D-bound}}",
+     "kind": "정리",
+     "name": "(D) 첫 층 기저의 하계 $kD_k\\ge-1-\\Upsilon_k$와 $\\hat\\Upsilon_k$",
+     "record_name": "기록 [r696d62c]의 p-lemmaD-sharp, 기록 [r29b01e8]의 p-ups-bound",
+     "process": "옮김+전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r696d62c",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.2"
+      },
+      {
+       "record": "r29b01e8",
+       "file": "exposition.md",
+       "note": "엄밀한 몫: 평평한 핵은 음이 아닌 합 ≥ 0.198",
+       "sec": "4.4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:cor-L}}",
+      "{{6:old-8-11}}"
+     ],
+     "special": "첫 판 6.8절 2075–2081행($\\Upsilon_k$, $\\hat\\Upsilon_k$ 상계)과 7.3절 2630행의 (D)·(Υ) 서술을 여기로 옮긴다."
+    }
+   ],
+   "intro": "순서: 따름정리 8.11 → 정리 8.12 → `{{6:pair-rearrange}}` → `{{6:diag-first-layer}}` → `{{6:cor-L}}` → `{{6:D-bound}}`. `{{6:D-bound}}`에는 첫 판 6.8절 2075–2081행의 $\\Upsilon_k$·$\\hat\\Upsilon_k$ 상계와 7.3절 2630행의 (D)·(Υ) 서술이 들어온다."
+  },
+  {
+   "sec": "6.5",
+   "title": "첫 층 꼬리합과 V-core",
+   "items": [
+    {
+     "label": "{{6:old-6-18}}",
+     "kind": "명제",
+     "name": "사다리",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1973,
+       1975
+      ],
+      "note": "첫 판 6.18"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{6:theorem-U}}",
+     "kind": "정리",
+     "name": "정리 U와 보조정리 ℓ·B·A·O·F·E·N",
+     "record_name": "기록 [r845b205]의 정리 U",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r845b205",
+       "file": "exposition.md",
+       "note": "$T_V$의 증명: 경로별 곡률 부등식에서 닫힌 꼴의 상계까지(94행)",
+       "sec": "7"
+      },
+      {
+       "record": "r845b205",
+       "file": "exposition.md",
+       "note": "부록 A. 정리 U의 적분 상수",
+       "range": [
+        295,
+        310
+       ]
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-43}}",
+      "{{2:old-2-46}}"
+     ],
+     "special": "Borel–Tanner 공식은 문헌 인용 또는 2.11의 보조정리로. 상수 50.6의 위합은 부록 D."
+    },
+    {
+     "label": "{{6:old-6-19}}",
+     "kind": "정리",
+     "name": "V-core",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       1977,
+       2009
+      ],
+      "note": "첫 판 6.19"
+     },
+     "inputs": [
+      "{{2:old-2-29}}",
+      "{{4:old-4-5}}",
+      "{{5:old-5-1}}",
+      "{{5:old-5-13}}",
+      "{{5:old-5-18}}",
+      "{{5:old-5-39}}",
+      "{{6:old-7-13}}",
+      "{{6:old-8-11}}",
+      "{{6:theorem-U}}",
+      "{{6:critical-front}}",
+      "{{6:far-window}}",
+      "{{6:small-k-bulk}}",
+      "{{6:first-layer-end}}",
+      "{{6:above-window}}",
+      "{{6:v-negative}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "첫 판 6.7절의 표(UL, V, V*)를 옮기되 UL♭·FC 행은 쓰지 않는다. 정리 6.19의 셋째 걸음은 `{{6:theorem-U}}`와 네 적분의 정의(첫 판 부록 A 16행)로, 넷째 걸음은 6.4의 `{{6:old-8-11}}`을 가리킨다. 상수 50.6의 위합은 부록 D."
+  },
+  {
+   "sec": "6.6",
+   "title": "UL 꼬리합의 다섯 조각과 (V)",
+   "items": [
+    {
+     "label": "{{6:path-shift}}",
+     "kind": "정리",
+     "name": "경로 이동 항등식과 경로별 하계",
+     "record_name": "기록 [r29c10cd]의 정리 1·보조정리 2",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3.1–3.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:theorem-D}}",
+     "kind": "정리",
+     "name": "정리 D·(DR)·보조정리 K",
+     "record_name": "기록 [r5bbc534]의 정리 D",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r5bbc534",
+       "file": "exposition.md",
+       "note": "결손 갱신 항등식 (DR)과 정리 D(49행)",
+       "sec": "4.1–4.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-43}}"
+     ],
+     "special": "기저 $L\\le700$은 부록 D."
+    },
+    {
+     "label": "{{6:prop-W}}",
+     "kind": "명제",
+     "name": "명제 W (나)(다)(라)",
+     "record_name": "기록 [r29c10cd]의 명제 W",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:path-shift}}",
+      "{{2:moving-tail}}"
+     ],
+     "special": "(가)의 13개 검사는 부록 D."
+    },
+    {
+     "label": "{{6:prop-R}}",
+     "kind": "명제",
+     "name": "환원 명제 R",
+     "record_name": "기록 [r9bf2dc6]의 명제 R",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:path-shift}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:lemma-H}}",
+     "kind": "보조정리",
+     "name": "망원 하계와 쌍 공식: 보조정리 H",
+     "record_name": "기록 [r9bf2dc6]의 보조정리 H",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "무거운 꼭짓점은 사슬이고 점확률은 두 곱의 차다",
+       "sec": "4.1"
+      },
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-45}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:lemma-Hprime}}",
+     "kind": "보조정리",
+     "name": "닫힌 꼴: 보조정리 H′",
+     "record_name": "기록 [r9bf2dc6]의 보조정리 H′",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4.4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:lemma-H}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:lemma-M}}",
+     "kind": "보조정리",
+     "name": "단조성: 보조정리 M",
+     "record_name": "기록 [r9bf2dc6]의 보조정리 M",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "4.5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:lemma-Hprime}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:critical-front}}",
+     "kind": "명제",
+     "name": "임계 창 앞쪽 조각",
+     "record_name": "기록 [r7e03176] §8.5의 따름정리, 기록 [r29c10cd] §7.5",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r7e03176",
+       "file": "exposition.md",
+       "note": "E_3의 균일 상계와 창 앞쪽의 닫힘",
+       "sec": "8.5"
+      },
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:old-7-13}}",
+      "{{6:prop-W}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:far-window}}",
+     "kind": "명제",
+     "name": "먼 창 N2",
+     "record_name": "기록 [r9bf2dc6] §5.1",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:prop-R}}",
+      "{{6:lemma-M}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:small-k-bulk}}",
+     "kind": "명제",
+     "name": "작은 $k$의 벌크 N3",
+     "record_name": "기록 [r9bf2dc6] §5.2",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r9bf2dc6",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "5.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:prop-R}}",
+      "{{5:old-5-1}}"
+     ],
+     "special": "인증 [r19de912]는 5.1의 정리 5.1을 가리킨다."
+    },
+    {
+     "label": "{{6:first-layer-end}}",
+     "kind": "명제",
+     "name": "첫 층 끝 조각(명제 E (가))",
+     "record_name": "기록 [r29c10cd]의 명제 E (가)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "공표 결과로 닫히는 부분",
+       "sec": "7.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:old-7-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:above-window}}",
+     "kind": "명제",
+     "name": "창 위 조각(명제 E (나))",
+     "record_name": "기록 [r29c10cd]의 명제 E (나)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{6:old-7-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{6:v-negative}}",
+     "kind": "명제",
+     "name": "$v_m<0$ ($k\\ge3131$, $k\\le m\\le k+13$)",
+     "record_name": "기록 [r29c10cd]의 명제 W (가)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "",
+       "sec": "7.5"
+      },
+      {
+       "record": "r29c10cd",
+       "file": "exposition.md",
+       "note": "정리 14: k=3131의 부등식 사슬",
+       "sec": "6.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:moving-tail}}"
+     ],
+     "special": "7문장 손 논증을 전개하고, $k=3131$, $d\\le13$의 부등식 13개는 값과 함께 적어 부록 D(2차 대조가 방향 반올림 구간으로 재계산)."
+    }
+   ],
+   "intro": "다섯 조각의 전개. 사슬 전개·이동 꼬리는 2.12를 가리킨다. 순서: `{{6:path-shift}}` → `{{6:theorem-D}}` → `{{6:prop-W}}` → `{{6:prop-R}}` → `{{6:lemma-H}}` → `{{6:lemma-Hprime}}` → `{{6:lemma-M}}` → `{{6:critical-front}}` → `{{6:far-window}}` → `{{6:small-k-bulk}}` → `{{6:first-layer-end}}` → `{{6:above-window}}` → `{{6:v-negative}}` → (V)의 모든 $L$. 명제 W (가)의 13개 검사와 정리 D의 기저 $L\\le700$은 부록 D."
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [
+  "{{2:chain-expansion}}",
+  "{{2:moving-tail}}",
+  "{{2:old-2-10}}",
+  "{{2:old-2-11}}",
+  "{{2:old-2-13}}",
+  "{{2:old-2-26}}",
+  "{{2:old-2-29}}",
+  "{{2:old-2-32}}",
+  "{{2:old-2-35}}",
+  "{{2:old-2-37}}",
+  "{{2:old-2-38}}",
+  "{{2:old-2-45}}",
+  "{{2:old-2-6}}",
+  "{{4:old-4-5}}",
+  "{{5:old-5-13}}",
+  "{{5:old-5-18}}",
+  "{{5:old-5-1}}",
+  "{{5:old-5-28}}",
+  "{{5:old-5-29}}",
+  "{{5:old-5-39}}",
+  "{{5:old-5-8}}",
+  "{{9:old-7-23}}"
+ ],
+ "todo": [],
+ "D_items": [
+  {
+   "label": "{{D:theorem-U-constant}}",
+   "for": "{{6:theorem-U}}",
+   "sources": [
+    {
+     "record": "r845b205",
+     "note": "상수 50.6의 위합(부록 A 적분 상수)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:theorem-D-base}}",
+   "for": "{{6:theorem-D}}",
+   "sources": [
+    {
+     "record": "r5bbc534",
+     "note": "기저 L≤700의 검사"
+    }
+   ]
+  },
+  {
+   "label": "{{D:prop-W-thirteen}}",
+   "for": "{{6:prop-W}}",
+   "sources": [
+    {
+     "record": "r29c10cd",
+     "note": "명제 W (가)의 13개 검사"
+    }
+   ]
+  },
+  {
+   "label": "{{D:v-negative-k3131}}",
+   "for": "{{6:v-negative}}",
+   "sources": [
+    {
+     "record": "r29c10cd",
+     "note": "k=3131, d≤13의 부등식 13개(방향 반올림 구간 재계산은 2차 대조)"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "Borel–Tanner 공식은 기록에 증명이 없으면 문헌 인용(Tanner 1953), 있으면 2.11의 보조정리에서 끌어온다. Robbins 부등식·Euler–Maclaurin 경계는 문헌 인용."
+ ]
+}

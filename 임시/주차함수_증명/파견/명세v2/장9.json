@@ -1,0 +1,1312 @@
+{
+ "chapter": 9,
+ "title": "벌크의 첫째 증명(P◇ 경로)",
+ "scope": "머리 합 조건 $H^*$·$H^*_+$와 무게중심 정지 확률(입력), 문턱 손실을 둘로 가르기, 행 조건의 해석적 증명, 띠의 닫힘, 쌍 부등식, 조립. $\\mathcal R_2$에서 $LRP_2$를 증명해 주 정리를 완성하는 첫째 길이다.",
+ "weights": "두 증명 사슬의 하나이므로 무겁다. 9.1의 머리 합 정리 1(136행)과 9.4·9.5의 정리들은 완전히 전개한다. 보조정리 7.10은 작성자 증명. 9.6은 조립이므로 가볍다.",
+ "sections": [
+  {
+   "sec": "9.1",
+   "title": "입력: 머리 합 조건",
+   "items": [
+    {
+     "label": "{{9:F5-upper}}",
+     "kind": "보조정리",
+     "name": "$F_5\\le v/(v+1)$",
+     "record_name": "기록 [r23f10e9] §5.8",
+     "process": "전개",
+     "class": "표준",
+     "sources": [
+      {
+       "record": "r23f10e9",
+       "file": "exposition.md",
+       "note": "§5.8 398행의 이항 전개 한 줄",
+       "range": [
+        394,
+        402
+       ]
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:old-5-28}}"
+     ],
+     "special": "정리 5.28의 증명이 하계 방향만 적으므로 상계 한 줄을 더한다."
+    },
+    {
+     "label": "{{9:theorem-A-plus}}",
+     "kind": "정리",
+     "name": "정리 A⁺(경로마다의 위쪽 대각 판)",
+     "record_name": "기록 [rc391829]의 정리 A⁺",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rc391829",
+       "file": "exposition.md",
+       "note": "경로마다의 위쪽 대각 판과 머리 합 조건(17행)",
+       "sec": "6.5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:old-5-28}}",
+      "{{9:F5-upper}}"
+     ],
+     "special": "그 밖의 전제 셋은 정리 5.28 증명에 있다(조사 4)."
+    },
+    {
+     "label": "{{9:prop-H}}",
+     "kind": "명제",
+     "name": "명제 H와 명제 HC(기준점 족)",
+     "record_name": "기록 [rc391829]의 명제 H·HC",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rc391829",
+       "file": "exposition.md",
+       "note": "기준점 족과 머리 합 판정(6행)",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{9:theorem-A-plus}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:head-sum-1}}",
+     "kind": "정리",
+     "name": "머리 합의 부호: 정리 1",
+     "record_name": "기록 [r2ec875c]의 정리 1",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r2ec875c",
+       "file": "exposition.md",
+       "note": "정리 A⁺로 대각 몫을 막기, 무거운 사슬, 명시적 양측 경계, 창 안의 최종 부등식(136행)",
+       "sec": "4.1–4.4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{9:theorem-A-plus}}",
+      "{{9:prop-H}}",
+      "{{2:old-2-40}}",
+      "{{2:old-2-43}}"
+     ],
+     "special": "Ψ 상수는 peer 정정값 $0.7978\\sqrt D-0.8848$, 끝점 0.83102."
+    },
+    {
+     "label": "{{9:head-sum-2}}",
+     "kind": "정리",
+     "name": "$m_1(k)$의 두 상계: 정리 2",
+     "record_name": "기록 [r2ec875c]의 정리 2",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r2ec875c",
+       "file": "exposition.md",
+       "note": "m₁(k)의 상계; M0·M2 손 12행",
+       "sec": "4.5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{9:head-sum-1}}",
+      "{{5:old-5-1}}"
+     ],
+     "special": "M1($3132\\le k\\le19403$)은 정리 5.1 인증 파일의 열 판독(위반 0, 최대 0.7095)으로 부록 D."
+    },
+    {
+     "label": "{{9:H-star}}",
+     "kind": "따름정리",
+     "name": "머리 합 조건 $H^*$",
+     "record_name": "기록 [r2ec875c]의 따름정리 H*, 기록 [rc391829]의 머리 합 조건",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r2ec875c",
+       "file": "exposition.md",
+       "note": "결과(29–45행)",
+       "sec": "2"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{9:head-sum-1}}",
+      "{{9:head-sum-2}}"
+     ],
+     "special": "첫 판 6.8절 2071행의 머리 합·출발 빚·빚 뺀 머리 합·증가 시작점 $m_1(k)$ 정의를 이 절 머리로 옮긴다."
+    },
+    {
+     "label": "{{9:H-star-plus}}",
+     "kind": "정리",
+     "name": "정량판 $H^*_+$(머리 합 여유 정리)",
+     "record_name": "기록 [r33475a7]의 머리 합 여유 정리",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r33475a7",
+       "file": "exposition.md",
+       "note": "머리 합 여유 정리; s=k+1 손 6행",
+       "sec": "5.4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{9:H-star}}"
+     ],
+     "special": "$s\\ge k+2$는 충분조건 $G(X,w)\\le\\Theta$의 식과 세 영역을 적고 방향 반올림 구간 산술을 부록 D."
+    },
+    {
+     "label": "{{9:centroid-stop}}",
+     "kind": "보조정리",
+     "name": "무게중심 정지 확률",
+     "record_name": "기록 [r2fe0259] §3.3",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r2fe0259",
+       "file": "exposition.md",
+       "note": "사슬은 무게중심에서만 멈춘다(36행)",
+       "sec": "3.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-13}}",
+      "{{2:old-2-44}}"
+     ],
+     "special": "9.2의 보조정리 7.2와 9.3의 정리 7.16이 쓴다."
+    }
+   ],
+   "intro": "절 머리에 머리 합 $P_s(k)$, 출발 빚, 빚 뺀 머리 합, 증가 시작점 $m_1(k)$의 정의(첫 판 6.8절 2071행 문단에서 옮김)를 둔다. 순서: `{{9:F5-upper}}` → `{{9:theorem-A-plus}}` → `{{9:prop-H}}` → `{{9:head-sum-1}}` → `{{9:head-sum-2}}` → `{{9:H-star}}` → `{{9:H-star-plus}}` → `{{9:centroid-stop}}`."
+  },
+  {
+   "sec": "9.2",
+   "title": "문턱 손실을 둘로 가르기",
+   "items": [
+    {
+     "label": "{{9:old-7-1}}",
+     "kind": "정의",
+     "name": "짝 없는 문턱 손실",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2310,
+       2316
+      ],
+      "note": "첫 판 7.1"
+     },
+     "inputs": [
+      "{{2:old-2-10}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-2}}",
+     "kind": "보조정리",
+     "name": "짝 없는 문턱 손실의 닫힌 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2318,
+       2344
+      ],
+      "note": "첫 판 7.2"
+     },
+     "inputs": [
+      "{{9:centroid-stop}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-3}}",
+     "kind": "보조정리",
+     "name": "잘린 병합 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2346,
+       2366
+      ],
+      "note": "첫 판 7.3"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-4}}",
+     "kind": "정리",
+     "name": "병합 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2368,
+       2378
+      ],
+      "note": "첫 판 7.4"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-5}}",
+     "kind": "정리",
+     "name": "환원",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2380,
+       2388
+      ],
+      "note": "첫 판 7.5"
+     },
+     "inputs": [
+      "{{9:old-7-2}}",
+      "{{9:old-7-4}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-6}}",
+     "kind": "명제",
+     "name": "줄기 더하기 쌍, 벌크; 명제 $B^+$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2390,
+       2402
+      ],
+      "note": "첫 판 7.6"
+     },
+     "inputs": [
+      "{{9:old-7-44}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-7}}",
+     "kind": "보조정리",
+     "name": "덮인 문턱의 꼴",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2404,
+       2417
+      ],
+      "note": "첫 판 7.7"
+     },
+     "inputs": [],
+     "special": ""
+    }
+   ],
+   "intro": "보조정리 7.10은 기록의 두 문장 근거를 2.10의 생성함수로 펼쳐 이 글이 증명한다(`(작성자 판단)`). 보조정리 7.12는 [r77e234e] §7 보조정리 F로 전개."
+  },
+  {
+   "sec": "9.3",
+   "title": "행 조건의 해석적 증명",
+   "items": [
+    {
+     "label": "{{9:old-7-8}}",
+     "kind": "정리",
+     "name": "한 블록 항등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2423,
+       2445
+      ],
+      "note": "첫 판 7.8"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-9}}",
+     "kind": "명제",
+     "name": "행 조건의 정확한 식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2447,
+       2455
+      ],
+      "note": "첫 판 7.9"
+     },
+     "inputs": [
+      "{{9:old-7-5}}",
+      "{{9:old-7-8}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-10}}",
+     "kind": "보조정리",
+     "name": "쌍 보정의 분해",
+     "record_name": "",
+     "process": "작성자 증명",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r77e234e",
+       "file": "exposition.md",
+       "note": "쌍 항: 보조정리 P, F, L(두 문장 근거)",
+       "sec": "7"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2457,
+       2465
+      ],
+      "note": "첫 판 7.10"
+     },
+     "inputs": [
+      "{{2:old-2-40}}",
+      "{{2:old-2-41}}"
+     ],
+     "special": "기록의 두 문장 근거를 2.10절의 생성함수로 펼쳐 증명을 쓰고 「작성자 판단」을 붙인다(K5)."
+    },
+    {
+     "label": "{{9:old-7-11}}",
+     "kind": "보조정리",
+     "name": "쌍 보정의 흡수",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2467,
+       2475
+      ],
+      "note": "첫 판 7.11"
+     },
+     "inputs": [
+      "{{9:old-7-10}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-12}}",
+     "kind": "보조정리",
+     "name": "조건부 수준 질량의 상계",
+     "record_name": "",
+     "process": "옮김+전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r77e234e",
+       "file": "exposition.md",
+       "note": "보조정리 F",
+       "sec": "7"
+      }
+     ],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2477,
+       2481
+      ],
+      "note": "첫 판 7.12"
+     },
+     "inputs": [
+      "{{6:old-7-13}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-14}}",
+     "kind": "보조정리",
+     "name": "생존 없는 핵 질량 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2489,
+       2502
+      ],
+      "note": "첫 판 7.14"
+     },
+     "inputs": [
+      "{{9:old-7-3}}",
+      "{{9:old-7-11}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-15}}",
+     "kind": "명제",
+     "name": "행 조건의 귀납",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2504,
+       2508
+      ],
+      "note": "첫 판 7.15"
+     },
+     "inputs": [
+      "{{9:old-7-2}}",
+      "{{9:old-7-5}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-16}}",
+     "kind": "정리",
+     "name": "해석적 행 정리",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2510,
+       2559
+      ],
+      "note": "첫 판 7.16"
+     },
+     "inputs": [
+      "{{8:old-6-33}}",
+      "{{9:old-7-3}}",
+      "{{9:old-7-11}}",
+      "{{9:old-7-12}}",
+      "{{9:centroid-stop}}",
+      "{{2:old-2-34}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-17}}",
+     "kind": "따름정리",
+     "name": "$B^+$의 남은 내용",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2561,
+       2565
+      ],
+      "note": "첫 판 7.17"
+     },
+     "inputs": [
+      "{{9:old-7-16}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "정리 7.13은 6.1의 `{{6:old-7-13}}`을 가리킨다. 정리 AR (2)·(3)의 Robbins 상수 0.734·0.8825의 출처를 대조 파일에 적는다. 적분값은 부록 D."
+  },
+  {
+   "sec": "9.4",
+   "title": "띠의 닫힘",
+   "items": [
+    {
+     "label": "{{9:regeneration-S}}",
+     "kind": "명제",
+     "name": "재생 항등식 (S)와 $\\mathcal X_n\\ge0$",
+     "record_name": "기록 [r05cf8c9]의 명제 4",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "r05cf8c9",
+       "file": "exposition.md",
+       "note": "지수 공식과 한 나무 둘째 차분, 첫 차수 항과 교차항",
+       "sec": "1.2–1.3"
+      },
+      {
+       "record": "r05cf8c9",
+       "file": "exposition.md",
+       "note": "숲–나무 재생 항등식과 충분조건 (FS)",
+       "sec": "2.1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-40}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-18}}",
+     "kind": "명제",
+     "name": "재생 원천의 분해",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2577,
+       2595
+      ],
+      "note": "첫 판 7.18"
+     },
+     "inputs": [
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:regeneration-S}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-22}}",
+     "kind": "보조정리",
+     "name": "한 걸음 무게 비의 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2620,
+       2630
+      ],
+      "note": "첫 판 7.22"
+     },
+     "inputs": [
+      "{{4:old-4-5}}",
+      "{{5:old-5-1}}",
+      "{{5:old-5-18}}",
+      "{{8:old-6-30}}",
+      "{{9:old-7-21}}",
+      "{{6:old-8-11}}",
+      "{{6:D-bound}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-23}}",
+     "kind": "정리",
+     "name": "꼬리는 핵 한 자리를 빼고 모두 양이다",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2632,
+       2647
+      ],
+      "note": "첫 판 7.23"
+     },
+     "inputs": [
+      "{{4:old-4-5}}",
+      "{{5:old-5-18}}",
+      "{{9:old-7-21}}",
+      "{{6:old-8-11}}",
+      "{{6:D-bound}}",
+      "{{9:H-star-plus}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-25}}",
+     "kind": "정리",
+     "name": "첫 층 선속의 균일 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2671,
+       2685
+      ],
+      "note": "첫 판 7.25"
+     },
+     "inputs": [
+      "{{6:old-6-19}}",
+      "{{9:old-7-21}}",
+      "{{9:old-7-23}}",
+      "{{6:old-7-24}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-26}}",
+     "kind": "보조정리",
+     "name": "$\\mathcal Y_k$의 모양과 $\\nu_0(k)$",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2687,
+       2696
+      ],
+      "note": "첫 판 7.26"
+     },
+     "inputs": [
+      "{{6:old-6-19}}",
+      "{{6:old-8-11}}",
+      "{{6:D-bound}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-27}}",
+     "kind": "따름정리",
+     "name": "벌크의 첫 층 선속",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2698,
+       2702
+      ],
+      "note": "첫 판 7.27"
+     },
+     "inputs": [
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:old-7-18}}",
+      "{{9:old-7-21}}",
+      "{{9:old-7-22}}",
+      "{{9:old-7-25}}",
+      "{{9:old-7-26}}",
+      "{{9:old-7-28}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-28}}",
+     "kind": "정리",
+     "name": "띠 안쪽에서 앞쪽으로",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2704,
+       2742
+      ],
+      "note": "첫 판 7.28"
+     },
+     "inputs": [
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:old-7-18}}",
+      "{{9:old-7-22}}",
+      "{{9:old-7-25}}",
+      "{{9:old-7-26}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-29}}",
+     "kind": "보조정리",
+     "name": "꼬리의 상한",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2744,
+       2752
+      ],
+      "note": "첫 판 7.29"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-30}}",
+     "kind": "정리",
+     "name": "자르는 자리 하나의 위치 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2754,
+       2765
+      ],
+      "note": "첫 판 7.30"
+     },
+     "inputs": [
+      "{{6:old-6-19}}",
+      "{{9:old-7-23}}",
+      "{{9:old-7-25}}",
+      "{{9:old-7-29}}",
+      "{{6:old-7-24}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-31}}",
+     "kind": "정리",
+     "name": "앞쪽 띠의 첫 단계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2767,
+       2775
+      ],
+      "note": "첫 판 7.31"
+     },
+     "inputs": [
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:old-7-22}}",
+      "{{9:old-7-25}}",
+      "{{9:old-7-28}}",
+      "{{9:old-7-30}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-32}}",
+     "kind": "정리",
+     "name": "선형 최소화의 위치 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2777,
+       2785
+      ],
+      "note": "첫 판 7.32"
+     },
+     "inputs": [
+      "{{6:old-6-19}}",
+      "{{9:old-7-23}}",
+      "{{9:old-7-30}}",
+      "{{6:old-7-24}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-33}}",
+     "kind": "정리",
+     "name": "띠 전체의 FS",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2787,
+       2793
+      ],
+      "note": "첫 판 7.33"
+     },
+     "inputs": [
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:old-7-22}}",
+      "{{9:old-7-25}}",
+      "{{9:old-7-28}}",
+      "{{9:old-7-31}}",
+      "{{9:old-7-32}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-34}}",
+     "kind": "따름정리",
+     "name": "띠의 원 비교",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2795,
+       2797
+      ],
+      "note": "첫 판 7.34"
+     },
+     "inputs": [
+      "{{5:old-5-1}}",
+      "{{7:old-6-13}}",
+      "{{9:old-7-33}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "`{{9:regeneration-S}}`를 명제 7.18 앞에 둔다. 7.19·7.20·7.21·7.24는 6.2를 가리킨다. 정리 7.23(`{{9:old-7-23}}`)은 7.22 다음이다. LP 확인은 부록 D."
+  },
+  {
+   "sec": "9.5",
+   "title": "쌍 부등식",
+   "items": [
+    {
+     "label": "{{9:old-7-35}}",
+     "kind": "정리",
+     "name": "쌍 부등식",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2807,
+       2823
+      ],
+      "note": "첫 판 7.35"
+     },
+     "inputs": [
+      "{{8:old-6-28}}",
+      "{{9:old-7-36}}",
+      "{{9:old-7-37}}",
+      "{{9:old-7-38}}",
+      "{{9:old-7-39}}",
+      "{{9:old-7-40}}",
+      "{{9:old-7-41}}",
+      "{{9:old-7-42}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-36}}",
+     "kind": "보조정리",
+     "name": "쌍의 무게",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2825,
+       2831
+      ],
+      "note": "첫 판 7.36"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-37}}",
+     "kind": "보조정리",
+     "name": "창 블록의 수준 질량",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2833,
+       2839
+      ],
+      "note": "첫 판 7.37"
+     },
+     "inputs": [
+      "{{8:old-6-28}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-38}}",
+     "kind": "보조정리",
+     "name": "나머지의 Borel 인자",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2841,
+       2868
+      ],
+      "note": "첫 판 7.38"
+     },
+     "inputs": [
+      "{{9:old-7-7}}",
+      "{{9:old-7-36}}",
+      "{{9:old-7-39}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-39}}",
+     "kind": "보조정리",
+     "name": "조각남 확률의 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2870,
+       2880
+      ],
+      "note": "첫 판 7.39"
+     },
+     "inputs": [
+      "{{9:old-7-7}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-40}}",
+     "kind": "보조정리",
+     "name": "덮개 몫의 상계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2882,
+       2891
+      ],
+      "note": "첫 판 7.40"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-41}}",
+     "kind": "보조정리",
+     "name": "칸 위의 인자",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2893,
+       2895
+      ],
+      "note": "첫 판 7.41"
+     },
+     "inputs": [],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-42}}",
+     "kind": "보조정리",
+     "name": "칸 합의 적분 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2897,
+       2943
+      ],
+      "note": "첫 판 7.42"
+     },
+     "inputs": [
+      "{{9:old-7-35}}",
+      "{{9:old-7-38}}",
+      "{{9:old-7-41}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-43}}",
+     "kind": "정리",
+     "name": "쌍 부등식의 둘째 하계",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2945,
+       2976
+      ],
+      "note": "첫 판 7.43"
+     },
+     "inputs": [
+      "{{2:old-2-13}}",
+      "{{9:old-7-7}}",
+      "{{9:old-7-16}}",
+      "{{9:old-7-35}}",
+      "{{2:old-2-42}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "한 변수 확인은 부록 D."
+  },
+  {
+   "sec": "9.6",
+   "title": "조립",
+   "items": [
+    {
+     "label": "{{9:old-7-44}}",
+     "kind": "따름정리",
+     "name": "$B^+$의 성립",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2980,
+       2986
+      ],
+      "note": "첫 판 7.44"
+     },
+     "inputs": [
+      "{{8:old-6-33}}",
+      "{{9:old-7-16}}",
+      "{{9:old-7-17}}",
+      "{{9:old-7-35}}",
+      "{{9:old-7-43}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-45}}",
+     "kind": "정리",
+     "name": "$B^+$가 $LRP_2$를 함의한다",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2988,
+       2994
+      ],
+      "note": "첫 판 7.45"
+     },
+     "inputs": [
+      "{{5:old-5-1}}",
+      "{{7:old-6-13}}",
+      "{{9:old-7-18}}",
+      "{{9:old-7-26}}",
+      "{{9:old-7-27}}",
+      "{{9:old-7-33}}",
+      "{{9:old-7-34}}"
+     ],
+     "special": ""
+    },
+    {
+     "label": "{{9:old-7-46}}",
+     "kind": "정리",
+     "name": "문제 P의 첫째 증명",
+     "record_name": "",
+     "process": "옮김",
+     "class": "",
+     "sources": [],
+     "first_edition": {
+      "file": "원고.md",
+      "range": [
+       2996,
+       3000
+      ],
+      "note": "첫 판 7.46"
+     },
+     "inputs": [
+      "{{2:old-2-31}}",
+      "{{4:old-4-2}}",
+      "{{4:old-4-5}}",
+      "{{4:old-4-8}}",
+      "{{5:old-5-1}}",
+      "{{5:old-5-18}}",
+      "{{7:old-6-9}}",
+      "{{7:old-6-13}}",
+      "{{7:old-6-15}}",
+      "{{6:old-6-19}}",
+      "{{7:old-6-20}}",
+      "{{7:old-6-21}}",
+      "{{7:old-6-22}}",
+      "{{8:old-6-28}}",
+      "{{8:old-6-29}}",
+      "{{8:old-6-33}}",
+      "{{9:old-7-44}}",
+      "{{9:old-7-45}}"
+     ],
+     "special": ""
+    }
+   ],
+   "intro": "입력 목록은 11.3을 가리키는 한 문장으로. 첫 판 7.6절(7.47–7.49)은 쓰지 않는다."
+  }
+ ],
+ "defines": [],
+ "free_letters": [],
+ "refs": [
+  "{{2:old-2-10}}",
+  "{{2:old-2-11}}",
+  "{{2:old-2-13}}",
+  "{{2:old-2-17}}",
+  "{{2:old-2-26}}",
+  "{{2:old-2-31}}",
+  "{{2:old-2-34}}",
+  "{{2:old-2-40}}",
+  "{{2:old-2-42}}",
+  "{{2:old-2-6}}",
+  "{{4:old-4-2}}",
+  "{{4:old-4-5}}",
+  "{{4:old-4-8}}",
+  "{{5:old-5-18}}",
+  "{{5:old-5-1}}",
+  "{{5:old-5-28}}",
+  "{{6:D-bound}}",
+  "{{6:old-6-19}}",
+  "{{6:old-7-20}}",
+  "{{6:old-7-24}}",
+  "{{6:old-8-11}}",
+  "{{7:old-6-13}}",
+  "{{7:old-6-15}}",
+  "{{7:old-6-20}}",
+  "{{7:old-6-21}}",
+  "{{7:old-6-22}}",
+  "{{7:old-6-9}}",
+  "{{8:old-6-23}}",
+  "{{8:old-6-28}}",
+  "{{8:old-6-29}}",
+  "{{8:old-6-30}}",
+  "{{8:old-6-33}}"
+ ],
+ "todo": [],
+ "D_items": [
+  {
+   "label": "{{D:m1-column-reading}}",
+   "for": "{{9:head-sum-2}}",
+   "sources": [
+    {
+     "record": "r2ec875c",
+     "note": "M1(3132≤k≤19403): 정리 5.1 인증 파일의 열 판독(위반 0, 최대 0.7095)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:H-star-plus-interval}}",
+   "for": "{{9:H-star-plus}}",
+   "sources": [
+    {
+     "record": "r33475a7",
+     "note": "s≥k+2의 충분조건 G(X,w)≤Θ 세 영역 방향 반올림 구간 산술(검토 재실행)"
+    }
+   ]
+  },
+  {
+   "label": "{{D:AR-integrals}}",
+   "for": "{{9:old-7-16}}",
+   "sources": [
+    {
+     "record": "rae1f209",
+     "note": "정리 AR의 적분값"
+    }
+   ]
+  },
+  {
+   "label": "{{D:band-LP}}",
+   "for": "{{9:old-7-33}}",
+   "sources": [
+    {
+     "record": "rb6a2cd0",
+     "note": "정리 P·P⁺·P⁺⁺의 유한 확인과 선형 계획 계산"
+    }
+   ]
+  },
+  {
+   "label": "{{D:pair-one-variable}}",
+   "for": "{{9:old-7-35}}",
+   "sources": [
+    {
+     "record": "r5909c9e",
+     "note": "정리 P◇의 한 변수 확인"
+    }
+   ]
+  }
+ ],
+ "notes": [
+  "장부 v2(`장부_v2.md`)의 글자·낱말만 쓴다. 첫 판 장 파일의 글자가 장부와 다르면 장부의 글자로 바꾸고, 바꾼 글자는 대조 파일 「첫 판에서 옮긴 문장의 바꾼 점」에 적는다.",
+  "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
+  "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
+  "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
+  "첫 판 7장의 「$\\mathcal T_n(t)$는 5.5.2절의 꼬리합과 글자가 같지만 다른 양」 류의 구별 문장은 장부 v2의 글자로 사라진다."
+ ]
+}
