@@ -1,8 +1,8 @@
 {
  "chapter": 8,
  "title": "둘째 층 띠",
- "scope": "둘째 층 띠 $103\\le\\nu\\le0.48k$에서 줄기 이득이 문턱 나무 손실을 이긴다는 비교. 비교의 꼴(한 블록 재귀와 비교 원리), 창의 수준 질량 하계(Jensen·탈출 하계, 봉투 보조정리 H·H-G, 정리 W), 생존 인자의 상쇄와 용량 이동, 띠 정리(B′·B‴). 9장과 10장이 함께 기대는 입력이다.",
- "weights": "고비는 8.2의 정리 W와 봉투 보조정리, 8.4의 띠 정리다. 봉투 식 전부(식 4+정의 3, 여섯 조각 6)를 본문에 적고, 셀 검사와 12001점 표는 부록 D. 탈출 봉투의 $y$-감소성과 여섯 조각의 $k$-단조성은 자리 표시자(아래).",
+ "scope": "둘째 층 띠 $103\\le\\nu\\le0.48k$에서 줄기 이득이 문턱 나무 손실을 이긴다는 비교. 비교의 꼴(한 블록 재귀와 비교 원리), 창의 수준 질량 하계(Jensen·탈출 하계, 봉투 보조정리 H·H-G, 봉투의 두 단조성·끼움·닫힌 꼴·허용 오차, 정리 W), 생존 인자의 상쇄와 용량 이동, 띠 정리(B′·B‴). 9장과 10장이 함께 기대는 입력이다.",
+ "weights": "고비는 8.2의 정리 W와 봉투 정리들(탈출 봉투의 $y$-비증가, 끼움 정리, 닫힌 꼴 봉투), 8.4의 띠 정리다. 봉투 식 전부(식 4+정의 3, 여섯 조각 6)와 두 단조성·끼움·닫힌 꼴·허용 오차의 증명을 본문에 적고, (가)·(나) 셀 검사·12001점 표·저장 표의 구간 산술 확인은 부록 D.",
  "sections": [
   {
    "sec": "8.1",
@@ -267,6 +267,164 @@
      "special": "여섯 조각 $P,R_1,R_2,D_1,D_2,D_3$의 식 전부를 적는다. 그 뒤의 $y$-감소성·$k$-단조성은 자리 표시자(지침 4.7)."
     },
     {
+     "label": "{{8:pieces-k-monotone}}",
+     "kind": "정리",
+     "name": "여섯 조각의 $k$-단조성(정리 B)",
+     "record_name": "기록 [rfc69320]의 정리 B",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "여섯 조각 $P,R_1,R_2,D_2,D_3$의 $k$-감소와 $D_1$의 $k$-증가; 로그 도함수 여섯 개(15행)",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:envelope-HG}}"
+     ],
+     "special": "실수 $k\\ge6600$, $y\\in[0.2,6.001]$. 검토가 다시 계산한 조건식과 상수(review/feedback.md §2.2)를 쓴다."
+    },
+    {
+     "label": "{{8:escape-y-monotone}}",
+     "kind": "정리",
+     "name": "탈출 봉투의 $y$-비증가(정리 A)",
+     "record_name": "기록 [rfc69320]의 정리 A와 보조정리 1–3",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "연속 꼴, 정규화 $U$·$V$, 보조정리 1(초등 사실)·2($U'\\ge0.7202$)·3($k^{1/3}V'\\le-0.343$), 정리 A(80행)",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:envelope-HG}}",
+      "{{8:pieces-k-monotone}}"
+     ],
+     "special": "혼합 몫 $q_{k,k'}$의 정의와 $\\max(0,\\min)=\\min(\\max(0,\\cdot))$ 단계까지 모두 적는다. 보조정리 2의 최솟값은 검토 정정값 0.7202097(본문은 0.7202)."
+    },
+    {
+     "label": "{{8:jensen-H-ii}}",
+     "kind": "정리",
+     "name": "Jensen 쪽 보조정리 H(ii)의 점검과 정정(정리 C)",
+     "record_name": "기록 [rfc69320]의 정리 C",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "Bpart의 $k$-증가(기록 논증의 완결성), Corr의 합친 로그 도함수와 인자별 논증이 틀리는 분할점(20행)",
+       "sec": "5"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:envelope-H}}"
+     ],
+     "special": "기록 [r030ffae]의 인자별 논증이 틀린 자리는 적지 않고(결정 10·17), 성립하는 증명(합친 로그 도함수 $19/(6k)-7/(2(k+1))$)만 적는다."
+    },
+    {
+     "label": "{{8:table-lower-bound}}",
+     "kind": "정리",
+     "name": "끼움 정리와 표의 하계 성질(정리 D·따름정리)",
+     "record_name": "기록 [rfc69320]의 정리 D와 따름정리",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "$\\tilde Q$의 정의, (a) 비증가 (b) $Q^{\\mathrm{env}}\\le\\tilde Q$ (c) 공표 부등식과의 결합, 따름정리(표의 하계 성질)(34행)",
+       "sec": "6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:envelope-H}}",
+      "{{8:envelope-HG}}",
+      "{{8:pieces-k-monotone}}",
+      "{{8:escape-y-monotone}}",
+      "{{8:jensen-H-ii}}"
+     ],
+     "special": "표 호출 범위는 $[0,6]$(검토 정정; 기록의 「$[0,6)$ 안」이 아님)."
+    },
+    {
+     "label": "{{8:envelope-code-monotone}}",
+     "kind": "명제",
+     "name": "코드 봉투의 $y$-감소와 표 함수의 엄격 감소(명제 E·F)",
+     "record_name": "기록 [rfc69320]의 명제 E·F와 7.2의 정정 비고",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "명제 E(고정 분할 구간의 엄격 감소), 7.2 미끄러지는 분할의 역행과 그 경계, 명제 F(표 함수의 엄격 감소)(36행)",
+       "sec": "7"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:escape-y-monotone}}",
+      "{{8:jensen-H-ii}}",
+      "{{8:table-lower-bound}}"
+     ],
+     "special": "명제 F의 이음새 경우($y_1<0.2\\le y_2$)는 기록의 부등식이 아니라 명제 E의 이음새 수치($Q_G\\le0.9234<0.9533\\le Q_W$)로 닫는다(검토 feedback §4 (d))."
+    },
+    {
+     "label": "{{8:closed-form-envelope}}",
+     "kind": "정리",
+     "name": "참 봉투의 닫힌 꼴(명제 W*·G*, 정리 CF, 보조정리 8.1)",
+     "record_name": "기록 [rfc69320]의 명제 W*·G*·정리 CF(peer)",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "보조정리 8.1($V$ 하계·$U$ 상계), 명제 W*(Jensen 상한은 $k=\\infty$), 명제 G*(탈출 하한은 $k=6600$), 정리 CF(51행)",
+       "sec": "8.2–8.3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:pieces-k-monotone}}",
+      "{{8:escape-y-monotone}}",
+      "{{8:jensen-H-ii}}",
+      "{{8:table-lower-bound}}"
+     ],
+     "special": "정리 CF (c)는 정리 B(`{{8:pieces-k-monotone}}`)의 $R_2$ 단조성과 미분식을 쓴다(검토 정정; 기록의 「정리 B를 쓰지 않는다」는 틀림). 반올림 방향이 틀린 수치 0.031497·0.531675·0.4696은 검토가 준 방향으로 적는다."
+    },
+    {
+     "label": "{{8:table-tolerance}}",
+     "kind": "보조정리",
+     "name": "저장된 binary64 표의 허용 오차(보조정리 8.2·8.3)",
+     "record_name": "기록 [rfc69320]의 보조정리 8.2·8.3(peer)",
+     "process": "전개",
+     "class": "새로운 것",
+     "sources": [
+      {
+       "record": "rfc69320",
+       "file": "exposition.md",
+       "note": "$\\tilde Q$의 감소 속도 $r_G$, 허용 오차 보조정리, 저장된 수의 정확 확인(37행)",
+       "sec": "8.5–8.6"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{8:closed-form-envelope}}",
+      "{{8:table-lower-bound}}"
+     ],
+     "special": "저장값 $v_i\\le Q^{\\mathrm{cf}}(x_{i+1})$의 구간 산술 확인(§8.4)은 부록 D `{{D:stored-table-check}}`로 보내고 본문에는 그 결과를 쓰는 한 문장만 둔다. $\\Delta=6.6439\\cdot10^{-6}$, $q\\ge0.020045$의 반올림 방향은 검토의 값으로."
+    },
+    {
      "label": "{{8:old-6-28}}",
      "kind": "정리",
      "name": "창의 수준 질량 하계",
@@ -292,12 +450,15 @@
      "inputs": [
       "{{8:envelope-H}}",
       "{{8:envelope-HG}}",
-      "{{8:lowest-violation}}"
+      "{{8:lowest-violation}}",
+      "{{8:table-lower-bound}}",
+      "{{8:envelope-code-monotone}}",
+      "{{8:table-tolerance}}"
      ],
-     "special": "(가)·(나) 셀 검사와 12001점 표는 부록 D(binary64 평가, 인증 아님). 증명의 둘째 단계에 `[todo]` 자리 표시자."
+     "special": "(가)·(나) 셀 검사와 12001점 표는 부록 D(binary64 평가, 인증 아님). 증명의 둘째 단계(표의 마디값이 하계임을 쓰는 자리)는 `{{8:table-lower-bound}}`·`{{8:table-tolerance}}`를 인용한다(자리 표시자 없음; 합의 v2 결정 15의 기록이 공표됨)."
     }
    ],
-   "intro": "순서: `{{8:jensen-lower}}` → `{{8:escape-lower}}` → `{{8:lowest-violation}}` → `{{8:prop-U-apriori}}` → `{{8:envelope-H}}` → `{{8:envelope-HG}}` → 정리 W(`{{8:old-6-28}}`). 정리 W 증명의 둘째 단계(봉투 표가 하계임을 쓰는 자리)에 지침 4.7의 자리 표시자를 둔다. 보조정리 H·H-G의 식은 기록 §3.5와 보고서 §3.9.2·`window_lib.py`의 docstring에서 옮기고 출처를 적는다."
+   "intro": "순서: `{{8:jensen-lower}}` → `{{8:escape-lower}}` → `{{8:lowest-violation}}` → `{{8:prop-U-apriori}}` → `{{8:envelope-H}}` → `{{8:envelope-HG}}` → `{{8:pieces-k-monotone}}` → `{{8:escape-y-monotone}}` → `{{8:jensen-H-ii}}` → `{{8:table-lower-bound}}` → `{{8:envelope-code-monotone}}` → `{{8:closed-form-envelope}}` → `{{8:table-tolerance}}` → 정리 W(`{{8:old-6-28}}`). 봉투 정리 일곱은 기록 [rfc69320](2026-11-12 공표; 검토가 13개 주장 전부 지지)에서 전개한다. 그 검토(`review/feedback.md` §2·§4)가 정정한 것을 따른다: 표 호출 범위 $[0,6]$, 명제 F 이음새 경우의 닫기, 정리 CF (c)의 의존(정리 B를 씀), 반올림 방향이 틀린 수치 다섯. 같은 요청의 독립 둘째 증명 기록 [r0e82912]는 쓰지 않고 인용하지 않는다(결정 10). 보조정리 H·H-G의 식은 기록 §3.5와 보고서 §3.9.2·`window_lib.py`의 docstring에서 옮기고 출처를 적는다."
   },
   {
    "sec": "8.3",
@@ -448,8 +609,13 @@
    "intro": "`{{8:hazard-H1}}`을 정리 B‴ 앞에 둔다(위험률 다듬기 $0.44k<\\nu\\le0.48k$가 쓴다). 상자 검사 206,727개(배정밀도)는 부록 D."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$\\mathrm{Bor}_{\\le}(q)$; $\\mathfrak R_q$; $\\mathfrak D_q$; $\\mathfrak D^{\\mathrm{src}}_q$; $\\mathfrak E_q$; $s^{\\mathrm{low}}_q$; $\\mathrm{Flow}_q$; $\\xi$; $\\Omega(\\xi), \\Omega_c$; $s^{\\mathrm{env}}(\\xi), s^{\\mathrm{env}}_{\\mathrm W}, s^{\\mathrm{env}}_{\\mathrm G}$; $\\tilde s^{\\mathrm{env}}(\\xi), \\tilde s^{\\mathrm{env}}_{\\mathrm W}, \\tilde s^{\\mathrm{env}}_{\\mathrm G}$; $s^{\\mathrm{cf}}(\\xi)$; $\\mathfrak j_\\infty(\\xi)$; $\\mathfrak B_N, \\mathfrak B^{\\mathrm{low}}(k,\\nu)$; $\\mathrm{Bor}_{>}(q)$; $\\mathrm{Lip}$; $\\mathfrak c_0$; $\\mathrm{LB}^{\\mathrm{mono}}, \\mathrm{LB}^{\\mathrm{low}}, \\mathrm{LOW}_k$; $\\mathfrak R^{\\mathrm{low}}_k$; $q_{\\mathrm{fb}}, q^\\circ_{\\mathrm{fb}}$; $m_{\\mathrm{fb}}$; $\\mathrm{fb}(\\theta)$; $\\mathrm{dup}_m$; $\\pi^{\\mathrm{two}}_N$; $\\mathfrak K^{\\mathrm U}_N$; $\\mathsf z_{1/2}, \\mathsf z_{-1/2}, \\mathsf z_{3/2}$",
+  "상자; 부족량; 부족량의 원천 항; 되먹임; 깊은 낙하; 상위해; 봉투; 한 블록 재귀, 환경 생존, 비교 원리, 윤곽 함수, 시험 함수, 흐름, 뿌리 죽임, 안전 인자, 램프, 창 끝, 용량 이동 비, 최대 나무 법칙, 위험률 다듬기, 띠 정리, 고유 입력, 공유 입력"
+ ],
+ "free_letters": [
+  "라틴 소문자: $f$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $D$, $E$, $F$, $H$, $I$, $J$, $K$, $L$, $R$, $S$, $T$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak C$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:old-2-13}}",
   "{{2:old-2-26}}",
@@ -459,13 +625,7 @@
   "{{2:old-2-44}}",
   "{{2:old-2-4}}"
  ],
- "todo": [
-  {
-   "where": "8.2, 정리 W(`{{8:old-6-28}}`) 증명의 둘째 단계(12001점 표의 마디값이 하계임을 쓰는 자리)와 보조정리 H-G(`{{8:envelope-HG}}`) 뒤",
-   "statement": "탈출 봉투 $Q^{\\mathrm{env}}_G(y)$가 $y\\in[0.2,6.001]$에서 비증가이고, 여섯 조각 $P,R_1,R_2,D_1,D_2,D_3$가 고정 $y$에서 $k\\ge6600$에 대해 단조라는 것(따라서 표의 마디값 $Q^{\\mathrm{env}}(y_{i+1})$이 셀 $[y_i,y_{i+1}]$ 위의 하계라는 것)",
-   "fill": "연구 인스턴스가 공표하는 기록(2026-11-12 요청에 대한 답)의 증명을 옮기고 2차 대조를 거친다. 그때까지 자리 표시자만 두고 그 성질을 쓰는 문장은 「[todo]의 진술 아래」라고 적는다"
-  }
- ],
+ "todo": [],
  "D_items": [
   {
    "label": "{{D:window-mass-env}}",
@@ -486,6 +646,16 @@
      "note": "상자 206,727개 배정밀도 검사, 최솟값 1.0094"
     }
    ]
+  },
+  {
+   "label": "{{D:stored-table-check}}",
+   "for": "{{8:table-tolerance}}",
+   "sources": [
+    {
+     "record": "rfc69320",
+     "note": "§8.4 저장된 표의 엄밀한 확인(mpmath 구간 산술, 바깥쪽 반올림 30자리; 위반 0, 최소 여유 4.74e-13)과 §10.3 재현; 자료: evidence/peer/peer_table_vs_closed_form.py·.out, peer_closed_form_constants.py·.out, peer_constants.py·.out; 검토의 독립 재현 review/evidence/rv_code_exact.py·.out, rv_constants.py·.out. 산술 등급: 방향 반올림 구간(저장값은 정확 유리수)"
+    }
+   ]
   }
  ],
  "notes": [
@@ -496,6 +666,8 @@
   "첫 판 6.9절 머리의 「창」 정의와 「5.5절의 창과 다른 뜻」 구별 문장은 쓰지 않는다. 장부 v2의 「착지 창」을 쓴다.",
   "첫 판 6.9절의 참값 비 관찰(2.17, 1.842, 4–6)과 어려움의 서술 가운데 증명에 쓰이지 않는 수치 관찰은 쓰지 않는다.",
   "8장의 용량 변수 $c$는 장부 v2의 $y$다.",
-  "Lagrange 반전, Euler–Maclaurin 경계, Robbins 부등식은 문헌 인용."
+  "Lagrange 반전, Euler–Maclaurin 경계, Robbins 부등식은 문헌 인용.",
+  "8.2의 봉투 정리 일곱은 기록의 글자($Q^{\\mathrm{env}}_G$, $P,R_1,R_2,D_1,D_2,D_3$, $q_{k,k'}$, $U$, $V$, $\\mathrm{Bpart}$, $\\mathrm{Corr}$, $B_\\infty$, $E^*$, $\\hat E$, $\\tilde Q$, $Q^{\\mathrm{cf}}$, $\\Lambda^+$, $r_G$ 등)을 장부 v2의 글자로 옮겨 쓴다. 장부에 자리가 없는 기호는 8장 여유 글자에서 고르고 대조 파일에 적는다(사전의 기록 대조가 이 기록을 덮는다).",
+  "Riemann 제타 함수의 값은 장부의 산세리프 명명 상수 $\\mathsf z_{1/2}$, $\\mathsf z_{-1/2}$, $\\mathsf z_{3/2}$로 적는다(8.2에서 한 번 정의; 이탤릭 $\\zeta$는 중앙 창 좌표다). 수치와 인증 구간은 부록 D."
  ]
 }

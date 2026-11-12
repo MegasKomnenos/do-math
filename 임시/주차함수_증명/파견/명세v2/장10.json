@@ -884,8 +884,13 @@
    "intro": "입력 비교 표는 11.3을 가리키는 한 문장으로. 첫 판 8.8절(8.38)은 쓰지 않는다."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$\\varkappa_m$; $\\mathfrak f_m$; $\\mathfrak T_m$; $\\mathfrak L_\\nu$; $m^\\ast$; $m_0$; $\\mathrm{Stays}, \\mathrm{Stays}^{\\mathrm{vis}}, \\mathrm{Stays}_{\\mathrm{PM}}, \\mathrm{Stays}_X$; $\\mathrm{Stays}^{\\mathrm{up}}(k,\\nu), \\mathrm{Stays}^{\\mathrm{up}}_{\\mathrm{new}}, \\mathrm{Stays}^{\\mathrm{up}}_{\\mathrm W}, \\mathrm{Stays}^{\\mathrm{up}}(k;\\bar\\nu), \\mathrm{Stays}^{\\mathrm{up}}_F$; $\\omega_m, \\omega_c(d), \\omega^\\sharp_c(d), \\tilde\\omega(d)$; $m^{\\mathrm{hit}}$; $\\mathsf{FLQ}$; $\\vartheta, \\vartheta_{\\mathrm{lb}}, \\vartheta_0$; $\\nu_{\\min}(k), \\bar\\nu$; $\\mathrm{DDL}(k)$; $\\mathrm{DDL}_2(k), \\mathrm{DDL}^\\natural(k)$; $\\mathfrak H_d$; $\\mathsf r_\\ast$; $s^{\\mathrm W}_q(m,y)$; $y_0$; $\\mathfrak h_y(q)$; $\\mathrm{inc}^{\\pm}_q$; $\\mathrm{tr}_y(q)$; $\\mathrm{Res}_d$; $\\mathfrak s^{\\mathrm{fr}}_d(y)$; $\\mathcal G_y(q), \\mathcal G^y(q)$; $\\mathfrak A_j, \\mathfrak A^{\\mathrm{crit}}_d(q)$; $\\mathfrak k_d(q)$; $\\mathfrak s^{\\mathrm{up}}_d(y)$; $\\mathsf m_{\\mathrm S}$; $\\mathrm{PM}_c(d)$; $d^\\star$; $k_0, k^\\ast$; $\\mathfrak s^{\\mathrm{low}}_d(y)$; $\\mathfrak Q(y,\\xi)$; $\\mathsf c_1$",
+  "미결 범위; 먼 결손 영역; 첫 층 안쪽; 격자, 격자점; 두 부분 적분 꼴; 넘침; 가족, 가족의 첫 열; $1/p$ 장부, 장부 계수, 꼬리합, 형제, 이차 몫, 선형 몫, 무게 성장, 동률의 나머지, 꼭대기 자식, 꼬리합 꼴, 결손 좌표, 꺾인 무게, 문턱 뒤 머묾 질량, 경로별 셈, 띠 인자, 방문 질량, 첫 도달 몫, 피벗, 예산; 젊은 사슬, 익은 사슬, 면적, 임계 면적, 볼록 몫, 보조 뿌리, 첫째 꼴, 둘째 꼴, 결손 차, 나눔점, 캡, 선도 몫, 용량 단조성, 결손 고정 단조성, 검사, 두 나무 숲, 고리, 평탄 몫, Abel 꼬리, 위쪽 몫, 가장자리"
+ ],
+ "free_letters": [
+  "라틴 소문자: $f$, $h$, $z$. 라틴 대문자: $B$, $C$, $D$, $E$, $F$, $H$, $I$, $J$, $K$, $R$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\iota$, $\\kappa$, $\\rho$, $\\varrho$, $\\sigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Xi$, $\\Sigma$, $\\Phi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal Q$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal X$, $\\mathcal Y$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak g$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak l$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak t$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf s$, $\\mathsf t$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:old-2-13}}",
   "{{2:old-2-26}}",
@@ -952,6 +957,8 @@
   "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
   "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
   "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
-  "첫 판 8장의 「$c$」(용량)는 장부 v2의 $y$다. 8.1의 「이 장은 행을 $n$으로」 선언 문장은 쓰지 않는다(장부가 정한다)."
+  "첫 판 8장의 「$c$」(용량)는 장부 v2의 $y$다. 8.1의 「이 장은 행을 $n$으로」 선언 문장은 쓰지 않는다(장부가 정한다).",
+  "첫 판 8.3의 「창 안」($m_0$의 미결 범위)은 장부 3절의 「미결 범위」로 적는다. 다만 첫 판 8.3·3372와 8.6·3724의 그 범위가 착지 창($k<m\\le k+q_{\\max}$)과 같으면 「착지 창 안」으로 적고 반환에 어느 쪽을 택했는지 적는다.",
+  "$\\mathrm{DDL}(k)$는 10.4에서, $\\mathrm{DDL}_2$·$\\mathrm{DDL}^\\natural$·$\\mathfrak H_d$는 10.5에서 정의한다. 10.4의 진술은 $\\mathrm{DDL}_2$를 부르지 않는다."
  ]
 }

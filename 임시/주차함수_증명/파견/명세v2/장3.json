@@ -164,8 +164,13 @@
    "intro": "정리 3.6만 남는다. 첫 판 3.4의 어휘 문단은 1.5로 갔고 극한 정리의 언급은 쓰지 않는다. 증명의 유리수 한 값(7309649993107890414228499/15500000000000000000000000<0.4716)은 닫힌 꼴 정확 산술이므로 본문에 둔다."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$X_n, X$; $f$; $x_\\ast$",
+  "반례; 로그오목; 최빈점; 해싱 극한, 정규화 결손"
+ ],
+ "free_letters": [
+  "라틴 소문자: $c$, $g$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $D$, $E$, $F$, $H$, $I$, $J$, $K$, $R$, $T$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Theta$, $\\Lambda$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Phi$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:old-2-13}}",
   "{{2:old-2-30}}"

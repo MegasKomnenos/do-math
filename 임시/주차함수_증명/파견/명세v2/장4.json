@@ -310,8 +310,13 @@
    ]
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$\\mathsf P_L, \\mathsf P_X, \\mathsf P_C, \\mathsf P_R$; $\\mathsf{LH}(n), \\mathsf{LH}^+(n)$; $\\mathsf Q, \\mathsf Q_L, \\mathsf Q_R, \\mathsf Q(n,\\ell)$; $\\Gamma_d(\\ell;n)$; $\\Gamma^{\\pm}$; $\\mathcal S_{n,k}$; $\\mathsf S_R$; $(\\mathrm G)_d$; $\\mathcal A_{k,n}$; $\\Phi, \\Phi^{\\mathrm{aux}}$; $\\mathcal M_r$; $\\mathcal I_k$; $\\mathrm{He}_j$; $\\mathcal D(\\beta)$; $\\mathrm{Bor}^{\\mathrm{tail}}_k(s)$; $V(x)$; $\\mathsf a_j$; $\\mathsf n_k, \\mathsf n_\\infty$; $\\mathsf g_k$; $\\mathsf b_D, \\mathsf b_J$",
+  "원천별 비교 항; 네 위치쌍 명제; 연쇄; 틈; 조립; 함의, 동치; 위치쌍, 감소 수준, 증가 수준; 횡단, 왼쪽 내부, 오른쪽 내부, 중앙 틈; 감소 뒤의 로그오목성; 경계 응답; Green 표현, Lagrange 계수, 윤곽 적분, 수직선, 호, 위상, 정수 인증, 구간 산술 인증"
+ ],
+ "free_letters": [
+  "라틴 소문자: $c$, $f$, $g$, $h$, $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $H$, $I$, $K$, $L$, $R$, $S$, $U$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\pi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Delta$, $\\Theta$, $\\Lambda$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal B$, $\\mathcal C$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:old-2-26}}",
   "{{2:old-2-28}}",

@@ -1213,8 +1213,13 @@
    "intro": "입력 목록은 11.3을 가리키는 한 문장으로. 첫 판 7.6절(7.47–7.49)은 쓰지 않는다."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$A^{(t)}_N, A^\\circ_N, A^\\diamond_N$; $A^{\\diamond,\\mathrm{up}}, A^\\diamond_{\\mathrm{dec}}$; $\\pi_n(t_1,t_2)$; $\\pi_2(t)$; $P^+_t(k)$; $\\Theta^\\circ_n$; $m_1(k)$; $\\mathsf H^\\ast, \\mathsf H^\\ast_+$; $K_n(m)$; $\\gamma_m$; $\\mathcal Q_m$; $\\mathcal C_n$; $\\mathsf B^+$; $\\mathrm{merge}, \\mathrm{merge}^{\\mathrm{up}}$; $\\mathrm{OB}_m$; $\\mathrm{FL}^{(1)}_m$; $\\mathrm{Pcor}_m, \\mathrm{Pcor}^{\\pm}_m$; $\\mathfrak V_m$; $\\mathfrak d_k, \\bar{\\mathfrak d}_k$; $\\mathfrak l_m(t)$; $\\mathrm{land}_m$; $\\mathsf L_\\ast(k)$; $\\mathcal J_1(k),\\dots,\\mathcal J_4(k)$; $\\mathrm{need}_m, (\\mathrm R_m)$; $\\mathrm{rb}_m$; $\\mathfrak K_N, \\mathfrak K^{\\prime}_N$; $\\mathrm{regen}_n$; $\\mathrm{flat}_k(t)$; $\\mathsf{FS}(n)$; $\\mathcal Y_k(n), \\mathcal Y^{\\mathrm{LP}}_k(n), \\mathcal Y^\\dagger_k(n)$; $\\nu_0(k), \\nu_1(k)$; $\\mathcal F_k(\\nu), \\mathcal F^+_k, \\mathcal F^{\\mathrm{LP}}_k$; $\\mathrm{LP}_k(n)$; $P^{\\theta}_t(k)$; $\\mathsf h_N$; $t^\\dagger$; $\\varrho^\\dagger(t^\\dagger)$; $P^{\\theta\\dagger}(t^\\dagger)$; $\\Psi^{\\mathrm{low}}(d), \\Psi^{\\mathrm{low}}_{(r)}$",
+  "대칭점; 전환 구간; 재생 원천; 조건부 수준 질량; 짝 없는, 병합, 행 조건, 행별 비, 덮인 문턱, 덮개 몫, 한 블록 항등식, 착지 비, 착지 무게, 쌍 보정, 요구값; 재생, 두 나무 꼴, 두 나무 법칙, 평평한 꼬리, 무게 증분, 감소율, 제한 성장비, 자르는 크기, 탐욕 채움, 선형 최소화, 바닥, 꼭대기; 구획, 구획 하계, 거대 나무, 창×창 쌍, 쌍의 무게, $k$-단조성, 한 변수 확인, 둘째 큰 나무"
+ ],
+ "free_letters": [
+  "라틴 소문자: $g$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $E$, $F$, $I$, $L$, $R$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\vartheta$, $\\iota$, $\\varkappa$, $\\mu$, $\\rho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal D$, $\\mathcal E$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal S$, $\\mathcal T$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak c$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:old-2-10}}",
   "{{2:old-2-11}}",
@@ -1307,6 +1312,9 @@
   "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
   "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
   "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
-  "첫 판 7장의 「$\\mathcal T_n(t)$는 5.5.2절의 꼬리합과 글자가 같지만 다른 양」 류의 구별 문장은 장부 v2의 글자로 사라진다."
+  "첫 판 7장의 「$\\mathcal T_n(t)$는 5.5.2절의 꼬리합과 글자가 같지만 다른 양」 류의 구별 문장은 장부 v2의 글자로 사라진다.",
+  "첫 판 7.1의 $A^{(G)}_N$의 위첨자 $G$는 가장 큰 나무의 크기 $G$가 아니라 「모든 나무의 크기가 이 값 이하」라는 문턱 매개변수다. 장부대로 나무 크기 변수 $t$로 $A^{(t)}_N$이라 적고 $A^\\circ_N=A^{(k+1)}_N$, $A^\\diamond_N=A^{(k+103)}_N$으로 둔다. 7.1의 합 지표 $g$도 나무 크기 변수 $t$ 또는 묶인 지표로 바꾼다.",
+  "평평한 꼬리는 $\\mathrm{flat}_k(t)$다(첫 판 7.3의 $\\mathfrak t_k(s)$). $\\varphi^\\flat_k=1+kD_k=k\\,\\mathrm{flat}_k(k+1)$.",
+  "9장은 꼬리 좌표 $r$ 대신 환경 크기 $N=n-k$(같은 수)를 쓴다. 1.5의 좌표 $\\hat x=(r+1)(\\ell+1)^{-2/3}$는 $(N+1)k^{-2/3}$으로 적는다."
  ]
 }

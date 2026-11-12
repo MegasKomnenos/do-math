@@ -98,6 +98,7 @@ def main():
     print(run("명세v2_수정.py").strip())
     fill_refs(); print("refs filled")
     print(run("명세v2_META.py").strip())
+    fill_letters()
     if check or briefs:
         for ch in range(1, 12):
             spec = os.path.join(SPEC, f"장{ch}.json")

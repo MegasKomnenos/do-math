@@ -31,11 +31,11 @@ D_REF_RE = re.compile(r"부록 D\.(\d+)")
 D_HEAD_RE = re.compile(r"^### D\.(\d+)\b")
 FORBIDDEN_ALL = [r"마디", r"뿌리 문제", r"뿌리 명제", r"공표", r"판 \d+"]
 FORBIDDEN_BODY = [r"노드", r"프런티어", r"생산자", r"peer", r"검토", r"세션", r"인스턴스", r"운영자"]
-DISTINCTION = [r"다른 (?:양|기호|함수|대상|수|뜻|명제|결과|분해|자름|말)(?:이다|이고|이며|이라|과|와|로)", r"구별(?:한다|된다|해야|하여|하고|이다)", r"글자가 같지만", r"글자만 같"]
+DISTINCTION = [r"(?:[와과은는]|서로) 다른 (?:양|기호|함수|대상|수|뜻|명제|결과|분해|자름|말)(?:이다|이고|이며|이라|과|와|로)", r"구별(?:한다|된다|해야|하여|하고|이다)", r"글자가 같지만", r"글자만 같"]
 RECORD_NOTATION = [r"기록(?:은|이|에서는|들은|들이)?(?: 이를| 이것을| 이 양을| 이 사건을| 이 결과를)? [^\s]+(?:라|이라|로|으로)고? (?:부른다|적는다|쓴다)"]
 FORWARD_REF = [r"이름은 [\d.]+절에서 정한다", r"뒤에서 정의한다", r"다음 절에서 정의"]
 CORRECTION_HISTORY = [r"검토가 [^.]{0,40}(?:고쳤|정정했|바로잡)", r"생산자는 [^.]{0,30}적었"]
-OMISSION = [r"다루지 않는다", r"옮기지 않는다", r"옮기지 않고", r"싣지 않는다", r"싣지 않고", r"생략한다", r"출처만", r"기록을 보라", r"않기로 했", r"사슬 밖", r"계산의 층과 범위", r"이 글에 싣지", r"여기에 적지 않"]
+OMISSION = [r"다루지 않는다", r"옮기지 않는다", r"옮기지 않고", r"싣지 않는다", r"싣지 않고", r"생략한다", r"출처만", r"기록을 보라", r"않기로 했", r"사슬 밖(?!의 (?:꼭짓점|점|자리|나무|부분|성분))", r"계산의 층과 범위", r"이 글에 싣지", r"여기에 적지 않"]
 ASIDE_CANDIDATES = [r"확인하지 못", r"보지 못했", r"대조하지 못", r"적지 않는다", r"다시 적지 않", r"되풀이하지 않"]
 RECORD_NAME_CALL = re.compile(r"(정리|명제|보조정리|따름정리) [A-Z](?:[A-Za-z0-9′″‴♮♯◇⋆⁺⁻\-]*)(?=[은는이가을를의에와과로]|\s(?:에|의|을|를|과|와|로|에서|이|가))")
 
@@ -114,13 +114,14 @@ def main():
         if kind != "정의":
             if not any(w in status_part for w in STATUS_OK):
                 failures.append(f"{i}: 지위 낱말 없음 [{bracket}]")
-            for w in STATUS_BAD:
-                if w in status_part:
-                    failures.append(f"{i}: 이 글에 쓰이지 않는 지위 「{w}」 [{bracket}]")
             extra = status_part
             for w in STATUS_OK + MODIFIERS:
                 extra = extra.replace(w, "")
-            extra = re.sub(r"[,，·\s은는이가의와과에서도만\(\)]+|항등식|부등식|대응|극한 진술|앞 두 문장|셋째 문장|마지막 문장|문장|부분|입력|의존|(?:정리|명제|보조정리|따름정리) \d+\.\d+(?:·\d+\.\d+)*에?|\$[^$]*\$|" + "|".join(map(re.escape, LAYER_WORDS)) + r"|배정밀도 평가|30자리 수치 적분|40자리 평가|전수|\d+", "", extra)
+            for w in STATUS_BAD:
+                if w in extra:
+                    failures.append(f"{i}: 이 글에 쓰이지 않는 지위 「{w}」 [{bracket}]")
+            extra = re.sub(r"의존(?:하는)?|(?:\([가-힣]\))+", "", extra)
+            extra = re.sub(r"[,，·\s은는이가의와과에서도만\(\)]+|항등식|부등식|대응|극한 진술|진술|앞 두 문장|셋째 문장|마지막 문장|문장|부분|입력|의존|(?:정리|명제|보조정리|따름정리) \d+\.\d+(?:·\d+\.\d+)*에?|\$[^$]*\$|" + "|".join(map(re.escape, LAYER_WORDS)) + r"|배정밀도 평가|30자리 수치 적분|40자리 평가|전수|\d+", "", extra)
             if extra.strip():
                 notes.append(f"{i}: 지위 표지에 낯선 낱말 '{extra.strip()}' ([{bracket}])")
             for m2 in re.finditer(r"계산 (보조|증거)(\(([^()]*(?:\([^()]*\))?[^()]*)\))?", status_part):

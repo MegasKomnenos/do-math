@@ -676,12 +676,12 @@
      "label": "{{2:J-egf}}",
      "kind": "보조정리",
      "name": "$J_n(c)$의 지수 생성함수 표현",
-     "record_name": "기록 [rba2ecf]의 Green 표현 재구성, 기록 [r37c204b]의 보조정리 3.3",
+     "record_name": "기록 [rba2ecf4]의 Green 표현 재구성, 기록 [r37c204b]의 보조정리 3.3",
      "process": "전개",
      "class": "새로운 것",
      "sources": [
       {
-       "record": "rba2ecf",
+       "record": "rba2ecf4",
        "file": "exposition.md",
        "note": "상속한 Green 표현과 그 짧은 유도(마지막 차 분해→선형화→EGF의 선형 ODE→적분인자)",
        "sec": "2"
@@ -1173,8 +1173,13 @@
    "intro": "새 절. 5장(`{{5:third-group}}`·`{{5:marked-recursion}}`)과 6장(다섯 조각·$v_m<0$)이 함께 쓰는 세 결과를 기록에서 모든 단계로 전개한다. 2.5·2.9·2.11의 대상만으로 진술한다."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$M(F)$; $M^{T}_t$; $\\widetilde M_n$; $b^\\sigma_\\ell$; $b^{(2)}_m$; $A^\\sigma_\\ell$; $A_\\ell(x)$; $\\sigma, \\sigma_i$; $\\mathfrak S_n$; $h_i$; $\\mathcal P_m(j)$; $Q_\\ell(x)$; $F$; $\\tau$; $I_v$; $t_v$; $U_v$; $\\mathcal N_\\ell(t)$; $T(x)$; $T_\\ell(x)$; $b^{T}_{t,\\ell}$; $\\mathcal B_\\ell(x)$; $\\delta_t$; $\\pi_n(m)$; $\\pi^0_n(y)$; $G$; $S_1>S_2>\\cdots$; $L$; $\\Pr_n, \\mathbb E_n$; $\\Pr^{T}_t, \\mathbb E^{T}_t$; $\\Pr_{\\mathrm B}$; $\\Pr^y, \\mathbb E^y$; $\\mathfrak v_k(Z,H)$; $Z_k(\\sigma), Z_k(F)$; $H_k(\\sigma), H_k(F)$; $\\mathrm{Bor}(m)$; $\\mathrm{Bor}^{*j}(m)$; $s^{T}_t(y)$; $g(x)$; $s_m(y)$; $c_m(Y)$; $c^{(2)}_m$; $\\mathcal K_{n,k}(y)$; $M^{\\#}(\\alpha)$; $E_{n,k}, E2_{n,k}$; $B_{n,m}$; $e_n$; $J_n(z)$; $T^{\\mathrm G}(x)$; $\\Xi_{n,k}$; $W_n(\\gamma)$; $\\mathrm{nf}(n,d)$; $x_t(y)$; $\\theta_t(k)$; $\\Pi, \\Pi_j(y)$; $P_t(k)$; $\\mathrm{Ren}(j)$; $\\Psi(q)$; $\\Theta_n$; $\\mathrm{FL}_n$; $\\mathrm{BV}_n$; $\\mathrm{KD}_n$; $\\mathrm{PAIR}_n$; $\\mathfrak a^\\circ_n$; $R_j$; $\\mathcal H_{\\mathrm B}(r)$; $\\beta_i$; $\\Pr^y(q\\to q^\\prime)$; $\\mathrm{tilt}_q(q^\\prime)$",
+  "포갬 구조; 결과 순열, 섬유, 포화; 용량; 마지막 차 재귀, 균등 주차함수; 나무, 숲, 뿌리, 꼭짓점, 부분나무, 잎, 라벨; 다섯 몫; 쪼개짐; 무게; 질량; 초과; 핵; 보행; 걸음; 단계; 다리; 사슬; 갱신; 생존; 문턱; 동률, 막힘; 얼린; 기울임; 홈; 임계점; 줄기, 줄기 이득; 머리 합, 출발 빚; 임계 볼츠만 법칙, Borel 분포, Borel–Tanner 분포, 이웃비"
+ ],
+ "free_letters": [
+  "라틴 소문자: $f$, $w$, $z$. 라틴 대문자: $C$, $D$, $K$, $V$. 그리스: $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\varrho$, $\\varsigma$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Sigma$, $\\Upsilon$, $\\Phi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal I$, $\\mathcal J$, $\\mathcal L$, $\\mathcal M$, $\\mathcal O$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [],
  "todo": [],
  "D_items": [
@@ -1204,6 +1209,10 @@
   "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
   "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
   "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
-  "2.6·2.11의 영어 병기(임계 볼츠만 법칙(critical Boltzmann law), 확률보행(random walk), 갱신함수(renewal function), 크기 편향(size-biased), 사다리 시각(ladder epoch))는 첫 정의 자리에 한 번만."
+  "2.6·2.11의 영어 병기(임계 볼츠만 법칙(critical Boltzmann law), 확률보행(random walk), 갱신함수(renewal function), 크기 편향(size-biased), 사다리 시각(ladder epoch))는 첫 정의 자리에 한 번만.",
+  "2.1의 선호 용량은 $h_i:=i-\\max(\\{j<i:\\sigma_j>\\sigma_i\\}\\cup\\{0\\})$로 바로 정의한다. 첫 판의 $t_i$는 전역 기호가 아니다: 그 자리는 $i-h_i$로 적고(정리 2.3의 범위 $i-h_i<a_{\\sigma_i}\\le i$, 보조정리 2.15의 용량 구간 $(i-h_i,\\,i]$), 증명 안에서 이름이 꼭 필요하면 장부 1.3의 국소 기호 $z_i$를 쓴다.",
+  "자리 $i$에 선 차의 변위는 $d_{\\sigma_i}$로 적는다($d_i$는 차 $i$의 변위). 결과 순열 $\\sigma_i$의 정의(자리 $i$에 선 차)와 맞는지 확인하고 어긋나면 반환에 적는다.",
+  "첫 판 정의 2.21(Borel 질량 $\\mathrm{Bor}(m)$)은 2.6이 아니라 2.5에 둔다(2.5의 가장 큰 나무 핵 $\\pi_n(m)$이 쓴다). 사슬 전개의 정규화 인자는 $\\mathrm{nf}(n,d)$다(가산 오차항이 아니라 $\\ge1$인 곱 인자).",
+  "「첫 층」의 나무 크기 꼴($k<t\\le2k+1$)은 2.5에서 나무를 정의한 뒤 적는다. 무거운·가벼운의 경계값 $k$ 귀속은 각 대상의 정의에 적는다."
  ]
 }

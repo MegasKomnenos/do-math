@@ -83,7 +83,7 @@ META = {
         },
         order={
             "5.2": ["{{5:tail-poly}}", "{{5:rational-cert}}", "{{5:sharp-546}}", "{{5:old-5-3}}",
-                    "{{5:green-connection}}", "{{5:source-rep}}", "{{5:cayley-ratio}}", "{{5:old-5-4}}",
+                    "{{5:green-connection}}", "{{5:source-rep}}", "{{5:SR-implies-QR}}", "{{5:cayley-ratio}}", "{{5:old-5-4}}",
                     "{{5:marked-riccati}}", "{{5:response-kernel}}", "{{5:fixed-size-response}}", "{{5:inverse-renewal}}", "{{5:renewal-fkg}}", "{{5:suff-cond}}", "{{5:lemma-L}}", "{{5:old-5-5}}",
                     "{{5:kernel-C-bound}}", "{{5:kernel-bounds}}", "{{5:third-group}}", "{{5:last-gap}}", "{{5:sign-sandwich}}", "{{5:old-5-6}}",
                     "{{5:first-moment-weight}}", "{{5:marked-recursion}}", "{{5:parity-tail}}", "{{5:old-5-7}}"],
@@ -162,7 +162,7 @@ META = {
         todo=[],
         D_items=[
             {"label": "{{D:column-certification-k500}}", "for": "{{7:column-lemma}}", "sources": [{"record": "rc9aee43", "note": "380열 144비트 정수 구간 계산(peer 160비트 재인증 5열)"}]},
-            {"label": "{{D:seed-certificates-k120}}", "for": "{{7:seed-transfer}}", "sources": [{"record": "r9e782", "note": "n≥16, k≤120의 119개 정확 유리수 인증서(producer/certificate-k*.json)"}]},
+            {"label": "{{D:seed-certificates-k120}}", "for": "{{7:seed-transfer}}", "sources": [{"record": "r9e782f5", "note": "n≥16, k≤120의 119개 정확 유리수 인증서(producer/certificate-k*.json)"}]},
             {"label": "{{D:self-consistent-constants}}", "for": "{{7:self-consistent-S}}", "sources": [{"record": "rad00a59", "note": "상수 세 층(정확 유리수+mpmath 구간)과 k=6098 한 점"}]},
             {"label": "{{D:xcert-partAB}}", "for": "{{7:old-6-12}}", "sources": [{"record": "rf451d83", "note": "Part A·B 인증(501≤k≤5000 열별; k-구간)"}]},
             {"label": "{{D:polar-blocks-488}}", "for": "{{7:polar-R}}", "sources": [{"record": "r89eb039", "note": "488블록 binary64 바깥 부풀림 구간(peer 재인증)과 L15 2472구간"}]},
@@ -249,6 +249,67 @@ META = {
 }
 
 
+
+# 사전 설계의 세션 결정(대조v2/장부_설계_세션결정.md)에서 온 장별 지시
+EXTRA_NOTES = {
+    1: [
+        "1.4 개관의 왼쪽·오른쪽 절반은 1.5의 위치 기준($n\\le2k$ / $n\\ge2k+1$)으로 적는다. 첫 판 1.4의 첨자 기준 문장은 위치 기준으로 고쳐 쓰되, 고친 문장이 참인지 확인한다(두 기준은 중앙의 한 칸에서만 다르다).",
+    ],
+    2: [
+        "2.1의 선호 용량은 $h_i:=i-\\max(\\{j<i:\\sigma_j>\\sigma_i\\}\\cup\\{0\\})$로 바로 정의한다. 첫 판의 $t_i$는 전역 기호가 아니다: 그 자리는 $i-h_i$로 적고(정리 2.3의 범위 $i-h_i<a_{\\sigma_i}\\le i$, 보조정리 2.15의 용량 구간 $(i-h_i,\\,i]$), 증명 안에서 이름이 꼭 필요하면 장부 1.3의 국소 기호 $z_i$를 쓴다.",
+        "자리 $i$에 선 차의 변위는 $d_{\\sigma_i}$로 적는다($d_i$는 차 $i$의 변위). 결과 순열 $\\sigma_i$의 정의(자리 $i$에 선 차)와 맞는지 확인하고 어긋나면 반환에 적는다.",
+    ],
+    5: [
+        "첫 판 5.5.4(정리 5.28 등)의 보조 변수 $v=m-d$와 $\\mathrm{EB}(v)$의 인수는 장부 1.3이 정한 5장 국소 글자로 적는다(꼭짓점 지표 $v$는 쓰지 않는다). 5.5.7–5.5.8의 척도 변수도 장부 1.3의 글자대로($\\zeta$는 1.5의 중앙 창 좌표이므로 쓰지 않는다).",
+    ],
+    7: [
+        "7.5의 뿌리 자리 법칙 $\\mathcal P^{(k)}_m(j)$는 마지막 차 자리 법칙 $\\mathcal P_m(j)$의 용량판이다. 정의 문장에 $\\mathcal P^{(k)}_m(j)=\\Pr_m(s_m=j\\mid M\\le k-1)$을 적고 그 등식을 한 줄로 확인한다(마지막 차의 선호 $\\min(j,k)$가지, 두 조각 $A_{j-1,k-1}A_{m-j,k-1}$).",
+    ],
+    9: [
+        "첫 판 7.1의 $A^{(G)}_N$의 위첨자 $G$는 가장 큰 나무의 크기 $G$가 아니라 「모든 나무의 크기가 이 값 이하」라는 문턱 매개변수다. 장부대로 나무 크기 변수 $t$로 $A^{(t)}_N$이라 적고 $A^\\circ_N=A^{(k+1)}_N$, $A^\\diamond_N=A^{(k+103)}_N$으로 둔다. 7.1의 합 지표 $g$도 나무 크기 변수 $t$ 또는 묶인 지표로 바꾼다.",
+        "평평한 꼬리는 $\\mathrm{flat}_k(t)$다(첫 판 7.3의 $\\mathfrak t_k(s)$). $\\varphi^\\flat_k=1+kD_k=k\\,\\mathrm{flat}_k(k+1)$.",
+    ],
+    10: [
+        "첫 판 8.3의 「창 안」($m_0$의 미결 범위)은 장부 3절의 「미결 범위」로 적는다. 다만 첫 판 8.3·3372와 8.6·3724의 그 범위가 착지 창($k<m\\le k+q_{\\max}$)과 같으면 「착지 창 안」으로 적고 반환에 어느 쪽을 택했는지 적는다.",
+    ],
+}
+
+
+# 2026-11-12 저녁: 봉투 단조성 기록 [rfc69320] 공표에 따른 8장 갱신(합의 v2 결정 15; 자리 표시자 소멸)
+_m8 = META[8]
+_m8["scope"] = _m8["scope"].replace("봉투 보조정리 H·H-G, 정리 W", "봉투 보조정리 H·H-G, 봉투의 두 단조성·끼움·닫힌 꼴·허용 오차, 정리 W")
+_m8["weights"] = ("고비는 8.2의 정리 W와 봉투 정리들(탈출 봉투의 $y$-비증가, 끼움 정리, 닫힌 꼴 봉투), 8.4의 띠 정리다. "
+                  "봉투 식 전부(식 4+정의 3, 여섯 조각 6)와 두 단조성·끼움·닫힌 꼴·허용 오차의 증명을 본문에 적고, (가)·(나) 셀 검사·12001점 표·저장 표의 구간 산술 확인은 부록 D.")
+_m8["intros"]["8.2"] = ("순서: `{{8:jensen-lower}}` → `{{8:escape-lower}}` → `{{8:lowest-violation}}` → `{{8:prop-U-apriori}}` → `{{8:envelope-H}}` → `{{8:envelope-HG}}` → "
+                        "`{{8:pieces-k-monotone}}` → `{{8:escape-y-monotone}}` → `{{8:jensen-H-ii}}` → `{{8:table-lower-bound}}` → `{{8:envelope-code-monotone}}` → `{{8:closed-form-envelope}}` → `{{8:table-tolerance}}` → 정리 W(`{{8:old-6-28}}`). "
+                        "봉투 정리 일곱은 기록 [rfc69320](2026-11-12 공표; 검토가 13개 주장 전부 지지)에서 전개한다. 그 검토(`review/feedback.md` §2·§4)가 정정한 것을 따른다: 표 호출 범위 $[0,6]$, 명제 F 이음새 경우의 닫기, 정리 CF (c)의 의존(정리 B를 씀), 반올림 방향이 틀린 수치 다섯. "
+                        "같은 요청의 독립 둘째 증명 기록 [r0e82912]는 쓰지 않고 인용하지 않는다(결정 10). 보조정리 H·H-G의 식은 기록 §3.5와 보고서 §3.9.2·`window_lib.py`의 docstring에서 옮기고 출처를 적는다.")
+_m8["order"]["8.2"] = ["{{8:jensen-lower}}", "{{8:escape-lower}}", "{{8:lowest-violation}}", "{{8:prop-U-apriori}}", "{{8:envelope-H}}", "{{8:envelope-HG}}",
+                       "{{8:pieces-k-monotone}}", "{{8:escape-y-monotone}}", "{{8:jensen-H-ii}}", "{{8:table-lower-bound}}", "{{8:envelope-code-monotone}}", "{{8:closed-form-envelope}}", "{{8:table-tolerance}}", "{{8:old-6-28}}"]
+_m8["todo"] = []
+_m8["D_items"].append({"label": "{{D:stored-table-check}}", "for": "{{8:table-tolerance}}",
+                       "sources": [{"record": "rfc69320", "note": "§8.4 저장된 표의 엄밀한 확인(mpmath 구간 산술, 바깥쪽 반올림 30자리; 위반 0, 최소 여유 4.74e-13)과 §10.3 재현; 자료: evidence/peer/peer_table_vs_closed_form.py·.out, peer_closed_form_constants.py·.out, peer_constants.py·.out; 검토의 독립 재현 review/evidence/rv_code_exact.py·.out, rv_constants.py·.out. 산술 등급: 방향 반올림 구간(저장값은 정확 유리수)"}]})
+_m8["notes"] = _m8["notes"] + ["8.2의 봉투 정리 일곱은 기록의 글자($Q^{\\mathrm{env}}_G$, $P,R_1,R_2,D_1,D_2,D_3$, $q_{k,k'}$, $U$, $V$, $\\mathrm{Bpart}$, $\\mathrm{Corr}$, $B_\\infty$, $E^*$, $\\hat E$, $\\tilde Q$, $Q^{\\mathrm{cf}}$, $\\Lambda^+$, $r_G$ 등)을 장부 v2의 글자로 옮겨 쓴다. 장부에 자리가 없는 기호는 8장 여유 글자에서 고르고 대조 파일에 적는다(사전의 기록 대조가 이 기록을 덮는다)."]
+
+
+# 2026-11-12 저녁: 기록 대조 반영 뒤의 장별 지시(세션 결정 28·33–35)
+EXTRA_NOTES.setdefault(1, []).append("1.5에서 변수 글자 $k$, $r=n-\\ell-1=n-k$, $N=n-k$, $\\nu=n-2k$, $d$, $q$를 정의한다(장부 1.1). 결손의 두 셈법(3장의 $n+1-M_n$, 뒤 장들의 $m-M$)의 관계를 한 문장으로 적는다.")
+EXTRA_NOTES.setdefault(2, []).append("첫 판 정의 2.21(Borel 질량 $\\mathrm{Bor}(m)$)은 2.6이 아니라 2.5에 둔다(2.5의 가장 큰 나무 핵 $\\pi_n(m)$이 쓴다). 사슬 전개의 정규화 인자는 $\\mathrm{nf}(n,d)$다(가산 오차항이 아니라 $\\ge1$인 곱 인자).")
+EXTRA_NOTES.setdefault(6, []).append("평평한 핵심 $\\varphi^\\flat_k$의 정의는 $k\\sum_{t=k+1}^{2k+1}x_t(k)$다(6.5의 $D_k$를 6.4에서 미리 쓰지 않는다).")
+EXTRA_NOTES.setdefault(7, []).append("극 $\\rho_k$($C_k(\\rho_k)=1$인 양의 근)의 정의를 7.3이 아니라 7.2에 둔다(7.2의 $\\mathfrak P_k(\\infty)$가 쓴다).")
+EXTRA_NOTES.setdefault(8, []).append("Riemann 제타 함수의 값은 장부의 산세리프 명명 상수 $\\mathsf z_{1/2}$, $\\mathsf z_{-1/2}$, $\\mathsf z_{3/2}$로 적는다(8.2에서 한 번 정의; 이탤릭 $\\zeta$는 중앙 창 좌표다). 수치와 인증 구간은 부록 D.")
+EXTRA_NOTES.setdefault(10, []).append("$\\mathrm{DDL}(k)$는 10.4에서, $\\mathrm{DDL}_2$·$\\mathrm{DDL}^\\natural$·$\\mathfrak H_d$는 10.5에서 정의한다. 10.4의 진술은 $\\mathrm{DDL}_2$를 부르지 않는다.")
+
+
+# 2026-11-12 밤: 1장 회수 뒤 세션 판단
+EXTRA_NOTES.setdefault(1, []).append("1.5는 「띠」를 행 범위를 한 좌표로 잰 구간의 통칭으로 정의하고 중앙 띠·둘째 층 띠만 정의한다(꼬리 띠는 5.4). 오른쪽·왼쪽 절반은 1.4가 처음 정의하고 1.5는 되풀이하지 않는다. 1.5는 꼬리 좌표 $r=n-\\ell-1$과 환경 크기 $N=n-k$가 같은 수임을 한 문장으로 밝힌다(4·5장은 $r$, 6–10장은 $N$).")
+EXTRA_NOTES.setdefault(2, []).append("「첫 층」의 나무 크기 꼴($k<t\\le2k+1$)은 2.5에서 나무를 정의한 뒤 적는다. 무거운·가벼운의 경계값 $k$ 귀속은 각 대상의 정의에 적는다.")
+EXTRA_NOTES.setdefault(9, []).append("9장은 꼬리 좌표 $r$ 대신 환경 크기 $N=n-k$(같은 수)를 쓴다. 1.5의 좌표 $\\hat x=(r+1)(\\ell+1)^{-2/3}$는 $(N+1)k^{-2/3}$으로 적는다.")
+
+
+# 2026-11-12 밤: 1장 2차 대조 뒤 세션 결정
+EXTRA_NOTES.setdefault(1, []).append("주 정리는 라벨 `{{1:main-theorem}}`의 정리로 세우고 지위는 「비형식 증명」, 식별자는 9.6·10.7의 두 닫는 정리의 기록이다(구조표 9.6·10.7 행). 1.3의 작은 $n$ 표는 부록 D `{{D:exact-n20000}}`을 한 문장으로 가리킨다. 1.5는 뒤 장이 정의하는 낱말(해싱 극한, 극)을 쓰지 않고 좌표의 정의만 적는다. 행 $n$의 증인 $\\ell^\\ast_n$은 가장 작은 증인이다.")
+
 def apply(ch):
     path = os.path.join(SPEC, f"장{ch}.json")
     spec = json.load(io.open(path, encoding="utf-8"))
@@ -256,7 +317,7 @@ def apply(ch):
     spec["title"] = m["title"]
     spec["scope"] = m["scope"]
     spec["weights"] = m["weights"]
-    spec["notes"] = m["notes"]
+    spec["notes"] = m["notes"] + EXTRA_NOTES.get(ch, [])
     spec["todo"] = m["todo"]
     spec["D_items"] = m["D_items"]
     by_sec = {s["sec"]: s for s in spec["sections"]}

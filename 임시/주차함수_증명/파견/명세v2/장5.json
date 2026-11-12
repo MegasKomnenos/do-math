@@ -210,6 +210,30 @@
      "special": "(G)의 진술을 $p_k/p_{k-1}$이 든 꼴로 적는다(첫 판의 다항식 부등식 꼴은 부정확; 조사 2). D1과 $e_-$ 유리 끼움을 적는다."
     },
     {
+     "label": "{{5:SR-implies-QR}}",
+     "kind": "따름정리",
+     "name": "경계 응답 부등식에서 조건부 로그오목성으로($\\mathsf S_R\\Rightarrow\\mathsf Q_R$)",
+     "record_name": "기록 [r708d99c]의 명제 B1·따름 B2",
+     "process": "전개",
+     "class": "고비",
+     "sources": [
+      {
+       "record": "r708d99c",
+       "file": "exposition.md",
+       "note": "네 용량 환원: 명제 B1과 따름 B2(133행)와 증명",
+       "sec": "3"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:source-rep}}",
+      "{{5:green-connection}}",
+      "{{4:old-4-3}}",
+      "{{2:old-2-28}}"
+     ],
+     "special": "첫 판 4.2의 함의($B_-=B_{n,k-1}$, $B_+=\\mathcal K_{n,k}(k+2)-A_{n,k+1}$, 한 칸 차분의 분해)는 5.2의 Green 연결·양의 원천 표현이 입력이므로 4장이 아니라 여기서 증명한다. 정리 5.4·5.5의 「따라서 $\\mathsf Q$」 단계가 이 따름정리를 인용한다. 원천별 비교 항 $(\\mathrm G)_d$와 낱말 「원천별 비교 항」도 여기서 정의한다."
+    },
+    {
      "label": "{{5:cayley-ratio}}",
      "kind": "보조정리",
      "name": "Cayley 비율 하계",
@@ -1779,8 +1803,13 @@
    "intro": "오른쪽 절반의 덮개 표만. 보증 서술은 11장으로."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$A^{c}_{n,\\ell}$; $\\mathfrak a_n$; $\\mathfrak m(n)$; $r_0(n)$; $\\mathsf W, \\mathsf W^\\sharp$; $\\mathsf X$; $\\eta$; $\\mathrm{tail}_t(y)$; $t_0(y)$; $\\mathrm{IH}(n,y)$; $\\mathrm{POS}_0, \\mathrm{POS}^\\prime_0, \\mathrm{POS}^{\\prime-}_0$; $\\mathrm{WIN}_0, \\mathrm{WIN}^{\\mathrm V}_0$; $\\mathcal E, \\mathcal E^+, \\mathcal E^\\ast(y)$; $\\mathfrak e_m$; $\\mathfrak z_m(d)$; $\\mathrm{top}, \\mathrm{top}_\\pi$; $q_{\\max}(Y)$; $\\mathrm{Lc}(Y,r)$; $\\Lambda_{\\mathrm w}(Y)$; $\\mathsf w_0$; $\\mathsf C_E$; $\\mathfrak g(\\theta)$; $\\mathrm{EB}(w)$; $b^\\circ_{n,\\ell}$",
+  "꼬리 창; 착지 창; 인증 구간; 꼬리 띠; 조립 범위; 덮개 칸; 셀; 덮개; 미달 수; 원천 항; 꼭대기 항; 꼭대기 이득; 안장점; 흡수; 착지; 포락선; 유한 인증, 꼬리 정리, 진입 지표, 진입 증가, 위반 쌍, 벌크 증가, 임계 창 잔여, 두 항 부등식; 이음 행; 기저량; 떠돌기, 떠돌기 한도; 방문 확률, 멈춤 확률; Gauss 체제, Airy 체제, 선도항, 주항"
+ ],
+ "free_letters": [
+  "라틴 소문자: $h$, $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $H$, $I$, $J$, $K$, $L$, $U$, $Z$. 그리스: $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Delta$, $\\Theta$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak f$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:J-egf}}",
   "{{2:chain-normalization}}",
@@ -1933,6 +1962,7 @@
   "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
   "FKG 부등식(Fortuin–Kasteleyn–Ginibre 1971), Wallis 부등식, Robbins 부등식, Jensen 부등식은 문헌 인용(진술과 출처만).",
   "장이 크므로 절 단위로 파일을 쌓아 가며 써도 된다. 다만 산출은 한 파일 `장v2/장5.md`다.",
-  "첫 판 5.5.6의 「넓은 창」과 6.9·7장의 「창」은 장부 v2가 「착지 창」 하나로 정했다."
+  "첫 판 5.5.6의 「넓은 창」과 6.9·7장의 「창」은 장부 v2가 「착지 창」 하나로 정했다.",
+  "첫 판 5.5.4(정리 5.28 등)의 보조 변수 $v=m-d$와 $\\mathrm{EB}(v)$의 인수는 장부 1.3이 정한 5장 국소 글자로 적는다(꼭짓점 지표 $v$는 쓰지 않는다). 5.5.7–5.5.8의 척도 변수도 장부 1.3의 글자대로($\\zeta$는 1.5의 중앙 창 좌표이므로 쓰지 않는다)."
  ]
 }

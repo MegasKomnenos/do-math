@@ -740,8 +740,13 @@
    "intro": "다섯 조각의 전개. 사슬 전개·이동 꼬리는 2.12를 가리킨다. 순서: `{{6:path-shift}}` → `{{6:theorem-D}}` → `{{6:prop-W}}` → `{{6:prop-R}}` → `{{6:lemma-H}}` → `{{6:lemma-Hprime}}` → `{{6:lemma-M}}` → `{{6:critical-front}}` → `{{6:far-window}}` → `{{6:small-k-bulk}}` → `{{6:first-layer-end}}` → `{{6:above-window}}` → `{{6:v-negative}}` → (V)의 모든 $L$. 명제 W (가)의 13개 검사와 정리 D의 기저 $L\\le700$은 부록 D."
   }
  ],
- "defines": [],
- "free_letters": [],
+ "defines": [
+  "$D_k$; $\\mathfrak w_n(t)$; $s^{\\mathrm F}(k,\\nu)$; $\\mathsf s_{\\mathrm B}$; $\\mathfrak r_N$; $\\mathrm{dec}_N$; $\\kappa_N$; $\\mathrm{hz}_k(N)$; $\\varrho_t, \\varrho^{\\mathrm H}, \\varrho^{\\mathrm L}, \\varrho_{\\min}$; $\\mathfrak s_d(y)$; $\\varsigma_m(\\ell)$; $\\Upsilon_k, \\hat\\Upsilon_k$; $\\mathsf u(k)$; $\\varphi^\\flat_k$; $\\mathrm{DD}(m,y)$; $\\mathsf{UL}, \\mathsf V, \\mathsf V^\\ast$; $\\mathfrak b_m$; $\\mathfrak p_m$; $\\mathcal U_k(m)$; $\\mathcal V_k(m)$; $\\mathsf v(k), \\mathsf v^\\prime_k$; $\\mathsf x_k$; $\\mathrm{Bd}^{\\mathrm V}_k, \\mathrm{Bd}^{\\Lambda}_\\nu, \\mathrm{Bd}^{\\mathrm S}, \\mathrm{Bd}^{\\mathrm T}(k,\\nu)$; $\\mathfrak X_d(y), \\mathfrak X^0_d, \\mathfrak X^1_d$; $\\psi(y)$",
+  "핵심; 사다리; 머묾; 평평한; 위험률; 표시 나무"
+ ],
+ "free_letters": [
+  "라틴 소문자: $f$, $g$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $E$, $F$, $H$, $I$, $J$, $K$, $R$, $T$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\sigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\chi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Xi$, $\\Sigma$, $\\Phi$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf t$, $\\mathsf w$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+ ],
  "refs": [
   "{{2:chain-expansion}}",
   "{{2:moving-tail}}",
@@ -814,6 +819,7 @@
   "지위 표지는 첫 판의 것을 물려받지 않고 지침 7.3의 정의로 다시 판정한다. 이 글 안에 모든 단계가 손으로 적힌 결과는 「증명됨」이다.",
   "첫 판 문장에 있는 구별 문장·앞당김 참조·사족·지위 설명·기록 표기 문장·「관찰」 문단·정정 이력은 모두 뺀다(지침 4.6·6절).",
   "기록의 결과 이름(정리 T, 정리 F′ 등)은 진술 머리의 괄호에만 적고 본문은 라벨로만 부른다.",
-  "Borel–Tanner 공식은 기록에 증명이 없으면 문헌 인용(Tanner 1953), 있으면 2.11의 보조정리에서 끌어온다. Robbins 부등식·Euler–Maclaurin 경계는 문헌 인용."
+  "Borel–Tanner 공식은 기록에 증명이 없으면 문헌 인용(Tanner 1953), 있으면 2.11의 보조정리에서 끌어온다. Robbins 부등식·Euler–Maclaurin 경계는 문헌 인용.",
+  "평평한 핵심 $\\varphi^\\flat_k$의 정의는 $k\\sum_{t=k+1}^{2k+1}x_t(k)$다(6.5의 $D_k$를 6.4에서 미리 쓰지 않는다)."
  ]
 }
