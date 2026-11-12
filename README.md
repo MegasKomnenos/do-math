@@ -1,18 +1,25 @@
 # do-math
 
+| At a glance | |
+|---|---|
+| What it is | Research on one mathematical proposition by many fresh AI sessions. The session that produces a piece of mathematics, the session that writes it up for others and the session that assesses it are three different conversations, and every result is published together with its assessment. |
+| First run | Conjecture 6.5 of Celano, Elder, Hadaway, Harris, Martin, Priestley and Udell ([arXiv:2507.07243](https://arxiv.org/abs/2507.07243)): the maximum-displacement distribution of parking functions is unimodal for every length. Started 5 November 2026; still running. |
+| State of the root | *Informally proved* on 11 November 2026: every record and every reviewed implication on two routes to the root was accepted by an AI review session. No person has reviewed the records as a referee would. Several steps rest on computer-assisted inputs, some in binary64 with error models assumed in advance. One step relies on two monotonicity properties that are asserted and numerically checked but not proved. |
+| Formal proof | None of the root. The user paused formalization on 9 November 2026. One necessary condition of the root has a Lean proof. |
+| Evidence | The knowledge base on Zenodo, concept DOI [10.5281/zenodo.24110810](https://doi.org/10.5281/zenodo.24110810); version 2 is [10.5281/zenodo.24142218](https://doi.org/10.5281/zenodo.24142218). |
+| Full account | [docs/do-math/first-run-parking-unimodality.md](docs/do-math/first-run-parking-unimodality.md) |
+| Run it | [Quick start](#running-do-math) below; full guide in [docs/do-math/running.md](docs/do-math/running.md). |
+| Cite | [CITATION.cff](CITATION.cff) for the software; the knowledge base by its DOI. |
+
 do-math runs research on one mathematical proposition through many fresh AI sessions. The person who starts a run, called the user below, supplies the proposition as an exact statement, together with any standing inputs, which are instructions that every session launched afterwards receives; the user does this through an AI conversation, called the operator, that prepares and operates the run on the user's behalf. The mathematics is then done by the sessions. A program called the runner launches them as the work requires, several at a time, each a new Claude Code or Codex conversation that remembers nothing of the others.
 
 What the sessions share is a knowledge base: a repository of records. A record holds mathematics that one session produced, that a second session developed into an account for others, and that a third session assessed; once published it is never changed, and the assessment stays beside it. Each session that produces mathematics reads the knowledge base and decides for itself what to work on; the sessions that develop and assess receive the work they are to process. No session plans or assigns the others' research.
 
 The system is built this way because research that runs for days needs both continuity and judgment that does not come from whoever did the work. Continuity comes from the records. Independence of judgment is sought through the separation of roles: the session that writes a piece of mathematics, the session that turns it into a record, and the session that judges the record are three different conversations. Work that is useful but imperfect is published with its assessment, so that a later session can tell an established result from a claim that still needs more.
 
-The first full run of this implementation began on 5 November 2026 on a conjecture from a 2025 paper by Celano, Elder, Hadaway, Harris, Martin, Priestley and Udell ([arXiv:2507.07243](https://arxiv.org/abs/2507.07243), Conjecture 6.5): for every length n, the numbers of parking functions of length n with maximum displacement 0, 1, …, n−1 form a unimodal sequence. On 11 November the root proposition reached the state do-math calls *informally proved*: every record, and every reviewed implication between statements, on two routes to the root had been accepted by an AI review session. The knowledge base is public on Zenodo.
+The first full run of this implementation began on 5 November 2026 on a conjecture from a 2025 paper by Celano, Elder, Hadaway, Harris, Martin, Priestley and Udell ([arXiv:2507.07243](https://arxiv.org/abs/2507.07243), Conjecture 6.5): for every length n, the numbers of parking functions of length n with maximum displacement 0, 1, …, n−1 form a unimodal sequence. On 11 November the root proposition reached the state do-math calls *informally proved*: every record, and every reviewed implication between statements, on two routes to the root had been accepted by an AI review session. That state comes with qualifications, set out in the first-run section below. No person has reviewed the records as a referee would. Several steps rest on computer-assisted inputs. One step relies on two monotonicity properties that a record asserts and that its review checked numerically but that no record proves. And no Lean proof of the root exists, because the user paused formalization on 9 November so that the research could finish first; do-math counts a run as complete only when a Lean proof of the root, or of its negation, has been recompiled by a review session and checked against the exact statement. The knowledge base is public on Zenodo.
 
-The informal proof of the root comes with qualifications. No person has reviewed the records as a referee would. Several steps rest on computer-assisted inputs. On 12 November one record on those routes was found to rely on two monotonicity properties that it asserts and that its review checked numerically but that no record proves; the sessions have been asked to prove them.
-
-The formal part has not been done. do-math counts a run as complete only when a Lean proof of the root, or of its negation, has been recompiled by a review session and checked against the exact statement; the user paused formalization on 9 November so that the research could finish first, and no Lean work on the routes to the root has been published. One statement that the root implies does have a Lean proof.
-
-The sections below describe how the sessions cooperate, what a published result does and does not certify, the first run with its evidence and its limits, the layout of a published knowledge base, and how to run do-math on a proposition of your own.
+The sections below describe how the sessions cooperate, what a published result does and does not certify, the first run in outline, the layout of a published knowledge base, and the shortest path to running do-math on a proposition of your own. Two longer documents hold the detail: the [full account of the first run](docs/do-math/first-run-parking-unimodality.md), with its setup, size, routes, interventions and limits, and the [running guide](docs/do-math/running.md), with every setting, command and procedure.
 
 ## How the research is organized
 
@@ -36,6 +43,26 @@ Six roles do the work, and the runner launches a fresh session for each piece of
 | peer | One producing session's complete retained work | A record candidate: exposition, claims and proposals |
 | review | The candidate and the producing session's retained work | Its assessment and feedback: claim statuses, a publication decision and any concerns |
 | organizer | The published records not yet organized | Modules, shared-context selection, glossary decisions, merges |
+
+The diagram shows one pipeline and the organizer's loop. Every box except the knowledge base and the record is a session that the runner launches as a fresh conversation; the arrows carry files from one session to the next, and no two sessions converse.
+
+```mermaid
+flowchart LR
+  KB["knowledge base: frontier, index, board, records"]
+  P["producing session: attempt, explorer or formalizer"]
+  PR["peer"]
+  RV["review"]
+  REC["record with its assessment"]
+  ORG["organizer"]
+  KB -- "read; an attempt or explorer chooses its own work, a formalizer receives a node whose informal proof review has accepted" --> P
+  P -- "retained work" --> PR
+  P -- "retained work" --> RV
+  PR -- "record candidate" --> RV
+  RV -- "publish, with claim statuses" --> REC
+  REC --> KB
+  KB -- "records not yet organized" --> ORG
+  ORG -- "modules, shared context, glossary" --> KB
+```
 
 What a producing session leaves is its **retained work**: the files it keeps in its own directory as it goes, holding the definitions and assumptions it used, arguments and intermediate results, computations with their code and output, literature with the conditions of its use, failed approaches with what they actually exclude, and the obligations that remain.
 
@@ -115,90 +142,17 @@ A **concern** is a challenge to the support for a claim, reported by a review se
 
 ## The first run: unimodality of the maximum-displacement distribution of parking functions
 
-### The problem
+A **parking function** of length n is a list of preferred spots for n cars that arrive one at a time at n spots in a row, each car taking its preferred spot if it is free and otherwise the first free spot beyond it, such that every car parks; there are (n+1)ⁿ⁻¹ of them. The **maximum displacement** M(α) of a parking function α is the largest distance any of its cars travelled beyond its preferred spot. With b(n, ℓ) the number of parking functions of length n with M(α) = ℓ, the root asks whether the sequence b(n, 0), b(n, 1), …, b(n, n−1) is unimodal for every n ≥ 1: non-decreasing up to some index and non-increasing after it, with a flat peak allowed. The [full account of the run](docs/do-math/first-run-parking-unimodality.md) states the problem exactly and gives the run's setup, its size, both routes to the root in outline, and every intervention by the user and the operator.
 
-Parking functions come from the following process. There are n parking spots in a row, numbered 1 to n, and n cars arrive one at a time, car 1 first. Each car i has a preferred spot aᵢ between 1 and n. It parks there if the spot is free; otherwise it drives on toward higher numbers and takes the first free spot it meets, and if none is left it fails. A preference list α = (a₁, …, aₙ) in which every car parks is a **parking function** of length n, and there are (n+1)ⁿ⁻¹ of them. The **displacement** of car i is the distance between its preferred spot and the spot it took, and the **maximum displacement** M(α) of a parking function is the largest displacement among its cars.
+The instance was created on 5 November 2026 by the author of this repository. On 11 November at 16:14 Korean time the root became informally proved through two routes. One route splits a failure of unimodality into four cases by the positions of the offending descent and ascent around the middle index ⌈n/2⌉, and each case has a reviewed informal proof; the other shows that a conditional log-concavity suffices for the root, and that condition was settled on each side of the middle. Both routes pass through the statement that the sequence increases below the middle, which was the last part to close. The record that closed it, r5909c9e7, inherits computer-assisted inputs from earlier records: several binary64 computations with error models assumed in advance, and a certification in integer interval arithmetic that the root holds for all n ≤ 20000.
 
-Write b(n, ℓ) for the number of parking functions of length n with M(α) = ℓ. The root asks whether, for every n ≥ 1, the sequence b(n, 0), b(n, 1), …, b(n, n−1) is unimodal: whether there is an index c such that b(n, ℓ) ≤ b(n, ℓ+1) for every ℓ < c and b(n, ℓ) ≥ b(n, ℓ+1) for every ℓ with c ≤ ℓ < n−1. The peak may be flat, and c may depend on n. This is Conjecture 6.5 of Celano et al., who write |IPFₙ(ℓ)^max| for the same numbers and tabulate them up to n = 9; the endpoints are b(n, 0) = n! and b(n, n−1) = nⁿ⁻².
+One step of those routes is known to be unproved. Record r030ffaeb reads a lower bound from a table of values that is valid only if two monotonicity properties hold. The record asserts the properties, its review checked them numerically and accepted the record as a computer-assisted proof while listing them among the points not yet rigorous, and no record proves them. The author and an operator session found the gap on 12 November while writing a manuscript from the records, and a standing input of that day asks the sessions to prove the two properties before any other work. Until a record does, the root's state rests on this step as the reviews accepted it.
 
-### Setup and size of the run
+No Lean proof of the root exists. The user paused all formalization on 9 November so that the research could finish first, and the pause is still in force. One node has a formal proof: record r0af7f414 contains the Lean theorem `Parking.critical_increment_unconditional`, whose transitive axioms are exactly `propext`, `Classical.choice` and `Quot.sound` and whose statement the review matched to the node. The node is a necessary condition of the root, a limit that unimodality for every n implies, so its refutation would have refuted the root while its proof leaves the root open.
 
-The instance was created on 5 November 2026 at 15:08 Korean time with the proposition above as its root and a standing input that it use no records or code from an earlier instance that had worked on the same problem under a previous implementation. The user of this run is the author of this repository.
+The complete `knowledge/` directory of the instance is published on Zenodo under the concept DOI [10.5281/zenodo.24110810](https://doi.org/10.5281/zenodo.24110810), which resolves to the latest version. Version 2, [10.5281/zenodo.24142218](https://doi.org/10.5281/zenodo.24142218), was compressed on 12 November at 01:52 Korean time, after the root had been informally proved, and holds 300 records; version 1, [10.5281/zenodo.24110811](https://doi.org/10.5281/zenodo.24110811), was taken on 11 November at 00:19 Korean time, while the root was still unresolved. To check the result, open `index.md`, go to `frontier.md` for the root's two routes and the records they cite, open record r5909c9e7 with its `review/feedback.md`, and continue into the records its proof uses.
 
-The producing roles ran on Codex gpt-6.1-sol as their first choice until 7 November and on Claude Fable 5.1 afterwards, each with the other as fallback. Until the evening of 6 November, peer and review preferred the same model as the producing roles; they were then moved to Claude Opus 5.5 as their first choice, and the default described above, under which the assessing roles prefer a different model, was adopted at the same time. The user changed the number of concurrent sessions several times, between 4 and 16.
-
-The run is still going. Its size at 17:45 Korean time on 12 November was the following.
-
-| Quantity | Count |
-|---|---|
-| Sessions launched | 1,227 (305 attempts, 96 explorers, 12 formalizers, 371 peers, 362 reviews, 81 organizers) |
-| Records published | 337 (240 from attempts, 90 from explorers, 7 from formalizers) |
-| Publication commits | 422 |
-| Nodes on the frontier | 108 |
-| Accepted relations | 119 |
-| Questions | 17, of which 10 resolved |
-
-The session counts differ from the record count because a producing session that ends without having begun research gets no peer, interrupted peers and reviews are replaced by fresh sessions, some candidates are not published, and some pipelines were still in progress; the commits outnumber the records because organizer outputs, comprehensive reviews and question publications are committed too.
-
-### Two routes to the root
-
-The frontier shows two routes to the root, established by records rce3dc75b and r15524fdd. Call a step ℓ a descent when b(n, ℓ) > b(n, ℓ+1) and an ascent when b(n, ℓ) < b(n, ℓ+1); the sequence fails to be unimodal exactly when some descent is followed by a later ascent. The first route splits that failure into four cases around the middle index m = ⌈n/2⌉, by the positions of the descent and the ascent: the descent at the step m−1 into the middle and the ascent at or beyond m; both at or beyond m; the descent below m−1 and the ascent at or beyond m; and both below m. Each case has a reviewed informal proof.
-
-The second route shows that a conditional log-concavity suffices for the root: if b(n, ℓ) > b(n, ℓ+1) then b(n, ℓ+1)² ≥ b(n, ℓ) b(n, ℓ+2), for all n ≥ 3 and 0 ≤ ℓ ≤ n−3, so that once the sequence has started to decrease it cannot rise again; this condition was then settled at steps at or beyond m and at steps below m separately, and a reviewed relation in record rdc276812 derives the latter from the fourth case of the first route.
-
-The third and fourth cases of the first route were in turn proved by showing that the sequence has no descent at all below the middle, that is, that it increases there. Both routes therefore pass through that increase, and it was the last part to close. In the part of it that resisted longest, where n lies between 2ℓ and about 2ℓ^(3/2), the records found that the neighboring counts b(n, ℓ−1) and b(n, ℓ) agree to leading order as ℓ grows, and that the difference deciding the inequality is smaller than either count by a factor of order ℓ^(−1/3).
-
-The last open premise on the routes was one node, pair-beats-capped-threshold, whose exact statement in the frontier is an inequality between two counts of configurations for n between 2ℓ and about 2ℓ^(3/2); the record that proved it, r5909c9e7, was published on 11 November at 16:14 Korean time. Its review supported the proof's claims, accepted the proof, marked one peripheral claim about a table's coverage unsupported, and stated that the proof inherits computer-assisted inputs from earlier records: several in binary64 floating point, and the certification that the root holds for all n ≤ 20000 (record r15df76b5, 8 November), which checked the steps at or beyond the middle in integer interval arithmetic and the steps below the middle twice, in integer interval arithmetic and in floating point with directed rounding. With that node proved, the runner derived the root through the relations.
-
-### A step known to be unproved
-
-One step of those routes is known to be unproved. Record r030ffaeb, published on 11 November, argues a lower bound on which the proof of the increase below the middle depends, and its argument reads that bound from a table of values that is valid only if the function tabulated is non-increasing in one of its variables and six explicit elementary pieces of it are monotone in the other. The record asserts these two properties, and its review checked them numerically at several parameter values and accepted the record as a computer-assisted proof while listing the properties among the points it judged not yet rigorous. The review did not write the missing proof; it judged the numerical check sufficient evidence for a computer-assisted claim and said so, and whether that judgment was right is open to any reader of the record.
-
-No record proves the two properties. The author and an operator session found the gap on 12 November while writing a manuscript from the records, and at 14:15 Korean time a standing input asked sessions launched afterwards to put proving the two properties before any other work; it assigned the work to no session, and no concern has been filed against the record. Until a record proves them, the root's state rests on this step as the reviews accepted it.
-
-### The one Lean proof and the formalization pause
-
-One node has a formal proof. Record r0af7f414, published on 6 November, contains a Lean theorem, `Parking.critical_increment_unconditional`, whose transitive axioms are exactly `propext`, `Classical.choice` and `Quot.sound`, and whose statement the review matched to the node. With F_ℓ(z) = Σ_m A(m, ℓ) zᵐ / m! the exponential generating function of the numbers A(m, ℓ) of parking functions of length m with maximum displacement at most ℓ, the theorem states that ℓ^(3/2) (F_ℓ(1/e) − F_{ℓ−1}(1/e)) tends to e/√(2π) as ℓ → ∞. The node is a necessary condition of the root: record r801ec220 proves that unimodality for every n implies this limit, so its refutation would have refuted the root, while its proof leaves the root open.
-
-The seven records produced by formalizers all belong to the Lean development that led to this theorem, and all were published on 6 November; the rule that limits formalization to outcomes that can reach the root was added to the runner afterwards, with this node as the occasion. On 9 November the user paused all formalization so that the research could finish first, and the five formalizations then in progress were ended without peer or review, so nothing of them was published. The pause is still in force, and no Lean work on the routes to the root has been published.
-
-### Interventions during the run
-
-The user and the operator intervened in the run in the ways listed below. Standing inputs apply to sessions launched after them. The software changed several times between 6 and 9 November: the installed copy that the instance executes was regenerated and the runner restarted, while sessions already running kept the code and guides they had been launched with. The standing inputs are not part of `knowledge/`; they are in the instance's `control/inputs` and `control/retired-inputs` directories.
-
-| Date (Korean time) | Kind | What changed |
-|---|---|---|
-| 5 November | Standing input | No records or code from the earlier instance are to be used |
-| 6 November | Software | Propagation of relations in every logical direction; formalization limited to outcomes that can reach the root; reconsideration of session endings |
-| 6 November, evening | Settings and software | Peer and review moved to Claude Opus 5.5 as first choice; do-math's default was changed at the same time so that the assessing roles prefer a model different from the one the producing roles prefer |
-| 7 November | Standing input | An attempt may take a node that is equivalent, through an accepted relation, to a node another session occupies |
-| 7 November | Settings | Producing roles moved to Claude Fable 5.1 as first choice |
-| 7 November, evening | Standing input | Register a section before beginning research on it; withdrawn on 9 November after 89 sessions had received it |
-| 8 November | Standing input | The essay on research and the description of the author's writing preferences, written during this run and since part of do-math's reference folder |
-| 9 November | Software | Questions on the frontier |
-| 9 November | Operator action | Five questions placed on the frontier without review, when questions were introduced |
-| 9 November | Settings | Explorer cadence changed from one request per three attempt launches to one per launch |
-| 9 November | Standing input | Formalization paused so that the research could finish first |
-| 9 November | Session termination | The five formalizations in progress ended without peer or review |
-| 9 November | Standing input | More weight on thinking about the problem than on large computations |
-| 9 November | Standing input | The question the user most wants answered is why the distribution is unimodal |
-| 12 November, 04:54 | Standing input | Material from a session outside the instance, relayed as unverified matter for the sessions' own judgment |
-| 12 November, 14:15 | Standing input | Prove the two monotonicity properties of record r030ffaeb before any other work |
-| During the run | Settings | Concurrency limit changed several times, between 4 and 16 |
-
-### The published evidence
-
-The complete `knowledge/` directory of the instance is published on Zenodo under the concept DOI [10.5281/zenodo.24110810](https://doi.org/10.5281/zenodo.24110810), which resolves to the latest version. Version 2, [10.5281/zenodo.24142218](https://doi.org/10.5281/zenodo.24142218), was compressed on 12 November at 01:52 Korean time and deposited at 02:38, after the root had been informally proved and before the two inputs of that day; it holds 300 records, including r5909c9e7, r030ffaeb and r0af7f414, with every review, organization and question published up to that moment. Version 1, [10.5281/zenodo.24110811](https://doi.org/10.5281/zenodo.24110811), was taken on 11 November at 00:19 Korean time, while the root was still unresolved.
-
-To check the result, open `index.md`, go to `frontier.md` for the root's two routes and the records they cite, open record r5909c9e7 with its `review/feedback.md`, and continue into the records its proof uses.
-
-### Limits
-
-Every review was an AI session; no person has reviewed the records as a referee would, and the author's reading of them while writing a manuscript is how the gap above was found. Several records on the routes rest on binary64 computations with error models assumed in advance, r030ffaeb among them; the review of r5909c9e7 lists the ones its proof inherits. One step on the routes is asserted and numerically checked but not proved, as described above. No Lean work on the routes to the root has been published.
-
-Whether the mechanisms described under the heading "How the research is organized", such as sections, questions or the reconsideration of endings, changed the quality of the research has not been measured; the run shows only that they were exercised at this scale, and it does not show that they improve the research. No figures were collected on token usage or cost, on how often reviews rejected or corrected claims, or on how often a fallback gave an assessing role the same model as the producers. The research is not finished: at 17:45 Korean time on 12 November, ten pipelines were active, working on unresolved nodes and unresolved questions beside the root.
-
-### Artifacts not yet public
+The result has limits. Every review was an AI session, and no person has reviewed the records as a referee would. Several records on the routes rest on binary64 computations with error models assumed in advance. One step is asserted and numerically checked but not proved. No Lean work on the routes to the root has been published. Whether do-math's mechanisms changed the quality of the research has not been measured, and no figures were collected on cost or on how often reviews rejected or corrected claims. The research is not finished: at 17:45 Korean time on 12 November the run had launched 1,227 sessions and published 337 records, the frontier held 108 nodes, and ten pipelines were active on nodes and questions beside the root.
 
 Several artifacts of the run are being prepared and are not yet public.
 
@@ -224,33 +178,17 @@ Each record is a directory under `records/` named by its identifier. `record.jso
 
 ## Running do-math
 
-### Requirements
+### Requirements and what a run does on your machine
 
-The runtime needs Python 3.12 or later and Git, and uses only Python's standard library. It needs the Codex CLI, the Claude Code CLI, or both, installed and logged in; it launches them as processes and does not call model APIs directly, so usage is billed or metered however those CLIs are configured, and do-math adds no accounting of its own.
+The runtime needs Python 3.12 or later and Git, and uses only Python's standard library. It needs the Codex CLI, the Claude Code CLI, or both, installed and logged in; it launches them as processes and does not call model APIs directly, so usage is billed or metered however those CLIs are configured. It needs Lean 4 in every case and Mathlib when the proofs will draw on it. Development and live verification were done on Windows; Linux is supported by the process helpers but has not been verified in a live run, and macOS is not supported.
 
-The runtime needs Lean 4 in every case, because the settings name a Lean installation and the broker starts with the runner; it needs Mathlib when the proofs the sessions write will draw on it, which the user judges from the problem at setup. External tools such as scholarly-mcp, a local server for academic literature search, are optional; the `mcp_servers` field of an instance's `settings.json` names the tool servers its sessions may use, and nothing else is available to them beyond the CLIs' built-in tools, which include shell commands and web search.
+Sessions run unattended with file and command access under your account: Claude Code is launched with permission prompts disabled, and Codex with its approval policy set to never and its sandbox set to full access. Their workspace boundaries are instructions, not an operating-system sandbox, and their model providers receive the material they read. A run has no cap on time, on the number of sessions, or on usage, and do-math collects no usage figures. do-math itself sends nothing outside your machine; publication is a commit to the instance's local Git repository, and the outbound traffic is the CLIs' own.
 
-Development and live verification were done on Windows. The process helpers also support Linux, where they read `/proc`; Linux execution has not been verified in a live run, and macOS is not supported, because process identification is not implemented for it.
+### Quick start
 
-### Permissions, caps and outbound traffic
+Clone this repository. From Claude Code or Codex started in the repository, ask the do-math skill to start research on a proposition; the conversation that handles the request is the operator, and it prepares the statement and settings, launches the detached runner and reports where the work lives. The skill is the folder `.claude/skills/do-math`, with its mirror for Codex at `.agents/skills/do-math`.
 
-Sessions run unattended with file and command access under your account: Claude Code is launched with permission prompts disabled, and Codex with its approval policy set to never and its sandbox set to full access. Their workspace boundaries are instructions, not an operating-system sandbox, and their model providers receive the material they read, as in ordinary CLI use. A run has no cap on time, on the number of sessions, or on usage, and do-math collects no usage figures; it ends when the root is formally settled and the remaining work has been processed, or when you end it as described below.
-
-do-math itself sends nothing outside your machine: publication means a commit to the instance's local Git repository, and the Zenodo deposit of the first run was made by hand. The outbound traffic is the CLIs' own, to their model providers and to the web tools the sessions use.
-
-### Starting through the skill
-
-To install, clone this repository. The skill is the folder `.claude/skills/do-math`, and its mirror for Codex is `.agents/skills/do-math`. From Claude Code or Codex started in the repository, ask the do-math skill to start research on a proposition. The conversation that handles that request is the operator; it prepares the statement and settings, launches the detached runner and reports where the work lives. The [operator entry point](.claude/skills/do-math/SKILL.md) and the [operating guide](.claude/skills/do-math/reference/operations.md) explain the full path.
-
-### Starting by hand
-
-For a manual launch, write a UTF-8 `root.md` containing the exact proposition, for example:
-
-```text
-For every natural number n, including zero, n + 0 = n.
-```
-
-Prepare `settings.json` with your actual executable paths. The operating guide lists every field with its default. This minimal file names the Lean installation, with the command that compiles a file and the command that prints the Lean version, and keeps the default models and scheduling:
+To launch by hand instead, write a UTF-8 `root.md` containing the exact proposition and a `settings.json` that names your Lean installation, with the command that compiles a file and the command that prints the Lean version:
 
 ```json
 {
@@ -261,27 +199,9 @@ Prepare `settings.json` with your actual executable paths. The operating guide l
 }
 ```
 
-The defaults are eight concurrent sessions (`max_sessions`), attempts and explorers launched at least 180 seconds apart (`launch_interval`), an explorer requested each time an attempt is launched (`explore_every`; the request is granted when a question is free and the interval has passed), an organizer after four research publications (`organizer_every_records`), and up to three reconsideration turns before a session may end (`max_end_resumptions`).
+This keeps the default models, which put Codex first and Claude second for every role and the reverse for peer and review; with only Claude Code installed, give the `models` list and the `roles` entries for peer and review Claude models only, as the running guide shows.
 
-The `models` list is the ordered model preference for every role, and an entry under `roles` replaces it for that role; each entry names a model as `provider/model` with the CLI's reasoning-effort setting, of which `xhigh` is the highest. The default `models` list puts Codex `gpt-6.1-sol` first and Claude `opus` second, and the default `roles` entries for peer and review reverse that order. With only Claude Code installed, give the common list and the two role entries Claude models only, as here with the Opus alias the Claude CLI resolves:
-
-```json
-{
-  "models": [{"model": "claude/opus", "effort": "xhigh"}],
-  "roles": {
-    "peer": [{"model": "claude/opus", "effort": "xhigh"}],
-    "review": [{"model": "claude/opus", "effort": "xhigh"}]
-  },
-  "lean": {
-    "command": ["C:/tools/lean.exe"],
-    "version_command": ["C:/tools/lean.exe", "--version"]
-  }
-}
-```
-
-To use Mathlib, set `lean.command` to your Lake executable followed by `env` and `lean`, and `lean.cwd` to a Mathlib project directory that has already been built, as the operating guide shows; a cold compile against Mathlib took about seven minutes and about a gigabyte of memory on the development machine, which is why compiles go through the broker. All sessions request a one-million-token context from their CLI; do-math only requests it, and the CLI and the account decide what the session actually gets. The allowed Lean axioms default to `propext`, `Classical.choice` and `Quot.sound`; the list can be extended in the settings, and `sorryAx` is never allowed.
-
-`init` creates the instance at a new path, which should lie outside this repository or under its `.skill-workspace/` directory, which Git ignores, so that the instance's own repository is not nested in a tracked tree. `start` then launches the runner:
+Then create the instance at a path outside this repository, or under its Git-ignored `.skill-workspace/` directory, and start the runner:
 
 ```powershell
 $skill = 'C:/path/to/do-math/.claude/skills/do-math'
@@ -291,42 +211,11 @@ python "$skill/runtime/runner.py" start $instance
 python "$skill/runtime/runner.py" status $instance
 ```
 
-Standing inputs, such as the language of the records or limits on methods, are plain text files submitted with `input --file <file>`, before `start` when they should reach every session. They apply only to sessions launched after them and accumulate; a later input that changes an earlier one must say which it changes. Changing the root's proposition requires a new instance.
-
-`start` launches the runner as a detached process, waits until the runner has written the record that confirms it is up, and returns its process ID and the paths of its log files under the instance's `runner/` directory. The runner then continues after the terminal or operator conversation ends, and `knowledge/` is updated with every publication.
-
-### Commands
-
-All commands have the form `python <skill>/runtime/runner.py <command> <instance> ...`.
-
-| Command | Purpose |
-|---|---|
-| `start` | Launch the detached runner when none is alive, including after a crash or reboot; existing sessions and unfinished publications are recovered. |
-| `run` | Run the runner in the foreground for observation. |
-| `status` | Read the root state, runner liveness, sessions, pending work, provider and model blocks, and the broker state. |
-| `stop` / `resume` | Stop or resume the launching of new sessions, including peers and reviews; the runner stays alive and running sessions continue. If the runner process has ended in the meantime, run `resume` and then `start`. |
-| `reconsider-attempts` | Launch one attempt to look again for available work after attempts have reported, in a state that `status` shows under `attempt_dispatch`, that every unresolved node is occupied; that report otherwise pauses attempt launches. |
-| `input --file <file>` | Supply a standing input to future sessions. |
-| `review --record <id>` / `review --node <id>` | Request a comprehensive review of published evidence. |
-| `organize` | Request organization of the currently unorganized records. |
-| `questions --file <file>` | Place questions on the frontier from a JSON file, without peer or review; the operating guide gives the format. |
-| `kill-session <id>` | End the identified session's CLI process; session IDs are in the `status` output. Retained research is still processed once launching is allowed. |
-| `render` | Rebuild the knowledge views when no runner process is alive. |
-| `restart-broker` | Replace the Lean broker after an environment change, with launching stopped. |
-
-### Ending a run
-
-To end a run before the root is settled, use `stop`, so that no peer or review follows what you end next; then `kill-session` for each running session, which also ends its session host; then end the runner process whose ID is in the instance's `runner/process.json`, with `Stop-Process` on Windows or `kill` on Linux. The Lean broker is a separate process whose ID is in `runner/lean/process.json`; it exits on its own when the instance's sessions and follow-up work have finished and no compile is queued or running, and it can be ended the same way.
-
-### Interruptions and completion
-
-A session interrupted by a provider's usage limit or another failure leaves its retained work for a peer. When a provider refuses a launch because of a usage limit, launches through that provider are blocked until the limit resets; a refusal specific to one model blocks only that model, and the configured alternatives serve later launches. Interrupted peers, reviews and organizers are replaced by fresh sessions that receive the partial work.
-
-Formal settlement of the root stops new attempts and explorers; existing sessions finish, their peers and reviews, formalizations and organizations still launch as their inputs become ready, and the runner finishes when that work has ended. The [operating guide](.claude/skills/do-math/reference/operations.md) explains states, failures, fallback and Lean environment changes; the [Lean guide](.claude/skills/do-math/reference/lean.md) explains the broker's commands, memory estimates and settings.
+The runner continues after the terminal or operator conversation ends, and `knowledge/` is updated with every publication. The [running guide](docs/do-math/running.md) covers the model and scheduling settings, Mathlib, the allowed Lean axioms, standing inputs, every runner command, how to end a run, and what happens on interruption and completion; the [operating guide](.claude/skills/do-math/reference/operations.md) in the skill is the complete reference for every setting and state.
 
 ## Repository layout, verification and tests
 
-Within `.claude/skills/do-math/`, `SKILL.md` is the operator's entry point, `roles/` holds the six role guides, `reference/` the shared and specialist guides, `resume/` the texts delivered when a session is asked to reconsider ending, and `runtime/` the runner, the coordination tools, the Lean broker and their tests. `.agents/skills/do-math/` is the generated mirror for Codex. The design and decision record of the current implementation is [docs/do-math/rebuild-design.md](docs/do-math/rebuild-design.md), and the checks performed when it was installed, including live launches of both CLIs, a complete small instance whose root was formally proved with a Lean proof that a review session recompiled and checked, and recovery after a runner restart, are in [docs/do-math/rebuild-verification.md](docs/do-math/rebuild-verification.md).
+Within `.claude/skills/do-math/`, `SKILL.md` is the operator's entry point, `roles/` holds the six role guides, `reference/` the shared and specialist guides, `resume/` the texts delivered when a session is asked to reconsider ending, and `runtime/` the runner, the coordination tools, the Lean broker and their tests. `.agents/skills/do-math/` is the generated mirror for Codex. The design and decision record of the current implementation is [docs/do-math/rebuild-design.md](docs/do-math/rebuild-design.md), and the checks performed when it was installed, including live launches of both CLIs, a complete small instance whose root was formally proved with a Lean proof that a review session recompiled and checked, and recovery after a runner restart, are in [docs/do-math/rebuild-verification.md](docs/do-math/rebuild-verification.md). The [full account of the first run](docs/do-math/first-run-parking-unimodality.md) and the [running guide](docs/do-math/running.md) are in the same folder.
 
 The runtime tests use scripted CLI processes, Git and a controlled Lean stand-in. They cover evidence propagation, occupancy and leases, questions, scheduling, glossary and index rendering, formal-evidence identity, interruption, recovery and context delivery. Run them with:
 
