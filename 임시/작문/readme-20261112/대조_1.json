@@ -1,0 +1,15 @@
+{
+  "verdict": "revise",
+  "alignment": "독해자는 합의의 무거운 것 셋을 모두 중심으로 재구성했다. (1) 협력 방식: 계획자 없음(U1), 역할 분리로 얻는 독립(U2), 노드 입장 조건(U3), 섹션·lease·점유(U4), 종료 재판단(U5), peer·review의 책임과 '본질적 증명을 대신 만들어 인증하지 않음'(U6), 불변 기록·finding·도출 보기·전파·contested(U7), 질문·explore(U8). (2) 보증: 게시≠증명서, 비형식의 뜻, 관계로 유도된 해는 비형식(U9), 계산의 명세와 유한 범위, 형식 해결의 세 검사(U10), concern·finding(U11). (3) 첫 운전: 문제(U12), 두 경로와 마지막 전제·binary64 의존(U13), AI 검토·Lean 하나·형식화 보류(U14), 사람의 개입과 미측정(U15), Zenodo v2와 읽는 순서(U16). 가벼운 것(실행 요구 사항 U17, 운영 U18, 플랫폼·권한 U19, 언어·인용 U20)도 합의 사실과 일치한다. 독해자가 중심으로 올린 것 가운데 가벼운 것은 없다. 지적 아홉은 모두 정의 선행이나 정확한 진술의 결함이어서 revise한다. 불확실성 X3·X4·X5는 원고가 말하지 않은 사실(미증명 단조성 요청이 승인된 사슬의 한 기록에 관한 것임, 세션 대화는 공개 아카이브 밖, 통계 시각과 v2 시각의 차이)을 가리키므로 원고에 보탠다.",
+  "findings": [
+    {"index": 1, "action": "revise", "reason": "'producing roles'를 처음 쓰는 자리에서 attempt·explore·formalizer로 정의한다."},
+    {"index": 2, "action": "revise", "reason": "'without either'를 셋을 가리키는 'without any of these'로 고친다."},
+    {"index": 3, "action": "revise", "reason": "supported의 뜻(제시된 근거가 그 진술을 세움)과 추측 진술에 붙을 때의 읽기를 한 문장으로 정의한다."},
+    {"index": 4, "action": "revise", "reason": "'not by a machine'을 'not by a proof checker'로 바꿔 AI 세션과 구별한다."},
+    {"index": 5, "action": "revise", "reason": "aᵢ의 범위(1 이상 n 이하)를 적는다."},
+    {"index": 6, "action": "revise", "reason": "네 경우를 가운데 인덱스 n/2와 두 절반으로 정의해 적는다."},
+    {"index": 7, "action": "revise", "reason": "left half를 인덱스 범위로 정의하고, 여유 k^(−1/3)의 뜻(두 양이 선두 차수에서 같고 차이가 그 비율)을 풀어 쓴다."},
+    {"index": 8, "action": "revise", "reason": "극한의 변수와 방향(y → ∞)을 적는다."},
+    {"index": 9, "action": "revise", "reason": "두 단조성 사실이 승인된 사슬의 한 기록(정리 W)이 수치로만 확인한 가정임을 적고, 한계 문단에도 반영한다."}
+  ]
+}

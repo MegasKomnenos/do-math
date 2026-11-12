@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use do-math, please cite it using the metadata in this file. To cite the published knowledge base of the first run, cite the Zenodo record listed under references."
+type: software
+title: "do-math"
+abstract: "do-math runs research on one mathematical proposition through many fresh AI sessions that share no conversation. Each piece of work is produced by one session, developed into a record by a second session, and assessed by a third; published records are immutable and carry their assessments. A root proposition counts as settled only when an independently recompiled Lean proof has been checked against the exact statement."
+authors:
+  - family-names: "Kim"
+    given-names: "Jaehyoung"
+    affiliation: "Kyungpook National University"
+repository-code: "https://github.com/MegasKomnenos/do-math"
+url: "https://github.com/MegasKomnenos/do-math"
+license: MPL-2.0
+keywords:
+  - "autonomous mathematical research"
+  - "multi-agent system"
+  - "large language models"
+  - "Lean 4"
+  - "parking functions"
+  - "unimodality"
+references:
+  - type: data
+    title: "parking-unimodality-2026-11-10"
+    authors:
+      - family-names: "Kim"
+        given-names: "Jaehyoung"
+        affiliation: "Kyungpook National University"
+    doi: 10.5281/zenodo.24110810
+    publisher:
+      name: "Zenodo"
+    year: 2026
+    notes: "Concept DOI for all versions of the published knowledge base of the first run. Version 2 is 10.5281/zenodo.24142218."
