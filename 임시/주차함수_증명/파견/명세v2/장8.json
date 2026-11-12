@@ -456,6 +456,32 @@
       "{{8:table-tolerance}}"
      ],
      "special": "(가)·(나) 셀 검사와 12001점 표는 부록 D(binary64 평가, 인증 아님). 증명의 둘째 단계(표의 마디값이 하계임을 쓰는 자리)는 `{{8:table-lower-bound}}`·`{{8:table-tolerance}}`를 인용한다(자리 표시자 없음; 합의 v2 결정 15의 기록이 공표됨)."
+    },
+    {
+     "label": "{{8:explicit-bounds}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "sec": "3.5",
+       "note": "확인 요"
+      },
+      {
+       "record": "r8456f59",
+       "file": "exposition.md",
+       "sec": "3.9.2",
+       "note": "확인 요"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{8:explicit-bounds}}`에(봉투 보조정리 H가 먼저 쓴다; 정수판 $\\Psi^{\\mathrm{low}}(d)$는 9.5) | 첫 판 6.9, [r8456f59], [r030ffae] §3.5·보고서 §3.9.2, [rfc69320] | 옮김+전개"
     }
    ],
    "intro": "순서: `{{8:jensen-lower}}` → `{{8:escape-lower}}` → `{{8:lowest-violation}}` → `{{8:prop-U-apriori}}` → `{{8:envelope-H}}` → `{{8:envelope-HG}}` → `{{8:pieces-k-monotone}}` → `{{8:escape-y-monotone}}` → `{{8:jensen-H-ii}}` → `{{8:table-lower-bound}}` → `{{8:envelope-code-monotone}}` → `{{8:closed-form-envelope}}` → `{{8:table-tolerance}}` → 정리 W(`{{8:old-6-28}}`). 봉투 정리 일곱은 기록 [rfc69320](2026-11-12 공표; 검토가 13개 주장 전부 지지)에서 전개한다. 그 검토(`review/feedback.md` §2·§4)가 정정한 것을 따른다: 표 호출 범위 $[0,6]$, 명제 F 이음새 경우의 닫기, 정리 CF (c)의 의존(정리 B를 씀), 반올림 방향이 틀린 수치 다섯. 같은 요청의 독립 둘째 증명 기록 [r0e82912]는 쓰지 않고 인용하지 않는다(결정 10). 보조정리 H·H-G의 식은 기록 §3.5와 보고서 §3.9.2·`window_lib.py`의 docstring에서 옮기고 출처를 적는다."
@@ -610,11 +636,11 @@
   }
  ],
  "defines": [
-  "$\\mathrm{Bor}_{\\le}(q)$; $\\mathfrak R_q$; $\\mathfrak D_q$; $\\mathfrak D^{\\mathrm{src}}_q$; $\\mathfrak E_q$; $s^{\\mathrm{low}}_q$; $\\mathrm{Flow}_q$; $\\xi$; $\\Omega(\\xi), \\Omega_c$; $s^{\\mathrm{env}}(\\xi), s^{\\mathrm{env}}_{\\mathrm W}, s^{\\mathrm{env}}_{\\mathrm G}$; $\\tilde s^{\\mathrm{env}}(\\xi), \\tilde s^{\\mathrm{env}}_{\\mathrm W}, \\tilde s^{\\mathrm{env}}_{\\mathrm G}$; $s^{\\mathrm{cf}}(\\xi)$; $\\mathfrak j_\\infty(\\xi)$; $\\mathfrak B_N, \\mathfrak B^{\\mathrm{low}}(k,\\nu)$; $\\mathrm{Bor}_{>}(q)$; $\\mathrm{Lip}$; $\\mathfrak c_0$; $\\mathrm{LB}^{\\mathrm{mono}}, \\mathrm{LB}^{\\mathrm{low}}, \\mathrm{LOW}_k$; $\\mathfrak R^{\\mathrm{low}}_k$; $q_{\\mathrm{fb}}, q^\\circ_{\\mathrm{fb}}$; $m_{\\mathrm{fb}}$; $\\mathrm{fb}(\\theta)$; $\\mathrm{dup}_m$; $\\pi^{\\mathrm{two}}_N$; $\\mathfrak K^{\\mathrm U}_N$; $\\mathsf z_{1/2}, \\mathsf z_{-1/2}, \\mathsf z_{3/2}$",
-  "상자; 부족량; 부족량의 원천 항; 되먹임; 깊은 낙하; 상위해; 봉투; 한 블록 재귀, 환경 생존, 비교 원리, 윤곽 함수, 시험 함수, 흐름, 뿌리 죽임, 안전 인자, 램프, 창 끝, 용량 이동 비, 최대 나무 법칙, 위험률 다듬기, 띠 정리, 고유 입력, 공유 입력"
+  "$\\mathrm{Bor}_{\\le}(q)$; $\\mathfrak R_q$; $\\mathfrak D_q$; $\\mathfrak D^{\\mathrm{src}}_q$; $\\mathfrak E_q$; $s^{\\mathrm{low}}_q$; $\\mathrm{Flow}_q$; $\\xi$; $\\Omega(\\xi), \\Omega_c$; $s^{\\mathrm{env}}(\\xi), s^{\\mathrm{env}}_{\\mathrm W}, s^{\\mathrm{env}}_{\\mathrm G}$; $\\tilde s^{\\mathrm{env}}(\\xi), \\tilde s^{\\mathrm{env}}_{\\mathrm W}, \\tilde s^{\\mathrm{env}}_{\\mathrm G}$; $s^{\\mathrm{cf}}(\\xi)$; $\\mathsf j_\\infty(\\xi)$; $\\mathfrak B_N, \\mathfrak B^{\\mathrm{low}}(k,\\nu)$; $\\mathrm{Lip}$; $\\mathfrak c_0$; $\\mathrm{LB}^{\\mathrm{mono}}, \\mathrm{LB}^{\\mathrm{low}}, \\mathrm{LOW}_k$; $\\mathfrak R^{\\mathrm{low}}_k$; $q_{\\mathrm{fb}}, q^\\circ_{\\mathrm{fb}}$; $m_{\\mathrm{fb}}$; $\\mathrm{fb}(\\theta)$; $\\mathrm{dup}_m$; $\\mathrm{km}_N$; $\\Psi^{\\mathrm{low}}_{(\\varrho)}$; $\\mathsf c_\\Psi$",
+  "부족량; 부족량의 원천 항; 되먹임; 깊은 낙하; 상위해; 봉투; 한 블록 재귀, 환경 생존, 비교 원리, 윤곽 함수, 시험 함수, 흐름, 뿌리 죽임, 안전 인자, 램프, 창 끝, 용량 이동 비, 최대 나무 법칙, 위험률 다듬기, 띠 정리, 고유 입력, 공유 입력"
  ],
  "free_letters": [
-  "라틴 소문자: $f$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $D$, $E$, $F$, $H$, $I$, $J$, $K$, $L$, $R$, $S$, $T$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak C$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+  "라틴 소문자: $f$, $w$, $z$. 라틴 대문자: $B$, $C$, $D$, $E$, $F$, $I$, $J$, $K$, $L$, $R$, $S$, $U$, $V$. 그리스: $\\beta$, $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\varkappa$, $\\mu$, $\\rho$, $\\varrho$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Lambda$, $\\Xi$, $\\Pi$, $\\Upsilon$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal S$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak C$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
  ],
  "refs": [
   "{{2:old-2-13}}",

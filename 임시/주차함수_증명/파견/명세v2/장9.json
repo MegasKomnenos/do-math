@@ -630,7 +630,7 @@
       "{{5:old-5-1}}",
       "{{5:old-5-18}}",
       "{{8:old-6-30}}",
-      "{{9:old-7-21}}",
+      "{{6:old-7-21}}",
       "{{6:old-8-11}}",
       "{{6:D-bound}}"
      ],
@@ -655,7 +655,7 @@
      "inputs": [
       "{{4:old-4-5}}",
       "{{5:old-5-18}}",
-      "{{9:old-7-21}}",
+      "{{6:old-7-21}}",
       "{{6:old-8-11}}",
       "{{6:D-bound}}",
       "{{9:H-star-plus}}"
@@ -680,7 +680,7 @@
      },
      "inputs": [
       "{{6:old-6-19}}",
-      "{{9:old-7-21}}",
+      "{{6:old-7-21}}",
       "{{9:old-7-23}}",
       "{{6:old-7-24}}"
      ],
@@ -729,7 +729,7 @@
       "{{8:old-6-29}}",
       "{{8:old-6-33}}",
       "{{9:old-7-18}}",
-      "{{9:old-7-21}}",
+      "{{6:old-7-21}}",
       "{{9:old-7-22}}",
       "{{9:old-7-25}}",
       "{{9:old-7-26}}",
@@ -1214,11 +1214,11 @@
   }
  ],
  "defines": [
-  "$A^{(t)}_N, A^\\circ_N, A^\\diamond_N$; $A^{\\diamond,\\mathrm{up}}, A^\\diamond_{\\mathrm{dec}}$; $\\pi_n(t_1,t_2)$; $\\pi_2(t)$; $P^+_t(k)$; $\\Theta^\\circ_n$; $m_1(k)$; $\\mathsf H^\\ast, \\mathsf H^\\ast_+$; $K_n(m)$; $\\gamma_m$; $\\mathcal Q_m$; $\\mathcal C_n$; $\\mathsf B^+$; $\\mathrm{merge}, \\mathrm{merge}^{\\mathrm{up}}$; $\\mathrm{OB}_m$; $\\mathrm{FL}^{(1)}_m$; $\\mathrm{Pcor}_m, \\mathrm{Pcor}^{\\pm}_m$; $\\mathfrak V_m$; $\\mathfrak d_k, \\bar{\\mathfrak d}_k$; $\\mathfrak l_m(t)$; $\\mathrm{land}_m$; $\\mathsf L_\\ast(k)$; $\\mathcal J_1(k),\\dots,\\mathcal J_4(k)$; $\\mathrm{need}_m, (\\mathrm R_m)$; $\\mathrm{rb}_m$; $\\mathfrak K_N, \\mathfrak K^{\\prime}_N$; $\\mathrm{regen}_n$; $\\mathrm{flat}_k(t)$; $\\mathsf{FS}(n)$; $\\mathcal Y_k(n), \\mathcal Y^{\\mathrm{LP}}_k(n), \\mathcal Y^\\dagger_k(n)$; $\\nu_0(k), \\nu_1(k)$; $\\mathcal F_k(\\nu), \\mathcal F^+_k, \\mathcal F^{\\mathrm{LP}}_k$; $\\mathrm{LP}_k(n)$; $P^{\\theta}_t(k)$; $\\mathsf h_N$; $t^\\dagger$; $\\varrho^\\dagger(t^\\dagger)$; $P^{\\theta\\dagger}(t^\\dagger)$; $\\Psi^{\\mathrm{low}}(d), \\Psi^{\\mathrm{low}}_{(r)}$",
-  "대칭점; 전환 구간; 재생 원천; 조건부 수준 질량; 짝 없는, 병합, 행 조건, 행별 비, 덮인 문턱, 덮개 몫, 한 블록 항등식, 착지 비, 착지 무게, 쌍 보정, 요구값; 재생, 두 나무 꼴, 두 나무 법칙, 평평한 꼬리, 무게 증분, 감소율, 제한 성장비, 자르는 크기, 탐욕 채움, 선형 최소화, 바닥, 꼭대기; 구획, 구획 하계, 거대 나무, 창×창 쌍, 쌍의 무게, $k$-단조성, 한 변수 확인, 둘째 큰 나무"
+  "$A^{(t)}_N, A^\\circ_N, A^\\diamond_N$; $A^{\\diamond,\\mathrm{up}}, A^\\diamond_{\\mathrm{dec}}$; $\\pi_n(t_1,t_2)$; $\\pi_2(t)$; $P^+_t(k)$; $\\Theta^\\circ_n$; $m_1(k)$; $\\mathsf H^\\ast, \\mathsf H^\\ast_+$; $K_n(m)$; $\\gamma_m$; $\\mathcal Q_m$; $\\mathcal C_n$; $\\mathsf B^+$; $\\mathrm{merge}, \\mathrm{merge}^{\\mathrm{up}}$; $\\mathrm{OB}_m$; $\\mathrm{FL}^{(1)}_m$; $\\mathrm{Pcor}_m, \\mathrm{Pcor}^{\\pm}_m$; $\\mathfrak V_m$; $\\mathfrak d_k, \\bar{\\mathfrak d}_k$; $\\mathfrak l_m(t)$; $\\mathrm{land}_m$; $\\mathsf L_\\ast(k)$; $\\mathcal J_1(k),\\dots,\\mathcal J_4(k)$; $\\mathrm{need}_m, (\\mathrm R_m)$; $\\mathfrak K_N, \\mathfrak K^{\\prime}_N$; $\\mathrm{regen}_n$; $\\mathrm{flat}_k(t)$; $\\mathsf{FS}(n)$; $\\mathcal Y_k(n), \\mathcal Y^{\\mathrm{LP}}_k(n), \\mathcal Y^\\dagger_k(n)$; $\\nu_0(k), \\nu_1(k)$; $\\mathcal F_k(\\nu), \\mathcal F^+_k, \\mathcal F^{\\mathrm{LP}}_k$; $\\mathrm{LP}_k(n)$; $P^{\\theta}_t(k)$; $\\mathsf h_N$; $t^\\dagger$; $\\varrho^\\dagger(t^\\dagger)$; $P^{\\theta\\dagger}(t^\\dagger)$; $\\Psi^{\\mathrm{low}}(d)$",
+  "대칭점; 전환 구간; 재생 원천; 짝 없는, 병합, 행 조건, 행별 비, 덮인 문턱, 덮개 몫, 한 블록 항등식, 착지 비, 착지 무게, 쌍 보정, 요구값; 재생, 두 나무 꼴, 평평한 꼬리, 무게 증분, 감소율, 제한 성장비, 자르는 크기, 탐욕 채움, 선형 최소화, 바닥, 꼭대기; 구획, 구획 하계, 거대 나무, 창×창 쌍, 쌍의 무게, $k$-단조성, 한 변수 확인, 둘째 큰 나무"
  ],
  "free_letters": [
-  "라틴 소문자: $g$, $h$, $w$, $z$. 라틴 대문자: $B$, $C$, $E$, $F$, $I$, $L$, $R$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\vartheta$, $\\iota$, $\\varkappa$, $\\mu$, $\\rho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal D$, $\\mathcal E$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal S$, $\\mathcal T$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak c$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+  "라틴 소문자: $g$, $w$, $z$. 라틴 대문자: $B$, $C$, $E$, $F$, $I$, $L$, $R$, $U$, $V$, $Z$. 그리스: $\\beta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\vartheta$, $\\iota$, $\\varkappa$, $\\mu$, $\\rho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\chi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Xi$, $\\Pi$, $\\Phi$. 필기체: $\\mathcal A$, $\\mathcal D$, $\\mathcal E$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal K$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal S$, $\\mathcal T$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak c$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf a$, $\\mathsf b$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf x$, $\\mathsf y$, $\\mathsf A$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf Q$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
  ],
  "refs": [
   "{{2:old-2-10}}",
@@ -1239,7 +1239,7 @@
   "{{5:old-5-28}}",
   "{{6:D-bound}}",
   "{{6:old-6-19}}",
-  "{{6:old-7-20}}",
+  "{{6:old-7-21}}",
   "{{6:old-7-24}}",
   "{{6:old-8-11}}",
   "{{7:old-6-13}}",

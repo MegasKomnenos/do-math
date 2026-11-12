@@ -9,6 +9,7 @@
 사용: python 자료묶음_v2.py [--dry] [--source 원고.md]
 """
 import argparse
+import glob
 import hashlib
 import io
 import os
@@ -50,8 +51,11 @@ def collect(texts):
                 cur = m.group(1) or ("D." + m.group(2))
                 continue
             if ln.startswith("**자료.**") and cur:
-                for pm in PATH_RE.finditer(ln):
-                    items.append((cur, pm.group(1), pm.group(2).replace("\\", "/")))
+                for seg in re.findall(r"`([^`]+)`", ln):
+                    if seg.startswith("원고_자료/") or seg.startswith("원고_자료\\"):
+                        continue  # 세션이 만든 파일(수정판 코드·재실행 출력)은 세션이 묶음에 직접 둔다.
+                    for pm in PATH_RE.finditer("`" + seg + "`"):
+                        items.append((cur, pm.group(1), pm.group(2).replace("\\", "/")))
     return items
 
 
@@ -74,10 +78,37 @@ def main():
             problems.append(f"{d_item}: 기록 폴더 없음 {rid}")
             continue
         src = os.path.join(RECORDS, rdir, rel)
+        short = rdir[:8]
+        if "*" in rel or "?" in rel:
+            # 와일드카드 경로: 기록 폴더 안에서 확장해 파일마다 복사한다.
+            matches = sorted(p for p in glob.glob(src) if os.path.isfile(p))
+            if not matches:
+                problems.append(f"{d_item}: 파일 없음 {rid}/{rel}")
+                continue
+            for fsrc in matches:
+                frel = os.path.relpath(fsrc, os.path.join(RECORDS, rdir)).replace("\\", "/")
+                fdest = os.path.join(BUNDLE, short, frel)
+                if not args.dry:
+                    os.makedirs(os.path.dirname(fdest), exist_ok=True)
+                    shutil.copy2(fsrc, fdest)
+                rows.append((f"{short}/{frel}", f"[{short}] `{frel}`(패턴 `{rel}`)", d_item, sha256(fsrc)))
+            continue
         if not os.path.exists(src):
             problems.append(f"{d_item}: 파일 없음 {rid}/{rel}")
             continue
-        short = rdir[:8]
+        if os.path.isdir(src):
+            # 폴더 참조: 폴더 구조를 유지해 파일 전부를 복사한다(__pycache__ 제외).
+            for root_, dirs_, files_ in os.walk(src):
+                dirs_[:] = [d for d in dirs_ if d != "__pycache__"]
+                for fn in sorted(files_):
+                    fsrc = os.path.join(root_, fn)
+                    frel = os.path.relpath(fsrc, os.path.join(RECORDS, rdir)).replace("\\", "/")
+                    fdest = os.path.join(BUNDLE, short, frel)
+                    if not args.dry:
+                        os.makedirs(os.path.dirname(fdest), exist_ok=True)
+                        shutil.copy2(fsrc, fdest)
+                    rows.append((f"{short}/{frel}", f"[{short}] `{frel}`(폴더 `{rel}`)", d_item, sha256(fsrc)))
+            continue
         # 같은 이름이 다른 하위 폴더에서 오면 하위 폴더 이름을 접두로
         base_name = os.path.basename(rel)
         sub = os.path.dirname(rel).replace("/", "__")

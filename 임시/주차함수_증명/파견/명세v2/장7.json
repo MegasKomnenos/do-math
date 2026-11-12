@@ -418,6 +418,86 @@
       "{{7:self-consistent-S}}"
      ],
      "special": "$k=6098$ 한 점은 부록 D."
+    },
+    {
+     "label": "{{7:flat-threshold}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [
+      {
+       "record": "r7c26b8b",
+       "file": "exposition.md",
+       "sec": null,
+       "note": "확인 요: 절 미상"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:flat-threshold}}` 문턱 자리 평균의 상계가 주는 증가 경계(따름정리; [r7c26b8b] 따름정리 3·[rb6423c6] 명제 P8; (라) $\\mathsf W_L^\\flat\\Leftrightarrow\\mathsf W_L$을 10.7이 가리킴), `"
+    },
+    {
+     "label": "{{7:level-chain}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:level-chain}}`·`"
+    },
+    {
+     "label": "{{7:lm-core}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:lm-core}}`(7A의 내부 보조정리), 새 `"
+    },
+    {
+     "label": "{{7:prime-decomposition}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:prime-decomposition}}`·`"
+    },
+    {
+     "label": "{{7:supermultiplicative}}",
+     "kind": "보조정리",
+     "name": "초승법성과 $u_l\\le1$",
+     "record_name": "기록 [r7c26b8b]의 보조정리 4.1",
+     "process": "전개",
+     "class": "표준",
+     "sources": [
+      {
+       "record": "r7c26b8b",
+       "file": "exposition.md",
+       "note": "정리 1의 증명 안의 보조정리 4.1(3행)",
+       "sec": "4"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{2:old-2-3}}"
+     ],
+     "special": "Fekete 보조정리는 문헌 인용."
     }
    ],
    "intro": "순서: 정리 6.6 → `{{7:factorial-moment}}` → 명제 6.7(전개) → 정리 6.8 → 명제 6.9(+ `{{7:band-propagation}}`, `{{7:column-lemma}}`, `{{7:seed-transfer}}`) → 정리 6.10 → `{{7:lemma-R-sc}}` → `{{7:self-consistent-S}}` → `{{7:cor-S-prime}}` → `{{7:S-infinity}}`. 6.2·6.4의 배경 서술(참값 관찰, 둘째 극소, Jensen 문턱)은 쓰지 않는다. 명제 6.7·정리 6.8은 증명이 글 안에 있으므로 「증명됨」, 명제 6.9는 「증명됨, 계산 보조(정확 정수 구간)」."
@@ -452,27 +532,6 @@
       "{{2:old-2-6}}"
      ],
      "special": "peer 정정 $z\\ge k-1$을 쓴다."
-    },
-    {
-     "label": "{{7:supermultiplicative}}",
-     "kind": "보조정리",
-     "name": "초승법성과 $u_l\\le1$",
-     "record_name": "기록 [r7c26b8b]의 보조정리 4.1",
-     "process": "전개",
-     "class": "표준",
-     "sources": [
-      {
-       "record": "r7c26b8b",
-       "file": "exposition.md",
-       "note": "정리 1의 증명 안의 보조정리 4.1(3행)",
-       "sec": "4"
-      }
-     ],
-     "first_edition": null,
-     "inputs": [
-      "{{2:old-2-3}}"
-     ],
-     "special": "Fekete 보조정리는 문헌 인용."
     },
     {
      "label": "{{7:pole-unique}}",
@@ -733,6 +792,39 @@
       "{{7:polar-N}}"
      ],
      "special": "극 영역은 이 명제로만 닫는다(첫 판 1885행의 「X′의 귀결」 문장은 뺌)."
+    },
+    {
+     "label": "{{7:lemma-P-prime}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:lemma-P-prime}}` 보조정리 P′(원 위 감김수)·`"
+    },
+    {
+     "label": "{{7:theorem-G-prime}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [
+      {
+       "record": "rb7effe0",
+       "file": "exposition.md",
+       "sec": "6.5",
+       "note": "확인 요"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:theorem-G-prime}}` 정리 G′(열 $501$–$2000$ 열별 인증서 $(n^{\\mathrm{bis}}_0,\\Gamma,\\mathfrak P^{\\mathrm U}_k)$의 정당화) [rb7effe0] §6.5(세션 결정 42; 7.4·7.5가 가리킴); polar-R (나)에 극 영역 상계 $\\mathfrak P_k(n)\\le\\Gamma\\,\\mathfrak P_k(\\infty)\\le V$, polar-W (가)에 $\\mathfrak P_k(n)\\le1.445/\\sqrt k$. 「X′의 귀결」 문장은 뺌 | 첫 판 6.3, [rb7effe0], [r7c26b8b], [r7c079be], [rf09e7ef], [rf451d83], [r89eb039] | 옮김+전개(약 300행)"
     }
    ],
    "intro": "순서: `{{7:riccati}}` → `{{7:supermultiplicative}}` → `{{7:pole-unique}}` → `{{7:pole-monotone}}` → 정리 6.11(전개) → `{{7:fourier-lemmas}}` → `{{7:X-cert}}` → 정리 6.12(전개) → `{{7:transfer-F}}` → `{{7:lemma-P-pole}}` → `{{7:polar-R}}` → `{{7:polar-N}}` → `{{7:polar-W}}`. 첫 판 1885행의 「$N^\\circ_k\\le n<2k^{3/2}$은 X′의 귀결」 문장은 쓰지 않는다(극 영역은 `{{7:polar-W}}`로만 닫는다). 정리 6.12의 미지지 주장 넷은 쓰지 않는다."
@@ -1062,6 +1154,39 @@
       "{{7:polar-PD}}"
      ],
      "special": ""
+    },
+    {
+     "label": "{{7:qstar-columns}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:qstar-columns}}`(열 $2001$–$3130$의 한 걸음 판정; 계산 보조; 10.7이 가리킴; 1130열 인증은 부록 D); `"
+    },
+    {
+     "label": "{{7:qstar-implies-wlflat}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [
+      {
+       "record": "r207f124",
+       "file": "exposition.md",
+       "sec": null,
+       "note": "확인 요: 절 미상"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{7:qstar-implies-wlflat}}` 따름정리(한 걸음 판정에서 왼쪽 잔여 증가로; (가)의 ⇐ 방향 결합은 세션 결정 42; 10.7이 가리킴) | 첫 판 6.5, [r207f124] | 옮김+전개(약 130행)"
     }
    ],
    "intro": "순서: 정리 6.14 → 명제 6.15 → `{{7:fold-A}}` → `{{7:fold-R}}` → `{{7:fold-T}}` → `{{7:fold-L1}}` → `{{7:fold-DIP}}` → `{{7:polar-PD}}` → `{{7:prop-PF}}`. 열 2001–3130의 $Q^\\star$는 여기서 닫힌다. 정리 Q-fin(1130열)은 부록 D(오기 $e^{3/25370}$ 대신 바른 하계 25233)."
@@ -1259,11 +1384,11 @@
   }
  ],
  "defines": [
-  "$\\mathcal P^{(k)}_m(j)$; $\\bar A_n(y)$; $\\mathcal W^{(>102)}, \\mathcal W^{(>40)}$; $\\mathcal W_M$; $\\Pr^{\\sigma}_{n,k}, \\mathbb E^{\\sigma}_{n,k}$; $\\mu_n(k)$; $\\mathcal T_k(\\sigma), \\mathcal T_{n,k}$; $\\mathsf{LM}, \\mathsf{LM}^{\\flat\\flat}$; $\\mathrm{Conv}_{n,k}, \\mathrm{Kink}_{n,k}$; $\\mathsf W_L, \\mathsf W_L^\\flat$; $n^\\sharp_k, \\tilde n_k, n^\\flat_k, n^\\natural_k, n^\\circ_k$; $\\mathsf t_k$; $\\mathsf q_k$; $n^\\varphi_k$; $\\check n_k, n^\\ast_k$; $n_{\\mathrm X}(k)$; $\\mathfrak P_k(n), \\mathfrak P_k(\\infty)$; $n_{\\mathrm{PD}}(k)$; $\\rho_k$; $C_k(x), C_{n,k}$; $\\tilde C_{n,k}, \\tilde C^\\circ_n$; $\\mathfrak a^{\\rho}_l$; $\\mathsf X^\\prime$; $J^{\\mathrm G}_n(z)$; $\\mathrm{src}_k(m)$; $\\chi_m(j)$; $\\mathrm{inh}_k(n), \\mathrm{inh}^{\\mathrm{lin}}_k(n)$; $(\\star)(n)$; $\\mathsf Q^\\star, \\mathsf Q^\\star_2$; $\\mathcal Z$; $\\mathsf{SRC}^+$; $w_m$; $\\mathrm{Left}_n$; $\\mathfrak u_n$; $\\mathrm{Quad}_n, \\mathrm{Stem}_n$; $\\mathsf{LRP}_2$; $\\mathcal R_2$; $\\mathcal R_{\\mathrm L}, \\mathcal R^{(>40)}_{\\mathrm L}$; $\\Pi^{\\mathrm{up}}_h$; $\\mathrm{cl}^+_m, \\mathrm{cl}^-_m$",
-  "착지 행; 갱신 구간; 왼쪽 창, 모멘트 창; 전달 범위; 토막; 조각; 소인 구간; 토막 원천; 원천 쪽; 증가 경계; 환경; 모멘트 판정, 볼록–꺾임 분해, 무거운 자리, 문턱 자리, 골격 값, 마지막 이탈 분해, 자기일관 상계; 소인 주차함수, 극, 지배 극, 갱신열, 갱신 인증서, 유한 크기 전달; 기록의 표지, Green 원자, 쌍별 판정, 모멘트 재귀, 용량 응답; 뿌리 자리 법칙, 문턱 뿌리, 무거운 뿌리, 가벼운 뿌리, 꼭대기 뿌리, 흡수 귀납, 첫 층 상속, 대각선 접기, 망원 상환; 분할 무게, 문턱 단위, 성장률, 생존비, 둘째 층 한 칸 비교, 실질 잔여, 증가 시작점, 개수 장부"
+  "$\\mathcal P^{(k)}_m(j)$; $\\mathfrak a^\\circ_n$; $\\bar A_n(y)$; $\\mathcal W^{(>102)}, \\mathcal W^{(>40)}$; $\\mathcal W_M$; $\\Pr^{\\sigma}_{n,k}, \\mathbb E^{\\sigma}_{n,k}$; $\\mu_n(k)$; $\\mathcal T_k(\\sigma), \\mathcal T_{n,k}$; $\\mathsf{LM}$; $\\mathsf{LM}^{\\flat\\flat}$; $\\mathrm{Conv}_{n,k}, \\mathrm{Kink}_{n,k}$; $\\mathsf W_L, \\mathsf W_L^\\flat$; $n^\\sharp_k, n^\\flat_k, n^\\circ_k$; $\\tilde n_k$; $n^\\natural_k$; $\\mathsf t_k$; $n_{\\mathrm X}(k)$; $\\mathfrak P_k(n)$; $\\mathfrak P_k(\\infty)$; $n_{\\mathrm{PD}}(k)$; $\\rho_k$; $C_k(x), C_{n,k}$; $\\mathrm{pr}_{n,k}, \\mathrm{pr}^\\circ_n$; $\\mathfrak a^{\\rho}_l$; $\\mathsf X^\\prime$; $J^{\\mathrm G}_n(z)$; $\\mathrm{src}_k(m)$; $\\chi_m(j)$; $\\mathrm{inh}_k(n), \\mathrm{inh}^{\\mathrm{lin}}_k(n)$; $(\\star)(n)$; $\\mathsf Q^\\star, \\mathsf Q^\\star_2$; $\\mathcal Z$; $\\mathsf{SRC}^+$; $w_m$; $\\mathrm{Left}_n$; $\\mathfrak u_n$; $\\mathrm{Quad}_n, \\mathrm{Stem}_n$; $\\mathsf{LRP}_2$; $\\mathcal R_2$; $\\mathcal R_{\\mathrm L}, \\mathcal R^{(>40)}_{\\mathrm L}$; $\\Pi^{\\mathrm{up}}_h$; $\\mathrm{cl}^+_m, \\mathrm{cl}^-_m$",
+  "착지 행; 갱신 구간; 왼쪽 창, 모멘트 창; 전달 범위; 토막; 조각; 소인 구간; 토막 원천; 원천 쪽; 증가 경계; 조건부 수준 질량; 모멘트 판정, 볼록–꺾임 분해, 무거운 자리, 문턱 자리, 골격 값, 마지막 이탈 분해, 자기일관 상계; 소인 주차함수, 극; 지배 극, 갱신열, 갱신 인증서, 유한 크기 전달; 기록의 표지, Green 원자, 쌍별 판정, 모멘트 재귀, 용량 응답; 뿌리 자리 법칙, 문턱 뿌리, 무거운 뿌리, 가벼운 뿌리; 꼭대기 뿌리, 흡수 귀납, 첫 층 상속, 대각선 접기, 망원 상환; 분할 무게, 문턱 단위, 성장률, 생존비, 둘째 층 한 칸 비교, 실질 잔여, 개수 장부; 자리별 변위 벡터; 경계점, 내부 경계점; 골격 자리; 자유 비; 소인 길이 분포; 격자 판정; 꼬리 삼중; 껍질; 쌍별 도달; 뿌리 자리; 깊은 자식 몫"
  ],
  "free_letters": [
-  "라틴 소문자: $f$, $z$. 라틴 대문자: $B$, $E$, $G$, $I$, $K$, $L$, $R$, $T$, $U$, $V$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\xi$, $\\pi$, $\\varrho$, $\\varsigma$, $\\upsilon$, $\\phi$, $\\varphi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Delta$, $\\Lambda$, $\\Xi$, $\\Sigma$, $\\Phi$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal I$, $\\mathcal J$, $\\mathcal L$, $\\mathcal M$, $\\mathcal N$, $\\mathcal O$, $\\mathcal Q$, $\\mathcal S$, $\\mathcal U$, $\\mathcal X$, $\\mathcal Y$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf b$, $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf g$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf n$, $\\mathsf o$, $\\mathsf p$, $\\mathsf r$, $\\mathsf s$, $\\mathsf u$, $\\mathsf w$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf Y$, $\\mathsf Z$"
+  "라틴 소문자: $f$, $z$. 라틴 대문자: $B$, $E$, $G$, $I$, $K$, $R$, $U$, $V$. 그리스: $\\beta$, $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\xi$, $\\varrho$, $\\varsigma$, $\\upsilon$, $\\phi$, $\\varphi$, $\\psi$, $\\omega$, $\\Gamma$, $\\Lambda$, $\\Xi$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal B$, $\\mathcal C$, $\\mathcal D$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal Q$, $\\mathcal S$, $\\mathcal U$, $\\mathcal X$, $\\mathcal Y$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak q$, $\\mathfrak t$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf u$, $\\mathsf w$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf S$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf Y$, $\\mathsf Z$"
  ],
  "refs": [
   "{{2:old-2-13}}",

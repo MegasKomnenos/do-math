@@ -47,6 +47,33 @@
       "{{5:old-5-1}}"
      ],
      "special": ""
+    },
+    {
+     "label": "{{5:witness-position-bound}}",
+     "kind": "명제",
+     "name": "작은 행의 증인 위치 경계",
+     "record_name": "정리 5.1의 인증 자료([r19de912]; 인용 [r7e03176] §8)",
+     "process": "부록 D",
+     "class": "기계적",
+     "sources": [
+      {
+       "record": "r7e03176",
+       "file": "exposition.md",
+       "note": "증인 위치 경계의 인용 자리",
+       "sec": "8.3"
+      },
+      {
+       "record": "r19de912",
+       "file": "exposition.md",
+       "note": "n≤20000 정확 정수 인증의 자료(행별 증인 위치)",
+       "sec": "1"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [
+      "{{5:old-5-1}}"
+     ],
+     "special": "진술: $50\\le m\\le20000$에서 $m+1-\\ell^\\ast_m\\le1.99+0.59963(m+1)^{2/3}+1.24847(m+1)^{1/3}$. 지위 「계산 증거」; 값은 부록 D `{{D:exact-n20000}}`의 행별 증인 위치에서 확인된다(그 항목에 한 줄 더한다). 6장의 `{{6:small-k-bulk}}`·`{{6:old-8-11}}`·`{{6:old-8-12}}`가 입력으로 쓴다."
     }
    ],
    "intro": "정리 5.1·5.2의 명세(범위, 알고리즘, 산술 등급, 독립 재계산)는 부록 D. 정리 5.1의 부록 D 항목은 뒤의 장들이 「정리 5.1의 범위 안」으로 가리키는 $n\\le15$ 정확 행도 덮는다."
@@ -1804,11 +1831,11 @@
   }
  ],
  "defines": [
-  "$A^{c}_{n,\\ell}$; $\\mathfrak a_n$; $\\mathfrak m(n)$; $r_0(n)$; $\\mathsf W, \\mathsf W^\\sharp$; $\\mathsf X$; $\\eta$; $\\mathrm{tail}_t(y)$; $t_0(y)$; $\\mathrm{IH}(n,y)$; $\\mathrm{POS}_0, \\mathrm{POS}^\\prime_0, \\mathrm{POS}^{\\prime-}_0$; $\\mathrm{WIN}_0, \\mathrm{WIN}^{\\mathrm V}_0$; $\\mathcal E, \\mathcal E^+, \\mathcal E^\\ast(y)$; $\\mathfrak e_m$; $\\mathfrak z_m(d)$; $\\mathrm{top}, \\mathrm{top}_\\pi$; $q_{\\max}(Y)$; $\\mathrm{Lc}(Y,r)$; $\\Lambda_{\\mathrm w}(Y)$; $\\mathsf w_0$; $\\mathsf C_E$; $\\mathfrak g(\\theta)$; $\\mathrm{EB}(w)$; $b^\\circ_{n,\\ell}$",
-  "꼬리 창; 착지 창; 인증 구간; 꼬리 띠; 조립 범위; 덮개 칸; 셀; 덮개; 미달 수; 원천 항; 꼭대기 항; 꼭대기 이득; 안장점; 흡수; 착지; 포락선; 유한 인증, 꼬리 정리, 진입 지표, 진입 증가, 위반 쌍, 벌크 증가, 임계 창 잔여, 두 항 부등식; 이음 행; 기저량; 떠돌기, 떠돌기 한도; 방문 확률, 멈춤 확률; Gauss 체제, Airy 체제, 선도항, 주항"
+  "$(\\mathrm G)_d$; $A^{c}_{n,\\ell}$; $\\mathfrak a_n$; $\\mathfrak m(n)$; $r_0(n)$; $\\mathsf W, \\mathsf W^\\sharp$; $\\mathsf X$; $\\eta$; $\\mathrm{tail}_t(y)$; $t_0(y)$; $\\mathrm{IH}(n,y)$; $\\mathrm{POS}_0, \\mathrm{POS}^\\prime_0, \\mathrm{POS}^{\\prime-}_0$; $\\mathrm{WIN}_0, \\mathrm{WIN}^{\\mathrm V}_0$; $\\mathcal E, \\mathcal E^+, \\mathcal E^\\ast(y)$; $\\mathfrak e_m$; $\\mathfrak z_m(d)$; $\\mathrm{top}, \\mathrm{top}_\\pi$; $q_{\\max}(Y)$; $\\mathrm{Lc}(Y,r)$; $\\Lambda_{\\mathrm w}(Y)$; $\\mathsf w_0$; $\\mathsf C_E$; $\\mathfrak g(\\theta)$; $\\mathrm{EB}(w)$; $b^\\circ_{n,\\ell}$; $\\mathsf z_{1/2}, \\mathsf z_{-1/2}, \\mathsf z_{3/2}$; $\\mathrm{rb}_m$",
+  "꼬리 창; 착지 창; 인증 구간; 꼬리 띠; 조립 범위; 덮개 칸; 셀; 덮개; 원천별 비교 항; 미달 수; 원천 항; 꼭대기 항; 꼭대기 이득; 안장점; 흡수; 착지; 포락선; 유한 인증, 꼬리 정리, 진입 지표, 진입 증가, 위반 쌍, 벌크 증가, 임계 창 잔여, 두 항 부등식; 이음 행; 기저량; 떠돌기, 떠돌기 한도; 방문 확률, 멈춤 확률; Gauss 체제, Airy 체제, 선도항, 주항; h-변환; 막히지 않은 수준 개수; 타일, 타일 합, 타일 측도, 배치, 유색, 무색; 생일 법칙, 기울인 생일 법칙, 기울인 생일 평균; 진입 위치; $r$ 칸; 상자 모임; 절단 표현, 반직선 꼴; 정규화 범함수; 첫째 보정, 둘째 보정"
  ],
  "free_letters": [
-  "라틴 소문자: $h$, $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $H$, $I$, $J$, $K$, $L$, $U$, $Z$. 그리스: $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Delta$, $\\Theta$, $\\Xi$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak f$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf Y$, $\\mathsf Z$"
+  "라틴 소문자: $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $I$, $K$, $L$, $U$. 그리스: $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Theta$, $\\Xi$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal A$, $\\mathcal B$, $\\mathcal C$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal K$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak f$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf x$, $\\mathsf y$, $\\mathsf A$, $\\mathsf B$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf Y$, $\\mathsf Z$"
  ],
  "refs": [
   "{{2:J-egf}}",

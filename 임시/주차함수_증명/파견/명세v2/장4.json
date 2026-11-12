@@ -253,6 +253,39 @@
       "{{4:gauss-coeff}}"
      ],
      "special": "첫 판 4.3절의 전사 문단에서 재조직."
+    },
+    {
+     "label": "{{4:borel-tail-arc}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [
+      {
+       "record": "r37c204b",
+       "file": "exposition.md",
+       "sec": null,
+       "note": "확인 요: 절 미상"
+      }
+     ],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{4:borel-tail-arc}}`(Borel 꼬리의 전개와 호 위 상계; 5.6이 쓴다; 세션 결정 46)로 진술, 상쇄 분해·실수 비교·조립·정수 인증(부록 D) | 첫 판 4.3, [r37c204b] 증거 문서, [rce3dc75] | 옮김+작성자 증명+재조직"
+    },
+    {
+     "label": "{{4:gauss-contraction}}",
+     "kind": "",
+     "name": "",
+     "record_name": "",
+     "process": "전개",
+     "class": "",
+     "sources": [],
+     "first_edition": null,
+     "inputs": [],
+     "special": "",
+     "cell": "{{4:gauss-contraction}}`(Hermite 비의 수축 부등식과 Hermite 수의 하계; 7.4의 hermite-nu가 쓴다; 세션 결정 45)·`"
     }
    ],
    "intro": "`{{4:e-integral}}`은 기록이 「적분 인자 해」라고만 적은 단계를 이 글이 증명하는 자리다. $F_*$·$K$·$Q_k$의 정의에서 ODE를 적분인자로 풀어 (R7)(R8)을 유도하고 그 문장 앞에 `(작성자 판단)`을 붙인다. 16≤n≤20000의 정수 구간 인증은 부록 D(`{{D:central-gap-integer}}`)."
@@ -311,11 +344,11 @@
   }
  ],
  "defines": [
-  "$\\mathsf P_L, \\mathsf P_X, \\mathsf P_C, \\mathsf P_R$; $\\mathsf{LH}(n), \\mathsf{LH}^+(n)$; $\\mathsf Q, \\mathsf Q_L, \\mathsf Q_R, \\mathsf Q(n,\\ell)$; $\\Gamma_d(\\ell;n)$; $\\Gamma^{\\pm}$; $\\mathcal S_{n,k}$; $\\mathsf S_R$; $(\\mathrm G)_d$; $\\mathcal A_{k,n}$; $\\Phi, \\Phi^{\\mathrm{aux}}$; $\\mathcal M_r$; $\\mathcal I_k$; $\\mathrm{He}_j$; $\\mathcal D(\\beta)$; $\\mathrm{Bor}^{\\mathrm{tail}}_k(s)$; $V(x)$; $\\mathsf a_j$; $\\mathsf n_k, \\mathsf n_\\infty$; $\\mathsf g_k$; $\\mathsf b_D, \\mathsf b_J$",
-  "원천별 비교 항; 네 위치쌍 명제; 연쇄; 틈; 조립; 함의, 동치; 위치쌍, 감소 수준, 증가 수준; 횡단, 왼쪽 내부, 오른쪽 내부, 중앙 틈; 감소 뒤의 로그오목성; 경계 응답; Green 표현, Lagrange 계수, 윤곽 적분, 수직선, 호, 위상, 정수 인증, 구간 산술 인증"
+  "$\\mathsf P_L, \\mathsf P_X, \\mathsf P_C, \\mathsf P_R$; $\\mathsf{LH}(n), \\mathsf{LH}^+(n)$; $\\mathsf Q, \\mathsf Q_L, \\mathsf Q_R, \\mathsf Q(n,\\ell)$; $\\Gamma_d(\\ell;n)$; $\\Gamma^{\\pm}$; $\\mathcal S_{n,k}$; $\\mathsf S_R$; $\\mathcal A_{k,n}$; $\\Phi, \\Phi^{\\mathrm{aux}}$; $\\mathcal M_r$; $\\mathcal I_k$; $\\mathrm{He}_j$; $\\mathcal D(\\beta)$; $\\mathrm{Bor}^{\\mathrm{tail}}_k(s)$; $V(x)$; $\\mathsf a_j$; $\\mathsf n_k, \\mathsf n_\\infty$; $\\mathsf g_k$; $\\mathsf b_D, \\mathsf b_J$",
+  "네 위치쌍 명제; 연쇄; 틈; 조립; 함의, 동치; 위치쌍, 감소 수준, 증가 수준; 횡단, 왼쪽 내부, 오른쪽 내부, 중앙 틈; 감소 뒤의 로그오목성; 경계 응답; Green 표현, Lagrange 계수, 윤곽 적분, 수직선, 호, 위상, 정수 인증, 구간 산술 인증"
  ],
  "free_letters": [
-  "라틴 소문자: $c$, $f$, $g$, $h$, $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $H$, $I$, $K$, $L$, $R$, $S$, $U$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\delta$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\pi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Delta$, $\\Theta$, $\\Lambda$, $\\Pi$, $\\Sigma$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal B$, $\\mathcal C$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
+  "라틴 소문자: $f$, $g$, $w$, $z$. 라틴 대문자: $C$, $D$, $F$, $G$, $H$, $I$, $K$, $L$, $R$, $S$, $U$, $Z$. 그리스: $\\beta$, $\\gamma$, $\\epsilon$, $\\varepsilon$, $\\eta$, $\\theta$, $\\vartheta$, $\\iota$, $\\kappa$, $\\varkappa$, $\\mu$, $\\xi$, $\\pi$, $\\rho$, $\\varrho$, $\\sigma$, $\\varsigma$, $\\tau$, $\\upsilon$, $\\phi$, $\\varphi$, $\\chi$, $\\psi$, $\\omega$, $\\Theta$, $\\Lambda$, $\\Pi$, $\\Upsilon$, $\\Psi$, $\\Omega$. 필기체: $\\mathcal B$, $\\mathcal C$, $\\mathcal E$, $\\mathcal F$, $\\mathcal G$, $\\mathcal H$, $\\mathcal J$, $\\mathcal L$, $\\mathcal N$, $\\mathcal O$, $\\mathcal P$, $\\mathcal Q$, $\\mathcal R$, $\\mathcal T$, $\\mathcal U$, $\\mathcal V$, $\\mathcal W$, $\\mathcal X$, $\\mathcal Y$, $\\mathcal Z$. 프락투어: $\\mathfrak a$, $\\mathfrak b$, $\\mathfrak c$, $\\mathfrak d$, $\\mathfrak e$, $\\mathfrak f$, $\\mathfrak g$, $\\mathfrak h$, $\\mathfrak i$, $\\mathfrak j$, $\\mathfrak k$, $\\mathfrak l$, $\\mathfrak m$, $\\mathfrak n$, $\\mathfrak o$, $\\mathfrak p$, $\\mathfrak q$, $\\mathfrak r$, $\\mathfrak s$, $\\mathfrak t$, $\\mathfrak u$, $\\mathfrak v$, $\\mathfrak w$, $\\mathfrak x$, $\\mathfrak y$, $\\mathfrak z$, $\\mathfrak A$, $\\mathfrak B$, $\\mathfrak C$, $\\mathfrak D$, $\\mathfrak E$, $\\mathfrak F$, $\\mathfrak G$, $\\mathfrak H$, $\\mathfrak I$, $\\mathfrak J$, $\\mathfrak K$, $\\mathfrak L$, $\\mathfrak M$, $\\mathfrak N$, $\\mathfrak O$, $\\mathfrak P$, $\\mathfrak Q$, $\\mathfrak R$, $\\mathfrak S$, $\\mathfrak T$, $\\mathfrak U$, $\\mathfrak V$, $\\mathfrak W$, $\\mathfrak X$, $\\mathfrak Y$, $\\mathfrak Z$. 산세리프(명명 상수에만): $\\mathsf c$, $\\mathsf d$, $\\mathsf e$, $\\mathsf f$, $\\mathsf h$, $\\mathsf i$, $\\mathsf j$, $\\mathsf k$, $\\mathsf l$, $\\mathsf m$, $\\mathsf o$, $\\mathsf p$, $\\mathsf q$, $\\mathsf r$, $\\mathsf s$, $\\mathsf t$, $\\mathsf u$, $\\mathsf v$, $\\mathsf w$, $\\mathsf x$, $\\mathsf y$, $\\mathsf z$, $\\mathsf A$, $\\mathsf B$, $\\mathsf C$, $\\mathsf D$, $\\mathsf E$, $\\mathsf F$, $\\mathsf G$, $\\mathsf H$, $\\mathsf I$, $\\mathsf J$, $\\mathsf K$, $\\mathsf L$, $\\mathsf M$, $\\mathsf N$, $\\mathsf O$, $\\mathsf R$, $\\mathsf T$, $\\mathsf U$, $\\mathsf V$, $\\mathsf W$, $\\mathsf X$, $\\mathsf Y$, $\\mathsf Z$"
  ],
  "refs": [
   "{{2:old-2-26}}",

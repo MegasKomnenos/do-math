@@ -60,6 +60,42 @@ def sec_sort_key(sec):
     return (int(m.group(1)), int(m.group(2) or 0))
 
 
+MEMO = re.compile(r"첫 판|세션|집필|2차 대조|회수|지시|초안|결정 \d|파견|재대조|확인 요|판정 요|조립본|기록대조|설계 에이전트|집필자|씀 — ")
+
+
+def clean(text):
+    """사전의 뜻·비고 열에서 작업 메모(첫 판 참조, 세션 결정, 대조·회수 기록)를 걷어 낸다. 괄호 단위와 쌍반점 조각 단위로."""
+    # 균형 잡힌 괄호 단위로 훑어, 작업 메모가 든 괄호(중첩 포함)를 통째로 지운다.
+    out, i, n = [], 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "(":
+            depth, j = 0, i
+            while j < n:
+                if text[j] == "(":
+                    depth += 1
+                elif text[j] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            seg = text[i:j + 1] if j < n else text[i:]
+            if MEMO.search(seg):
+                i = j + 1
+                continue
+            out.append(seg)
+            i = j + 1
+            continue
+        out.append(ch)
+        i += 1
+    t = "".join(out)
+    parts = [p for p in re.split(r"(?<!\$);\s*", t) if p.strip()]
+    parts = [p for p in parts if not MEMO.search(p)] or parts[:1]
+    t = "; ".join(p.strip() for p in parts)
+    t = re.sub(r"\s+", " ", t).replace(" ,", ",").replace("( ", "(").strip(" ;,")
+    return t
+
+
 # ------------------------------------------------------------------ 부록 A
 def build_A(ledger, body, prune=False):
     out = ["## 부록 A. 기호표", "",
@@ -68,7 +104,7 @@ def build_A(ledger, body, prune=False):
     rows11 = [r for r in table_rows(s11) if len(r) >= 4 and r[0] != "글자"]
     out += ["### 변수와 지표 글자", "", "| 기호 | 뜻 | 처음 정의된 절 | 기록의 글자 |", "|---|---|---|---|"]
     for r in rows11:
-        out.append(f"| {r[0]} | {r[1]} | 1.5 | — |")
+        out.append(f"| {r[0]} | {clean(r[1])} | 1.5 | — |")
     out.append("")
     s12 = section(ledger, "### 1.2 전역 기호", ["### 1.3"])
     rows12 = [r for r in table_rows(s12) if len(r) >= 7 and not r[0].startswith("글자")]
@@ -93,8 +129,8 @@ def build_A(ledger, body, prune=False):
     for ch in sorted(by_ch):
         out += [f"### {ch}장에서 정의하는 기호", "", "| 기호 | 뜻 | 처음 정의된 절 | 기록의 글자 |", "|---|---|---|---|"]
         for _, glyph, meaning, sec, rec in sorted(by_ch[ch], key=lambda t: t[0]):
-            rec_cell = rec if rec and rec != "—" else "—"
-            out.append(f"| {glyph} | {meaning} | {sec} | {rec_cell} |")
+            rec_cell = clean(rec) if rec and rec != "—" else "—"
+            out.append(f"| {glyph} | {clean(meaning)} | {sec} | {rec_cell or '—'} |")
         out.append("")
     return "\n".join(out) + "\n", missing
 
@@ -135,7 +171,7 @@ def build_B(texts, base, checked):
         rows.append((meta[0], rid, meta[1], meta[2], meta[3]))
     rows.sort()
     out = ["## 부록 B. 인용한 기록", "",
-           f"본문과 부록 D가 대괄호로 인용한 연구 기록을 기록의 시각 순으로 적는다. 식별자는 기록 폴더 이름의 앞 여덟 글자, 곧 `r`과 그 뒤의 16진수 일곱 자리다. 기록은 이 글과 함께 보관되는 연구 인스턴스의 `knowledge/records/` 아래 폴더이며, 각 폴더의 `exposition.md`가 본문, `record.json`이 주장 목록, `review/`가 독립 검토다. "
+           f"본문과 부록(계산 증거 자료, 기호표의 「기록의 글자」, 용어 대응표)이 대괄호로 인용한 연구 기록을 기록의 시각 순으로 적는다. 식별자는 기록 폴더 이름의 앞 여덟 글자, 곧 `r`과 그 뒤의 16진수 일곱 자리다. 기록은 이 글과 함께 보관되는 연구 인스턴스의 `knowledge/records/` 아래 폴더이며, 각 폴더의 `exposition.md`가 본문, `record.json`이 주장 목록, `review/`가 독립 검토다. "
            f"이 글의 기준은 지식 저장소의 판 {base}이고, 판 {checked}(2026-11-12)까지 아래 기록 어느 것에도 우려나 철회가 없음을 확인했다.", "",
            "| 식별자 | 기록의 시각 | 내용 | 폴더 |", "|---|---|---|---|"]
     for _, rid, when, title, d in rows:
@@ -147,18 +183,19 @@ def build_B(texts, base, checked):
 # ------------------------------------------------------------------ 부록 C
 def build_C(ledger):
     out = ["## 부록 C. 용어 대응표", "",
-           "이 글의 용어가 연구 기록이나 첫 판의 용어와 다른 자리, 영어를 함께 적은 낱말, 기록이 결과에 붙인 이름과 이 글의 번호, 그리고 기록의 글자와 이 글의 글자의 대응을 적는다. 본문은 이 글의 용어와 번호만 쓴다.", ""]
+           "이 글의 용어가 연구 기록의 용어와 다른 자리, 영어를 함께 적은 낱말, 기록이 결과에 붙인 이름과 이 글의 번호, 그리고 기록의 글자와 이 글의 글자의 대응을 적는다. 본문은 이 글의 용어와 번호만 쓴다.", ""]
     # 3절: 낱말
     s3 = section(ledger, "## 3. 낱말 사전", ["\n## 4."])
     rows3 = [r for r in table_rows(s3) if len(r) >= 4 and r[0] != "낱말"]
-    out += ["### 낱말: 이 글의 용어와 기록·첫 판의 용어", "", "| 이 글의 용어 | 기록·첫 판의 용어 | 영어 | 처음 정의된 절 |", "|---|---|---|---|"]
+    out += ["### 낱말: 이 글의 용어와 기록의 용어", "", "| 이 글의 용어 | 기록의 용어 | 처음 정의된 절 |", "|---|---|---|"]
     for r in rows3:
         word, meaning, sec, old = r[0], r[1], r[2], r[3]
-        eng = ", ".join(re.findall(r"\(([A-Za-z][A-Za-z\- ]+)\)", meaning + " " + word))
-        old_c = old.strip()
+        eng = ", ".join(re.findall(r"\(([A-Za-z][A-Za-z\- ;,]+)\)", meaning + " " + word))
+        old_c = clean(old.strip())
         if old_c in ("같음", "", "—") and not eng:
             continue
-        out.append(f"| {word} | {old_c if old_c not in ('같음', '') else '같음'} | {eng or '—'} | {sec} |")
+        word_c = word if not eng or eng in word else f"{word}({eng})"
+        out.append(f"| {word_c} | {old_c if old_c not in ('같음', '') else '같음'} | {sec} |")
     out.append("")
     # 4절: 기록의 결과 이름 ↔ 라벨
     s4 = section(ledger, "## 4. 이름 사전", ["\n## 5."])
@@ -166,7 +203,7 @@ def build_C(ledger):
     out += ["### 기록이 결과에 붙인 이름과 이 글의 번호", "", "| 기록의 이름 | 이 글의 진술 | 이 글의 이름 |", "|---|---|---|"]
     for r in rows4:
         num, kind, name, recname, sec, label = r[:6]
-        if not recname.strip() or label.strip() in ("—", ""):
+        if not recname.strip() or label.strip() in ("—", "") or "{{" not in label or label.strip() == "{{}}":
             continue
         out.append(f"| {recname} | {kind} {label} | {name} |")
     out.append("")
@@ -175,7 +212,7 @@ def build_C(ledger):
     rows7 = [r for r in table_rows(s7) if len(r) >= 4 and r[0] != "이 글의 글자"]
     out += ["### 기록의 글자와 이 글의 글자", "", "| 이 글의 글자 | 기록 | 기록의 글자 | 첨자·인수의 이동 |", "|---|---|---|---|"]
     for r in rows7:
-        out.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} |")
+        out.append(f"| {r[0]} | {r[1]} | {r[2]} | {clean(r[3]) or '—'} |")
     out.append("")
     return "\n".join(out) + "\n"
 
@@ -191,8 +228,12 @@ def main():
     texts = chapter_texts()
     body = "\n".join(texts.values())
     A, missing_A = build_A(ledger, body, prune=args.prune)
-    B, rows_B, missing_B = build_B(texts, args.base, args.checked)
     C = build_C(ledger)
+    # 부록 B는 본문·부록 D와 함께 부록 A·C(기록의 글자 대응)가 인용하는 식별자도 덮는다(불변식 2: 글 전체의 식별자 집합 = 부록 B).
+    texts_all = dict(texts)
+    texts_all["부록A.md"] = A
+    texts_all["부록C.md"] = C
+    B, rows_B, missing_B = build_B(texts_all, args.base, args.checked)
     print(f"부록 A: 본문에 바탕 토큰이 보이지 않는 1.2 행 {len(missing_A)}개" + (": " + "; ".join(missing_A[:40]) if missing_A else ""))
     print(f"부록 B: 식별자 {len(rows_B)}개" + (f", 폴더 없음 {missing_B}" if missing_B else ""))
     if args.dry:
