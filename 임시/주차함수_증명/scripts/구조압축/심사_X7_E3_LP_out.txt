@@ -1,0 +1,8 @@
+k=6668: v(k)=0.76550, Ups_hat=0.13524
+nu= 103: rhomin*k=0.0228  Y29=-0.11469  Y36(LP)=-0.04363  Y_unified=-0.01480 (phi*=-0.1352)  LP-29 gap=+0.07106  unified-LP=+0.02883  U(k+1)rhomin=0.00309  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.00561
+nu= 120: rhomin*k=0.0265  Y29=-0.11135  Y36(LP)=-0.04335  Y_unified=-0.01471 (phi*=-0.1352)  LP-29 gap=+0.06800  unified-LP=+0.02864  U(k+1)rhomin=0.00359  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.00576
+nu= 150: rhomin*k=0.0330  Y29=-0.10551  Y36(LP)=-0.04242  Y_unified=-0.01402 (phi*=-0.1352)  LP-29 gap=+0.06309  unified-LP=+0.02840  U(k+1)rhomin=0.00446  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.00646
+nu= 200: rhomin*k=0.0437  Y29=-0.09590  Y36(LP)=-0.03993  Y_unified=-0.01173 (phi*=-0.1352)  LP-29 gap=+0.05597  unified-LP=+0.02820  U(k+1)rhomin=0.00591  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.00860
+nu= 300: rhomin*k=0.0646  Y29=-0.07707  Y36(LP)=-0.03257  Y_unified=-0.00421 (phi*=-0.1352)  LP-29 gap=+0.04451  unified-LP=+0.02836  U(k+1)rhomin=0.00873  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.01523
+nu= 500: rhomin*k=0.1046  Y29=-0.04100  Y36(LP)=-0.01310  Y_unified=+0.01693 (phi*=-0.1352)  LP-29 gap=+0.02791  unified-LP=+0.03003  U(k+1)rhomin=0.01415  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.03329
+nu= 742: rhomin*k=0.1502  Y29=+0.00004  Y36(LP)=+0.01354  Y_unified=+0.04679 (phi*=-0.1352)  LP-29 gap=+0.01350  unified-LP=+0.03325  U(k+1)rhomin=0.02031  F^LP=min(0,Y36)+(1-1/k)^nu/20=+0.04473

@@ -1,0 +1,4 @@
+k=10000: max_q<=101 of k*UnionBound/q^1.5 = 0.83704 at q=2  (needs <= 0.5 for F4's boxed claim via this route)
+k=100000: max_q<=101 of k*UnionBound/q^1.5 = 0.83716 at q=2  (needs <= 0.5 for F4's boxed claim via this route)
+limit k->inf, q=50: sum_(j<q) (q-j)Ren(j)/q^1.5 = 0.58179
+limit k->inf, q=101: sum_(j<q) (q-j)Ren(j)/q^1.5 = 0.56643

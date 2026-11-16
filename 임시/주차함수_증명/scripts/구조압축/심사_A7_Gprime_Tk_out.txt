@@ -1,0 +1,17 @@
+columns read: 1500, range 501..2000, missing: []
+all ok flags: True; nV_exact all: True
+T_k := max(n0bis, n^psi_k).  NE_new equals T_k in all columns: True
+T_k == NE_rec (record) in all columns: True
+501-840: max T_k = 19990 (k=840); all <= 20000: True
+T_841 = 20025, T_2000 = 71871; n0bis(841)=17831, nV(841)=20025
+T_k nondecreasing in k: True
+T_k <= ceil(0.836 k^1.5) all: True
+first k with T_k > 20000: 841
+841-2000: n_M(k) - T_k in [482, 1161]; n_M(841)=20507, n_M(2000)=73032; n_M > T_k in all: True
+moment-cert positions, first range 501-840 (2k+1..floor(13k^2/100)): 19840702
+moment-cert positions, second range 841-2000 current (10001..n_M-1): 40638833
+  G' direct, rows 20001..T_k-1: 28086453;  rows 10001..T_k-1: 39686453
+  saved vs current total 60479535: with 20001 start 32393082; with 10001 start 20793082
+min over 501-840 of psi_G(20001) with G = upper end of Gamma*P^U: 4.5676123e-7 at k=840; all positive: True
+min stored lower end of psi_G(n^psi_k) over 1500 columns: 2.0675e-10 at k=912
+k=841: psi_G(20001) = -9.71582e-7, psi_G(20025) = 6.5548e-9, psi_G(20024) = -3.42479e-8

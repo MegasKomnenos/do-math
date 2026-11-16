@@ -1,0 +1,21 @@
+1. eps_N = g(N+1)-g(k) >= g(2k)-g(k) (g increasing) vs claimed 3/(4k)-17/(24k^2):
+  k=301: g(2k)-g(k)=0.002484814639  claimed lb=0.00248387619  ok=True;  1-e^-eps=0.002481730042  claimed hz lb=0.002471459108 ok=True; >=1/(2k): True
+  k=2001: g(2k)-g(k)=0.0003746565635  claimed lb=0.0003746356873  ok=True;  1-e^-eps=0.0003745863885  claimed hz lb=0.0003743547184 ok=True; >=1/(2k): True
+  k=3131: g(2k)-g(k)=0.0002394763447  claimed lb=0.0002394678274  ok=True;  1-e^-eps=0.0002394476725  claimed hz lb=0.0002393530685 ok=True; >=1/(2k): True
+  k=10000: g(2k)-g(k)=7.499375051e-5  claimed lb=7.499291667e-5  ok=True;  1-e^-eps=7.499093855e-5  claimed hz lb=7.498166667e-5 ok=True; >=1/(2k): True
+  k=1000000: g(2k)-g(k)=7.49999375e-7  claimed lb=7.499992917e-7  ok=True;  1-e^-eps=7.499990938e-7  claimed hz lb=7.499981667e-7 ok=True; >=1/(2k): True
+2. current proof uses hz >= kappa_N/(N+1) >= 0.14/n; the new bound 1/(2k) vs 0.14/n at n=3k+1 and n=n_PD:
+  k=2001: 1/(2k)=0.000249875; 0.14/n at n=3k+1: 2.33178e-5, at n=n_PD=27235: 5.14044e-6  (ratio new/old at n_PD: 48.61)
+  k=3131: 1/(2k)=0.000159693; 0.14/n at n=3k+1: 1.49031e-5, at n=n_PD=48957: 2.85965e-6  (ratio new/old at n_PD: 55.84)
+  k=10000: 1/(2k)=5.0e-5; 0.14/n at n=3k+1: 4.66651e-6, at n=n_PD=225474: 6.20914e-7  (ratio new/old at n_PD: 80.53)
+  k=100000: 1/(2k)=5.0e-6; 0.14/n at n=3k+1: 4.66665e-7, at n=n_PD=4741652: 2.95256e-8  (ratio new/old at n_PD: 169.3)
+3. bracket = sum_{U<=300}(rw-1) hz_k(n-1-U) - 1 with hz >= 1/(2k):  min over n>=3k+1 is at n=3k+1 (factor (1-k/n)^2 increasing in n):
+  k=301: new bracket at n=3k+1: 7.70125  (F3's sqrt(k)/2-301/(2k)-1 = 7.17468);  >20: False;  current G_k(3k+1)-1 = -0.188781
+  k=841: new bracket at n=3k+1: 14.174  (F3's sqrt(k)/2-301/(2k)-1 = 13.321);  >20: False;  current G_k(3k+1)-1 = 0.41568
+  k=2001: new bracket at n=3k+1: 22.5932  (F3's sqrt(k)/2-301/(2k)-1 = 21.2911);  >20: True;  current G_k(3k+1)-1 = 1.20166
+  k=3131: new bracket at n=3k+1: 28.554  (F3's sqrt(k)/2-301/(2k)-1 = 26.9296);  >20: True;  current G_k(3k+1)-1 = 1.75808
+  k=6667: new bracket at n=3k+1: 42.1675  (F3's sqrt(k)/2-301/(2k)-1 = 39.8033);  >20: True;  current G_k(3k+1)-1 = 3.02877
+  k=10000: new bracket at n=3k+1: 51.8782  (F3's sqrt(k)/2-301/(2k)-1 = 48.9849);  >20: True;  current G_k(3k+1)-1 = 3.93514
+  conditions: n-1-U >= k and n-U >= 2k for all U<=300, n>=3k+1  <=>  k >= 300 (3k+1-300 >= 2k).  U_0=300 <= k-1 needs k>=301.
+4. sanity: min_n G_3131(n) over [2k+1, n_PD-1] = 1.0439 (결정 128 기록의 1.044와 견줌); n_PD(3131)=48957
+5. smallest k>=301 with new bracket>0 at n=3k+1: 301

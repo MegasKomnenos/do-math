@@ -1,0 +1,4 @@
+cases (n<=7, 2<=k<=n): 21
+(a) Kink_{n,k} == J_n(k): violations = 0
+(b) Conv - Kink == d_{n,k}: violations = 0
+(c) fiber sign formula per sigma (2.14 == 7.2 derivation): violations = 0

@@ -1,0 +1,398 @@
+1.1 정의 1:old-1-1 주차함수 장1.md:9 proof_lines 0
+1.2 명제 1:old-1-2  장1.md:17 proof_lines 9
+1.3 정의 1:old-1-3 최대 변위 장1.md:35 proof_lines 0
+1.4 정의 1:old-1-4 단봉성 장1.md:75 proof_lines 0
+1.5 정리 1:main-theorem 주 정리 장1.md:93 proof_lines 0
+2.1 정의 2:old-2-1 결과 순열과 섬유 장2.md:15 proof_lines 0
+2.2 정의 2:old-2-2 선호 용량 장2.md:21 proof_lines 0
+2.3 정리 2:old-2-3 섬유의 곱 구조 장2.md:29 proof_lines 5
+2.4 따름정리 2:old-2-4  장2.md:43 proof_lines 1
+2.5 정리 2:old-2-5 비단봉 섬유 장2.md:58 proof_lines 3
+2.6 정리 2:old-2-6 마지막 차 재귀 장2.md:74 proof_lines 3
+2.7 명제 2:old-2-7 균등 분해 장2.md:86 proof_lines 5
+2.8 명제 2:old-2-8 역수 생성함수 장2.md:113 proof_lines 1
+2.9 정의 2:old-2-9 뿌리 숲과 국소 역전 수 장2.md:127 proof_lines 0
+2.10 정리 2:old-2-10 숲 개수의 일치 장2.md:131 proof_lines 9
+2.11 정리 2:old-2-11 모양 조건부 독립성 장2.md:151 proof_lines 1
+2.12 정의 2:old-2-21 Borel 질량 장2.md:174 proof_lines 0
+2.13 정의 2:old-2-12 가장 큰 나무 사슬 장2.md:196 proof_lines 0
+2.14 정리 2:old-2-13 가장 큰 나무 사슬 공식; 기록 [r39ea75d]의 heavy-path-recurrenc 장2.md:200 proof_lines 7
+2.15 보조정리 2:old-2-14 섬유의 부호식; 기록 [r88bed8a]의 식 (1.1) 장2.md:227 proof_lines 3
+2.16 보조정리 2:old-2-15 용량 구간의 포갬 구조; 기록 [r88bed8a]의 보조정리 L 장2.md:243 proof_lines 1
+2.17 보조정리 2:old-2-16 톱니; 기록 [r88bed8a]의 보조정리 S 장2.md:251 proof_lines 1
+2.18 보조정리 2:old-2-17 용량 다중집합의 법칙; 기록 [r88bed8a]의 보조정리 D 장2.md:259 proof_lines 5
+2.19 보조정리 2:old-2-18 사슬 구성의 셈; 기록 [r88bed8a]의 보조정리 C 장2.md:269 proof_lines 1
+2.20 따름정리 2:old-2-19 사슬의 국소 극한; 기록 [r88bed8a]의 따름정리 C′ 장2.md:277 proof_lines 5
+2.21 명제 2:old-2-20 섬유는 거의 모두 단봉이 아니다; 기록 [r88bed8a]의 명제 F 장2.md:285 proof_lines 16
+2.22 정의 2:old-2-22 임계 볼츠만 법칙(critical Boltzmann law) 장2.md:308 proof_lines 0
+2.23 정의 2:old-2-24 생존 확률 장2.md:324 proof_lines 0
+2.24 정의 2:old-2-25 수준 질량 장2.md:340 proof_lines 0
+2.25 보조정리 2:old-2-26 함수 $g$의 성질 장2.md:350 proof_lines 9
+2.26 정의 2:old-2-27 동률과 막힘 장2.md:384 proof_lines 0
+2.27 정리 2:old-2-28 동률–막힘 항등식 장2.md:388 proof_lines 5
+2.28 따름정리 2:old-2-29  장2.md:409 proof_lines 1
+2.29 보조정리 2:old-2-30  장2.md:421 proof_lines 3
+2.30 보조정리 2:J-egf $J_n(z)$의 지수 생성함수 표현; 기록 [rba2ecf4]의 green-reconst 장2.md:439 proof_lines 23
+2.31 정리 2:old-2-31 크기 단조성과 대각선 단조성; 기록 [r79ee9e0]의 보조정리 Sh 장2.md:483 proof_lines 15
+2.32 보조정리 2:old-2-32 마지막 차 자리 법칙의 두 단조성; 기록 [r79ee9e0]의 보조정리 Πβ(i)와 Πn 장2.md:493 proof_lines 15
+2.33 보조정리 2:old-2-33 마지막 차 자리의 한 걸음 결합; 기록 [r79ee9e0]의 보조정리 R 장2.md:513 proof_lines 1
+2.34 따름정리 2:ratio-e 지수 생성함수 계수 비의 상계; 기록 [r60a6f55]의 식 (8) 장2.md:539 proof_lines 1
+2.35 보조정리 2:old-2-34 수준 방문 보존; 기록 [rae1f209]의 보조정리 C 장2.md:549 proof_lines 1
+2.36 보조정리 2:old-2-35 나무를 고정한 행 차분 장2.md:577 proof_lines 1
+2.37 보조정리 2:old-2-36 문턱 부분나무의 기대 수 장2.md:595 proof_lines 1
+2.38 보조정리 2:old-2-37 갱신 방문 핵과 갱신 항등식 장2.md:609 proof_lines 5
+2.39 보조정리 2:zeta-constants 세 제타 상수의 구간 장2.md:633 proof_lines 0
+2.40 정리 2:old-2-38 문턱 부분나무로 잰 나무 곡률; 기록 [r4868e30]의 c-threshold-subtr 장2.md:637 proof_lines 17
+2.41 따름정리 2:old-2-39 머리 합의 안쪽 층 장2.md:673 proof_lines 1
+2.42 보조정리 2:b-top 행의 마지막 항 장2.md:705 proof_lines 1
+2.43 정리 2:old-2-40 다섯 몫 분해 장2.md:719 proof_lines 5
+2.44 명제 2:old-2-41 쌍 항의 정수 꼴; 기록 [rae1f209]의 보조정리 2 장2.md:742 proof_lines 1
+2.45 정의 2:old-2-43 Borel 갱신 집합 장2.md:754 proof_lines 0
+2.46 명제 2:old-2-44 갱신 집합의 기대 크기 장2.md:760 proof_lines 1
+2.47 보조정리 2:old-2-45 무거운 사슬의 수준 방문 확률; 기록 [re71a735]의 보조정리 3 장2.md:768 proof_lines 7
+2.48 보조정리 2:old-2-46 갱신 다리; 기록 [re71a735]의 보조정리 B 장2.md:788 proof_lines 5
+2.49 정리 2:chain-expansion 지정 사슬의 쌍 공식과 사슬 전개; 기록 [r42d9a17]의 식 (7)–(11) 장2.md:810 proof_lines 15
+2.50 보조정리 2:convex-bonferroni Bonferroni 잔차의 볼록성; 기록 [r42d9a17]의 convex-bonferro 장2.md:861 proof_lines 7
+2.51 정리 2:moving-tail 이동 꼬리의 균일 추정; 기록 [r42d9a17]의 uniform-moving-tail 장2.md:873 proof_lines 31
+2.52 보조정리 2:chain-normalization 사슬 가중치의 정규화와 그 상하계; 기록 [r1aa0be6]의 chain-normaliza 장2.md:943 proof_lines 13
+3.1 명제 3:old-3-1 해싱 모형과의 대응 장3.md:25 proof_lines 1
+3.2 명제 3:old-3-2 곱 표현 장3.md:43 proof_lines 5
+3.3 정리 3:old-3-3 극한 밀도의 엄격 단봉성 장3.md:61 proof_lines 63
+3.4 정리 3:old-3-4 로그오목성의 실패 장3.md:135 proof_lines 33
+3.5 정리 3:old-3-5 누적 로그오목성의 실패 장3.md:177 proof_lines 0
+3.6 정리 3:old-3-6 봉우리의 위치 장3.md:187 proof_lines 71
+3.7 따름정리 3:peak-asymptotics 봉우리 위치의 점근식 장3.md:265 proof_lines 11
+4.1 정의 4:old-4-1 네 위치쌍 명제 장4.md:19 proof_lines 0
+4.2 보조정리 4:old-4-2 분할의 정확성; 기록 [rce3dc75]의 보조정리 1.1 장4.md:29 proof_lines 1
+4.3 정의 4:old-4-3 감소 뒤의 로그오목성 장4.md:39 proof_lines 0
+4.4 정리 4:old-4-4 $\mathsf Q$는 $\mathsf P$를 함의한다 장4.md:43 proof_lines 7
+4.5 정리 4:old-4-5 중앙 틈; 기록 [rce3dc75]의 정리 8.1 장4.md:71 proof_lines 29
+4.6 보조정리 4:e-integral $e_n$의 적분 표현 장4.md:85 proof_lines 46
+4.7 명제 4:old-4-6 $J$의 보조 분해; 기록 [rce3dc75]의 명제 3.1 장4.md:179 proof_lines 9
+4.8 보조정리 4:gauss-contraction Hermite 비의 수축 부등식과 Hermite 수의 하계; 기록 [rce3dc75]의 보 장4.md:215 proof_lines 43
+4.9 보조정리 4:gauss-coeff Gauss형 계수의 상하계; 기록 [rce3dc75]의 보조정리 H 장4.md:276 proof_lines 47
+4.10 정리 4:old-4-7 실수 비교; 기록 [rce3dc75]의 정리 1 장4.md:340 proof_lines 45
+4.11 따름정리 4:gauss-coeff-numeric 실수 비교의 수치 귀결 장4.md:394 proof_lines 5
+4.12 보조정리 4:borel-tail-arc Borel 꼬리의 전개와 호 위 상계; 기록 [rce3dc75]의 보조정리 V의 (V6)과 장4.md:404 proof_lines 9
+4.13 보조정리 4:correction-contour 두 보정의 윤곽 적분 표현 장4.md:428 proof_lines 13
+4.14 보조정리 4:two-corrections 두 보정의 수직선 적분; 기록 [rce3dc75]의 보조정리 V 장4.md:467 proof_lines 69
+4.15 정리 4:old-4-8 횡단과 왼쪽의 동치; 기록 [rce3dc75]의 명제 8.4와 기록 [r656206c]의  장4.md:563 proof_lines 7
+4.16 정리 4:old-4-9 감소 뒤의 로그오목성과 왼쪽의 동치 장4.md:575 proof_lines 1
+5.1 정리 5:old-5-1 모든 $n\le20000$의 단봉성 장5A.md:19 proof_lines 9
+5.2 정리 5:old-5-2 $n\le50000$의 오른쪽 절반 인증 장5A.md:31 proof_lines 8
+5.3 명제 5:witness-position-bound 작은 행의 증인 위치 상계; 기록 [r19de912]의 mode-formula-crossc 장5A.md:44 proof_lines 1
+5.4 보조정리 5:green-connection 경계 응답 다항식의 Green 연결; 기록 [rda45d0e]의 exact-green-co 장5A.md:60 proof_lines 23
+5.5 정리 5:source-rep 양의 원천 표현과 원천별 비교; 기록 [r708d99c]의 명제 C1, positive-s 장5A.md:106 proof_lines 26
+5.6 따름정리 5:SR-implies-QR 경계 응답 부등식에서 감소 뒤의 로그오목성으로; 기록 [r708d99c]의 따름정리 B2 장5A.md:159 proof_lines 5
+5.7 보조정리 5:cayley-ratio Cayley 비의 하계; 기록 [r708d99c]의 보조정리 D1 장5A.md:169 proof_lines 10
+5.8 정리 5:old-5-4 Newton 인증, 꼬리 좌표 170까지; 기록 [r708d99c]의 명제 D2 장5A.md:186 proof_lines 13
+5.9 보조정리 5:inverse-renewal 역수 형태와 타일 모형; 기록 [rbeae3a3]의 inverse-renewal-form 장5A.md:206 proof_lines 1
+5.10 보조정리 5:renewal-fkg 타일 측도의 양의 연관; 기록 [rbeae3a3]의 renewal-fkg, 보조정리 6.1 장5A.md:216 proof_lines 11
+5.11 정리 5:suff-cond 원천별 비교 항의 충분조건; 기록 [r5ddf8a8]의 endpoint-comparison 장5A.md:243 proof_lines 27
+5.12 보조정리 5:lemma-L 기울인 생일 평균의 해석적 하계와 환원; 기록 [r0dc57fa]의 보조정리 L과 주장 t 장5A.md:298 proof_lines 20
+5.13 정리 5:old-5-5 명시적 꼬리 T1; 기록 [r0dc57fa]의 정리 T1 장5A.md:339 proof_lines 7
+5.14 보조정리 5:kernel-C-bound 갱신 방문 핵의 상하계; 기록 [r7798355]의 matched-third-kernels 장5A.md:374 proof_lines 1
+5.15 보조정리 5:kernel-bounds 갱신 방문 핵의 좁은 계수 하계 (K1); 기록 [r690be93]의 kernel-boun 장5A.md:388 proof_lines 1
+5.16 보조정리 5:nf-ratio 정규화 인자 비의 로그; 기록 [r1aa0be6]의 third-group-compariso 장5A.md:396 proof_lines 1
+5.17 보조정리 5:marked-recursion 사슬 합의 양의 생성함수 재귀와 일차 표시; 기록 [r1aa0be6]의 renewal-bo 장5A.md:400 proof_lines 3
+5.18 보조정리 5:laurent-coeff Laurent 단항식의 계수와 중앙 이항계수의 상하계; 기록 [r690be93] §6의 계 장5A.md:417 proof_lines 3
+5.19 보조정리 5:kernel-crude 갱신 방문 핵의 거친 한 항 상계; 기록 [r13b0b8f] §6 장5A.md:429 proof_lines 1
+5.20 보조정리 5:first-moment-weight 사슬 가중치의 일차 보정; 기록 [r690be93]의 first-moment-weight, 장5A.md:437 proof_lines 13
+5.21 보조정리 5:parity-tail 홀짝 정규화와 꼬리; 기록 [r690be93]의 entry-increase-EI의 증명 구 장5A.md:458 proof_lines 3
+5.22 정리 5:old-5-7 진입 증가 EI; 기록 [r690be93]의 정리 EI 장5A.md:472 proof_lines 5
+5.23 정의 5:old-5-8 오른쪽 벌크 증가 W 장5A.md:486 proof_lines 0
+5.24 명제 5:old-5-9 $\mathsf Q_R\Rightarrow\mathsf P_R$ 장5A.md:490 proof_lines 1
+5.25 명제 5:old-5-10 $\mathsf W\Rightarrow\mathsf Q_R$ 장5A.md:494 proof_lines 1
+5.26 정리 5:old-5-11 $\mathsf P_R\Rightarrow\mathsf W$, 그리고 세 동치 장5A.md:498 proof_lines 9
+5.27 보조정리 5:weight-envelope 사슬 가중치의 계수별 포락선; 기록 [r13b0b8f]의 (3.1)–(3.5) 장5A.md:520 proof_lines 5
+5.28 보조정리 5:marked-chain-rec 둘째 차수까지의 표시 사슬 합의 생성함수 재귀; 기록 [r13b0b8f]의 (4.1)(4. 장5A.md:547 proof_lines 5
+5.29 보조정리 5:kernel-sandwich 갱신 방문 핵의 대수적 포락선과 Wallis 상하계; 기록 [r13b0b8f]의 식 (5. 장5A.md:570 proof_lines 5
+5.30 보조정리 5:omitted-tail 생략한 사슬 길이의 꼬리; 기록 [r13b0b8f] §6 장5A.md:586 proof_lines 3
+5.31 정리 5:old-5-12 꼬리 띠 A·A⁺; 기록 [r13b0b8f]의 정리 A·A⁺ 장5A.md:602 proof_lines 11
+5.32 보조정리 5:cover-edge 꼬리 정리 경계의 엄격 증가와 꼬리 띠가 덮는 $\mathsf W$의 부분; 기록 [r13 장5A.md:620 proof_lines 3
+5.33 보조정리 5:unit-circle 단위원 위의 두 피적분함수의 지배; 기록 [ra4c01fc]의 보조정리 A·B 장5A.md:638 proof_lines 3
+5.34 보조정리 5:cut-rep Borel 꼬리의 절단 표현과 반직선 꼴; 기록 [ra4c01fc]의 보조정리 S, 따름정 장5A.md:650 proof_lines 7
+5.35 보조정리 5:hat-normalization 두 정규화 범함수; 기록 [ra4c01fc]의 (6.1) 장5A.md:700 proof_lines 9
+5.36 정리 5:old-5-13 임계 창의 증가; 기록 [ra4c01fc]의 정리 D 장5A.md:738 proof_lines 7
+5.37 정의 5:old-5-14 임계 창 잔여 $\mathsf W^\sharp$ 장5A.md:754 proof_lines 0
+5.38 보조정리 5:old-5-15 $\mathsf W^\sharp\Leftrightarrow\mathsf W$; 기록 [ra 장5A.md:756 proof_lines 1
+5.39 정리 5:old-5-18 $\mathsf W^\sharp$와 $\mathsf W$ 장5B.md:9 proof_lines 1
+5.40 보조정리 5:old-5-19 열 재귀 장5B.md:29 proof_lines 1
+5.41 보조정리 5:old-5-20 핵의 단조·볼록성 장5B.md:38 proof_lines 1
+5.42 정의 5:old-5-21 이음 행 장5B.md:56 proof_lines 0
+5.43 명제 5:old-5-22 Abel 환원; 기록 [r58b4caa]의 이름 (★′) 장5B.md:64 proof_lines 9
+5.44 보조정리 5:old-5-23 사슬별 둘째 차분 장5B.md:96 proof_lines 1
+5.45 보조정리 5:old-5-24 방문 확률 장5B.md:104 proof_lines 1
+5.46 보조정리 5:old-5-25 창 항의 항별 상계 장5B.md:112 proof_lines 1
+5.47 보조정리 5:stirling-bor Borel 질량과 Borel 꼬리의 상하계 장5B.md:121 proof_lines 1
+5.48 보조정리 5:old-5-26 창 항의 닫힌 꼴 상계; 기록 [r8a9b11e]의 보조정리 WIN 장5B.md:129 proof_lines 1
+5.49 보조정리 5:old-5-27 기저 항등식 장5B.md:140 proof_lines 1
+5.50 정리 5:old-5-28 크기 방향 하계; 기록 [r23f10e9]의 정리 A 장5B.md:149 proof_lines 19
+5.51 보조정리 5:old-5-30 흡수; 기록 [r8a9b11e]의 보조정리 A 장5B.md:191 proof_lines 5
+5.52 정리 5:old-5-31 착지 창 열 값의 하계; 기록 [r8a9b11e]의 정리 W 장5B.md:213 proof_lines 5
+5.53 보조정리 5:borel-gf Borel 생성함수의 성질; 기록 [r8a9b11e]의 보조정리 B는 (나)(다)에 해당 장5B.md:230 proof_lines 5
+5.54 보조정리 5:bt-tail Borel–Tanner 꼬리의 상계 장5B.md:246 proof_lines 1
+5.55 보조정리 5:stop-lower 쪼개짐 확률의 상하계 장5B.md:262 proof_lines 9
+5.56 보조정리 5:rig-int 가중 창 질량의 두 닫힌 꼴 하계 장5B.md:276 proof_lines 5
+5.57 보조정리 5:scaled-integrand 척도 변수의 단조 묶음 장5B.md:294 proof_lines 9
+5.58 보조정리 5:riemann-unimodal 단봉 함수의 Riemann 합; 기록 [r8a9b11e]의 보조정리 R 장5B.md:336 proof_lines 1
+5.59 정리 5:old-5-32 가중 창 질량의 균일 상수; 기록 [r8a9b11e]의 정리 U-L 장5B.md:343 proof_lines 12
+5.60 정리 5:old-5-33 꼭대기 행 하계; 기록 [r8a9b11e]의 정리 T 장5B.md:362 proof_lines 5
+5.61 따름정리 5:old-5-34 꼭대기 항의 하계; 기록 [r8a9b11e]의 따름정리 T-POS 장5B.md:378 proof_lines 1
+5.62 보조정리 5:hover-tail 떠돌기 인자의 두 하계; 기록 [r8a9b11e]의 보조정리 H′는 둘째 하계에 해당 장5B.md:401 proof_lines 1
+5.63 명제 5:band-inequality 조립 범위의 판정식 장5B.md:408 proof_lines 11
+5.64 보조정리 5:right-part 오른쪽 부분의 판정식 장5B.md:422 proof_lines 15
+5.65 보조정리 5:old-5-38 귀납 틀 장5B.md:444 proof_lines 1
+6.1 정리 6:old-7-13 첫 층 생존의 상계; 기록 [r7e03176]의 정리 F′ 장6.md:19 proof_lines 79
+6.2 보조정리 6:old-7-19 두 나무 꼴; 기록 [rb6a2cd0]의 식 (2.1) 장6.md:121 proof_lines 1
+6.3 보조정리 6:old-7-20 제한 성장비의 상계; 기록 [r051bfe1]의 c-sharp 장6.md:143 proof_lines 1
+6.4 보조정리 6:difference-identity 차분 항등식; 기록 [r051bfe1]의 보조정리 D 장6.md:155 proof_lines 1
+6.5 보조정리 6:cayley-propagation Cayley 구간의 감소는 모든 크기로 전파된다; 기록 [r051bfe1]의 정리 A 장6.md:165 proof_lines 9
+6.6 보조정리 6:tilt-interval Cayley 구간의 기울인 무게; 기록 [r051bfe1]의 보조정리 C 장6.md:191 proof_lines 5
+6.7 보조정리 6:tilt-sum 기울인 Borel 질량의 합; 기록 [r051bfe1]의 보조정리 S 장6.md:199 proof_lines 5
+6.8 정리 6:old-7-21 표시 나무 무게의 증가; 기록 [rcb2e2d4]의 정리 L 장6.md:215 proof_lines 1
+6.9 보조정리 6:old-7-24 위험률의 하계; 기록 [r051bfe1]의 (Hz) 장6.md:231 proof_lines 7
+6.10 보조정리 6:lemma-ell 이웃비 로그의 Taylor 상하계; 기록 [r845b205]의 보조정리 ℓ 장6.md:260 proof_lines 1
+6.11 따름정리 6:increment-bounds 무게 증분의 하계 장6.md:268 proof_lines 5
+6.12 정리 6:old-8-13 머묾 법칙; 기록 [r98fb348]의 정리 S 장6.md:298 proof_lines 23
+6.13 보조정리 6:chain-recursion 첫 층 사슬 재귀; 기록 [r98fb348]의 보조정리 C 장6.md:306 proof_lines 1
+6.14 명제 6:same-kernel 같은 핵의 두 재귀; 기록 [r98fb348]의 명제 D 장6.md:325 proof_lines 13
+6.15 명제 6:stay-margin-identity 머묾 여유의 항등식; 기록 [r98fb348]의 명제 E 장6.md:357 proof_lines 5
+6.16 보조정리 6:lemma-omega 머묾 여유 주항의 하계; 기록 [r98fb348]의 보조정리 Ω 장6.md:379 proof_lines 29
+6.17 보조정리 6:lemma-phi 머묾 여유 보조 항의 하계; 기록 [r98fb348]의 보조정리 Φ 장6.md:415 proof_lines 1
+6.18 따름정리 6:old-8-11 중앙 행 수준 질량의 상계; 기록 [r7e03176]의 따름정리 E 장6.md:451 proof_lines 17
+6.19 정리 6:old-8-12 벌크 수준 질량의 상계; 기록 [r7e03176]의 p-bulk-point-mass 장6.md:477 proof_lines 7
+6.20 보조정리 6:pair-rearrange 짝 재배열; 기록 [r29b01e8]의 식 (4.1) 장6.md:503 proof_lines 5
+6.21 정리 6:diag-first-layer 첫 층의 대각선 하계; 기록 [r696d62c]의 정리 P6 장6.md:525 proof_lines 1
+6.22 명제 6:chain-count 결손 $d$의 사슬 셈; 기록 [r696d62c]의 명제 1 장6.md:543 proof_lines 1
+6.23 명제 6:class-polynomial 부류의 다항식 꼴; 기록 [r696d62c]의 명제 P1 장6.md:552 proof_lines 1
+6.24 명제 6:log-derivative 로그 도함수의 다섯 몫; 기록 [r696d62c]의 명제 P2 장6.md:563 proof_lines 1
+6.25 보조정리 6:split-mass 쪼개기 질량; 기록 [r696d62c]의 보조정리 S 장6.md:582 proof_lines 1
+6.26 명제 6:insertion 한 점 삽입 항등식; 기록 [r696d62c]의 명제 P3 장6.md:588 proof_lines 1
+6.27 보조정리 6:concave-split 오목한 쪼개기; 기록 [r696d62c]의 보조정리 C 장6.md:606 proof_lines 1
+6.28 보조정리 6:highest-long-cell 가장 높은 긴 구획; 기록 [r696d62c]의 보조정리 T 장6.md:610 proof_lines 1
+6.29 보조정리 6:geometric-mean 기하 무게의 평균; 기록 [r696d62c]의 보조정리 G 장6.md:614 proof_lines 5
+6.30 보조정리 6:trapezoid 사다리꼴 장6.md:626 proof_lines 1
+6.31 정리 6:pointwise 점별 지배; 기록 [r696d62c]의 정리 P4 장6.md:634 proof_lines 25
+6.32 보조정리 6:survival-factor 생존 인자; 기록 [r696d62c]의 보조정리 N 장6.md:664 proof_lines 5
+6.33 정리 6:classes-increase 모든 부류의 증가; 기록 [r696d62c]의 정리 P5 장6.md:672 proof_lines 1
+6.34 따름정리 6:cor-L 기저량의 날카로운 하계; 기록 [r696d62c]의 따름정리 L 장6.md:680 proof_lines 5
+6.35 정리 6:D-bound 평평한 핵심의 하계와 $\Upsilon_k$의 상계; 기록 [r696d62c]의 p-lem 장6.md:694 proof_lines 1
+6.36 명제 6:old-6-18 사다리 장6.md:724 proof_lines 5
+6.37 보조정리 6:tilt-split 사슬 공식과 정지 분해; 기록 [r845b205]의 식 (C)와 정리 S 장6.md:752 proof_lines 13
+6.38 정리 6:theorem-U 기울임 곡률의 상계; 기록 [r845b205]의 정리 U 장6.md:786 proof_lines 25
+6.39 보조정리 6:lemma-B 경로별 곡률 부등식; 기록 [r845b205]의 보조정리 B 장6.md:794 proof_lines 9
+6.40 보조정리 6:lemma-A Abel 합; 기록 [r845b205]의 보조정리 A 장6.md:810 proof_lines 1
+6.41 보조정리 6:lemma-O 할인된 방문 수; 기록 [r845b205]의 보조정리 O 장6.md:818 proof_lines 5
+6.42 보조정리 6:lemma-F 인수분해; 기록 [r845b205]의 보조정리 F 장6.md:848 proof_lines 5
+6.43 보조정리 6:lemma-E 가중 유한합의 적분 상계; 기록 [r845b205]의 보조정리 E 장6.md:858 proof_lines 1
+6.44 보조정리 6:lemma-N 가중치 상수의 상계; 기록 [r845b205]의 보조정리 N 장6.md:862 proof_lines 1
+6.45 정리 6:old-6-19 V-핵심 장6.md:902 proof_lines 31
+6.46 따름정리 6:DD-lower-bound 대각선 둘째 차분의 하계와 기울임 곡률의 합 장6.md:944 proof_lines 1
+6.47 정리 6:path-shift 경로 이동 항등식과 경로별 하계; 기록 [r29c10cd]의 정리 1과 보조정리 2 장6.md:969 proof_lines 7
+6.48 정리 6:theorem-D 결손 갱신 항등식과 임계 창 수준 질량의 상하계; 기록 [r5bbc534]의 정리 DR·보 장6.md:996 proof_lines 25
+6.49 명제 6:prop-W 이동 인자의 바닥, 첫 층 질량의 상계, 임계 창 앞쪽의 하계; 기록 [r29c10cd]의 장6.md:1035 proof_lines 19
+6.50 명제 6:prop-R 환원; 기록 [r9bf2dc6]의 명제 R 장6.md:1073 proof_lines 1
+6.51 보조정리 6:pair-formula 포개진 두 꼭짓점의 쌍 공식; 기록 [r9bf2dc6]의 보조정리 P 장6.md:1093 proof_lines 5
+6.52 보조정리 6:lemma-H 무거운 사슬 점질량의 하계; 기록 [r9bf2dc6]의 보조정리 H 장6.md:1101 proof_lines 7
+6.53 보조정리 6:lemma-Hprime 닫힌 꼴; 기록 [r9bf2dc6]의 보조정리 H′ 장6.md:1123 proof_lines 23
+6.54 보조정리 6:lemma-M 단조성; 기록 [r9bf2dc6]의 보조정리 M 장6.md:1149 proof_lines 11
+6.55 명제 6:critical-front 임계 창 앞쪽 조각; 기록 [r7e03176]의 따름정리 W′ 장6.md:1165 proof_lines 1
+6.56 명제 6:far-window 먼 창; 기록 [r9bf2dc6]의 N2 장6.md:1171 proof_lines 5
+6.57 명제 6:first-layer-end 첫 층의 끝; 기록 [r29c10cd]의 명제 E (가) 장6.md:1181 proof_lines 1
+6.58 명제 6:small-k-bulk 작은 $k$의 벌크; 기록 [r9bf2dc6]의 N3 장6.md:1187 proof_lines 13
+6.59 명제 6:above-window 창 위쪽; 기록 [r29c10cd]의 명제 E (나) 장6.md:1205 proof_lines 3
+6.60 명제 6:v-negative 핵심 근처 항의 음성; 기록 [r29c10cd]의 명제 W (가) 장6.md:1213 proof_lines 9
+6.61 정리 6:V-all (V)의 모든 절단점 장6.md:1225 proof_lines 1
+7.1 정의 7:old-6-1 용량 가중 결과 순열 법칙 장7A.md:15 proof_lines 0
+7.2 정리 7:old-6-2 상대 둘째 차분의 모멘트 표현 장7A.md:25 proof_lines 1
+7.3 보조정리 7:old-6-3  장7A.md:33 proof_lines 1
+7.4 따름정리 7:old-6-4 모멘트 판정 장7A.md:43 proof_lines 1
+7.5 명제 7:old-6-5 볼록–꺾임 분해 장7A.md:53 proof_lines 5
+7.6 정리 7:old-6-6 대칭 변위 가중 법칙의 평균 하계; 기록 [rb6423c6]의 정리 B 장7A.md:79 proof_lines 31
+7.7 따름정리 7:factorial-moment 계승 모멘트 하계; 기록 [rb6423c6]의 명제 P7과 정리 C 장7A.md:123 proof_lines 19
+7.8 명제 7:old-6-7 세 용량 개수의 결합 부등식; 기록 [r39ba7c1]의 결합 부등식 장7A.md:159 proof_lines 50
+7.9 정리 7:old-6-8 반감 경계; 기록 [rb6423c6]의 정리 P2 장7A.md:224 proof_lines 9
+7.10 보조정리 7:band-propagation 비 전파; 기록 [r39ba7c1]의 명제 6.1 장7A.md:238 proof_lines 5
+7.11 보조정리 7:prime-decomposition 소인 분해와 열의 극; 기록 [rf09e7ef]의 prime-decomposition, 기 장7A.md:252 proof_lines 11
+7.12 정리 7:seed-transfer 유한 전파 정리와 그 설정; 기록 [r9e782f5]의 positive-tail-syste 장7A.md:288 proof_lines 23
+7.13 보조정리 7:column-lemma 열 인증; 기록 [rc9aee43]의 보조정리 4.1·4.2 장7A.md:332 proof_lines 13
+7.14 명제 7:old-6-9 왼쪽 잔여 증가와 왼쪽 내부의 동치 장7A.md:350 proof_lines 1
+7.15 보조정리 7:supermultiplicative 초승법성; 기록 [r7c26b8b]의 보조정리 4.1 장7A.md:360 proof_lines 1
+7.16 정리 7:old-6-10 문턱 자리 평균의 첫 상계; 기록 [r7c26b8b]의 정리 1 장7A.md:364 proof_lines 35
+7.17 따름정리 7:flat-threshold 문턱 자리 평균의 상계가 주는 증가 경계; 기록 [r7c26b8b]의 따름정리 3, 기록  장7A.md:410 proof_lines 1
+7.18 보조정리 7:level-chain 수준 사슬과 마지막 이탈 분해; 기록 [rb7effe0]의 명제 2.1, 기록 [rad00 장7A.md:420 proof_lines 9
+7.19 보조정리 7:lemma-R-sc 막힌 비의 하계; 기록 [rad00a59]의 보조정리 R 장7A.md:458 proof_lines 13
+7.20 정리 7:self-consistent-S 골격 값의 자기일관 상계; 기록 [rad00a59]의 정리 S 장7A.md:476 proof_lines 27
+7.21 따름정리 7:cor-S-prime 자기일관 상계가 주는 모멘트 판정의 경계; 기록 [rad00a59]의 따름정리 S′ 장7A.md:545 proof_lines 9
+7.22 명제 7:riccati 표시 생성함수와 Riccati 식; 기록 [rb7effe0]의 명제 3.1 장7A.md:567 proof_lines 25
+7.23 보조정리 7:pole-unique 극의 유일성과 단순성; 기록 [r7c079be] §2, 기록 [rf09e7ef]의 fixe 장7A.md:603 proof_lines 9
+7.24 보조정리 7:pole-monotone 극의 단조성; 기록 [rf09e7ef]의 fixed-bound-pole 장7A.md:621 proof_lines 7
+7.25 정리 7:old-6-11 문턱 밀도의 유한 크기 공식; 기록 [rb7effe0]의 정리 C 장7A.md:637 proof_lines 11
+7.26 보조정리 7:fourier-lemmas 단위원 위의 해석성과 도함수 상계; 기록 [rf451d83]의 보조정리 2–6 장7A.md:677 proof_lines 13
+7.27 정리 7:X-cert 갱신 인증서; 기록 [rf451d83]의 정리 X-cert 장7A.md:717 proof_lines 5
+7.28 정리 7:old-6-12 유한 크기 전달; 기록 [rf451d83]의 $\mathsf X'$ 장7A.md:729 proof_lines 5
+7.29 보조정리 7:transfer-F 갱신 창 꼬리의 상계; 기록 [rb7effe0]의 정리 F 장7A.md:739 proof_lines 1
+7.30 보조정리 7:lemma-P-pole 고정된 열의 단일 극 상계; 기록 [rb7effe0]의 보조정리 P 장7A.md:745 proof_lines 23
+7.31 보조정리 7:lemma-P-prime 원 위의 감김수로 얻는 단일 극 상계; 기록 [rb7effe0]의 보조정리 P′ 장7A.md:785 proof_lines 9
+7.32 명제 7:polar-R 극 영역의 판정 연쇄; 기록 [r89eb039]의 명제 R 장7A.md:807 proof_lines 11
+7.33 정리 7:theorem-G-prime 열별 갱신 인증서; 기록 [rb7effe0]의 정리 G′ 장7A.md:837 proof_lines 1
+7.34 보조정리 7:polar-N 극 영역의 시작 행과 평탄 문턱; 기록 [r89eb039]의 보조정리 N 장7A.md:847 proof_lines 5
+7.35 명제 7:polar-W 극 영역의 왼쪽 증가; 기록 [r89eb039]의 주정리와 §7 장7A.md:855 proof_lines 18
+7.36 보조정리 7:moment-recursion 최대 원소 분해와 모멘트 재귀; 기록 [r10ff8c2]의 보조정리 2.1과 명제 2.2 장7B.md:13 proof_lines 7
+7.37 보조정리 7:variance-formula 전분산 공식과 분산–포화 분해; 기록 [r10ff8c2]의 정리 2.3 장7B.md:41 proof_lines 1
+7.38 정리 7:theorem-C-moment 모멘트 판정의 큰 $n$ 쪽 경계; 기록 [r10ff8c2]의 정리 C와 정리 D 장7B.md:65 proof_lines 1
+7.39 보조정리 7:blocked-majorant 막힌 수의 경계 다항식 상계 장7B.md:73 proof_lines 1
+7.40 명제 7:block-exponential 조각의 지수 공식과 초과 항등식; 기록 [r475ada3]의 정리 B(I)–(III) 장7B.md:95 proof_lines 10
+7.41 보조정리 7:green-atom Green 원자; 기록 [r8d6850a]의 green-marker-majorant-all 장7B.md:130 proof_lines 9
+7.42 보조정리 7:pair-terms Neumann 전개와 쌍별 항; 기록 [r475ada3] §3.5 장7B.md:155 proof_lines 1
+7.43 보조정리 7:heavy-block 무거운 조각의 모멘트와 꼬리 확률; 기록 [r475ada3]의 보조정리 3.2, 기록 [r 장7B.md:179 proof_lines 1
+7.44 보조정리 7:pair-criterion 강화한 쌍별 판정; 기록 [r475ada3]의 보조정리 P 장7B.md:196 proof_lines 1
+7.45 명제 7:pair-check-10000 껍질 $50$까지의 쌍별 판정; 기록 [r475ada3] §3.6 장7B.md:207 proof_lines 1
+7.46 보조정리 7:kernel-bound 가장 큰 나무 핵의 상계; 기록 [r6b37c7e]의 보조정리 T1 장7B.md:213 proof_lines 9
+7.47 보조정리 7:tail-bound 첫 층 꼬리 확률의 상계; 기록 [r6b37c7e]의 보조정리 T 장7B.md:232 proof_lines 5
+7.48 보조정리 7:pair-criterion-sharp 꼬리 상계를 넣은 쌍별 판정; 기록 [r6b37c7e]의 보조정리 P♯ 장7B.md:251 proof_lines 1
+7.49 명제 7:pair-reach-table 꼬리 삼중과 쌍별로 닿은 껍질; 기록 [r6b37c7e] §3.6 장7B.md:261 proof_lines 1
+7.50 보조정리 7:hermite-nu Hermite 계수의 $\nu$-일반 상하계; 기록 [r475ada3]의 보조정리 H′ 장7B.md:272 proof_lines 13
+7.51 보조정리 7:vertical-nu 수직선 윤곽의 $\nu$-일반 상하계; 기록 [r475ada3]의 보조정리 V′ 장7B.md:306 proof_lines 1
+7.52 명제 7:analytic-transfer 중앙 틈 연쇄의 $\nu$-이전; 기록 [r475ada3]의 정리 C·C′·C″, 기록 [ 장7B.md:324 proof_lines 13
+7.53 명제 7:integer-strips 유한 위치의 구간 인증; 기록 [r475ada3]의 명제 F1·F2, 기록 [r6b37c7 장7B.md:352 proof_lines 0
+7.54 정리 7:old-6-13 띠 40과 띠 102 장7B.md:362 proof_lines 7
+7.55 정리 7:old-6-14 한 걸음 항등식 장7B.md:384 proof_lines 5
+7.56 명제 7:old-6-15 흡수 귀납 장7B.md:399 proof_lines 1
+7.57 따름정리 7:qstar-implies-wlflat 한 걸음 판정에서 왼쪽 잔여 증가로; 기록 [r3172894]의 rel-qstar-wlfl 장7B.md:415 proof_lines 1
+7.58 명제 7:fold-A 원천의 세 몫; 기록 [r207f124]의 명제 A와 E-단위 분해 장7B.md:423 proof_lines 1
+7.59 명제 7:fold-R 대각선 접기; 기록 [r207f124]의 명제 R 장7B.md:439 proof_lines 1
+7.60 보조정리 7:fold-T 이동 부등식; 기록 [r207f124]의 명제 T 장7B.md:458 proof_lines 5
+7.61 정리 7:fold-L1 모든 $n$의 원천 하계; 기록 [r207f124]의 정리 L1* 장7B.md:472 proof_lines 1
+7.62 따름정리 7:fold-DIP 생존 감소 판정; 기록 [r207f124]의 따름정리 DIP 장7B.md:483 proof_lines 5
+7.63 보조정리 7:borel-monotone Borel 질량의 세 단조성; 기록 [r207f124] §6.8의 Borel 보조정리 장7B.md:511 proof_lines 1
+7.64 정리 7:polar-PD 전달 범위의 원천; 기록 [r207f124]의 정리 PD 장7B.md:515 proof_lines 10
+7.65 명제 7:prop-PF 첫 층 상속의 갱신열 판정; 기록 [r207f124]의 명제 PF 장7B.md:530 proof_lines 1
+7.66 정리 7:qstar-columns 열 2001–3130의 한 걸음 판정; 기록 [r207f124]의 정리 Q-fin 장7B.md:546 proof_lines 5
+7.67 보조정리 7:root-symmetry 뿌리 무게 비의 대칭; 기록 [r79ee9e0]의 보조정리 r 장7B.md:564 proof_lines 1
+7.68 정리 7:old-6-16 문턱 손실의 망원 상환; 기록 [r79ee9e0]의 명제 S1′과 정리 T 장7B.md:568 proof_lines 1
+7.69 보조정리 7:explicit-bounds Borel 질량과 마지막 차 자리 법칙의 명시 상계; 기록 [r79ee9e0] §4.3의  장7B.md:584 proof_lines 9
+7.70 정리 7:top-roots 여러 꼭대기 뿌리의 상환; 기록 [r79ee9e0]의 정리 V″ 장7B.md:600 proof_lines 1
+7.71 정리 7:theorem-W 꼭대기 뿌리의 무게; 기록 [r79ee9e0]의 정리 W와 명제 W′ 장7B.md:614 proof_lines 11
+7.72 명제 7:src-plus 원천 쪽 $\mathsf{SRC}^+$; 기록 [r79ee9e0]의 명제 SRC⁺ 장7B.md:632 proof_lines 8
+7.73 명제 7:old-6-20 셋째 층부터의 전파; 기록 [r317d678]의 명제 P 장7B.md:670 proof_lines 5
+7.74 보조정리 7:threshold-unit-ratio 문턱 단위와 분할 무게의 비; 기록 [r317d678]의 식 (9.1)과 정리 T의 셋째  장7B.md:685 proof_lines 15
+7.75 정리 7:old-6-21 둘째 층의 한 걸음 항등식; 기록 [r317d678]의 정리 R과 정리 T 장7B.md:708 proof_lines 12
+7.76 정리 7:old-6-22 주 정리와 둘째 층 한 칸 비교의 동치 장7B.md:730 proof_lines 9
+8.1 보조정리 8:old-6-23 한 나무 재귀; 기록 [r030ffae]의 사실 (E1) 장8.md:31 proof_lines 1
+8.2 보조정리 8:old-6-24 재귀 계수의 Borel 하계; 기록 [r030ffae]의 보조정리 D1 장8.md:58 proof_lines 1
+8.3 보조정리 8:old-6-25 부족량 부등식; 기록 [r030ffae]의 보조정리 E 장8.md:68 proof_lines 5
+8.4 보조정리 8:old-6-26 비교 원리; 기록 [r030ffae]의 보조정리 F 장8.md:82 proof_lines 1
+8.5 보조정리 8:old-6-27 대수적 꼴; 기록 [r030ffae]의 보조정리 G 장8.md:88 proof_lines 1
+8.6 보조정리 8:explicit-bounds 명시 상하계 장8.md:108 proof_lines 9
+8.7 보조정리 8:jensen-lower Jensen 하계; 기록 [r8456f59]의 보조정리 W 장8.md:132 proof_lines 1
+8.8 정리 8:escape-lower 기하 탈출 하계; 기록 [r8456f59]의 정리 G 장8.md:141 proof_lines 1
+8.9 명제 8:lowest-violation 가장 낮은 위반; 기록 [r8456f59] §4.7의 항등식 (V) 장8.md:153 proof_lines 13
+8.10 명제 8:prop-U-apriori 사전 상계; 기록 [r8456f59]의 명제 U 장8.md:175 proof_lines 5
+8.11 보조정리 8:envelope-H Jensen 봉투; 기록 [r030ffae]의 보조정리 H 장8.md:194 proof_lines 5
+8.12 보조정리 8:envelope-HG 탈출 봉투; 기록 [r030ffae]의 보조정리 H-G 장8.md:231 proof_lines 19
+8.13 정리 8:pieces-k-monotone 여섯 조각의 $k$-단조성; 기록 [rfc69320]의 정리 B 장8.md:285 proof_lines 11
+8.14 정리 8:escape-y-monotone 탈출 봉투의 $\xi$-비증가; 기록 [rfc69320]의 정리 A와 보조정리 1–3 장8.md:314 proof_lines 31
+8.15 정리 8:jensen-H-ii Jensen 조각의 단조성; 기록 [rfc69320]의 정리 C 장8.md:364 proof_lines 13
+8.16 정리 8:table-lower-bound 끼움 정리와 표의 하계 성질; 기록 [rfc69320]의 정리 D와 따름정리 장8.md:390 proof_lines 11
+8.17 명제 8:envelope-code-monotone 봉투의 $\xi$-감소와 표 함수의 엄격 감소; 기록 [rfc69320]의 명제 E·F 장8.md:408 proof_lines 9
+8.18 정리 8:closed-form-envelope 참 봉투의 닫힌 꼴; 기록 [rfc69320]의 보조정리 8.1, 명제 W\*·G\*, 정 장8.md:424 proof_lines 19
+8.19 보조정리 8:table-tolerance 저장된 표의 하계 성질과 허용 오차; 기록 [rfc69320]의 §8.4와 보조정리 8.2 장8.md:453 proof_lines 13
+8.20 보조정리 8:large-q-bounds 큰 $q$의 단조 상하계; 기록 [r030ffae] §3.6의 보조정리 K(i) 장8.md:490 proof_lines 5
+8.21 보조정리 8:cell-bound 셀 하계; 기록 [r030ffae]의 보조정리 L 장8.md:506 proof_lines 1
+8.22 명제 8:reduction-J 정리 {{8:old-6-28}}로의 환원; 기록 [r030ffae]의 명제 J 장8.md:512 proof_lines 1
+8.23 정리 8:old-6-28 창의 수준 질량 하계; 기록 [r030ffae]의 정리 W 장8.md:544 proof_lines 1
+8.24 보조정리 8:old-6-30 용량 이동 비; 기록 [r030ffae]의 보조정리 C₀ 장8.md:558 proof_lines 9
+8.25 보조정리 8:old-6-31 가장 큰 나무 법칙과 Borel 질량의 로그 볼록성; 기록 [r030ffae]의 사실 1· 장8.md:588 proof_lines 1
+8.26 보조정리 8:old-6-32 용량–크기 보조정리; 기록 [r030ffae] §4″.3의 보조정리 K 장8.md:608 proof_lines 13
+8.27 정리 8:old-6-29 띠 앞부분의 비교; 기록 [r030ffae]의 정리 B′ 장8.md:632 proof_lines 21
+8.28 보조정리 8:hazard-H1 첫 층 위험률 합의 명시 하계; 기록 [r5bbc534]의 정리 H1(a)에 해당 장8.md:668 proof_lines 5
+8.29 정리 8:old-6-33 둘째 층 띠; 기록 [r030ffae]의 정리 B‴ 장8.md:680 proof_lines 26
+9.1 보조정리 9:F5-upper 경로 비의 마지막 인자의 상계 장9.md:39 proof_lines 1
+9.2 정리 9:theorem-A-plus 경로마다의 위쪽 대각 판; 기록 [rc391829]의 정리 A⁺ 장9.md:47 proof_lines 41
+9.3 명제 9:prop-H 머리 합의 세 몫과 그 상계; 기록 [rc391829]의 명제 H와 명제 HC 장9.md:97 proof_lines 5
+9.4 보조정리 9:chain-rep 사슬 표현 장9.md:125 proof_lines 1
+9.5 보조정리 9:chain-moments 크기별 기대 개수와 두 깊이의 동시 출현 장9.md:135 proof_lines 3
+9.6 보조정리 9:chain-bounds 합집합 상계와 Jensen 하계 장9.md:152 proof_lines 1
+9.7 명제 9:prop-6 결손 수준 질량의 명시적 상하계; 기록 [r2ec875c]의 명제 6 장9.md:163 proof_lines 17
+9.8 보조정리 9:psi-two-sided Borel 갱신함수의 상하계 장9.md:189 proof_lines 5
+9.9 정리 9:head-sum-1 머리 합의 부호; 기록 [r2ec875c]의 정리 1 장9.md:199 proof_lines 53
+9.10 정리 9:head-sum-2 증가 시작점의 두 상계; 기록 [r2ec875c]의 정리 2 장9.md:257 proof_lines 5
+9.11 정리 9:H-star-plus 머리 합 여유 정리; 기록 [r33475a7]의 정리 H*₊ 장9.md:267 proof_lines 23
+9.12 보조정리 9:centroid-stop 무게중심 정지 확률; 기록 [r2fe0259]의 명제 C1 장9.md:295 proof_lines 7
+9.13 정의 9:old-7-1 짝 없는 문턱 손실 장9.md:326 proof_lines 0
+9.14 보조정리 9:old-7-3 잘린 병합 항등식; 기록 [rae1f209]의 보조정리 T 장9.md:350 proof_lines 9
+9.15 정리 9:old-7-4 병합 항등식; 기록 [r6f5f48f]의 보조정리 4 장9.md:372 proof_lines 1
+9.16 정리 9:old-7-5 환원; 기록 [rae1f209]의 정리 A 장9.md:386 proof_lines 1
+9.17 명제 9:old-7-6 줄기 더하기 쌍, 벌크; 기록 [rae1f209]의 명제 B⁺ 장9.md:396 proof_lines 0
+9.18 보조정리 9:old-7-7 덮인 문턱의 꼴; 기록 [r5909c9e]의 보조정리 4 장9.md:410 proof_lines 1
+9.19 정리 9:old-7-8 한 나무 항등식; 기록 [r77e234e]의 (OB) 장9.md:429 proof_lines 1
+9.20 보조정리 9:old-7-10 쌍 보정의 분해; 기록 [r77e234e]의 보조정리 P 장9.md:460 proof_lines 7
+9.21 보조정리 9:old-7-11 쌍 보정의 흡수; 기록 [rae1f209]의 보조정리 V 장9.md:476 proof_lines 1
+9.22 보조정리 9:old-7-12 정규화 수준 질량의 상계; 기록 [r77e234e]의 보조정리 F 장9.md:486 proof_lines 11
+9.23 정리 9:old-7-16 해석적 행 정리; 기록 [rae1f209]의 정리 AR 장9.md:512 proof_lines 50
+9.24 따름정리 9:old-7-17 $\mathsf B^+$의 남은 내용 장9.md:569 proof_lines 1
+9.25 명제 9:regeneration-S 재생 항등식; 기록 [r05cf8c9]의 보조정리 1·명제 4와 기록 [r2e22726]의 장9.md:583 proof_lines 9
+9.26 명제 9:old-7-18 재생 원천의 분해; 기록 [rb6a2cd0]의 명제 2.1 장9.md:604 proof_lines 1
+9.27 보조정리 9:old-7-22 한 걸음 무게 비의 상계; 기록 [rb6a2cd0]의 보조정리 R 장9.md:624 proof_lines 1
+9.28 정리 9:old-7-23 꼬리는 핵심 한 자리를 빼고 모두 음이 아니다; 기록 [rb6a2cd0]의 정리 10 장9.md:634 proof_lines 1
+9.29 정리 9:old-7-25 첫 층 선속의 균일 하계; 기록 [rb6a2cd0]의 정리 11 장9.md:651 proof_lines 5
+9.30 보조정리 9:old-7-26 $\mathcal Y_k$의 모양과 $\nu_0(k)$; 기록 [rb6a2cd0]의 보조정 장9.md:665 proof_lines 7
+9.31 따름정리 9:old-7-27 벌크의 첫 층 선속; 기록 [rb6a2cd0]의 따름정리 13 장9.md:678 proof_lines 1
+9.32 정리 9:old-7-28 띠 안쪽에서 앞쪽으로; 기록 [rb6a2cd0]의 정리 P 장9.md:684 proof_lines 11
+9.33 보조정리 9:old-7-29 꼬리의 상계; 기록 [rb6a2cd0]의 보조정리 C 장9.md:708 proof_lines 1
+9.34 정리 9:old-7-30 자르는 크기 하나의 위치 하계; 기록 [rb6a2cd0]의 정리 11′ 장9.md:718 proof_lines 5
+9.35 정리 9:old-7-31 앞쪽 띠의 첫 단계; 기록 [rb6a2cd0]의 정리 P⁺ 장9.md:735 proof_lines 1
+9.36 정리 9:old-7-32 선형 최소화의 위치 하계; 기록 [rb6a2cd0]의 정리 11″ 장9.md:745 proof_lines 1
+9.37 정리 9:old-7-33 띠 전체의 FS; 기록 [rb6a2cd0]의 정리 P⁺⁺ 장9.md:755 proof_lines 1
+9.38 따름정리 9:old-7-34 띠의 원 비교; 기록 [rb6a2cd0]의 따름정리 P′⁺⁺ 장9.md:761 proof_lines 1
+9.39 정리 9:old-7-35 쌍 부등식; 기록 [r5909c9e]의 정리 P◇ 장9.md:777 proof_lines 1
+9.40 보조정리 9:old-7-36 쌍의 무게; 기록 [r5909c9e]의 보조정리 1 장9.md:793 proof_lines 1
+9.41 보조정리 9:old-7-37 창 나무의 수준 질량; 기록 [r5909c9e]의 보조정리 2 장9.md:801 proof_lines 1
+9.42 보조정리 9:old-7-38 나머지의 Borel 인자; 기록 [r5909c9e]의 보조정리 3 장9.md:809 proof_lines 1
+9.43 보조정리 9:psi-low 갱신함수의 구획 하계 장9.md:832 proof_lines 1
+9.44 보조정리 9:old-7-39 쪼개짐 확률의 상계; 기록 [r5909c9e]의 보조정리 5 장9.md:840 proof_lines 5
+9.45 보조정리 9:old-7-40 덮개 몫의 상계; 기록 [r5909c9e]의 보조정리 6 장9.md:852 proof_lines 1
+9.46 보조정리 9:old-7-41 구획 위의 인자; 기록 [r5909c9e]의 보조정리 7 장9.md:864 proof_lines 1
+9.47 보조정리 9:old-7-42 구획 합의 적분 하계; 기록 [r5909c9e]의 보조정리 8 장9.md:868 proof_lines 1
+9.48 보조정리 9:pair-one-variable 쌍 비의 $k$-단조성과 한 변수 하계 장9.md:887 proof_lines 7
+9.49 따름정리 9:old-7-44 $\mathsf B^+$의 성립 장9.md:903 proof_lines 1
+9.50 정리 9:old-7-45 $\mathsf B^+$가 $\mathsf{LRP}_2$를 함의한다; 기록 [rb6a2cd 장9.md:907 proof_lines 1
+9.51 정리 9:old-7-46 주 정리의 첫째 증명 장9.md:911 proof_lines 1
+10.1 정의 10:old-8-1 명제 $\mathsf Q^\star_2$ 장10.md:25 proof_lines 0
+10.2 보조정리 10:old-8-2 장부 항등식; 기록 [r3d0856b]의 보조정리 1, 기록 [r317d678]의 c-le 장10.md:61 proof_lines 15
+10.3 보조정리 10:old-8-3 분할 무게; 기록 [r3d0856b]의 보조정리 2 장10.md:84 proof_lines 1
+10.4 보조정리 10:old-8-4 열 꼬리; 기록 [r3d0856b]의 보조정리 3(i) 장10.md:111 proof_lines 1
+10.5 명제 10:old-8-6 꼬리합 꼴; 기록 [r3d0856b]의 명제 6 장10.md:117 proof_lines 1
+10.6 명제 10:old-8-8 머묾 꼴; 기록 [r3d0856b]의 명제 S 장10.md:147 proof_lines 17
+10.7 정의 10:old-8-9 명제 FLQ 장10.md:189 proof_lines 0
+10.8 정리 10:old-8-10 FLQ ∧ 띠 ⇒ $\mathsf Q^\star_2$; 기록 [r3d0856b]의 관계 q 장10.md:208 proof_lines 17
+10.9 보조정리 10:row-3k $n=3k$에서의 FLQ 장10.md:232 proof_lines 1
+10.10 명제 10:old-8-14 (나)의 머묾 질량 환원; 기록 [r3d0856b]의 명제 T 장10.md:265 proof_lines 21
+10.11 명제 10:old-8-15 창의 생존 상계; 기록 [r3d0856b]의 명제 W 장10.md:305 proof_lines 1
+10.12 보조정리 10:old-8-16 h-변환; 기록 [re71a735]의 보조정리 1 장10.md:325 proof_lines 1
+10.13 보조정리 10:old-8-17 얼린 볼록성; 기록 [r845b205]의 보조정리 5, 기록 [re71a735]의 보조정리 장10.md:337 proof_lines 1
+10.14 정리 10:old-8-18 나머지의 수준별 공식; 기록 [re71a735]의 정리 A 장10.md:347 proof_lines 5
+10.15 정리 10:old-8-19 젊은 사슬; 기록 [re71a735]의 정리 B 장10.md:371 proof_lines 1
+10.16 보조정리 10:old-8-20 걸음 수를 고정한 방문 상계와 젊은 걸음; 기록 [re71a735]의 보조정리 4·5 장10.md:392 proof_lines 1
+10.17 보조정리 10:old-8-21 젊은 걸음 합; 기록 [re71a735]의 보조정리 N 장10.md:400 proof_lines 1
+10.18 정리 10:old-8-22 대각선 손실의 명시 상계; 기록 [re71a735]의 정리 C 장10.md:404 proof_lines 1
+10.19 명제 10:old-8-23 대각선 손실의 닫힌 꼴; 기록 [re71a735]의 명제 M♮ 장10.md:419 proof_lines 21
+10.20 보조정리 10:old-8-24 상위해 원리; 기록 [re71a735]의 보조정리 SS 장10.md:454 proof_lines 1
+10.21 정리 10:old-8-25 첫 층 생존의 상계; 기록 [re71a735]의 정리 S′ 장10.md:462 proof_lines 23
+10.22 정리 10:old-8-28 수준 질량의 사슬 표현; 기록 [re71a735]의 정리 P 장10.md:508 proof_lines 1
+10.23 명제 10:reduction-na (나)의 환원 장10.md:533 proof_lines 1
+10.24 명제 10:reduction-ga (가)의 환원 장10.md:541 proof_lines 5
+10.25 정의 10:families 네 가족 장10.md:565 proof_lines 0
+10.26 보조정리 10:old-8-30 창의 생존 하계; 기록 [re71a735]의 보조정리 J 장10.md:580 proof_lines 1
+10.27 보조정리 10:old-8-31 수준 질량 하계; 기록 [re71a735]의 보조정리 R 장10.md:591 proof_lines 11
+10.28 보조정리 10:old-8-32 두 부분 적분 꼴; 기록 [re71a735]의 보조정리 R′ 장10.md:620 proof_lines 5
+10.29 명제 10:old-8-33 $\nu$에 무관한 머묾 상계; 기록 [re71a735]의 명제 U 장10.md:639 proof_lines 15
+10.30 보조정리 10:old-8-34 상쇄 보조정리; 기록 [re71a735]의 상쇄 보조정리 장10.md:671 proof_lines 5
+10.31 명제 10:old-8-35 가족별 하계; 기록 [re71a735]의 명제 L 장10.md:686 proof_lines 1
+10.32 보조정리 10:bulk-majorants 벌크의 명시 상계 장10.md:699 proof_lines 1
+10.33 명제 10:check-na (나)의 가족 검사 장10.md:715 proof_lines 1
+10.34 명제 10:check-ga (가)의 가족 검사 장10.md:730 proof_lines 13
+10.35 정리 10:old-8-36 명제 FLQ의 증명; 기록 [re71a735]의 정리 FLQ 장10.md:759 proof_lines 1
+10.36 정리 10:old-8-37 주 정리의 둘째 증명 장10.md:767 proof_lines 11

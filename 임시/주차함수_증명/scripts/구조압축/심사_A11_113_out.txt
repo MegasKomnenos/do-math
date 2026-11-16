@@ -1,0 +1,224 @@
+===== 6:old-7-13
+  [11.3-공유] 행 100: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 6:theorem-D
+  [11.2] 행 40: 부록 D.{{D:theorem-D-base}}
+  [11.3-공유] 행 99: 판정 $\mathsf V$와 V-핵심, 작은 행의 증인 위치 상계: 정리 {{6:V-all}}, 정리 {{6:old-6-19}}, 명제 {{5:witness-po
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 6:prop-W
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 5:old-5-28
+===== 6:diag-first-layer
+  [11.3-공유] 행 92: 기저량의 날카로운 하계: 따름정리 {{6:cor-L}}과 그 증명이 거쳐 부르는 보조정리 {{6:pair-rearrange}}, 정리 {{6:diag-first-
+===== 9:theorem-A-plus
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 9:prop-6
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 7:polar-W
+  [11.2] 행 47: 부록 D.{{D:polar-blocks-488}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== 7:polar-PD
+  [11.2] 행 46: 부록 D.{{D:xcert-partAB}}
+  [11.3-공유] 행 101: 원천 쪽: 명제 {{7:src-plus}}
+===== 7:theorem-C-moment
+  [11.2] 행 49: 부록 D.{{D:moment-certification}}
+  [11.2] 행 50: 부록 D.{{D:column-certificates-841-2000}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== 7:qstar-implies-wlflat
+  [11.2] 행 49: 부록 D.{{D:moment-certification}}
+  [11.2] 행 50: 부록 D.{{D:column-certificates-841-2000}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== 7:self-consistent-S
+  [11.2] 행 45: 부록 D.{{D:self-consistent-constants}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== 7:cor-S-prime
+  [11.2] 행 45: 부록 D.{{D:self-consistent-constants}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== 7:factorial-moment
+===== 7:qstar-columns
+  [11.2] 행 51: 부록 D.{{D:Q-fin-1130}}
+  [11.3-공유] 행 103: 열 $2001$–$3130$의 한 걸음 판정: 정리 {{7:qstar-columns}}
+===== 7:theorem-W
+  [11.3-공유] 행 101: 원천 쪽: 명제 {{7:src-plus}}
+  [11.3-공유] 행 106: 위험률의 하계: 보조정리 {{6:old-7-24}}
+===== 6:old-7-24
+  [11.3-공유] 행 101: 원천 쪽: 명제 {{7:src-plus}}
+  [11.3-공유] 행 106: 위험률의 하계: 보조정리 {{6:old-7-24}}
+===== 5:old-5-4
+  [11.2] 행 32: 부록 D.{{D:newton-m170}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+===== 5:old-5-5
+  [11.2] 행 33: 부록 D.{{D:tail-T1-partAB}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+===== 5:old-5-7
+  [11.2] 행 34: 부록 D.{{D:bernstein-signs}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+===== 5:old-5-32
+  [11.2] 행 37: 부록 D.{{D:window-mass-constant}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+===== 5:band-inequality
+  [11.2] 행 38: 부록 D.{{D:band-check}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+===== 5:old-5-12
+  [11.2] 행 35: 부록 D.{{D:band-A-certification}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+  [11.4] 행 156: Wallis, *Arithmetica Infinitorum*, Oxford, 1656
+===== 8:old-6-28
+  [11.2] 행 52: 부록 D.{{D:window-mass-env}}
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+===== 8:table-tolerance
+  [11.2] 행 55: 부록 D.{{D:stored-table-check}}
+  [11.3-공유] 행 98: 세 제타 상수: 보조정리 {{2:zeta-constants}}
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+===== 8:closed-form-envelope
+  [11.2] 행 55: 부록 D.{{D:stored-table-check}}
+  [11.3-공유] 행 98: 세 제타 상수: 보조정리 {{2:zeta-constants}}
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+===== 9:old-7-16
+  [11.2] 행 58: 부록 D.{{D:AR-integrals}}
+  [11.3-공유] 행 100: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.3-첫째고유] 행 116: 해석적 행 정리: 정리 {{9:old-7-16}}
+  [11.3-첫째고유] 행 121: 첫째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-34}}, 보조정리 {{2:b-top}}, 명제 {{2:old-2-41}}, 정리 {{2:old-2
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 9:head-sum-2
+  [11.2] 행 56: 부록 D.{{D:m1-column-reading}}
+  [11.3-공유] 행 88: 중앙 틈: 정리 {{4:old-4-5}}
+  [11.3-공유] 행 89: $n\le20000$의 단봉성: 정리 {{5:old-5-1}}
+  [11.3-공유] 행 91: 오른쪽 내부: 정리 {{5:old-5-18}}, 정리 {{5:old-5-11}}
+  [11.3-첫째고유] 행 115: 머리 합 여유: 정리 {{9:H-star-plus}}, 정리 {{9:head-sum-2}}
+===== 9:H-star-plus
+  [11.2] 행 57: 부록 D.{{D:H-star-plus-interval}}
+  [11.3-첫째고유] 행 115: 머리 합 여유: 정리 {{9:H-star-plus}}, 정리 {{9:head-sum-2}}
+  [11.3-첫째고유] 행 121: 첫째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-34}}, 보조정리 {{2:b-top}}, 명제 {{2:old-2-41}}, 정리 {{2:old-2
+===== 10:old-8-23
+  [11.2] 행 61: 부록 D.{{D:M-natural-integrals}}
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.3-둘째고유] 행 127: 대각선 손실의 닫힌 꼴: 명제 {{10:old-8-23}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 10:check-na
+  [11.2] 행 62: 부록 D.{{D:four-families}}
+  [11.3-둘째고유] 행 127: 대각선 손실의 닫힌 꼴: 명제 {{10:old-8-23}}
+  [11.3-둘째고유] 행 128: 네 가족의 검사: 명제 {{10:check-na}}, 명제 {{10:check-ga}}, 정리 {{10:old-8-36}}
+===== 10:check-ga
+  [11.2] 행 62: 부록 D.{{D:four-families}}
+  [11.3-둘째고유] 행 128: 네 가족의 검사: 명제 {{10:check-na}}, 명제 {{10:check-ga}}, 정리 {{10:old-8-36}}
+===== 7:pair-check-10000
+  [11.2] 행 48: 부록 D.{{D:band102-integer}}
+  [11.3-공유] 행 94: 중앙 띠: 정리 {{7:old-6-13}}
+===== 7:pair-reach-table
+  [11.2] 행 48: 부록 D.{{D:band102-integer}}
+  [11.3-공유] 행 94: 중앙 띠: 정리 {{7:old-6-13}}
+===== 7:old-6-5
+===== 8:prop-U-apriori
+===== 10:old-8-25
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.3-둘째고유] 행 129: 둘째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-46}}과 그 증명이 부르는 명제 {{2:old-2-44}}, 정리 {{6:old-8-13}}과 그
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 10:old-8-24
+===== 8:jensen-lower
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.4] 행 155: Jensen, *Sur les fonctions convexes et les inégalités entre les valeurs moyennes*, Acta Ma
+===== 10:old-8-30
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.4] 행 155: Jensen, *Sur les fonctions convexes et les inégalités entre les valeurs moyennes*, Acta Ma
+===== 6:same-kernel
+  [11.3-둘째고유] 행 129: 둘째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-46}}과 그 증명이 부르는 명제 {{2:old-2-44}}, 정리 {{6:old-8-13}}과 그
+===== 8:old-6-23
+  [11.3-공유] 행 104: 한 나무 재귀와 용량 이동 비: 보조정리 {{8:old-6-23}}, 보조정리 {{8:old-6-30}}
+  [11.4] 행 141: Stanley, *Enumerative Combinatorics*, vol. 2, Cambridge Univ. Press, 1999
+===== 9:chain-rep
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+===== 4:e-integral
+  [11.4] 행 151: Ahlfors, *Complex Analysis*, 3판, McGraw-Hill, 1979
+===== 5:source-rep
+  [11.4] 행 141: Stanley, *Enumerative Combinatorics*, vol. 2, Cambridge Univ. Press, 1999
+===== 4:gauss-coeff
+  [11.2] 행 27: 부록 D.{{D:central-gap-rational-audit}}
+  [11.3-공유] 행 88: 중앙 틈: 정리 {{4:old-4-5}}
+  [11.4] 행 151: Ahlfors, *Complex Analysis*, 3판, McGraw-Hill, 1979
+===== 4:two-corrections
+  [11.2] 행 27: 부록 D.{{D:central-gap-rational-audit}}
+  [11.3-공유] 행 88: 중앙 틈: 정리 {{4:old-4-5}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 7:hermite-nu
+  [11.2] 행 48: 부록 D.{{D:band102-integer}}
+  [11.3-공유] 행 94: 중앙 띠: 정리 {{7:old-6-13}}
+===== 6:old-8-11
+  [11.3-공유] 행 99: 판정 $\mathsf V$와 V-핵심, 작은 행의 증인 위치 상계: 정리 {{6:V-all}}, 정리 {{6:old-6-19}}, 명제 {{5:witness-po
+  [11.3-공유] 행 100: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+===== 6:V-all
+  [11.3-공유] 행 99: 판정 $\mathsf V$와 V-핵심, 작은 행의 증인 위치 상계: 정리 {{6:V-all}}, 정리 {{6:old-6-19}}, 명제 {{5:witness-po
+  [11.3-공유] 행 100: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+===== 6:old-6-19
+  [11.3-공유] 행 99: 판정 $\mathsf V$와 V-핵심, 작은 행의 증인 위치 상계: 정리 {{6:V-all}}, 정리 {{6:old-6-19}}, 명제 {{5:witness-po
+  [11.3-공유] 행 100: 첫 층 생존의 상계와 중앙 행 수준 질량의 상계: 정리 {{6:old-7-13}}, 따름정리 {{6:old-8-11}}
+===== 8:escape-lower
+===== 8:old-6-29
+  [11.2] 행 53: 부록 D.{{D:bprime-boxes}}
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+  [11.3-첫째고유] 행 118: 띠 앞부분의 비교: 정리 {{8:old-6-29}}
+===== 9:old-7-35
+  [11.3-공유] 행 105: 둘째 층 띠와 창의 수준 질량 하계: 정리 {{8:old-6-33}}, 정리 {{8:old-6-28}}, 보조정리 {{8:table-tolerance}}
+  [11.3-첫째고유] 행 117: 쌍 부등식: 정리 {{9:old-7-35}}, 보조정리 {{9:pair-one-variable}}
+  [11.3-첫째고유] 행 121: 첫째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-34}}, 보조정리 {{2:b-top}}, 명제 {{2:old-2-41}}, 정리 {{2:old-2
+===== 9:pair-one-variable
+  [11.2] 행 60: 부록 D.{{D:pair-one-variable}}
+  [11.3-첫째고유] 행 117: 쌍 부등식: 정리 {{9:old-7-35}}, 보조정리 {{9:pair-one-variable}}
+===== 6:lemma-H
+  [11.3-공유] 행 98: 세 제타 상수: 보조정리 {{2:zeta-constants}}
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+  [11.4] 행 155: Jensen, *Sur les fonctions convexes et les inégalités entre les valeurs moyennes*, Acta Ma
+===== 6:lemma-Hprime
+  [11.3-공유] 행 98: 세 제타 상수: 보조정리 {{2:zeta-constants}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== 10:old-8-31
+  [11.3-공유] 행 108: 2장의 표현: 정리 {{2:old-2-6}}·{{2:old-2-10}}·{{2:old-2-11}}·{{2:old-2-13}}, 보조정리 {{2:old-2-26}}
+  [11.3-둘째고유] 행 129: 둘째 증명만 부르는 앞 장의 진술: 보조정리 {{2:old-2-46}}과 그 증명이 부르는 명제 {{2:old-2-44}}, 정리 {{6:old-8-13}}과 그
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+  [11.4] 행 155: Jensen, *Sur les fonctions convexes et les inégalités entre les valeurs moyennes*, Acta Ma
+===== 6:tilt-sum
+  [11.2] 행 42: 부록 D.{{D:tilt-sum-small-k}}
+  [11.3-공유] 행 101: 원천 쪽: 명제 {{7:src-plus}}
+===== D:polar-blocks-488
+  [11.2] 행 47: 부록 D.{{D:polar-blocks-488}}
+  [11.4] 행 147: Robbins, *A remark on Stirling's formula*, Amer. Math. Monthly 62 (1955) 26–29
+===== D:Q-fin-1130
+  [11.2] 행 51: 부록 D.{{D:Q-fin-1130}}
+===== D:theorem-D-base
+  [11.2] 행 40: 부록 D.{{D:theorem-D-base}}
+===== D:newton-m170
+  [11.2] 행 32: 부록 D.{{D:newton-m170}}
+===== D:tail-T1-partAB
+  [11.2] 행 33: 부록 D.{{D:tail-T1-partAB}}
+===== D:bernstein-signs
+  [11.2] 행 34: 부록 D.{{D:bernstein-signs}}
+===== D:window-mass-constant
+  [11.2] 행 37: 부록 D.{{D:window-mass-constant}}
+===== D:band-check
+  [11.2] 행 38: 부록 D.{{D:band-check}}
+===== D:M-natural-integrals
+  [11.2] 행 61: 부록 D.{{D:M-natural-integrals}}
+===== D:AR-integrals
+  [11.2] 행 58: 부록 D.{{D:AR-integrals}}
+===== D:m1-column-reading
+  [11.2] 행 56: 부록 D.{{D:m1-column-reading}}
+===== D:H-star-plus-interval
+  [11.2] 행 57: 부록 D.{{D:H-star-plus-interval}}
+===== D:band102-integer
+  [11.2] 행 48: 부록 D.{{D:band102-integer}}
+===== D:moment-certification
+  [11.2] 행 49: 부록 D.{{D:moment-certification}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== D:column-certificates-841-2000
+  [11.2] 행 50: 부록 D.{{D:column-certificates-841-2000}}
+  [11.3-공유] 행 95: 한 걸음 판정에서 왼쪽 잔여 증가로(모멘트 판정과 극 영역): 따름정리 {{7:qstar-implies-wlflat}}
+===== D:xcert-partAB
+  [11.2] 행 46: 부록 D.{{D:xcert-partAB}}
+  [11.3-공유] 행 103: 열 $2001$–$3130$의 한 걸음 판정: 정리 {{7:qstar-columns}}
+===== D:self-consistent-constants
+  [11.2] 행 45: 부록 D.{{D:self-consistent-constants}}

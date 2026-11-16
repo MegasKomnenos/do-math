@@ -1,0 +1,379 @@
+항목 수: 42
+====================================================================================================
+[부록D_장10.md:1] D:M-natural-integrals
+  제목: 대각선 손실 닫힌 꼴의 두 적분값 (명제 {{10:old-8-23}})
+  머리 라벨: ['10:old-8-23']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 30자리 평가다.
+  범위: 두 적분의 적분 구간은 $[0,1]$이다. $\mathrm{DDL}^\natural$의 평가점은 $k\in\{6667,6668,8065,9551,9705,9949,2\cdot10^4,10^5,10^6,10^8,10^{12}\}$. 부호 보조정리의 적분은 $k\in\{6667,10^4,10^6,10^9\}$에서 평가한다. 감소는 $6667\le k<4\cdot10^4$의 모든 이웃 쌍과 $[6667,10^7]$의 기하 표본 $300$점에서 구간으로 대조했다(증명은 6단계의 해석적 논증이다).
+  확인하는 진술: $\mathfrak q(\rho)=1+0.7501\,\rho/(1+\rho)$에 대해
+  자료: `records/re71a735…/evidence/peer/propM_proof.py`, `records/re71a735…/evidence/peer/propM_proof_out.txt`, `records/re71a735…/evidence/peer/cf.py`(`CF` 함수가 $\mathrm{DDL}^\natural$), `records/re71a735…/evidence/peer/recheck_1a.py`, `records/re71a735…/evidence/peer/recheck_1a_out.txt`; `원고_자료/세션_재계산/M_natural/j_integrals_iv.py`, `원고_자료/세션_재계산/M_natural/j_integrals_iv_out.txt`.
+  인용(부록D 밖): [('장10.md', 428), ('장11.md', 61)]
+====================================================================================================
+[부록D_장10.md:26] D:four-families
+  제목: 네 가족의 첫 열 검사 (명제 {{10:check-na}}, 명제 {{10:check-ga}})
+  머리 라벨: ['10:check-na', '10:check-ga']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  범위: $k_0\in\{6668,8065,9551,9705\}$. (가)(a)의 결손 $2\le q_0\le\epsilon_0$, $\epsilon_0=562,638,714,722$. 가장자리 점은 $\xi_{\mathrm{cap}}\in\{1.3,2^{2/3}\}$로 정한다.
+  확인하는 진술: (나) 네 가족 $F\in\{\text{벌크},2,1b,1a\}$의 첫 열 $k_0\in\{6668,8065,9551,9705\}$(이 순서대로 가족과 첫 열이 하나씩 대응한다)에서 $\mathfrak o_F(k_0)>\mathrm{Stays}^{\mathrm{up}}_F(k_0)$. (가) 같은 $k_0$에서 $\epsilon_0=\lfloor2^{2/3}(k_0+1)^{2/3}\rfloor$에 대해 (a) 모든 $2\le q_0\le\epsilon_0$에서 $\mathfrak e^{\mathrm{low}}(k_0,q_0)\ge\mathfrak R^\sharp_F(k_0)$, 가족 1a·1b에서는 모든 $104\le q_0\le\epsilon_0$에서 $\mathfrak e^{\mathrm{low}}_{\mathrm R}(k_0,q_0;k_0)+\mathfrak s_{q_0+1}(k_0)\ge\mathfrak R^{\sharp\prime}_F(k_0)$; (b) 가장자리 $4\ma
+  자료: `records/re71a735…/evidence/peer/run_flq_checks.py`(전체 재실행), `records/re71a735…/evidence/peer/flq_checks_out.txt`, `records/re71a735…/evidence/peer/families.py`, `records/re71a735…/evidence/peer/families_out.txt`, `records/re71a735…/evidence/peer/flq_uniform.py`, `records/re71a735…/evidence/peer/bulk_majorants.py`, `records/re71a735…/evidence/peer/cf.py`, `records/re71a735…/evidence/peer/window_checks.py`, `records/re71a735…/evidence/peer/window_checks_out.txt`, `records/re71a735…/evidence/peer/edge_checks.py`, `records/re71a735…/evidence/peer/edge_checks_out.txt`, `records/re71a735…/evidence/
+  인용(부록D 밖): [('장10.md', 726), ('장10.md', 755), ('장11.md', 62)]
+====================================================================================================
+[부록D_장2.md:1] D:fiber-enumeration
+  제목: $n\le6$의 모든 섬유 행의 단봉성 전수 확인 (정리 {{2:old-2-5}})
+  머리 라벨: ['2:old-2-5']
+  산술 등급: 정확 정수·유리수(Python 임의 정밀도 정수).
+  범위: $n\le7$(진술에 쓰이는 범위는 $n\le6$; $n=7$에서 첫 비단봉 섬유 $\sigma=(1,2,3,5,4,6,7)$, 행 $(1,31,130,222,216,264,144)$가 나와 멈춤).
+  확인하는 진술: $n\le6$에서는 모든 결과 순열 $\sigma\in\mathfrak S_n$의 섬유 행 $(b^\sigma_0,\dots,b^\sigma_{n-1})$이 단봉이다.
+  자료: `records/r81e7051…/evidence/producer/work/explore.py`(`--fiber-max` 인자로 섬유 전수 범위 지정), `records/r81e7051…/evidence/producer/work/explore-run.log`(`fibers n <용량 벡터 수>` 행), `records/r81e7051…/evidence/producer/output/computation-summary.json`(`fiber_nonunimodal`, `fiber_nonlogconcave`), `records/r81e7051…/evidence/peer_verify.py`, `records/r81e7051…/evidence/peer-checks.json`; `원고_자료/세션_재계산/fiber_exhaustive/fiber_exhaustive.py`, `fiber_exhaustive.txt`.
+  인용(부록D 밖): [('장11.md', 21), ('장2.md', 66)]
+====================================================================================================
+[부록D_장2.md:21] D:fiber-nonunimodal-bound
+  제목: 단봉 섬유 비율의 유한 $n$ 상계값 (명제 {{2:old-2-20}})
+  머리 라벨: ['2:old-2-20']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $n=17$에서 정확 유리수, $n=100,1000,10^4$에서 배정밀도 평가다.
+  범위: 기록은 $n\in\{12,17,30,50,100,200,500,1000,2000,5000,10000\}$, 이 글의 재계산은 진술에 쓰인 $n=17,100,1000,10^4$.
+  확인하는 진술: 균등 주차함수의 결과 순열의 섬유가 단봉일 확률의 명시적 상계는 $n=17$에서 $0.740$, $n=100$에서 $0.317$, $n=1000$에서 $0.0658$, $n=10^4$에서 $0.0115$다.
+  자료: `records/r88bed8a…/evidence/peer/code/peer_fibre_bound.py`, `records/r88bed8a…/evidence/peer/data/fibre_bound.txt`, `records/r88bed8a…/review/evidence/rv_check2.py`, `records/r88bed8a…/review/evidence/rv_check2.txt`; `원고_자료/세션_재계산/fiber_nonunimodal_bound/fiber_bound_iv.py`, `fiber_bound_iv_out.txt`.
+  인용(부록D 밖): [('장11.md', 22), ('장2.md', 302)]
+====================================================================================================
+[부록D_장2.md:50] D:zeta-constants
+  제목: 세 제타 상수 $\mathsf z_{1/2}$·$\mathsf z_{-1/2}$·$\mathsf z_{3/2}$의 인증 구간 (보조정리 {{2:zeta-constants}})
+  머리 라벨: ['2:zeta-constants']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+  범위: 상수 셋이라 범위가 따로 없다.
+  확인하는 진술: 보조정리 {{2:zeta-constants}}가 진술하는 세 구간 $\mathsf z_{1/2}\in[-1.46036,-1.46035]$, $\mathsf z_{-1/2}\in[-0.20789,-0.20788]$, $\mathsf z_{3/2}\in[2.61237,2.61238]$을 확인한다.
+  자료: `records/r8a9b11e…/evidence/peer/cemaj_iv.py`(함수 `zeta32`); `원고_자료/세션_재계산/zeta_constants/zeta_iv.py`, `zeta_iv_out.txt`(코드와 출력의 `N`은 이 글의 $C$이고, 두 인자는 $\mathsf z_{3/2}$ 쪽과 Euler–Maclaurin 쪽의 $C$다).
+  인용(부록D 밖): [('장11.md', 23), ('장11.md', 152), ('장2.md', 635)]
+====================================================================================================
+[부록D_장3.md:1] D:logconcavity-failure-n80
+  제목: 행의 로그오목성: $n\le79$의 성립과 $n=80$의 첫 실패 (정리 {{3:old-3-4}})
+  머리 라벨: ['3:old-3-4']
+  산술 등급: 정확 정수·유리수.
+  범위: $1\le n\le120$, 각 행의 모든 내부 첨자. 진술이 쓰는 것은 $n\le80$이다.
+  확인하는 진술: $1\le n\le79$인 모든 $n$과 $1\le\ell\le n-2$인 모든 $\ell$에서 $b_{n,\ell}^2\ge b_{n,\ell-1}b_{n,\ell+1}$이다. $n=80$, $\ell=40$에서 $b_{80,40}^2<b_{80,39}b_{80,41}$이고, $b_{80,39}<b_{80,40}<b_{80,41}$이다.
+  자료: `records/r81e7051…/evidence/producer/work/explore.py`, `records/r81e7051…/evidence/producer/output/counts.json`, `records/r81e7051…/evidence/producer/output/computation-summary.json`, `records/r81e7051…/evidence/producer/output/structure-checks.json`, `records/r81e7051…/evidence/peer_verify.py`, `records/r81e7051…/evidence/peer-checks.json`, `records/r15524fd…/evidence/logconcavity-witness.json`, `records/r15524fd…/evidence/counts.json`; `원고_자료/세션_재계산/logconcavity_n80/lc_n80.py`, `lc_n80_out.txt`(이 글의 재계산).
+  인용(부록D 밖): [('장11.md', 24), ('장11.md', 25), ('장3.md', 137)]
+====================================================================================================
+[부록D_장3.md:25] D:cumulative-logconcavity
+  제목: 누적 개수의 로그오목성: $n\le779$의 성립과 $n=780$의 첫 실패 (정리 {{3:old-3-5}})
+  머리 라벨: ['3:old-3-5']
+  산술 등급: 정확 정수·유리수(주 계산과 첫째 확인 계산); 둘째 확인 계산은 binary64 사전 오차 해석.
+  범위: $n\le800$의 모든 $(n,\ell)$, $1\le\ell\le n-2$.
+  확인하는 진술: $n\le779$인 모든 $n$과 $1\le\ell\le n-2$인 모든 $\ell$에서 $A_{n,\ell}^2\ge A_{n,\ell-1}A_{n,\ell+1}$이다. $n=780$에서 이 부등식은 정확히 $\ell=575,576,577,578$에서 어긋나고, 그 자리들에서 $(A_{n,\ell}^2-A_{n,\ell-1}A_{n,\ell+1})/A_{n,\ell}^2$는 $-5.9\times10^{-9}$과 $-1.7\times10^{-9}$ 사이에 있다.
+  자료: `records/r059f11e…/evidence/producer/code/exact_stream.py`, `records/r059f11e…/evidence/producer/data/exact_stream_N800.json`, `records/r059f11e…/evidence/producer/code/exact_witness.py`, `records/r059f11e…/evidence/producer/data/exact_witness_n779.json`, `records/r059f11e…/evidence/producer/data/exact_witness_n780.json`, `records/r059f11e…/evidence/peer/pk_exact.py`, `records/r059f11e…/evidence/peer/witness780.py`, `records/r059f11e…/evidence/peer/witness780_peer.json`, `records/r059f11e…/evidence/peer/lca_float_scan.py`, `records/r059f11e…/evidence/peer/lca_float_scan_N800.json`, `records/r0
+  인용(부록D 밖): [('장11.md', 25), ('장3.md', 179)]
+====================================================================================================
+[부록D_장4.md:1] D:central-gap-integer
+  제목: 가운데 증가의 정수 인증과 작은 행의 정확 계산 (정리 {{4:old-4-5}})
+  머리 라벨: ['4:old-4-5']
+  산술 등급: 정확 정수·유리수(방향을 정한 반올림의 고정소수점 정수 산술; 판정은 정수 비교).
+  범위: $8\le k\le10000$, $n\in\{2k-1,2k\}$, 그 가운데 $n\ge16$인 $19985$개 $n$. (ㄴ)은 $n\le60$.
+  확인하는 진술: (ㄱ) 모든 $16\le n\le20000$, $k=k_n=\lceil n/2\rceil$에서 $e_n>J_n(k-1)$이다. (ㄴ) $2\le n\le15$에서 $d_{n,k_n}<0$이고 $k_n\le j\le n-2$에서 $b_{n,j}\ge b_{n,j+1}$이며, $n=1$에서는 범위가 비어 있다.
+  자료: `records/rce3dc75…/evidence/peer/icert/icert.c`, `make_rtable.py`, `rtable.txt`, `icert_py.py`, `summarize.py`, `validate_small.py`, `out_8_10000.txt`, `out_small.txt`, `icert_summary.json`, `pyref_compare.json`; `records/rce3dc75…/evidence/peer/code/v_small_rows.py`, `v_exact_small.py`, `records/rce3dc75…/evidence/peer/data/v_small_rows_out.json`, `v_exact_small_out.json`; `records/rce3dc75…/review/checks/scripts/rev_icert_unpaired.py`, `rev_icert_unpaired_fast.py`, `rev_small_exact.py`, `records/rce3dc75…/review/checks/data/rev_icert_8_1000.out`, `rev_icert_big.out`, `rev_icert_dense.out`, `
+  인용(부록D 밖): [('장11.md', 26), ('장11.md', 30), ('장4.md', 555)]
+====================================================================================================
+[부록D_장4.md:30] D:central-gap-rational-audit
+  제목: 가운데 증가 해석적 연쇄의 정확 유리수 감사 (정리 {{4:old-4-5}}, 보조정리 {{4:gauss-contraction}}·{{4:gauss-coeff}}·{{4:two-corrections}}, 따름정리 {{4:gauss-coeff-numeric}})
+  머리 라벨: ['4:old-4-5', '4:gauss-contraction', '4:gauss-coeff', '4:two-corrections', '4:gauss-coeff-numeric']
+  산술 등급: 정확 정수·유리수(기호 계산 포함). 주 감사에는 수치 구적이 쓰이지 않는다.
+  범위: $k\ge30000$ 판과 $k\ge10000$ 판; (ㄴ)은 $\gamma\in[1/3,1]$; (ㄷ)(ㄹ)은 $\theta\in[0,1]$, $\nu\in\{-1,0\}$.
+  확인하는 진술: 다음 유리수 비교와 기호 항등식을 확인한다. (ㄱ) $1.287899<\mathsf a_0<1.2879$, $0.938892<\mathsf a_1<0.939$. (ㄴ) 보조정리 {{4:gauss-contraction}} (나)의 증명에 나오는 잔차 $\mathcal R(\iota)$에서 $\mathfrak x^0$~$\mathfrak x^3$의 계수가 $\gamma$의 Laurent 다항식으로 항등적으로 $0$이고, $\gamma=1/3$에서 $\mathfrak x^4$ 계수가 $2729376$이다. (ㄷ) 보조정리 {{4:gauss-coeff}} 둘째 단계의 $\mathfrak g(\kappa)$의 $\kappa^0$~$\kappa^8$ 계수($\theta$의 다항식)와 $|\mathfrak g_3|\le16988$, $|\mathfrak g_4|\le404903$($\theta\in[0,1]$)과 $(4.8)$의 허용폭이 $k\ge30000$에서 $2/k^2$, $k\ge1000
+  자료: `records/rce3dc75…/evidence/producer/work/real_comparison_audit.py`, `hermite_bounds_audit.py`, `hermite_series.py`, `hermite_laurent.py`, `vertical_exact_constant.py`, `exact_first_constant.py`, `vertical_error_audit.py`, `boundary_vertical_audit.py`, `effective_constants_audit.py`; `records/rce3dc75…/evidence/producer/output/hermite-bounds-audit.json`, `hermite-series.json`, `effective-constants-audit.json`, `boundary-vertical-audit.json`, `exact-first-constant.json`, `vertical-exact-constant.json`; `records/rce3dc75…/evidence/peer/k1audit/audit_K1.py`, `audit_K1_out.json`; `records/rce3dc75
+  인용(부록D 밖): [('장11.md', 27), ('장4.md', 237), ('장4.md', 296), ('장4.md', 306), ('장4.md', 312), ('장4.md', 318), ('장4.md', 396), ('장4.md', 400), ('장4.md', 501), ('장4.md', 507), ('장4.md', 517), ('장4.md', 529), ('장4.md', 539), ('장4.md', 551)]
+====================================================================================================
+[부록D_장4.md:50] D:crossing-small-n
+  제목: $20\le n\le1000$의 한가운데 오른쪽 증가 (정리 {{4:old-4-8}}(나))
+  머리 라벨: ['4:old-4-8']
+  산술 등급: 정확 정수·유리수.
+  범위: $5\le n\le1000$.
+  확인하는 진술: 모든 $20\le n\le1000$에서 $b_{n,k_n}<b_{n,k_n+1}$이다. $5\le n\le19$에서는 거짓이다.
+  자료: `records/re79cb4d…/evidence/peer/right_counts.py`, `right_counts2.py`, `crosscheck_counts.py`, `n1000_summary.py`, `n1000_summary.json`; `records/r656206c…/evidence/peer/code/pv_check_Y.py`, `pv_check_rows.py`, `pv_core.py`, `records/r656206c…/evidence/peer/data/pv_check_Y.json`, `pv_check_rows.json`.
+  인용(부록D 밖): [('장11.md', 28), ('장4.md', 567)]
+====================================================================================================
+[부록D_장4.md:74] D:QL-small-n
+  제목: $3\le n\le15$의 $\mathsf Q_L(n)$ (정리 {{4:old-4-9}})
+  머리 라벨: ['4:old-4-9']
+  산술 등급: 정확 정수·유리수.
+  범위: $3\le n\le15$(기록의 계산은 $1\le n\le1000$, 감소 수준 $43860$개).
+  확인하는 진술: 모든 $3\le n\le15$에서 $\mathsf Q_L(n)$이 성립한다. 곧 $2\ell\le n-2$, $b_{n,\ell}>b_{n,\ell+1}$인 모든 위치에서 $b_{n,\ell+1}^2\ge b_{n,\ell}b_{n,\ell+2}$이다.
+  자료: `records/rbeae3a3…/evidence/peer/exact_stream.py`, `exact_rows.py`, `stream1000-summary.json`, `streamR1000-summary.json`, `stream1000-rows.json.gz`.
+  인용(부록D 밖): [('장11.md', 29), ('장4.md', 577)]
+====================================================================================================
+[부록D_장5A.md:1] D:exact-n20000
+  제목: 모든 $n\le20000$의 단봉성을 이루는 네 조각의 정수 구간 인증과 증인 위치 (정리 {{5:old-5-1}}, 명제 {{5:witness-position-bound}})
+  머리 라벨: ['5:old-5-1', '5:witness-position-bound']
+  산술 등급: 정확 정수·유리수((ㄱ)–(ㅁ)의 주 계산; 정수 구간)와 방향 반올림 구간((ㄴ)의 독립 프로그램은 IEEE binary64의 방향 반올림 구간; (ㅂ)는 mpmath `iv`, 소수 $30$자리 — 이 글의 재계산). 정리 {{5:old-5-1}}의 결론은 (ㄱ)(ㄴ 첫째 프로그램)(ㄷ; D.{{D:central-gap-integer}})(ㄹ)(ㅁ)의 
+  범위: (ㄱ) 열 $2\le k\le120$(이 글의 재계산), $\max(2k+1,12)\le n\le10000$: 직접 비교 $1{,}175{,}466$개($k\le5$는 $n=12$부터 $9{,}989$개씩, $k\ge6$은 $n=2k+1$부터 $10000-2k$개씩); 열 인증 $121\le k\le500$(직접 비교는 $2k+1\le n\le2B$, 비 비교는 $B\le n\le2B$, $B=\lceil k^2/4\rceil$; $k\le141$에서는 $2B<10000$이라 그 위의 $n\le10000$은 비 전파가 닫는다. 명세
+  확인하는 진술: (ㄱ) $12\le n\le10000$에서 $b_{n,1}<b_{n,2}<\dots<b_{n,k_n-1}$. (ㄴ) $10001\le n\le20000$에서 $b_{n,1}\le b_{n,2}\le\dots\le b_{n,k_n}$. 두 범위 모두에서 $\ell=0$의 비교 $b_{n,0}=n!<A_{n,1}-n!=b_{n,1}$은 자명하다(「범위」(ㄴ)). (ㄷ) $16\le n\le20000$에서 $b_{n,k_n-1}<b_{n,k_n}$(정리 {{4:old-4-5}}의 유한 범위; 그 계산 명세는 부록 D.{{D:central-gap-integer}}에 있다). (ㄹ) $5\le n\le20000$, $(n-1)/2\le\ell\le n-3$의 모든 위치에서 $b_{n,\ell}\le b_{n,\ell+1}$이 성립하거나 $b_{n,\ell}>b_{n,\ell+1}$, $b_{n,\ell+1}^2>b_{n,\ell}b_{n,\ell+2}$, $b_{n,\ell}+b_{n,\el
+  자료: (ㄱ) `records/rc9aee43…/evidence/producer/code/positive_columns.py`, `records/rc9aee43…/evidence/producer/output/certificates-121-160.json`, `records/rc9aee43…/evidence/peer/code/extend_columns.py`, `rowwise_left.py`, `indep_lastcar.py`, `records/rc9aee43…/evidence/peer/output/ext-161-360.json`, `ext-361-442.json`, `ext-443-500.json`, `rw-10000-a.json`–`rw-10000-g.json`, `summary-all.json`, `records/rc9aee43…/review/evidence/rerun-k500.json`, `rev-col-k150.json`, `rev-col-k200.json`; `원고_자료/세션_재계산/left_columns_k2_120/code/left_columns.py`(기록 `positive_columns.py`의 사본 `code/positive_columns.py`를
+  인용(부록D 밖): [('장1.md', 58), ('장11.md', 30), ('장11.md', 31), ('장11.md', 34), ('장11.md', 35), ('장5A.md', 21), ('장5A.md', 23), ('장5A.md', 27), ('장5A.md', 29), ('장5A.md', 50)]
+====================================================================================================
+[부록D_장5A.md:25] D:c50
+  제목: $20001\le n\le50000$의 오른쪽 절반 인증과 $n\le20000$의 재인증 (정리 {{5:old-5-2}})
+  머리 라벨: ['5:old-5-2']
+  산술 등급: 방향 반올림 구간(IEEE binary64의 아래·위 반올림 두 패스, 표는 mpmath `iv` 소수 $40$자리의 바깥 반올림; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다.
+  범위: 행 $30{,}000$개(열 $10000\le c\le49999$), $\mathsf Q_R$ 위치 $524{,}955{,}000$개, 인접 쌍 $524{,}985{,}000$개. $5\le n\le20000$의 재인증(열 $2\le c\le19999$)은 위치 $99{,}970{,}002$개, 인접 쌍 $99{,}989{,}998$개.
+  확인하는 진술: $20001\le n\le50000$, $(n-1)/2\le\ell\le n-3$의 모든 위치에서 $b_{n,\ell}<b_{n,\ell+1}$ 또는 $b_{n,\ell+1}^2>b_{n,\ell}b_{n,\ell+2}$가 인증되고, $\lceil(n-1)/2\rceil\le\ell\le n-2$의 모든 인접 쌍에서 $b_{n,\ell}<b_{n,\ell+1}$ 또는 $b_{n,\ell}>b_{n,\ell+1}$이 인증되며, 각 행의 마지막 증가 위치가 $n-2-\max\{m\ge171:m^{3/2}+9m\le n\}$ 이상이다. 같은 프로그램으로 $5\le n\le20000$을 계산한 결과가 D.{{D:exact-n20000}}(ㄹ)의 행별 자료와 일치하고, 그 행들에서도 $\lceil(n-1)/2\rceil\le\ell\le n-2$의 모든 인접 쌍이 미결 없이 엄격 증가 또는 엄격 감소로 판정된다(명제 {{5:witness-position-bound}}의 증명이 봉우리가 한 칸
+  자료: `records/r59c82d7…/evidence/code/qrcert.c`, `make_tables.py`, `bor.bin`, `h.bin`, `tables_manifest.json`, `postprocess_rows.py`, `merge_chunks.py`, `records/r59c82d7…/evidence/runs/ext50000_summary.json`, `ext50000_rows.tsv`, `ext50000_post.json`, `e50_1_summary.json`–`e50_6_summary.json`, `full20000_summary.json`, `full20000_rows.tsv`, `full20000_compare_published.txt`, `t60_validate.json`, `records/r59c82d7…/evidence/exact_check.json`; `원고_자료/세션_재계산/c50_iv/c50iv.c`, `build.bat`, `make_tables_iv.py`, `tables_iv_manifest.json`, `postprocess_iv.py`, `exact_small.py`, `probe_undercount.py`, `run
+  인용(부록D 밖): [('장11.md', 30), ('장11.md', 31), ('장5A.md', 40)]
+====================================================================================================
+[부록D_장5A.md:50] D:newton-m170
+  제목: 원천별 비교 $(\mathrm G)_d$의 Newton 전진 차분 인증 (정리 {{5:old-5-4}})
+  머리 라벨: ['5:old-5-4']
+  산술 등급: 정확 정수·유리수.
+  범위: $2\le r\le170$, $1\le d\le r-1$의 $14{,}365$개 다항식. $r=45$에서 $0.5$초, $r=150$에서 약 $2$분.
+  확인하는 진술: 모든 $2\le r\le170$, $1\le d\le r-1$에서 정리 {{5:old-5-4}}의 증명에 적은 정수값 다항식 $\mathrm{Nw}_{r,d}(\mathrm{nv})$($\mathrm{nv}=k-r-1\ge0$)의 전진 차분 $\Delta^i\mathrm{Nw}_{r,d}(0)$이 모두 음이 아니고 $\mathrm{Nw}_{r,d}(0)>0$이며, 차수 $r+d+3$ 너머의 차분이 $0$이다.
+  자료: `records/r708d99c…/evidence/peer/cert_newton_summary.json`과 범위별 JSON, `records/r708d99c…/evidence/peer/cert_newton.py`(`gam`), `records/r708d99c…/evidence/peer/peer_core.py`(`gammas`), `records/r708d99c…/evidence/peer/recheck_certificate.py`, `recheck_certificate_out.json`, `records/r708d99c…/evidence/peer/verify_P_poly.py`, `records/r708d99c…/evidence/peer/verify_reduction.py`, `records/r708d99c…/evidence/producer/work/renewal_poly_results.json`, `records/r708d99c…/review/checks/rv_cert.py`, `rv_core.py`, `rv_cert_newton_A.json`($2\le r\le60$), `rv_cert_newton_B.json`($r=101,102,170$); `원고_자료
+  인용(부록D 밖): [('장11.md', 32), ('장5A.md', 200)]
+====================================================================================================
+[부록D_장5A.md:70] D:tail-T1-partAB
+  제목: 꼬리 정리 T1의 두 부분 (A)·(B)의 구간 계산 (정리 {{5:old-5-5}})
+  머리 라벨: ['5:old-5-5']
+  산술 등급: 방향 반올림 구간(30자리).
+  범위: (A) $9{,}829$개의 $r$. (B) 상수 한 벌.
+  확인하는 진술: (A) $171\le r\le9999$의 모든 정수 $r$에서 $\mathfrak k_r=\lceil r^{3/2}+8r\rceil$, $\rho_r=\mathfrak k_r/(\mathfrak k_r+r)$에 대해 $\mathrm{tm}_{r-1}(\rho_r)$의 하계 $\mathrm{eb}_r$과 정리 {{5:old-5-5}}의 증명의 다항식 $\mathrm{Pc}(\mathfrak k_r)$의 하계가 양수다. (B) $\mathfrak L(10^4)\ge0.845204$이고, $\mathfrak s=\sqrt r\ge100$에서 $\mathfrak s(\frac12+2\mathfrak L(10^4)-\sqrt{3\pi/2})+\frac12-[\frac1{3\mathfrak s}+\frac8{3\mathfrak s^2}+\frac{2.507}{\mathfrak s^2}+\frac{1+2.1709\,\mathfrak s}{\mathfrak s^3}]\ge0.0196\,\mathf
+  자료: 코드의 변수 `k0`는 이 글의 $\mathfrak k_r$, `E`는 $\mathrm{eb}_r$, `t`는 $\mathrm{bw}_j$, `rho`는 공비 $\mathrm{bw}_{J_2+1}/\mathrm{bw}_{J_2}$, `L`은 $\mathfrak L$이다. `records/r0dc57fa…/evidence/peer/code/cert_tail_alpha1.py`, `records/r0dc57fa…/evidence/peer/data/cert_tail_alpha1_171_9999.json`, `records/r0dc57fa…/evidence/peer/code/tail_alpha_scan.py`, `records/r0dc57fa…/evidence/peer/data/tail_alpha_scan.json`, `records/r0dc57fa…/evidence/peer/code/S_float.py`, `core_exact.py`, `records/r0dc57fa…/review/evidence/t1_check.py`, `records/r0dc57fa…/review/evidence/t1_check_out.json`.
+  인용(부록D 밖): [('장11.md', 33), ('장5A.md', 341), ('장5A.md', 343)]
+====================================================================================================
+[부록D_장5A.md:90] D:bernstein-signs
+  제목: 진입 증가의 35개 $r$ 칸의 Bernstein 부호 인증 (정리 {{5:old-5-7}})
+  머리 라벨: ['5:old-5-7']
+  산술 등급: 정확 정수·유리수(Python 정수와 분수).
+  범위: $r\ge529$, $\frac{16}{25}\le x^{3/2}\le\frac{13}{20}$($35$개 $r$ 칸).
+  확인하는 진술: 정리 {{5:old-5-7}}의 증명에서 각 $r$ 칸의 상계 다항식 $\mathrm{Pol}_{\mathrm E}(x^{3/2})$를 $x^{3/2}=\frac{16}{25}+\frac{\mathrm {bv}}{100}$으로 바꾸어 차수 $96$의 Bernstein 기저로 전개한 계수가 모두 음수다.
+  자료: `records/r690be93…/evidence/producer/certify_entry.py`, `certify_concavity.py`, `published_algebra.py`, `entry-slope-certificate.json`, `check_certificates.py`, `direct_checks.py`, `certificate-check.json`, `direct-checks.json`, `records/r690be93…/evidence/peer/reproduction/`, `records/r690be93…/evidence/peer/kernel_sample.py`, `kernel_sample/`, `tsv_crosscheck_output.txt`, `window_check.json`.
+  인용(부록D 밖): [('장11.md', 34), ('장5A.md', 478)]
+====================================================================================================
+[부록D_장5A.md:110] D:band-A-certification
+  제목: 꼬리 띠 A·A⁺의 직사각형 인증 (정리 {{5:old-5-12}})
+  머리 라벨: ['5:old-5-12']
+  산술 등급: Laurent 계수는 정확 정수·유리수. 직사각형 평가는 (A) 첫 인증은 120비트 고정소수점 정수 구간, (A) 재인증과 (A⁺) 200비트 방향 반올림 구간(mpmath).
+  범위: (A) 첫 인증: $\mathfrak s^{-1}\in[0,\frac{41}{1000}]$, $x^{3/2}\in[\frac{73}{100},\frac65]$를 폭 $\frac2{1000}$ 이하로 나눈 $4935$개($21\times235$), $K=24$. 독립 재인증: $82\times235=19{,}270$개($\mathfrak s^{-1}$ 폭 $\frac1{2000}$, $x^{3/2}$ 폭 $\frac1{500}$), $K=30$. (A⁺) 두 조각: $[\frac65,\frac32]$, $r\ge833$, $K=30$
+  확인하는 진술: 좌표 $(\mathfrak s^{-1},x^{3/2})$의 각 직사각형에서 정리 {{5:old-5-12}}의 증명의 상계 다항식 $\mathrm{Pol}_{\mathrm A}(x^{3/2})$가 $-\frac1{100}$ 미만이다.
+  자료: `records/r13b0b8f…/evidence/producer/output/critical-strip-certificate.json`, `code/cert_critical_strip.py`, `certificate-run.log`, `verification.json`, `records/r13b0b8f…/evidence/peer/code/indep_cert.py`, `indep_cert2.py`, `indep_cert3.py`, `laurent_sympy.py`, `laurent_fast.py`, `records/r13b0b8f…/evidence/peer/indep_cert_A.json`, `cert2_12_15.json`, `cert3_15_18.json`, `indep_cert_ext15.json`, `laurent_series_check.json`, `gf_identity_check.json`, `J_identity_check.json`, `tsv_crosscheck.json`, `strip_sample.json`, `reproduction/critical-strip-certificate-rerun.json`, `records/r13b0b8f…/rev
+  인용(부록D 밖): [('장11.md', 35), ('장11.md', 156), ('장5A.md', 618)]
+====================================================================================================
+[부록D_장5A.md:130] D:critical-window-rig
+  제목: 임계 창 인증의 둘러싸기 설계, 상자 모임과 구간 검증 상수 (정리 {{5:old-5-13}})
+  머리 라벨: ['5:old-5-13']
+  산술 등급: 방향 반올림 구간(mpmath.iv, 30자리). 급수는 명시적 꼬리와 함께 자른다. 상자 자료는 상자별 캐시(JSON, 17자리 십진 문자열)에 저장해 재사용하며, 읽을 때 양 끝을 상대 $2^{-48}$ 바깥으로 넓혀 둘러싸기를 유지한다.
+  범위: $\mathrm{ku}\in(0,10001^{-1/3}]$: 폭 $0.0015$의 상자 A00–A28($0.04641\to0.00291$)과 그 아래를 $0.0015$까지 덮는 폭 $0.00141$의 상자 A29, 비 $1.25$의 기하 상자 G00–G11($0.0015\to1.0308\times10^{-4}$), 얇은 G12, 마지막 G13 $=[0,1.0307\times10^{-4}]$($k\ge9.13\times10^{11}$과 $k=\infty$). 상자마다 $\hat x\in[1.4,10]$을 $\mathrm{cw}=0.2
+  확인하는 진술: $\mathrm{ku}$의 상자 $44$개와 $\hat x\in[1.4,10]$의 셀마다 $\inf(\Upsilon_e-\Upsilon_B)>0$. 보조정리 {{5:cut-rep}}(라) 뒤의 경로 회전에 쓰이는 반직선 $\arg\hat\varphi=-\pi/8$, $|\varphi|\le\frac12$ 위의 구간 검증 상수들과, 호 $|\hat\varphi|=\frac12\mathrm{ku}^{-3/2}$·실수축 나머지 $|\varphi|\in[\frac12,\pi)$의 기여가 예산 $\mathrm{far}_0\le e^{-800}$ 안에 든다는 것.
+  자료: `records/ra4c01fc…/evidence/producer-code/`(rig_*.py), `records/ra4c01fc…/evidence/certificates/cert2/`, `cert3/`(상자별 JSON), `records/ra4c01fc…/evidence/peer/coverage_check.py`, `coverage_check.out`, `exact_en_B.py`, `contain_check.py`, `contain_*.log`, `h_exact.py`, `check_h_contain.py`, `h_contain.jsonl`, `check_constants.py`, `check_xi.py`; `원고_자료/세션_재계산/critical_window_rerun/`(`rig_common.py`, `rig_H.py`, `rig_ray2.py`, `rig_ray4.py`, `rig_pipeline.py`, `rig_pipeline2.py`, `rig_cert.py`, `rig_W.py`, `ivio.py`: 이 글이 쓴 코드, `orig/`: 기록의 원본; `boxes.py`, `common.py`, `rerun_boxes.py`, `recert_f
+  인용(부록D 밖): [('장11.md', 36), ('장5A.md', 698), ('장5A.md', 746)]
+====================================================================================================
+[부록D_장5B.md:1] D:window-mass-constant
+  제목: 가중 창 질량의 균일 상수 $\mathsf w_0$의 구간 산술 인증 (정리 {{5:old-5-32}})
+  머리 라벨: ['5:old-5-32']
+  산술 등급: 방향 반올림 구간(mpmath 구간 산술 `iv`, 소수 $40$자리).
+  범위: $Y\ge25000$($\mathfrak h\le\mathfrak h_0=0.0342$).
+  확인하는 진술: 정리의 증명에서 가중 창 질량의 하계는 두 함수의 적분으로 적혔고 이 항목에서는 그 두 함수를 단봉 계단 함수로 바꾸어 그 하계를 수치로 확인한다. 그러기 위해 $\mathfrak h_0=0.0342$, $\upsilon_{\max}=\sqrt{6\mathfrak h_0}$, $\mathfrak c_2=1/(2(1-\upsilon_{\max}))$로 둔다. $\theta\in[0,4.1]$의 $1600$개 셀에서 잰 $\mathfrak g$의 하계로 단봉 계단 함수 $\tilde\psi$를, $\theta\in[0,12]$의 $6400$개 셀에서 잰 $\bar\varrho$의 상계로 단봉 계단 함수 $\tilde\varphi$를 만든다. 확인하는 부등식은
+  자료: `원고_자료/세션_재계산/r8a9b11e/ul_iv_fixed.py`(이 글의 코드; 기록의 `ul_iv.py`와 115행 한 줄만 다르다; 인자 `25000 1600 1200 0.1 6400 4`), `원고_자료/세션_재계산/r8a9b11e/outputs_fixed/`; `records/r8a9b11e…/evidence/peer/ul_iv.py`.
+  인용(부록D 밖): [('장11.md', 37), ('장5B.md', 356)]
+====================================================================================================
+[부록D_장5B.md:38] D:band-check
+  제목: 조립 범위의 포락선 검사 (명제 {{5:band-inequality}})
+  머리 라벨: ['5:band-inequality']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리).
+  범위: $n=50001$(포락선의 $n$-단조성, 곧 하계 포락선은 증가하고 상계 포락선은 감소한다는 사실로 모든 $n\ge50001$을 덮으며 단조성은 명제의 증명에서 확인한다), $\lambda\in[1/2,2/3]$.
+  확인하는 진술: 조립 범위의 판정식은 그 범위의 모든 위치에서 성립해야 하고 이 항목에서는 그 범위를 셀로 잘라 셀마다 좌변의 하계를 잰다. 곧 $\lambda\in[1/2,2/3]$의 $4000$개 셀(두 끝점을 $[\lambda_a,\lambda_b]$로 적는다) 각각에서 아래 다섯 포락선을 $n=50001$, $\mathsf w_0=0.71216$으로 평가한 $(5.4)$의 좌변 하계와 우변 $1$의 비가 $1.3558$ 이상이다.
+  자료: `records/r8a9b11e…/evidence/peer/band_iv.py`; `원고_자료/세션_재계산/band_check/band_cells.py`(이 글의 코드), `band_cells_CE0.tsv`(셀별 비의 하계), `band_read.py`, `band_read_out_CE0.txt`(판독); `band_iv.py`(기록 코드의 사본), `band_iv_out_CE0.txt`(인자 `0.71216 0 4000`의 실행).
+  인용(부록D 밖): [('장11.md', 38), ('장5B.md', 420)]
+====================================================================================================
+[부록D_장6.md:1] D:theorem-U-constant
+  제목: 기울임 곡률 상계의 적분 상수 (정리 {{6:theorem-U}})
+  머리 라벨: ['6:theorem-U']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  범위: $U\in[0,1+2\mathfrak V_0]$, 셀 $16000$개와 첫 셀 하나(셀 $32000$개로도 계산); $\mathcal I_{\mathcal F}$의 인수는 $\mathfrak T\le(1+3\mathfrak V_0)/(2+2\mathfrak V_0)<0.5004$.
+  확인하는 진술: 정리 {{6:theorem-U}}의 증명 끝에 쓰인 네 부등식 $\mathcal J_{\mathrm I}(1)\le8.133$, $\mathcal Y_{\mathrm I}(1)\le10.301$, $\mathcal J_{\mathrm X}(\Gamma_\ast)\le17.951$, $\mathcal Y_{\mathrm X}(\Gamma_\ast)\le23.462$를 확인한다. 이 넷에서 $3\mathsf c(\mathcal J_{\mathrm I}+\mathsf c\mathcal Y_{\mathrm I})+1.5\Gamma_\ast\mathsf m_\ast\mathsf c(\mathcal J_{\mathrm X}+\mathsf c\mathcal Y_{\mathrm X})\le14.653+35.952=50.605\le50.62$가 나온다.
+  자료: `records/r845b205…/evidence/peer/tv_certify.py`, `tv_certify_out.txt`, `records/r845b205…/evidence/peer/tv_stages.py`, `tv_stages_out.txt`, `records/r845b205…/review/evidence/rv_constU.py`, `rv_constU_out.txt`; `원고_자료/세션_재계산/theorem_U_constant/theorem_U_iv.py`, `theorem_U_iv_out.txt`(셀 $16000$개), `theorem_U_iv_out_32000.txt`(셀 $32000$개).
+  인용(부록D 밖): [('장11.md', 39), ('장6.md', 890)]
+====================================================================================================
+[부록D_장6.md:21] D:theorem-D-base
+  제목: 임계 창 수준 질량 상하계의 기저 $m\le700$ (정리 {{6:theorem-D}})
+  머리 라벨: ['6:theorem-D']
+  산술 등급: 정확 정수·유리수(결손 갱신 재귀)와 방향 반올림 구간($\Psi$와 비; mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 $\Psi$와 비를 40자리로 평가한다.
+  범위: $4\le m\le700$, $1\le d\le\lfloor m^{2/3}/2\rfloor$($m=700$에서 $d\le39$), 곧 $8d^3\le m^2$인 $16229$쌍.
+  확인하는 진술: 정리 {{6:theorem-D}}(나)의 기저, 곧 모든 정수 $4\le m\le700$과 $1\le d\le\lfloor m^{2/3}/2\rfloor$에서 $\Psi(d)/(2m)\le c_m(m-d)\le3\Psi(d)/(2m)$이라는 부등식을 확인한다.
+  자료: `records/r5bbc534…/evidence/producer/code/thmD_base.py` → `records/r5bbc534…/evidence/producer/out/thmD_base_L700.out`; `records/r5bbc534…/evidence/peer/verify_DR_thmD.py` → `verify_DR_thmD.out`(실행 `python verify_DR_thmD.py 700`); `원고_자료/세션_재계산/theorem_D_base/thmD_base_iv.py`, `thmD_base_iv_out.txt`.
+  인용(부록D 밖): [('장11.md', 40), ('장6.md', 1009)]
+====================================================================================================
+[부록D_장6.md:41] D:prop-W-thirteen
+  제목: 핵심 근처 열세 항의 음성 부등식 (명제 {{6:v-negative}})
+  머리 라벨: ['6:v-negative']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 40자리 평가다.
+  범위: $k=3131$, $1\le d\le13$.
+  확인하는 진술: 부등식 (6.50)을 $k=3131$, $1\le d\le13$에서 확인한다. 이 부등식은 명제의 증명이 핵심 근처 항, 곧 첫 층 꼬리합에서 가장 아래 절단점 바로 위에 놓인 열세 항이 음이라는 것을 보이려고 세운 충분조건이다. 적으면 $(k-1)\bigl(e\,\mathrm{Ren}(d+1)-60(d+1)/(k+d)\bigr)>2\bigl(1+\sum_{r=1}^{d-1}(e\,\mathrm{Ren}(r+1)+60(r+1)/(k+d))\bigr)$.
+  자료: `records/r29c10cd…/evidence/peer/code/near_window_thresholds.py` → `records/r29c10cd…/evidence/peer/data/near_window_thresholds.out`; `원고_자료/세션_재계산/prop_W_thirteen/iv13.py`, `iv13_out.txt`.
+  인용(부록D 밖): [('장11.md', 41), ('장6.md', 1223)]
+====================================================================================================
+[부록D_장6.md:61] D:tilt-sum-small-k
+  제목: 기울인 Borel 질량 합의 작은 $k$ 확인 (보조정리 {{6:tilt-sum}})
+  머리 라벨: ['6:tilt-sum']
+  산술 등급: 정확 정수·유리수.
+  범위: $2\le k\le60$(기록의 둘째 작성자, 정확); $2\le k\le300$(기록의 첫째 작성자, 유리수 상계). 진술에 필요한 범위는 $2\le k\le42$뿐이다.
+  확인하는 진술: 보조정리 {{6:tilt-sum}}의 $2\le k\le42$ 부분, 곧 $\mathfrak q=e\,\mathsf x_k=e(k/(k+1))^{k-1}$에 대해 $\sum_{n=2}^{k+1}\mathrm{Bor}(n)\,\mathfrak q^n<1$이라는 부등식을 확인한다.
+  자료: `records/r051bfe1…/evidence/peer/peer_lemmaS.py` → `peer_lemmaS.log`; `records/r051bfe1…/evidence/producer/check3.py` → `check3.log`.
+  인용(부록D 밖): [('장11.md', 42), ('장6.md', 203)]
+====================================================================================================
+[부록D_장7A.md:1] D:column-certification-k500
+  제목: 열 인증: $121\le k\le500$의 직접 차분과 비 비교의 정수 구간 계산 (보조정리 {{7:column-lemma}})
+  머리 라벨: ['7:column-lemma']
+  산술 등급: 정확 정수·유리수($144$비트 고정소수점 정수 구간; 1.5절의 등급 표대로 바깥쪽으로만 반올림하는 정수 구간은 이 등급에 든다). 기록의 둘째 작성자의 재계산과 이 글의 재계산은 모두 $160$비트다.
+  범위: 기록의 첫째 작성자: $k=121,\dots,160$(40열). 기록의 둘째 작성자: $k=161,\dots,500$(340열). 각 열에서 직접 차분은 $2k+1\le n\le2B$, 비 비교는 $B\le n\le2B$, $B=\lceil k^2/4\rceil$. 비교 수는 직접 차분 $386{,}260+19{,}982{,}310$, 비 비교 $198{,}790+10{,}103{,}865$.
+  확인하는 진술: $121\le k\le500$인 각 열에서 $B=\lceil k^2/4\rceil$로 두면 다음 둘이 성립한다. 첫째, $2k+1\le n\le2B$인 모든 $n$에서 $d_{n,k}>0$이다. 둘째, $B\le n\le2B$인 모든 $n$에서 $10A_{n,k}\ge17A_{n,k-1}$이다. 함께 쓰이는 정수 부등식 $10^{21}\cdot400^{10}>17^{21}\cdot123^{10}$도 확인한다.
+  자료: `records/rc9aee43…/evidence/producer/code/positive_columns.py`, `records/rc9aee43…/evidence/producer/code/verify_positive_columns.py`, `records/rc9aee43…/evidence/producer/output/certificates-121-160.json`, `records/rc9aee43…/evidence/producer/output/batch-summary.json`, `records/rc9aee43…/evidence/producer/output/fixed-ratio-integer-check.json`, `records/rc9aee43…/evidence/peer/code/extend_columns.py`, `records/rc9aee43…/evidence/peer/code/producer_positive_columns.py`, `records/rc9aee43…/evidence/peer/output/ext-161-360.json`, `records/rc9aee43…/evidence/peer/output/ext-361-442.json`, `recor
+  인용(부록D 밖): [('장11.md', 43), ('장7A.md', 346)]
+====================================================================================================
+[부록D_장7A.md:31] D:seed-certificates-k120
+  제목: 유한 전파 인증서: $2\le k\le120$ (정리 {{7:seed-transfer}})
+  머리 라벨: ['7:seed-transfer']
+  산술 등급: 정확 정수·유리수.
+  범위: $k=2,\dots,120$(119개 인증서). 대표값 $(k,\mathfrak k_k,\mathfrak d_k)=(2,8,13)$, $(8,24,43)$, $(34,68,189)$, $(120,240,709)$; 검사한 구간 $\mathfrak k_k\le n<\mathfrak d_k+k+1$은 각각 $n=8$–$15$, $24$–$51$, $68$–$223$, $240$–$829$. 최종 하계 벡터의 계수는 모두 합쳐 $116{,}128$개, 검사 구간의 $\tilde{\mathfrak Q}_n$ 값은 $34{,}571$개(저장
+  확인하는 진술: 각 $2\le k\le120$에 대해 어떤 절단점 $\mathfrak k_k$와 미분 횟수 $\mathfrak d_k\ge\mathfrak k_k$에서 정리 {{7:seed-transfer}}(다)의 세 조건, 곧 (나)의 계수별 하계 벡터 $\underline{\phi}^{[\mathfrak d_k]}$의 모든 성분이 계수가 음이 아니고, $\mathfrak k_k\le n<\mathfrak d_k+k+1$에서 $\tilde{\mathfrak Q}_n\ge0$이며 $\tilde{\mathfrak Q}_{\mathfrak k_k}>0$이라는 것이 성립한다. 또 $\max(16,2k-1)\le n<\mathfrak k_k$인 모든 $n$에서 $d_{n,k}>0$이다. 둘을 합치면 모든 $n\ge16$, $2\le k\le\min(120,\lceil n/2\rceil)$에서 $d_{n,k}>0$이다.
+  자료: `records/r9e782f5…/producer/certificate-k*.json`(119개), `records/r9e782f5…/producer/lower-cone-k*-cut*.json.gz`(121개), `records/r9e782f5…/peer_verify.py`, `records/r9e782f5…/peer/audit.json`, `records/r9e782f5…/producer-files.json`; 검토의 재실행 `records/r9e782f5…/review/reproduction/`.
+  인용(부록D 밖): [('장11.md', 44), ('장7A.md', 328)]
+====================================================================================================
+[부록D_장7A.md:51] D:self-consistent-constants
+  제목: 자기일관 상계의 상수: 세 범위 (정리 {{7:self-consistent-S}}, 따름정리 {{7:cor-S-prime}})
+  머리 라벨: ['7:self-consistent-S', '7:cor-S-prime']
+  산술 등급: 정확 정수·유리수(세 범위의 상수, 따름정리의 세 값)와 방향 반올림 구간($e^{-i}$).
+  범위: 세 범위의 매개변수 셋.
+  확인하는 진술: (1) 정리 {{7:self-consistent-S}}(다)의 표. 세 범위 $(\mathfrak L,\mathcal J^{\mathrm S},k^{\mathrm S}_0)=(267/100,25,501)$, $(27/10,70,1855)$, $(271/100,100,6098)$에서 $\mathfrak j^\ast(\mathfrak L)=82,220,490$, $k_{\mathrm R}(\mathfrak L)=429,1855,6098$, $\mathfrak R_{\mathcal J}=0.02499107,0.00880166,0.00569075$(여덟 자리 반올림), $\Xi=0.749711,0.854757,0.865504$, $\Xi^{(k^{\mathrm S}_0)}=0.736245,0.849132,0.862859$(여섯 자리 반올림), $\mathfrak A_0\le1.4708,2.5335,2.7354$, $\mathfrak B_0\le0.098505,0.060259,0.0422$이
+  자료: `records/rad00a59…/evidence/peer/cert_S.py`, `records/rad00a59…/evidence/peer/cert_S.txt`, `records/rad00a59…/evidence/peer/cert_S_tiers.py`, `records/rad00a59…/evidence/peer/cert_S_tiers.txt`, `records/rad00a59…/evidence/peer/sc_thresholds.py`, `records/rad00a59…/evidence/peer/sc_thresholds.txt`, `records/rad00a59…/evidence/peer/sc_bounds.py`, `records/rad00a59…/evidence/peer/cert_table.py`, `records/rad00a59…/evidence/peer/cert_table.txt`; 검토의 독립 재계산 `records/rad00a59…/review/evidence/rv_constants.py`, `records/rad00a59…/review/evidence/rv_constants.txt`.
+  인용(부록D 밖): [('장11.md', 45), ('장7A.md', 511), ('장7A.md', 555)]
+====================================================================================================
+[부록D_장7A.md:71] D:xcert-partAB
+  제목: 유한 크기 전달의 다섯 범위 인증 (정리 {{7:old-6-12}}, 정리 {{7:polar-PD}})
+  머리 라벨: ['7:old-6-12', '7:polar-PD']
+  산술 등급: 방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 음이 아닌 항 $n$개의 내적과 합(BLAS 포함)은 합산 순서와 FMA 사용에 무관한 한계 $|\mathrm{fl}-\t
+  범위: 범위 1 $[501,5000]$(4500열), 범위 2 $[5000,10^5]$(통과 구간 110개), 범위 3 $[10^5,7\times10^5]$(36구간), 범위 4 $[6\times10^5,10^{30}]$(72구간), 범위 5 $[10^{30},\infty)$. 이웃 범위가 겹쳐 빠지는 $k$가 없다.
+  확인하는 진술: 모든 정수 $k\ge501$에서 정리 {{7:X-cert}}의 조건 $R_U\le2-2/(n_{\mathrm X}(k)+1)$이 그 $k$를 덮는 어느 한 범위의 입력으로 성립한다. 따라서 모든 $k\ge501$, $n\ge n_{\mathrm X}(k)=\lceil k^{4/3}\rceil$에서 $\mathfrak P_k(n)\le2\mathfrak P_k(\infty)$다. 또 $y\ge2002$인 모든 열에서 그 열을 덮는 범위가 주는 $\mathrm{lp}_y$의 하계가 $5.3146$ 이상, 곧 $\mathrm{lp}_y\ge5.3146$임을 확인한다(정리 {{7:polar-PD}}의 증명이 쓴다).
+  자료: `records/rf451d83…/evidence/code/xcert.py`, `records/rf451d83…/evidence/code/xcert_I.py`, `records/rf451d83…/evidence/code/xcert_U.py`, `records/rf451d83…/evidence/code/tail_lemma.py`, `records/rf451d83…/evidence/code/core.py`, `records/rf451d83…/evidence/code/lemmaG.py`, `records/rf451d83…/evidence/code/asym.py`, `records/rf451d83…/evidence/code/envelope2.py`, `records/rf451d83…/evidence/code/envelope_int.py`, `records/rf451d83…/evidence/code/make_tables.py`, `records/rf451d83…/evidence/code/tables.py`, `records/rf451d83…/evidence/code/sigma_bracket.py`, `records/rf451d83…/evidence/producer/r
+  인용(부록D 밖): [('장11.md', 46), ('장11.md', 103), ('장7A.md', 735), ('장7B.md', 509), ('장7B.md', 526)]
+====================================================================================================
+[부록D_장7A.md:118] D:polar-blocks-488
+  제목: 극 영역 판정 연쇄의 입력: $488$개 $k$-구간과 $2472$개 $\mathrm{lp}$-구간 (명제 {{7:polar-W}})
+  머리 라벨: ['7:polar-W']
+  산술 등급: 방향 반올림 구간(binary64 위의 바깥 밀기 구간 산술; 초월함수를 정확 반올림 사칙연산·제곱근만으로 구현해 라이브러리 함수의 오차 가정이 없고, 모든 단계를 구간으로 평가함; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다(라이브러리 함수의 오차를 $4$ ulp로 가정하고, 부풀림 없는 단계 몇 곳의 상대 오차 $10^{-13}
+  범위: $k$-구간 $488$개가 $[2001,10^7]$을 빈틈없이 덮는다. $\mathrm{lp}$-구간 $2472$개가 $[10.9,300]$을 덮는다. 판정 단계의 대조는 $488$개 $k$-구간의 $3903$개 점.
+  확인하는 진술: 명제 {{7:polar-W}}의 증명이 쓰는 입력: 모든 정수 $k\ge2001$에서 명제 {{7:polar-R}}의 조건 (a)–(d)가 $n_1=n^\circ_k=\lceil2k^{3/2}\rceil$에 대해 성립한다. 곧 $\eta>0$, $\varepsilon_{n^\circ_k}<1$, $\psi_G(n^\circ_k)\ge0$($k\ge10^7$에서는 그 대신 $G\sqrt k\le0.9$)다.
+  자료: `records/r89eb039…/evidence/producer/code/ia.py`, `records/r89eb039…/evidence/producer/code/bounds_ia.py`, `records/r89eb039…/evidence/producer/code/cert_ia.py`, `records/r89eb039…/evidence/producer/code/cert_ia2.py`, `records/r89eb039…/evidence/producer/code/sparts.py`, `records/r89eb039…/evidence/producer/code/ctx_fast.py`, `records/r89eb039…/evidence/producer/code/cert_fast.py`, `records/r89eb039…/evidence/producer/code/run_blocks3.py`, `records/r89eb039…/evidence/producer/code/check_cover.py`, `records/r89eb039…/evidence/producer/code/polecore.py`, `records/r89eb039…/evidence/producer/note
+  인용(부록D 밖): [('장11.md', 47), ('장11.md', 147), ('장7A.md', 876)]
+====================================================================================================
+[부록D_장7B.md:1] D:band102-integer
+  제목: 중앙 띠 정리의 네 계산: 쌍별 판정의 껍질 검사, 꼬리 삼중의 인증, 해석적 연쇄의 정확 유리수 감사, 유한 위치의 구간 인증 (명제 {{7:pair-check-10000}}·{{7:pair-reach-table}}·{{7:analytic-transfer}}·{{7:integer-strips}}, 보조정리 {{7:hermite-nu}})
+  머리 라벨: ['7:pair-check-10000', '7:pair-reach-table', '7:analytic-transfer', '7:integer-strips', '7:hermite-nu']
+  산술 등급: (ㄱ)(ㄴ)(ㄷ)(ㄹ) 정확 정수·유리수. (ㅁ) 방향 반올림 구간(부동소수점 모형 없음; 포함구간의 상대 폭 약 $2\times10^{-15}$).
+  범위: (ㄱ) $k=10000$, $q+q'+j\le50$: $10{,}725$개 경우($q\le q'$인 순서 없는 쌍으로 센 수다. 판정식은 $q,q'$에 대칭이므로 순서쌍 $20{,}825$개를 다 검사한 것과 같다). (ㄴ) 다섯 삼중, $2\le q\le\mathfrak M$. (ㄷ) $K_1\in\{12000,13000,14000,15000,2\cdot10^4,3\cdot10^4,5\cdot10^4,10^5,2\cdot10^5,5\cdot10^5,10^6\}$, 껍질 $\nu_{\mathrm P}$와 $\nu_{\mathrm P
+  확인하는 진술: (ㄱ) 명제 {{7:pair-check-10000}}: $k=10000$에서 $q+q'+j\le50$인 모든 $(q,q',j)$($1\le q,q'$, $j\ge0$)에 대해 (7.11)의 우변 $1-\frac jk(\bar{\mathrm{ex}}_q+\bar{\mathrm{ex}}_{q'})-[\bar{\mathrm{ex}}_q(q'-1)+\bar{\mathrm{ex}}_{q'}(q-1)]/(2k)$가 양수다. (ㄴ) 명제 {{7:pair-reach-table}}(가), 곧 보조정리 {{7:tail-bound}}의 (7.12) $\mathfrak F_{\mathrm{tf}}(q)\ge0$($2\le q\le\mathfrak M$)이 다섯 삼중 $(K_1,\mathfrak M,\mathrm{tf})=(10^4,120,0.54)$, $(2\cdot10^4,250,0.593)$, $(10^5,300,0.522)$, $(10^5,450,0.548)$, $(10^6,700,0.519)$에서
+  자료: `records/r475ada3…/evidence/peer/exact/peer_pair_improved.py`, `records/r475ada3…/evidence/peer/exact/peer_pair_improved_out.json`, `records/r475ada3…/evidence/peer/exact/peer_pair_check_bound.py`, `peer_jets.py`, `records/r475ada3…/evidence/producer/band/audit_band.py`, `records/r475ada3…/evidence/producer/code/hermite_exact.py`, `records/r475ada3…/evidence/peer/repro/audit_param.py`, `records/r475ada3…/evidence/peer/repro/uv_general.py`, `records/r475ada3…/evidence/peer/repro/audit_diag_run.txt`, `records/r475ada3…/evidence/peer/repro/audit_band_run.txt`, `records/r475ada3…/evidence/peer/rep
+  인용(부록D 밖): [('장11.md', 48), ('장7B.md', 209), ('장7B.md', 268), ('장7B.md', 272), ('장7B.md', 294), ('장7B.md', 300), ('장7B.md', 304), ('장7B.md', 322), ('장7B.md', 348), ('장7B.md', 360)]
+====================================================================================================
+[부록D_장7B.md:21] D:moment-certification
+  제목: 모멘트 판정의 계산: 두 범위의 재귀 구간 인증, 열별 문턱 $n_{\mathrm M}(k)$의 정확 유리수 재계산 (정리 {{7:theorem-C-moment}}, 따름정리 {{7:qstar-implies-wlflat}})
+  머리 라벨: ['7:theorem-C-moment', '7:qstar-implies-wlflat']
+  산술 등급: (ㄱ) 방향 반올림 구간(binary64 끝점 구간; 정확히 반올림되는 원소별 곱·덧셈만 쓰고(BLAS·행렬곱·융합 곱셈-덧셈 없음), 짝지은 합 나무의 반올림 횟수를 세어 끝에서 $(1\pm\mathsf p)^r$로 넓힘 — 부록 D.{{D:column-certificates-841-2000}}의 내적과 같은 방식; 저장값이 모두 $0$이거나 $[2^{-
+  범위: 첫째 범위 $340$열, 둘째 범위 $1160$열. (ㄴ) $841\le k\le2000$의 $1160$열.
+  확인하는 진술: (ㄱ) 다음 위치 전부에서 $\mathbb E^\sigma_{n,k}[\mathcal T_k]>0$이다(기록의 계산은 이것을 아래 「식」 줄의 판정식으로 확인한다). 첫째 범위 $501\le k\le840$, $2k+1\le n\le\lfloor13k^2/100\rfloor$; 둘째 범위 $841\le k\le2000$, $10001\le n\le n_{\mathrm M}(k)-1$. (ㄴ) $841\le k\le2000$의 열마다 $\mathfrak P^{\mathrm M}_k$와 $n_{\mathrm M}(k)=\min\{n\ge n^{\mathrm{bis}}_0:\mathfrak m^\sharp(\mathfrak m^\sharp-1)>n\mathfrak P^{\mathrm M}_k\}$에 대해 $\mathrm Q_k(n_{\mathrm M})>0$, $\mathrm Q_k'(n_{\mathrm M})>0$($\mathrm Q_k(n)=\mathfrak m^\sharp(\math
+  자료: `records/r10ff8c2…/evidence/producer/lmcert_sweep.c`, `records/r10ff8c2…/evidence/producer/notes_errors.md`, `records/r10ff8c2…/evidence/producer/cert/`(`full_*`: 첫째 범위, 기록의 실행 이름 A3; `win_0..3`: 둘째 범위, 실행 이름 A5), `records/r10ff8c2…/evidence/producer/win_targets.py`, `records/r10ff8c2…/evidence/peer/block3_501_2000_all.json`(열별 인증값 사본), `records/r10ff8c2…/evidence/peer/brute.py`, `records/r10ff8c2…/evidence/peer/identities.py`, `records/r10ff8c2…/evidence/peer/exact_cols.py`, `records/r10ff8c2…/evidence/peer/npcheck.py`, `records/r10ff8c2…/evidence/peer/np_results.txt`, `records/r10ff8c2…/evid
+  인용(부록D 밖): [('장11.md', 49), ('장11.md', 95), ('장7B.md', 61), ('장7B.md', 67), ('장7B.md', 69), ('장7B.md', 417)]
+====================================================================================================
+[부록D_장7B.md:45] D:column-certificates-841-2000
+  제목: 열 841–2000의 열별 갱신 인증서: 정리 {{7:theorem-G-prime}}의 조건 (a′)(b′)(c′)를 만족하는 성분의 생성과 확인 (정리 {{7:theorem-C-moment}}; 따름정리 {{7:qstar-implies-wlflat}}의 열 $841\le k\le2000$ 부분)
+  머리 라벨: ['7:theorem-G-prime', '7:theorem-C-moment', '7:qstar-implies-wlflat']
+  산술 등급: 방향 반올림 구간(이 글의 재계산). binary64 벡터에서는 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고, 연산마다 결과를 한 칸 이상 바깥으로 민다($x\mapsto x\pm(|x|2^{-52}+2^{-1074})$). 재귀의 내적(음이 아닌 항 $k-1$개)은 깊이 $d=\lceil\log_2(k-1)\rceil$의 짝지은 합 나무로 더한
+  범위: $841\le k\le2000$의 $1160$열(기록의 계산과 이 글의 재계산은 $501\le k\le2000$의 $1500$열에서 했다. 열 $501\le k\le840$은 따름정리 {{7:qstar-implies-wlflat}}의 증명 (ㄱ)이 부록 D.{{D:moment-certification}}과 따름정리 {{7:cor-S-prime}}으로 닫으므로 이 인증서를 쓰지 않는다).
+  확인하는 진술: $841\le k\le2000$인 모든 정수 $k$에서 정리 {{7:theorem-G-prime}}의 (a′)(b′)(c′)를 만족하는 성분 $(\mathrm{lp}_{\mathrm L},\mathrm{lp}_{\mathrm U},\vartheta,\mathfrak b_0,\mathfrak P^{\mathrm U}_k,\mathrm{sep},\mathcal U^\sharp,n^{\mathrm{bis}}_0)$과 그로 정한 $\Gamma$가 있다. 따라서 모든 $n\ge n^{\mathrm{bis}}_0$에서 $\mathfrak P_k(n)\le\Gamma\,\mathfrak P^{\mathrm U}_k$다. 정리 {{7:theorem-C-moment}}와 부록 D.{{D:moment-certification}} (ㄴ)은 성분 $(n^{\mathrm{bis}}_0,\Gamma,\mathfrak P^{\mathrm U}_k)$을 쓴다.
+  자료: `records/rb7effe0…/evidence/code/turn3/`(`certificate3.py` 인증 코드; `block3_501_2000_all.json` 열별 성분, 여섯 자리; `blk3_stats.py`·`blk3_stats.out` 블록 통계; `samples3.out` 표본 열; `validate_eps3.py`·`validate_eps3.out`), 검토의 `records/rb7effe0…/review/evidence/cert/`, `records/rb7effe0…/review/evidence/check/`; 사본 `records/r10ff8c2…/evidence/peer/block3_501_2000_all.json`; 이 글의 구간 재계산 `원고_자료/세션_재계산/column_cert_iv/colcert_iv.py`(구간 부품 `ivlib.py`, $k$에 무관한 표 `tables.py`(처음 실행 때 `_cache/bor_pr0.npy`·`_cache/twiddle_2p21.npy`로 저장해 두고 그 뒤에는 그 파일을 읽는다; 묶음에 넣지 않고 다시 만든다); 실행 `python -I colcert_iv.py --ks 841-2000
+  인용(부록D 밖): [('장11.md', 50), ('장11.md', 95), ('장7B.md', 67)]
+====================================================================================================
+[부록D_장7B.md:65] D:Q-fin-1130
+  제목: 열 2001–3130의 한 걸음 판정: 원천 쪽 충분형과 첫 층 쪽 판정의 $n=20001$ 확인 (정리 {{7:qstar-columns}})
+  머리 라벨: ['7:qstar-columns']
+  산술 등급: 방향 반올림 구간(binary64 numpy 위의 바깥 반올림 구간과 mpmath `iv`, 소수 $40$자리; 이 글의 재계산). 기록의 계산은 binary64 사전 오차 해석이다. numpy에서는 사칙연산만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 민다. 음 아닌 항 $n$개의 내적과 합은 합산 순서와 FMA 사용에 무관한 한계 $|\mathr
+  범위: $2001\le k\le3130$($1130$열), $n=20001$. 기록의 계산은 또 $3131\le k\le4999$에서 두 판정이 처음 통과하는 $n$(원천 쪽 $n^\ast$, 첫 층 쪽 $t^\ast$)을 기록했다.
+  확인하는 진술: $2001\le k\le3130$의 모든 열에서 $n=20001$일 때 (ㄱ) 어떤 $\mathfrak l\in[1,k-2]$에 대해
+  자료: `records/r207f124…/evidence/peer/code/polar_q.py`, `records/r207f124…/evidence/peer/code/colsb.py`, `records/r207f124…/evidence/peer/out/polar_q_2001_4999_all.log`, `records/r207f124…/evidence/peer/out/polar_table.out`, `records/r207f124…/evidence/peer/out/polar_uniform.out`, `records/r207f124…/evidence/peer/out/polar_check.out`; 기록의 검토가 한 재계산의 결과는 같은 기록의 `review/feedback.md` §2.5에 적혀 있다. 입력: `records/rf451d83…/evidence/results/partB/xcert_501_5000_*.jsonl`. 이 글의 재계산: `원고_자료/세션_재계산/Q_fin_1130/extract_inputs.py` → `xcert_rows_2001_3131.json`, `extract_inputs_out.txt`(범위 1 인증값 $2001\le y\le3131$
+  인용(부록D 밖): [('장11.md', 51), ('장7B.md', 552)]
+====================================================================================================
+[부록D_장8.md:1] D:window-mass-env
+  제목: 창의 수준 질량 하계의 봉투 표와 셀 검사 (정리 {{8:old-6-28}})
+  머리 라벨: ['8:old-6-28']
+  산술 등급: 방향 반올림 구간(numpy 벡터 위의 바깥 반올림 구간과 mpmath `iv`; 이 글의 재계산). numpy에서는 $+$, $-$, $\times$, $\div$, $\sqrt{\ }$만 쓰고 정확 반올림된 결과를 $1$ ulp 바깥으로 밀며, 초등함수($\exp$)와 정확 표 $\mathrm{Bor}$·$\Psi$·$\mathrm{Bor}_\le$(소
+  범위: (가) $1\le q\le2999$, $\xi\in(0,\min(6,q/6600^{2/3})]$; $q$를 $[1,2280)$, $[2280,3000)$의 두 조각으로 나누어 병렬로 돌렸다. (나) $i=0,\dots,16$, $\xi\in(0,6]$, 격자 간격 $0.001$.
+  확인하는 진술: 정리 {{8:old-6-28}}의 증명이 명제 {{8:reduction-J}}에 넣는 두 조건. (가) $1\le q\le2999$의 각 $q$와 $\xi\in(0,\min(6,q/6600^{2/3})]$의 모든 실수 $\xi$에서 (8.23)이 성립한다. (나) $J_i=3000\cdot2^i$($0\le i\le16$)에 대해 모든 $\xi\in(0,6]$에서 (8.25)($i<16$)와 (8.26)($i=16$)이 성립한다. 두 조건의 시험 함수 $\Omega$와 원천 표 $\hat{\mathcal T}$(부족량 조건의 원천에 넣는, 봉투의 값을 점에 두고 저장한 표)는 아래 「식」의 것이다.
+  자료: `records/r030ffae…/evidence/peer/rerun/work/window_lib.py`(봉투 함수·사슬), `fixes.py`(`E_env_rigorous_fixed`, `lipG_up_fixed`), `build_env_fixed.py`(표 생성), `qenv_fix_x.npy`, `qenv_fix_v.npy`(저장된 표), `wKrig.npy`, `xKrig.npy`, `design.json`(시험 함수 표), `cert_lib_fixed.py`((가)·(나)의 검사), `cert_lib.py`, `cert_Cb_range.py`(세 조각 실행), 출력 `FIXED_cert_Cb_1_2080.out`, `FIXED_cert_Cb_2080_2621.out`, `FIXED_cert_Cb_2621_3000.out`, `FIXED_cert_Cb_result_1_2080.json`, `FIXED_cert_Cb_result_2080_2621.json`, `FIXED_cert_Cb_result_2621_3000.json`, `FIXED_cert_interval.out`, `FIXED_cert_interval_result.json`; 검토 재실행 `r
+  인용(부록D 밖): [('장11.md', 52), ('장11.md', 55), ('장8.md', 534), ('장8.md', 550), ('장8.md', 552)]
+====================================================================================================
+[부록D_장8.md:21] D:bprime-boxes
+  제목: 첫 조립의 상자 검사 (정리 {{8:old-6-29}})
+  머리 라벨: ['8:old-6-29']
+  산술 등급: 방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 곱해 아래로 민다. 벡터 쪽에는 초등함수를 쓰지 않으므로 그 정확도 가정
+  범위: $k\in[6668,1001931059908]$($k$-상자 $480$개), $103\le\nu\le3.6k^{2/3}$; 유한 상자 $140729$개와 꼬리 상자 $72$개.
+  확인하는 진술: 모든 정수 $k\ge6668$과 $103\le\nu\le3.6k^{2/3}$에서 (8.28)의 $\mathrm{LB}^{\mathrm U}(k,\nu)\ge1.05$.
+  자료: `records/r030ffae…/evidence/peer/rerun/work/cert_assembly_fixed.py`, 출력 `FIXED_cert_assembly_U_3.6_run2.out`, `FIXED_cert_assembly_result_U_X3.6_k6668.json`; 입력 표 `qenv_fix_x.npy`, `qenv_fix_v.npy`, `wKrig.npy`, `xKrig.npy`; 참 비의 대조 `records/r030ffae…/evidence/peer/check/check_BV.py`, `exact_lib.py`, `check_BV.out`; 검토 재실행 `records/r030ffae…/review/evidence/REVIEW_Bprime_3.6.out`. 실행: `rerun/` 폴더에서 `python -u work/cert_assembly_fixed.py 3.6 U 1.04 1.03 6668`. 이 글의 구간 재계산: `원고_자료/세션_재계산/bprime_boxes/ivbox_lib.py`(구간 부품; $\Omega$는 `window_mass_env/ia.py`의 정확 정의에서), `bprime_iv.py`(실행 `python -I b
+  인용(부록D 밖): [('장11.md', 53), ('장11.md', 54), ('장8.md', 662)]
+====================================================================================================
+[부록D_장8.md:45] D:band-boxes
+  제목: 띠 정리의 상자 검사 (정리 {{8:old-6-33}})
+  머리 라벨: ['8:old-6-33']
+  산술 등급: 방향 반올림 구간(이 글의 재계산). 스칼라 인자는 mpmath `iv`(소수 $34$자리)로 계산했다. 리만 합의 벡터는 binary64에서 IEEE 754의 정확 반올림 사칙연산과 제곱근만 쓰고 연산마다 결과를 1 ulp 밖으로 밀며, $6000$항의 합은 $1-10^{-11}$을 곱해 아래로 민다. 벡터 쪽에는 초등함수를 쓰지 않는다. 제타 상수는 D
+  범위: $k\in[6668,1001931059908]$($k$-상자 $480$개)와 꼬리. 유한 상자는 $206727$개이고 꼬리 상자는 $96$개다.
+  확인하는 진술: (8.30)의 $\mathrm{LB}^{\mathrm{low}}(k,\nu)$에 대해 모든 정수 $k\ge6668$, $103\le\nu\le0.48k$에서 $\mathrm{LB}^{\mathrm{low}}\ge1.009$.
+  자료: `records/r030ffae…/evidence/peer/rerun/work/cert_assembly_lowH.py`(위험률 판), `cert_assembly_mono.py`(바탕 코드), 출력 `LOWH_cert_assembly_T0.48_k6668.out`과 그 `.json`; 입력 표 `qenv_fix_x.npy`, `qenv_fix_v.npy`, `wKrig.npy`, `xKrig.npy`; 검토 재실행 `records/r030ffae…/review/evidence/REVIEW_LOWH_T0.48_k6668.out`. 실행: `rerun/` 폴더에서 `python -u work/cert_assembly_lowH.py 0.48 6668 1.04 1.03`. 이 글의 구간 재계산: `원고_자료/세션_재계산/band_boxes/band_iv.py`(구간 부품 `원고_자료/세션_재계산/bprime_boxes/ivbox_lib.py`; 실행 `python -I band_iv.py fbox H 12 25 6668 0 2`·`… 1 2`, 기록 방식은 `box …`, 꼬리는 `tail …`; 순서 `run_all.sh`), `band_summary.py`, 출력
+  인용(부록D 밖): [('장11.md', 54), ('장8.md', 731)]
+====================================================================================================
+[부록D_장8.md:79] D:stored-table-check
+  제목: 저장된 봉투 표와 닫힌 꼴 봉투의 비교 (보조정리 {{8:table-tolerance}}, 정리 {{8:closed-form-envelope}})
+  머리 라벨: ['8:table-tolerance', '8:closed-form-envelope']
+  산술 등급: 방향 반올림 구간(mpmath `iv`; 이 글의 재계산은 소수 $40$자리, 기록의 계산은 소수 $30$자리).
+  범위: $i=0,\dots,12000$; Jensen 성분을 쓴 점 $4148$개, 탈출 성분을 쓴 점 $7853$개($[2,2.1]$의 $201$개는 둘 가운데 큰 것).
+  확인하는 진술: 보조정리 {{8:table-tolerance}}(가)와 정리 {{8:closed-form-envelope}}(라)의 이음새 부등식. 저장된 binary64 값 $z_i$($0\le i\le12000$)가 모든 $i$에서 $z_i\le s^{\mathrm{cf}}(\xi^{\mathcal T}_{i+1})$을 만족하고 엄격 감소하며, 최소 감소 $z_{11999}-z_{12000}\ge6.6438\cdot10^{-6}$이다. 또 정리 {{8:closed-form-envelope}}(라)의 두 이음새 부등식 $q_{6600,6600}(2)\le0.213721<0.222127\le e^{-\mathsf j_\infty(2)}$, $q_{6600,6600}(2.1)\ge0.200904>0.198148\ge e^{-\mathsf j_\infty(2.1)}$.
+  자료: `records/rfc69320…/evidence/peer/peer_table_vs_closed_form.py`, `peer_table_vs_closed_form.out`(구간 산술 비교), `peer_closed_form_constants.py`, `peer_closed_form_constants.out`(명제 W\*·G\*의 상수), `peer_constants.py`, `peer_constants.out`(8.2절 상수의 40자리 재계산), `peer_table_geometry.out`(좌표와 저장값의 정확 사실), `peer_numeric.py`, `peer_numeric.out`, `peer_iv_sanity.out`(구간 산술의 표본 점검); 검토 `records/rfc69320…/review/evidence/rv_table_check.py`, `rv_table_check.out`, `rv_constants.py`, `rv_constants.out`, `rv_code_exact.py`, `rv_code_exact.out`. 입력 표는 `records/r030ffae…/evidence/peer/rerun/work/qenv_fix_x.npy`, `qe
+  인용(부록D 밖): [('장11.md', 55), ('장8.md', 449), ('장8.md', 455)]
+====================================================================================================
+[부록D_장9.md:1] D:m1-column-reading
+  제목: 증가 시작점 상계의 인증 열 판독 (정리 {{9:head-sum-2}})
+  머리 라벨: ['9:head-sum-2']
+  산술 등급: 정확 정수·유리수(인증 파일의 정수 구간 산술 결과를 정수 비교로 읽는다).
+  범위: $3132\le k\le19403$, 행 $m\le20000$.
+  확인하는 진술: $3132\le k\le19403$인 모든 정수 $k$와 $k+\lfloor0.75k^{2/3}\rfloor\le m\le\min(2k-1,20000)$인 모든 정수 $m$에서 $b_{m,k-1}\le b_{m,k}$다. 곧 그 모든 $(m,k)$에서 행 $m$의 위치 $k-1$은 정리 {{5:old-5-1}}의 인증이 증가 위치로 판정한 자리다.
+  자료: `records/r2ec875c…/evidence/peer/scripts/cert_readout.py`, `records/r2ec875c…/evidence/peer/out/cert_readout.out`(기록의 판독); 입력 자료는 `records/r19de912…/evidence/peer/cert/v2run20000-rows.tsv`, 인증 코드는 `records/r19de912…/evidence/peer/cert/qr_cert2.c`(같은 판정 줄이 `qr_cert3.c`에도 있다); `원고_자료/세션_재계산/m1_column_reading/m1_read.py`, `m1_read_out.txt`.
+  인용(부록D 밖): [('장11.md', 56), ('장9.md', 263)]
+====================================================================================================
+[부록D_장9.md:21] D:H-star-plus-interval
+  제목: 머리 합 여유 정리의 세 영역 구간 산술 (정리 {{9:H-star-plus}})
+  머리 라벨: ['9:H-star-plus']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리). $\upsilon_1$과 $\upsilon_2$는 $3132^{-1/3}$, $19404^{-1/3}$을 담는 구간의 위 끝이다.
+  범위: A: $k\ge3132$, $\xi\le0.75$; B: $k\ge19404$, $0.75\le\xi\le1$; C: $\xi<2\upsilon_1^2$.
+  확인하는 진술: 정리 {{9:H-star-plus}} 증명의 세 영역 A, B, C 전체에서 $\mathcal G(\xi,\upsilon)\le\mathcal L(\xi,\upsilon)$이고, $\mathcal G/\mathcal L$의 최댓값은 각각 $0.8321$, $0.6347$, $0.8321$ 이하다.
+  자료: `records/r33475a7…/evidence/peer2/scripts/hplus_interval.py`, `records/r33475a7…/evidence/peer2/out/hplus_interval_0.2.out`; 참값과의 대조 `records/r33475a7…/evidence/peer2/scripts/hplus_sanity.py`, `float_tools.py`, `hplus_float.py`, `records/r33475a7…/evidence/peer2/out/hplus_sanity.out`; `원고_자료/세션_재계산/H_star_plus/hplus_interval.py`, `hplus_interval_out.txt`.
+  인용(부록D 밖): [('장11.md', 57), ('장9.md', 291)]
+====================================================================================================
+[부록D_장9.md:41] D:AR-integrals
+  제목: 해석적 행 정리의 적분값 (정리 {{9:old-7-16}})
+  머리 라벨: ['9:old-7-16']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다.
+  범위: $k=6668$(정리의 단조성으로 모든 $k\ge6668$을 덮는다).
+  확인하는 진술: $\mathsf L_\ast(6668)=\mathcal J_1(6668)+\mathcal J_2(6668)+\mathcal J_3(6668)+\mathcal J_4(6668)\ge1.206$이고, 특히 $\mathsf L_\ast(6668)>1.0845$다.
+  자료: `records/rae1f209…/evidence/code/peer/analytic_bounds.py`, `records/rae1f209…/evidence/out/peer/analytic_bounds.out`; 검토 재계산 `records/rae1f209…/review/evidence/rev_analytic.py`, `records/rae1f209…/review/evidence/rev_analytic.out`; `원고_자료/세션_재계산/AR_integrals/ar_integrals_iv.py`, `ar_integrals_iv_out.txt`.
+  인용(부록D 밖): [('부록C.md', 563), ('장11.md', 58), ('장9.md', 543)]
+====================================================================================================
+[부록D_장9.md:61] D:band-LP
+  제목: 띠 정리들의 유한 확인과 선형 최소화 (보조정리 {{9:old-7-26}}, 정리 {{9:old-7-28}}·{{9:old-7-31}}·{{9:old-7-33}})
+  머리 라벨: ['9:old-7-26', '9:old-7-28', '9:old-7-31', '9:old-7-33']
+  산술 등급: 방향 반올림 구간(이 글의 재계산). 닫힌 꼴의 스칼라($\mathsf v(k)$, $\hat\Upsilon_k$, $\varrho^{\mathrm H}$, $\varrho^{\mathrm L}$, $\mathcal Y_k$, $\mathcal F_k$, $\mu$, $(1-1/k)^\nu$)는 mpmath `iv`(소수 $30$자리)로 계산한다. (다)·
+  범위: (가) $k=6668$; (나) $38887\le k\le48965$($10079$개)와 $k=48966$; (다) $9467\le k\le38886$($29420$개 열; $k=9466$은 따로 평가); (라) $6668\le k\le9466$($2799$개 열).
+  확인하는 진술: (가) 보조정리 {{9:old-7-26}}의 세 경계값: $k=6668$에서 $k\mu(k)/(1-\mu(k))<741.8\le0.1113k$, $k^{1/3}\mu(k)/(1-\mu(k))\le2.094$, $\mathcal Y_k(3k+1)>0.00273>0$. (나) 정리 {{9:old-7-28}}(3): $38887\le k\le48965$의 모든 정수 $k$에서 $\mathcal F_k(103)\ge0$; 또 $k=48966$에서 $\hat\Upsilon_k\le\frac1{20}(1-1/k)^{103}$. (다) 정리 {{9:old-7-31}}: $9467\le k\le38886$, $103\le\nu<\nu_1(k)$의 모든 $(k,\nu)$에서 $\mathcal F^+_k(\nu)\ge0$. (라) 정리 {{9:old-7-33}}: $6668\le k\le9466$, $103\le\nu<\nu_1(k)$의 모든 $(k,\nu)$에서 $\mathcal F^{\mathrm
+  자료: `records/rb6a2cd0…/evidence/peer/border_mp.py`, `out_border_mp.txt`(가); `peer_thresholds.py`, `peer_ranges.py`, `out_peer_thresholds.txt`(나); `peer_localize.py`, `peer_localize_check.py`, `out_localize_9400_16749.txt`, `out_localize_16750_24099.txt`, `out_localize_24100_31449.txt`, `out_localize_31450_38886.txt`, `localize_mp.py`, `out_localize_mp.txt`(다); `peer_lp.py`, `peer_lp_check.py`, `out_lp_check_6668_9466.txt`, `out_lp_pointwise.txt`(라); 생산자 쪽 `records/rb6a2cd0…/evidence/producer/work/subband_check.py`, `subband.py`, `out_subband_check.txt`; `원고_자료/세션_재계산/band_LP/bandlib.py`, `part_ga_
+  인용(부록D 밖): [('장11.md', 59), ('장9.md', 676), ('장9.md', 700), ('장9.md', 737), ('장9.md', 757)]
+====================================================================================================
+[부록D_장9.md:81] D:pair-one-variable
+  제목: 쌍 부등식의 한 변수 확인 (보조정리 {{9:pair-one-variable}})
+  머리 라벨: ['9:pair-one-variable']
+  산술 등급: 방향 반올림 구간(mpmath `iv`, 소수 $30$자리; 이 글의 재계산). 기록의 계산은 배정밀도 평가다(40자리 mpmath로 재평가).
+  범위: $k=6668$, $\mathfrak j\in[0.48,1]$, $5200$ 구간.
+  확인하는 진술: $\mathfrak j\in[0.48,1]$에서 $\mathfrak F(6668,\mathfrak j)\ge1.149$이다.
+  자료: `records/r5909c9e…/evidence/peer/flow_check.py`, `flow_check.out`, `flow_check_rerun.out`; `flow_mp.py`, `flow_mp.out`(40자리); `sandwich.py`, `sandwich.out`($k$-무관 괄호 판과 정수 $\nu$ 대조); 모양 함수 자료 `records/r5909c9e…/evidence/peer/w_data/`(`wKrig.npy`, `xKrig.npy`, `design.json`, `README.md`); 생산자 쪽 `records/r5909c9e…/evidence/producer/code/pdiamond_proof.py`, `pdiamond_final.py`, `W_exact.py`, `levelmass_upper.py`, `records/r5909c9e…/evidence/producer/out/pdiamond_proof.out`, `pdiamond_final.out`; 검토의 새 코드 `records/r5909c9e…/review/evidence/my_flow.py`, `my_flow.out`; `원고_자료/세션_재계산/pair_one_variabl
+  인용(부록D 밖): [('장11.md', 60), ('장9.md', 895)]

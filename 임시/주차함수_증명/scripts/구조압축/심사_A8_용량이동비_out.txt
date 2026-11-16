@@ -1,0 +1,4 @@
+sanity: w_t=min(t,41) gives Z_n=(n+1)^{n-1} for n<=12: OK
+C9: tested 320 (k,N) pairs, k=2..8, N<=4k+4 (N>2k-1 포함); violations=0; min lhs/rhs=1.000000
+S7: Jensen s_N(y)>=exp(-E_N[A]/y) tested at 126 (y,N), y=1..7, N up to 4y+6 (N>2y+1 포함): violations=0, min s/bound=1.0063
+S7: union bound 1-s<=sum theta (m-y)/m: violations=0; (8.10) identity exact in chain range: OK

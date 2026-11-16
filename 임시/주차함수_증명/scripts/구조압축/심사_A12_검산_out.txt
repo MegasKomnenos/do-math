@@ -1,0 +1,120 @@
+=== P3: G' 열별 인증서의 문턱 T_k=max(n0^bis, n^psi)와 모멘트 인증 위치 수 ===
+열 수 1500 범위 501 2000 누락 [] 모두 ok True
+501-840 max T_k = 19990 (k=840)
+T_841 = 20025  T_2000 = 71871  nV_exact 전부: True
+T_k가 k에 단조증가: True
+841-2000: n_M(k) - T_k 범위 [482, 1161]; n_M > T_k 전부: True
+현행 모멘트 인증 위치 수: 첫째 범위 19840702, 둘째 범위 40638833, 합 60479535
+P3 뒤: 첫째 범위 0, 둘째 범위(20001..T_k-1) 28086453; (10001..T_k-1로 두면) 39686453; 줄어드는 수 32393082
+T_k <= ceil(0.836 k^{3/2}) 전부: True
+n0(=n_bis0) 가운데 nV(=n_psi)보다 큰 열 수: 0
+
+=== E5: 명제 5.3(증인 위치 상계)로 D:m1-column-reading을 대체할 수 있는가 ===
+0.75k^{2/3} 판: 최소 여유 (q0+1)-B(m+1) = 7.340 at k=3145, q0=160, m=3305
+q-증가 확인(도함수 at x=3000): 0.9703
+k^{2/3} 판(m<=20000 행만): 최소 여유 59.594 at k=3152,q0=214,m=3366
+
+=== E6: DDL_2 <= 14(1+log 3k)/(5sqrt(pi k)) + 42/(5sqrt(3pi) k) < 1/4 (k>=6667) ===
+ k=6667: 0.21136
+ k=6668: 0.21135
+ k=8065: 0.19549
+ k=9551: 0.18235
+ k=9705: 0.18115
+ k=100000: 0.06802
+ 네 가족 (나) 여유 재조립 (부록 D 구간의 차 - (1/4 - DDL(k0))):
+  벌크: 0.4717  (F4: 벌크 .4717, 2 .3769, 1b .3314, 1a .0680)
+  2: 0.3769  (F4: 벌크 .4717, 2 .3769, 1b .3314, 1a .0680)
+  1b: 0.3314  (F4: 벌크 .4717, 2 .3769, 1b .3314, 1a .0680)
+  1a: 0.0680  (F4: 벌크 .4717, 2 .3769, 1b .3314, 1a .0680)
+ (가)(a) q0=2 여유 재조립: 벌크 2.5641, 2 1.2355, 1b 0.5908, 1a 0.0988
+ (가)(b) 가장자리 R#': 1b 0.2013, 1a 0.2580
+
+=== S5: Jensen 하계의 지수 손실 (d/(1-d))(mu2-mu1)/mu1, mu1>=Psi(d), mu2-mu1 <= d(1-d)^(-3/2) e^(1/(12(m+1))) ===
+ 표본 최대 지수 손실 0.536927 at (m,d)=(2064, 81) ; log2=0.693147 ; F3 주장 .663774
+ 소비처 확인: 6.48(나)는 6.49(다)에서만 쓰이고 그 자리는 하계, 14<=d<=m^{2/3}/2, m=k+d>=3145 (장6.md 1035·1061행)
+
+=== S11: hz_k(N) >= 1-e^{-eps_N}, eps_N=g(N+1)-g(k) >= 3/(4k)-17/(24k^2) (N+1>=2k) ===
+ k=2001: eps(2k)=3.747e-04 >= 3.746e-04 : True ; 1-e^-eps=3.746e-04 >= (3/4-11/(6k))/k=3.744e-04 : True ; >=1/(2k): True
+ k=3131: eps(2k)=2.395e-04 >= 2.395e-04 : True ; 1-e^-eps=2.394e-04 >= (3/4-11/(6k))/k=2.394e-04 : True ; >=1/(2k): True
+ k=10000: eps(2k)=7.499e-05 >= 7.499e-05 : True ; 1-e^-eps=7.499e-05 >= (3/4-11/(6k))/k=7.498e-05 : True ; >=1/(2k): True
+ k=1000000: eps(2k)=7.502e-07 >= 7.500e-07 : True ; 1-e^-eps=7.502e-07 >= (3/4-11/(6k))/k=7.500e-07 : True ; >=1/(2k): True
+  k=2001 n=4303: theorem-W 대괄호(hz>=1/(2k) 판) 하계 14.17 (>0 필요)
+  k=2001 n=6004: theorem-W 대괄호(hz>=1/(2k) 판) 하계 22.60 (>0 필요)
+  k=2001 n=20010: theorem-W 대괄호(hz>=1/(2k) 판) 하계 42.05 (>0 필요)
+  k=2001 n=1000000000: theorem-W 대괄호(hz>=1/(2k) 판) 하계 52.16 (>0 필요)
+  k=3131 n=6563: theorem-W 대괄호(hz>=1/(2k) 판) 하계 17.17 (>0 필요)
+  k=3131 n=9394: theorem-W 대괄호(hz>=1/(2k) 판) 하계 28.56 (>0 필요)
+  k=3131 n=31310: theorem-W 대괄호(hz>=1/(2k) 판) 하계 52.89 (>0 필요)
+  k=3131 n=1000000000: theorem-W 대괄호(hz>=1/(2k) 판) 하계 65.54 (>0 필요)
+  k=10000 n=20301: theorem-W 대괄호(hz>=1/(2k) 판) 하계 29.63 (>0 필요)
+  k=10000 n=30001: theorem-W 대괄호(hz>=1/(2k) 판) 하계 51.88 (>0 필요)
+  k=10000 n=100000: theorem-W 대괄호(hz>=1/(2k) 판) 하계 95.38 (>0 필요)
+  k=10000 n=1000000000: theorem-W 대괄호(hz>=1/(2k) 판) 하계 117.98 (>0 필요)
+ 현행 .14/n 판 D_k(n/k=3)/… at k=3131: 5.272
+
+=== P9: 쌍별 손실 상계 L^2/3 + (8C/25)sqrt(2/5) L^{5/2} (C=21/40) 대 K ===
+ (K,L)=(10000,50): 상계 2711.6 < K: True
+ (K,L)=(12000,58): 상계 3843.5 < K: True
+ (K,L)=(13000,79): 상계 7974.3 < K: True
+ (K,L)=(14000,99): 상계 13628.6 < K: True
+ (K,L)=(15000,102): 상계 14632.5 < K: True
+ 브루트 최대(L=50, p+q+j=L): 2624.2
+ 브루트 최대(L=102, p+q+j=L): 14350.5
+ 현행 (7.11) ex_50(k=1e4)=1452.8 ; 새 e_50=235.6
+
+=== C3: Lambda(Y) >= 1-2/Y-3Y/Q^{3/2}-3^{5/3}Y^{-1/3}+9/sqrt(Q)+3/Q^{3/2} > 7/10 (Y>=25000) ===
+ Y=25000 Q=5129: 0.70800
+ Y=30000 Q=5792: 0.71319
+ Y=100000 Q=12926: 0.74056
+ Y=1000000 Q=59999: 0.77021
+ C3 여파 - w0 0.71216->0.7: right-part 계수 0.7673 (현행 0.7869); Psi_R(lambda=2/3) >= 0.1782
+ band-check 최소 비 재조립(곱 인자 선형): 1.3324
+
+=== 자료 규모(원고_자료에서 직접 셈) ===
+ Q_fin_1130 결과 줄(열) 수: 1130
+  r89eb039_polar_iv out/NEW_blocks_merged.jsonl 488
+  r89eb039_polar_iv out/achain_iv.jsonl 2472
+  xcert resB_p0.jsonl 2250
+  xcert resB_p1.jsonl 2250
+  xcert resAint_p0.jsonl 65
+  xcert resAint_p1.jsonl 13
+  xcert resAint_p3.jsonl 32
+  xcert resA1_p0.jsonl 18
+  xcert resA1_p1.jsonl 9
+  xcert resA1_p3.jsonl 9
+  xcert resA2.jsonl 72
+ band_cells_CE0.tsv 줄 수: 4001
+ newton_cert_out.txt 머리: r=2 polynomials=1 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=0.0 | r=3 polynomials=2 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=0.0 | r=4 polynomials=3 failures=[] nonzero_beyond_r+d+3=[] max_degree_minus_(r+d+1)=0 seconds=0.0 | r=5 polynomials=4 fai
+  window_mass_env cert_Cb_iv_result_1_2280.json dict 2 ['rep', 'extra']
+  window_mass_env cert_Cb_iv_result_2280_3000.json dict 2 ['rep', 'extra']
+  window_mass_env cert_interval_iv_result.json dict 17 ['3000', '6000', '12000', '24000', '48000', '96000', '192000', '384000']
+  [bprime_boxes/bprime_result.txt] 5259바이트: D.bprime-boxes, directed-rounding interval recomputation (bprime_iv.py) | finite k-boxes: 480 (k in [6668, 1001931059908], ratio 1.04), nu-boxes ratio 1.03, Riemann cells 6000 | total finite boxes: 140729 | smallest box lower bounds (ka, kb, nua, nub, rho_lo): |    6935 7213 1301 1340  1.052428971 |    6668 6935 1263 1300  1.053304818 |    7213 7502 1341 1379  1.056307640 |    7502 7803 1382 1416  1.065332011 |    6668 6935 1301 1309  1.071798016 |    7803 8116 1424 1453  1.075973368 |    6935 7213 1341 1343  1.083
+  [band_boxes/band_result.txt] 1186바이트: D.band-boxes, directed-rounding interval recomputation (band_iv.py); k ratio 1.04, nu ratio 1.03, 6000 Riemann cells | D.band-boxes record box scheme, THETA = 12/25, k >= 6668, threshold 1.009: |    k-boxes 480 (k up to 1001931059908), boxes 206727, wall 581s + 581s |    min box lower bound 1.00942285566 at k in [6668,6935], nu box [3280, 3328] |    smallest five: ['6668 6935 3280 3328 1.009422856', '6935 7213 3379 3462 1.012120535', '7213 7502 3586 3600 1.015223820', '6668 6935 3184 3279 1.016447347', 
+  [four_families/families_iv_out.txt] 7857바이트: mpmath iv, dps = 30 | theta0 = (2e^-0.48 - 1)e^-0.48 in [0.1470023801, 0.1470023802] | first rows: 20001-2k <= phi k^(2/3): 1a k=9705: 591 <= [591.4804284, 591.4804285]  k=9704: 593 vs [591.4397971, 591.4397972] |             1b k=9551: 899 <= [900.3179156, 900.3179157]  k=9550: 901 vs [900.2550717, 900.2550718] |             2  k=8065: 3871 <= [3871.1999, 3871.2001] (nu<=0.48k side) / 2k^(2/3) = [804.3274863, 804.3274864] |  | (na)  o_F(k0) - Stays^up_F(k0) | family bulk k0=6668: o_F in [2.913044651, 2.91304
+  [M_natural/j_integrals_iv_out.txt] 2730바이트: mpmath iv, dps = 30, Taylor degree 16, delta = 2^-40 | 3*sqrt(2)*0.16696          in [0.708351289121435, 0.708351289121436]  <= 0.70836 : True | 2.5 - log 2 - log 0.485917 in [2.52857027099959, 2.52857027099960]  <= 2.528571: True | j2 in [2.717199867930190, 2.717199867930191]  width 1.7e-29 | j1 in [0.7998716895841891, 0.7998716895841892]  width 7.8e-18 | j1 (= int h(-log q + 3 log s) + 2.528571*j2) in [0.7998716895841891, 0.7998716895841892]  overlap: True |   tanh-sinh j2               2.7171998679301907
+  [theorem_D_base/thmD_base_iv_out.txt] 568바이트: integer (6.45) vs capacity recursion, m<=30, all 2d<=m+1: pairs=240, mismatches=0 | pairs (m,d) checked: 16229 (4<=m<=700, 8d^3<=m^2); max interval width of q: 5.32e-30 | min q: (m,d)=(689, 39)  q in [0.85613376342948715147, 0.85613376342948715147] | max q: (m,d)=(4, 1)  q in [1.3917602961710311605, 1.3917602961710311605] | lower end of min q - 1/2 = 0.35613376 ; 3/2 - upper end of max q = 0.1082397 | all q in [1/2, 3/2]: True | all q in [0.856, 1.392]: True | (m,d)=(3,1): q in [1.5290335285082129449, 1.52903
+  [prop_W_thirteen/iv13_out.txt] 5930바이트: d= 1  L in [[2183.0019300857193546439174985287526930459389, 2183.0019300857193546439174985287526930459389], [2183.00193008571935464391749852875269304607996, 2183.00193008571935464391749852875269304607996]]  R in [[2.0, 2.0], [2.0, 2.0]]  L-R > 0: True | d= 2  L in [[1726.36982314926014515462412511706299435518303, 1726.36982314926014515462412511706299435518303], [1726.3698231492601451546241251170629943553476, 1726.3698231492601451546241251170629943553476]]  R in [[3.54812165871704920977820104936592
+  [m1_column_reading/m1_read_out.txt] 589바이트: input: r19de912cab694b4f803d322834e9500a/evidence/peer/cert/v2run20000-rows.tsv | sha256: d35451d1431a6167228c41a5fb688d097de76cc043470b10a95487c88b838f48 | (1) rows read: 19996 (n = 5..20000); rows failing the structure test: 0 [] |     total positions 99970002, I 94192042, Q 5777960 | (2) c = 3/4: pairs (k, m) checked 88933203, k with empty m-range 0, violations 0 [] | (3) c = 1:   pairs (k, m) checked 86939621, k with empty m-range 122, violations 0 [] | (4) max over 3132 <= k <= 19403 of (m1'(k) - k)/k^
+  [H_star_plus/hplus_interval_out.txt] 701바이트: w(3132) <= 0.0683480427192821194015254508227  w(19404) <= 0.0372137050663869703375396494082 | Domain A (k>=3132, 2w1^2<=X<=0.75, w=w1):  max G/Theta <= [0.83202473690441142149823920822295521, 0.83202473690441142149823920822295521] on ['0.00934291', '0.00934496'] | Domain B (k>=19404, 0.75<=X<=1, w=w2):     max G/Theta <= [0.63468645905221103862161087795185857, 0.63468645905221103862161087795185857] on ['0.999928', '1.0'] | Domain C (D=2 boundary curve X=2w^2, w<=w1; value at w1 bounds the curve): G/Th
+  [AR_integrals/ar_integrals_iv_out.txt] 1152바이트: D.{{D:AR-integrals}} interval recomputation, mpmath 1.3.0 iv.dps = 30  k = 6668 | M = 20000 cells per integral (18.9 s) |   J1 in [0.43264208, 0.43274537]  J2 in [0.43279231, 0.43289563] |   J3 in [0.17025024, 0.17025024]  J4 in [0.17024975, 0.17024975] |   Lstar(6668) = J1+J2+J3+J4 in [1.205934374, 1.206140986] | M = 80000 cells per integral (85.4 s) |   J1 in [0.43268081, 0.43270664]  J2 in [0.43283105, 0.43285688] |   J3 in [0.17025024, 0.17025024]  J4 in [0.17024975, 0.17024975] |   Lstar(6668) = J1+J2+J3+J
+  [pair_one_variable/pair_iv_out.txt] 2098바이트: D.{{D:pair-one-variable}} interval recomputation, mpmath 1.3.0  iv.dps = 30 | Omega knots: 12927  range 0.0 5.99971772632788 | Omega check: 0: [0.96, 0.96] (binary64 0.9600000000); 0.5: [0.7310691948, 0.7310691948] (binary64 0.7310691948); 1: [0.4553468643, 0.4553468643] (binary64 0.4553468643); 2: [0.1233799885, 0.1233799885] (binary64 0.1233799885); 3: [0.03758040366, 0.03758040366] (binary64 0.0375804037); 4: [0.01376706417, 0.01376706417] (binary64 0.0137670642) | max |Omega binary64 - Omega inter
+  [xcert_iv/summary.txt] 2199바이트: == B == |   n: 4500 |   ok: 4500 |   missing_or_failed: [] |   n_missing: 0 |   max_R_U: 1.2746428571422692 |   k_at_max: 501 |   R_U_at: {501: 1.2746428571422692, 1000: 1.0866900319723471, 2000: 1.0309670867511205, 2001: 1.0309128657906983, 2002: 1.0308588356480926, 5000: 1.0118171544817143} |   max_R_U_2002_5000: 1.0308588356480926 |   k_max_2002: 2002 |   min_sL_2002_5000: 5.314675262474834 |   sL_2002: 5.314675262474834 |   sU_2002: 5.314675262874834 |   max_sigma_width: 4.000000330961484e-10 |   min_b0: 0.180058467565
+  [r89eb039_polar_iv/out/summary.txt] 4672바이트: input ok blocks: 488   new records: 488   old records: 488 | missing in new: [] 0 | new FAIL blocks: [] | coverage: up to 10000000, gaps [], overlapping starts 0 [] | blocks in a minimal chain cover: 488 |  | [new (directed rounding)] range | blocks | min eta | min eta0 | Vsqrtk1 range | max Gamma | min psi_lo | min eta/inf_max | max eps_n0 | min psi/((4-2V sqrt k1)/k2) | min psi/((4-2V sqrt k1)/k1) | 2001-2086 | 5 | 0.006393 | 0.01134 | 1.2020-1.4454 | 1.824767 | 0.000519 | 0.06332 | 0.03162 | 0.9738 | 0.964
+  [Q_fin_1130/summarize_out.txt] 1999바이트: columns present 1130 of 1130 missing [] | all pass | source side: min lower bound of log margin 0.785457 at k=3130 (l=816, l/k=0.261); min ratio lower bound 2.193408 | source side: number of passing l per column: min 1461 | first layer: min lower bound of margin 2.437312e-04 at k=3130 (numerator lower bound 3.4377e-09, A upper bound 1.4105e-05) | first layer: max interval width of sum_L D_L over A: 2.703e-07; ambiguous-sign L total 0; sign changes per column: [1] | max relative width: columns 4.143e-10, bet
+  [moment_cert_iv/summary.txt] 1483바이트: columns expected 7619, present 7619, missing 0, wrong range 0 | A1: columns 5019 (k=4981..9999), positions 200380, failures 0; min E_lo = 22.189738 at (k,n)=(5000,10001); min relative margin (lower) = 0.057499 at (9999,20007); columns whose min E_lo is at the left end: 5019/5019; max relative width of ah at the last row = 3.35e-09 (k=9999); min lo(ah) on tested rows = 8.670e-10 (k=9999); cpu time 3851s | A2: columns 1100 (k=10000..11099), positions 23100, failures 0; min E_lo = 26.292311 at (k,n)=(1
+  [column_cert_iv/summary_all_out.txt] 3776바이트: range 501-2000: 1500 rows, missing 0 [], errors 0 [] | all ok: True  failing columns: [] |   tail_ok    false in 0 columns [] |   J_ok       false in 0 columns [] |   eps_ok     false in 0 columns [] |   n0_ok      false in 0 columns [] |   wind_ok    false in 0 columns [] |   stored_ok  false in 0 columns [] |   nV_exact   false in 0 columns [] |  | --- condition (a'): circle |xi| = e^{theta/k}, Lemma P'(c) | min b0 = 0.03478799 (k=1131) | min margin b0 - (pi l/Nf + e) = 0.02722108 (k=1131) | max e = 9.137e-10 (k=501); 
+
+=== C1/C2: 기울인 생일 법칙의 정확 항등식, 모멘트 상계, 평균 하계, Pc 양성 ===
+ r=5 k=20: E[J^2]+(3+r^2/k)mu+2 = 10.0 (2r=10) ; E[J(J-1)] <= 1.5mu^2: True ; mu=1.2570, (6/7)sqrt r=1.9166
+ r=10 k=100: E[J^2]+(3+r^2/k)mu+2 = 20.0 (2r=20) ; E[J(J-1)] <= 1.5mu^2: True ; mu=2.3897, (6/7)sqrt r=2.7105
+ r=64 k=1024: E[J^2]+(3+r^2/k)mu+2 = 128.0 (2r=128) ; E[J(J-1)] <= 1.5mu^2: True ; mu=7.3635, (6/7)sqrt r=6.8571
+ r=170 k=2217: E[J^2]+(3+r^2/k)mu+2 = 340.0 (2r=340) ; E[J(J-1)] <= 1.5mu^2: True ; mu=10.8569, (6/7)sqrt r=11.1758
+ r=200 k=4429: E[J^2]+(3+r^2/k)mu+2 = 400.0 (2r=400) ; E[J(J-1)] <= 1.5mu^2: True ; mu=13.2628, (6/7)sqrt r=12.1218
+ min_r mu/((6/7)sqrt r) over r in 64..20000 (k=ceil(r^1.5+8r)): 1.06466 at r=20000 (mu=129.0558)
+ C1: Pc(k_r, r, eb=(6/7)sqrt r) - (sqrt r/70 + 7/20) 최소 0.4052 at r=64 (양이면 F4 주장 성립)
+ C2: Pc(49831, r, eb=0) 최소 114.266 at r=170 (F4: >57/2=28.5)
+ C2 보강: k=49831은 n=k+r>=50001, r<=170의 최소 k; Pc는 k에 증가(계수 1/(2r)-1/(3r^2)>0)이고 r에 감소
+
+=== E5(둘째 부분): H*+의 G/L 비가 xi에 단조인지(격자 관찰; 증명 아님) ===
+ 영역 A: max G/L=0.8320 at xi=0.0093 (끝점 값 0.8320, 0.3711); 증가 구간 2966, 감소 구간 1034
+ 영역 B: max G/L=0.6346 at xi=1.0000 (끝점 값 0.2235, 0.6346); 증가 구간 4000, 감소 구간 0

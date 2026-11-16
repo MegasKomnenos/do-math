@@ -1,0 +1,14 @@
+[k=2, N=12, z 값 26개] 7.40(가) D=exp(T_<=k+z∫(D-E)): True; δ==bd: True
+  [G4] X == e^T(z∫X+e^δ-1-δ) (mod x^13): True; X 최저 차수 {8, 6} (주장 2k+2=6)
+  (7.7) mod x^9: True; mod x^10에서는 어긋남: False
+  [4.6 1–3단계] D≡G_* mod x^6: True; mod x^7에서는 어긋남: False
+  [5.5(가) 꼴] D≡F_0+z e^T e^{zGr}∫e^{-zGr}(F_0-E) mod x^6: True; mod x^7 어긋남: False; E+Q≡F_0: True; Q≡F_0-E: True; G_*≡5.5꼴 mod x^6: True; mod x^7 어긋남: True
+  [2.30(나)·7.41] J≡Green 해 mod x^5: True; (J^G-J) 최저 차수 {5, 6} (주장 2k+1=5); 그 계수(n!배, z별 값 집합의 크기 25)
+  두 변수 Riccati F'=zF^2+C_kF: True
+[k=3, N=16, z 값 26개] 7.40(가) D=exp(T_<=k+z∫(D-E)): True; δ==bd: True
+  [G4] X == e^T(z∫X+e^δ-1-δ) (mod x^17): True; X 최저 차수 {8, 10} (주장 2k+2=8)
+  (7.7) mod x^12: True; mod x^13에서는 어긋남: False
+  [4.6 1–3단계] D≡G_* mod x^8: True; mod x^9에서는 어긋남: False
+  [5.5(가) 꼴] D≡F_0+z e^T e^{zGr}∫e^{-zGr}(F_0-E) mod x^8: True; mod x^9 어긋남: False; E+Q≡F_0: True; Q≡F_0-E: True; G_*≡5.5꼴 mod x^8: True; mod x^9 어긋남: True
+  [2.30(나)·7.41] J≡Green 해 mod x^7: True; (J^G-J) 최저 차수 {8, 7} (주장 2k+1=7); 그 계수(n!배, z별 값 집합의 크기 25)
+  두 변수 Riccati F'=zF^2+C_kF: True

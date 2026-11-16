@@ -1,0 +1,14 @@
+columns read: 1500  range 501..2000  missing: []
+all ok flags: True
+NE_new == max(n0bis, n^psi) in all columns: True
+(1) 501-840: max T_k = 19990 at k=840;  all T_k <= 20000: True
+    T_840=19990, T_841=20025, T_2000=71871
+    T_k nondecreasing over 501-2000: True
+(2) 841-2000: n_M present for 1160 columns; n_M - T_k in [482, 1161]; all T_k <= n_M: True
+    n_M(841)=20507, n_M(2000)=73032
+    841-2000: all T_k >= 20001 (so a finite moment window [20001, T_k-1] is nonempty): True
+(4) min psi_G(NE) lower end over 1500 columns = 2.067534e-10 at k=912
+    min over 501-840 = 2.224401e-10 at k=639
+(5) 501-840, n=20001: min psi_G(20001) = 4.5676122529e-07 at k=840 (double precision; F3 claims 4.5676e-7); all positive: True
+    T_k/k^1.5 in [0.80354, 0.83584]
+(6) 841-2000 moment-cert positions: current [10001, n_M-1] = 40,638,833; re-cut [20001, T_k-1] = 28,086,453 (F3 claims 40,638,833 -> 28,086,453)

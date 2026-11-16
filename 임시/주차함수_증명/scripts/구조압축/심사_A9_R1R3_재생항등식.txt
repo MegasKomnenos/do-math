@@ -1,0 +1,27 @@
+== k = 3
+ n=  7 (n-3k=-2) d=         -4747 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n=  8 (n-3k=-1) d=         49574 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n=  9 (n-3k=+0) d=       2991002 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-7560  [n=3k: PAIR-O = 7560, R2 항 = 7560]
+ n= 10 (n-3k=+1) d=      96631600 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-793800
+ n= 11 (n-3k=+2) d=    2804219461 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-49480200
+ n= 12 (n-3k=+3) d=   80396603566 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-2555728560
+ n= 13 (n-3k=+4) d= 2352826776416 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-122202328248
+== k = 4
+ n=  9 (n-3k=-3) d=       -769292 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 10 (n-3k=-2) d=      13424710 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 11 (n-3k=-1) d=     983035020 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 12 (n-3k=+0) d=   40678917880 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-23654400  [n=3k: PAIR-O = 23654400, R2 항 = 23654400]
+ n= 13 (n-3k=+1) d= 1502028149728 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-3743900160
+ n= 14 (n-3k=+2) d=54222882042810 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-337369896864
+ n= 15 (n-3k=+3) d=1978064684985232 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-24437236956132
+ n= 16 (n-3k=+4) d=73996422476166700 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-1596094606762656
+== k = 5
+ n= 11 (n-3k=-4) d=    -151555158 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 12 (n-3k=-3) d=    8283270910 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 13 (n-3k=-2) d=  586240597121 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 14 (n-3k=-1) d=28294936141092 항등식(다)=True (가)=True O>=0=True O==PAIR=True A=p치환=True N1=True O_n-PAIR_n=0
+ n= 15 (n-3k=+0) d=1242519774546397 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-246339843750  [n=3k: PAIR-O = 246339843750, R2 항 = 246339843750]
+ n= 16 (n-3k=+1) d=53355443651156682 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-52689136500000
+ n= 17 (n-3k=+2) d=2305716682328821670 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=True N1=True O_n-PAIR_n=-6264439417236000
+ n= 18 (n-3k=+3) d=101656720813974134428 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-588017463427089696
+ n= 19 (n-3k=+4) d=4604906678437897736794 항등식(다)=True (가)=True O>=0=True O==PAIR=False A=p치환=False N1=False O_n-PAIR_n=-48962697330309818484

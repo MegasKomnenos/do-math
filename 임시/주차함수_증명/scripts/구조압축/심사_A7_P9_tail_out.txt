@@ -1,0 +1,19 @@
+(a) k(1-s_{k+q-1}(k))/q^{3/2} via exact recursion (7.10):
+  k=9950: max ratio = 0.450056 at q=101; ratio at q=101: 0.450056; #q in [2,101] with ratio>1/2: 0 (first few [])
+  k=10000: max ratio = 0.450137 at q=101; ratio at q=101: 0.450137; #q in [2,101] with ratio>1/2: 0 (first few [])
+  k=15000: max ratio = 0.455616 at q=101; ratio at q=101: 0.455616; #q in [2,101] with ratio>1/2: 0 (first few [])
+  k=100000: max ratio = 0.465202 at q=101; ratio at q=101: 0.465202; #q in [2,101] with ratio>1/2: 0 (first few [])
+  k->inf limit T(q)/q^{3/2}: max over q<=101: 0.46693 at q=101; at q=101: 0.46693; at q=120: 0.472194; at q=250: 0.490298; at q=700: 0.506917
+  (원고 꼬리 삼중의 tf: 0.54 (M=120), 0.593 (M=250), 0.522 (M=300), 0.548 (M=450), 0.519 (M=700))
+  (7.12) with tf=0.5, K1=9950, M=101: min_q F = -3.34411 at q=101  -> lemma 7:tail-bound does NOT give 1-s <= 0.5 q^1.5/k
+  (7.12) with tf=0.52, K1=9950, M=101: min_q F = -0.000561741 at q=101  -> lemma 7:tail-bound does NOT give 1-s <= 0.52 q^1.5/k
+  (7.12) with tf=0.54, K1=9950, M=101: min_q F = 0.952163 at q=2  -> lemma 7:tail-bound gives 1-s <= 0.54 q^1.5/k
+(b) brute force: max over p,q>=1, j>=0, p+q+j<=L of LHS vs RHS, C=21/40:
+  L=50: max LHS = 2624.16 at (p,q,j)=(19, 19, 12); RHS = 2711.63; holds: True
+  L=58: max LHS = 3732.54 at (p,q,j)=(22, 22, 14); RHS = 3843.47; holds: True
+  L=79: max LHS = 7789.84 at (p,q,j)=(30, 30, 19); RHS = 7974.29; holds: True
+  L=99: max LHS = 13361.3 at (p,q,j)=(38, 38, 23); RHS = 13628.6; holds: True
+  L=102: max LHS = 14350.5 at (p,q,j)=(39, 39, 24); RHS = 14632.5; holds: True
+  F4의 접합점 (15000,102): 손실 분자 상계 14767 < 15000 라고 적음; 위 RHS(L=102)와 견준다.
+  implied C at k=15000,q=102 with tf=0.5: (ex_hat-q)/q^1.5 = 0.5213  (F4 needs C < 21/40 = 0.525)
+  implied C at k=15000,q=102 with tf=0.54: (ex_hat-q)/q^1.5 = 0.56461  (F4 needs C < 21/40 = 0.525)

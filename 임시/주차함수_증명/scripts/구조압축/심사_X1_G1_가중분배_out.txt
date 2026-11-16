@@ -1,0 +1,15 @@
+[G1(나)] 공통 재귀 Z_n=sum C(n-1,j) w_{j+1} Z_j Z_{n-1-j}, n<=7: True
+[G1(다)] Z(x)=exp(sum_t w_t Z_{t-1} x^t/t!), n<=7: True
+[G1(가)] n=0: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=1: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=2: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=3: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=4: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=5: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[G1(가)] n=6: sum_F prod w/t == Z_n(w)? True ; a(t,d) 세분: sum_F prod a(t_v,I_v) == Z_n(sum_d a)? True
+[2.10 / 2.11 둘째 식] n<=6, 모든 l: #{F: M(F)<=l} == A_{n,l} == sum_F prod min(t_v,l+1)/t_v : True
+[평균 2.11] n=1: 법칙 일치 True
+[평균 2.11] n=2: 법칙 일치 True
+[평균 2.11] n=3: 법칙 일치 True
+[평균 2.11] n=4: 법칙 일치 True
+[평균 2.11] n=5: 법칙 일치 True

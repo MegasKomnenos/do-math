@@ -1,0 +1,26 @@
+k=2..600: n^sharp_k<=20001 인 최대 k = 201; n^flat_k<=20001 인 최대 k = 267
+n^sharp_k 비감소? True; n^flat_k 비감소? True
+k=   2  t_k=   2  n^sharp=      8  n^flat=      7  n^flat/k^2=1.7500  n^sharp/k^2=2.0000  n^flat<=n^sharp? True
+k=   3  t_k=   3  n^sharp=     15  n^flat=     12  n^flat/k^2=1.3333  n^sharp/k^2=1.6667  n^flat<=n^sharp? True
+k=   5  t_k=   4  n^sharp=     29  n^flat=     22  n^flat/k^2=0.8800  n^sharp/k^2=1.1600  n^flat<=n^sharp? True
+k=  10  t_k=   6  n^sharp=     76  n^flat=     58  n^flat/k^2=0.5800  n^sharp/k^2=0.7600  n^flat<=n^sharp? True
+k=  20  t_k=  11  n^sharp=    251  n^flat=    170  n^flat/k^2=0.4250  n^sharp/k^2=0.6275  n^flat<=n^sharp? True
+k=  50  t_k=  26  n^sharp=   1376  n^flat=    829  n^flat/k^2=0.3316  n^sharp/k^2=0.5504  n^flat<=n^sharp? True
+k= 100  t_k=  50  n^sharp=   5150  n^flat=   2994  n^flat/k^2=0.2994  n^sharp/k^2=0.5150  n^flat<=n^sharp? True
+k= 120  t_k=  59  n^sharp=   7259  n^flat=   4234  n^flat/k^2=0.2940  n^sharp/k^2=0.5041  n^flat<=n^sharp? True
+k= 121  t_k=  60  n^sharp=   7441  n^flat=   4302  n^flat/k^2=0.2938  n^sharp/k^2=0.5082  n^flat<=n^sharp? True
+k= 150  t_k=  74  n^sharp=  11324  n^flat=   6494  n^flat/k^2=0.2886  n^sharp/k^2=0.5033  n^flat<=n^sharp? True
+k= 200  t_k=  98  n^sharp=  19898  n^flat=  11328  n^flat/k^2=0.2832  n^sharp/k^2=0.4974  n^flat<=n^sharp? True
+k= 204  t_k= 100  n^sharp=  20704  n^flat=  11772  n^flat/k^2=0.2829  n^sharp/k^2=0.4975  n^flat<=n^sharp? True
+k= 205  t_k= 100  n^sharp=  20805  n^flat=  11885  n^flat/k^2=0.2828  n^sharp/k^2=0.4951  n^flat<=n^sharp? True
+k= 250  t_k= 122  n^sharp=  30872  n^flat=  17496  n^flat/k^2=0.2799  n^sharp/k^2=0.4940  n^flat<=n^sharp? True
+k= 272  t_k= 132  n^sharp=  36308  n^flat=  20632  n^flat/k^2=0.2789  n^sharp/k^2=0.4908  n^flat<=n^sharp? True
+k= 273  t_k= 133  n^sharp=  36715  n^flat=  20781  n^flat/k^2=0.2788  n^sharp/k^2=0.4926  n^flat<=n^sharp? True
+k= 300  t_k= 146  n^sharp=  44246  n^flat=  24997  n^flat/k^2=0.2777  n^sharp/k^2=0.4916  n^flat<=n^sharp? True
+k= 400  t_k= 194  n^sharp=  78194  n^flat=  44002  n^flat/k^2=0.2750  n^sharp/k^2=0.4887  n^flat<=n^sharp? True
+k= 500  t_k= 242  n^sharp= 121742  n^flat=  68342  n^flat/k^2=0.2734  n^sharp/k^2=0.4870  n^flat<=n^sharp? True
+k= 501  t_k= 243  n^sharp= 122487  n^flat=  68612  n^flat/k^2=0.2734  n^sharp/k^2=0.4880  n^flat<=n^sharp? True
+k= 600  t_k= 290  n^sharp= 174890  n^flat=  98017  n^flat/k^2=0.2723  n^sharp/k^2=0.4858  n^flat<=n^sharp? True
+max n^sharp_k, k<=120: 7259; max n^flat_k, k<=120: 4234
+n^flat_k <= n^sharp_k for all k<=600? True
+phi_50(1000) - psi_{x_50}(1000) = 0E-59

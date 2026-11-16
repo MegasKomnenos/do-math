@@ -1,0 +1,20 @@
+1. pi_m(j) = Bor(j)Bor(m+1-j)/Bor(m+1) for all 1<=j<=m<=40 (exact): True;  P_m(j) = (j/m) pi_m(j): True
+   따라서 pi_m(m-s) = Bor(s+1) * Bor(m-s)/Bor(m+1) = Bor(s+1) * exp(sum_{i=m-s}^{m} (1-g(i)))  (2:old-2-26(나)); kernel-bound·explicit-bounds(나)는 g의 상계 한 줄.
+   (s,m)=(118,10119): exact log[pi/Bor(s+1)] = 0.017742766;  g-bound sum(3/(2i)-1/(2i^2)) = 0.017743158;  manuscript ke(s,m) = 0.017759085
+   (s,m)=(10,10010): exact log[pi/Bor(s+1)] = 0.001649084;  g-bound sum(3/(2i)-1/(2i^2)) = 0.0016491206;  manuscript ke(s,m) = 0.0016490852
+   (s,m)=(699,1000699): exact log[pi/Bor(s+1)] = 0.0010496326;  g-bound sum(3/(2i)-1/(2i^2)) = 0.0010496328;  manuscript ke(s,m) = 0.0010496526
+   (s,m)=(50,2050): exact log[pi/Bor(s+1)] = 0.037769412;  g-bound sum(3/(2i)-1/(2i^2)) = 0.037773554;  manuscript ke(s,m) = 0.037836497
+2. k=2, z=2: exact identity X=B(z∫X+e^δ-1-δ) mod x^9: True; (7.7) mod x^9: True; lowest degree of X = 6 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=2, z=5/2: exact identity X=B(z∫X+e^δ-1-δ) mod x^9: True; (7.7) mod x^9: True; lowest degree of X = 6 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=3, z=3: exact identity X=B(z∫X+e^δ-1-δ) mod x^12: True; (7.7) mod x^12: True; lowest degree of X = 8 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=3, z=7/2: exact identity X=B(z∫X+e^δ-1-δ) mod x^12: True; (7.7) mod x^12: True; lowest degree of X = 8 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=4, z=4: exact identity X=B(z∫X+e^δ-1-δ) mod x^15: True; (7.7) mod x^15: True; lowest degree of X = 10 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=4, z=9/2: exact identity X=B(z∫X+e^δ-1-δ) mod x^15: True; (7.7) mod x^15: True; lowest degree of X = 10 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=5, z=5: exact identity X=B(z∫X+e^δ-1-δ) mod x^18: True; (7.7) mod x^18: True; lowest degree of X = 12 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+2. k=5, z=11/2: exact identity X=B(z∫X+e^δ-1-δ) mod x^18: True; (7.7) mod x^18: True; lowest degree of X = 12 (=2k+2: True); X_{2k+2} = e^{T_le}δ²/2 coefficient: True
+3. P8: Q_k(2k+1)<0, Q_k(n_M)>0, Q_k'(n_M)>0 and Q' >= secant slope, 841..2000: violations [] (count 0)  [note: keys used: V_hi]
+4. S12 inequality V_k(k) >= ((k-1)/(R+1))[1-s_R(k-1)] - (k-1)c_2k(k-1), exact, k=3..40: violations 0 []
+   samples (k, V, rhs): (3,0.1231,-0.4529), (5,0.1535,-0.5227), (10,0.3542,-0.5362), (20,0.6843,-0.4141), (30,0.9072,-0.3047), (40,1.0663,-0.2170)
+5. k=2001: V_k(k) (double) = 2.03964;  F3 lower-bound expression = 0.56102;  s_R(k-1)=0.05640 (R=3000), (k-1)c_2k(k-1)=0.06784
+5. k=3130: V_k(k) (double) = 2.05104;  F3 lower-bound expression = 0.58586;  s_R(k-1)=0.04258 (R=4693), (k-1)c_2k(k-1)=0.05235
+5. k=3131: V_k(k) (double) = 2.05104;  F3 lower-bound expression = 0.58583;  s_R(k-1)=0.04255 (R=4695), (k-1)c_2k(k-1)=0.05234
