@@ -1,0 +1,70 @@
+mpmath iv, dps = 30
+theta0 = (2e^-0.48 - 1)e^-0.48 in [0.1470023801, 0.1470023802]
+first rows: 20001-2k <= phi k^(2/3): 1a k=9705: 591 <= [591.4804284, 591.4804285]  k=9704: 593 vs [591.4397971, 591.4397972]
+            1b k=9551: 899 <= [900.3179156, 900.3179157]  k=9550: 901 vs [900.2550717, 900.2550718]
+            2  k=8065: 3871 <= [3871.1999, 3871.2001] (nu<=0.48k side) / 2k^(2/3) = [804.3274863, 804.3274864]
+
+(na)  o_F(k0) - Stays^up_F(k0)
+family bulk k0=6668: o_F in [2.913044651, 2.913044652]  Stays^up_F in [2.364206945, 2.364206946]  margin in [0.5488377059, 0.5488377060]  >0: True
+      DDL in [0.1728846838, 0.1728846839];  abar in [0.1879774101, 0.1879774102];  bbar in [1.118959281, 1.118959282];  dbar in [0.8843855696, 0.8843855697];  ebar in [1.086955348, 1.086955349]
+family 2    k0=8065: o_F in [1.885771411, 1.885771412]  Stays^up_F in [1.419381656, 1.419381657]  margin in [0.4663897550, 0.4663897551]  >0: True
+      DDL in [0.1604933380, 0.1604933381];  three_sup in [1.339210739, 1.339210740];  theta in [0.1470023801, 0.1470023802];  BD in [0.7615268905, 0.7615268906]
+family 1b   k0=9551: o_F in [1.606388691, 1.606388692]  Stays^up_F in [1.175200991, 1.175200992]  margin in [0.4311876998, 0.4311876999]  >0: True
+      DDL in [0.1501749541, 0.1501749542];  three_sup in [2.464359871, 2.464359872];  theta in [0.7462878167, 0.7462878168];  BD in [0.5253642995, 0.5253642996]
+family 1a   k0=9705: o_F in [1.319502782, 1.319502783]  Stays^up_F in [1.150740167, 1.150740168]  margin in [0.1687626151, 0.1687626152]  >0: True
+      DDL in [0.1492316781, 0.1492316782];  ec in [0.02503058352, 0.02503058353];  BD in [0.5062349555, 0.5062349556];  Flat_km1 in [0.1153306711, 0.1153306712];  Flat_k in [0.1153262585, 0.1153262586];  Ab_km1 in [0.3021456180, 0.3021456181];  Ab_k in [0.3021335674, 0.3021335675];  top in [0.3158040523, 0.3158040524]
+bulk: abar+bbar+DDL+dbar+ebar in [3.451162294, 3.451162295]
+
+R#_F(k0), R#'_F(k0):
+family bulk R# in [2.364206945, 2.364206946]
+family 2    R# in [3.680612625, 3.680612626]
+family 1b   R# in [4.315100116, 4.315100117]   R#' in [1.850740245, 1.850740246]
+family 1a   R# in [4.806206801, 4.806206802]   R#' in [1.806206801, 1.806206802]
+
+(ga)(a)  min over 2 <= q0 <= eps0 of e_low(k0,q0) - R#_F(k0);  1a,1b: min over 104 <= q0 <= eps0 of e_low_R + s_{q0+1}(k0) - R#'
+family bulk k0=6668 eps0=562: min at q0=2, margin in [2.641206651, 2.641206652] (e_low in [5.005413597, 5.005413598])  >0: True
+      max(z_R, s - Pr) decided by z_R at 560, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999944833257, 0.999944833258], s_3(k0) in [0.999849067963, 0.999849067964]  (9 s)
+family 2    k0=8065 eps0=638: min at q0=2, margin in [1.324976921, 1.324976922] (e_low in [5.005589546, 5.005589547])  >0: True
+      max(z_R, s - Pr) decided by z_R at 636, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999954388515, 0.999954388516], s_3(k0) in [0.999875211734, 0.999875211735]  (12 s)
+family 1b   k0=9551 eps0=714: min at q0=2, margin in [0.6906200981, 0.6906200982] (e_low in [5.005720215, 5.005720216])  >0: True | m0>N: min at q0=714, margin in [3.128212786, 3.128212787]  >0: True
+      max(z_R, s - Pr) decided by z_R at 712, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999961484642, 0.999961484643], s_3(k0) in [0.999894626819, 0.999894626820]  (15 s)
+family 1a   k0=9705 eps0=722: min at q0=2, margin in [0.1995246672, 0.1995246673] (e_low in [5.005731468, 5.005731469])  >0: True | m0>N: min at q0=722, margin in [3.196131317, 3.196131318]  >0: True
+      max(z_R, s - Pr) decided by z_R at 720, by s - Pr at 1, undecided 0 q0's;  s_2(k0+1) in [0.999962095777, 0.999962095778], s_3(k0) in [0.999896298875, 0.999896298876]  (15 s)
+
+(ga)(b)  edge points
+family bulk k0=6668: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.349608430, 4.349608431], margin in [1.985401484, 1.985401485]  >0: True
+family 2    k0=8065: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.639523243, 4.639523244], margin in [0.9589106179, 0.9589106180]  >0: True
+family 1b   k0=9551: m0<=N, xi_cap=2^(2/3): 4 s_low + 2 Q in [4.913345070, 4.913345071], margin in [0.5982449536, 0.5982449537]  >0: True | m0>N: Q + s_low in [2.151862297, 2.151862298], margin in [0.3011220516, 0.3011220517]  >0: True
+family 1a   k0=9705: m0<=N, xi_cap=1.3: 4 s_low + 2 Q in [7.647281546, 7.647281547], margin in [2.841074744, 2.841074745]  >0: True | m0>N: Q + s_low in [2.165010335, 2.165010336], margin in [0.3588035342, 0.3588035343]  >0: True
+
+Lemma 10:old-8-32(iii) conditions on xi in [1.04, 2^(2/3)] (40000 interval cells; y = 6669 in (h1), q0 = 562 in (h2)):
+  (h1) min_xi [e^{-c d}(1+c d) - g(a)] in [0.0855877, 0.0856190]  >0: True
+  (h2) min_xi [g(a1) - g(a2) - a1 e^{-a1}/564] in [0.163537, 0.163598]  >0: True
+
+1a cross-check with the record's 30-digit recheck_1a.py (record constants 0.708345, 2.528570 in DDL):
+  Stays^up(9705;1.3k^(2/3))    interval [1.150740167, 1.150740168]   recheck 1.1507402   recheck within 5e-8 of the interval: True
+  o_F(9705)                    interval [1.319502782, 1.319502783]   recheck 1.3554526   recheck within 5e-8 of the interval: False
+  (na) margin                  interval [0.1687626151, 0.1687626152]   recheck 0.204712   recheck within 5e-8 of the interval: False
+  R#                           interval [4.806206801, 4.806206802]   recheck 4.770257   recheck within 5e-8 of the interval: False
+  R#'                          interval [1.806206801, 1.806206802]   recheck 1.770257   recheck within 5e-8 of the interval: False
+  DDL^natural(9705)            interval [0.1492316781, 0.1492316782]   recheck 0.11328183   recheck within 5e-8 of the interval: False
+  (ga)(a) q0=2 margin          interval [0.1995246672, 0.1995246673]   recheck 0.235475   recheck within 5e-8 of the interval: False
+  with the record's constants: j1' in [0.7998520346, 0.7998520347], j2' in [2.717142329, 2.717142330], DDL'(9705) in [0.1492316781, 0.1492316782] (shift [-0.0000000000000000000000000000001726, 0.0000000000000000000000000000001726])
+  o_F(9705)                    interval [1.319502782, 1.319502783]   recheck 1.3554526   recheck rounds the interval (half unit 5e-8): False
+  (na) margin                  interval [0.1687626151, 0.1687626152]   recheck 0.204712   recheck rounds the interval (half unit 5e-7): False
+  R#                           interval [4.806206801, 4.806206802]   recheck 4.770257   recheck rounds the interval (half unit 5e-7): False
+  R#'                          interval [1.806206801, 1.806206802]   recheck 1.770257   recheck rounds the interval (half unit 5e-7): False
+  DDL'(9705)                   interval [0.1492316781, 0.1492316782]   recheck 0.11328183   recheck rounds the interval (half unit 5e-9): False
+  (ga)(a) q0=2 margin          interval [0.1995246672, 0.1995246673]   recheck 0.235475   recheck rounds the interval (half unit 5e-7): False
+  (ga)(b) edge m0<=N margin    interval [2.841074744, 2.841074745]   recheck 2.87702   recheck rounds the interval (half unit 5e-6): False
+  (ga)(b) edge m0>N margin     interval [0.3588035342, 0.3588035343]   recheck 0.394753   recheck rounds the interval (half unit 5e-7): False
+
+monotonicity samples (record grids; consecutive values compared with certified intervals):
+  family bulk (727 points): o_F increasing: True, Stays^up_F decreasing: True, R# decreasing: True
+  family 2    (726 points): o_F increasing: True, Stays^up_F decreasing: True, R# decreasing: True
+  family 1b   (725 points): o_F increasing: True, Stays^up_F decreasing: True, R# decreasing: True, R#' decreasing: True
+  family 1a   (725 points): o_F increasing: True, Stays^up_F decreasing: True, R# decreasing: True, R#' decreasing: True
+  edge bounds decreasing in xi on [0.8 xi_cap, xi_cap] (2 x 60 values of y in [6669, 1e9], 120 xi each): True
+  Q(y, xi) increasing and s_low nondecreasing in y on 400 points of [k0+1, 1e8] (each family, each cap): True
+
+total time 93 s
